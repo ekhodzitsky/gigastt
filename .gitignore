@@ -3,3 +3,4 @@
 
 # Override global gitignore — CLAUDE.md is part of the project
 !CLAUDE.md
+gigastt-*.tar.gz

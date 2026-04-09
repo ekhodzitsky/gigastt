@@ -1,7 +1,7 @@
 //! WebSocket server that accepts PCM16 audio and streams transcripts.
 
 use crate::inference::Engine;
-use crate::protocol::ServerMessage;
+use crate::protocol::{ClientMessage, ServerMessage};
 use anyhow::Result;
 use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
@@ -68,29 +68,38 @@ async fn handle_connection(
     sink.send(Message::Text(serde_json::to_string(&ready)?)).await?;
 
     // Create per-connection streaming state (LSTM decoder + audio buffer)
-    let mut stream_state = engine.create_state();
+    // Wrapped in Option so we can move it into/out of spawn_blocking
+    let mut state_opt = Some(engine.create_state());
 
     // Process incoming audio frames
     while let Some(msg) = source.next().await {
         let msg = msg?;
         match msg {
             Message::Binary(data) => {
-                // PCM16 mono — 2 bytes per sample
-                let samples_48k: Vec<i16> = data
+                // PCM16 mono at 48kHz — convert to f32 for resampling
+                let samples_48k_f32: Vec<f32> = data
                     .chunks_exact(2)
-                    .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
+                    .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
                     .collect();
 
-                // Downsample 48kHz → 16kHz (3:1 ratio with averaging)
-                let samples: Vec<i16> = samples_48k
-                    .chunks(3)
-                    .map(|c| {
-                        let sum: i32 = c.iter().map(|&s| s as i32).sum();
-                        (sum / c.len() as i32) as i16
-                    })
+                // Resample 48kHz → 16kHz using the same algorithm as file transcription
+                let samples_16k_f32 = Engine::resample(&samples_48k_f32, 48000, 16000);
+                let samples: Vec<i16> = samples_16k_f32
+                    .iter()
+                    .map(|&s| (s * 32768.0).clamp(-32768.0, 32767.0) as i16)
                     .collect();
 
-                match engine.process_chunk(&samples, &mut stream_state) {
+                // Run inference in a blocking thread to avoid blocking the tokio runtime
+                let mut state = state_opt.take().expect("streaming state");
+                let eng = engine.clone();
+                let (result, state_back) = tokio::task::spawn_blocking(move || {
+                    let r = eng.process_chunk(&samples, &mut state);
+                    (r, state)
+                })
+                .await?;
+                state_opt = Some(state_back);
+
+                match result {
                     Ok(segments) => {
                         for seg in segments {
                             let msg = if seg.is_final {
@@ -104,7 +113,8 @@ async fn handle_connection(
                                     timestamp: seg.timestamp,
                                 }
                             };
-                            sink.send(Message::Text(serde_json::to_string(&msg)?)).await?;
+                            sink.send(Message::Text(serde_json::to_string(&msg)?))
+                                .await?;
                         }
                     }
                     Err(e) => {
@@ -113,12 +123,28 @@ async fn handle_connection(
                             message: "Inference failed. Please check audio format.".into(),
                             code: "inference_error".into(),
                         };
-                        sink.send(Message::Text(serde_json::to_string(&err)?)).await?;
+                        sink.send(Message::Text(serde_json::to_string(&err)?))
+                            .await?;
                     }
                 }
             }
+            Message::Text(text) => {
+                if let Ok(ClientMessage::Stop) = serde_json::from_str(&text) {
+                    tracing::info!("Stop received from {peer}, finalizing");
+                    let final_msg = ServerMessage::Final {
+                        text: String::new(),
+                        timestamp: std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_secs_f64(),
+                    };
+                    sink.send(Message::Text(serde_json::to_string(&final_msg)?))
+                        .await?;
+                    break;
+                }
+            }
             Message::Close(_) => break,
-            _ => {} // Ignore text/ping/pong
+            _ => {} // Ignore ping/pong
         }
     }
 

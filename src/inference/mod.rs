@@ -237,12 +237,21 @@ impl Engine {
             }
         }
 
+        let duration_s = all_samples.len() as f64 / sample_rate as f64;
         tracing::info!(
             "Decoded {} samples at {}Hz ({:.1}s)",
             all_samples.len(),
             sample_rate,
-            all_samples.len() as f64 / sample_rate as f64
+            duration_s
         );
+
+        const MAX_DURATION_S: f64 = 600.0; // 10 minutes
+        if duration_s > MAX_DURATION_S {
+            anyhow::bail!(
+                "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
+                duration_s
+            );
+        }
 
         // Resample to 16kHz if needed
         if sample_rate != 16000 {
@@ -291,7 +300,10 @@ impl Engine {
         let length_tensor =
             TensorRef::from_array_view(([1_usize], length_data.as_slice()))?;
 
-        let mut encoder = self.encoder.lock().unwrap_or_else(|e| e.into_inner());
+        let mut encoder = self.encoder.lock().unwrap_or_else(|e| {
+            tracing::warn!("Encoder mutex was poisoned, recovering");
+            e.into_inner()
+        });
         let encoder_outputs = encoder
             .run(ort::inputs![signal_tensor, length_tensor])
             .context("Encoder inference failed")?;
@@ -313,8 +325,14 @@ impl Engine {
         drop(encoder);
 
         // RNN-T greedy decode
-        let mut decoder = self.decoder.lock().unwrap_or_else(|e| e.into_inner());
-        let mut joiner = self.joiner.lock().unwrap_or_else(|e| e.into_inner());
+        let mut decoder = self.decoder.lock().unwrap_or_else(|e| {
+            tracing::warn!("Decoder mutex was poisoned, recovering");
+            e.into_inner()
+        });
+        let mut joiner = self.joiner.lock().unwrap_or_else(|e| {
+            tracing::warn!("Joiner mutex was poisoned, recovering");
+            e.into_inner()
+        });
 
         let token_ids = decode::greedy_decode(
             &mut decoder,

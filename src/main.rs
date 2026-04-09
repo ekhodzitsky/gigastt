@@ -1,9 +1,5 @@
-mod inference;
-mod model;
-mod protocol;
-mod server;
-
 use clap::{Parser, Subcommand};
+use gigastt::{inference, model, server};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]

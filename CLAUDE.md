@@ -93,6 +93,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - WebSocket frame limit: 512KB
 - Connection semaphore: max 4 concurrent
 - Audio buffer cap: 5 seconds (OOM protection)
+- File transcription cap: 10 minutes (OOM protection)
 - Internal errors hidden from clients (generic message sent)
 
 ## Model
@@ -103,8 +104,6 @@ GigaAM v3 e2e_rnnt from `istupakov/gigaam-v3-onnx` on HuggingFace:
 - Sample rate: 16kHz, Features: 64 mel bins
 - ONNX tensors: encoder out `[1, 768, T]` (channels-first), decoder state `[1, 1, 320]`
 
-## Known limitations (v0.1)
+## Known limitations
 - macOS ARM64 only (CoreML feature in ort)
-- `std::sync::Mutex` on ONNX sessions blocks tokio runtime (use `spawn_blocking` in v0.2)
-- Simple averaging for 48→16kHz downsampling (use polyphase FIR in v0.2)
-- `ClientMessage::Stop` defined but not handled in server
+- Linear interpolation resampler (upgrade to polyphase FIR for better quality)
