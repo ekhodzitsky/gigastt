@@ -63,6 +63,7 @@ async fn handle_connection(
     let ready = ServerMessage::Ready {
         model: "gigaam-v3-e2e-rnnt".into(),
         sample_rate: 48000,
+        version: crate::protocol::PROTOCOL_VERSION.into(),
     };
     sink.send(Message::Text(serde_json::to_string(&ready)?)).await?;
 
