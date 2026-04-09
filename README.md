@@ -55,7 +55,7 @@ gigastt download
 
 ## WebSocket Protocol
 
-Connect to `ws://127.0.0.1:9876` and send PCM16 mono 16kHz binary frames.
+Connect to `ws://127.0.0.1:9876` and send PCM16 mono 48kHz binary frames (server resamples to 16kHz internally).
 
 ### Messages
 

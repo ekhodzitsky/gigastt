@@ -43,10 +43,10 @@ async fn handle_connection(
 
     tracing::info!("Client connected: {peer}");
 
-    // Send ready message
+    // Send ready message — accept 48kHz from clients, resample to 16kHz internally
     let ready = ServerMessage::Ready {
         model: "gigaam-v3-e2e-rnnt".into(),
-        sample_rate: 16000,
+        sample_rate: 48000,
     };
     sink.send(Message::Text(serde_json::to_string(&ready)?)).await?;
 
@@ -58,10 +58,19 @@ async fn handle_connection(
         let msg = msg?;
         match msg {
             Message::Binary(data) => {
-                // PCM16 mono 16kHz — 2 bytes per sample
-                let samples: Vec<i16> = data
+                // PCM16 mono — 2 bytes per sample
+                let samples_48k: Vec<i16> = data
                     .chunks_exact(2)
                     .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
+                    .collect();
+
+                // Downsample 48kHz → 16kHz (3:1 ratio with averaging)
+                let samples: Vec<i16> = samples_48k
+                    .chunks(3)
+                    .map(|c| {
+                        let sum: i32 = c.iter().map(|&s| s as i32).sum();
+                        (sum / c.len() as i32) as i16
+                    })
                     .collect();
 
                 match engine.process_chunk(&samples, &mut stream_state) {
