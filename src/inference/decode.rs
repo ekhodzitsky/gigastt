@@ -9,6 +9,32 @@ use super::{PRED_HIDDEN, DecoderState};
 const MAX_TOKENS_PER_STEP: usize = 3;
 const ENC_DIM: usize = 768;
 
+/// Extract encoder frame `t` from channels-first layout [1, ENC_DIM, enc_len].
+///
+/// Element [0, ch, t] is at index `ch * enc_len + t`.
+pub(crate) fn extract_encoder_frame(
+    encoded: &[f32],
+    encoded_len: usize,
+    t: usize,
+    enc_frame: &mut [f32],
+) {
+    for ch in 0..enc_frame.len() {
+        enc_frame[ch] = encoded[ch * encoded_len + t];
+    }
+}
+
+/// Argmax over logits, returning the index of the largest value.
+///
+/// Returns `blank_id` if logits is empty.
+pub(crate) fn argmax(logits: &[f32], blank_id: usize) -> usize {
+    logits
+        .iter()
+        .enumerate()
+        .max_by(|(_i, a), (_j, b)| a.total_cmp(b))
+        .map(|(idx, _)| idx)
+        .unwrap_or(blank_id)
+}
+
 /// Run RNN-T greedy decode on encoder output.
 ///
 /// Encoder output layout: [1, 768, enc_len] (channels-first).
@@ -29,11 +55,7 @@ pub fn greedy_decode(
     for t in 0..encoded_len {
         let mut tokens_this_step = 0;
 
-        // Extract encoder frame t from [1, 768, enc_len] layout:
-        // element [0, ch, t] is at index ch * enc_len + t
-        for ch in 0..ENC_DIM {
-            enc_frame[ch] = encoded[ch * encoded_len + t];
-        }
+        extract_encoder_frame(encoded, encoded_len, t, &mut enc_frame);
 
         loop {
             // Run decoder: input prev_token [1,1] + hidden state [1,1,320]
@@ -75,12 +97,7 @@ pub fn greedy_decode(
                 .context("Failed to extract joiner output")?;
 
             // Greedy: argmax over logits (1025 classes)
-            let token = logits
-                .iter()
-                .enumerate()
-                .max_by(|(_i, a), (_j, b)| a.total_cmp(b))
-                .map(|(idx, _)| idx)
-                .unwrap_or(blank_id);
+            let token = argmax(logits, blank_id);
 
             if token == blank_id || tokens_this_step >= MAX_TOKENS_PER_STEP {
                 break;
@@ -102,4 +119,76 @@ pub fn greedy_decode(
     }
 
     Ok(tokens)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // --- extract_encoder_frame tests ---
+
+    #[test]
+    fn test_extract_encoder_frame_first() {
+        // 2 channels, 3 time steps: [ch0: 1,2,3, ch1: 4,5,6]
+        let encoded = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut frame = vec![0.0; 2];
+        extract_encoder_frame(&encoded, 3, 0, &mut frame);
+        assert_eq!(frame, vec![1.0, 4.0]);
+    }
+
+    #[test]
+    fn test_extract_encoder_frame_last() {
+        let encoded = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut frame = vec![0.0; 2];
+        extract_encoder_frame(&encoded, 3, 2, &mut frame);
+        assert_eq!(frame, vec![3.0, 6.0]);
+    }
+
+    #[test]
+    fn test_extract_encoder_frame_middle() {
+        let encoded = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let mut frame = vec![0.0; 2];
+        extract_encoder_frame(&encoded, 3, 1, &mut frame);
+        assert_eq!(frame, vec![2.0, 5.0]);
+    }
+
+    // --- argmax tests ---
+
+    #[test]
+    fn test_argmax_clear_winner() {
+        let logits = vec![0.1, 0.5, 0.9, 0.2];
+        assert_eq!(argmax(&logits, 999), 2);
+    }
+
+    #[test]
+    fn test_argmax_tie_returns_last() {
+        // Rust's Iterator::max_by returns the last element on ties
+        let logits = vec![1.0, 1.0, 0.5];
+        assert_eq!(argmax(&logits, 999), 1);
+    }
+
+    #[test]
+    fn test_argmax_single_element() {
+        let logits = vec![42.0];
+        assert_eq!(argmax(&logits, 999), 0);
+    }
+
+    #[test]
+    fn test_argmax_negative_values() {
+        let logits = vec![-3.0, -1.0, -2.0];
+        assert_eq!(argmax(&logits, 999), 1);
+    }
+
+    #[test]
+    fn test_argmax_empty_returns_blank() {
+        let logits: Vec<f32> = vec![];
+        assert_eq!(argmax(&logits, 1024), 1024);
+    }
+
+    #[test]
+    fn test_argmax_blank_id_selected() {
+        // If blank_id is the argmax, it should be returned
+        let logits = vec![0.1, 0.2, 0.9]; // index 2 is max
+        assert_eq!(argmax(&logits, 2), 2); // blank_id matches argmax
+    }
 }
