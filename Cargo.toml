@@ -44,6 +44,7 @@ rustfft = "6"
 
 # Audio file reading (for `transcribe` command)
 hound = "3.5"
+symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
 
 # Directory management
 dirs = "6"

@@ -170,41 +170,135 @@ impl Engine {
         }])
     }
 
-    /// Transcribe an entire WAV file (offline mode).
+    /// Transcribe an audio file (supports WAV, MP3, M4A/AAC, OGG, FLAC).
     pub fn transcribe_file(&self, path: &str) -> Result<String> {
-        let reader = hound::WavReader::open(path).context("Failed to open WAV file")?;
-        let spec = reader.spec();
-        anyhow::ensure!(
-            spec.channels == 1,
-            "Expected mono audio, got {} channels",
-            spec.channels
-        );
-        anyhow::ensure!(spec.bits_per_sample == 16, "Expected 16-bit audio");
+        let float_samples = Self::decode_audio_file(path)?;
 
-        if spec.sample_rate != 16000 {
-            anyhow::bail!(
-                "Expected 16kHz audio, got {} Hz. Please resample first.",
-                spec.sample_rate
-            );
-        }
-
-        let samples: Vec<i16> = reader
-            .into_samples::<i16>()
-            .collect::<std::result::Result<Vec<_>, _>>()
-            .context("Corrupted samples in WAV file")?;
-        tracing::info!(
-            "Read {} samples at {} Hz ({:.1}s)",
-            samples.len(),
-            spec.sample_rate,
-            samples.len() as f64 / spec.sample_rate as f64
-        );
-
-        let float_samples: Vec<f32> = samples.iter().map(|&s| s as f32 / 32768.0).collect();
         let (features, num_frames) = self.mel.compute(&float_samples);
         tracing::info!("Extracted {} mel frames", num_frames);
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
         self.run_inference(&features, num_frames, &mut decoder_state)
+    }
+
+    /// Decode any supported audio file to mono f32 samples at 16kHz.
+    fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
+        use symphonia::core::audio::SampleBuffer;
+        use symphonia::core::codecs::DecoderOptions;
+        use symphonia::core::formats::FormatOptions;
+        use symphonia::core::io::MediaSourceStream;
+        use symphonia::core::meta::MetadataOptions;
+        use symphonia::core::probe::Hint;
+
+        let file = std::fs::File::open(path)
+            .with_context(|| format!("Failed to open audio file: {path}"))?;
+        let mss = MediaSourceStream::new(Box::new(file), Default::default());
+
+        let mut hint = Hint::new();
+        if let Some(ext) = std::path::Path::new(path).extension().and_then(|e| e.to_str()) {
+            hint.with_extension(ext);
+        }
+
+        let probed = symphonia::default::get_probe()
+            .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
+            .context("Unsupported audio format")?;
+
+        let mut format = probed.format;
+
+        let track = format
+            .default_track()
+            .context("No audio track found")?;
+        let track_id = track.id;
+        let sample_rate = track
+            .codec_params
+            .sample_rate
+            .context("Unknown sample rate")?;
+        let channels = track
+            .codec_params
+            .channels
+            .map(|c| c.count())
+            .unwrap_or(1);
+
+        tracing::info!("Audio: {sample_rate}Hz, {channels}ch, format={}",
+            std::path::Path::new(path).extension().unwrap_or_default().to_string_lossy());
+
+        let mut decoder = symphonia::default::get_codecs()
+            .make(&track.codec_params, &DecoderOptions::default())
+            .context("Unsupported audio codec")?;
+
+        let mut all_samples: Vec<f32> = Vec::new();
+
+        loop {
+            let packet = match format.next_packet() {
+                Ok(p) => p,
+                Err(symphonia::core::errors::Error::IoError(ref e))
+                    if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+                Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+            };
+
+            if packet.track_id() != track_id {
+                continue;
+            }
+
+            let decoded = decoder.decode(&packet).context("Decode error")?;
+            let spec = *decoded.spec();
+            let num_frames = decoded.frames();
+
+            let mut sample_buf = SampleBuffer::<f32>::new(num_frames as u64, spec);
+            sample_buf.copy_interleaved_ref(decoded);
+            let samples = sample_buf.samples();
+
+            // Mix to mono if multi-channel
+            if spec.channels.count() > 1 {
+                let ch = spec.channels.count();
+                for frame in 0..num_frames {
+                    let mut sum = 0.0_f32;
+                    for c in 0..ch {
+                        sum += samples[frame * ch + c];
+                    }
+                    all_samples.push(sum / ch as f32);
+                }
+            } else {
+                all_samples.extend_from_slice(samples);
+            }
+        }
+
+        tracing::info!(
+            "Decoded {} samples at {}Hz ({:.1}s)",
+            all_samples.len(),
+            sample_rate,
+            all_samples.len() as f64 / sample_rate as f64
+        );
+
+        // Resample to 16kHz if needed
+        if sample_rate != 16000 {
+            all_samples = Self::resample(&all_samples, sample_rate, 16000);
+            tracing::info!("Resampled to 16kHz: {} samples", all_samples.len());
+        }
+
+        Ok(all_samples)
+    }
+
+    /// Simple linear interpolation resampler.
+    fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
+        let ratio = from_rate as f64 / to_rate as f64;
+        let out_len = (samples.len() as f64 / ratio) as usize;
+        let mut output = Vec::with_capacity(out_len);
+
+        for i in 0..out_len {
+            let src_pos = i as f64 * ratio;
+            let idx = src_pos as usize;
+            let frac = src_pos - idx as f64;
+
+            let sample = if idx + 1 < samples.len() {
+                samples[idx] as f64 * (1.0 - frac) + samples[idx + 1] as f64 * frac
+            } else {
+                samples[idx.min(samples.len() - 1)] as f64
+            };
+            output.push(sample as f32);
+        }
+
+        output
     }
 
     fn run_inference(
