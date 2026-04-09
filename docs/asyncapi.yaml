@@ -1,0 +1,267 @@
+asyncapi: 3.0.0
+
+info:
+  title: gigastt WebSocket API
+  version: "1.0"
+  description: |
+    Real-time speech-to-text WebSocket API powered by GigaAM v3 e2e_rnnt.
+    On-device Russian speech recognition via ONNX Runtime.
+
+    ## Connection Flow
+
+    1. Client connects to `ws://127.0.0.1:{port}`
+    2. Server sends `ready` message with model info and protocol version
+    3. Client streams raw PCM16 audio as binary frames (48kHz mono)
+    4. Server responds with `partial` and `final` transcript messages
+    5. Client sends `stop` (JSON) or closes connection to end session
+
+    ## Audio Format
+
+    - Encoding: PCM16 signed little-endian
+    - Sample rate: 48,000 Hz (server resamples to 16kHz internally)
+    - Channels: 1 (mono)
+    - Frame size: up to 512 KiB per WebSocket frame (~16s of audio)
+
+    ## Limits
+
+    - Max concurrent connections: 4
+    - Max WebSocket frame: 512 KiB
+    - Audio buffer cap: 5 seconds (older audio is discarded)
+    - Bind address: 127.0.0.1 only (local)
+  license:
+    name: MIT
+    url: https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE
+  contact:
+    name: gigastt
+    url: https://github.com/ekhodzitsky/gigastt
+
+servers:
+  local:
+    host: 127.0.0.1:9876
+    protocol: ws
+    description: Local development server (default port)
+
+defaultContentType: application/json
+
+channels:
+  audio:
+    address: /
+    description: |
+      Single WebSocket endpoint for audio streaming and transcription.
+      Accepts binary PCM16 frames and JSON control messages.
+    messages:
+      ready:
+        $ref: "#/components/messages/ready"
+      partial:
+        $ref: "#/components/messages/partial"
+      final:
+        $ref: "#/components/messages/final"
+      error:
+        $ref: "#/components/messages/error"
+      stop:
+        $ref: "#/components/messages/stop"
+      audioFrame:
+        $ref: "#/components/messages/audioFrame"
+
+operations:
+  onConnect:
+    action: receive
+    channel:
+      $ref: "#/channels/audio"
+    summary: Server sends ready message upon connection
+    messages:
+      - $ref: "#/channels/audio/messages/ready"
+
+  sendAudio:
+    action: send
+    channel:
+      $ref: "#/channels/audio"
+    summary: Client streams PCM16 audio frames
+    messages:
+      - $ref: "#/channels/audio/messages/audioFrame"
+
+  sendStop:
+    action: send
+    channel:
+      $ref: "#/channels/audio"
+    summary: Client requests server to finalize transcription
+    messages:
+      - $ref: "#/channels/audio/messages/stop"
+
+  receiveTranscript:
+    action: receive
+    channel:
+      $ref: "#/channels/audio"
+    summary: Server sends partial or final transcription results
+    messages:
+      - $ref: "#/channels/audio/messages/partial"
+      - $ref: "#/channels/audio/messages/final"
+
+  receiveError:
+    action: receive
+    channel:
+      $ref: "#/channels/audio"
+    summary: Server sends error when inference fails
+    messages:
+      - $ref: "#/channels/audio/messages/error"
+
+components:
+  messages:
+    ready:
+      name: ready
+      title: Ready
+      summary: Server is ready to accept audio
+      description: |
+        Sent immediately after WebSocket handshake.
+        Contains model identifier, expected sample rate, and protocol version.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ReadyMessage"
+
+    partial:
+      name: partial
+      title: Partial Transcript
+      summary: Interim transcription result (may change with more audio)
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/PartialMessage"
+
+    final:
+      name: final
+      title: Final Transcript
+      summary: Finalized transcription for a completed utterance
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/FinalMessage"
+
+    error:
+      name: error
+      title: Error
+      summary: Inference or processing error
+      description: |
+        Internal error details are hidden from clients for security.
+        The message field contains a generic user-facing description.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ErrorMessage"
+
+    stop:
+      name: stop
+      title: Stop
+      summary: Client requests server to stop and finalize
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/StopMessage"
+
+    audioFrame:
+      name: audioFrame
+      title: Audio Frame
+      summary: Raw PCM16 audio data
+      description: |
+        Binary WebSocket frame containing signed 16-bit little-endian PCM samples.
+        Sample rate: 48,000 Hz, mono. Each sample is 2 bytes.
+      contentType: application/octet-stream
+      payload:
+        type: string
+        format: binary
+        description: Raw PCM16 signed little-endian audio samples at 48kHz mono
+
+  schemas:
+    ReadyMessage:
+      type: object
+      required:
+        - type
+        - model
+        - sample_rate
+        - version
+      properties:
+        type:
+          type: string
+          const: ready
+          description: Message type discriminator
+        model:
+          type: string
+          example: gigaam-v3-e2e-rnnt
+          description: Identifier of the loaded speech recognition model
+        sample_rate:
+          type: integer
+          example: 48000
+          description: Expected audio sample rate in Hz (client should send at this rate)
+        version:
+          type: string
+          example: "1.0"
+          description: WebSocket protocol version (semver-lite major.minor)
+
+    PartialMessage:
+      type: object
+      required:
+        - type
+        - text
+        - timestamp
+      properties:
+        type:
+          type: string
+          const: partial
+          description: Message type discriminator
+        text:
+          type: string
+          example: "привет как"
+          description: Current interim transcription (may change as more audio arrives)
+        timestamp:
+          type: number
+          format: double
+          example: 1712700000.123
+          description: Unix timestamp (seconds since epoch) when the segment was produced
+
+    FinalMessage:
+      type: object
+      required:
+        - type
+        - text
+        - timestamp
+      properties:
+        type:
+          type: string
+          const: final
+          description: Message type discriminator
+        text:
+          type: string
+          example: "привет как дела"
+          description: Finalized transcription for the completed utterance
+        timestamp:
+          type: number
+          format: double
+          example: 1712700001.456
+          description: Unix timestamp (seconds since epoch) when the segment was finalized
+
+    ErrorMessage:
+      type: object
+      required:
+        - type
+        - message
+        - code
+      properties:
+        type:
+          type: string
+          const: error
+          description: Message type discriminator
+        message:
+          type: string
+          example: "Inference failed. Please check audio format."
+          description: User-facing error description (internal details are hidden)
+        code:
+          type: string
+          example: inference_error
+          description: Machine-readable error code
+          enum:
+            - inference_error
+
+    StopMessage:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: stop
+          description: Message type discriminator
