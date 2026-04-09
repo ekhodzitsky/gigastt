@@ -2,9 +2,9 @@
   <h1 align="center">gigastt</h1>
   <p align="center">Local speech-to-text server powered by <a href="https://github.com/salute-developers/GigaAM">GigaAM v3</a> — on-device Russian speech recognition via ONNX Runtime</p>
   <p align="center">
-    <a href="https://github.com/evkhodzitsky/gigastt/actions"><img src="https://github.com/evkhodzitsky/gigastt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="https://github.com/ekhodzitsky/gigastt/actions"><img src="https://github.com/ekhodzitsky/gigastt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://crates.io/crates/gigastt"><img src="https://img.shields.io/crates/v/gigastt.svg" alt="crates.io"></a>
-    <a href="https://github.com/evkhodzitsky/gigastt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+    <a href="https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
   </p>
 </p>
 
