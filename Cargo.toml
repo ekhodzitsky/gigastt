@@ -38,10 +38,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Error handling
 anyhow = "1"
-thiserror = "2"
-
-# File hashing
-sha2 = "0.10"
 
 # FFT for mel spectrogram
 rustfft = "6"

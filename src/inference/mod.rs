@@ -15,11 +15,30 @@ use std::sync::Mutex;
 use features::MelSpectrogram;
 use tokenizer::Tokenizer;
 
+pub const N_MELS: usize = 64;
+pub const N_FFT: usize = 320;
+pub const HOP_LENGTH: usize = 160;
+pub const PRED_HIDDEN: usize = 320;
+
+fn ort_err(e: impl std::fmt::Display) -> anyhow::Error {
+    anyhow::anyhow!("{e}")
+}
+
 /// Decoder LSTM state persisted across chunks.
 pub struct DecoderState {
     pub h: Vec<f32>,
     pub c: Vec<f32>,
     pub prev_token: i64,
+}
+
+impl DecoderState {
+    pub fn new(blank_id: usize) -> Self {
+        Self {
+            h: vec![0.0; PRED_HIDDEN],
+            c: vec![0.0; PRED_HIDDEN],
+            prev_token: blank_id as i64,
+        }
+    }
 }
 
 /// Per-connection streaming state.
@@ -47,19 +66,19 @@ impl Engine {
         tracing::info!("Loading ONNX models from {model_dir}...");
 
         let encoder = Session::builder()
-            .map_err(|e| anyhow::anyhow!("{e}"))?
+            .map_err(ort_err)?
             .commit_from_file(dir.join("v3_e2e_rnnt_encoder.onnx"))
-            .map_err(|e| anyhow::anyhow!("{e}"))?;
+            .map_err(ort_err)?;
 
         let decoder = Session::builder()
-            .map_err(|e| anyhow::anyhow!("{e}"))?
+            .map_err(ort_err)?
             .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
-            .map_err(|e| anyhow::anyhow!("{e}"))?;
+            .map_err(ort_err)?;
 
         let joiner = Session::builder()
-            .map_err(|e| anyhow::anyhow!("{e}"))?
+            .map_err(ort_err)?
             .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
-            .map_err(|e| anyhow::anyhow!("{e}"))?;
+            .map_err(ort_err)?;
 
         let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
         let mel = MelSpectrogram::new();
@@ -78,11 +97,7 @@ impl Engine {
     /// Create a fresh streaming state for a new connection.
     pub fn create_state(&self) -> StreamingState {
         StreamingState {
-            decoder: DecoderState {
-                h: vec![0.0; 320],
-                c: vec![0.0; 320],
-                prev_token: self.tokenizer.blank_id() as i64,
-            },
+            decoder: DecoderState::new(self.tokenizer.blank_id()),
             audio_buffer: Vec::new(),
         }
     }
@@ -101,8 +116,16 @@ impl Engine {
 
         // Convert to f32 and prepend leftover samples from the previous chunk
         let new_samples: Vec<f32> = pcm16.iter().map(|&s| s as f32 / 32768.0).collect();
-        let mut samples = std::mem::take(&mut state.audio_buffer);
-        samples.extend_from_slice(&new_samples);
+        let mut all_samples = std::mem::take(&mut state.audio_buffer);
+        all_samples.extend_from_slice(&new_samples);
+
+        const MAX_BUFFER_SAMPLES: usize = 16000 * 5; // 5 seconds at 16kHz
+        if all_samples.len() > MAX_BUFFER_SAMPLES {
+            tracing::warn!("Audio buffer exceeded 5s limit, truncating");
+            all_samples = all_samples[all_samples.len() - MAX_BUFFER_SAMPLES..].to_vec();
+        }
+
+        let samples = all_samples;
 
         // Save leftover samples that don't fill a complete hop (160 samples)
         let hop_length = 160;
@@ -180,11 +203,7 @@ impl Engine {
         let (features, num_frames) = self.mel.compute(&float_samples);
         tracing::info!("Extracted {} mel frames", num_frames);
 
-        let mut decoder_state = DecoderState {
-            h: vec![0.0; 320],
-            c: vec![0.0; 320],
-            prev_token: self.tokenizer.blank_id() as i64,
-        };
+        let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
         self.run_inference(&features, num_frames, &mut decoder_state)
     }
 
@@ -194,11 +213,9 @@ impl Engine {
         num_frames: usize,
         decoder_state: &mut DecoderState,
     ) -> Result<String> {
-        let n_mels = 64;
-
         // Encoder input: audio_signal [1, 64, num_frames], length [1]
         let signal_tensor =
-            TensorRef::from_array_view(([1_usize, n_mels, num_frames], features))?;
+            TensorRef::from_array_view(([1_usize, N_MELS, num_frames], features))?;
         let length_data = [num_frames as i64];
         let length_tensor =
             TensorRef::from_array_view(([1_usize], length_data.as_slice()))?;

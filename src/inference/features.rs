@@ -15,9 +15,9 @@ pub struct MelSpectrogram {
 
 impl MelSpectrogram {
     pub fn new() -> Self {
-        let n_fft = 320;
-        let hop_length = 160;
-        let n_mels = 64;
+        let n_fft = super::N_FFT;
+        let hop_length = super::HOP_LENGTH;
+        let n_mels = super::N_MELS;
         let sample_rate = 16000.0_f32;
         let fmin = 0.0_f32;
         let fmax = sample_rate / 2.0;

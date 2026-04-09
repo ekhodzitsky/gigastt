@@ -4,8 +4,9 @@ use anyhow::{Context, Result};
 use ort::session::Session;
 use ort::value::TensorRef;
 
+use super::{PRED_HIDDEN, DecoderState};
+
 const MAX_TOKENS_PER_STEP: usize = 3;
-const PRED_HIDDEN: usize = 320;
 const ENC_DIM: usize = 768;
 
 /// Run RNN-T greedy decode on encoder output.
@@ -18,7 +19,7 @@ pub fn greedy_decode(
     encoded: &[f32],    // [1, 768, enc_len] — channels-first
     encoded_len: usize,
     blank_id: usize,
-    state: &mut super::DecoderState,
+    state: &mut DecoderState,
 ) -> Result<Vec<usize>> {
     let mut tokens = Vec::new();
 
@@ -88,6 +89,12 @@ pub fn greedy_decode(
             // Non-blank: emit token, update state
             tokens.push(token);
             state.prev_token = token as i64;
+            if new_h_data.len() != PRED_HIDDEN || new_c_data.len() != PRED_HIDDEN {
+                anyhow::bail!(
+                    "Unexpected decoder state shape: h={}, c={}, expected {}",
+                    new_h_data.len(), new_c_data.len(), PRED_HIDDEN
+                );
+            }
             state.h.copy_from_slice(new_h_data);
             state.c.copy_from_slice(new_c_data);
             tokens_this_step += 1;

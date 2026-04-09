@@ -7,24 +7,40 @@ use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
+use tokio::sync::Semaphore;
 use tokio_tungstenite::tungstenite::Message;
+
+const MAX_CONCURRENT_CONNECTIONS: usize = 4;
 
 pub async fn run(engine: Engine, port: u16) -> Result<()> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = TcpListener::bind(&addr).await?;
     let engine = Arc::new(engine);
+    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_CONNECTIONS));
 
     tracing::info!("gigastt server listening on ws://{addr}");
 
     loop {
-        let (stream, peer) = listener.accept().await?;
-        let engine = engine.clone();
-        tokio::spawn(async move {
-            if let Err(e) = handle_connection(stream, peer, engine).await {
-                tracing::error!("Connection error from {peer}: {e}");
+        tokio::select! {
+            result = listener.accept() => {
+                let (stream, peer) = result?;
+                let engine = engine.clone();
+                let permit = semaphore.clone().acquire_owned().await?;
+                tokio::spawn(async move {
+                    if let Err(e) = handle_connection(stream, peer, engine).await {
+                        tracing::error!("Connection error from {peer}: {e}");
+                    }
+                    drop(permit);
+                });
             }
-        });
+            _ = tokio::signal::ctrl_c() => {
+                tracing::info!("Shutting down server");
+                break;
+            }
+        }
     }
+
+    Ok(())
 }
 
 async fn handle_connection(
