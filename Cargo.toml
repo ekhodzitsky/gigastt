@@ -49,6 +49,10 @@ symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac"
 # Directory management
 dirs = "6"
 
+[[test]]
+name = "benchmark"
+harness = false
+
 [dev-dependencies]
 tempfile = "3"
 

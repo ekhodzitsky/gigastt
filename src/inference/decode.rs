@@ -6,7 +6,7 @@ use ort::value::TensorRef;
 
 use super::{PRED_HIDDEN, DecoderState};
 
-const MAX_TOKENS_PER_STEP: usize = 3;
+const MAX_TOKENS_PER_STEP: usize = 10;
 const ENC_DIM: usize = 768;
 
 /// Extract encoder frame `t` from channels-first layout [1, ENC_DIM, enc_len].
