@@ -63,6 +63,8 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 4. `cargo test && cargo clippy` before every commit
 
 ### API versioning & backward compatibility
+- WebSocket protocol version: `PROTOCOL_VERSION = "1.0"` (in `protocol/mod.rs`)
+- `ServerMessage::Ready` includes `version` field sent on connection
 - WebSocket protocol messages are versioned via `type` field
 - New fields are additive only (never remove or rename existing fields)
 - Breaking changes require new message type, not modification of existing
@@ -72,7 +74,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - Unit tests live in `#[cfg(test)] mod tests` at bottom of each file
 - Tests use synthetic data (no model download required)
 - Test names: `test_<what>_<expected_behavior>`
-- Current: 9 tests (tokenizer: 5, features: 4). Goal: cover all modules
+- Current: 39 tests (tokenizer: 5, features: 4, decode: 9, inference: 16, protocol: 6). All modules covered
 
 ### Code style
 - Rust 2024 edition
