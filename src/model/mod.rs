@@ -3,11 +3,13 @@
 //! Downloads GigaAM v3 e2e_rnnt ONNX files from HuggingFace to `~/.gigastt/models/`.
 
 use anyhow::{Context, Result};
+use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::path::Path;
+use tokio::io::AsyncWriteExt;
 
 const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
-const MODEL_FILES: &[&str] = &["encoder.onnx", "decoder.onnx", "joiner.onnx", "tokens.txt"];
+const MODEL_FILES: &[&str] = &["v3_e2e_rnnt_encoder.onnx", "v3_e2e_rnnt_decoder.onnx", "v3_e2e_rnnt_joint.onnx", "v3_e2e_rnnt_vocab.txt"];
 
 pub fn default_model_dir() -> String {
     dirs::home_dir()
@@ -40,7 +42,7 @@ fn model_files_exist(dir: &Path) -> bool {
 
 async fn download_file(filename: &str, dir: &Path) -> Result<()> {
     let url = format!(
-        "https://huggingface.co/{HF_REPO}/resolve/main/v3_e2e_rnnt/{filename}"
+        "https://huggingface.co/{HF_REPO}/resolve/main/{filename}"
     );
     let dest = dir.join(filename);
 
@@ -57,12 +59,22 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
             .progress_chars("#>-"),
     );
 
-    let bytes = response.bytes().await.context("Failed to read response body")?;
-    pb.set_position(bytes.len() as u64);
-    pb.finish_with_message("done");
+    let mut file = tokio::fs::File::create(&dest)
+        .await
+        .context("Failed to create model file")?;
+    let mut stream = response.bytes_stream();
 
-    std::fs::write(&dest, &bytes).context("Failed to write model file")?;
-    tracing::info!("Saved {filename} ({} bytes)", bytes.len());
+    let mut downloaded: u64 = 0;
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.context("Download stream error")?;
+        file.write_all(&chunk).await.context("Failed to write chunk")?;
+        downloaded += chunk.len() as u64;
+        pb.set_position(downloaded);
+    }
+
+    file.flush().await?;
+    pb.finish_with_message("done");
+    tracing::info!("Saved {filename} ({downloaded} bytes)");
 
     Ok(())
 }

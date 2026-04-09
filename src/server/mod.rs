@@ -32,7 +32,13 @@ async fn handle_connection(
     peer: SocketAddr,
     engine: Arc<Engine>,
 ) -> Result<()> {
-    let ws_stream = tokio_tungstenite::accept_async(stream).await?;
+    let ws_config = tokio_tungstenite::tungstenite::protocol::WebSocketConfig {
+        max_message_size: Some(512 * 1024), // 512 KiB (~16s of 16kHz PCM16)
+        max_frame_size: Some(512 * 1024),
+        ..Default::default()
+    };
+    let ws_stream =
+        tokio_tungstenite::accept_async_with_config(stream, Some(ws_config)).await?;
     let (mut sink, mut source) = ws_stream.split();
 
     tracing::info!("Client connected: {peer}");
@@ -40,22 +46,25 @@ async fn handle_connection(
     // Send ready message
     let ready = ServerMessage::Ready {
         model: "gigaam-v3-e2e-rnnt".into(),
-        sample_rate: 48000,
+        sample_rate: 16000,
     };
     sink.send(Message::Text(serde_json::to_string(&ready)?)).await?;
+
+    // Create per-connection streaming state (LSTM decoder + audio buffer)
+    let mut stream_state = engine.create_state();
 
     // Process incoming audio frames
     while let Some(msg) = source.next().await {
         let msg = msg?;
         match msg {
             Message::Binary(data) => {
-                // PCM16 mono 48kHz — 2 bytes per sample
+                // PCM16 mono 16kHz — 2 bytes per sample
                 let samples: Vec<i16> = data
                     .chunks_exact(2)
                     .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]))
                     .collect();
 
-                match engine.process_chunk(&samples) {
+                match engine.process_chunk(&samples, &mut stream_state) {
                     Ok(segments) => {
                         for seg in segments {
                             let msg = if seg.is_final {
@@ -73,8 +82,9 @@ async fn handle_connection(
                         }
                     }
                     Err(e) => {
+                        tracing::error!("Inference error for {peer}: {e:#}");
                         let err = ServerMessage::Error {
-                            message: e.to_string(),
+                            message: "Inference failed. Please check audio format.".into(),
                             code: "inference_error".into(),
                         };
                         sink.send(Message::Text(serde_json::to_string(&err)?)).await?;

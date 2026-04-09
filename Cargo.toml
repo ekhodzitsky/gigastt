@@ -43,11 +43,17 @@ thiserror = "2"
 # File hashing
 sha2 = "0.10"
 
+# FFT for mel spectrogram
+rustfft = "6"
+
 # Audio file reading (for `transcribe` command)
 hound = "3.5"
 
 # Directory management
 dirs = "6"
+
+[dev-dependencies]
+tempfile = "3"
 
 [profile.release]
 lto = true
