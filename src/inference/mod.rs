@@ -326,7 +326,9 @@ impl Engine {
         )?;
 
         let text = self.tokenizer.decode(&token_ids);
-        tracing::info!("Decoded {} tokens → \"{}\"", token_ids.len(), text);
+        let preview: String = text.chars().take(80).collect();
+        let ellipsis = if text.len() > 80 { "..." } else { "" };
+        tracing::info!("Decoded {} tokens → \"{preview}{ellipsis}\"", token_ids.len());
 
         Ok(text)
     }
