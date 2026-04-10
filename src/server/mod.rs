@@ -12,6 +12,13 @@ use tokio_tungstenite::tungstenite::Message;
 
 const MAX_CONCURRENT_CONNECTIONS: usize = 4;
 
+/// Start the WebSocket STT server on the given host and port.
+///
+/// Accepts PCM16 audio at 48kHz over WebSocket binary frames, resamples to 16kHz,
+/// and streams back JSON transcript messages ([`ServerMessage`]).
+/// Supports up to 4 concurrent connections (controlled by semaphore).
+///
+/// Runs until `Ctrl-C` is received.
 pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
     let addr: SocketAddr = format!("{host}:{port}").parse()
         .context("Invalid host:port")?;
@@ -82,8 +89,17 @@ async fn handle_connection(
     while let Some(msg) = source.next().await {
         let msg = msg?;
         match msg {
+            Message::Binary(data) if data.is_empty() => {
+                tracing::debug!("Empty binary frame from {peer}, skipping");
+            }
             Message::Binary(data) => {
                 // PCM16 mono at 48kHz — convert to f32 for resampling
+                if data.len() % 2 != 0 {
+                    tracing::warn!(
+                        "Odd-length PCM frame ({} bytes) from {peer}, dropping last byte",
+                        data.len()
+                    );
+                }
                 let samples_48k_f32: Vec<f32> = data
                     .chunks_exact(2)
                     .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)

@@ -8,6 +8,13 @@ const MAX_BUFFER_SAMPLES: usize = 16000 * 5; // 5 seconds at 16kHz
 const MAX_DURATION_S: f64 = 600.0; // 10 minutes
 
 /// Decode any supported audio file to mono f32 samples at 16kHz.
+///
+/// Supports WAV, MP3, M4A/AAC, OGG/Vorbis, and FLAC via symphonia.
+/// Multi-channel audio is mixed to mono. Files longer than 10 minutes are rejected.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be opened, decoded, or exceeds the duration limit.
 pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
     use symphonia::core::audio::SampleBuffer;
     use symphonia::core::codecs::DecoderOptions;
@@ -114,10 +121,22 @@ pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
 }
 
 /// Simple linear interpolation resampler.
+///
+/// Non-finite samples (NaN, infinity) are replaced with `0.0` before resampling.
 pub fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Vec<f32> {
     if samples.is_empty() || from_rate == 0 || to_rate == 0 {
         return Vec::new();
     }
+    // Sanitize non-finite values to prevent NaN propagation through interpolation
+    let has_non_finite = samples.iter().any(|s| !s.is_finite());
+    let owned;
+    let samples = if has_non_finite {
+        tracing::warn!("Non-finite audio samples detected, replacing with zeros");
+        owned = samples.iter().map(|&s| if s.is_finite() { s } else { 0.0 }).collect::<Vec<_>>();
+        &owned[..]
+    } else {
+        samples
+    };
     let ratio = from_rate as f64 / to_rate as f64;
     let out_len = (samples.len() as f64 / ratio) as usize;
     let mut output = Vec::with_capacity(out_len);
@@ -301,5 +320,71 @@ mod tests {
         // 2 frames: usable = (2-1)*160 + 320 = 480
         assert_eq!(result.unwrap().len(), N_FFT + HOP_LENGTH);
         assert!(buffer.is_empty());
+    }
+
+    // --- stress tests: robustness edge cases ---
+
+    #[test]
+    fn test_resample_nan_input() {
+        let input = vec![f32::NAN; 1000];
+        let output = resample(&input, 48000, 16000);
+        // NaN should be replaced with zeros
+        assert!(!output.is_empty());
+        for &s in &output {
+            assert!(s.is_finite(), "NaN should be sanitized to zero, got {s}");
+        }
+    }
+
+    #[test]
+    fn test_resample_infinity_input() {
+        let input = vec![f32::INFINITY; 500];
+        let output = resample(&input, 48000, 16000);
+        assert!(!output.is_empty());
+        for &s in &output {
+            assert!(s.is_finite(), "Infinity should be sanitized to zero, got {s}");
+        }
+    }
+
+    #[test]
+    fn test_resample_mixed_nan_normal() {
+        let mut input = vec![0.5_f32; 480];
+        input[100] = f32::NAN;
+        input[200] = f32::NEG_INFINITY;
+        let output = resample(&input, 48000, 16000);
+        assert!(!output.is_empty());
+        for &s in &output {
+            assert!(s.is_finite(), "Non-finite values should be sanitized");
+        }
+    }
+
+    #[test]
+    fn test_prepare_buffer_empty_input() {
+        let mut buffer = vec![1.0; 100];
+        let result = prepare_audio_buffer(&[], &mut buffer);
+        // Empty new samples: buffer should retain its contents
+        assert!(result.is_none());
+        assert_eq!(buffer.len(), 100);
+    }
+
+    #[test]
+    fn test_prepare_buffer_exactly_max() {
+        // Exactly MAX_BUFFER_SAMPLES — should not trigger truncation warning
+        let new_samples = vec![1.0; MAX_BUFFER_SAMPLES];
+        let mut buffer = Vec::new();
+        let result = prepare_audio_buffer(&new_samples, &mut buffer);
+        assert!(result.is_some());
+        let usable = result.unwrap();
+        assert!(usable.len() + buffer.len() <= MAX_BUFFER_SAMPLES);
+    }
+
+    #[test]
+    fn test_prepare_buffer_one_over_max() {
+        // MAX_BUFFER_SAMPLES + 1 — triggers truncation
+        let new_samples = vec![1.0; MAX_BUFFER_SAMPLES + 1];
+        let mut buffer = Vec::new();
+        let result = prepare_audio_buffer(&new_samples, &mut buffer);
+        assert!(result.is_some());
+        let usable = result.unwrap();
+        assert!(usable.len() + buffer.len() <= MAX_BUFFER_SAMPLES);
     }
 }

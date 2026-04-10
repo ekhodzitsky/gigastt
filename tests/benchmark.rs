@@ -91,7 +91,7 @@ fn number_to_words(n: u64) -> String {
     let t = r % 100;
     if t >= 20 {
         parts.push(TENS[t / 10]);
-        if t % 10 > 0 {
+        if !t.is_multiple_of(10) {
             parts.push(ONES[t % 10]);
         }
     } else if t >= 10 {
@@ -159,14 +159,13 @@ fn resolve_ordinals(words: &[String]) -> Vec<String> {
     let mut result = Vec::new();
     let mut i = 0;
     while i < words.len() {
-        if i + 1 < words.len() && words[i + 1] == "й" {
-            if let Ok(n) = words[i].parse::<u64>() {
-                if let Some(ordinal) = try_ordinal_masculine(n) {
-                    result.push(ordinal.to_string());
-                    i += 2;
-                    continue;
-                }
-            }
+        if i + 1 < words.len() && words[i + 1] == "й"
+            && let Ok(n) = words[i].parse::<u64>()
+            && let Some(ordinal) = try_ordinal_masculine(n)
+        {
+            result.push(ordinal.to_string());
+            i += 2;
+            continue;
         }
         result.push(words[i].clone());
         i += 1;
@@ -178,13 +177,13 @@ fn resolve_ordinals(words: &[String]) -> Vec<String> {
 fn convert_cardinal_numbers(words: &[String]) -> Vec<String> {
     let mut result = Vec::new();
     for w in words {
-        if w.chars().all(|c| c.is_ascii_digit()) && !w.is_empty() {
-            if let Ok(n) = w.parse::<u64>() {
-                for part in number_to_words(n).split_whitespace() {
-                    result.push(part.to_string());
-                }
-                continue;
+        if w.chars().all(|c| c.is_ascii_digit()) && !w.is_empty()
+            && let Ok(n) = w.parse::<u64>()
+        {
+            for part in number_to_words(n).split_whitespace() {
+                result.push(part.to_string());
             }
+            continue;
         }
         result.push(w.clone());
     }

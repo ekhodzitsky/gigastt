@@ -133,7 +133,7 @@ async fn test_stop_message_closes_gracefully() {
 
     // Send some synthetic PCM16 audio (silence at 48kHz, 100ms = 4800 samples = 9600 bytes)
     let silence: Vec<u8> = vec![0u8; 9600];
-    sink.send(Message::Binary(silence.into())).await.unwrap();
+    sink.send(Message::Binary(silence)).await.unwrap();
 
     // Send Stop
     let stop = serde_json::json!({"type": "stop"});

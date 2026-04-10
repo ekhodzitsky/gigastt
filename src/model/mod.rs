@@ -11,12 +11,19 @@ use tokio::io::AsyncWriteExt;
 const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 const MODEL_FILES: &[&str] = &["v3_e2e_rnnt_encoder.onnx", "v3_e2e_rnnt_decoder.onnx", "v3_e2e_rnnt_joint.onnx", "v3_e2e_rnnt_vocab.txt"];
 
+/// Return the default model directory path (`~/.gigastt/models/`).
+///
+/// Falls back to `.gigastt/models` if the home directory cannot be determined.
 pub fn default_model_dir() -> String {
     dirs::home_dir()
         .map(|h| h.join(".gigastt").join("models").to_string_lossy().into_owned())
         .unwrap_or_else(|| ".gigastt/models".into())
 }
 
+/// Ensure model files exist in `model_dir`, downloading from HuggingFace if missing.
+///
+/// Downloads encoder, decoder, joiner ONNX models and vocabulary from
+/// the `istupakov/gigaam-v3-onnx` repository. Shows progress bars during download.
 pub async fn ensure_model(model_dir: &str) -> Result<()> {
     let dir = Path::new(model_dir);
 

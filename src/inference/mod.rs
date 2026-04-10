@@ -7,7 +7,7 @@ mod features;
 mod tokenizer;
 pub mod audio;
 
-use anyhow::{Context, Result};
+use anyhow::Context;
 use ort::ep;
 use ort::session::Session;
 use ort::value::TensorRef;
@@ -15,12 +15,18 @@ use serde::Serialize;
 use std::path::Path;
 use std::sync::Mutex;
 
+use crate::error::GigasttError;
+
 use features::MelSpectrogram;
 use tokenizer::Tokenizer;
 
+/// Number of mel frequency bins used for spectrogram features.
 pub const N_MELS: usize = 64;
+/// FFT window size in samples (320 samples = 20ms at 16kHz).
 pub const N_FFT: usize = 320;
+/// Hop length between consecutive FFT frames in samples (160 samples = 10ms at 16kHz).
 pub const HOP_LENGTH: usize = 160;
+/// Hidden dimension of the RNN-T prediction (decoder) network.
 pub const PRED_HIDDEN: usize = 320;
 
 fn ort_err(e: impl std::fmt::Display) -> anyhow::Error {
@@ -37,15 +43,24 @@ pub(crate) fn now_timestamp() -> f64 {
 /// Seconds per encoder frame (HOP_LENGTH * 4 / 16000 = 0.04s).
 const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64) * 4.0 / 16000.0;
 
-/// Decoder LSTM state persisted across chunks.
+/// Decoder LSTM hidden state persisted across streaming chunks.
+///
+/// Created via [`DecoderState::new`] or obtained from [`StreamingState::decoder`].
+/// Holds the RNN-T prediction network state between decode steps.
+#[non_exhaustive]
 pub struct DecoderState {
+    /// LSTM hidden state vector (length [`PRED_HIDDEN`]).
     pub h: Vec<f32>,
+    /// LSTM cell state vector (length [`PRED_HIDDEN`]).
     pub c: Vec<f32>,
+    /// Previously emitted token ID (initialized to `blank_id`).
     pub prev_token: i64,
+    /// Count of consecutive blank frames (used for endpointing).
     pub consecutive_blanks: usize,
 }
 
 impl DecoderState {
+    /// Create a new decoder state initialized to zeros with the given blank token ID.
     pub fn new(blank_id: usize) -> Self {
         Self {
             h: vec![0.0; PRED_HIDDEN],
@@ -56,27 +71,55 @@ impl DecoderState {
     }
 }
 
-/// Word with timing and confidence metadata.
+/// A recognized word with timing and confidence metadata.
+///
+/// Produced by the RNN-T decoder during [`Engine::process_chunk`] or [`Engine::transcribe_file`].
+/// Timestamps are in seconds relative to the start of the audio stream.
 #[derive(Debug, Clone, Serialize)]
+#[non_exhaustive]
 pub struct WordInfo {
+    /// The recognized word text (BPE tokens joined, `▁` stripped).
     pub word: String,
+    /// Start time in seconds from the beginning of the audio stream.
     pub start: f64,
+    /// End time in seconds from the beginning of the audio stream.
     pub end: f64,
+    /// Softmax confidence score (0.0–1.0), averaged over constituent BPE tokens.
     pub confidence: f32,
 }
 
-/// Per-connection streaming state.
+/// Per-connection streaming state that persists across audio chunks.
+///
+/// Created via [`Engine::create_state`]. Holds the decoder LSTM state, an audio
+/// sample buffer for incomplete frames, and accumulated transcript text/words.
+/// Pass this to [`Engine::process_chunk`] for each incoming audio chunk and
+/// [`Engine::flush_state`] when the stream ends.
+#[non_exhaustive]
 pub struct StreamingState {
+    /// Decoder LSTM hidden state (persisted across chunks).
     pub decoder: DecoderState,
+    /// Leftover audio samples that didn't fill a complete frame.
     pub audio_buffer: Vec<f32>,
-    /// Accumulated text across chunks for Partial emission.
+    /// Accumulated transcript text across chunks (reset on endpointing).
     pub accumulated_text: String,
-    /// Accumulated words with timestamps for structured output.
+    /// Accumulated words with timestamps (reset on endpointing).
     pub accumulated_words: Vec<WordInfo>,
-    /// Total encoder frames processed (for absolute timestamp offset).
+    /// Total encoder frames processed so far (for absolute timestamp offset).
     pub total_frames: usize,
 }
 
+/// ONNX Runtime inference engine for GigaAM v3 e2e_rnnt.
+///
+/// Thread-safe: ONNX sessions are wrapped in [`Mutex`] so `Engine` can be shared
+/// across connections via `Arc<Engine>`. Typical usage:
+///
+/// ```ignore
+/// let engine = Engine::load("~/.gigastt/models")?;
+/// let text = engine.transcribe_file("audio.wav")?;
+/// ```
+///
+/// For streaming recognition, use [`create_state`](Engine::create_state) +
+/// [`process_chunk`](Engine::process_chunk) + [`flush_state`](Engine::flush_state).
 pub struct Engine {
     encoder: Mutex<Session>,
     decoder: Mutex<Session>,
@@ -86,13 +129,26 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn load(model_dir: &str) -> Result<Self> {
+    /// Load ONNX models from the given directory and create an inference engine.
+    ///
+    /// Expects files: `v3_e2e_rnnt_encoder.onnx` (or `_int8.onnx`), `v3_e2e_rnnt_decoder.onnx`,
+    /// `v3_e2e_rnnt_joint.onnx`, and `v3_e2e_rnnt_vocab.txt`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GigasttError::ModelLoad`] if model files are missing or ONNX session creation fails.
+    pub fn load(model_dir: &str) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
-        anyhow::ensure!(
-            dir.join("v3_e2e_rnnt_encoder.onnx").exists(),
-            "v3_e2e_rnnt_encoder.onnx not found in {model_dir}"
-        );
+        if !dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
+            return Err(GigasttError::ModelLoad(format!(
+                "v3_e2e_rnnt_encoder.onnx not found in {model_dir}"
+            )));
+        }
+        Self::load_inner(dir, model_dir)
+            .map_err(|e| GigasttError::ModelLoad(format!("{e:#}")))
+    }
 
+    fn load_inner(dir: &Path, model_dir: &str) -> anyhow::Result<Self> {
         // Prefer INT8 quantized encoder if available (~4x smaller, ~43% faster)
         let encoder_path = if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
             tracing::info!("Using INT8 quantized encoder");
@@ -158,15 +214,20 @@ impl Engine {
         }
     }
 
-    /// Process a chunk of f32 audio samples and return any new transcript segments.
+    /// Process a chunk of 16kHz f32 audio samples and return any new transcript segments.
     ///
-    /// Returns Partial segments during speech, Final on endpointing (silence detected).
+    /// Returns [`TranscriptSegment`] with `is_final == false` during speech (Partial),
+    /// and `is_final == true` on endpointing (~600ms silence detected).
     /// Streaming state (LSTM hidden/cell, leftover audio, accumulated text) is maintained in `state`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GigasttError::Inference`] if the ONNX runtime fails.
     pub fn process_chunk(
         &self,
         samples: &[f32],
         state: &mut StreamingState,
-    ) -> Result<Vec<TranscriptSegment>> {
+    ) -> Result<Vec<TranscriptSegment>, GigasttError> {
         if samples.is_empty() {
             return Ok(vec![]);
         }
@@ -182,8 +243,9 @@ impl Engine {
             return Ok(vec![]);
         }
 
-        let (new_words, endpoint) =
-            self.run_inference(&features, num_frames, &mut state.decoder, state.total_frames)?;
+        let (new_words, endpoint) = self
+            .run_inference(&features, num_frames, &mut state.decoder, state.total_frames)
+            .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         state.total_frames += num_frames;
 
         if new_words.is_empty() && !endpoint {
@@ -229,15 +291,26 @@ impl Engine {
         Some(seg)
     }
 
-    /// Transcribe an audio file (supports WAV, MP3, M4A/AAC, OGG, FLAC).
-    pub fn transcribe_file(&self, path: &str) -> Result<String> {
-        let float_samples = audio::decode_audio_file(path)?;
+    /// Transcribe an audio file to text (supports WAV, MP3, M4A/AAC, OGG, FLAC).
+    ///
+    /// Decodes the file to mono 16kHz, runs the full encoder+decoder pipeline,
+    /// and returns the recognized text.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GigasttError::InvalidAudio`] if the file cannot be decoded, or
+    /// [`GigasttError::Inference`] if the ONNX runtime fails.
+    pub fn transcribe_file(&self, path: &str) -> Result<String, GigasttError> {
+        let float_samples = audio::decode_audio_file(path)
+            .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
 
         let (features, num_frames) = self.mel.compute(&float_samples);
         tracing::info!("Extracted {} mel frames", num_frames);
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
-        let (words, _endpoint) = self.run_inference(&features, num_frames, &mut decoder_state, 0)?;
+        let (words, _endpoint) = self
+            .run_inference(&features, num_frames, &mut decoder_state, 0)
+            .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
         Ok(text)
     }
@@ -248,7 +321,7 @@ impl Engine {
         num_frames: usize,
         decoder_state: &mut DecoderState,
         frame_offset: usize,
-    ) -> Result<(Vec<WordInfo>, bool)> {
+    ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
         // Encoder input: audio_signal [1, 64, num_frames], length [1]
         let signal_tensor =
             TensorRef::from_array_view(([1_usize, N_MELS, num_frames], features))?;
@@ -380,11 +453,20 @@ impl Engine {
     }
 }
 
+/// A transcript segment emitted by the inference engine.
+///
+/// Partial segments (`is_final == false`) represent interim results that may change.
+/// Final segments (`is_final == true`) represent completed utterances after endpointing.
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct TranscriptSegment {
+    /// Recognized text for this segment.
     pub text: String,
+    /// Individual words with timing and confidence metadata.
     pub words: Vec<WordInfo>,
+    /// Whether this segment is final (utterance complete) or partial (interim).
     pub is_final: bool,
+    /// Unix timestamp (seconds since epoch) when this segment was produced.
     pub timestamp: f64,
 }
 
