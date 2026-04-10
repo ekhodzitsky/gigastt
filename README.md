@@ -8,9 +8,6 @@
   </p>
 </p>
 
-<!-- TODO: Record GIF demo with `vhs` or `asciinema` showing real-time streaming transcription -->
-<!-- ![demo](assets/demo.gif) -->
-
 ## Features
 
 - **Real-time streaming** — partial transcription results via WebSocket as you speak
@@ -33,17 +30,11 @@ gigastt serve
 # Listening on ws://127.0.0.1:9876
 ```
 
-### Homebrew
-
-```sh
-brew install ekhodzitsky/gigastt/gigastt
-gigastt serve
-```
-
 ### Docker
 
 ```sh
-docker run -p 9876:9876 ghcr.io/ekhodzitsky/gigastt:latest serve --host 0.0.0.0
+docker build -t gigastt .
+docker run -p 9876:9876 gigastt serve --host 0.0.0.0
 # Model auto-downloaded on first run (~850MB)
 ```
 
@@ -109,15 +100,15 @@ Full protocol documentation in [`docs/asyncapi.yaml`](docs/asyncapi.yaml).
 | Direction | Type | Fields | Notes |
 |-----------|------|--------|-------|
 | **Server** | `ready` | `model`, `sample_rate`, `version` | Sent on connection. Includes protocol v1.0. |
-| **Server** | `partial` | `text`, `timestamp` | Interim transcription (may change with more audio) |
-| **Server** | `final` | `text`, `timestamp` | Complete utterance with punctuation |
+| **Server** | `partial` | `text`, `timestamp`, `words` | Interim transcription (may change with more audio) |
+| **Server** | `final` | `text`, `timestamp`, `words` | Complete utterance with punctuation |
 | **Server** | `error` | `message`, `code` | Error occurred; connection may close |
-| **Client** | `stop` | — | Request finalization (planned for v0.3) |
+| **Client** | `stop` | — | Request finalization of buffered audio |
 
 ### Example Session
 
 ```json
-{"type": "ready", "model": "gigaam-v3-e2e-rnnt", "sample_rate": 16000, "version": "1.0"}
+{"type": "ready", "model": "gigaam-v3-e2e-rnnt", "sample_rate": 48000, "version": "1.0"}
 {"type": "partial", "text": "что такое", "timestamp": 0.5}
 {"type": "partial", "text": "что такое Node", "timestamp": 1.2}
 {"type": "final", "text": "Что такое Node.js?", "timestamp": 2.1}
@@ -206,7 +197,7 @@ See [`examples/`](examples/) for ready-to-use WebSocket clients:
 - **CPU**: Apple Silicon (M1, M2, M3, M4)
 - **Disk**: ~1.5GB (model + binary)
 - **RAM**: ~500MB during inference
-- **Rust**: 1.75+ (for building from source)
+- **Rust**: 1.85+ (edition 2024, for building from source)
 
 ## Installation
 
@@ -222,14 +213,6 @@ cargo install gigastt
 git clone https://github.com/ekhodzitsky/gigastt
 cd gigastt
 cargo install --path .
-```
-
-### Docker
-
-```dockerfile
-# See Dockerfile in repo for production image
-docker build -t gigastt .
-docker run -p 9876:9876 gigastt serve --host 0.0.0.0
 ```
 
 ## Build & Development
