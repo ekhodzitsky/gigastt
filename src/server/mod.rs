@@ -24,7 +24,13 @@ pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
     loop {
         tokio::select! {
             result = listener.accept() => {
-                let (stream, peer) = result?;
+                let (stream, peer) = match result {
+                    Ok(v) => v,
+                    Err(e) => {
+                        tracing::error!("Accept error: {e}");
+                        continue;
+                    }
+                };
                 let engine = engine.clone();
                 let permit = semaphore.clone().acquire_owned().await?;
                 tokio::spawn(async move {
@@ -84,17 +90,13 @@ async fn handle_connection(
                     .collect();
 
                 // Resample 48kHz → 16kHz using the same algorithm as file transcription
-                let samples_16k_f32 = Engine::resample(&samples_48k_f32, 48000, 16000);
-                let samples: Vec<i16> = samples_16k_f32
-                    .iter()
-                    .map(|&s| (s * 32768.0).clamp(-32768.0, 32767.0) as i16)
-                    .collect();
+                let samples_16k = crate::inference::audio::resample(&samples_48k_f32, 48000, 16000);
 
                 // Run inference in a blocking thread to avoid blocking the tokio runtime
-                let mut state = state_opt.take().expect("streaming state");
+                let mut state = state_opt.take().context("Streaming state lost")?;
                 let eng = engine.clone();
                 let (result, state_back) = tokio::task::spawn_blocking(move || {
-                    let r = eng.process_chunk(&samples, &mut state);
+                    let r = eng.process_chunk(&samples_16k, &mut state);
                     (r, state)
                 })
                 .await?;
@@ -134,14 +136,13 @@ async fn handle_connection(
                     tracing::info!("Stop received from {peer}, finalizing");
                     let final_msg = ServerMessage::Final {
                         text: String::new(),
-                        timestamp: std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap_or_default()
-                            .as_secs_f64(),
+                        timestamp: crate::inference::now_timestamp(),
                     };
                     sink.send(Message::Text(serde_json::to_string(&final_msg)?))
                         .await?;
                     break;
+                } else {
+                    tracing::debug!("Unrecognized text message from {peer}: {}", &text[..text.len().min(100)]);
                 }
             }
             Message::Close(_) => break,

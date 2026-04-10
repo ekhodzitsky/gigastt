@@ -52,6 +52,12 @@ pub fn greedy_decode(
     // Pre-allocate buffer for extracting a single encoder frame [768, 1]
     let mut enc_frame = vec![0.0_f32; ENC_DIM];
 
+    anyhow::ensure!(
+        encoded.len() >= ENC_DIM * encoded_len,
+        "Encoder output size mismatch: got {}, expected >= {}",
+        encoded.len(), ENC_DIM * encoded_len
+    );
+
     for t in 0..encoded_len {
         let mut tokens_this_step = 0;
 
