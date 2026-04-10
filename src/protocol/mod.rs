@@ -20,12 +20,16 @@ pub enum ServerMessage {
     Partial {
         text: String,
         timestamp: f64,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        words: Vec<crate::inference::WordInfo>,
     },
 
-    /// Final transcript — utterance is complete, with punctuation.
+    /// Final transcript — utterance is complete.
     Final {
         text: String,
         timestamp: f64,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        words: Vec<crate::inference::WordInfo>,
     },
 
     /// Error occurred.
@@ -72,6 +76,7 @@ mod tests {
         let msg = ServerMessage::Partial {
             text: "hello".into(),
             timestamp: 1.0,
+            words: vec![],
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -84,6 +89,7 @@ mod tests {
         let msg = ServerMessage::Final {
             text: "hello".into(),
             timestamp: 1.0,
+            words: vec![],
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();

@@ -8,6 +8,23 @@ use super::{PRED_HIDDEN, DecoderState};
 
 const MAX_TOKENS_PER_STEP: usize = 10;
 const ENC_DIM: usize = 768;
+/// Number of consecutive blank frames to trigger endpointing (~600ms at 40ms/frame).
+pub(crate) const ENDPOINT_BLANK_THRESHOLD: usize = 15;
+
+/// Token emitted by the decoder with metadata.
+#[derive(Debug, Clone)]
+pub(crate) struct TokenInfo {
+    pub token_id: usize,
+    pub frame_index: usize,
+    pub confidence: f32,
+}
+
+/// Result of greedy decode: tokens + endpointing signal.
+#[derive(Debug)]
+pub(crate) struct DecodeResult {
+    pub tokens: Vec<TokenInfo>,
+    pub endpoint_detected: bool,
+}
 
 /// Extract encoder frame `t` from channels-first layout [1, ENC_DIM, enc_len].
 ///
@@ -35,6 +52,20 @@ pub(crate) fn argmax(logits: &[f32], blank_id: usize) -> usize {
         .unwrap_or(blank_id)
 }
 
+/// Argmax with softmax confidence score.
+///
+/// Returns `(token_id, confidence)` where confidence is the softmax probability.
+pub(crate) fn argmax_with_confidence(logits: &[f32], blank_id: usize) -> (usize, f32) {
+    if logits.is_empty() {
+        return (blank_id, 0.0);
+    }
+    let max_logit = logits.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+    let sum_exp: f32 = logits.iter().map(|&l| (l - max_logit).exp()).sum();
+    let token = argmax(logits, blank_id);
+    let confidence = (logits[token] - max_logit).exp() / sum_exp;
+    (token, confidence)
+}
+
 /// Run RNN-T greedy decode on encoder output.
 ///
 /// Encoder output layout: [1, 768, enc_len] (channels-first).
@@ -46,8 +77,9 @@ pub fn greedy_decode(
     encoded_len: usize,
     blank_id: usize,
     state: &mut DecoderState,
-) -> Result<Vec<usize>> {
+) -> Result<DecodeResult> {
     let mut tokens = Vec::new();
+    let mut endpoint_detected = false;
 
     // Pre-allocate buffer for extracting a single encoder frame [768, 1]
     let mut enc_frame = vec![0.0_f32; ENC_DIM];
@@ -102,15 +134,25 @@ pub fn greedy_decode(
                 .try_extract_tensor::<f32>()
                 .context("Failed to extract joiner output")?;
 
-            // Greedy: argmax over logits (1025 classes)
-            let token = argmax(logits, blank_id);
+            // Greedy: argmax with confidence over logits (1025 classes)
+            let (token, confidence) = argmax_with_confidence(logits, blank_id);
 
             if token == blank_id || tokens_this_step >= MAX_TOKENS_PER_STEP {
+                // Track consecutive blanks for endpointing
+                state.consecutive_blanks += 1;
+                if state.consecutive_blanks >= ENDPOINT_BLANK_THRESHOLD && !tokens.is_empty() {
+                    endpoint_detected = true;
+                }
                 break;
             }
 
-            // Non-blank: emit token, update state
-            tokens.push(token);
+            // Non-blank: emit token with metadata, reset blank counter
+            state.consecutive_blanks = 0;
+            tokens.push(TokenInfo {
+                token_id: token,
+                frame_index: t,
+                confidence,
+            });
             state.prev_token = token as i64;
             if new_h_data.len() != PRED_HIDDEN || new_c_data.len() != PRED_HIDDEN {
                 anyhow::bail!(
@@ -124,7 +166,7 @@ pub fn greedy_decode(
         }
     }
 
-    Ok(tokens)
+    Ok(DecodeResult { tokens, endpoint_detected })
 }
 
 #[cfg(test)]

@@ -11,6 +11,7 @@ use anyhow::{Context, Result};
 use ort::ep;
 use ort::session::Session;
 use ort::value::TensorRef;
+use serde::Serialize;
 use std::path::Path;
 use std::sync::Mutex;
 
@@ -33,11 +34,15 @@ pub(crate) fn now_timestamp() -> f64 {
         .as_secs_f64()
 }
 
+/// Seconds per encoder frame (HOP_LENGTH * 4 / 16000 = 0.04s).
+const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64) * 4.0 / 16000.0;
+
 /// Decoder LSTM state persisted across chunks.
 pub struct DecoderState {
     pub h: Vec<f32>,
     pub c: Vec<f32>,
     pub prev_token: i64,
+    pub consecutive_blanks: usize,
 }
 
 impl DecoderState {
@@ -46,14 +51,30 @@ impl DecoderState {
             h: vec![0.0; PRED_HIDDEN],
             c: vec![0.0; PRED_HIDDEN],
             prev_token: blank_id as i64,
+            consecutive_blanks: 0,
         }
     }
+}
+
+/// Word with timing and confidence metadata.
+#[derive(Debug, Clone, Serialize)]
+pub struct WordInfo {
+    pub word: String,
+    pub start: f64,
+    pub end: f64,
+    pub confidence: f32,
 }
 
 /// Per-connection streaming state.
 pub struct StreamingState {
     pub decoder: DecoderState,
     pub audio_buffer: Vec<f32>,
+    /// Accumulated text across chunks for Partial emission.
+    pub accumulated_text: String,
+    /// Accumulated words with timestamps for structured output.
+    pub accumulated_words: Vec<WordInfo>,
+    /// Total encoder frames processed (for absolute timestamp offset).
+    pub total_frames: usize,
 }
 
 pub struct Engine {
@@ -131,12 +152,16 @@ impl Engine {
         StreamingState {
             decoder: DecoderState::new(self.tokenizer.blank_id()),
             audio_buffer: Vec::new(),
+            accumulated_text: String::new(),
+            accumulated_words: Vec::new(),
+            total_frames: 0,
         }
     }
 
     /// Process a chunk of f32 audio samples and return any new transcript segments.
     ///
-    /// Streaming state (LSTM hidden/cell, leftover audio) is maintained in `state`.
+    /// Returns Partial segments during speech, Final on endpointing (silence detected).
+    /// Streaming state (LSTM hidden/cell, leftover audio, accumulated text) is maintained in `state`.
     pub fn process_chunk(
         &self,
         samples: &[f32],
@@ -157,17 +182,51 @@ impl Engine {
             return Ok(vec![]);
         }
 
-        let text = self.run_inference(&features, num_frames, &mut state.decoder)?;
+        let (new_words, endpoint) =
+            self.run_inference(&features, num_frames, &mut state.decoder, state.total_frames)?;
+        state.total_frames += num_frames;
 
-        if text.is_empty() {
+        if new_words.is_empty() && !endpoint {
             return Ok(vec![]);
         }
 
-        Ok(vec![TranscriptSegment {
-            text,
+        // Accumulate new words
+        for w in &new_words {
+            if !state.accumulated_text.is_empty() {
+                state.accumulated_text.push(' ');
+            }
+            state.accumulated_text.push_str(&w.word);
+        }
+        state.accumulated_words.extend(new_words);
+
+        let text = state.accumulated_text.clone();
+        let words = state.accumulated_words.clone();
+        let ts = now_timestamp();
+
+        if endpoint {
+            // Endpoint detected: emit Final and reset accumulation
+            state.accumulated_text.clear();
+            state.accumulated_words.clear();
+            state.decoder.consecutive_blanks = 0;
+            Ok(vec![TranscriptSegment { text, words, is_final: true, timestamp: ts }])
+        } else {
+            // Ongoing speech: emit Partial
+            Ok(vec![TranscriptSegment { text, words, is_final: false, timestamp: ts }])
+        }
+    }
+
+    /// Flush accumulated text as a Final segment (called on Stop/Close).
+    pub fn flush_state(&self, state: &mut StreamingState) -> Option<TranscriptSegment> {
+        if state.accumulated_text.is_empty() {
+            return None;
+        }
+        let seg = TranscriptSegment {
+            text: std::mem::take(&mut state.accumulated_text),
+            words: std::mem::take(&mut state.accumulated_words),
             is_final: true,
             timestamp: now_timestamp(),
-        }])
+        };
+        Some(seg)
     }
 
     /// Transcribe an audio file (supports WAV, MP3, M4A/AAC, OGG, FLAC).
@@ -178,7 +237,9 @@ impl Engine {
         tracing::info!("Extracted {} mel frames", num_frames);
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
-        self.run_inference(&features, num_frames, &mut decoder_state)
+        let (words, _endpoint) = self.run_inference(&features, num_frames, &mut decoder_state, 0)?;
+        let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
+        Ok(text)
     }
 
     fn run_inference(
@@ -186,7 +247,8 @@ impl Engine {
         features: &[f32],
         num_frames: usize,
         decoder_state: &mut DecoderState,
-    ) -> Result<String> {
+        frame_offset: usize,
+    ) -> Result<(Vec<WordInfo>, bool)> {
         // Encoder input: audio_signal [1, 64, num_frames], length [1]
         let signal_tensor =
             TensorRef::from_array_view(([1_usize, N_MELS, num_frames], features))?;
@@ -228,7 +290,7 @@ impl Engine {
             e.into_inner()
         });
 
-        let token_ids = decode::greedy_decode(
+        let result = decode::greedy_decode(
             &mut decoder,
             &mut joiner,
             &enc_data_owned,
@@ -237,18 +299,91 @@ impl Engine {
             decoder_state,
         )?;
 
-        let text = self.tokenizer.decode(&token_ids);
-        let preview: String = text.chars().take(80).collect();
-        let ellipsis = if text.len() > 80 { "..." } else { "" };
-        tracing::info!("Decoded {} tokens → \"{preview}{ellipsis}\"", token_ids.len());
+        // Convert token infos to words with timestamps
+        let words = self.tokens_to_words(&result.tokens, frame_offset);
 
-        Ok(text)
+        let preview: String = words.iter().take(10).map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
+        let ellipsis = if words.len() > 10 { "..." } else { "" };
+        tracing::info!("Decoded {} tokens → \"{preview}{ellipsis}\"", result.tokens.len());
+
+        Ok((words, result.endpoint_detected))
+    }
+
+    /// Convert decoded tokens into words with timestamps and confidence.
+    fn tokens_to_words(&self, tokens: &[decode::TokenInfo], frame_offset: usize) -> Vec<WordInfo> {
+        if tokens.is_empty() {
+            return Vec::new();
+        }
+
+        let token_ids: Vec<usize> = tokens.iter().map(|t| t.token_id).collect();
+        let raw_text = self.tokenizer.decode(&token_ids);
+        if raw_text.is_empty() {
+            return Vec::new();
+        }
+
+        // Group tokens by words (BPE ▁ marks word boundaries)
+        let mut words = Vec::new();
+        let mut current_word = String::new();
+        let mut word_start_frame: Option<usize> = None;
+        let mut word_end_frame: usize = 0;
+        let mut word_confidences: Vec<f32> = Vec::new();
+
+        for token in tokens {
+            let token_text = self.tokenizer.token_text(token.token_id);
+            let is_word_boundary = token_text.starts_with('\u{2581}');
+
+            if is_word_boundary && !current_word.is_empty() {
+                // Emit previous word
+                let avg_conf: f32 = if word_confidences.is_empty() {
+                    1.0
+                } else {
+                    word_confidences.iter().sum::<f32>() / word_confidences.len() as f32
+                };
+                words.push(WordInfo {
+                    word: current_word.clone(),
+                    start: (word_start_frame.unwrap_or(0) + frame_offset) as f64 * SECONDS_PER_FRAME,
+                    end: (word_end_frame + frame_offset) as f64 * SECONDS_PER_FRAME,
+                    confidence: avg_conf,
+                });
+                current_word.clear();
+                word_confidences.clear();
+                word_start_frame = None;
+            }
+
+            let clean = token_text.replace('\u{2581}', "");
+            if !clean.is_empty() {
+                current_word.push_str(&clean);
+                if word_start_frame.is_none() {
+                    word_start_frame = Some(token.frame_index);
+                }
+                word_end_frame = token.frame_index;
+                word_confidences.push(token.confidence);
+            }
+        }
+
+        // Emit last word
+        if !current_word.is_empty() {
+            let avg_conf: f32 = if word_confidences.is_empty() {
+                1.0
+            } else {
+                word_confidences.iter().sum::<f32>() / word_confidences.len() as f32
+            };
+            words.push(WordInfo {
+                word: current_word,
+                start: (word_start_frame.unwrap_or(0) + frame_offset) as f64 * SECONDS_PER_FRAME,
+                end: (word_end_frame + frame_offset) as f64 * SECONDS_PER_FRAME,
+                confidence: avg_conf,
+            });
+        }
+
+        words
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct TranscriptSegment {
     pub text: String,
+    pub words: Vec<WordInfo>,
     pub is_final: bool,
     pub timestamp: f64,
 }

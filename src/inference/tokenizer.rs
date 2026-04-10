@@ -48,6 +48,19 @@ impl Tokenizer {
         self.blank_id
     }
 
+    /// Get raw token text by id (returns empty string for out-of-range or special tokens).
+    pub fn token_text(&self, id: usize) -> &str {
+        if id >= self.tokens.len() {
+            return "";
+        }
+        let t = &self.tokens[id];
+        if t == "<blk>" || t == "<unk>" {
+            ""
+        } else {
+            t
+        }
+    }
+
     pub fn vocab_size(&self) -> usize {
         self.tokens.len()
     }

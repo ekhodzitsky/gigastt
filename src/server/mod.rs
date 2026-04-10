@@ -109,11 +109,13 @@ async fn handle_connection(
                                 ServerMessage::Final {
                                     text: seg.text,
                                     timestamp: seg.timestamp,
+                                    words: seg.words,
                                 }
                             } else {
                                 ServerMessage::Partial {
                                     text: seg.text,
                                     timestamp: seg.timestamp,
+                                    words: seg.words,
                                 }
                             };
                             sink.send(Message::Text(serde_json::to_string(&msg)?))
@@ -134,9 +136,22 @@ async fn handle_connection(
             Message::Text(text) => {
                 if let Ok(ClientMessage::Stop) = serde_json::from_str(&text) {
                     tracing::info!("Stop received from {peer}, finalizing");
-                    let final_msg = ServerMessage::Final {
-                        text: String::new(),
-                        timestamp: crate::inference::now_timestamp(),
+                    // Flush accumulated text from streaming state
+                    let mut state = state_opt.take().context("Streaming state lost")?;
+                    let flush_seg = engine.flush_state(&mut state);
+                    drop(state); // Not needed after break
+                    let final_msg = if let Some(seg) = flush_seg {
+                        ServerMessage::Final {
+                            text: seg.text,
+                            timestamp: seg.timestamp,
+                            words: seg.words,
+                        }
+                    } else {
+                        ServerMessage::Final {
+                            text: String::new(),
+                            timestamp: crate::inference::now_timestamp(),
+                            words: vec![],
+                        }
                     };
                     sink.send(Message::Text(serde_json::to_string(&final_msg)?))
                         .await?;
