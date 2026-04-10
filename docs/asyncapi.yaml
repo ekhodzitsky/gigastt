@@ -9,7 +9,8 @@ info:
 
     ## Connection Flow
 
-    1. Client connects to `ws://127.0.0.1:{port}`
+    1. Client connects to `ws://{host}:{port}` (default: `ws://127.0.0.1:9876`)
+       - Use `--host 0.0.0.0` for Docker; `--host 127.0.0.1` for local (default)
     2. Server sends `ready` message with model info and protocol version
     3. Client streams raw PCM16 audio as binary frames (48kHz mono)
     4. Server responds with `partial` and `final` transcript messages
@@ -22,12 +23,14 @@ info:
     - Channels: 1 (mono)
     - Frame size: up to 512 KiB per WebSocket frame (~16s of audio)
 
-    ## Limits
+    ## Limits & Security
 
     - Max concurrent connections: 4
     - Max WebSocket frame: 512 KiB
-    - Audio buffer cap: 5 seconds (older audio is discarded)
-    - Bind address: 127.0.0.1 only (local)
+    - Audio buffer cap: 5 seconds (WebSocket streaming)
+    - File transcription cap: 10 minutes (offline mode)
+    - Bind address: 127.0.0.1 (default, use --host 0.0.0.0 for Docker)
+    - Internal errors hidden from clients (generic message sent)
   license:
     name: MIT
     url: https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE
@@ -39,7 +42,11 @@ servers:
   local:
     host: 127.0.0.1:9876
     protocol: ws
-    description: Local development server (default port)
+    description: Local development server (default host and port)
+  docker:
+    host: 0.0.0.0:9876
+    protocol: ws
+    description: Docker container (use --host 0.0.0.0 to expose)
 
 defaultContentType: application/json
 

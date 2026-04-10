@@ -15,19 +15,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```sh
 cargo build              # Debug build
 cargo build --release    # Release build (LTO, stripped)
-cargo test               # Run all tests
-cargo clippy             # Lint (only `ClientMessage` dead_code warning is expected)
+cargo test               # Run all 39 unit tests (no model required)
+cargo test --test server_integration -- --ignored  # 1 integration test (requires model)
+cargo clippy             # Lint (no expected warnings)
 ```
 
-Model download (required for E2E testing, ~850MB):
+Model download (required for E2E testing and file transcription, ~850MB):
 ```sh
-cargo run -- download    # Downloads to ~/.gigastt/models/
+cargo run -- download                    # Downloads to ~/.gigastt/models/
+python scripts/quantize.py               # Optional: generate INT8 encoder (~210MB)
 ```
+
+## Docker
+
+Multi-stage production build:
+```sh
+docker build -t gigastt .
+docker run -p 9876:9876 gigastt
+# Model auto-downloads on first run, binds to 0.0.0.0:9876
+```
+
+The Dockerfile uses `--host 0.0.0.0` to allow container networking. Local deployments should use `--host 127.0.0.1` (default).
 
 ## Architecture
 
 ```
 src/
+  lib.rs                  # Public module exports
   main.rs                 # CLI (clap): serve, download, transcribe
   model/mod.rs            # HuggingFace model download (streaming to disk)
   inference/
@@ -38,6 +52,14 @@ src/
   server/mod.rs           # WebSocket server (tokio + tungstenite)
   protocol/mod.rs         # JSON message types (Ready, Partial, Final, Error)
 ```
+
+### Performance optimizations (v0.2)
+- **CoreML execution provider** (macOS ARM64): MLProgram format + Neural Engine + model cache directory
+  - Automatically loads quantized encoder if available (~4x smaller, ~43% faster)
+  - Caches compiled models in `~/.gigastt/models/coreml_cache/`
+- **INT8 quantization** (optional): encoder_int8.onnx (~210MB vs 844MB)
+  - Run `python scripts/quantize.py` to generate (requires onnxruntime)
+  - Auto-detection: Engine uses INT8 encoder if present, falls back to FP32
 
 ### Key constants (defined in `inference/mod.rs`)
 - `N_MELS = 64`, `N_FFT = 320`, `HOP_LENGTH = 160`, `PRED_HIDDEN = 320`
@@ -74,7 +96,8 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - Unit tests live in `#[cfg(test)] mod tests` at bottom of each file
 - Tests use synthetic data (no model download required)
 - Test names: `test_<what>_<expected_behavior>`
-- Current: 39 tests (tokenizer: 5, features: 4, decode: 9, inference: 16, protocol: 6). All modules covered
+- Current: 39 unit tests (tokenizer, features, decode, inference, protocol) + 1 integration test (WebSocket)
+- Benchmark suite (WER evaluation on Golos fixtures) in `tests/benchmark.rs` (harness disabled)
 
 ### Code style
 - Rust 2024 edition
@@ -100,10 +123,21 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 
 GigaAM v3 e2e_rnnt from `istupakov/gigaam-v3-onnx` on HuggingFace:
 - Files: `v3_e2e_rnnt_{encoder,decoder,joint}.onnx` + `v3_e2e_rnnt_vocab.txt`
-- Encoder: 844MB, Decoder: 4.4MB, Joiner: 2.6MB
+- Encoder: 844MB (FP32) or 210MB (INT8 quantized), Decoder: 4.4MB, Joiner: 2.6MB
 - Sample rate: 16kHz, Features: 64 mel bins
 - ONNX tensors: encoder out `[1, 768, T]` (channels-first), decoder state `[1, 1, 320]`
 
-## Known limitations
-- macOS ARM64 only (CoreML feature in ort)
-- Linear interpolation resampler (upgrade to polyphase FIR for better quality)
+### Quantization (optional)
+
+`scripts/quantize.py` generates INT8 quantized encoder (QInt8, per-channel):
+```sh
+pip install onnxruntime
+python scripts/quantize.py --model-dir ~/.gigastt/models
+# Produces: v3_e2e_rnnt_encoder_int8.onnx (~210MB, ~4x smaller, ~43% faster)
+```
+
+Engine auto-detects and prefers INT8 if available; falls back to FP32.
+
+## Known limitations (v0.2)
+- macOS ARM64 only (CoreML EP dependency; CPU fallback available but slower)
+- Linear interpolation resampler (upgrade to polyphase FIR for better quality in future releases)

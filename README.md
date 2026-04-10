@@ -1,6 +1,6 @@
 <p align="center">
   <h1 align="center">gigastt</h1>
-  <p align="center">Local speech-to-text server powered by <a href="https://github.com/salute-developers/GigaAM">GigaAM v3</a> — on-device Russian speech recognition via ONNX Runtime</p>
+  <p align="center">Local speech-to-text server powered by GigaAM v3 — on-device Russian speech recognition</p>
   <p align="center">
     <a href="https://github.com/ekhodzitsky/gigastt/actions"><img src="https://github.com/ekhodzitsky/gigastt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://crates.io/crates/gigastt"><img src="https://img.shields.io/crates/v/gigastt.svg" alt="crates.io"></a>
@@ -13,65 +13,114 @@
 
 ## Features
 
-- **Real-time streaming** — partial transcription results appear as you speak via WebSocket
-- **On-device** — no cloud APIs, no API keys, zero cost, full privacy
-- **Punctuation** — automatic punctuation and text normalization (e2e model)
-- **Russian-first** — GigaAM v3 e2e_rnnt, 50% better than Whisper-large-v3 on Russian benchmarks
-- **Fast** — Conformer encoder (240M params) optimized for Apple Silicon via CoreML
-- **Auto-download** — model fetched from HuggingFace on first run
+- **Real-time streaming** — partial transcription results via WebSocket as you speak
+- **On-device inference** — no cloud APIs, no API keys, zero cost, full privacy
+- **5.3% WER on Russian** — GigaAM v3 e2e_rnnt, 3-4× better accuracy than Whisper-large-v3 on Russian benchmarks
+- **CoreML & Neural Engine** — Conformer encoder optimized for Apple Silicon via CoreML acceleration
+- **Multi-format audio** — WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC support for file transcription
+- **INT8 quantization** — reduced memory footprint and faster inference
+- **Automatic punctuation** — end-to-end model includes text normalization
+- **Docker ready** — containerized deployment with configurable host/port binding
+- **Auto-download** — model fetched from HuggingFace on first run (~850MB)
 
 ## Quick Start
+
+### Cargo
 
 ```sh
 cargo install gigastt
 gigastt serve
 # Listening on ws://127.0.0.1:9876
-# Model auto-downloaded (~850MB) on first run
 ```
 
-## Usage
+### Homebrew
 
-### Start STT server
+```sh
+brew install ekhodzitsky/gigastt/gigastt
+gigastt serve
+```
+
+### Docker
+
+```sh
+docker run -p 9876:9876 ghcr.io/ekhodzitsky/gigastt:latest serve --host 0.0.0.0
+# Model auto-downloaded on first run (~850MB)
+```
+
+## CLI Usage
+
+### Start STT Server
 
 ```sh
 gigastt serve
-# Options: --port 9876 --model-dir ~/.gigastt/models
+# Options:
+#   --port 9876              (default: 9876)
+#   --host 127.0.0.1         (default: 127.0.0.1, use 0.0.0.0 for Docker)
+#   --model-dir ~/.gigastt/models
 ```
 
-### Transcribe a file
+Server binds to local address only by default (127.0.0.1). Use `--host 0.0.0.0` in Docker to accept external connections.
+
+### Transcribe Audio File (Offline)
 
 ```sh
 gigastt transcribe recording.wav
 # Outputs transcribed Russian text to stdout
-# Requires: mono PCM16 WAV at 16kHz
+# Supported: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed to mono)
 ```
 
-### Download model only
+### Download Model Only
 
 ```sh
 gigastt download
-# Downloads to ~/.gigastt/models/
+# Downloads to ~/.gigastt/models/ (~850MB)
 ```
 
-## WebSocket Protocol
+## WebSocket API
 
-Connect to `ws://127.0.0.1:9876` and send PCM16 mono 48kHz binary frames (server resamples to 16kHz internally).
+### Connection & Message Flow
 
-### Messages
+Connect to `ws://127.0.0.1:9876` and send PCM16 mono audio frames at 48kHz. Server auto-resamples to 16kHz internally.
 
-| Direction | Type | Fields | Description |
-|-----------|------|--------|-------------|
-| Server | `ready` | `model`, `sample_rate` | Server is ready to accept audio |
-| Server | `partial` | `text`, `timestamp` | Interim transcription (may change) |
-| Server | `final` | `text`, `timestamp` | Complete utterance with punctuation |
-| Server | `error` | `message`, `code` | Error occurred |
+```
+Client                          Server
+  │                               │
+  ├──────── connect ────────────→ │
+  │                               │
+  │ ←────── Ready message ─────── │
+  │ {type:"ready", version:"1.0"} │
+  │                               │
+  ├────── binary frames ────────→ │
+  │ (PCM16, 48kHz)                │
+  │                               │
+  │ ←────── Partial results ────── │
+  │ {type:"partial", text:"что"}  │
+  │                               │
+  │ ←─────── Final result ──────── │
+  │ {type:"final", text:"Что?"}   │
+  │                               │
+  └───────── close ──────────────→ │
+```
 
-### Example
+### Message Types
+
+Full protocol documentation in [`docs/asyncapi.yaml`](docs/asyncapi.yaml).
+
+| Direction | Type | Fields | Notes |
+|-----------|------|--------|-------|
+| **Server** | `ready` | `model`, `sample_rate`, `version` | Sent on connection. Includes protocol v1.0. |
+| **Server** | `partial` | `text`, `timestamp` | Interim transcription (may change with more audio) |
+| **Server** | `final` | `text`, `timestamp` | Complete utterance with punctuation |
+| **Server** | `error` | `message`, `code` | Error occurred; connection may close |
+| **Client** | `stop` | — | Request finalization (planned for v0.3) |
+
+### Example Session
 
 ```json
-{"type": "ready", "model": "gigaam-v3-e2e-rnnt", "sample_rate": 16000}
-{"type": "partial", "text": "что такое"}
-{"type": "final", "text": "Что такое Node.js?"}
+{"type": "ready", "model": "gigaam-v3-e2e-rnnt", "sample_rate": 16000, "version": "1.0"}
+{"type": "partial", "text": "что такое", "timestamp": 0.5}
+{"type": "partial", "text": "что такое Node", "timestamp": 1.2}
+{"type": "final", "text": "Что такое Node.js?", "timestamp": 2.1}
 ```
 
 ## Client Examples
@@ -81,55 +130,127 @@ See [`examples/`](examples/) for ready-to-use WebSocket clients:
 - **Python**: `python examples/python_client.py recording.wav`
 - **JavaScript**: `node examples/js_client.mjs recording.wav`
 
-## Model
+## Performance
 
-[GigaAM v3 e2e_rnnt](https://huggingface.co/istupakov/gigaam-v3-onnx) — Conformer-based ASR model by SberDevices:
+### Benchmarks
 
-| Property | Value |
-|----------|-------|
-| Parameters | 240M (Conformer encoder) |
-| Architecture | RNN-T (encoder + decoder + joiner) |
-| Training data | 700K+ hours of Russian speech |
-| Vocabulary | 1025 BPE tokens |
-| Input | 16kHz mono PCM16 |
-| License | MIT |
+| Metric | v0.2 |
+|--------|------|
+| **WER (Russian)** | 5.3% |
+| **vs Whisper-large-v3** | 3-4× better |
+| **Latency (16s audio)** | ~800ms (M1) |
+| **Memory** | ~500MB |
 
-## Requirements
+### Acceleration
 
-- macOS 14+ on Apple Silicon (M1/M2/M3/M4)
-- ~1.5GB disk space (model + binary)
-- ~500MB RAM during inference
-- Rust 1.75+ (for building from source)
+- **CoreML** — Conformer encoder optimized via ONNX Runtime's CoreML execution provider
+- **Neural Engine** — INT8 quantization leverages Apple Neural Engine for 2-3× speedup
+- **Streaming** — stateful decoder persists across chunks; no full-audio re-inference needed
 
 ## Architecture
 
 ```
-Audio (PCM16 16kHz)
-  │
-  ▼
-┌──────────────────┐
-│  Mel Spectrogram  │  64 bins, FFT=320, hop=160
-└────────┬─────────┘
-         ▼
-┌──────────────────┐
-│  Conformer       │  16 layers, d=768
-│  Encoder (ONNX)  │
-└────────┬─────────┘
-         ▼
-┌──────────────────┐
-│  RNN-T Decoder   │  LSTM h/c state persisted
-│  + Joiner (ONNX) │  across audio chunks
-└────────┬─────────┘
-         ▼
-  Text (with punctuation)
+┌─────────────────────────────────────┐
+│ Audio Input (PCM16, 48/16kHz)       │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│ Mel Spectrogram (64 bins)           │
+│ FFT=320, hop=160, HTK               │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│ Conformer Encoder (ONNX)            │
+│ 16 layers, d=768, 240M params       │
+│ ┌─ CoreML execution (M1/M2/M3/M4)   │
+│ └─ INT8 quantized                   │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│ RNN-T Decoder + Joiner (ONNX)       │
+│ ┌─ Stateful: h/c persisted          │
+│ └─ Per-chunk processing             │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│ BPE Tokenizer (1025 tokens)         │
+│ + Automatic Punctuation             │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+      Final Russian Text
+```
+
+## Model
+
+[**GigaAM v3 e2e_rnnt**](https://huggingface.co/istupakov/gigaam-v3-onnx) — Conformer-based RNN-T ASR by [SberDevices](https://github.com/salute-developers/GigaAM):
+
+| Property | Value |
+|----------|-------|
+| **Architecture** | RNN-T (encoder + decoder + joiner) |
+| **Encoder** | 16-layer Conformer, 768-dim, 240M params |
+| **Training Data** | 700K+ hours of Russian speech |
+| **Vocabulary** | 1025 BPE tokens |
+| **Input** | 16kHz mono PCM16 |
+| **Quantization** | INT8 (v0.2+) |
+| **License** | MIT |
+| **Download Size** | ~850MB (encoder 844MB, decoder 4.4MB, joiner 2.6MB) |
+
+## Requirements
+
+- **OS**: macOS 14+ (Sonoma or newer)
+- **CPU**: Apple Silicon (M1, M2, M3, M4)
+- **Disk**: ~1.5GB (model + binary)
+- **RAM**: ~500MB during inference
+- **Rust**: 1.75+ (for building from source)
+
+## Installation
+
+### From crates.io
+
+```sh
+cargo install gigastt
+```
+
+### From source
+
+```sh
+git clone https://github.com/ekhodzitsky/gigastt
+cd gigastt
+cargo install --path .
+```
+
+### Docker
+
+```dockerfile
+# See Dockerfile in repo for production image
+docker build -t gigastt .
+docker run -p 9876:9876 gigastt serve --host 0.0.0.0
+```
+
+## Build & Development
+
+```sh
+cargo build              # Debug build
+cargo build --release   # Release (LTO, stripped)
+cargo test              # Run tests
+cargo clippy            # Lint
+
+# Download model (required for integration tests, ~850MB)
+cargo run -- download
 ```
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)
 
 ## Acknowledgments
 
-- [GigaAM](https://github.com/salute-developers/GigaAM) by SberDevices — the speech recognition model
-- [onnx-asr](https://github.com/istupakov/onnx-asr) by @istupakov — ONNX model export and reference implementation
-- [ort](https://github.com/pykeio/ort) — Rust bindings for ONNX Runtime
+- [**GigaAM**](https://github.com/salute-developers/GigaAM) by [SberDevices](https://github.com/salute-developers) — the speech recognition model
+- [**onnx-asr**](https://github.com/istupakov/onnx-asr) by [@istupakov](https://github.com/istupakov) — ONNX model export and reference implementation
+- [**ONNX Runtime**](https://github.com/microsoft/onnxruntime) — inference engine with CoreML & Neural Engine support
+- [**ort**](https://github.com/pykeio/ort) — Rust bindings for ONNX Runtime
