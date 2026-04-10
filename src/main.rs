@@ -17,6 +17,10 @@ enum Commands {
         #[arg(short, long, default_value_t = 9876)]
         port: u16,
 
+        /// Bind address (use 0.0.0.0 for Docker)
+        #[arg(long, default_value = "127.0.0.1")]
+        host: String,
+
         /// Model directory
         #[arg(long, default_value_t = model::default_model_dir())]
         model_dir: String,
@@ -49,10 +53,10 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Serve { port, model_dir } => {
+        Commands::Serve { port, host, model_dir } => {
             model::ensure_model(&model_dir).await?;
             let engine = inference::Engine::load(&model_dir)?;
-            server::run(engine, port).await?;
+            server::run(engine, port, &host).await?;
         }
         Commands::Download { model_dir } => {
             model::ensure_model(&model_dir).await?;

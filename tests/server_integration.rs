@@ -31,7 +31,7 @@ async fn test_single_client_receives_ready() {
     let port = free_port().await;
 
     let engine = gigastt::inference::Engine::load(&model_dir).unwrap();
-    tokio::spawn(gigastt::server::run(engine, port));
+    tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
     tokio::time::sleep(Duration::from_millis(200)).await;
 
     let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}"))
@@ -61,7 +61,7 @@ async fn test_four_clients_connect_concurrently() {
     let port = free_port().await;
 
     let engine = gigastt::inference::Engine::load(&model_dir).unwrap();
-    tokio::spawn(gigastt::server::run(engine, port));
+    tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
     tokio::time::sleep(Duration::from_millis(200)).await;
 
     let url = format!("ws://127.0.0.1:{port}");
@@ -120,7 +120,7 @@ async fn test_stop_message_closes_gracefully() {
     let port = free_port().await;
 
     let engine = gigastt::inference::Engine::load(&model_dir).unwrap();
-    tokio::spawn(gigastt::server::run(engine, port));
+    tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
     tokio::time::sleep(Duration::from_millis(200)).await;
 
     let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}"))

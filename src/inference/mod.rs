@@ -7,6 +7,7 @@ mod features;
 mod tokenizer;
 
 use anyhow::{Context, Result};
+use ort::ep;
 use ort::session::Session;
 use ort::value::TensorRef;
 use std::path::Path;
@@ -63,19 +64,42 @@ impl Engine {
             "v3_e2e_rnnt_encoder.onnx not found in {model_dir}"
         );
 
+        // Prefer INT8 quantized encoder if available (~4x smaller, ~43% faster)
+        let encoder_path = if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
+            tracing::info!("Using INT8 quantized encoder");
+            dir.join("v3_e2e_rnnt_encoder_int8.onnx")
+        } else {
+            dir.join("v3_e2e_rnnt_encoder.onnx")
+        };
+
         tracing::info!("Loading ONNX models from {model_dir}...");
+
+        // CoreML EP: MLProgram format + Neural Engine + model cache
+        let cache_dir = dir.join("coreml_cache");
+        let coreml_ep = ep::CoreML::default()
+            .with_model_format(ep::coreml::ModelFormat::MLProgram)
+            .with_compute_units(ep::coreml::ComputeUnits::CPUAndNeuralEngine)
+            .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
+            .with_model_cache_dir(cache_dir.to_string_lossy())
+            .build();
 
         let encoder = Session::builder()
             .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_encoder.onnx"))
+            .with_execution_providers([coreml_ep.clone()])
+            .map_err(ort_err)?
+            .commit_from_file(&encoder_path)
             .map_err(ort_err)?;
 
         let decoder = Session::builder()
+            .map_err(ort_err)?
+            .with_execution_providers([coreml_ep.clone()])
             .map_err(ort_err)?
             .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
             .map_err(ort_err)?;
 
         let joiner = Session::builder()
+            .map_err(ort_err)?
+            .with_execution_providers([coreml_ep])
             .map_err(ort_err)?
             .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
             .map_err(ort_err)?;

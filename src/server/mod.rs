@@ -2,7 +2,7 @@
 
 use crate::inference::Engine;
 use crate::protocol::{ClientMessage, ServerMessage};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -12,8 +12,9 @@ use tokio_tungstenite::tungstenite::Message;
 
 const MAX_CONCURRENT_CONNECTIONS: usize = 4;
 
-pub async fn run(engine: Engine, port: u16) -> Result<()> {
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
+    let addr: SocketAddr = format!("{host}:{port}").parse()
+        .context("Invalid host:port")?;
     let listener = TcpListener::bind(&addr).await?;
     let engine = Arc::new(engine);
     let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_CONNECTIONS));

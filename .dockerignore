@@ -1,0 +1,5 @@
+target/
+.omc/
+.git/
+missions/
+*.tar.gz
