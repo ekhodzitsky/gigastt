@@ -12,6 +12,10 @@ use tokio_tungstenite::tungstenite::Message;
 
 const MAX_CONCURRENT_CONNECTIONS: usize = 4;
 
+/// Supported input sample rates (Hz). Default is 48000 for backward compatibility.
+const SUPPORTED_RATES: &[u32] = &[8000, 16000, 24000, 44100, 48000];
+const DEFAULT_SAMPLE_RATE: u32 = 48000;
+
 /// Start the WebSocket STT server on the given host and port.
 ///
 /// Accepts PCM16 audio at 48kHz over WebSocket binary frames, resamples to 16kHz,
@@ -85,6 +89,7 @@ async fn handle_connection(
     // Create per-connection streaming state (LSTM decoder + audio buffer)
     // Wrapped in Option so we can move it into/out of spawn_blocking
     let mut state_opt = Some(engine.create_state());
+    let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
 
     // Process incoming audio frames
     while let Some(msg) = source.next().await {
@@ -94,20 +99,24 @@ async fn handle_connection(
                 tracing::debug!("Empty binary frame from {peer}, skipping");
             }
             Message::Binary(data) => {
-                // PCM16 mono at 48kHz — convert to f32 for resampling
+                // PCM16 mono — convert to f32
                 if data.len() % 2 != 0 {
                     tracing::warn!(
                         "Odd-length PCM frame ({} bytes) from {peer}, dropping last byte",
                         data.len()
                     );
                 }
-                let samples_48k_f32: Vec<f32> = data
+                let samples_f32: Vec<f32> = data
                     .chunks_exact(2)
                     .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
                     .collect();
 
-                // Resample 48kHz → 16kHz using the same algorithm as file transcription
-                let samples_16k = crate::inference::audio::resample(&samples_48k_f32, 48000, 16000);
+                // Resample to 16kHz if needed (skip if already 16kHz)
+                let samples_16k = if client_sample_rate == 16000 {
+                    samples_f32
+                } else {
+                    crate::inference::audio::resample(&samples_f32, client_sample_rate, 16000)
+                };
 
                 // Run inference in a blocking thread to avoid blocking the tokio runtime
                 let mut state = state_opt.take().context("Streaming state lost")?;
@@ -151,30 +160,47 @@ async fn handle_connection(
                 }
             }
             Message::Text(text) => {
-                if let Ok(ClientMessage::Stop) = serde_json::from_str(&text) {
-                    tracing::info!("Stop received from {peer}, finalizing");
-                    // Flush accumulated text from streaming state
-                    let mut state = state_opt.take().context("Streaming state lost")?;
-                    let flush_seg = engine.flush_state(&mut state);
-                    drop(state); // Not needed after break
-                    let final_msg = if let Some(seg) = flush_seg {
-                        ServerMessage::Final {
-                            text: seg.text,
-                            timestamp: seg.timestamp,
-                            words: seg.words,
+                match serde_json::from_str::<ClientMessage>(&text) {
+                    Ok(ClientMessage::Configure { sample_rate }) => {
+                        if SUPPORTED_RATES.contains(&sample_rate) {
+                            client_sample_rate = sample_rate;
+                            tracing::info!("Client {peer} configured sample rate: {sample_rate}Hz");
+                        } else {
+                            let err = ServerMessage::Error {
+                                message: format!(
+                                    "Unsupported sample rate: {sample_rate}Hz. Supported: {SUPPORTED_RATES:?}"
+                                ),
+                                code: "invalid_sample_rate".into(),
+                            };
+                            sink.send(Message::Text(serde_json::to_string(&err)?))
+                                .await?;
                         }
-                    } else {
-                        ServerMessage::Final {
-                            text: String::new(),
-                            timestamp: crate::inference::now_timestamp(),
-                            words: vec![],
-                        }
-                    };
-                    sink.send(Message::Text(serde_json::to_string(&final_msg)?))
-                        .await?;
-                    break;
-                } else {
-                    tracing::debug!("Unrecognized text message from {peer}: {}", &text[..text.len().min(100)]);
+                    }
+                    Ok(ClientMessage::Stop) => {
+                        tracing::info!("Stop received from {peer}, finalizing");
+                        let mut state = state_opt.take().context("Streaming state lost")?;
+                        let flush_seg = engine.flush_state(&mut state);
+                        drop(state);
+                        let final_msg = if let Some(seg) = flush_seg {
+                            ServerMessage::Final {
+                                text: seg.text,
+                                timestamp: seg.timestamp,
+                                words: seg.words,
+                            }
+                        } else {
+                            ServerMessage::Final {
+                                text: String::new(),
+                                timestamp: crate::inference::now_timestamp(),
+                                words: vec![],
+                            }
+                        };
+                        sink.send(Message::Text(serde_json::to_string(&final_msg)?))
+                            .await?;
+                        break;
+                    }
+                    Err(_) => {
+                        tracing::debug!("Unrecognized text message from {peer}: {}", &text[..text.len().min(100)]);
+                    }
                 }
             }
             Message::Close(_) => break,
