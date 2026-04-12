@@ -7,6 +7,9 @@ mod features;
 mod tokenizer;
 pub mod audio;
 
+#[cfg(feature = "diarization")]
+pub mod diarization;
+
 #[cfg(all(feature = "coreml", feature = "cuda"))]
 compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.");
 
@@ -90,6 +93,20 @@ pub struct WordInfo {
     pub end: f64,
     /// Softmax confidence score (0.0–1.0), averaged over constituent BPE tokens.
     pub confidence: f32,
+    /// Speaker label from diarization (zero-based index). Omitted if diarization is disabled.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub speaker: Option<u32>,
+}
+
+/// Per-connection diarization state accumulating audio and speaker assignments.
+#[cfg(feature = "diarization")]
+pub struct DiarizationStreamState {
+    /// Raw 16 kHz f32 samples accumulated since the last embedding extraction.
+    pub audio_buffer: Vec<f32>,
+    /// Online speaker cluster tracking centroids across the session.
+    pub cluster: diarization::SpeakerCluster,
+    /// Speaker ID assigned to the most recent segment.
+    pub current_speaker: Option<u32>,
 }
 
 /// Per-connection streaming state that persists across audio chunks.
@@ -110,6 +127,9 @@ pub struct StreamingState {
     pub accumulated_words: Vec<WordInfo>,
     /// Total encoder frames processed so far (for absolute timestamp offset).
     pub total_frames: usize,
+    /// Diarization state (present only when diarization is enabled).
+    #[cfg(feature = "diarization")]
+    pub diarization_state: Option<DiarizationStreamState>,
 }
 
 /// ONNX Runtime inference engine for GigaAM v3 e2e_rnnt.
@@ -130,6 +150,9 @@ pub struct Engine {
     joiner: Mutex<Session>,
     tokenizer: Tokenizer,
     mel: MelSpectrogram,
+    /// Speaker encoder for diarization (None if model file is absent).
+    #[cfg(feature = "diarization")]
+    pub speaker_encoder: Option<diarization::SpeakerEncoder>,
 }
 
 impl Engine {
@@ -248,23 +271,60 @@ impl Engine {
 
         tracing::info!("Models loaded (vocab_size={})", tokenizer.vocab_size());
 
+        #[cfg(feature = "diarization")]
+        let speaker_encoder = match diarization::SpeakerEncoder::load(dir) {
+            Ok(enc) => {
+                tracing::info!("Speaker encoder loaded (diarization available)");
+                Some(enc)
+            }
+            Err(e) => {
+                tracing::warn!("Speaker encoder not loaded, diarization unavailable: {e:#}");
+                None
+            }
+        };
+
         Ok(Self {
             encoder: Mutex::new(encoder),
             decoder: Mutex::new(decoder),
             joiner: Mutex::new(joiner),
             tokenizer,
             mel,
+            #[cfg(feature = "diarization")]
+            speaker_encoder,
         })
     }
 
+    /// Return `true` if a speaker encoder is loaded and diarization is available.
+    #[cfg(feature = "diarization")]
+    pub fn has_speaker_encoder(&self) -> bool {
+        self.speaker_encoder.is_some()
+    }
+
     /// Create a fresh streaming state for a new connection.
-    pub fn create_state(&self) -> StreamingState {
+    ///
+    /// Pass `diarization_enabled = true` to activate speaker diarization for
+    /// this session (requires the `diarization` feature and a loaded speaker
+    /// encoder; silently ignored otherwise).
+    pub fn create_state(&self, #[cfg(feature = "diarization")] diarization_enabled: bool) -> StreamingState {
+        #[cfg(feature = "diarization")]
+        let diarization_state = if diarization_enabled && self.speaker_encoder.is_some() {
+            Some(DiarizationStreamState {
+                audio_buffer: Vec::new(),
+                cluster: diarization::SpeakerCluster::new(),
+                current_speaker: None,
+            })
+        } else {
+            None
+        };
+
         StreamingState {
             decoder: DecoderState::new(self.tokenizer.blank_id()),
             audio_buffer: Vec::new(),
             accumulated_text: String::new(),
             accumulated_words: Vec::new(),
             total_frames: 0,
+            #[cfg(feature = "diarization")]
+            diarization_state,
         }
     }
 
@@ -286,6 +346,11 @@ impl Engine {
             return Ok(vec![]);
         }
 
+        // Keep a copy of the 16kHz samples for diarization before the buffer
+        // logic potentially pads/realigns them.
+        #[cfg(feature = "diarization")]
+        let samples_16k_copy = samples.to_vec();
+
         let samples = match audio::prepare_audio_buffer(samples, &mut state.audio_buffer) {
             Some(s) => s,
             None => return Ok(vec![]),
@@ -297,10 +362,40 @@ impl Engine {
             return Ok(vec![]);
         }
 
-        let (new_words, endpoint) = self
+        #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
+        let (mut new_words, endpoint) = self
             .run_inference(&features, num_frames, &mut state.decoder, state.total_frames)
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         state.total_frames += num_frames;
+
+        // --- Diarization: accumulate audio, extract embeddings, assign speakers ---
+        #[cfg(feature = "diarization")]
+        if let (Some(dia), Some(enc)) =
+            (state.diarization_state.as_mut(), self.speaker_encoder.as_ref())
+        {
+            dia.audio_buffer.extend_from_slice(&samples_16k_copy);
+
+            while dia.audio_buffer.len() >= diarization::SEGMENT_SAMPLES {
+                let segment: Vec<f32> =
+                    dia.audio_buffer.drain(..diarization::SEGMENT_SAMPLES).collect();
+                match enc.extract_embedding(&segment) {
+                    Ok(embedding) => {
+                        let speaker = dia.cluster.assign(&embedding);
+                        dia.current_speaker = Some(speaker);
+                    }
+                    Err(e) => {
+                        tracing::warn!("Embedding extraction failed: {e:#}");
+                    }
+                }
+            }
+
+            // Annotate all words in this chunk with current speaker
+            if let Some(speaker_id) = dia.current_speaker {
+                for w in &mut new_words {
+                    w.speaker = Some(speaker_id);
+                }
+            }
+        }
 
         if new_words.is_empty() && !endpoint {
             return Ok(vec![]);
@@ -471,6 +566,7 @@ impl Engine {
                     start: (word_start_frame.unwrap_or(0) + frame_offset) as f64 * SECONDS_PER_FRAME,
                     end: (word_end_frame + frame_offset) as f64 * SECONDS_PER_FRAME,
                     confidence: avg_conf,
+                    speaker: None,
                 });
                 current_word.clear();
                 word_confidences.clear();
@@ -500,6 +596,7 @@ impl Engine {
                 start: (word_start_frame.unwrap_or(0) + frame_offset) as f64 * SECONDS_PER_FRAME,
                 end: (word_end_frame + frame_offset) as f64 * SECONDS_PER_FRAME,
                 confidence: avg_conf,
+                speaker: None,
             });
         }
 

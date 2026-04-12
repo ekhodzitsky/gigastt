@@ -109,7 +109,10 @@ pub async fn transcribe_stream(
         .map_err(|e| api_error(StatusCode::UNPROCESSABLE_ENTITY, &format!("{e}"), "invalid_audio"))?;
 
     let stream = async_stream::stream! {
-        let mut stream_state = engine.create_state();
+        let mut stream_state = engine.create_state(
+            #[cfg(feature = "diarization")]
+            false,
+        );
         let chunk_size = 16000; // 1 second at 16kHz
 
         for chunk in samples.chunks(chunk_size) {

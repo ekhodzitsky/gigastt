@@ -21,6 +21,9 @@ pub enum ServerMessage {
         /// Supported input sample rates (omitted from JSON if empty for backward compat).
         #[serde(skip_serializing_if = "Vec::is_empty")]
         supported_rates: Vec<u32>,
+        /// Whether diarization is active for this session. Omitted from JSON when false.
+        #[serde(skip_serializing_if = "std::ops::Not::not")]
+        diarization: bool,
     },
 
     /// Partial (interim) transcript — may change with more audio.
@@ -63,8 +66,12 @@ pub enum ClientMessage {
     Stop,
     /// Configure session parameters (must be sent before first audio frame).
     Configure {
-        /// Audio sample rate in Hz (e.g., 8000, 16000, 24000, 44100, 48000).
-        sample_rate: u32,
+        /// Audio sample rate in Hz (e.g., 8000, 16000, 24000, 44100, 48000). Optional.
+        #[serde(default)]
+        sample_rate: Option<u32>,
+        /// Enable speaker diarization for this session. Optional.
+        #[serde(default)]
+        diarization: Option<bool>,
     },
 }
 
@@ -84,6 +91,7 @@ mod tests {
             sample_rate: 48000,
             version: PROTOCOL_VERSION.into(),
             supported_rates: vec![],
+            diarization: false,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -143,7 +151,7 @@ mod tests {
         let json = r#"{"type":"configure","sample_rate":8000}"#;
         let msg: ClientMessage = serde_json::from_str(json).unwrap();
         match msg {
-            ClientMessage::Configure { sample_rate } => assert_eq!(sample_rate, 8000),
+            ClientMessage::Configure { sample_rate, .. } => assert_eq!(sample_rate, Some(8000)),
             _ => panic!("Expected Configure"),
         }
     }
@@ -155,6 +163,7 @@ mod tests {
             sample_rate: 48000,
             version: "1.0".into(),
             supported_rates: vec![8000, 16000, 24000, 44100, 48000],
+            diarization: false,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -168,9 +177,75 @@ mod tests {
             sample_rate: 48000,
             version: "1.0".into(),
             supported_rates: vec![],
+            diarization: false,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert!(v.get("supported_rates").is_none());
+    }
+
+    #[test]
+    fn test_word_info_speaker_none_omitted() {
+        let word = crate::inference::WordInfo {
+            word: "hello".into(),
+            start: 0.0,
+            end: 1.0,
+            confidence: 0.9,
+            speaker: None,
+        };
+        let json = serde_json::to_string(&word).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(v.get("speaker").is_none());
+    }
+
+    #[test]
+    fn test_word_info_speaker_present() {
+        let word = crate::inference::WordInfo {
+            word: "hello".into(),
+            start: 0.0,
+            end: 1.0,
+            confidence: 0.9,
+            speaker: Some(2),
+        };
+        let json = serde_json::to_string(&word).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["speaker"], 2);
+    }
+
+    #[test]
+    fn test_configure_diarization_deserialize() {
+        let json = r#"{"type":"configure","diarization":true}"#;
+        let msg: ClientMessage = serde_json::from_str(json).unwrap();
+        match msg {
+            ClientMessage::Configure { diarization, .. } => assert_eq!(diarization, Some(true)),
+            _ => panic!("Expected Configure"),
+        }
+    }
+
+    #[test]
+    fn test_configure_sample_rate_only() {
+        let json = r#"{"type":"configure","sample_rate":8000}"#;
+        let msg: ClientMessage = serde_json::from_str(json).unwrap();
+        match msg {
+            ClientMessage::Configure { sample_rate, diarization } => {
+                assert_eq!(sample_rate, Some(8000));
+                assert_eq!(diarization, None);
+            }
+            _ => panic!("Expected Configure"),
+        }
+    }
+
+    #[test]
+    fn test_ready_diarization_false_omitted() {
+        let msg = ServerMessage::Ready {
+            model: "test".into(),
+            sample_rate: 48000,
+            version: "1.0".into(),
+            supported_rates: vec![],
+            diarization: false,
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(v.get("diarization").is_none());
     }
 }

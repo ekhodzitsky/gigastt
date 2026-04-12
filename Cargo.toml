@@ -12,6 +12,7 @@ categories = ["multimedia::audio", "command-line-utilities"]
 default = []
 coreml = ["ort/coreml"]
 cuda = ["ort/cuda"]
+diarization = []
 
 [dependencies]
 # ONNX Runtime

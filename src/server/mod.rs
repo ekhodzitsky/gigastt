@@ -105,16 +105,25 @@ async fn handle_ws_inner(
     tracing::info!("Client connected: {peer}");
 
     // Send ready message
+    #[cfg(feature = "diarization")]
+    let diarization_available = engine.has_speaker_encoder();
+    #[cfg(not(feature = "diarization"))]
+    let diarization_available = false;
+
     let ready = ServerMessage::Ready {
         model: "gigaam-v3-e2e-rnnt".into(),
         sample_rate: DEFAULT_SAMPLE_RATE,
         version: crate::protocol::PROTOCOL_VERSION.into(),
         supported_rates: SUPPORTED_RATES.to_vec(),
+        diarization: diarization_available,
     };
     sink.send(WsMessage::Text(serde_json::to_string(&ready)?.into()))
         .await?;
 
-    let mut state_opt = Some(engine.create_state());
+    let mut state_opt = Some(engine.create_state(
+        #[cfg(feature = "diarization")]
+        false,
+    ));
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
 
     while let Some(msg) = source.next().await {
@@ -188,22 +197,35 @@ async fn handle_ws_inner(
             }
             WsMessage::Text(text) => {
                 match serde_json::from_str::<ClientMessage>(&text) {
-                    Ok(ClientMessage::Configure { sample_rate }) => {
-                        if SUPPORTED_RATES.contains(&sample_rate) {
-                            client_sample_rate = sample_rate;
-                            tracing::info!(
-                                "Client {peer} configured sample rate: {sample_rate}Hz"
-                            );
-                        } else {
-                            let err = ServerMessage::Error {
-                                message: format!(
-                                    "Unsupported sample rate: {sample_rate}Hz. Supported: {SUPPORTED_RATES:?}"
-                                ),
-                                code: "invalid_sample_rate".into(),
-                            };
-                            sink.send(WsMessage::Text(serde_json::to_string(&err)?.into()))
-                                .await?;
+                    Ok(ClientMessage::Configure { sample_rate, diarization }) => {
+                        if let Some(rate) = sample_rate {
+                            if SUPPORTED_RATES.contains(&rate) {
+                                client_sample_rate = rate;
+                                tracing::info!(
+                                    "Client {peer} configured sample rate: {rate}Hz"
+                                );
+                            } else {
+                                let err = ServerMessage::Error {
+                                    message: format!(
+                                        "Unsupported sample rate: {rate}Hz. Supported: {SUPPORTED_RATES:?}"
+                                    ),
+                                    code: "invalid_sample_rate".into(),
+                                };
+                                sink.send(WsMessage::Text(serde_json::to_string(&err)?.into()))
+                                    .await?;
+                            }
                         }
+
+                        // Re-create state if diarization preference changes
+                        #[cfg(feature = "diarization")]
+                        if let Some(enable_dia) = diarization {
+                            tracing::info!(
+                                "Client {peer} configured diarization: {enable_dia}"
+                            );
+                            state_opt = Some(engine.create_state(enable_dia));
+                        }
+                        #[cfg(not(feature = "diarization"))]
+                        let _ = diarization;
                     }
                     Ok(ClientMessage::Stop) => {
                         tracing::info!("Stop received from {peer}, finalizing");

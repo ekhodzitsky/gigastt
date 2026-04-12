@@ -31,6 +31,11 @@ enum Commands {
         /// Model directory
         #[arg(long, default_value_t = model::default_model_dir())]
         model_dir: String,
+
+        /// Also download speaker diarization model
+        #[cfg(feature = "diarization")]
+        #[arg(long, default_value_t = false)]
+        diarization: bool,
     },
 
     /// Transcribe an audio file (offline)
@@ -58,8 +63,16 @@ async fn main() -> anyhow::Result<()> {
             let engine = inference::Engine::load(&model_dir)?;
             server::run(engine, port, &host).await?;
         }
-        Commands::Download { model_dir } => {
+        Commands::Download {
+            model_dir,
+            #[cfg(feature = "diarization")]
+            diarization,
+        } => {
             model::ensure_model(&model_dir).await?;
+            #[cfg(feature = "diarization")]
+            if diarization {
+                model::ensure_speaker_model(&model_dir).await?;
+            }
             tracing::info!("Model ready at {model_dir}");
         }
         Commands::Transcribe { file, model_dir } => {
