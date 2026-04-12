@@ -78,6 +78,7 @@ async fn handle_connection(
         model: "gigaam-v3-e2e-rnnt".into(),
         sample_rate: 48000,
         version: crate::protocol::PROTOCOL_VERSION.into(),
+        supported_rates: vec![8000, 16000, 24000, 44100, 48000],
     };
     sink.send(Message::Text(serde_json::to_string(&ready)?)).await?;
 

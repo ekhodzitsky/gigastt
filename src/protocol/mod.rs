@@ -14,10 +14,13 @@ pub enum ServerMessage {
     Ready {
         /// Model identifier (e.g., `"gigaam-v3-e2e-rnnt"`).
         model: String,
-        /// Expected audio sample rate in Hz (typically 48000).
+        /// Default audio sample rate in Hz (48000 for backward compatibility).
         sample_rate: u32,
         /// Protocol version string (e.g., `"1.0"`).
         version: String,
+        /// Supported input sample rates (omitted from JSON if empty for backward compat).
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        supported_rates: Vec<u32>,
     },
 
     /// Partial (interim) transcript — may change with more audio.
@@ -58,6 +61,11 @@ pub enum ServerMessage {
 pub enum ClientMessage {
     /// Request server to stop and finalize.
     Stop,
+    /// Configure session parameters (must be sent before first audio frame).
+    Configure {
+        /// Audio sample rate in Hz (e.g., 8000, 16000, 24000, 44100, 48000).
+        sample_rate: u32,
+    },
 }
 
 #[cfg(test)]
@@ -75,6 +83,7 @@ mod tests {
             model: "test-model".into(),
             sample_rate: 48000,
             version: PROTOCOL_VERSION.into(),
+            supported_rates: vec![],
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -127,5 +136,41 @@ mod tests {
         let json = r#"{"type":"stop"}"#;
         let msg: ClientMessage = serde_json::from_str(json).unwrap();
         assert!(matches!(msg, ClientMessage::Stop));
+    }
+
+    #[test]
+    fn test_client_message_configure_deserialize() {
+        let json = r#"{"type":"configure","sample_rate":8000}"#;
+        let msg: ClientMessage = serde_json::from_str(json).unwrap();
+        match msg {
+            ClientMessage::Configure { sample_rate } => assert_eq!(sample_rate, 8000),
+            _ => panic!("Expected Configure"),
+        }
+    }
+
+    #[test]
+    fn test_ready_supported_rates_serialization() {
+        let msg = ServerMessage::Ready {
+            model: "test".into(),
+            sample_rate: 48000,
+            version: "1.0".into(),
+            supported_rates: vec![8000, 16000, 24000, 44100, 48000],
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["supported_rates"].as_array().unwrap().len(), 5);
+    }
+
+    #[test]
+    fn test_ready_empty_supported_rates_omitted() {
+        let msg = ServerMessage::Ready {
+            model: "test".into(),
+            sample_rate: 48000,
+            version: "1.0".into(),
+            supported_rates: vec![],
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(v.get("supported_rates").is_none());
     }
 }
