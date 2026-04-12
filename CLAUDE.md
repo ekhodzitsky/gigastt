@@ -13,9 +13,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Test
 
 ```sh
-cargo build              # Debug build
-cargo build --release    # Release build (LTO, stripped)
-cargo test               # Run all 39 unit tests (no model required)
+cargo build                          # CPU-only debug build (default, any platform)
+cargo build --features coreml        # macOS ARM64 (CoreML / Neural Engine)
+cargo build --features cuda          # Linux x86_64 (CUDA 12+)
+cargo build --release                # Release build (LTO, stripped)
+cargo test                           # Run all 39 unit tests, CPU (no model required)
+cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
 cargo test --test server_integration -- --ignored  # 1 integration test (requires model)
 cargo clippy             # Lint (no expected warnings)
 ```
@@ -30,9 +33,14 @@ python scripts/quantize.py               # Optional: generate INT8 encoder (~210
 
 Multi-stage production build:
 ```sh
+# CPU / macOS (default Dockerfile)
 docker build -t gigastt .
 docker run -p 9876:9876 gigastt
 # Model auto-downloads on first run, binds to 0.0.0.0:9876
+
+# CUDA (Linux, requires NVIDIA Container Toolkit)
+docker build -f Dockerfile.cuda -t gigastt-cuda .
+docker run --gpus all -p 9876:9876 gigastt-cuda
 ```
 
 The Dockerfile uses `--host 0.0.0.0` to allow container networking. Local deployments should use `--host 127.0.0.1` (default).
@@ -54,9 +62,11 @@ src/
 ```
 
 ### Performance optimizations (v0.2)
-- **CoreML execution provider** (macOS ARM64): MLProgram format + Neural Engine + model cache directory
+- **CoreML execution provider** (`--features coreml`, macOS ARM64): MLProgram format + Neural Engine + model cache directory
   - Automatically loads quantized encoder if available (~4x smaller, ~43% faster)
   - Caches compiled models in `~/.gigastt/models/coreml_cache/`
+- **CUDA execution provider** (`--features cuda`, Linux x86_64 CUDA 12+): GPU inference via ONNX Runtime CUDA EP
+  - Features are compile-time and mutually exclusive; default build uses CPU EP on all platforms
 - **INT8 quantization** (optional): encoder_int8.onnx (~210MB vs 844MB)
   - Run `python scripts/quantize.py` to generate (requires onnxruntime)
   - Auto-detection: Engine uses INT8 encoder if present, falls back to FP32
@@ -105,6 +115,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - No `unwrap()` in production paths (use `?`, `context()`, or `unwrap_or_else`)
 - Shared constants in `inference/mod.rs`, referenced by sub-modules
 - `ort` errors wrapped via `ort_err()` helper (Send/Sync workaround)
+- Execution provider selection uses `#[cfg(feature = "coreml")]` / `#[cfg(feature = "cuda")]` blocks in `inference/mod.rs`; default falls through to CPU EP
 
 ### Audio format support
 - File transcription: WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC (via symphonia)
@@ -139,5 +150,5 @@ python scripts/quantize.py --model-dir ~/.gigastt/models
 Engine auto-detects and prefers INT8 if available; falls back to FP32.
 
 ## Known limitations (v0.2)
-- macOS ARM64 only (CoreML EP dependency; CPU fallback available but slower)
+- CPU EP runs on any platform; CoreML EP requires macOS ARM64; CUDA EP requires Linux x86_64 with CUDA 12+
 - Linear interpolation resampler (upgrade to polyphase FIR for better quality in future releases)

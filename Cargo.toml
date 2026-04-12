@@ -8,9 +8,14 @@ repository = "https://github.com/ekhodzitsky/gigastt"
 keywords = ["stt", "speech-recognition", "gigaam", "onnx", "russian"]
 categories = ["multimedia::audio", "command-line-utilities"]
 
+[features]
+default = []
+coreml = ["ort/coreml"]
+cuda = ["ort/cuda"]
+
 [dependencies]
 # ONNX Runtime
-ort = { version = "2.0.0-rc.12", features = ["coreml"] }
+ort = "2.0.0-rc.12"
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
@@ -39,8 +44,14 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # Error handling
 anyhow = "1"
 
+# Cryptographic hashing for model verification
+sha2 = "0.10"
+
 # FFT for mel spectrogram
 rustfft = "6"
+
+# High-quality audio resampling
+rubato = "0.16"
 
 # Audio file reading (for `transcribe` command)
 hound = "3.5"

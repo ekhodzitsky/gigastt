@@ -11,14 +11,14 @@ COPY src/ src/
 COPY tests/ tests/
 
 # Build release binary
-RUN cargo build --release --no-default-features && \
+RUN cargo build --release && \
     strip target/release/gigastt
 
 # --- Runtime stage ---
 FROM debian:bookworm-slim
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /build/target/release/gigastt /usr/local/bin/gigastt
@@ -27,6 +27,9 @@ COPY --from=builder /build/target/release/gigastt /usr/local/bin/gigastt
 ENV RUST_LOG=gigastt=info
 
 EXPOSE 9876
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -f http://localhost:9876/health || exit 1
 
 # Download model if not present, then start server
 # Bind 0.0.0.0 inside container (not 127.0.0.1)

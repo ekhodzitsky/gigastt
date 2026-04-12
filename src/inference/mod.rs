@@ -7,7 +7,11 @@ mod features;
 mod tokenizer;
 pub mod audio;
 
+#[cfg(all(feature = "coreml", feature = "cuda"))]
+compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.");
+
 use anyhow::Context;
+#[cfg(any(feature = "coreml", feature = "cuda"))]
 use ort::ep;
 use ort::session::Session;
 use ort::value::TensorRef;
@@ -159,35 +163,85 @@ impl Engine {
 
         tracing::info!("Loading ONNX models from {model_dir}...");
 
-        // CoreML EP: Neural Engine + model cache
-        // Note: MLProgram format is incompatible with GigaAM v3 models, using default NeuralNetwork
-        let cache_dir = dir.join("coreml_cache");
-        let coreml_ep = ep::CoreML::default()
-            .with_compute_units(ep::coreml::ComputeUnits::CPUAndNeuralEngine)
-            .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
-            .with_model_cache_dir(cache_dir.to_string_lossy())
-            .build();
+        // --- Execution provider selection (compile-time) ---
 
-        let encoder = Session::builder()
-            .map_err(ort_err)?
-            .with_execution_providers([coreml_ep.clone()])
-            .map_err(ort_err)?
-            .commit_from_file(&encoder_path)
-            .map_err(ort_err)?;
+        #[cfg(feature = "coreml")]
+        let (encoder, decoder, joiner) = {
+            let cache_dir = dir.join("coreml_cache");
+            let coreml_ep = ep::CoreML::default()
+                .with_compute_units(ep::coreml::ComputeUnits::CPUAndNeuralEngine)
+                .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
+                .with_model_cache_dir(cache_dir.to_string_lossy())
+                .build();
 
-        let decoder = Session::builder()
-            .map_err(ort_err)?
-            .with_execution_providers([coreml_ep.clone()])
-            .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
-            .map_err(ort_err)?;
+            tracing::info!("Using CoreML execution provider (Neural Engine + CPU)");
 
-        let joiner = Session::builder()
-            .map_err(ort_err)?
-            .with_execution_providers([coreml_ep])
-            .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
-            .map_err(ort_err)?;
+            let encoder = Session::builder()
+                .map_err(ort_err)?
+                .with_execution_providers([coreml_ep.clone()])
+                .map_err(ort_err)?
+                .commit_from_file(&encoder_path)
+                .map_err(ort_err)?;
+            let decoder = Session::builder()
+                .map_err(ort_err)?
+                .with_execution_providers([coreml_ep.clone()])
+                .map_err(ort_err)?
+                .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+                .map_err(ort_err)?;
+            let joiner = Session::builder()
+                .map_err(ort_err)?
+                .with_execution_providers([coreml_ep])
+                .map_err(ort_err)?
+                .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+                .map_err(ort_err)?;
+            (encoder, decoder, joiner)
+        };
+
+        #[cfg(feature = "cuda")]
+        let (encoder, decoder, joiner) = {
+            let cuda_ep = ep::CUDA::default().build();
+
+            tracing::info!("Using CUDA execution provider (falls back to CPU if unavailable)");
+
+            let encoder = Session::builder()
+                .map_err(ort_err)?
+                .with_execution_providers([cuda_ep.clone()])
+                .map_err(ort_err)?
+                .commit_from_file(&encoder_path)
+                .map_err(ort_err)?;
+            let decoder = Session::builder()
+                .map_err(ort_err)?
+                .with_execution_providers([cuda_ep.clone()])
+                .map_err(ort_err)?
+                .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+                .map_err(ort_err)?;
+            let joiner = Session::builder()
+                .map_err(ort_err)?
+                .with_execution_providers([cuda_ep])
+                .map_err(ort_err)?
+                .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+                .map_err(ort_err)?;
+            (encoder, decoder, joiner)
+        };
+
+        #[cfg(not(any(feature = "coreml", feature = "cuda")))]
+        let (encoder, decoder, joiner) = {
+            tracing::info!("Using CPU execution provider");
+
+            let encoder = Session::builder()
+                .map_err(ort_err)?
+                .commit_from_file(&encoder_path)
+                .map_err(ort_err)?;
+            let decoder = Session::builder()
+                .map_err(ort_err)?
+                .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+                .map_err(ort_err)?;
+            let joiner = Session::builder()
+                .map_err(ort_err)?
+                .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+                .map_err(ort_err)?;
+            (encoder, decoder, joiner)
+        };
 
         let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
         let mel = MelSpectrogram::new();

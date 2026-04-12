@@ -1,0 +1,49 @@
+# Multi-stage build for gigastt with CUDA support
+# Build: docker build -f Dockerfile.cuda -t gigastt-cuda .
+# Run:   docker run --gpus all -p 9876:9876 gigastt-cuda
+#
+# CUDA binary falls back to CPU if no GPU is available at runtime.
+
+# --- Builder stage ---
+FROM nvidia/cuda:12.6.3-devel-ubuntu22.04 AS builder
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl build-essential pkg-config && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+WORKDIR /build
+COPY Cargo.toml Cargo.lock ./
+COPY src/ src/
+COPY tests/ tests/
+
+# ort's download-binaries feature fetches CUDA-enabled ONNX Runtime.
+# copy-dylibs copies libonnxruntime*.so to target/release/.
+RUN cargo build --release --features cuda && \
+    strip target/release/gigastt
+
+# --- Runtime stage ---
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy binary AND ort's dynamic libraries (.so files copied by copy-dylibs)
+COPY --from=builder /build/target/release/gigastt /usr/local/bin/gigastt
+COPY --from=builder /build/target/release/libonnxruntime*.so* /usr/local/lib/
+RUN ldconfig
+
+ENV RUST_LOG=gigastt=info
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
+
+EXPOSE 9876
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -f http://localhost:9876/health || exit 1
+
+ENTRYPOINT ["gigastt"]
+CMD ["serve", "--port", "9876", "--host", "0.0.0.0"]

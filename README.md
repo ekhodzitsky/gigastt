@@ -14,6 +14,7 @@
 - **On-device inference** — no cloud APIs, no API keys, zero cost, full privacy
 - **5.3% WER on Russian** — GigaAM v3 e2e_rnnt, 3-4× better accuracy than Whisper-large-v3 on Russian benchmarks
 - **CoreML & Neural Engine** — Conformer encoder optimized for Apple Silicon via CoreML acceleration
+- **CUDA acceleration** — Linux x86_64 with NVIDIA GPU support via CUDA 12+
 - **Multi-format audio** — WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC support for file transcription
 - **INT8 quantization** — reduced memory footprint and faster inference
 - **Automatic punctuation** — end-to-end model includes text normalization
@@ -33,8 +34,14 @@ gigastt serve
 ### Docker
 
 ```sh
+# CPU image (any platform)
 docker build -t gigastt .
 docker run -p 9876:9876 gigastt serve --host 0.0.0.0
+
+# CUDA image (Linux x86_64, requires NVIDIA GPU + CUDA 12+ drivers on host)
+docker build -f Dockerfile.cuda -t gigastt-cuda .
+docker run --gpus all -p 9876:9876 gigastt-cuda serve --host 0.0.0.0
+
 # Model auto-downloaded on first run (~850MB)
 ```
 
@@ -134,9 +141,12 @@ See [`examples/`](examples/) for ready-to-use WebSocket clients:
 
 ### Acceleration
 
-- **CoreML** — Conformer encoder optimized via ONNX Runtime's CoreML execution provider
-- **Neural Engine** — INT8 quantization leverages Apple Neural Engine for 2-3× speedup
+- **CoreML** — Conformer encoder optimized via ONNX Runtime's CoreML execution provider (macOS ARM64)
+- **Neural Engine** — INT8 quantization leverages Apple Neural Engine for 2-3× speedup (macOS ARM64)
+- **CUDA** — ONNX Runtime CUDA execution provider for NVIDIA GPUs on Linux x86_64; falls back to CPU at runtime if no GPU is available
 - **Streaming** — stateful decoder persists across chunks; no full-audio re-inference needed
+
+Relative throughput: CPU < CUDA < CoreML (Apple Silicon).
 
 ## Architecture
 
@@ -156,6 +166,7 @@ See [`examples/`](examples/) for ready-to-use WebSocket clients:
 │ Conformer Encoder (ONNX)            │
 │ 16 layers, d=768, 240M params       │
 │ ┌─ CoreML execution (M1/M2/M3/M4)   │
+│ ├─ CUDA execution (Linux x86_64)    │
 │ └─ INT8 quantized                   │
 └──────────────┬──────────────────────┘
                │
@@ -193,11 +204,14 @@ See [`examples/`](examples/) for ready-to-use WebSocket clients:
 
 ## Requirements
 
-- **OS**: macOS 14+ (Sonoma or newer)
-- **CPU**: Apple Silicon (M1, M2, M3, M4)
-- **Disk**: ~1.5GB (model + binary)
-- **RAM**: ~500MB during inference
-- **Rust**: 1.85+ (edition 2024, for building from source)
+| | macOS ARM64 | Linux x86_64 |
+|---|---|---|
+| **OS** | macOS 14+ (Sonoma) | Any modern Linux distro |
+| **CPU** | Apple Silicon (M1–M4) | x86_64 |
+| **GPU** | — | NVIDIA GPU with CUDA 12+ (optional) |
+| **Disk** | ~1.5GB (model + binary) | ~1.5GB (model + binary) |
+| **RAM** | ~500MB during inference | ~500MB during inference |
+| **Rust** | 1.85+ (edition 2024) | 1.85+ (edition 2024) |
 
 ## Installation
 
@@ -218,10 +232,14 @@ cargo install --path .
 ## Build & Development
 
 ```sh
-cargo build              # Debug build
-cargo build --release   # Release (LTO, stripped)
-cargo test              # Run tests
-cargo clippy            # Lint
+cargo build                        # CPU-only (any platform)
+cargo build --features coreml     # macOS ARM64: CoreML + Neural Engine
+cargo build --features cuda       # Linux x86_64: NVIDIA CUDA 12+
+cargo build --release             # Release build (LTO, stripped)
+cargo test                        # Run tests
+cargo clippy                      # Lint
+
+# Features are mutually exclusive — do not combine coreml and cuda.
 
 # Download model (required for integration tests, ~850MB)
 cargo run -- download
