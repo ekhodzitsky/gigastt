@@ -52,6 +52,11 @@ async fn test_single_client_receives_ready() {
     assert_eq!(v["version"], "1.0");
     assert_eq!(v["sample_rate"], 48000);
     assert!(v["model"].as_str().unwrap().contains("gigaam"));
+    // Verify supported_rates is present and includes expected rates
+    let rates = v["supported_rates"].as_array().expect("supported_rates missing");
+    assert!(rates.len() >= 5);
+    assert!(rates.contains(&serde_json::json!(8000)));
+    assert!(rates.contains(&serde_json::json!(48000)));
 }
 
 #[tokio::test]
@@ -151,4 +156,41 @@ async fn test_stop_message_closes_gracefully() {
     let text = msg.into_text().unwrap();
     let v: serde_json::Value = serde_json::from_str(&text).unwrap();
     assert_eq!(v["type"], "final");
+}
+
+#[tokio::test]
+#[ignore] // Requires model download
+async fn test_configure_invalid_sample_rate() {
+    let model_dir = model_dir().expect("Model not found. Run `cargo run -- download` first.");
+    let port = free_port().await;
+
+    let engine = gigastt::inference::Engine::load(&model_dir).unwrap();
+    tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
+    tokio::time::sleep(Duration::from_millis(200)).await;
+
+    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}"))
+        .await
+        .unwrap();
+    let (mut sink, mut stream) = ws.split();
+
+    // Receive Ready
+    let _ = stream.next().await;
+
+    // Send Configure with invalid sample rate
+    let configure = serde_json::json!({"type": "configure", "sample_rate": 7000});
+    sink.send(Message::Text(serde_json::to_string(&configure).unwrap()))
+        .await
+        .unwrap();
+
+    // Should receive Error with code "invalid_sample_rate"
+    let msg = tokio::time::timeout(Duration::from_secs(5), stream.next())
+        .await
+        .expect("timeout waiting for Error")
+        .expect("stream ended")
+        .expect("ws error");
+
+    let text = msg.into_text().unwrap();
+    let v: serde_json::Value = serde_json::from_str(&text).unwrap();
+    assert_eq!(v["type"], "error");
+    assert_eq!(v["code"], "invalid_sample_rate");
 }
