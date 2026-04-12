@@ -34,7 +34,7 @@ async fn test_single_client_receives_ready() {
     tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
     tokio::time::sleep(Duration::from_millis(200)).await;
 
-    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}"))
+    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/ws"))
         .await
         .unwrap();
     let (mut _sink, mut stream) = ws.split();
@@ -69,7 +69,7 @@ async fn test_four_clients_connect_concurrently() {
     tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
     tokio::time::sleep(Duration::from_millis(200)).await;
 
-    let url = format!("ws://127.0.0.1:{port}");
+    let url = format!("ws://127.0.0.1:{port}/ws");
 
     // Connect 4 clients in parallel
     let mut handles = Vec::new();
@@ -128,7 +128,7 @@ async fn test_stop_message_closes_gracefully() {
     tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
     tokio::time::sleep(Duration::from_millis(200)).await;
 
-    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}"))
+    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/ws"))
         .await
         .unwrap();
     let (mut sink, mut stream) = ws.split();
@@ -168,7 +168,7 @@ async fn test_configure_invalid_sample_rate() {
     tokio::spawn(gigastt::server::run(engine, port, "127.0.0.1"));
     tokio::time::sleep(Duration::from_millis(200)).await;
 
-    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}"))
+    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/ws"))
         .await
         .unwrap();
     let (mut sink, mut stream) = ws.split();

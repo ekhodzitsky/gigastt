@@ -57,7 +57,9 @@ src/
     features.rs           # Mel spectrogram (64 bins, FFT=320, hop=160, HTK)
     tokenizer.rs          # BPE tokenizer (1025 tokens)
     decode.rs             # RNN-T greedy decode loop
-  server/mod.rs           # WebSocket server (tokio + tungstenite)
+  server/
+    mod.rs                # axum router: HTTP + WebSocket on single port
+    http.rs               # REST handlers: /health, /v1/transcribe, /v1/transcribe/stream (SSE)
   protocol/mod.rs         # JSON message types (Ready, Partial, Final, Error)
 ```
 
