@@ -84,7 +84,8 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 ### Streaming
 - `StreamingState` persists LSTM h/c and audio buffer across WebSocket chunks
 - `DecoderState` holds decoder hidden state (h, c, prev_token)
-- Server accepts 48kHz, resamples to 16kHz internally
+- Server accepts configurable sample rates (8kHz, 16kHz, 24kHz, 44.1kHz, 48kHz) via `Configure` message
+- Default 48kHz for backward compatibility; resamples to 16kHz via rubato (polyphase FIR)
 
 ## Development guidelines
 

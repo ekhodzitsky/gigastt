@@ -111,11 +111,14 @@ Full protocol documentation in [`docs/asyncapi.yaml`](docs/asyncapi.yaml).
 | **Server** | `final` | `text`, `timestamp`, `words` | Complete utterance with punctuation |
 | **Server** | `error` | `message`, `code` | Error occurred; connection may close |
 | **Client** | `stop` | — | Request finalization of buffered audio |
+| **Client** | `configure` | `sample_rate` | Set input sample rate (8000/16000/24000/44100/48000). Send before first audio frame. |
 
 ### Example Session
 
 ```json
-{"type": "ready", "model": "gigaam-v3-e2e-rnnt", "sample_rate": 48000, "version": "1.0"}
+{"type": "ready", "model": "gigaam-v3-e2e-rnnt", "sample_rate": 48000, "version": "1.0", "supported_rates": [8000, 16000, 24000, 44100, 48000]}
+{"type": "configure", "sample_rate": 8000}
+// ... send PCM16 audio at 8kHz ...
 {"type": "partial", "text": "что такое", "timestamp": 0.5}
 {"type": "partial", "text": "что такое Node", "timestamp": 1.2}
 {"type": "final", "text": "Что такое Node.js?", "timestamp": 2.1}
