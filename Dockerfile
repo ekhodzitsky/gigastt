@@ -3,7 +3,7 @@
 # Run:   docker run -p 9876:9876 gigastt
 
 # --- Builder stage ---
-FROM rust:1.83-bookworm AS builder
+FROM rust:1.85-bookworm AS builder
 
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
