@@ -42,9 +42,13 @@ const HUNDREDS: &[&str] = &[
 ];
 
 /// Convert a cardinal number (0–999_999) to Russian words.
+/// Numbers above 999_999 are returned as digit strings.
 fn number_to_words(n: u64) -> String {
     if n == 0 {
         return "ноль".to_string();
+    }
+    if n > 999_999 {
+        return n.to_string();
     }
 
     let mut parts: Vec<&str> = Vec::new();
