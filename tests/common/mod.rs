@@ -3,6 +3,9 @@
 //! Provides server startup with clean shutdown, WAV generation,
 //! WebSocket helpers, and readiness polling.
 
+// Each test binary only uses a subset of these helpers.
+#![allow(dead_code)]
+
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::net::TcpListener;

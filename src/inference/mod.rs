@@ -275,6 +275,8 @@ impl Engine {
         #[cfg(feature = "coreml")]
         let (encoder, decoder, joiner) = {
             let cache_dir = dir.join("coreml_cache");
+            let optimized_cache_dir = dir.join("optimized_cache");
+            std::fs::create_dir_all(&optimized_cache_dir).ok();
             let coreml_ep = ep::CoreML::default()
                 .with_compute_units(ep::coreml::ComputeUnits::CPUAndNeuralEngine)
                 .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
@@ -284,6 +286,8 @@ impl Engine {
             let encoder = Session::builder()
                 .map_err(ort_err)?
                 .with_execution_providers([coreml_ep.clone()])
+                .map_err(ort_err)?
+                .with_optimized_model_path(optimized_cache_dir.join("encoder_optimized.onnx"))
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
@@ -304,11 +308,15 @@ impl Engine {
 
         #[cfg(feature = "cuda")]
         let (encoder, decoder, joiner) = {
+            let cache_dir = dir.join("optimized_cache");
+            std::fs::create_dir_all(&cache_dir).ok();
             let cuda_ep = ep::CUDA::default().build();
 
             let encoder = Session::builder()
                 .map_err(ort_err)?
                 .with_execution_providers([cuda_ep.clone()])
+                .map_err(ort_err)?
+                .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
@@ -329,7 +337,11 @@ impl Engine {
 
         #[cfg(not(any(feature = "coreml", feature = "cuda")))]
         let (encoder, decoder, joiner) = {
+            let cache_dir = dir.join("optimized_cache");
+            std::fs::create_dir_all(&cache_dir).ok();
             let encoder = Session::builder()
+                .map_err(ort_err)?
+                .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
@@ -472,7 +484,9 @@ impl Engine {
         };
         let samples = &samples[..];
 
+        let mel_start = std::time::Instant::now();
         let (features, num_frames) = self.mel.compute(samples);
+        tracing::debug!(elapsed_us = mel_start.elapsed().as_micros() as u64, "mel_compute");
         if num_frames == 0 {
             return Ok(vec![]);
         }
@@ -614,9 +628,11 @@ impl Engine {
         let length_tensor =
             TensorRef::from_array_view(([1_usize], length_data.as_slice()))?;
 
+        let enc_start = std::time::Instant::now();
         let encoder_outputs = triplet.encoder
             .run(ort::inputs![signal_tensor, length_tensor])
             .context("Encoder inference failed")?;
+        tracing::info!(elapsed_ms = enc_start.elapsed().as_millis() as u64, "encoder_inference");
 
         let (_enc_shape, enc_data) = encoder_outputs[0]
             .try_extract_tensor::<f32>()
@@ -634,6 +650,7 @@ impl Engine {
         drop(encoder_outputs);
 
         // RNN-T greedy decode
+        let dec_start = std::time::Instant::now();
         let result = decode::greedy_decode(
             &mut triplet.decoder,
             &mut triplet.joiner,
@@ -642,6 +659,7 @@ impl Engine {
             self.tokenizer.blank_id(),
             decoder_state,
         )?;
+        tracing::info!(elapsed_ms = dec_start.elapsed().as_millis() as u64, "greedy_decode");
 
         // Convert token infos to words with timestamps
         let words = self.tokens_to_words(&result.tokens, frame_offset);

@@ -83,6 +83,8 @@ pub fn greedy_decode(
 
     // Pre-allocate buffer for extracting a single encoder frame [768, 1]
     let mut enc_frame = vec![0.0_f32; ENC_DIM];
+    let mut decoder_calls: u32 = 0;
+    let mut joiner_calls: u32 = 0;
 
     anyhow::ensure!(
         encoded.len() >= ENC_DIM * encoded_len,
@@ -96,6 +98,7 @@ pub fn greedy_decode(
         extract_encoder_frame(encoded, encoded_len, t, &mut enc_frame);
 
         loop {
+            decoder_calls += 1;
             // Run decoder: input prev_token [1,1] + hidden state [1,1,320]
             let target_data = [state.prev_token];
             let target_tensor =
@@ -126,6 +129,7 @@ pub fn greedy_decode(
             let dec_tensor =
                 TensorRef::from_array_view(([1_usize, PRED_HIDDEN, 1], dec_data))?;
 
+            joiner_calls += 1;
             let joiner_outputs = joiner
                 .run(ort::inputs![enc_tensor, dec_tensor])
                 .context("Joiner inference failed")?;
@@ -166,6 +170,7 @@ pub fn greedy_decode(
         }
     }
 
+    tracing::debug!(decoder_calls, joiner_calls, encoded_len, "decode_loop_stats");
     Ok(DecodeResult { tokens, endpoint_detected })
 }
 

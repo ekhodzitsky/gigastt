@@ -24,6 +24,10 @@ enum Commands {
         /// Model directory
         #[arg(long, default_value_t = model::default_model_dir())]
         model_dir: String,
+
+        /// Number of concurrent inference sessions
+        #[arg(long, default_value_t = 4)]
+        pool_size: usize,
     },
 
     /// Download model without starting server
@@ -49,6 +53,28 @@ enum Commands {
     },
 }
 
+fn log_rss() {
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+            if let Some(line) = status.lines().find(|l| l.starts_with("VmRSS:")) {
+                tracing::info!("{}", line.trim());
+            }
+        }
+    }
+    // On macOS/other platforms, use `ps` as a simple cross-platform fallback
+    #[cfg(not(target_os = "linux"))]
+    {
+        if let Ok(output) = std::process::Command::new("ps")
+            .args(["-o", "rss=", "-p", &std::process::id().to_string()])
+            .output()
+            && let Ok(rss) = String::from_utf8_lossy(&output.stdout).trim().parse::<u64>()
+        {
+            tracing::info!(rss_mb = rss / 1024, "memory_after_load");
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
@@ -58,9 +84,10 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Serve { port, host, model_dir } => {
+        Commands::Serve { port, host, model_dir, pool_size } => {
             model::ensure_model(&model_dir).await?;
-            let engine = inference::Engine::load(&model_dir)?;
+            let engine = inference::Engine::load_with_pool_size(&model_dir, pool_size)?;
+            log_rss();
             server::run(engine, port, &host).await?;
         }
         Commands::Download {
@@ -77,7 +104,8 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Transcribe { file, model_dir } => {
             model::ensure_model(&model_dir).await?;
-            let engine = inference::Engine::load(&model_dir)?;
+            let engine = inference::Engine::load_with_pool_size(&model_dir, 1)?;
+            log_rss();
             let mut triplet = engine.pool.checkout().await;
             let result = engine.transcribe_file(&file, &mut triplet);
             engine.pool.checkin(triplet).await;
