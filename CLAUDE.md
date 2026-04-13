@@ -17,7 +17,7 @@ cargo build                          # CPU-only debug build (default, any platfo
 cargo build --features coreml        # macOS ARM64 (CoreML / Neural Engine)
 cargo build --features cuda          # Linux x86_64 (CUDA 12+)
 cargo build --release                # Release build (LTO, stripped)
-cargo test                           # Run all 63 unit tests, CPU (no model required)
+cargo test                           # Run all 63+ unit tests, CPU (no model required)
 cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
 cargo test --test server_integration -- --ignored  # 1 integration test (requires model)
 cargo clippy             # Lint (no expected warnings)
@@ -112,7 +112,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - Unit tests live in `#[cfg(test)] mod tests` at bottom of each file
 - Tests use synthetic data (no model download required)
 - Test names: `test_<what>_<expected_behavior>`
-- Current: 63 unit tests (tokenizer, features, decode, inference, protocol, audio, diarization) + 1 integration test (WebSocket)
+- Current: 63+ unit tests (tokenizer, features, decode, inference, protocol, audio, diarization) + 1 integration test (WebSocket)
 - Benchmark suite (WER evaluation on Golos fixtures) in `tests/benchmark.rs` (harness disabled)
 
 ### Code style
