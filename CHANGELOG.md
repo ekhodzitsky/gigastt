@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-04-13
+
+### Changed
+
+- Diarization module no longer depends on internal `ort_err()` helper — uses `anyhow::Context` instead. Module is now self-contained and ready for future crate extraction.
+
+### Fixed
+
+- Centroid re-normalization after running average update (prevents speaker clustering drift).
+- Semaphore timeout (30s) on HTTP endpoints prevents DoS via hanging requests.
+- SSE semaphore permit held for stream lifetime (was dropped before stream consumed).
+- SSE inference wrapped in `spawn_blocking` (no longer blocks async runtime).
+- Error messages sanitized at HTTP API boundary (no internal path/model leakage).
+- Speaker count capped at 64 (`MAX_SPEAKERS`) with graceful fallback.
+- Cosine similarity zero-norm check uses epsilon (1e-8) instead of exact float equality.
+- Request body dropped after temp file write (reduces peak memory ~2x for large files).
+- Configure message rejected after first audio frame (`configure_too_late` error).
+- WebSocket idle timeout (300s) disconnects silent clients.
+- Unnecessary `samples_16k_copy` allocation skipped when diarization disabled at runtime.
+- Async `tokio::fs::write` replaces blocking `std::fs::write` in HTTP handlers.
+- `tokio-tungstenite` moved to dev-dependencies (unused in production code).
+- `hound` dependency removed (unused).
+- CLAUDE.md and README.md updated: test counts, architecture tree, WebSocket URL `/ws`, REST API docs, version references.
+
 ## [0.4.0] - 2026-04-13
 
 ### Added
@@ -115,7 +139,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.1.2...v0.2.0

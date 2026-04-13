@@ -1,6 +1,6 @@
 [package]
 name = "gigastt"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2024"
 description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 license = "MIT"
