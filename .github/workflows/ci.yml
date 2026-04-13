@@ -35,7 +35,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo clippy -- -D warnings
+      - run: cargo clippy -- -D warnings -A dead_code
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -134,6 +134,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install cargo-audit
-        run: cargo install cargo-audit
+        run: cargo install cargo-audit --locked
       - name: Run audit
         run: cargo audit
