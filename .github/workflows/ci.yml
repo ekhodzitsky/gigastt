@@ -10,6 +10,16 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    name: Format
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --check
+
   clippy:
     runs-on: ubuntu-latest
     name: Clippy
@@ -25,7 +35,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo clippy -- -D warnings -A dead_code
+      - run: cargo clippy -- -D warnings
 
   unit-tests:
     runs-on: ubuntu-latest

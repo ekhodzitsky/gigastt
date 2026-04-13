@@ -17,34 +17,64 @@ struct DownloadProgress {
 
 impl DownloadProgress {
     fn new(total: u64) -> Self {
-        Self { total, current: 0, last_percent: 0 }
+        Self {
+            total,
+            current: 0,
+            last_percent: 0,
+        }
     }
 
     fn update(&mut self, bytes: u64) {
         self.current += bytes;
-        let percent = if self.total > 0 { (self.current * 100 / self.total) as u8 } else { 0 };
+        let percent = if self.total > 0 {
+            (self.current * 100 / self.total) as u8
+        } else {
+            0
+        };
         if percent != self.last_percent {
             self.last_percent = percent;
-            eprint!("\rDownloading... {percent}% ({:.1}MB / {:.1}MB)",
-                self.current as f64 / 1_048_576.0, self.total as f64 / 1_048_576.0);
+            eprint!(
+                "\rDownloading... {percent}% ({:.1}MB / {:.1}MB)",
+                self.current as f64 / 1_048_576.0,
+                self.total as f64 / 1_048_576.0
+            );
         }
     }
 
     fn finish(&self) {
-        eprintln!("\rDownload complete ({:.1}MB)                    ", self.current as f64 / 1_048_576.0);
+        eprintln!(
+            "\rDownload complete ({:.1}MB)                    ",
+            self.current as f64 / 1_048_576.0
+        );
     }
 }
 
 const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
-const MODEL_FILES: &[&str] = &["v3_e2e_rnnt_encoder.onnx", "v3_e2e_rnnt_decoder.onnx", "v3_e2e_rnnt_joint.onnx", "v3_e2e_rnnt_vocab.txt"];
+const MODEL_FILES: &[&str] = &[
+    "v3_e2e_rnnt_encoder.onnx",
+    "v3_e2e_rnnt_decoder.onnx",
+    "v3_e2e_rnnt_joint.onnx",
+    "v3_e2e_rnnt_vocab.txt",
+];
 
 /// SHA-256 checksums for model integrity verification.
-/// Set to None to skip verification (first download).
 const MODEL_CHECKSUMS: &[(&str, Option<&str>)] = &[
-    ("v3_e2e_rnnt_encoder.onnx", None),
-    ("v3_e2e_rnnt_decoder.onnx", None),
-    ("v3_e2e_rnnt_joint.onnx", None),
-    ("v3_e2e_rnnt_vocab.txt", None),
+    (
+        "v3_e2e_rnnt_encoder.onnx",
+        Some("cd60b3764a832e8560ae6d3ad0b10adc1a42ffae412b9476f25620aae4f4a508"),
+    ),
+    (
+        "v3_e2e_rnnt_decoder.onnx",
+        Some("7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231"),
+    ),
+    (
+        "v3_e2e_rnnt_joint.onnx",
+        Some("602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c"),
+    ),
+    (
+        "v3_e2e_rnnt_vocab.txt",
+        Some("39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7"),
+    ),
 ];
 
 #[cfg(feature = "diarization")]
@@ -54,9 +84,13 @@ pub const SPEAKER_MODEL_FILE: &str = "wespeaker_resnet34.onnx";
 
 fn home_dir() -> Option<std::path::PathBuf> {
     #[cfg(unix)]
-    { std::env::var_os("HOME").map(std::path::PathBuf::from) }
+    {
+        std::env::var_os("HOME").map(std::path::PathBuf::from)
+    }
     #[cfg(windows)]
-    { std::env::var_os("USERPROFILE").map(std::path::PathBuf::from) }
+    {
+        std::env::var_os("USERPROFILE").map(std::path::PathBuf::from)
+    }
 }
 
 /// Return the default model directory path (`~/.gigastt/models/`).
@@ -64,7 +98,12 @@ fn home_dir() -> Option<std::path::PathBuf> {
 /// Falls back to `.gigastt/models` if the home directory cannot be determined.
 pub fn default_model_dir() -> String {
     home_dir()
-        .map(|h| h.join(".gigastt").join("models").to_string_lossy().into_owned())
+        .map(|h| {
+            h.join(".gigastt")
+                .join("models")
+                .to_string_lossy()
+                .into_owned()
+        })
         .unwrap_or_else(|| ".gigastt/models".into())
 }
 
@@ -127,7 +166,9 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     let mut downloaded: u64 = 0;
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.context("Download stream error")?;
-        file.write_all(&chunk).await.context("Failed to write chunk")?;
+        file.write_all(&chunk)
+            .await
+            .context("Failed to write chunk")?;
         downloaded += chunk.len() as u64;
         pb.update(chunk.len() as u64);
     }
@@ -144,9 +185,7 @@ fn model_files_exist(dir: &Path) -> bool {
 }
 
 async fn download_file(filename: &str, dir: &Path) -> Result<()> {
-    let url = format!(
-        "https://huggingface.co/{HF_REPO}/resolve/main/{filename}"
-    );
+    let url = format!("https://huggingface.co/{HF_REPO}/resolve/main/{filename}");
     let dest = dir.join(filename);
 
     tracing::info!("Downloading {filename}...");
@@ -168,7 +207,9 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
     let mut downloaded: u64 = 0;
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.context("Download stream error")?;
-        file.write_all(&chunk).await.context("Failed to write chunk")?;
+        file.write_all(&chunk)
+            .await
+            .context("Failed to write chunk")?;
         downloaded += chunk.len() as u64;
         progress.update(chunk.len() as u64);
     }
@@ -178,11 +219,14 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
     tracing::info!("Saved {filename} ({downloaded} bytes)");
 
     // Verify SHA-256 if checksum is known
-    if let Some(expected) = MODEL_CHECKSUMS.iter()
+    if let Some(expected) = MODEL_CHECKSUMS
+        .iter()
         .find(|(name, _)| *name == filename)
         .and_then(|(_, hash)| *hash)
     {
-        let data = tokio::fs::read(&dest).await.context("Failed to read downloaded file for verification")?;
+        let data = tokio::fs::read(&dest)
+            .await
+            .context("Failed to read downloaded file for verification")?;
         let mut hasher = Sha256::new();
         hasher.update(&data);
         let actual = format!("{:x}", hasher.finalize());
@@ -203,7 +247,10 @@ mod tests {
     #[test]
     fn test_home_dir_returns_some() {
         // On any CI or developer machine HOME / USERPROFILE should be set.
-        assert!(home_dir().is_some(), "home_dir() must return Some on this platform");
+        assert!(
+            home_dir().is_some(),
+            "home_dir() must return Some on this platform"
+        );
     }
 
     #[test]
