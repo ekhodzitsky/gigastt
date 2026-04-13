@@ -195,3 +195,42 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_home_dir_returns_some() {
+        // On any CI or developer machine HOME / USERPROFILE should be set.
+        assert!(home_dir().is_some(), "home_dir() must return Some on this platform");
+    }
+
+    #[test]
+    fn test_default_model_dir_contains_gigastt() {
+        let dir = default_model_dir();
+        assert!(
+            dir.contains(".gigastt"),
+            "default_model_dir() should contain \".gigastt\", got: {dir}"
+        );
+    }
+
+    #[test]
+    fn test_download_progress_basic() {
+        let mut progress = DownloadProgress::new(1_000_000);
+        // Should not panic on normal update.
+        progress.update(500_000);
+        assert_eq!(progress.current, 500_000);
+        assert_eq!(progress.last_percent, 50);
+        progress.finish();
+    }
+
+    #[test]
+    fn test_download_progress_zero_total() {
+        let mut progress = DownloadProgress::new(0);
+        // Must not divide by zero.
+        progress.update(100);
+        assert_eq!(progress.last_percent, 0);
+        progress.finish();
+    }
+}

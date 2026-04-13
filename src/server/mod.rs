@@ -314,3 +314,23 @@ async fn handle_ws_inner(
     tracing::info!("Client disconnected: {peer}");
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_supported_rates_contains_common() {
+        assert!(SUPPORTED_RATES.contains(&8000), "SUPPORTED_RATES must include 8000 Hz");
+        assert!(SUPPORTED_RATES.contains(&16000), "SUPPORTED_RATES must include 16000 Hz");
+        assert!(SUPPORTED_RATES.contains(&48000), "SUPPORTED_RATES must include 48000 Hz");
+    }
+
+    #[test]
+    fn test_default_sample_rate_in_supported() {
+        assert!(
+            SUPPORTED_RATES.contains(&DEFAULT_SAMPLE_RATE),
+            "DEFAULT_SAMPLE_RATE ({DEFAULT_SAMPLE_RATE}) must be present in SUPPORTED_RATES"
+        );
+    }
+}

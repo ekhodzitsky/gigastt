@@ -516,4 +516,54 @@ mod tests {
         let usable = result.unwrap();
         assert!(usable.len() + buffer.len() <= MAX_BUFFER_SAMPLES);
     }
+
+    // --- decode_audio_bytes tests ---
+
+    fn make_wav_bytes(samples: &[i16], sample_rate: u32) -> Vec<u8> {
+        let data_size = (samples.len() * 2) as u32;
+        let file_size = 36 + data_size;
+        let mut buf = Vec::new();
+        buf.extend_from_slice(b"RIFF");
+        buf.extend_from_slice(&file_size.to_le_bytes());
+        buf.extend_from_slice(b"WAVE");
+        buf.extend_from_slice(b"fmt ");
+        buf.extend_from_slice(&16u32.to_le_bytes()); // chunk size
+        buf.extend_from_slice(&1u16.to_le_bytes());  // PCM
+        buf.extend_from_slice(&1u16.to_le_bytes());  // mono
+        buf.extend_from_slice(&sample_rate.to_le_bytes());
+        buf.extend_from_slice(&(sample_rate * 2).to_le_bytes()); // byte rate
+        buf.extend_from_slice(&2u16.to_le_bytes());  // block align
+        buf.extend_from_slice(&16u16.to_le_bytes()); // bits per sample
+        buf.extend_from_slice(b"data");
+        buf.extend_from_slice(&data_size.to_le_bytes());
+        for &s in samples {
+            buf.extend_from_slice(&s.to_le_bytes());
+        }
+        buf
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_empty() {
+        // Empty slice must return an error, not panic
+        let result = decode_audio_bytes(&[]);
+        assert!(result.is_err(), "Expected error for empty input, got Ok");
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_invalid_data() {
+        // Random bytes that are not a valid audio file must return an error, not panic
+        let garbage: Vec<u8> = (0u8..128).collect();
+        let result = decode_audio_bytes(&garbage);
+        assert!(result.is_err(), "Expected error for invalid audio data, got Ok");
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_wav() {
+        let silence: Vec<i16> = vec![0; 16000]; // 1 second at 16kHz
+        let wav = make_wav_bytes(&silence, 16000);
+        let samples = decode_audio_bytes(&wav).unwrap();
+        assert!(!samples.is_empty());
+        // Should be ~16000 samples (1 second at 16kHz)
+        assert!((samples.len() as i64 - 16000).unsigned_abs() <= 100);
+    }
 }
