@@ -265,7 +265,7 @@ impl Engine {
     }
 
     /// Load a single set of encoder/decoder/joiner ONNX sessions from disk.
-    fn load_sessions(dir: &Path) -> anyhow::Result<(Session, Session, Session)> {
+    fn load_sessions(dir: &Path, prepacked: &ort::session::builder::PrepackedWeights) -> anyhow::Result<(Session, Session, Session)> {
         let encoder_path = if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
             dir.join("v3_e2e_rnnt_encoder_int8.onnx")
         } else {
@@ -285,6 +285,8 @@ impl Engine {
 
             let encoder = Session::builder()
                 .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
+                .map_err(ort_err)?
                 .with_execution_providers([coreml_ep.clone()])
                 .map_err(ort_err)?
                 .with_optimized_model_path(optimized_cache_dir.join("encoder_optimized.onnx"))
@@ -293,11 +295,15 @@ impl Engine {
                 .map_err(ort_err)?;
             let decoder = Session::builder()
                 .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
+                .map_err(ort_err)?
                 .with_execution_providers([coreml_ep.clone()])
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
                 .map_err(ort_err)?;
             let joiner = Session::builder()
+                .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
                 .with_execution_providers([coreml_ep])
                 .map_err(ort_err)?
@@ -314,6 +320,8 @@ impl Engine {
 
             let encoder = Session::builder()
                 .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
+                .map_err(ort_err)?
                 .with_execution_providers([cuda_ep.clone()])
                 .map_err(ort_err)?
                 .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
@@ -322,11 +330,15 @@ impl Engine {
                 .map_err(ort_err)?;
             let decoder = Session::builder()
                 .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
+                .map_err(ort_err)?
                 .with_execution_providers([cuda_ep.clone()])
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
                 .map_err(ort_err)?;
             let joiner = Session::builder()
+                .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
                 .with_execution_providers([cuda_ep])
                 .map_err(ort_err)?
@@ -341,15 +353,21 @@ impl Engine {
             std::fs::create_dir_all(&cache_dir).ok();
             let encoder = Session::builder()
                 .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
+                .map_err(ort_err)?
                 .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
             let decoder = Session::builder()
                 .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
+                .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
                 .map_err(ort_err)?;
             let joiner = Session::builder()
+                .map_err(ort_err)?
+                .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
                 .map_err(ort_err)?;
@@ -373,12 +391,16 @@ impl Engine {
         #[cfg(not(any(feature = "coreml", feature = "cuda")))]
         tracing::info!("Using CPU execution provider");
 
+        // Shared prepacked weights container (Arc-based, thread-safe)
+        let prepacked = ort::session::builder::PrepackedWeights::new();
+
         let triplets: Vec<SessionTriplet> = std::thread::scope(|s| {
             let handles: Vec<_> = (0..pool_size)
                 .map(|i| {
+                    let pp = &prepacked;
                     s.spawn(move || {
-                        tracing::info!("Loading session triplet {}/{pool_size}", i + 1);
-                        let (encoder, decoder, joiner) = Self::load_sessions(dir)?;
+                        tracing::info!("Loading session triplet {}/{pool_size} (shared weights)", i + 1);
+                        let (encoder, decoder, joiner) = Self::load_sessions(dir, pp)?;
                         Ok(SessionTriplet { encoder, decoder, joiner })
                     })
                 })

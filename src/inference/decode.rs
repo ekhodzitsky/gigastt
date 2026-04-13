@@ -100,7 +100,7 @@ pub fn greedy_decode(
         loop {
             decoder_calls += 1;
             // Run decoder: input prev_token [1,1] + hidden state [1,1,320]
-            let target_data = [state.prev_token];
+            let target_data = [state.prev_token]; // stack-allocated, reused shape
             let target_tensor =
                 TensorRef::from_array_view(([1_usize, 1], target_data.as_slice()))?;
             let h_tensor =
