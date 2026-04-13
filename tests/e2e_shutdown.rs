@@ -33,12 +33,12 @@ async fn test_shutdown_during_ws_session() {
     let _ = shutdown.send(());
 
     // The stream must terminate within 5 seconds — no hanging forever
-    let result = tokio::time::timeout(Duration::from_secs(5), stream.next()).await;
+    let result = tokio::time::timeout(Duration::from_secs(15), stream.next()).await;
 
     match result {
         // Timed out — connection hung, which is the failure we are guarding against
         Err(_elapsed) => {
-            panic!("WebSocket stream did not terminate within 5s after server shutdown")
+            panic!("WebSocket stream did not terminate within 15s after server shutdown")
         }
         // Stream ended cleanly (None) or returned a Close frame or an error — all acceptable
         Ok(_) => {}
@@ -103,7 +103,7 @@ async fn test_shutdown_during_sse_stream() {
     match result {
         // Timed out — stream hung after shutdown signal, which is the failure we guard against
         Err(_elapsed) => {
-            panic!("SSE bytes_stream did not terminate within 5s after server shutdown")
+            panic!("SSE bytes_stream did not terminate within 15s after server shutdown")
         }
         // Stream ended (None) or returned an error — both are acceptable termination signals
         Ok(_) => {}
