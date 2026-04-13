@@ -1,6 +1,12 @@
 //! Audio decoding, resampling, and buffer management utilities.
 
 use anyhow::{Context, Result};
+use symphonia::core::audio::SampleBuffer;
+use symphonia::core::codecs::DecoderOptions;
+use symphonia::core::formats::FormatOptions;
+use symphonia::core::io::MediaSourceStream;
+use symphonia::core::meta::MetadataOptions;
+use symphonia::core::probe::Hint;
 
 use super::{HOP_LENGTH, N_FFT};
 
@@ -16,108 +22,27 @@ const MAX_DURATION_S: f64 = 600.0; // 10 minutes
 ///
 /// Returns an error if the file cannot be opened, decoded, or exceeds the duration limit.
 pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
-    use symphonia::core::audio::SampleBuffer;
-    use symphonia::core::codecs::DecoderOptions;
-    use symphonia::core::formats::FormatOptions;
-    use symphonia::core::io::MediaSourceStream;
-    use symphonia::core::meta::MetadataOptions;
-    use symphonia::core::probe::Hint;
-
-    let file = std::fs::File::open(path)
-        .with_context(|| format!("Failed to open audio file: {path}"))?;
+    let file =
+        std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
 
     let mut hint = Hint::new();
-    if let Some(ext) = std::path::Path::new(path).extension().and_then(|e| e.to_str()) {
+    if let Some(ext) = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+    {
         hint.with_extension(ext);
     }
 
-    let probed = symphonia::default::get_probe()
-        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
-        .context("Unsupported audio format")?;
-
-    let mut format = probed.format;
-
-    let track = format
-        .default_track()
-        .context("No audio track found")?;
-    let track_id = track.id;
-    let sample_rate = track
-        .codec_params
-        .sample_rate
-        .context("Unknown sample rate")?;
-    let channels = track
-        .codec_params
-        .channels
-        .map(|c| c.count())
-        .unwrap_or(1);
-
-    tracing::info!("Audio: {sample_rate}Hz, {channels}ch, format={}",
-        std::path::Path::new(path).extension().unwrap_or_default().to_string_lossy());
-
-    let mut decoder = symphonia::default::get_codecs()
-        .make(&track.codec_params, &DecoderOptions::default())
-        .context("Unsupported audio codec")?;
-
-    let mut all_samples: Vec<f32> = Vec::new();
-
-    loop {
-        let packet = match format.next_packet() {
-            Ok(p) => p,
-            Err(symphonia::core::errors::Error::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
-            Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
-        };
-
-        if packet.track_id() != track_id {
-            continue;
-        }
-
-        let decoded = decoder.decode(&packet).context("Decode error")?;
-        let spec = *decoded.spec();
-        let num_frames = decoded.frames();
-
-        let mut sample_buf = SampleBuffer::<f32>::new(num_frames as u64, spec);
-        sample_buf.copy_interleaved_ref(decoded);
-        let samples = sample_buf.samples();
-
-        // Mix to mono if multi-channel
-        if spec.channels.count() > 1 {
-            let ch = spec.channels.count();
-            for frame in 0..num_frames {
-                let mut sum = 0.0_f32;
-                for c in 0..ch {
-                    sum += samples[frame * ch + c];
-                }
-                all_samples.push(sum / ch as f32);
-            }
-        } else {
-            all_samples.extend_from_slice(samples);
-        }
-    }
-
-    let duration_s = all_samples.len() as f64 / sample_rate as f64;
-    tracing::info!(
-        "Decoded {} samples at {}Hz ({:.1}s)",
-        all_samples.len(),
-        sample_rate,
-        duration_s
+    let source_label = format!(
+        "format={}",
+        std::path::Path::new(path)
+            .extension()
+            .unwrap_or_default()
+            .to_string_lossy()
     );
 
-    if duration_s > MAX_DURATION_S {
-        anyhow::bail!(
-            "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
-            duration_s
-        );
-    }
-
-    // Resample to 16kHz if needed
-    if sample_rate != 16000 {
-        all_samples = resample(&all_samples, sample_rate, 16000).context("Resampling failed")?;
-        tracing::info!("Resampled to 16kHz: {} samples", all_samples.len());
-    }
-
-    Ok(all_samples)
+    decode_audio_inner(mss, hint, &source_label)
 }
 
 /// Decode audio from raw bytes in memory (no temp file needed).
@@ -130,40 +55,34 @@ pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
 ///
 /// Returns an error if the bytes cannot be decoded or the audio exceeds the duration limit.
 pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
-    use std::io::Cursor;
-    use symphonia::core::audio::SampleBuffer;
-    use symphonia::core::codecs::DecoderOptions;
-    use symphonia::core::formats::FormatOptions;
-    use symphonia::core::io::MediaSourceStream;
-    use symphonia::core::meta::MetadataOptions;
-    use symphonia::core::probe::Hint;
-
-    let cursor = Cursor::new(data.to_vec());
+    let cursor = std::io::Cursor::new(data.to_vec());
     let mss = MediaSourceStream::new(Box::new(cursor), Default::default());
-
     let hint = Hint::new();
+    decode_audio_inner(mss, hint, "bytes")
+}
 
+/// Shared decode logic: probe → format → decode → mono mix → duration check → resample.
+fn decode_audio_inner(mss: MediaSourceStream, hint: Hint, source_label: &str) -> Result<Vec<f32>> {
     let probed = symphonia::default::get_probe()
-        .format(&hint, mss, &FormatOptions::default(), &MetadataOptions::default())
+        .format(
+            &hint,
+            mss,
+            &FormatOptions::default(),
+            &MetadataOptions::default(),
+        )
         .context("Unsupported audio format")?;
 
     let mut format = probed.format;
 
-    let track = format
-        .default_track()
-        .context("No audio track found")?;
+    let track = format.default_track().context("No audio track found")?;
     let track_id = track.id;
     let sample_rate = track
         .codec_params
         .sample_rate
         .context("Unknown sample rate")?;
-    let channels = track
-        .codec_params
-        .channels
-        .map(|c| c.count())
-        .unwrap_or(1);
+    let channels = track.codec_params.channels.map(|c| c.count()).unwrap_or(1);
 
-    tracing::info!("Audio (bytes): {sample_rate}Hz, {channels}ch");
+    tracing::info!("Audio ({source_label}): {sample_rate}Hz, {channels}ch");
 
     let mut decoder = symphonia::default::get_codecs()
         .make(&track.codec_params, &DecoderOptions::default())
@@ -175,7 +94,10 @@ pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
         let packet = match format.next_packet() {
             Ok(p) => p,
             Err(symphonia::core::errors::Error::IoError(ref e))
-                if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
+                if e.kind() == std::io::ErrorKind::UnexpectedEof =>
+            {
+                break;
+            }
             Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
         };
 
@@ -248,8 +170,7 @@ pub fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Result<Vec<f32
         .collect();
 
     use rubato::{
-        Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType,
-        WindowFunction,
+        Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
     };
 
     let params = SincInterpolationParameters {
@@ -283,10 +204,7 @@ pub fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Result<Vec<f32
 /// Returns `Some(usable_samples)` if enough data for at least one frame,
 /// `None` if all data was buffered for the next call.
 /// Updates `buffer` in-place with leftover samples.
-pub(crate) fn prepare_audio_buffer(
-    new_samples: &[f32],
-    buffer: &mut Vec<f32>,
-) -> Option<Vec<f32>> {
+pub(crate) fn prepare_audio_buffer(new_samples: &[f32], buffer: &mut Vec<f32>) -> Option<Vec<f32>> {
     let mut all_samples = std::mem::take(buffer);
     all_samples.extend_from_slice(new_samples);
 
@@ -326,8 +244,11 @@ mod tests {
         // Rubato FIR filter has sinc_len/2 delay; output is shorter than ideal ratio.
         // For 4800 samples at 3:1 ratio, expect ~1556 (not exact 1600).
         assert!(!output.is_empty());
-        assert!(output.len() > 1400 && output.len() < 1700,
-            "Unexpected output length: {}", output.len());
+        assert!(
+            output.len() > 1400 && output.len() < 1700,
+            "Unexpected output length: {}",
+            output.len()
+        );
     }
 
     #[test]
@@ -336,8 +257,11 @@ mod tests {
         let output = resample(&input, 8000, 16000).unwrap();
         // Rubato FIR delay reduces output; expect ~1340 (not exact 1600).
         assert!(!output.is_empty());
-        assert!(output.len() > 1200 && output.len() < 1700,
-            "Unexpected output length: {}", output.len());
+        assert!(
+            output.len() > 1200 && output.len() < 1700,
+            "Unexpected output length: {}",
+            output.len()
+        );
     }
 
     #[test]
@@ -349,7 +273,10 @@ mod tests {
         let start = output.len() / 10;
         let end = output.len() - start;
         for &sample in &output[start..end] {
-            assert!((sample - 0.5).abs() < 0.05, "DC signal not preserved: {sample}");
+            assert!(
+                (sample - 0.5).abs() < 0.05,
+                "DC signal not preserved: {sample}"
+            );
         }
     }
 
@@ -470,7 +397,10 @@ mod tests {
         let output = resample(&input, 48000, 16000).unwrap();
         assert!(!output.is_empty());
         for &s in &output {
-            assert!(s.is_finite(), "Infinity should be sanitized to zero, got {s}");
+            assert!(
+                s.is_finite(),
+                "Infinity should be sanitized to zero, got {s}"
+            );
         }
     }
 
@@ -528,11 +458,11 @@ mod tests {
         buf.extend_from_slice(b"WAVE");
         buf.extend_from_slice(b"fmt ");
         buf.extend_from_slice(&16u32.to_le_bytes()); // chunk size
-        buf.extend_from_slice(&1u16.to_le_bytes());  // PCM
-        buf.extend_from_slice(&1u16.to_le_bytes());  // mono
+        buf.extend_from_slice(&1u16.to_le_bytes()); // PCM
+        buf.extend_from_slice(&1u16.to_le_bytes()); // mono
         buf.extend_from_slice(&sample_rate.to_le_bytes());
         buf.extend_from_slice(&(sample_rate * 2).to_le_bytes()); // byte rate
-        buf.extend_from_slice(&2u16.to_le_bytes());  // block align
+        buf.extend_from_slice(&2u16.to_le_bytes()); // block align
         buf.extend_from_slice(&16u16.to_le_bytes()); // bits per sample
         buf.extend_from_slice(b"data");
         buf.extend_from_slice(&data_size.to_le_bytes());
@@ -554,7 +484,10 @@ mod tests {
         // Random bytes that are not a valid audio file must return an error, not panic
         let garbage: Vec<u8> = (0u8..128).collect();
         let result = decode_audio_bytes(&garbage);
-        assert!(result.is_err(), "Expected error for invalid audio data, got Ok");
+        assert!(
+            result.is_err(),
+            "Expected error for invalid audio data, got Ok"
+        );
     }
 
     #[test]
