@@ -7,15 +7,23 @@ pub mod http;
 use crate::inference::{Engine, SessionTriplet};
 use crate::protocol::{ClientMessage, ServerMessage};
 use anyhow::{Context, Result};
-use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
-use axum::extract::State;
-use axum::response::Response;
-use axum::extract::DefaultBodyLimit;
-use axum::routing::{get, post};
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
+use axum::extract::State;
+use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
+use axum::response::Response;
+use axum::routing::{get, post};
 use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
+
+/// Serialize a server message to JSON with a safe fallback on error.
+fn json_text(msg: &impl serde::Serialize) -> String {
+    serde_json::to_string(msg).unwrap_or_else(|e| {
+        tracing::error!("Failed to serialize server message: {e}");
+        r#"{"type":"error","message":"Internal serialization error","code":"internal"}"#.into()
+    })
+}
 
 /// Supported input sample rates (Hz). Default is 48000 for backward compatibility.
 const SUPPORTED_RATES: &[u32] = &[8000, 16000, 24000, 44100, 48000];
@@ -70,8 +78,12 @@ pub async fn run_with_shutdown(
 
     let shutdown_fut = async {
         match shutdown {
-            Some(rx) => { rx.await.ok(); }
-            None => { tokio::signal::ctrl_c().await.ok(); }
+            Some(rx) => {
+                rx.await.ok();
+            }
+            None => {
+                tokio::signal::ctrl_c().await.ok();
+            }
         }
         tracing::info!("Shutting down server");
     };
@@ -86,10 +98,7 @@ pub async fn run_with_shutdown(
     Ok(())
 }
 
-async fn cors_middleware(
-    req: axum::extract::Request,
-    next: axum::middleware::Next,
-) -> Response {
+async fn cors_middleware(req: axum::extract::Request, next: axum::middleware::Next) -> Response {
     let mut response = next.run(req).await;
     let headers = response.headers_mut();
     headers.insert(
@@ -113,7 +122,11 @@ async fn ws_handler(
     headers: axum::http::HeaderMap,
     State(state): State<Arc<http::AppState>>,
 ) -> Response {
-    if let Some(origin) = headers.get("origin").and_then(|v| v.to_str().ok()).filter(|o| !o.contains("127.0.0.1") && !o.contains("localhost")) {
+    if let Some(origin) = headers
+        .get("origin")
+        .and_then(|v| v.to_str().ok())
+        .filter(|o| !o.contains("127.0.0.1") && !o.contains("localhost"))
+    {
         tracing::warn!("WebSocket connection from non-local origin: {origin} (peer: {peer})");
     }
     ws.max_message_size(512 * 1024)
@@ -122,7 +135,24 @@ async fn ws_handler(
 }
 
 async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppState>) {
-    let triplet = state.engine.pool.checkout().await;
+    let triplet = match tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        state.engine.pool.checkout(),
+    )
+    .await
+    {
+        Ok(triplet) => triplet,
+        Err(_) => {
+            tracing::warn!("WebSocket pool checkout timeout for {peer}");
+            let (mut sink, _) = socket.split();
+            let err = ServerMessage::Error {
+                message: "Server busy, try again later".into(),
+                code: "timeout".into(),
+            };
+            let _ = sink.send(WsMessage::Text(json_text(&err).into())).await;
+            return;
+        }
+    };
 
     let (triplet_opt, result) = handle_ws_inner(socket, peer, &state.engine, triplet).await;
     if let Err(e) = result {
@@ -162,9 +192,7 @@ async fn handle_ws_inner(
         supported_rates: SUPPORTED_RATES.to_vec(),
         diarization: diarization_available,
     };
-    if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&ready).unwrap().into()))
-        .await
-    {
+    if let Err(e) = sink.send(WsMessage::Text(json_text(&ready).into())).await {
         return (Some(triplet), Err(e.into()));
     }
 
@@ -178,11 +206,8 @@ async fn handle_ws_inner(
 
     let result: Result<()> = 'outer: {
         loop {
-            let msg = match tokio::time::timeout(
-                std::time::Duration::from_secs(300),
-                source.next(),
-            )
-            .await
+            let msg = match tokio::time::timeout(std::time::Duration::from_secs(300), source.next())
+                .await
             {
                 Ok(Some(Ok(msg))) => msg,
                 Ok(Some(Err(e))) => break 'outer Err(e.into()),
@@ -226,7 +251,13 @@ async fn handle_ws_inner(
                         Some(s) => s,
                         None => break 'outer Err(anyhow::anyhow!("Streaming state lost")),
                     };
-                    let mut triplet = triplet_opt.take().expect("triplet must be present");
+                    let mut triplet = match triplet_opt.take() {
+                        Some(t) => t,
+                        None => {
+                            tracing::error!("Triplet unexpectedly missing for {peer}");
+                            break 'outer Err(anyhow::anyhow!("Triplet lost"));
+                        }
+                    };
                     let eng = engine.clone();
                     let join_result = tokio::task::spawn_blocking(move || {
                         let r = eng.process_chunk(&samples_16k, &mut state, &mut triplet);
@@ -254,8 +285,8 @@ async fn handle_ws_inner(
                                                 words: seg.words,
                                             }
                                         };
-                                        if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&msg).unwrap().into()))
-                                            .await
+                                        if let Err(e) =
+                                            sink.send(WsMessage::Text(json_text(&msg).into())).await
                                         {
                                             break 'outer Err(e.into());
                                         }
@@ -268,8 +299,8 @@ async fn handle_ws_inner(
                                             .into(),
                                         code: "inference_error".into(),
                                     };
-                                    if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&err).unwrap().into()))
-                                        .await
+                                    if let Err(e) =
+                                        sink.send(WsMessage::Text(json_text(&err).into())).await
                                     {
                                         break 'outer Err(e.into());
                                     }
@@ -277,22 +308,32 @@ async fn handle_ws_inner(
                             }
                         }
                         Err(e) => {
-                            // spawn_blocking panicked — triplet is lost (triplet_opt is None)
-                            tracing::error!("spawn_blocking panicked for {peer}: {e}");
+                            // spawn_blocking panicked — triplet is permanently lost.
+                            // The pool degrades gracefully with one fewer slot.
+                            // Recovering the triplet would require restructuring closure
+                            // ownership (see SSE handler pattern in http.rs).
+                            tracing::warn!(
+                                "spawn_blocking panicked for {peer}: {e} — \
+                                 triplet lost, pool capacity reduced"
+                            );
                             break 'outer Err(anyhow::anyhow!("Inference thread panicked"));
                         }
                     }
                 }
                 WsMessage::Text(text) => {
                     match serde_json::from_str::<ClientMessage>(&text) {
-                        Ok(ClientMessage::Configure { sample_rate, diarization }) => {
+                        Ok(ClientMessage::Configure {
+                            sample_rate,
+                            diarization,
+                        }) => {
                             if audio_received {
                                 let err = ServerMessage::Error {
-                                    message: "Configure must be sent before first audio frame".into(),
+                                    message: "Configure must be sent before first audio frame"
+                                        .into(),
                                     code: "configure_too_late".into(),
                                 };
-                                if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&err).unwrap().into()))
-                                    .await
+                                if let Err(e) =
+                                    sink.send(WsMessage::Text(json_text(&err).into())).await
                                 {
                                     break 'outer Err(e.into());
                                 }
@@ -311,8 +352,8 @@ async fn handle_ws_inner(
                                         ),
                                         code: "invalid_sample_rate".into(),
                                     };
-                                    if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&err).unwrap().into()))
-                                        .await
+                                    if let Err(e) =
+                                        sink.send(WsMessage::Text(json_text(&err).into())).await
                                     {
                                         break 'outer Err(e.into());
                                     }
@@ -332,11 +373,10 @@ async fn handle_ws_inner(
                         }
                         Ok(ClientMessage::Stop) => {
                             tracing::info!("Stop received from {peer}, finalizing");
-                            let mut state =
-                                match state_opt.take() {
-                                    Some(s) => s,
-                                    None => break,
-                                };
+                            let mut state = match state_opt.take() {
+                                Some(s) => s,
+                                None => break,
+                            };
                             let flush_seg = engine.flush_state(&mut state);
                             drop(state);
                             let final_msg = if let Some(seg) = flush_seg {
@@ -352,7 +392,8 @@ async fn handle_ws_inner(
                                     words: vec![],
                                 }
                             };
-                            if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&final_msg).unwrap().into()))
+                            if let Err(e) = sink
+                                .send(WsMessage::Text(json_text(&final_msg).into()))
                                 .await
                             {
                                 break 'outer Err(e.into());
@@ -384,9 +425,18 @@ mod tests {
 
     #[test]
     fn test_supported_rates_contains_common() {
-        assert!(SUPPORTED_RATES.contains(&8000), "SUPPORTED_RATES must include 8000 Hz");
-        assert!(SUPPORTED_RATES.contains(&16000), "SUPPORTED_RATES must include 16000 Hz");
-        assert!(SUPPORTED_RATES.contains(&48000), "SUPPORTED_RATES must include 48000 Hz");
+        assert!(
+            SUPPORTED_RATES.contains(&8000),
+            "SUPPORTED_RATES must include 8000 Hz"
+        );
+        assert!(
+            SUPPORTED_RATES.contains(&16000),
+            "SUPPORTED_RATES must include 16000 Hz"
+        );
+        assert!(
+            SUPPORTED_RATES.contains(&48000),
+            "SUPPORTED_RATES must include 48000 Hz"
+        );
     }
 
     #[test]

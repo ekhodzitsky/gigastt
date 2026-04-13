@@ -3,10 +3,10 @@
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::Json;
-use futures_util::stream::Stream;
+use axum::response::sse::{Event, KeepAlive, Sse};
 use futures_util::StreamExt;
+use futures_util::stream::Stream;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -51,7 +51,10 @@ pub struct TranscribeResponse {
 type ApiError = (StatusCode, Json<serde_json::Value>);
 
 fn api_error(status: StatusCode, msg: &str, code: &str) -> ApiError {
-    (status, Json(serde_json::json!({"error": msg, "code": code})))
+    (
+        status,
+        Json(serde_json::json!({"error": msg, "code": code})),
+    )
 }
 
 /// GET /health — health check for monitoring and Docker HEALTHCHECK.
@@ -71,14 +74,21 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
         id: "gigaam-v3-e2e-rnnt".into(),
         name: "GigaAM v3 RNN-T".into(),
         version: env!("CARGO_PKG_VERSION").into(),
-        encoder: if engine.is_int8() { "int8".into() } else { "fp32".into() },
+        encoder: if engine.is_int8() {
+            "int8".into()
+        } else {
+            "fp32".into()
+        },
         vocab_size: 1025,
         sample_rate: 16000,
         pool_size: engine.pool.total(),
         pool_available: engine.pool.available(),
         supported_formats: vec![
-            "wav".into(), "mp3".into(), "m4a".into(),
-            "ogg".into(), "flac".into(),
+            "wav".into(),
+            "mp3".into(),
+            "m4a".into(),
+            "ogg".into(),
+            "flac".into(),
         ],
         supported_rates: vec![8000, 16000, 24000, 44100, 48000],
     })
@@ -93,7 +103,11 @@ pub async fn transcribe(
     body: Bytes,
 ) -> Result<Json<TranscribeResponse>, ApiError> {
     if body.is_empty() {
-        return Err(api_error(StatusCode::BAD_REQUEST, "Empty request body", "empty_body"));
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "Empty request body",
+            "empty_body",
+        ));
     }
 
     // Checkout a session triplet from the pool (blocks if none available)
@@ -102,7 +116,13 @@ pub async fn transcribe(
         state.engine.pool.checkout(),
     )
     .await
-    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?;
+    .map_err(|_| {
+        api_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Server busy, try again later",
+            "timeout",
+        )
+    })?;
 
     let body_bytes = body.to_vec();
     drop(body);
@@ -111,9 +131,24 @@ pub async fn transcribe(
 
     let result = tokio::task::spawn_blocking(move || {
         let mut triplet = triplet;
-        let r = engine.transcribe_bytes(&body_bytes, &mut triplet);
-        (r, triplet)
-    }).await;
+        // catch_unwind ensures triplet is returned to pool even on panic
+        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            engine.transcribe_bytes(&body_bytes, &mut triplet)
+        }));
+        match r {
+            Ok(inference_result) => (inference_result, triplet),
+            Err(_) => {
+                tracing::error!("Panic in REST transcribe — triplet recovered");
+                (
+                    Err(crate::error::GigasttError::Inference(
+                        "Inference thread panicked".into(),
+                    )),
+                    triplet,
+                )
+            }
+        }
+    })
+    .await;
 
     match result {
         Ok((Ok(result), triplet)) => {
@@ -127,12 +162,20 @@ pub async fn transcribe(
         Ok((Err(e), triplet)) => {
             state.engine.pool.checkin(triplet).await;
             tracing::error!("Transcription error: {e}");
-            Err(api_error(StatusCode::UNPROCESSABLE_ENTITY, "Transcription failed. Check audio format.", "transcription_error"))
+            Err(api_error(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "Transcription failed. Check audio format.",
+                "transcription_error",
+            ))
         }
         Err(e) => {
-            // spawn_blocking panicked — triplet is lost
+            // spawn_blocking task itself failed (e.g., runtime shutdown)
             tracing::error!("spawn_blocking join error: {e}");
-            Err(api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal"))
+            Err(api_error(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Internal server error",
+                "internal",
+            ))
         }
     }
 }
@@ -146,7 +189,11 @@ pub async fn transcribe_stream(
     body: Bytes,
 ) -> Result<Sse<impl Stream<Item = Result<Event, std::convert::Infallible>>>, ApiError> {
     if body.is_empty() {
-        return Err(api_error(StatusCode::BAD_REQUEST, "Empty request body", "empty_body"));
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "Empty request body",
+            "empty_body",
+        ));
     }
 
     let body_bytes = body.to_vec();
@@ -175,10 +222,17 @@ pub async fn transcribe_stream(
         state.engine.pool.checkout(),
     )
     .await
-    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?;
+    .map_err(|_| {
+        api_error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Server busy, try again later",
+            "timeout",
+        )
+    })?;
 
     // Create mpsc channel for streaming segments from spawn_blocking to SSE
-    let (tx, rx) = tokio::sync::mpsc::channel::<Result<crate::inference::TranscriptSegment, String>>(16);
+    let (tx, rx) =
+        tokio::sync::mpsc::channel::<Result<crate::inference::TranscriptSegment, String>>(16);
 
     let engine = state.engine.clone();
     tokio::task::spawn_blocking(move || {
