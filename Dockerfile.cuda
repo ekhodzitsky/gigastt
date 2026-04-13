@@ -36,6 +36,10 @@ COPY --from=builder /build/target/release/gigastt /usr/local/bin/gigastt
 COPY --from=builder /build/target/release/libonnxruntime*.so* /usr/local/lib/
 RUN ldconfig
 
+RUN groupadd -r gigastt && useradd -r -g gigastt gigastt && \
+    mkdir -p /home/gigastt/.gigastt/models && chown -R gigastt:gigastt /home/gigastt
+USER gigastt
+
 ENV RUST_LOG=gigastt=info
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"

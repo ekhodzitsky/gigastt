@@ -9,7 +9,7 @@ import { readFileSync } from "fs";
 import { WebSocket } from "ws";
 
 const wavPath = process.argv[2];
-const server = process.argv[3] || "ws://127.0.0.1:9876";
+const server = process.argv[3] || "ws://127.0.0.1:9876/ws";
 
 if (!wavPath) {
   console.log("Usage: node js_client.mjs <audio.wav> [ws://host:port]");

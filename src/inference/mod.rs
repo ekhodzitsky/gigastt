@@ -450,15 +450,16 @@ impl Engine {
     /// Transcribe an audio file to text (supports WAV, MP3, M4A/AAC, OGG, FLAC).
     ///
     /// Decodes the file to mono 16kHz, runs the full encoder+decoder pipeline,
-    /// and returns the recognized text.
+    /// and returns the recognized text with word-level details and duration.
     ///
     /// # Errors
     ///
     /// Returns [`GigasttError::InvalidAudio`] if the file cannot be decoded, or
     /// [`GigasttError::Inference`] if the ONNX runtime fails.
-    pub fn transcribe_file(&self, path: &str) -> Result<String, GigasttError> {
+    pub fn transcribe_file(&self, path: &str) -> Result<TranscribeResult, GigasttError> {
         let float_samples = audio::decode_audio_file(path)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
+        let duration_s = float_samples.len() as f64 / 16000.0;
 
         let (features, num_frames) = self.mel.compute(&float_samples);
         tracing::info!("Extracted {} mel frames", num_frames);
@@ -468,7 +469,24 @@ impl Engine {
             .run_inference(&features, num_frames, &mut decoder_state, 0)
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
-        Ok(text)
+        Ok(TranscribeResult { text, words, duration_s })
+    }
+
+    /// Transcribe audio from raw bytes in memory (no temp file needed).
+    pub fn transcribe_bytes(&self, data: &[u8]) -> Result<TranscribeResult, GigasttError> {
+        let float_samples = audio::decode_audio_bytes(data)
+            .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
+        let duration_s = float_samples.len() as f64 / 16000.0;
+
+        let (features, num_frames) = self.mel.compute(&float_samples);
+        tracing::info!("Extracted {} mel frames", num_frames);
+
+        let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+        let (words, _endpoint) = self
+            .run_inference(&features, num_frames, &mut decoder_state, 0)
+            .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
+        let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
+        Ok(TranscribeResult { text, words, duration_s })
     }
 
     fn run_inference(
@@ -609,6 +627,14 @@ impl Engine {
 
         words
     }
+}
+
+/// Result of file transcription, including word-level details.
+#[derive(Debug, Clone, Serialize)]
+pub struct TranscribeResult {
+    pub text: String,
+    pub words: Vec<WordInfo>,
+    pub duration_s: f64,
 }
 
 /// A transcript segment emitted by the inference engine.

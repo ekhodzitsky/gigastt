@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-04-13
+
+### Removed
+
+- **`dirs` dependency** — replaced with `env::var("HOME")` / `USERPROFILE` (~10 lines).
+- **`indicatif` dependency** — replaced with simple stderr progress output (~50 transitive deps removed).
+- **`tempfile` from production deps** — HTTP handlers decode audio from memory via `Cursor<Vec<u8>>` (faster, no disk I/O). Kept in dev-dependencies for tests.
+- **`async-stream` dependency** — replaced with `futures_util::stream::unfold`.
+- **`tower-http` dependency** — replaced with axum's built-in `DefaultBodyLimit`.
+
+### Added
+
+- `decode_audio_bytes()` — decode audio from in-memory bytes without temp files.
+- `Engine::transcribe_bytes()` — transcribe from byte buffer directly.
+- Security audit job in CI workflow (`cargo audit`).
+- Non-root user in Dockerfiles (hardened containers).
+
 ## [0.4.1] - 2026-04-13
 
 ### Changed
@@ -139,7 +156,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.2.0...v0.3.0

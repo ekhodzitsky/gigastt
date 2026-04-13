@@ -4,9 +4,17 @@
 //! Run with: `cargo test --test server_integration -- --ignored`
 
 use futures_util::{SinkExt, StreamExt};
+use std::path::PathBuf;
 use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio_tungstenite::tungstenite::Message;
+
+fn home_dir() -> Option<PathBuf> {
+    #[cfg(unix)]
+    { std::env::var_os("HOME").map(PathBuf::from) }
+    #[cfg(windows)]
+    { std::env::var_os("USERPROFILE").map(PathBuf::from) }
+}
 
 /// Find a free port by binding to port 0.
 async fn free_port() -> u16 {
@@ -16,7 +24,7 @@ async fn free_port() -> u16 {
 
 /// Check if the model is available.
 fn model_dir() -> Option<String> {
-    let dir = dirs::home_dir()?.join(".gigastt").join("models");
+    let dir = home_dir()?.join(".gigastt").join("models");
     if dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
         Some(dir.to_string_lossy().into_owned())
     } else {

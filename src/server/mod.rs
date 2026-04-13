@@ -10,6 +10,7 @@ use anyhow::{Context, Result};
 use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
 use axum::extract::State;
 use axum::response::Response;
+use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use axum::Router;
 use futures_util::{SinkExt, StreamExt};
@@ -47,9 +48,8 @@ pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
         .route("/v1/transcribe", post(http::transcribe))
         .route("/v1/transcribe/stream", post(http::transcribe_stream))
         .route("/ws", get(ws_handler))
-        .layer(tower_http::limit::RequestBodyLimitLayer::new(
-            50 * 1024 * 1024,
-        )) // 50MB
+        .layer(DefaultBodyLimit::max(50 * 1024 * 1024)) // 50MB
+        .layer(axum::middleware::from_fn(cors_middleware))
         .with_state(state);
 
     tracing::info!("gigastt server listening on http://{addr}");
@@ -72,11 +72,36 @@ async fn shutdown_signal() {
     tracing::info!("Shutting down server");
 }
 
+async fn cors_middleware(
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Response {
+    let mut response = next.run(req).await;
+    let headers = response.headers_mut();
+    headers.insert(
+        axum::http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        axum::http::HeaderValue::from_static("*"),
+    );
+    headers.insert(
+        axum::http::header::ACCESS_CONTROL_ALLOW_METHODS,
+        axum::http::HeaderValue::from_static("GET, POST, OPTIONS"),
+    );
+    headers.insert(
+        axum::http::header::ACCESS_CONTROL_ALLOW_HEADERS,
+        axum::http::HeaderValue::from_static("*"),
+    );
+    response
+}
+
 async fn ws_handler(
     ws: WebSocketUpgrade,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
+    headers: axum::http::HeaderMap,
     State(state): State<Arc<http::AppState>>,
 ) -> Response {
+    if let Some(origin) = headers.get("origin").and_then(|v| v.to_str().ok()).filter(|o| !o.contains("127.0.0.1") && !o.contains("localhost")) {
+        tracing::warn!("WebSocket connection from non-local origin: {origin} (peer: {peer})");
+    }
     ws.max_message_size(512 * 1024)
         .max_frame_size(512 * 1024)
         .on_upgrade(move |socket| handle_ws(socket, peer, state))
@@ -165,7 +190,7 @@ async fn handle_ws_inner(
                         &samples_f32,
                         client_sample_rate,
                         16000,
-                    )
+                    )?
                 };
 
                 let mut state = state_opt.take().context("Streaming state lost")?;

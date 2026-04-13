@@ -143,8 +143,9 @@ Transcribe an audio file (WAV, M4A, MP3, OGG, FLAC). Returns the full transcript
 
 ```sh
 curl -X POST http://127.0.0.1:9876/v1/transcribe \
-  -F "file=@recording.wav"
-# {"text":"Что такое Node.js?"}
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @recording.wav
+# {"text":"Что такое Node.js?","words":[],"duration":3.5}
 ```
 
 ### POST /v1/transcribe/stream
@@ -153,7 +154,8 @@ Transcribe an audio file with streaming Server-Sent Events (SSE). Returns partia
 
 ```sh
 curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
-  -F "file=@recording.wav"
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @recording.wav
 # data: {"type":"partial","text":"что такое"}
 # data: {"type":"partial","text":"что такое Node"}
 # data: {"type":"final","text":"Что такое Node.js?"}

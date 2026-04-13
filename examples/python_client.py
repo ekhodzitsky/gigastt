@@ -14,7 +14,7 @@ except ImportError:
     sys.exit(1)
 
 
-async def transcribe(wav_path: str, server: str = "ws://127.0.0.1:9876"):
+async def transcribe(wav_path: str, server: str = "ws://127.0.0.1:9876/ws"):
     async with websockets.connect(server) as ws:
         # Wait for ready
         msg = json.loads(await ws.recv())
@@ -45,7 +45,7 @@ async def transcribe(wav_path: str, server: str = "ws://127.0.0.1:9876"):
         print("Done.")
 
 
-async def stream_and_print(wav_path: str, server: str = "ws://127.0.0.1:9876"):
+async def stream_and_print(wav_path: str, server: str = "ws://127.0.0.1:9876/ws"):
     async with websockets.connect(server) as ws:
         msg = json.loads(await ws.recv())
         print(f"Connected: {msg['model']} @ {msg['sample_rate']}Hz\n")
@@ -82,5 +82,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     wav = sys.argv[1]
-    server = sys.argv[2] if len(sys.argv) > 2 else "ws://127.0.0.1:9876"
+    server = sys.argv[2] if len(sys.argv) > 2 else "ws://127.0.0.1:9876/ws"
     asyncio.run(stream_and_print(wav, server))

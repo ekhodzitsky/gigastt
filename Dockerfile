@@ -23,7 +23,10 @@ RUN apt-get update && \
 
 COPY --from=builder /build/target/release/gigastt /usr/local/bin/gigastt
 
-# Model will be downloaded on first run to /root/.gigastt/models
+RUN groupadd -r gigastt && useradd -r -g gigastt gigastt && \
+    mkdir -p /home/gigastt/.gigastt/models && chown -R gigastt:gigastt /home/gigastt
+USER gigastt
+
 ENV RUST_LOG=gigastt=info
 
 EXPOSE 9876

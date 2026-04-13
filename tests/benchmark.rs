@@ -4,7 +4,14 @@
 //! Harness is disabled (`harness = false` in Cargo.toml) so this runs as a binary.
 
 use serde::Deserialize;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+fn home_dir() -> Option<PathBuf> {
+    #[cfg(unix)]
+    { std::env::var_os("HOME").map(PathBuf::from) }
+    #[cfg(windows)]
+    { std::env::var_os("USERPROFILE").map(PathBuf::from) }
+}
 
 #[derive(Deserialize)]
 struct Sample {
@@ -235,7 +242,7 @@ fn main() {
     let manifest_path = fixture_dir.join("manifest.json");
 
     // Check model availability — skip gracefully if missing
-    let model_dir = dirs::home_dir()
+    let model_dir = home_dir()
         .map(|h| h.join(".gigastt").join("models"))
         .expect("HOME not set");
 
@@ -266,7 +273,7 @@ fn main() {
             .expect("Transcription failed");
 
         let ref_words = normalize_for_wer(&sample.reference);
-        let hyp_words = normalize_for_wer(&hypothesis);
+        let hyp_words = normalize_for_wer(&hypothesis.text);
 
         let errors = word_edit_distance(&ref_words, &hyp_words);
         let sample_wer = if ref_words.is_empty() {
@@ -280,13 +287,13 @@ fn main() {
 
         eprintln!(
             "  [WER {:5.1}%] {} | ref: \"{}\" | hyp: \"{}\"",
-            sample_wer, sample.filename, sample.reference, hypothesis
+            sample_wer, sample.filename, sample.reference, hypothesis.text
         );
 
         details.push(serde_json::json!({
             "file": sample.filename,
             "reference": sample.reference,
-            "hypothesis": hypothesis,
+            "hypothesis": hypothesis.text,
             "ref_norm": ref_words.join(" "),
             "hyp_norm": hyp_words.join(" "),
             "wer": (sample_wer * 10.0).round() / 10.0,

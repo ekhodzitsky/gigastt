@@ -70,30 +70,19 @@ pub async fn transcribe(
     .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?
     .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server shutting down", "busy"))?;
 
-    let tmp = tempfile::NamedTempFile::new().map_err(|e| {
-        tracing::error!("Failed to create temp file: {e}");
-        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
-    })?;
-
-    // M5: async fs write
-    tokio::fs::write(tmp.path(), &body).await.map_err(|e| {
-        tracing::error!("Failed to write temp file: {e}");
-        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
-    })?;
-
-    // H7: drop body after write
+    let body_bytes = body.to_vec();
+    // H7: drop body after copying
     drop(body);
 
-    let path = tmp.path().to_string_lossy().to_string();
     let engine = state.engine.clone();
 
-    let result = tokio::task::spawn_blocking(move || engine.transcribe_file(&path)).await;
+    let result = tokio::task::spawn_blocking(move || engine.transcribe_bytes(&body_bytes)).await;
 
     match result {
-        Ok(Ok(text)) => Ok(Json(TranscribeResponse {
-            text,
-            words: vec![],
-            duration: 0.0, // not available from transcribe_file
+        Ok(Ok(result)) => Ok(Json(TranscribeResponse {
+            text: result.text,
+            words: result.words,
+            duration: result.duration_s,
         })),
         Ok(Err(e)) => {
             tracing::error!("Transcription error: {e}");
@@ -125,25 +114,17 @@ pub async fn transcribe_stream(
     .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?
     .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server shutting down", "busy"))?;
 
-    let tmp = tempfile::NamedTempFile::new().map_err(|e| {
-        tracing::error!("Failed to create temp file: {e}");
-        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
-    })?;
-
-    // M5: async fs write
-    tokio::fs::write(tmp.path(), &body).await.map_err(|e| {
-        tracing::error!("Failed to write temp file: {e}");
-        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
-    })?;
-
-    // H7: drop body after write
+    let body_bytes = body.to_vec();
+    // H7: drop body after copying
     drop(body);
 
-    let path = tmp.path().to_string_lossy().to_string();
-    let engine = state.engine.clone();
+    let samples = crate::inference::audio::decode_audio_bytes(&body_bytes)
+        .map_err(|e| {
+            tracing::error!("Audio decode error: {e:#}");
+            api_error(StatusCode::UNPROCESSABLE_ENTITY, "Failed to decode audio file. Check format (WAV, MP3, M4A, OGG, FLAC supported).", "invalid_audio")
+        })?;
 
-    let samples = crate::inference::audio::decode_audio_file(&path)
-        .map_err(|e| api_error(StatusCode::UNPROCESSABLE_ENTITY, &format!("{e}"), "invalid_audio"))?;
+    let engine = state.engine.clone();
 
     // H2: run all blocking inference in spawn_blocking, collect segments upfront
     let engine_clone = engine.clone();
@@ -182,25 +163,30 @@ pub async fn transcribe_stream(
         }
     };
 
-    let stream = async_stream::stream! {
-        // H1: move permit into stream so it lives until the stream is exhausted
-        let _permit = permit;
-
-        if let Some(_err) = inference_error {
-            tracing::error!("SSE inference error: {_err}");
-            let msg = serde_json::json!({"type": "error", "message": "Transcription failed. Check audio format.", "code": "inference_error"});
-            yield Ok(Event::default().data(msg.to_string()));
-        } else {
-            for seg in all_segments {
-                let msg = if seg.is_final {
-                    serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-                } else {
-                    serde_json::json!({"type": "partial", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-                };
-                yield Ok(Event::default().data(msg.to_string()));
-            }
+    // Build events from collected segments
+    let mut events: Vec<Result<Event, std::convert::Infallible>> = Vec::new();
+    if let Some(err) = inference_error {
+        tracing::error!("SSE inference error: {err}");
+        let msg = serde_json::json!({"type": "error", "message": "Transcription failed. Check audio format.", "code": "inference_error"});
+        events.push(Ok(Event::default().data(msg.to_string())));
+    } else {
+        for seg in all_segments {
+            let msg = if seg.is_final {
+                serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
+            } else {
+                serde_json::json!({"type": "partial", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
+            };
+            events.push(Ok(Event::default().data(msg.to_string())));
         }
-    };
+    }
+
+    // Stream events with permit held until stream is exhausted
+    let stream = futures_util::stream::unfold(
+        (events.into_iter(), permit),
+        |(mut iter, permit)| async move {
+            iter.next().map(|event| (event, (iter, permit)))
+        },
+    );
 
     Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
 }

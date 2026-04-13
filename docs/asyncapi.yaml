@@ -9,7 +9,7 @@ info:
 
     ## Connection Flow
 
-    1. Client connects to `ws://{host}:{port}` (default: `ws://127.0.0.1:9876`)
+    1. Client connects to `ws://{host}:{port}/ws` (default: `ws://127.0.0.1:9876/ws`)
        - Use `--host 0.0.0.0` for Docker; `--host 127.0.0.1` for local (default)
     2. Server sends `ready` message with model info and protocol version
     3. Client streams raw PCM16 audio as binary frames (48kHz mono)
@@ -52,7 +52,7 @@ defaultContentType: application/json
 
 channels:
   audio:
-    address: /
+    address: /ws
     description: |
       Single WebSocket endpoint for audio streaming and transcription.
       Accepts binary PCM16 frames and JSON control messages.
@@ -65,6 +65,8 @@ channels:
         $ref: "#/components/messages/final"
       error:
         $ref: "#/components/messages/error"
+      configure:
+        $ref: "#/components/messages/configure"
       stop:
         $ref: "#/components/messages/stop"
       audioFrame:
@@ -78,6 +80,14 @@ operations:
     summary: Server sends ready message upon connection
     messages:
       - $ref: "#/channels/audio/messages/ready"
+
+  sendConfigure:
+    action: send
+    channel:
+      $ref: "#/channels/audio"
+    summary: Client configures session parameters (must be sent before first audio frame)
+    messages:
+      - $ref: "#/channels/audio/messages/configure"
 
   sendAudio:
     action: send
@@ -160,6 +170,14 @@ components:
       payload:
         $ref: "#/components/schemas/StopMessage"
 
+    configure:
+      name: configure
+      title: Configure
+      summary: Client configures session parameters before sending audio
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/ConfigureMessage"
+
     audioFrame:
       name: audioFrame
       title: Audio Frame
@@ -198,6 +216,16 @@ components:
           type: string
           example: "1.0"
           description: WebSocket protocol version (semver-lite major.minor)
+        supported_rates:
+          type: array
+          items:
+            type: integer
+          example: [8000, 16000, 24000, 44100, 48000]
+          description: List of supported input sample rates (Hz)
+        diarization:
+          type: boolean
+          example: false
+          description: Whether speaker diarization is available
 
     PartialMessage:
       type: object
@@ -219,6 +247,11 @@ components:
           format: double
           example: 1712700000.123
           description: Unix timestamp (seconds since epoch) when the segment was produced
+        words:
+          type: array
+          items:
+            $ref: "#/components/schemas/WordInfo"
+          description: Word-level transcription with timestamps
 
     FinalMessage:
       type: object
@@ -240,6 +273,11 @@ components:
           format: double
           example: 1712700001.456
           description: Unix timestamp (seconds since epoch) when the segment was finalized
+        words:
+          type: array
+          items:
+            $ref: "#/components/schemas/WordInfo"
+          description: Word-level transcription with timestamps
 
     ErrorMessage:
       type: object
@@ -262,6 +300,26 @@ components:
           description: Machine-readable error code
           enum:
             - inference_error
+            - configure_too_late
+            - invalid_sample_rate
+
+    ConfigureMessage:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          const: configure
+          description: Message type discriminator
+        sample_rate:
+          type: integer
+          example: 16000
+          description: Input audio sample rate in Hz
+        diarization:
+          type: boolean
+          example: true
+          description: Enable speaker diarization (if available)
 
     StopMessage:
       type: object
@@ -272,3 +330,24 @@ components:
           type: string
           const: stop
           description: Message type discriminator
+
+    WordInfo:
+      type: object
+      required:
+        - word
+        - start
+        - end
+      properties:
+        word:
+          type: string
+          example: "привет"
+        start:
+          type: number
+          format: double
+          example: 0.5
+          description: Word start time in seconds
+        end:
+          type: number
+          format: double
+          example: 0.8
+          description: Word end time in seconds

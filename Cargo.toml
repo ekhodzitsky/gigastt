@@ -1,6 +1,6 @@
 [package]
 name = "gigastt"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 license = "MIT"
@@ -23,8 +23,6 @@ tokio = { version = "1", features = ["full"] }
 
 # HTTP + WebSocket server (single port via axum)
 axum = { version = "0.8", features = ["ws", "multipart"] }
-tower-http = { version = "0.6", features = ["limit", "cors"] }
-async-stream = "0.3"
 futures-util = "0.3"
 
 # CLI
@@ -36,9 +34,6 @@ reqwest = { version = "0.12", features = ["stream"] }
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-
-# Progress bar
-indicatif = "0.17"
 
 # Logging
 tracing = "0.1"
@@ -58,12 +53,6 @@ rubato = "0.16"
 
 # Audio file reading (for `transcribe` command)
 symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
-
-# Directory management
-dirs = "6"
-
-# Temp files for HTTP upload
-tempfile = "3"
 
 [[test]]
 name = "benchmark"
