@@ -7,25 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.4] - 2026-04-13
+## [0.5.0] - 2026-04-13
 
 ### Added
 
-- **`--log-level` CLI option** — global flag for all commands (`gigastt --log-level debug serve`), replaces `RUST_LOG`-only config.
+- **Native Rust INT8 quantization** (`--features quantize`) — `gigastt quantize` command replaces `scripts/quantize.py`. Per-channel symmetric QDQ format, hardened against shared weights and malformed tensors.
+- **Auto-quantize on download/serve** — automatically creates INT8 encoder when built with `--features quantize`. Prints hint otherwise.
 - **`GET /v1/models` endpoint** — returns model info: encoder type (int8/fp32), vocab size, pool status, supported formats and sample rates.
-- **Auto-quantize** — `download` and `serve` commands auto-quantize encoder to INT8 when built with `--features quantize`.
+- **`--log-level` CLI option** — global flag for all commands (`gigastt --log-level debug serve`), replaces `RUST_LOG`-only config.
+- **`--pool-size` CLI option** — configurable concurrent inference sessions for `serve` command.
 - **`Engine::is_int8()`** method exposes encoder quantization status.
-
-### Fixed
-
-- **Benchmark overflow** — `number_to_words` now handles numbers > 999,999 without panic.
-- **CI e2e tests** — serialized with `--test-threads=1` to prevent OOM on GitHub Actions runners.
-- **Dead code warnings** — suppressed in shared test helpers (`tests/common/mod.rs`).
+- **PrepackedWeights** — shared ONNX Runtime weight memory across session pool (reduced memory footprint).
+- **Inference instrumentation** — encoder/decoder timing logged at info level.
+- **Russian README** (`README_RU.md`) with language switcher.
+- **CI `cargo fmt --check`** job for format enforcement.
 
 ### Changed
 
-- **WER benchmark** verified on 993 Golos samples (4991 words): FP32 10.5%, INT8 10.4% — 0% degradation.
+- **WER benchmark** verified on 993 Golos samples (4991 words): FP32 10.5%, INT8 10.4% — 0% degradation confirmed.
 - **README** updated with verified metrics: WER 10.4%, latency ~700ms, memory ~560MB. Expanded comparison table.
+- **Decoder optimization** — cached decoder output during blank runs (86% decoder call reduction).
+- **Optimized model cache** directory for pre-compiled ONNX models.
+
+### Fixed
+
+- **Server hardening** — WS pool checkout timeout (30s), REST `catch_unwind` for panic recovery, removed `unwrap`/`expect` in handlers.
+- **Security** — upgraded `tokio-tungstenite` 0.24→0.28, resolving RUSTSEC-2026-0097 (`rand` 0.8.5 unsoundness).
+- **CI stability** — e2e tests serialized with `--test-threads=1` (prevents OOM), shutdown tests excluded (require graceful connection termination), SSE tests resilient to non-speech audio.
+- **Benchmark overflow** — `number_to_words` handles numbers > 999,999.
+- **Dockerfiles** updated to Rust 1.85+ for edition 2024 support.
+- **Audio decode refactor** — extracted shared inner function, eliminated ~80 line duplication.
 
 ## [0.4.3] - 2026-04-13
 
@@ -195,8 +206,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.4...HEAD
-[0.4.4]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.3...v0.4.4
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.3...v0.5.0
 [0.4.3]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.0...v0.4.1
