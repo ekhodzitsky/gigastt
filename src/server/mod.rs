@@ -54,6 +54,7 @@ pub async fn run_with_shutdown(
 
     let app = Router::new()
         .route("/health", get(http::health))
+        .route("/v1/models", get(http::models))
         .route("/v1/transcribe", post(http::transcribe))
         .route("/v1/transcribe/stream", post(http::transcribe_stream))
         .route("/ws", get(ws_handler))

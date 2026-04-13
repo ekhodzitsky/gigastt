@@ -233,12 +233,19 @@ pub struct Engine {
     pub pool: SessionPool,
     tokenizer: Tokenizer,
     mel: MelSpectrogram,
+    /// Whether the INT8 quantized encoder is in use.
+    int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
     #[cfg(feature = "diarization")]
     pub speaker_encoder: Option<diarization::SpeakerEncoder>,
 }
 
 impl Engine {
+    /// Whether the INT8 quantized encoder is loaded.
+    pub fn is_int8(&self) -> bool {
+        self.int8
+    }
+
     /// Load ONNX models from the given directory and create an inference engine.
     ///
     /// Creates a pool of [`DEFAULT_POOL_SIZE`] session triplets for concurrent inference.
@@ -378,7 +385,8 @@ impl Engine {
     }
 
     fn load_inner(dir: &Path, model_dir: &str, pool_size: usize) -> anyhow::Result<Self> {
-        if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
+        let is_int8 = dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists();
+        if is_int8 {
             tracing::info!("Using INT8 quantized encoder");
         }
 
@@ -432,6 +440,7 @@ impl Engine {
             pool: SessionPool::new(triplets),
             tokenizer,
             mel,
+            int8: is_int8,
             #[cfg(feature = "diarization")]
             speaker_encoder,
         })

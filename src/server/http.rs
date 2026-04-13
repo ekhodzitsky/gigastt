@@ -25,6 +25,21 @@ pub struct HealthResponse {
     pub version: String,
 }
 
+/// Model info response.
+#[derive(Serialize)]
+pub struct ModelInfo {
+    pub id: String,
+    pub name: String,
+    pub version: String,
+    pub encoder: String,
+    pub vocab_size: usize,
+    pub sample_rate: u32,
+    pub pool_size: usize,
+    pub pool_available: usize,
+    pub supported_formats: Vec<String>,
+    pub supported_rates: Vec<u32>,
+}
+
 /// Transcription response.
 #[derive(Serialize)]
 pub struct TranscribeResponse {
@@ -46,6 +61,26 @@ pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> 
         status: "ok".into(),
         model: "gigaam-v3-e2e-rnnt".into(),
         version: env!("CARGO_PKG_VERSION").into(),
+    })
+}
+
+/// GET /v1/models — list loaded models and capabilities.
+pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
+    let engine = &state.engine;
+    Json(ModelInfo {
+        id: "gigaam-v3-e2e-rnnt".into(),
+        name: "GigaAM v3 RNN-T".into(),
+        version: env!("CARGO_PKG_VERSION").into(),
+        encoder: if engine.is_int8() { "int8".into() } else { "fp32".into() },
+        vocab_size: 1025,
+        sample_rate: 16000,
+        pool_size: engine.pool.total(),
+        pool_available: engine.pool.available(),
+        supported_formats: vec![
+            "wav".into(), "mp3".into(), "m4a".into(),
+            "ogg".into(), "flac".into(),
+        ],
+        supported_rates: vec![8000, 16000, 24000, 44100, 48000],
     })
 }
 
