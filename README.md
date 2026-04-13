@@ -1,6 +1,6 @@
 <p align="center">
   <h1 align="center">gigastt</h1>
-  <p align="center"><strong>On-device Russian speech recognition with 5.3% WER</strong></p>
+  <p align="center"><strong>On-device Russian speech recognition with 10.4% WER</strong></p>
   <p align="center">Local STT server powered by GigaAM v3 — no cloud, no API keys, full privacy</p>
   <p align="center">
     <a href="https://github.com/ekhodzitsky/gigastt/actions"><img src="https://github.com/ekhodzitsky/gigastt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -30,7 +30,7 @@ cargo install gigastt && gigastt serve
 | **Privacy** | 100% local | 100% local | data leaves device |
 | **Cost** | free forever | free | $0.006/min+ |
 | **Setup** | `cargo install` | Python + deps | API key + billing |
-| **Binary size** | single static binary | Python runtime | N/A |
+| **Binary size** | single binary | Python runtime | N/A |
 | **INT8 quantization** | auto, 0% WER loss | manual | N/A |
 | **Concurrent sessions** | 4 (configurable) | 1 | unlimited |
 
@@ -128,6 +128,7 @@ Client                            Server
 | Endpoint | Method | Description |
 |---|---|---|
 | `/health` | GET | Health check (`{"status":"ok"}`) |
+| `/v1/models` | GET | Model info (encoder type, pool size, capabilities) |
 | `/v1/transcribe` | POST | File transcription, full JSON response |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
 | `/ws` | GET | WebSocket upgrade for real-time streaming |
@@ -238,12 +239,16 @@ python scripts/quantize.py           # legacy Python alternative
 ## CLI Reference
 
 ```
-gigastt <COMMAND>
+gigastt [OPTIONS] <COMMAND>
+
+Options:
+  --log-level <LEVEL>    Log level [default: info]
 
 Commands:
   serve        Start STT server
   download     Download model (~850 MB)
   transcribe   Transcribe audio file (offline)
+  quantize     Quantize encoder to INT8 (requires --features quantize)
 
 gigastt serve [OPTIONS]
   --port <PORT>          Listen port [default: 9876]
@@ -251,7 +256,12 @@ gigastt serve [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
   --pool-size <N>        Concurrent inference sessions [default: 4]
 
-gigastt transcribe <FILE>
+gigastt download [OPTIONS]
+  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
+  --diarization          Also download speaker diarization model (requires --features diarization)
+
+gigastt transcribe [OPTIONS] <FILE>
+  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
   Supports: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed)
 
 gigastt quantize [OPTIONS]          # requires --features quantize
@@ -289,17 +299,17 @@ gigastt quantize [OPTIONS]          # requires --features quantize
 
 - Binds to `127.0.0.1` only by default (localhost)
 - WebSocket frame limit: 512 KB
-- Connection semaphore: max 4 concurrent sessions
+- Session pool: max 4 concurrent sessions
 - Audio buffer cap: 5 s (streaming) / 10 min (file upload)
 - Internal errors sanitized — no path or model leakage to clients
 - Idle connection timeout: 300 s
 
 ## Testing
 
-72 unit tests + 28 e2e tests + load & soak tests:
+87 unit tests + 24 e2e tests + load & soak tests:
 
 ```sh
-cargo test                           # 72 unit tests (no model needed)
+cargo test                           # 87 unit tests (no model needed)
 cargo clippy                         # Lint (zero warnings)
 
 # E2E tests (require model, serial to avoid OOM)
