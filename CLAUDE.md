@@ -17,9 +17,12 @@ cargo build                          # CPU-only debug build (default, any platfo
 cargo build --features coreml        # macOS ARM64 (CoreML / Neural Engine)
 cargo build --features cuda          # Linux x86_64 (CUDA 12+)
 cargo build --release                # Release build (LTO, stripped)
-cargo test                           # Run all 63+ unit tests, CPU (no model required)
+cargo test                           # Run all 72 unit tests, CPU (no model required)
 cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
-cargo test --test server_integration -- --ignored  # 1 integration test (requires model)
+cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown  # E2E tests (requires model)
+cargo test --test load_test -- --ignored           # Load tests (requires model, local only)
+cargo test --test soak_test -- --ignored           # Soak test (requires model, local only)
+cargo test --test server_integration -- --ignored  # Legacy integration tests (requires model)
 cargo clippy             # Lint (no expected warnings)
 ```
 
@@ -109,11 +112,38 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - Deprecation: add `deprecated: true` field, support old format for 2 minor versions
 
 ### Testing
-- Unit tests live in `#[cfg(test)] mod tests` at bottom of each file
-- Tests use synthetic data (no model download required)
-- Test names: `test_<what>_<expected_behavior>`
-- Current: 63+ unit tests (tokenizer, features, decode, inference, protocol, audio, diarization) + 1 integration test (WebSocket)
-- Benchmark suite (WER evaluation on Golos fixtures) in `tests/benchmark.rs` (harness disabled)
+
+Three-tier test architecture:
+
+**Unit tests** (no model required, run in CI on every PR):
+- Live in `#[cfg(test)] mod tests` at bottom of each file
+- Use synthetic data, test names: `test_<what>_<expected_behavior>`
+- 72 unit tests across 11 modules
+- `cargo test` — runs all unit tests
+
+**E2E tests** (require model ~850MB, run in CI on main push only):
+- `tests/e2e_rest.rs` — 8 REST API tests (health, transcribe, SSE streaming, error paths)
+- `tests/e2e_ws.rs` — 9 WebSocket protocol tests (ready, audio, stop, configure, errors, concurrent)
+- `tests/e2e_errors.rs` — 5 error path tests (oversized body/frame, pool saturation, idle timeout)
+- `tests/e2e_shutdown.rs` — 2 graceful shutdown tests
+- `tests/common/mod.rs` — shared helpers (start_server with shutdown handle, WAV generation, WS connect)
+- `cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown` — all e2e tests
+
+**Load/soak tests** (require model, run locally only):
+- `tests/load_test.rs` — 3 load tests (concurrent WS, concurrent REST, burst connections)
+- `tests/soak_test.rs` — 1 soak test (continuous WS cycling, configurable via `GIGASTT_SOAK_DURATION_SECS`)
+- `cargo test --test load_test -- --ignored` / `cargo test --test soak_test -- --ignored`
+
+**Legacy integration tests** (kept for backward compat):
+- `tests/server_integration.rs` — 6 tests, `#[ignore]`, `cargo test --test server_integration -- --ignored`
+
+**Benchmark suite:**
+- `tests/benchmark.rs` — WER evaluation on 15 Golos fixtures (custom harness, `harness = false`)
+
+### CI structure
+- **PR CI** (fast): clippy, unit tests, feature compile checks (CoreML, CUDA, diarization), audit
+- **Main push CI** (full): all PR checks + e2e tests with cached model (~850MB, OS-independent cache key)
+- Load/soak tests are local-only, not in CI
 
 ### Code style
 - Rust 2024 edition

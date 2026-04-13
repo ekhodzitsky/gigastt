@@ -31,6 +31,19 @@ const DEFAULT_SAMPLE_RATE: u32 = 48000;
 ///
 /// Runs until `Ctrl-C` is received.
 pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
+    run_with_shutdown(engine, port, host, None).await
+}
+
+/// Start server with an optional programmatic shutdown signal.
+///
+/// When `shutdown` is `Some`, the server stops when the sender fires (or is dropped).
+/// When `None`, the server stops on Ctrl-C. Used by tests for clean teardown.
+pub async fn run_with_shutdown(
+    engine: Engine,
+    port: u16,
+    host: &str,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+) -> Result<()> {
     let addr: SocketAddr = format!("{host}:{port}")
         .parse()
         .context("Invalid host:port")?;
@@ -53,19 +66,23 @@ pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
     tracing::info!("  REST API:  http://{addr}/health, /v1/transcribe, /v1/transcribe/stream");
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
+
+    let shutdown_fut = async {
+        match shutdown {
+            Some(rx) => { rx.await.ok(); }
+            None => { tokio::signal::ctrl_c().await.ok(); }
+        }
+        tracing::info!("Shutting down server");
+    };
+
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
-    .with_graceful_shutdown(shutdown_signal())
+    .with_graceful_shutdown(shutdown_fut)
     .await?;
 
     Ok(())
-}
-
-async fn shutdown_signal() {
-    tokio::signal::ctrl_c().await.ok();
-    tracing::info!("Shutting down server");
 }
 
 async fn cors_middleware(
