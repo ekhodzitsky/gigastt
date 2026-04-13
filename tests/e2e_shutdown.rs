@@ -27,7 +27,7 @@ async fn test_shutdown_during_ws_session() {
 
     // Send 1 second of PCM16 silence at 48kHz to start a streaming session
     let silence = common::generate_pcm16_silence(1.0, 48000);
-    sink.send(Message::Binary(silence)).await.unwrap();
+    sink.send(Message::Binary(silence.into())).await.unwrap();
 
     // Trigger server shutdown while the session is still open
     let _ = shutdown.send(());

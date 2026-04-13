@@ -29,14 +29,14 @@ async fn test_load_4_concurrent_ws_streaming() {
             // 5s of PCM16 silence at 48kHz = 480000 bytes, sent in 9600-byte chunks
             let silence = common::generate_pcm16_silence(5.0, 48000);
             for chunk in silence.chunks(9600) {
-                sink.send(Message::Binary(chunk.to_vec()))
+                sink.send(Message::Binary(chunk.to_vec().into()))
                     .await
                     .unwrap_or_else(|e| panic!("Client {i}: send audio chunk failed: {e}"));
             }
 
             // Send Stop
             sink.send(Message::Text(
-                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
             ))
             .await
             .unwrap_or_else(|e| panic!("Client {i}: send stop failed: {e}"));
@@ -171,7 +171,7 @@ async fn test_load_burst_20_connections() {
 
             // Send Stop immediately — no audio
             sink.send(Message::Text(
-                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
             ))
             .await
             .unwrap_or_else(|e| panic!("Client {i}: send stop failed: {e}"));

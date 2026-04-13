@@ -63,12 +63,12 @@ async fn test_ws_audio_produces_final() {
     // 2 seconds of PCM16 silence at 48kHz = 192000 bytes
     let silence = common::generate_pcm16_silence(2.0, 48000);
     for chunk in silence.chunks(9600) {
-        sink.send(Message::Binary(chunk.to_vec())).await.unwrap();
+        sink.send(Message::Binary(chunk.to_vec().into())).await.unwrap();
     }
 
     // Send Stop
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
     ))
     .await
     .unwrap();
@@ -110,7 +110,7 @@ async fn test_ws_stop_without_audio() {
     let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
 
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
     ))
     .await
     .unwrap();
@@ -144,18 +144,18 @@ async fn test_ws_configure_valid_sample_rate() {
     // Configure to 16kHz
     sink.send(Message::Text(
         serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
-            .unwrap(),
+            .unwrap().into(),
     ))
     .await
     .unwrap();
 
     // 1 second of PCM16 silence at 16kHz = 32000 bytes
     let silence = common::generate_pcm16_silence(1.0, 16000);
-    sink.send(Message::Binary(silence)).await.unwrap();
+    sink.send(Message::Binary(silence.into())).await.unwrap();
 
     // Send Stop
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
     ))
     .await
     .unwrap();
@@ -192,7 +192,7 @@ async fn test_ws_configure_invalid_sample_rate() {
 
     sink.send(Message::Text(
         serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 7000}))
-            .unwrap(),
+            .unwrap().into(),
     ))
     .await
     .unwrap();
@@ -225,12 +225,12 @@ async fn test_ws_configure_after_audio() {
 
     // Send some audio first
     let silence = common::generate_pcm16_silence(0.1, 48000);
-    sink.send(Message::Binary(silence)).await.unwrap();
+    sink.send(Message::Binary(silence.into())).await.unwrap();
 
     // Now try to configure — should be rejected
     sink.send(Message::Text(
         serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
-            .unwrap(),
+            .unwrap().into(),
     ))
     .await
     .unwrap();
@@ -262,13 +262,13 @@ async fn test_ws_malformed_json() {
     let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
 
     // Send garbage text that is not valid JSON
-    sink.send(Message::Text("not json at all {{".to_string()))
+    sink.send(Message::Text("not json at all {{".to_string().into()))
         .await
         .unwrap();
 
     // Connection must NOT be closed; send Stop and expect Final
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
     ))
     .await
     .unwrap();
@@ -305,7 +305,7 @@ async fn test_ws_client_disconnect_midstream() {
     {
         let (mut sink, _stream, _ready) = common::ws_connect(port).await;
         let silence = common::generate_pcm16_silence(0.5, 48000);
-        sink.send(Message::Binary(silence)).await.unwrap();
+        sink.send(Message::Binary(silence.into())).await.unwrap();
         // Dropped here — abrupt disconnect without sending Close frame
     }
 
@@ -353,7 +353,7 @@ async fn test_ws_concurrent_4_clients() {
 
             // Send Stop
             sink.send(Message::Text(
-                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
             ))
             .await
             .unwrap();

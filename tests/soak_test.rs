@@ -59,7 +59,7 @@ async fn test_soak_ws_continuous() {
             for chunk in silence.chunks(9_600) {
                 tokio::time::timeout(
                     Duration::from_secs(10),
-                    sink.send(Message::Binary(chunk.to_vec())),
+                    sink.send(Message::Binary(chunk.to_vec().into())),
                 )
                 .await
                 .map_err(|_| format!("iter {iteration}: timeout sending audio chunk"))?
@@ -70,7 +70,7 @@ async fn test_soak_ws_continuous() {
             tokio::time::timeout(
                 Duration::from_secs(10),
                 sink.send(Message::Text(
-                    serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap(),
+                    serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
                 )),
             )
             .await

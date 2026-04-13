@@ -100,7 +100,7 @@ async fn test_four_clients_connect_concurrently() {
 
             // Send Stop
             let stop = serde_json::json!({"type": "stop"});
-            sink.send(Message::Text(serde_json::to_string(&stop).unwrap()))
+            sink.send(Message::Text(serde_json::to_string(&stop).unwrap().into()))
                 .await
                 .unwrap();
 
@@ -146,11 +146,11 @@ async fn test_stop_message_closes_gracefully() {
 
     // Send some synthetic PCM16 audio (silence at 48kHz, 100ms = 4800 samples = 9600 bytes)
     let silence: Vec<u8> = vec![0u8; 9600];
-    sink.send(Message::Binary(silence)).await.unwrap();
+    sink.send(Message::Binary(silence.into())).await.unwrap();
 
     // Send Stop
     let stop = serde_json::json!({"type": "stop"});
-    sink.send(Message::Text(serde_json::to_string(&stop).unwrap()))
+    sink.send(Message::Text(serde_json::to_string(&stop).unwrap().into()))
         .await
         .unwrap();
 
@@ -274,14 +274,14 @@ async fn test_four_concurrent_ws_with_audio() {
 
             // Send audio in chunks
             for chunk in audio.chunks(9600) {
-                sink.send(Message::Binary(chunk.to_vec()))
+                sink.send(Message::Binary(chunk.to_vec().into()))
                     .await
                     .unwrap();
             }
 
             // Send Stop
             let stop = serde_json::json!({"type": "stop"});
-            sink.send(Message::Text(serde_json::to_string(&stop).unwrap()))
+            sink.send(Message::Text(serde_json::to_string(&stop).unwrap().into()))
                 .await
                 .unwrap();
 
@@ -329,7 +329,7 @@ async fn test_configure_invalid_sample_rate() {
 
     // Send Configure with invalid sample rate
     let configure = serde_json::json!({"type": "configure", "sample_rate": 7000});
-    sink.send(Message::Text(serde_json::to_string(&configure).unwrap()))
+    sink.send(Message::Text(serde_json::to_string(&configure).unwrap().into()))
         .await
         .unwrap();
 

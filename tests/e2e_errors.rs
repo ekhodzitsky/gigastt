@@ -59,10 +59,11 @@ async fn test_ws_oversized_frame_rejected() {
     let (mut ws, _) =
         tokio_tungstenite::connect_async_with_config(
             format!("ws://127.0.0.1:{port}/ws"),
-            Some(tokio_tungstenite::tungstenite::protocol::WebSocketConfig {
-                max_message_size: None,
-                max_frame_size: None,
-                ..Default::default()
+            Some({
+                let mut cfg = tokio_tungstenite::tungstenite::protocol::WebSocketConfig::default();
+                cfg.max_message_size = None;
+                cfg.max_frame_size = None;
+                cfg
             }),
             false,
         )
