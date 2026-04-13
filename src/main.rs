@@ -78,8 +78,10 @@ async fn main() -> anyhow::Result<()> {
         Commands::Transcribe { file, model_dir } => {
             model::ensure_model(&model_dir).await?;
             let engine = inference::Engine::load(&model_dir)?;
-            let result = engine.transcribe_file(&file)?;
-            println!("{}", result.text);
+            let mut triplet = engine.pool.checkout().await;
+            let result = engine.transcribe_file(&file, &mut triplet);
+            engine.pool.checkin(triplet).await;
+            println!("{}", result?.text);
         }
     }
 

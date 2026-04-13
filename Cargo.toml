@@ -51,6 +51,9 @@ rustfft = "6"
 # High-quality audio resampling
 rubato = "0.16"
 
+# Async stream adapters (ReceiverStream for SSE)
+tokio-stream = "0.1"
+
 # Audio file reading (for `transcribe` command)
 symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
 

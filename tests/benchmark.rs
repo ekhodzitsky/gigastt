@@ -262,6 +262,9 @@ fn main() {
     let engine =
         gigastt::inference::Engine::load(&model_dir_str).expect("Failed to load engine");
 
+    let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+    let mut triplet = rt.block_on(engine.pool.checkout());
+
     let mut total_ref_words = 0usize;
     let mut total_errors = 0usize;
     let mut details = Vec::new();
@@ -269,7 +272,7 @@ fn main() {
     for sample in &manifest {
         let wav_path = fixture_dir.join(&sample.filename);
         let hypothesis = engine
-            .transcribe_file(wav_path.to_str().unwrap())
+            .transcribe_file(wav_path.to_str().unwrap(), &mut triplet)
             .expect("Transcription failed");
 
         let ref_words = normalize_for_wer(&sample.reference);

@@ -6,6 +6,7 @@ use axum::http::StatusCode;
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::Json;
 use futures_util::stream::Stream;
+use futures_util::StreamExt;
 use serde::Serialize;
 use std::sync::Arc;
 
@@ -14,7 +15,6 @@ use crate::inference::Engine;
 /// Shared application state for all handlers.
 pub struct AppState {
     pub engine: Arc<Engine>,
-    pub semaphore: Arc<tokio::sync::Semaphore>,
 }
 
 /// Health check response.
@@ -61,34 +61,41 @@ pub async fn transcribe(
         return Err(api_error(StatusCode::BAD_REQUEST, "Empty request body", "empty_body"));
     }
 
-    // C2: timeout on semaphore acquisition
-    let _permit = tokio::time::timeout(
+    // Checkout a session triplet from the pool (blocks if none available)
+    let triplet = tokio::time::timeout(
         std::time::Duration::from_secs(30),
-        state.semaphore.acquire(),
+        state.engine.pool.checkout(),
     )
     .await
-    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?
-    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server shutting down", "busy"))?;
+    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?;
 
     let body_bytes = body.to_vec();
-    // H7: drop body after copying
     drop(body);
 
     let engine = state.engine.clone();
 
-    let result = tokio::task::spawn_blocking(move || engine.transcribe_bytes(&body_bytes)).await;
+    let result = tokio::task::spawn_blocking(move || {
+        let mut triplet = triplet;
+        let r = engine.transcribe_bytes(&body_bytes, &mut triplet);
+        (r, triplet)
+    }).await;
 
     match result {
-        Ok(Ok(result)) => Ok(Json(TranscribeResponse {
-            text: result.text,
-            words: result.words,
-            duration: result.duration_s,
-        })),
-        Ok(Err(e)) => {
+        Ok((Ok(result), triplet)) => {
+            state.engine.pool.checkin(triplet).await;
+            Ok(Json(TranscribeResponse {
+                text: result.text,
+                words: result.words,
+                duration: result.duration_s,
+            }))
+        }
+        Ok((Err(e), triplet)) => {
+            state.engine.pool.checkin(triplet).await;
             tracing::error!("Transcription error: {e}");
             Err(api_error(StatusCode::UNPROCESSABLE_ENTITY, "Transcription failed. Check audio format.", "transcription_error"))
         }
         Err(e) => {
+            // spawn_blocking panicked — triplet is lost
             tracing::error!("spawn_blocking join error: {e}");
             Err(api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal"))
         }
@@ -96,6 +103,9 @@ pub async fn transcribe(
 }
 
 /// POST /v1/transcribe/stream — upload audio file, get SSE stream of partial/final results.
+///
+/// Real streaming: audio is processed chunk-by-chunk inside `spawn_blocking`,
+/// and segments are sent to the SSE stream via an mpsc channel as they are produced.
 pub async fn transcribe_stream(
     State(state): State<Arc<AppState>>,
     body: Bytes,
@@ -104,89 +114,99 @@ pub async fn transcribe_stream(
         return Err(api_error(StatusCode::BAD_REQUEST, "Empty request body", "empty_body"));
     }
 
-    // C2: timeout on semaphore acquisition; H1: acquire before writing, move into stream
-    let semaphore = state.semaphore.clone();
-    let permit = tokio::time::timeout(
-        std::time::Duration::from_secs(30),
-        semaphore.acquire_owned(),
-    )
-    .await
-    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?
-    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server shutting down", "busy"))?;
-
     let body_bytes = body.to_vec();
-    // H7: drop body after copying
     drop(body);
 
-    let samples = crate::inference::audio::decode_audio_bytes(&body_bytes)
+    // Decode audio first (in spawn_blocking since symphonia is blocking)
+    let samples = {
+        let bytes = body_bytes;
+        tokio::task::spawn_blocking(move || {
+            crate::inference::audio::decode_audio_bytes(&bytes)
+        })
+        .await
+        .map_err(|e| {
+            tracing::error!("spawn_blocking join error: {e}");
+            api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
+        })?
         .map_err(|e| {
             tracing::error!("Audio decode error: {e:#}");
             api_error(StatusCode::UNPROCESSABLE_ENTITY, "Failed to decode audio file. Check format (WAV, MP3, M4A, OGG, FLAC supported).", "invalid_audio")
-        })?;
-
-    let engine = state.engine.clone();
-
-    // H2: run all blocking inference in spawn_blocking, collect segments upfront
-    let engine_clone = engine.clone();
-    let segments_result = tokio::task::spawn_blocking(move || {
-        let mut stream_state = engine_clone.create_state(
-            #[cfg(feature = "diarization")]
-            false,
-        );
-        let chunk_size = 16000; // 1 second at 16kHz
-        let mut all_segments = Vec::new();
-        let mut had_error = None;
-
-        for chunk in samples.chunks(chunk_size) {
-            match engine_clone.process_chunk(chunk, &mut stream_state) {
-                Ok(segs) => all_segments.extend(segs),
-                Err(e) => {
-                    had_error = Some(format!("{e}"));
-                    break;
-                }
-            }
-        }
-
-        if had_error.is_none() && let Some(seg) = engine_clone.flush_state(&mut stream_state) {
-            all_segments.push(seg);
-        }
-
-        (all_segments, had_error)
-    })
-    .await;
-
-    let (all_segments, inference_error) = match segments_result {
-        Ok(pair) => pair,
-        Err(e) => {
-            tracing::error!("spawn_blocking join error: {e}");
-            return Err(api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal"));
-        }
+        })?
     };
 
-    // Build events from collected segments
-    let mut events: Vec<Result<Event, std::convert::Infallible>> = Vec::new();
-    if let Some(err) = inference_error {
-        tracing::error!("SSE inference error: {err}");
-        let msg = serde_json::json!({"type": "error", "message": "Transcription failed. Check audio format.", "code": "inference_error"});
-        events.push(Ok(Event::default().data(msg.to_string())));
-    } else {
-        for seg in all_segments {
-            let msg = if seg.is_final {
-                serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-            } else {
-                serde_json::json!({"type": "partial", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-            };
-            events.push(Ok(Event::default().data(msg.to_string())));
-        }
-    }
+    // Checkout a session triplet from the pool
+    let triplet = tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        state.engine.pool.checkout(),
+    )
+    .await
+    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?;
 
-    // Stream events with permit held until stream is exhausted
-    let stream = futures_util::stream::unfold(
-        (events.into_iter(), permit),
-        |(mut iter, permit)| async move {
-            iter.next().map(|event| (event, (iter, permit)))
-        },
-    );
+    // Create mpsc channel for streaming segments from spawn_blocking to SSE
+    let (tx, rx) = tokio::sync::mpsc::channel::<Result<crate::inference::TranscriptSegment, String>>(16);
+
+    let engine = state.engine.clone();
+    tokio::task::spawn_blocking(move || {
+        let mut triplet = triplet;
+
+        // catch_unwind ensures triplet is returned to pool even on panic
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut stream_state = engine.create_state(
+                #[cfg(feature = "diarization")]
+                false,
+            );
+            let chunk_size = 16000; // 1 second at 16kHz
+
+            for chunk in samples.chunks(chunk_size) {
+                match engine.process_chunk(chunk, &mut stream_state, &mut triplet) {
+                    Ok(segs) => {
+                        for seg in segs {
+                            if tx.blocking_send(Ok(seg)).is_err() {
+                                // Receiver dropped (client disconnected)
+                                return;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        let _ = tx.blocking_send(Err(format!("{e}")));
+                        return;
+                    }
+                }
+            }
+
+            // Flush final segment
+            if let Some(seg) = engine.flush_state(&mut stream_state) {
+                let _ = tx.blocking_send(Ok(seg));
+            }
+        }));
+
+        if result.is_err() {
+            tracing::error!("Panic in SSE inference task — triplet recovered");
+        }
+
+        // Always return triplet to pool (even after panic)
+        engine.pool.blocking_checkin(triplet);
+    });
+
+    // Convert receiver to SSE stream
+    let stream = tokio_stream::wrappers::ReceiverStream::new(rx)
+        .map(|result| {
+            let event = match result {
+                Ok(seg) => {
+                    let msg = if seg.is_final {
+                        serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
+                    } else {
+                        serde_json::json!({"type": "partial", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
+                    };
+                    Event::default().data(msg.to_string())
+                }
+                Err(_) => {
+                    let msg = serde_json::json!({"type": "error", "message": "Transcription failed.", "code": "inference_error"});
+                    Event::default().data(msg.to_string())
+                }
+            };
+            Ok(event)
+        });
 
     Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
 }

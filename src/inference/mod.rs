@@ -20,7 +20,7 @@ use ort::session::Session;
 use ort::value::TensorRef;
 use serde::Serialize;
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::error::GigasttError;
 
@@ -49,6 +49,87 @@ pub(crate) fn now_timestamp() -> f64 {
 
 /// Seconds per encoder frame (HOP_LENGTH * 4 / 16000 = 0.04s).
 const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64) * 4.0 / 16000.0;
+
+/// Default number of session triplets in the pool.
+const DEFAULT_POOL_SIZE: usize = 4;
+
+/// A set of ONNX sessions for one inference pipeline (encoder + decoder + joiner).
+///
+/// Moved out of the pool on checkout and returned on checkin.
+/// Each triplet is independent and can run inference concurrently with others.
+pub struct SessionTriplet {
+    pub(crate) encoder: Session,
+    pub(crate) decoder: Session,
+    pub(crate) joiner: Session,
+}
+
+/// Pool of pre-loaded [`SessionTriplet`]s backed by an mpsc channel.
+///
+/// Checkout = `recv` from channel, checkin = `send` back.
+/// The pool size acts as the concurrency limit — no separate semaphore needed.
+pub struct SessionPool {
+    sender: tokio::sync::mpsc::Sender<SessionTriplet>,
+    receiver: tokio::sync::Mutex<tokio::sync::mpsc::Receiver<SessionTriplet>>,
+    total: usize,
+    available: AtomicUsize,
+}
+
+impl SessionPool {
+    /// Create a pool pre-filled with the given triplets.
+    pub fn new(triplets: Vec<SessionTriplet>) -> Self {
+        let total = triplets.len();
+        let (sender, receiver) = tokio::sync::mpsc::channel(total);
+        for triplet in triplets {
+            sender.try_send(triplet).expect("channel capacity matches triplet count");
+        }
+        Self {
+            sender,
+            receiver: tokio::sync::Mutex::new(receiver),
+            total,
+            available: AtomicUsize::new(total),
+        }
+    }
+
+    /// Checkout a triplet from the pool. Blocks if none available.
+    pub async fn checkout(&self) -> SessionTriplet {
+        let triplet = self
+            .receiver
+            .lock()
+            .await
+            .recv()
+            .await
+            .expect("Pool sender dropped — this is a bug");
+        self.available.fetch_sub(1, Ordering::Relaxed);
+        triplet
+    }
+
+    /// Return a triplet to the pool (async).
+    pub async fn checkin(&self, triplet: SessionTriplet) {
+        self.sender
+            .send(triplet)
+            .await
+            .expect("Pool receiver dropped — this is a bug");
+        self.available.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Return a triplet to the pool (blocking, for use inside `spawn_blocking`).
+    pub fn blocking_checkin(&self, triplet: SessionTriplet) {
+        self.sender
+            .blocking_send(triplet)
+            .expect("Pool receiver dropped — this is a bug");
+        self.available.fetch_add(1, Ordering::Relaxed);
+    }
+
+    /// Total number of triplets in the pool.
+    pub fn total(&self) -> usize {
+        self.total
+    }
+
+    /// Number of currently available (not checked-out) triplets.
+    pub fn available(&self) -> usize {
+        self.available.load(Ordering::Relaxed)
+    }
+}
 
 /// Decoder LSTM hidden state persisted across streaming chunks.
 ///
@@ -134,20 +215,22 @@ pub struct StreamingState {
 
 /// ONNX Runtime inference engine for GigaAM v3 e2e_rnnt.
 ///
-/// Thread-safe: ONNX sessions are wrapped in [`Mutex`] so `Engine` can be shared
-/// across connections via `Arc<Engine>`. Typical usage:
+/// Thread-safe: inference sessions live in a [`SessionPool`] so `Engine` can be
+/// shared across connections via `Arc<Engine>`. The pool size acts as the
+/// concurrency limit — no separate semaphore needed. Typical usage:
 ///
 /// ```ignore
 /// let engine = Engine::load("~/.gigastt/models")?;
-/// let text = engine.transcribe_file("audio.wav")?;
+/// let mut triplet = engine.pool.checkout().await;
+/// let text = engine.transcribe_file("audio.wav", &mut triplet)?;
+/// engine.pool.checkin(triplet).await;
 /// ```
 ///
 /// For streaming recognition, use [`create_state`](Engine::create_state) +
 /// [`process_chunk`](Engine::process_chunk) + [`flush_state`](Engine::flush_state).
 pub struct Engine {
-    encoder: Mutex<Session>,
-    decoder: Mutex<Session>,
-    joiner: Mutex<Session>,
+    /// Pool of ONNX session triplets for concurrent inference.
+    pub pool: SessionPool,
     tokenizer: Tokenizer,
     mel: MelSpectrogram,
     /// Speaker encoder for diarization (None if model file is absent).
@@ -158,6 +241,7 @@ pub struct Engine {
 impl Engine {
     /// Load ONNX models from the given directory and create an inference engine.
     ///
+    /// Creates a pool of [`DEFAULT_POOL_SIZE`] session triplets for concurrent inference.
     /// Expects files: `v3_e2e_rnnt_encoder.onnx` (or `_int8.onnx`), `v3_e2e_rnnt_decoder.onnx`,
     /// `v3_e2e_rnnt_joint.onnx`, and `v3_e2e_rnnt_vocab.txt`.
     ///
@@ -165,28 +249,28 @@ impl Engine {
     ///
     /// Returns [`GigasttError::ModelLoad`] if model files are missing or ONNX session creation fails.
     pub fn load(model_dir: &str) -> Result<Self, GigasttError> {
+        Self::load_with_pool_size(model_dir, DEFAULT_POOL_SIZE)
+    }
+
+    /// Load ONNX models with a custom pool size.
+    pub fn load_with_pool_size(model_dir: &str, pool_size: usize) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
         if !dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
             return Err(GigasttError::ModelLoad(format!(
                 "v3_e2e_rnnt_encoder.onnx not found in {model_dir}"
             )));
         }
-        Self::load_inner(dir, model_dir)
+        Self::load_inner(dir, model_dir, pool_size)
             .map_err(|e| GigasttError::ModelLoad(format!("{e:#}")))
     }
 
-    fn load_inner(dir: &Path, model_dir: &str) -> anyhow::Result<Self> {
-        // Prefer INT8 quantized encoder if available (~4x smaller, ~43% faster)
+    /// Load a single set of encoder/decoder/joiner ONNX sessions from disk.
+    fn load_sessions(dir: &Path) -> anyhow::Result<(Session, Session, Session)> {
         let encoder_path = if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
-            tracing::info!("Using INT8 quantized encoder");
             dir.join("v3_e2e_rnnt_encoder_int8.onnx")
         } else {
             dir.join("v3_e2e_rnnt_encoder.onnx")
         };
-
-        tracing::info!("Loading ONNX models from {model_dir}...");
-
-        // --- Execution provider selection (compile-time) ---
 
         #[cfg(feature = "coreml")]
         let (encoder, decoder, joiner) = {
@@ -196,8 +280,6 @@ impl Engine {
                 .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
                 .with_model_cache_dir(cache_dir.to_string_lossy())
                 .build();
-
-            tracing::info!("Using CoreML execution provider (Neural Engine + CPU)");
 
             let encoder = Session::builder()
                 .map_err(ort_err)?
@@ -224,8 +306,6 @@ impl Engine {
         let (encoder, decoder, joiner) = {
             let cuda_ep = ep::CUDA::default().build();
 
-            tracing::info!("Using CUDA execution provider (falls back to CPU if unavailable)");
-
             let encoder = Session::builder()
                 .map_err(ort_err)?
                 .with_execution_providers([cuda_ep.clone()])
@@ -249,8 +329,6 @@ impl Engine {
 
         #[cfg(not(any(feature = "coreml", feature = "cuda")))]
         let (encoder, decoder, joiner) = {
-            tracing::info!("Using CPU execution provider");
-
             let encoder = Session::builder()
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
@@ -266,10 +344,43 @@ impl Engine {
             (encoder, decoder, joiner)
         };
 
+        Ok((encoder, decoder, joiner))
+    }
+
+    fn load_inner(dir: &Path, model_dir: &str, pool_size: usize) -> anyhow::Result<Self> {
+        if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
+            tracing::info!("Using INT8 quantized encoder");
+        }
+
+        tracing::info!("Loading ONNX models from {model_dir} (pool_size={pool_size})...");
+
+        #[cfg(feature = "coreml")]
+        tracing::info!("Using CoreML execution provider (Neural Engine + CPU)");
+        #[cfg(feature = "cuda")]
+        tracing::info!("Using CUDA execution provider (falls back to CPU if unavailable)");
+        #[cfg(not(any(feature = "coreml", feature = "cuda")))]
+        tracing::info!("Using CPU execution provider");
+
+        let triplets: Vec<SessionTriplet> = std::thread::scope(|s| {
+            let handles: Vec<_> = (0..pool_size)
+                .map(|i| {
+                    s.spawn(move || {
+                        tracing::info!("Loading session triplet {}/{pool_size}", i + 1);
+                        let (encoder, decoder, joiner) = Self::load_sessions(dir)?;
+                        Ok(SessionTriplet { encoder, decoder, joiner })
+                    })
+                })
+                .collect();
+            handles
+                .into_iter()
+                .map(|h| h.join().expect("Thread panicked during model loading"))
+                .collect::<anyhow::Result<Vec<_>>>()
+        })?;
+
         let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
         let mel = MelSpectrogram::new();
 
-        tracing::info!("Models loaded (vocab_size={})", tokenizer.vocab_size());
+        tracing::info!("Models loaded (vocab_size={}, pool_size={pool_size})", tokenizer.vocab_size());
 
         #[cfg(feature = "diarization")]
         let speaker_encoder = match diarization::SpeakerEncoder::load(dir) {
@@ -284,9 +395,7 @@ impl Engine {
         };
 
         Ok(Self {
-            encoder: Mutex::new(encoder),
-            decoder: Mutex::new(decoder),
-            joiner: Mutex::new(joiner),
+            pool: SessionPool::new(triplets),
             tokenizer,
             mel,
             #[cfg(feature = "diarization")]
@@ -341,6 +450,7 @@ impl Engine {
         &self,
         samples: &[f32],
         state: &mut StreamingState,
+        triplet: &mut SessionTriplet,
     ) -> Result<Vec<TranscriptSegment>, GigasttError> {
         if samples.is_empty() {
             return Ok(vec![]);
@@ -369,7 +479,7 @@ impl Engine {
 
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
         let (mut new_words, endpoint) = self
-            .run_inference(&features, num_frames, &mut state.decoder, state.total_frames)
+            .run_inference(triplet, &features, num_frames, &mut state.decoder, state.total_frames)
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         state.total_frames += num_frames;
 
@@ -456,7 +566,7 @@ impl Engine {
     ///
     /// Returns [`GigasttError::InvalidAudio`] if the file cannot be decoded, or
     /// [`GigasttError::Inference`] if the ONNX runtime fails.
-    pub fn transcribe_file(&self, path: &str) -> Result<TranscribeResult, GigasttError> {
+    pub fn transcribe_file(&self, path: &str, triplet: &mut SessionTriplet) -> Result<TranscribeResult, GigasttError> {
         let float_samples = audio::decode_audio_file(path)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
         let duration_s = float_samples.len() as f64 / 16000.0;
@@ -466,14 +576,14 @@ impl Engine {
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
         let (words, _endpoint) = self
-            .run_inference(&features, num_frames, &mut decoder_state, 0)
+            .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
         Ok(TranscribeResult { text, words, duration_s })
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
-    pub fn transcribe_bytes(&self, data: &[u8]) -> Result<TranscribeResult, GigasttError> {
+    pub fn transcribe_bytes(&self, data: &[u8], triplet: &mut SessionTriplet) -> Result<TranscribeResult, GigasttError> {
         let float_samples = audio::decode_audio_bytes(data)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
         let duration_s = float_samples.len() as f64 / 16000.0;
@@ -483,7 +593,7 @@ impl Engine {
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
         let (words, _endpoint) = self
-            .run_inference(&features, num_frames, &mut decoder_state, 0)
+            .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
         Ok(TranscribeResult { text, words, duration_s })
@@ -491,6 +601,7 @@ impl Engine {
 
     fn run_inference(
         &self,
+        triplet: &mut SessionTriplet,
         features: &[f32],
         num_frames: usize,
         decoder_state: &mut DecoderState,
@@ -503,11 +614,7 @@ impl Engine {
         let length_tensor =
             TensorRef::from_array_view(([1_usize], length_data.as_slice()))?;
 
-        let mut encoder = self.encoder.lock().unwrap_or_else(|e| {
-            tracing::warn!("Encoder mutex was poisoned, recovering");
-            e.into_inner()
-        });
-        let encoder_outputs = encoder
+        let encoder_outputs = triplet.encoder
             .run(ort::inputs![signal_tensor, length_tensor])
             .context("Encoder inference failed")?;
 
@@ -522,24 +629,14 @@ impl Engine {
 
         tracing::debug!("Encoder output: {} frames", enc_len);
 
-        // Need to copy encoder data since we need to drop encoder_outputs before locking decoder
+        // Copy encoder data so we can release the encoder output borrow
         let enc_data_owned: Vec<f32> = enc_data.to_vec();
         drop(encoder_outputs);
-        drop(encoder);
 
         // RNN-T greedy decode
-        let mut decoder = self.decoder.lock().unwrap_or_else(|e| {
-            tracing::warn!("Decoder mutex was poisoned, recovering");
-            e.into_inner()
-        });
-        let mut joiner = self.joiner.lock().unwrap_or_else(|e| {
-            tracing::warn!("Joiner mutex was poisoned, recovering");
-            e.into_inner()
-        });
-
         let result = decode::greedy_decode(
-            &mut decoder,
-            &mut joiner,
+            &mut triplet.decoder,
+            &mut triplet.joiner,
             &enc_data_owned,
             enc_len,
             self.tokenizer.blank_id(),

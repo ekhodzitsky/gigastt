@@ -4,7 +4,7 @@
 
 pub mod http;
 
-use crate::inference::Engine;
+use crate::inference::{Engine, SessionTriplet};
 use crate::protocol::{ClientMessage, ServerMessage};
 use anyhow::{Context, Result};
 use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
@@ -16,9 +16,6 @@ use axum::Router;
 use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tokio::sync::Semaphore;
-
-const MAX_CONCURRENT_CONNECTIONS: usize = 4;
 
 /// Supported input sample rates (Hz). Default is 48000 for backward compatibility.
 const SUPPORTED_RATES: &[u32] = &[8000, 16000, 24000, 44100, 48000];
@@ -40,7 +37,6 @@ pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
 
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
-        semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_CONNECTIONS)),
     });
 
     let app = Router::new()
@@ -108,23 +104,29 @@ async fn ws_handler(
 }
 
 async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppState>) {
-    let permit = match state.semaphore.clone().acquire_owned().await {
-        Ok(p) => p,
-        Err(_) => return,
-    };
+    let triplet = state.engine.pool.checkout().await;
 
-    if let Err(e) = handle_ws_inner(socket, peer, &state.engine).await {
+    let (triplet_opt, result) = handle_ws_inner(socket, peer, &state.engine, triplet).await;
+    if let Err(e) = result {
         tracing::error!("WebSocket error from {peer}: {e}");
     }
 
-    drop(permit);
+    if let Some(triplet) = triplet_opt {
+        state.engine.pool.checkin(triplet).await;
+    }
+    // If triplet_opt is None, the triplet was lost due to a spawn_blocking panic.
+    // The pool degrades gracefully with fewer available slots.
 }
 
+/// Runs the WebSocket session loop. Always tries to return the triplet so the
+/// caller can check it back into the pool. Returns `None` only if the triplet
+/// was lost due to a thread panic inside `spawn_blocking`.
 async fn handle_ws_inner(
     socket: WebSocket,
     peer: SocketAddr,
     engine: &Arc<Engine>,
-) -> Result<()> {
+    triplet: SessionTriplet,
+) -> (Option<SessionTriplet>, Result<()>) {
     let (mut sink, mut source) = socket.split();
 
     tracing::info!("Client connected: {peer}");
@@ -142,177 +144,220 @@ async fn handle_ws_inner(
         supported_rates: SUPPORTED_RATES.to_vec(),
         diarization: diarization_available,
     };
-    sink.send(WsMessage::Text(serde_json::to_string(&ready)?.into()))
-        .await?;
+    if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&ready).unwrap().into()))
+        .await
+    {
+        return (Some(triplet), Err(e.into()));
+    }
 
     let mut state_opt = Some(engine.create_state(
         #[cfg(feature = "diarization")]
         false,
     ));
+    let mut triplet_opt = Some(triplet);
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
     let mut audio_received = false;
 
-    loop {
-        let msg = match tokio::time::timeout(
-            std::time::Duration::from_secs(300),
-            source.next(),
-        )
-        .await
-        {
-            Ok(Some(msg)) => msg?,
-            Ok(None) => break,
-            Err(_) => {
-                tracing::info!("Client {peer} idle timeout (300s)");
-                break;
-            }
-        };
-        match msg {
-            WsMessage::Binary(data) if data.is_empty() => {
-                tracing::debug!("Empty binary frame from {peer}, skipping");
-            }
-            WsMessage::Binary(data) => {
-                audio_received = true;
-                if data.len() % 2 != 0 {
-                    tracing::warn!(
-                        "Odd-length PCM frame ({} bytes) from {peer}, dropping last byte",
-                        data.len()
-                    );
+    let result: Result<()> = 'outer: {
+        loop {
+            let msg = match tokio::time::timeout(
+                std::time::Duration::from_secs(300),
+                source.next(),
+            )
+            .await
+            {
+                Ok(Some(Ok(msg))) => msg,
+                Ok(Some(Err(e))) => break 'outer Err(e.into()),
+                Ok(None) => break,
+                Err(_) => {
+                    tracing::info!("Client {peer} idle timeout (300s)");
+                    break;
                 }
-                let samples_f32: Vec<f32> = data
-                    .chunks_exact(2)
-                    .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
-                    .collect();
+            };
+            match msg {
+                WsMessage::Binary(data) if data.is_empty() => {
+                    tracing::debug!("Empty binary frame from {peer}, skipping");
+                }
+                WsMessage::Binary(data) => {
+                    audio_received = true;
+                    if data.len() % 2 != 0 {
+                        tracing::warn!(
+                            "Odd-length PCM frame ({} bytes) from {peer}, dropping last byte",
+                            data.len()
+                        );
+                    }
+                    let samples_f32: Vec<f32> = data
+                        .chunks_exact(2)
+                        .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
+                        .collect();
 
-                let samples_16k = if client_sample_rate == 16000 {
-                    samples_f32
-                } else {
-                    crate::inference::audio::resample(
-                        &samples_f32,
-                        client_sample_rate,
-                        16000,
-                    )?
-                };
+                    let samples_16k = if client_sample_rate == 16000 {
+                        samples_f32
+                    } else {
+                        match crate::inference::audio::resample(
+                            &samples_f32,
+                            client_sample_rate,
+                            16000,
+                        ) {
+                            Ok(s) => s,
+                            Err(e) => break 'outer Err(e),
+                        }
+                    };
 
-                let mut state = state_opt.take().context("Streaming state lost")?;
-                let eng = engine.clone();
-                let (result, state_back) = tokio::task::spawn_blocking(move || {
-                    let r = eng.process_chunk(&samples_16k, &mut state);
-                    (r, state)
-                })
-                .await?;
-                state_opt = Some(state_back);
+                    let mut state = match state_opt.take() {
+                        Some(s) => s,
+                        None => break 'outer Err(anyhow::anyhow!("Streaming state lost")),
+                    };
+                    let mut triplet = triplet_opt.take().expect("triplet must be present");
+                    let eng = engine.clone();
+                    let join_result = tokio::task::spawn_blocking(move || {
+                        let r = eng.process_chunk(&samples_16k, &mut state, &mut triplet);
+                        (r, state, triplet)
+                    })
+                    .await;
 
-                match result {
-                    Ok(segments) => {
-                        for seg in segments {
-                            let msg = if seg.is_final {
+                    match join_result {
+                        Ok((result, state_back, triplet_back)) => {
+                            state_opt = Some(state_back);
+                            triplet_opt = Some(triplet_back);
+                            match result {
+                                Ok(segments) => {
+                                    for seg in segments {
+                                        let msg = if seg.is_final {
+                                            ServerMessage::Final {
+                                                text: seg.text,
+                                                timestamp: seg.timestamp,
+                                                words: seg.words,
+                                            }
+                                        } else {
+                                            ServerMessage::Partial {
+                                                text: seg.text,
+                                                timestamp: seg.timestamp,
+                                                words: seg.words,
+                                            }
+                                        };
+                                        if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&msg).unwrap().into()))
+                                            .await
+                                        {
+                                            break 'outer Err(e.into());
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    tracing::error!("Inference error for {peer}: {e:#}");
+                                    let err = ServerMessage::Error {
+                                        message: "Inference failed. Please check audio format."
+                                            .into(),
+                                        code: "inference_error".into(),
+                                    };
+                                    if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&err).unwrap().into()))
+                                        .await
+                                    {
+                                        break 'outer Err(e.into());
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            // spawn_blocking panicked — triplet is lost (triplet_opt is None)
+                            tracing::error!("spawn_blocking panicked for {peer}: {e}");
+                            break 'outer Err(anyhow::anyhow!("Inference thread panicked"));
+                        }
+                    }
+                }
+                WsMessage::Text(text) => {
+                    match serde_json::from_str::<ClientMessage>(&text) {
+                        Ok(ClientMessage::Configure { sample_rate, diarization }) => {
+                            if audio_received {
+                                let err = ServerMessage::Error {
+                                    message: "Configure must be sent before first audio frame".into(),
+                                    code: "configure_too_late".into(),
+                                };
+                                if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&err).unwrap().into()))
+                                    .await
+                                {
+                                    break 'outer Err(e.into());
+                                }
+                                continue;
+                            }
+                            if let Some(rate) = sample_rate {
+                                if SUPPORTED_RATES.contains(&rate) {
+                                    client_sample_rate = rate;
+                                    tracing::info!(
+                                        "Client {peer} configured sample rate: {rate}Hz"
+                                    );
+                                } else {
+                                    let err = ServerMessage::Error {
+                                        message: format!(
+                                            "Unsupported sample rate: {rate}Hz. Supported: {SUPPORTED_RATES:?}"
+                                        ),
+                                        code: "invalid_sample_rate".into(),
+                                    };
+                                    if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&err).unwrap().into()))
+                                        .await
+                                    {
+                                        break 'outer Err(e.into());
+                                    }
+                                }
+                            }
+
+                            // Re-create state if diarization preference changes
+                            #[cfg(feature = "diarization")]
+                            if let Some(enable_dia) = diarization {
+                                tracing::info!(
+                                    "Client {peer} configured diarization: {enable_dia}"
+                                );
+                                state_opt = Some(engine.create_state(enable_dia));
+                            }
+                            #[cfg(not(feature = "diarization"))]
+                            let _ = diarization;
+                        }
+                        Ok(ClientMessage::Stop) => {
+                            tracing::info!("Stop received from {peer}, finalizing");
+                            let mut state =
+                                match state_opt.take() {
+                                    Some(s) => s,
+                                    None => break,
+                                };
+                            let flush_seg = engine.flush_state(&mut state);
+                            drop(state);
+                            let final_msg = if let Some(seg) = flush_seg {
                                 ServerMessage::Final {
                                     text: seg.text,
                                     timestamp: seg.timestamp,
                                     words: seg.words,
                                 }
                             } else {
-                                ServerMessage::Partial {
-                                    text: seg.text,
-                                    timestamp: seg.timestamp,
-                                    words: seg.words,
+                                ServerMessage::Final {
+                                    text: String::new(),
+                                    timestamp: crate::inference::now_timestamp(),
+                                    words: vec![],
                                 }
                             };
-                            sink.send(WsMessage::Text(serde_json::to_string(&msg)?.into()))
-                                .await?;
-                        }
-                    }
-                    Err(e) => {
-                        tracing::error!("Inference error for {peer}: {e:#}");
-                        let err = ServerMessage::Error {
-                            message: "Inference failed. Please check audio format."
-                                .into(),
-                            code: "inference_error".into(),
-                        };
-                        sink.send(WsMessage::Text(serde_json::to_string(&err)?.into()))
-                            .await?;
-                    }
-                }
-            }
-            WsMessage::Text(text) => {
-                match serde_json::from_str::<ClientMessage>(&text) {
-                    Ok(ClientMessage::Configure { sample_rate, diarization }) => {
-                        if audio_received {
-                            let err = ServerMessage::Error {
-                                message: "Configure must be sent before first audio frame".into(),
-                                code: "configure_too_late".into(),
-                            };
-                            sink.send(WsMessage::Text(serde_json::to_string(&err)?.into()))
-                                .await?;
-                            continue;
-                        }
-                        if let Some(rate) = sample_rate {
-                            if SUPPORTED_RATES.contains(&rate) {
-                                client_sample_rate = rate;
-                                tracing::info!(
-                                    "Client {peer} configured sample rate: {rate}Hz"
-                                );
-                            } else {
-                                let err = ServerMessage::Error {
-                                    message: format!(
-                                        "Unsupported sample rate: {rate}Hz. Supported: {SUPPORTED_RATES:?}"
-                                    ),
-                                    code: "invalid_sample_rate".into(),
-                                };
-                                sink.send(WsMessage::Text(serde_json::to_string(&err)?.into()))
-                                    .await?;
+                            if let Err(e) = sink.send(WsMessage::Text(serde_json::to_string(&final_msg).unwrap().into()))
+                                .await
+                            {
+                                break 'outer Err(e.into());
                             }
+                            break;
                         }
-
-                        // Re-create state if diarization preference changes
-                        #[cfg(feature = "diarization")]
-                        if let Some(enable_dia) = diarization {
-                            tracing::info!(
-                                "Client {peer} configured diarization: {enable_dia}"
+                        Err(_) => {
+                            tracing::debug!(
+                                "Unrecognized text message from {peer}: {}",
+                                &text[..text.len().min(100)]
                             );
-                            state_opt = Some(engine.create_state(enable_dia));
                         }
-                        #[cfg(not(feature = "diarization"))]
-                        let _ = diarization;
-                    }
-                    Ok(ClientMessage::Stop) => {
-                        tracing::info!("Stop received from {peer}, finalizing");
-                        let mut state =
-                            state_opt.take().context("Streaming state lost")?;
-                        let flush_seg = engine.flush_state(&mut state);
-                        drop(state);
-                        let final_msg = if let Some(seg) = flush_seg {
-                            ServerMessage::Final {
-                                text: seg.text,
-                                timestamp: seg.timestamp,
-                                words: seg.words,
-                            }
-                        } else {
-                            ServerMessage::Final {
-                                text: String::new(),
-                                timestamp: crate::inference::now_timestamp(),
-                                words: vec![],
-                            }
-                        };
-                        sink.send(WsMessage::Text(serde_json::to_string(&final_msg)?.into()))
-                            .await?;
-                        break;
-                    }
-                    Err(_) => {
-                        tracing::debug!(
-                            "Unrecognized text message from {peer}: {}",
-                            &text[..text.len().min(100)]
-                        );
                     }
                 }
+                WsMessage::Close(_) => break,
+                _ => {} // Ignore ping/pong
             }
-            WsMessage::Close(_) => break,
-            _ => {} // Ignore ping/pong
         }
-    }
+        Ok(())
+    };
 
     tracing::info!("Client disconnected: {peer}");
-    Ok(())
+    (triplet_opt, result)
 }
 
 #[cfg(test)]
