@@ -9,8 +9,6 @@ use ort::value::TensorRef;
 use std::path::Path;
 use std::sync::Mutex;
 
-use super::ort_err;
-
 /// Dimension of speaker embedding vectors.
 pub const EMBEDDING_DIM: usize = 256;
 
@@ -43,9 +41,9 @@ impl SpeakerEncoder {
             );
         }
         let session = Session::builder()
-            .map_err(ort_err)?
+            .context("Failed to create ONNX session builder")?
             .commit_from_file(&path)
-            .map_err(ort_err)?;
+            .context("Failed to load speaker encoder model")?;
         Ok(Self { session: Mutex::new(session) })
     }
 
