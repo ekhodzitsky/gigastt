@@ -1,4 +1,4 @@
-//! INT8 dynamic quantization for ONNX encoder models (QDQ node insertion).
+//! INT8 static weight quantization for ONNX encoder models (QDQ node insertion).
 //!
 //! Replaces `scripts/quantize.py` with a native Rust implementation.
 //! Enabled via `--features quantize`.
@@ -54,7 +54,7 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
                     continue;
                 }
                 let num_elements: i64 = init.dims.iter().product();
-                if num_elements as usize >= MIN_ELEMENTS {
+                if num_elements > 0 && num_elements as usize >= MIN_ELEMENTS {
                     targets.push((ni, ii, input_name.clone(), init_idx));
                 }
             }
@@ -73,6 +73,11 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     let mut quantized_names: HashSet<String> = HashSet::new();
 
     for (_node_idx, _input_idx, weight_name, init_idx) in &targets {
+        // CRITICAL fix: skip already-quantized shared weights (avoid duplicate initializers)
+        if !quantized_names.insert(weight_name.clone()) {
+            continue;
+        }
+
         let init = &graph.initializer[*init_idx];
         let float_data = extract_float_data(init)?;
         let dims = &init.dims;
@@ -82,6 +87,17 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
         }
 
         let channels = dims[0] as usize;
+        if channels == 0 {
+            continue;
+        }
+        let expected_elements: usize = dims.iter().map(|&d| d.max(0) as usize).product();
+        if expected_elements != float_data.len() {
+            tracing::warn!(
+                "Skipping tensor '{}': shape mismatch (dims={:?}, data={})",
+                init.name, dims, float_data.len()
+            );
+            continue;
+        }
         let channel_size = float_data.len() / channels;
 
         // Per-channel symmetric quantization
@@ -176,12 +192,14 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     all_nodes.append(&mut graph.node);
     graph.node = all_nodes;
 
-    // Write quantized model
+    // Write quantized model (atomic: write to tmp, then rename)
     let mut output_bytes = Vec::new();
     model
         .encode(&mut output_bytes)
         .context("Failed to encode quantized model")?;
-    std::fs::write(output, &output_bytes).context("Failed to write quantized model")?;
+    let tmp = output.with_extension("onnx.tmp");
+    std::fs::write(&tmp, &output_bytes).context("Failed to write quantized model")?;
+    std::fs::rename(&tmp, output).context("Failed to finalize quantized model")?;
 
     let in_mb = model_bytes.len() as f64 / (1024.0 * 1024.0);
     let out_mb = output_bytes.len() as f64 / (1024.0 * 1024.0);
@@ -199,6 +217,11 @@ fn extract_float_data(tensor: &TensorProto) -> Result<Vec<f32>> {
         return Ok(tensor.float_data.clone());
     }
     if !tensor.raw_data.is_empty() {
+        anyhow::ensure!(
+            tensor.raw_data.len().is_multiple_of(4),
+            "Tensor '{}' raw_data length {} is not aligned to 4 bytes",
+            tensor.name, tensor.raw_data.len()
+        );
         let num_floats = tensor.raw_data.len() / 4;
         let mut data = Vec::with_capacity(num_floats);
         for chunk in tensor.raw_data.chunks_exact(4) {
