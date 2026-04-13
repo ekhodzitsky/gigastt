@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-04-13
+
+### Added
+
+- **Comprehensive e2e test infrastructure** — 28 new tests across 7 files:
+  - `tests/e2e_rest.rs` (8 tests): health, transcribe, SSE streaming, error paths
+  - `tests/e2e_ws.rs` (9 tests): WebSocket protocol — ready, audio, stop, configure, malformed JSON, disconnect, concurrency
+  - `tests/e2e_errors.rs` (5 tests): oversized body/frame rejection, pool saturation (503), idle timeout
+  - `tests/e2e_shutdown.rs` (2 tests): graceful shutdown during active WS/SSE sessions
+  - `tests/load_test.rs` (3 tests): 4 concurrent WS/REST, burst 20 connections
+  - `tests/soak_test.rs` (1 test): continuous WS cycling (configurable via `GIGASTT_SOAK_DURATION_SECS`)
+- **Shared test helpers** (`tests/common/mod.rs`): `start_server` with clean shutdown, `wait_for_ready` with exponential backoff, WAV generation, WebSocket connect helpers.
+- **`server::run_with_shutdown()`** — accepts optional `oneshot::Receiver<()>` for programmatic server shutdown (used by tests; `run()` unchanged).
+- **CI feature matrix** — split into 7 jobs: clippy, unit tests, build-coreml, build-cuda, build-diarization, e2e tests (main push only with cached model), security audit.
+
+### Changed
+
+- CI workflow restructured: PRs get fast feedback (unit + clippy + feature builds), main push adds full e2e suite with ~850MB cached model (OS-independent cache key).
+
 ## [0.4.2] - 2026-04-13
 
 ### Removed
@@ -156,7 +175,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.3.0...v0.4.0
