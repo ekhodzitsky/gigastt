@@ -66,10 +66,89 @@ pub(crate) fn argmax_with_confidence(logits: &[f32], blank_id: usize) -> (usize,
     (token, confidence)
 }
 
+/// Decoder call result — owned data for caching across frames.
+///
+/// During blank runs, decoder inputs (prev_token, h, c) are unchanged,
+/// so the output is deterministic and can be reused without re-calling the decoder.
+struct DecoderOutput {
+    /// Decoder output vector [PRED_HIDDEN].
+    dec_data: Vec<f32>,
+    /// New LSTM hidden state [PRED_HIDDEN] — committed only on non-blank token.
+    new_h: Vec<f32>,
+    /// New LSTM cell state [PRED_HIDDEN] — committed only on non-blank token.
+    new_c: Vec<f32>,
+}
+
+/// Run decoder ONNX session with current state.
+///
+/// Input: prev_token [1,1] + h [1,1,PRED_HIDDEN] + c [1,1,PRED_HIDDEN]
+/// Output: DecoderOutput with dec_data, new_h, new_c (all owned).
+fn run_decoder(
+    decoder: &mut Session,
+    state: &DecoderState,
+) -> Result<DecoderOutput> {
+    let target_data = [state.prev_token];
+    let target_tensor =
+        TensorRef::from_array_view(([1_usize, 1], target_data.as_slice()))?;
+    let h_tensor =
+        TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.h.as_slice()))?;
+    let c_tensor =
+        TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.c.as_slice()))?;
+
+    let decoder_outputs = decoder
+        .run(ort::inputs![target_tensor, h_tensor, c_tensor])
+        .context("Decoder inference failed")?;
+
+    let (_dec_shape, dec_data) = decoder_outputs[0]
+        .try_extract_tensor::<f32>()
+        .context("Failed to extract decoder output")?;
+    let (_h_shape, new_h_data) = decoder_outputs[1]
+        .try_extract_tensor::<f32>()
+        .context("Failed to extract decoder h state")?;
+    let (_c_shape, new_c_data) = decoder_outputs[2]
+        .try_extract_tensor::<f32>()
+        .context("Failed to extract decoder c state")?;
+
+    Ok(DecoderOutput {
+        dec_data: dec_data.to_vec(),
+        new_h: new_h_data.to_vec(),
+        new_c: new_c_data.to_vec(),
+    })
+}
+
+/// Run joiner ONNX session on a single encoder frame.
+///
+/// Input: enc [1, ENC_DIM, 1] + dec [1, PRED_HIDDEN, 1]
+/// Output: logits [VOCAB_SIZE] (flattened from [1, 1, 1, VOCAB_SIZE]).
+fn run_joiner_single(
+    joiner: &mut Session,
+    enc_frame: &[f32],
+    dec_data: &[f32],
+) -> Result<Vec<f32>> {
+    let enc_tensor =
+        TensorRef::from_array_view(([1_usize, ENC_DIM, 1], enc_frame))?;
+    let dec_tensor =
+        TensorRef::from_array_view(([1_usize, PRED_HIDDEN, 1], dec_data))?;
+
+    let joiner_outputs = joiner
+        .run(ort::inputs![enc_tensor, dec_tensor])
+        .context("Joiner inference failed")?;
+
+    let (_joint_shape, logits) = joiner_outputs[0]
+        .try_extract_tensor::<f32>()
+        .context("Failed to extract joiner output")?;
+
+    Ok(logits.to_vec())
+}
+
 /// Run RNN-T greedy decode on encoder output.
 ///
 /// Encoder output layout: [1, 768, enc_len] (channels-first).
 /// Decoder LSTM state is read from and written back to `state`.
+///
+/// Optimization: during blank runs (consecutive frames where joiner outputs blank),
+/// the decoder call is skipped and the cached decoder output is reused, since
+/// decoder inputs (prev_token, h, c) are unchanged during blank runs.
 pub fn greedy_decode(
     decoder: &mut Session,
     joiner: &mut Session,
@@ -85,6 +164,12 @@ pub fn greedy_decode(
     let mut enc_frame = vec![0.0_f32; ENC_DIM];
     let mut decoder_calls: u32 = 0;
     let mut joiner_calls: u32 = 0;
+    let mut skipped_decoder_calls: u32 = 0;
+
+    // Decoder output caching: during blank runs, decoder inputs (prev_token, h, c)
+    // are unchanged, so the decoder output is deterministic and can be reused.
+    let mut cached_decoder_output: Option<DecoderOutput> = None;
+    let mut in_blank_run = false;
 
     anyhow::ensure!(
         encoded.len() >= ENC_DIM * encoded_len,
@@ -98,51 +183,33 @@ pub fn greedy_decode(
         extract_encoder_frame(encoded, encoded_len, t, &mut enc_frame);
 
         loop {
-            decoder_calls += 1;
-            // Run decoder: input prev_token [1,1] + hidden state [1,1,320]
-            let target_data = [state.prev_token]; // stack-allocated, reused shape
-            let target_tensor =
-                TensorRef::from_array_view(([1_usize, 1], target_data.as_slice()))?;
-            let h_tensor =
-                TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.h.as_slice()))?;
-            let c_tensor =
-                TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.c.as_slice()))?;
+            // === DECODER CALL (skip if in blank run) ===
+            // During a blank run, prev_token/h/c are unchanged (state mutation
+            // at the end of this loop is only reached for non-blank tokens).
+            // Therefore run_decoder() with the same inputs produces identical output.
+            let decoder_out = if in_blank_run {
+                skipped_decoder_calls += 1;
+                // Safe: cached_decoder_output is always Some when in_blank_run is true,
+                // because in_blank_run is only set after a successful decoder call.
+                cached_decoder_output.as_ref().unwrap()
+            } else {
+                decoder_calls += 1;
+                let out = run_decoder(decoder, state)?;
+                cached_decoder_output = Some(out);
+                cached_decoder_output.as_ref().unwrap()
+            };
 
-            let decoder_outputs = decoder
-                .run(ort::inputs![target_tensor, h_tensor, c_tensor])
-                .context("Decoder inference failed")?;
-
-            // Extract decoder output [1, 1, 320] and new states
-            let (_dec_shape, dec_data) = decoder_outputs[0]
-                .try_extract_tensor::<f32>()
-                .context("Failed to extract decoder output")?;
-            let (_h_shape, new_h_data) = decoder_outputs[1]
-                .try_extract_tensor::<f32>()
-                .context("Failed to extract decoder h state")?;
-            let (_c_shape, new_c_data) = decoder_outputs[2]
-                .try_extract_tensor::<f32>()
-                .context("Failed to extract decoder c state")?;
-
-            // Joiner inputs: enc [1, 768, 1] + dec [1, 320, 1] → joint [1, 1, 1, 1025]
-            let enc_tensor =
-                TensorRef::from_array_view(([1_usize, ENC_DIM, 1], enc_frame.as_slice()))?;
-            let dec_tensor =
-                TensorRef::from_array_view(([1_usize, PRED_HIDDEN, 1], dec_data))?;
-
+            // === JOINER CALL ===
             joiner_calls += 1;
-            let joiner_outputs = joiner
-                .run(ort::inputs![enc_tensor, dec_tensor])
-                .context("Joiner inference failed")?;
+            let logits = run_joiner_single(joiner, &enc_frame, &decoder_out.dec_data)?;
 
-            let (_joint_shape, logits) = joiner_outputs[0]
-                .try_extract_tensor::<f32>()
-                .context("Failed to extract joiner output")?;
+            // Greedy: argmax with confidence over logits
+            let (token, confidence) = argmax_with_confidence(&logits, blank_id);
 
-            // Greedy: argmax with confidence over logits (1025 classes)
-            let (token, confidence) = argmax_with_confidence(logits, blank_id);
-
-            if token == blank_id || tokens_this_step >= MAX_TOKENS_PER_STEP {
-                // Track consecutive blanks for endpointing
+            // === TOKEN CLASSIFICATION ===
+            if token == blank_id {
+                // True blank: decoder state was NOT updated. Safe to cache.
+                in_blank_run = true;
                 state.consecutive_blanks += 1;
                 if state.consecutive_blanks >= ENDPOINT_BLANK_THRESHOLD && !tokens.is_empty() {
                     endpoint_detected = true;
@@ -150,27 +217,47 @@ pub fn greedy_decode(
                 break;
             }
 
-            // Non-blank: emit token with metadata, reset blank counter
+            if tokens_this_step >= MAX_TOKENS_PER_STEP {
+                // Token cap hit with non-blank token.
+                // Decoder state WAS updated on prior iterations of this inner loop.
+                // cached_decoder_output is STALE — do NOT enter blank run.
+                in_blank_run = false;
+                cached_decoder_output = None;
+                state.consecutive_blanks += 1;
+                if state.consecutive_blanks >= ENDPOINT_BLANK_THRESHOLD && !tokens.is_empty() {
+                    endpoint_detected = true;
+                }
+                break;
+            }
+
+            // === NON-BLANK TOKEN: commit state, emit token ===
+            in_blank_run = false;
             state.consecutive_blanks = 0;
+            state.prev_token = token as i64;
+            if decoder_out.new_h.len() != PRED_HIDDEN || decoder_out.new_c.len() != PRED_HIDDEN {
+                anyhow::bail!(
+                    "Unexpected decoder state shape: h={}, c={}, expected {}",
+                    decoder_out.new_h.len(), decoder_out.new_c.len(), PRED_HIDDEN
+                );
+            }
+            state.h.copy_from_slice(&decoder_out.new_h);
+            state.c.copy_from_slice(&decoder_out.new_c);
             tokens.push(TokenInfo {
                 token_id: token,
                 frame_index: t,
                 confidence,
             });
-            state.prev_token = token as i64;
-            if new_h_data.len() != PRED_HIDDEN || new_c_data.len() != PRED_HIDDEN {
-                anyhow::bail!(
-                    "Unexpected decoder state shape: h={}, c={}, expected {}",
-                    new_h_data.len(), new_c_data.len(), PRED_HIDDEN
-                );
-            }
-            state.h.copy_from_slice(new_h_data);
-            state.c.copy_from_slice(new_c_data);
             tokens_this_step += 1;
         }
     }
 
-    tracing::debug!(decoder_calls, joiner_calls, encoded_len, "decode_loop_stats");
+    tracing::debug!(
+        decoder_calls,
+        joiner_calls,
+        skipped_decoder_calls,
+        encoded_len,
+        "decode_loop_stats"
+    );
     Ok(DecodeResult { tokens, endpoint_detected })
 }
 
