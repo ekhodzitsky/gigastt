@@ -24,14 +24,17 @@ cargo install gigastt && gigastt serve
 
 | | gigastt | Whisper large-v3 | Cloud APIs |
 |---|:---:|:---:|:---:|
-| **WER (Russian)** | **5.3%** | ~18% | 5-10% |
-| **Latency (16s audio)** | **~800ms** | ~4s | network-dependent |
-| **Streaming** | real-time | batch only | varies |
+| **WER (Russian)** | **10.4%** | ~18% | 5-10% |
+| **Latency (16s audio, M1)** | **~700ms** | ~4s | network-dependent |
+| **Streaming** | real-time WebSocket | batch only | varies |
 | **Privacy** | 100% local | 100% local | data leaves device |
-| **Cost** | free | free | $0.006/min+ |
+| **Cost** | free forever | free | $0.006/min+ |
 | **Setup** | `cargo install` | Python + deps | API key + billing |
+| **Binary size** | single static binary | Python runtime | N/A |
+| **INT8 quantization** | auto, 0% WER loss | manual | N/A |
+| **Concurrent sessions** | 4 (configurable) | 1 | unlimited |
 
-> GigaAM v3 was trained on **700K+ hours** of Russian speech. It delivers 3-4x better accuracy than Whisper-large-v3 on Russian benchmarks while running faster on Apple Silicon and NVIDIA GPUs.
+> GigaAM v3 was trained on **700K+ hours** of Russian speech. It delivers better accuracy than Whisper-large-v3 on Russian benchmarks while running faster on Apple Silicon and NVIDIA GPUs. WER measured on 993 Golos crowd-sourced samples (4991 words).
 
 ## Features
 
@@ -160,11 +163,12 @@ node examples/js_client.mjs recording.wav
 
 | Metric | Value |
 |---|---|
-| **WER (Russian)** | 5.3% (Golos benchmark) |
-| **Latency (16s audio, M1)** | ~800 ms |
-| **Memory** | ~500 MB |
-| **Model size** | 851 MB (FP32) / 217 MB (INT8) |
-| **Concurrent sessions** | up to 4 |
+| **WER (Russian)** | 10.4% (993 Golos crowd samples, 4991 words) |
+| **INT8 vs FP32** | 0% WER degradation (10.4% vs 10.5% on 993 samples) |
+| **Latency (16s audio, M1)** | ~700 ms (encoder 667 ms + decode 31 ms) |
+| **Memory (RSS)** | ~560 MB |
+| **Model size** | 851 MB (FP32) / 222 MB (INT8) |
+| **Concurrent sessions** | up to 4 (configurable via `--pool-size`) |
 
 ### Hardware Acceleration
 
@@ -184,12 +188,18 @@ Features are compile-time and mutually exclusive.
 
 ### INT8 Quantization
 
-Optional quantized encoder: 4x smaller, ~43% faster. Auto-detected at runtime.
+Optional quantized encoder: 4x smaller, ~43% faster, 0% WER degradation (verified on 993 Golos samples / 4991 words). Auto-detected at runtime.
+
+When built with `--features quantize`, INT8 encoder is created automatically on first `download` or `serve` — no manual steps needed.
 
 ```sh
-pip install onnxruntime
-python scripts/quantize.py --model-dir ~/.gigastt/models
-# Produces: v3_e2e_rnnt_encoder_int8.onnx (~210 MB)
+# Automatic (recommended)
+cargo install gigastt --features quantize
+gigastt serve   # downloads model + auto-quantizes on first run
+
+# Manual
+gigastt quantize                     # native Rust quantization
+python scripts/quantize.py           # legacy Python alternative
 ```
 
 ## Architecture
@@ -239,9 +249,14 @@ gigastt serve [OPTIONS]
   --port <PORT>          Listen port [default: 9876]
   --host <HOST>          Bind address [default: 127.0.0.1]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
+  --pool-size <N>        Concurrent inference sessions [default: 4]
 
 gigastt transcribe <FILE>
   Supports: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed)
+
+gigastt quantize [OPTIONS]          # requires --features quantize
+  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
+  --force                Re-quantize even if INT8 model exists
 ```
 
 ## Model
@@ -267,7 +282,7 @@ gigastt transcribe <FILE>
 | **CPU** | Apple Silicon (M1-M4) | x86_64 |
 | **GPU** | _(integrated, via CoreML)_ | NVIDIA + CUDA 12+ (optional) |
 | **Disk** | ~1.5 GB | ~1.5 GB |
-| **RAM** | ~500 MB | ~500 MB |
+| **RAM** | ~560 MB | ~560 MB |
 | **Rust** | 1.85+ | 1.85+ |
 
 ## Security
@@ -287,9 +302,9 @@ gigastt transcribe <FILE>
 cargo test                           # 72 unit tests (no model needed)
 cargo clippy                         # Lint (zero warnings)
 
-# E2E tests (require model)
+# E2E tests (require model, serial to avoid OOM)
 cargo run -- download
-cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored
+cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored --test-threads=1
 
 # Load & soak (local only)
 cargo test --test load_test -- --ignored

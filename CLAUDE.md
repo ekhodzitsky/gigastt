@@ -19,7 +19,7 @@ cargo build --features cuda          # Linux x86_64 (CUDA 12+)
 cargo build --release                # Release build (LTO, stripped)
 cargo test                           # Run all 72 unit tests, CPU (no model required)
 cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
-cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown  # E2E tests (requires model)
+cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored --test-threads=1  # E2E tests (requires model)
 cargo test --test load_test -- --ignored           # Load tests (requires model, local only)
 cargo test --test soak_test -- --ignored           # Soak test (requires model, local only)
 cargo test --test server_integration -- --ignored  # Legacy integration tests (requires model)
@@ -53,7 +53,7 @@ The Dockerfile uses `--host 0.0.0.0` to allow container networking. Local deploy
 ```
 src/
   lib.rs                  # Public module exports
-  main.rs                 # CLI (clap): serve, download, transcribe
+  main.rs                 # CLI (clap): serve, download, transcribe, quantize
   model/mod.rs            # HuggingFace model download (streaming to disk)
   inference/
     mod.rs                # Engine: ONNX session management, StreamingState, DecoderState
@@ -127,7 +127,7 @@ Three-tier test architecture:
 - `tests/e2e_errors.rs` — 5 error path tests (oversized body/frame, pool saturation, idle timeout)
 - `tests/e2e_shutdown.rs` — 2 graceful shutdown tests
 - `tests/common/mod.rs` — shared helpers (start_server with shutdown handle, WAV generation, WS connect)
-- `cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown` — all e2e tests
+- `cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored --test-threads=1` — all e2e tests
 
 **Load/soak tests** (require model, run locally only):
 - `tests/load_test.rs` — 3 load tests (concurrent WS, concurrent REST, burst connections)
