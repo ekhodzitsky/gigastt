@@ -83,7 +83,9 @@ async fn test_transcribe_wav_returns_text() {
         "\"words\" field should be an array, got: {:?}",
         body["words"]
     );
-    let duration = body["duration"].as_f64().expect("\"duration\" should be a number");
+    let duration = body["duration"]
+        .as_f64()
+        .expect("\"duration\" should be a number");
     assert!(duration > 0.0, "duration should be > 0, got {duration}");
 
     let _ = shutdown.send(());
@@ -305,9 +307,9 @@ async fn test_sse_events_well_formed() {
             }
             let v: serde_json::Value = serde_json::from_str(json_str)
                 .unwrap_or_else(|_| panic!("SSE data line is not valid JSON: {json_str:?}"));
-            let event_type = v["type"].as_str().unwrap_or_else(|| {
-                panic!("SSE event missing \"type\" field: {v:?}")
-            });
+            let event_type = v["type"]
+                .as_str()
+                .unwrap_or_else(|| panic!("SSE event missing \"type\" field: {v:?}"));
             assert!(
                 event_type == "partial" || event_type == "final",
                 "SSE event type should be \"partial\" or \"final\", got: {event_type:?}"

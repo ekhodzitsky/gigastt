@@ -39,7 +39,11 @@ impl Tokenizer {
             .position(|t| t == "<blk>")
             .unwrap_or(tokens.len() - 1);
 
-        tracing::info!("Loaded vocabulary: {} tokens, blank_id={}", tokens.len(), blank_id);
+        tracing::info!(
+            "Loaded vocabulary: {} tokens, blank_id={}",
+            tokens.len(),
+            blank_id
+        );
 
         Ok(Self { tokens, blank_id })
     }
@@ -54,11 +58,7 @@ impl Tokenizer {
             return "";
         }
         let t = &self.tokens[id];
-        if t == "<blk>" || t == "<unk>" {
-            ""
-        } else {
-            t
-        }
+        if t == "<blk>" || t == "<unk>" { "" } else { t }
     }
 
     pub fn vocab_size(&self) -> usize {

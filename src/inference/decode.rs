@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use ort::session::Session;
 use ort::value::TensorRef;
 
-use super::{PRED_HIDDEN, DecoderState};
+use super::{DecoderState, PRED_HIDDEN};
 
 const MAX_TOKENS_PER_STEP: usize = 10;
 const ENC_DIM: usize = 768;
@@ -83,17 +83,11 @@ struct DecoderOutput {
 ///
 /// Input: prev_token [1,1] + h [1,1,PRED_HIDDEN] + c [1,1,PRED_HIDDEN]
 /// Output: DecoderOutput with dec_data, new_h, new_c (all owned).
-fn run_decoder(
-    decoder: &mut Session,
-    state: &DecoderState,
-) -> Result<DecoderOutput> {
+fn run_decoder(decoder: &mut Session, state: &DecoderState) -> Result<DecoderOutput> {
     let target_data = [state.prev_token];
-    let target_tensor =
-        TensorRef::from_array_view(([1_usize, 1], target_data.as_slice()))?;
-    let h_tensor =
-        TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.h.as_slice()))?;
-    let c_tensor =
-        TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.c.as_slice()))?;
+    let target_tensor = TensorRef::from_array_view(([1_usize, 1], target_data.as_slice()))?;
+    let h_tensor = TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.h.as_slice()))?;
+    let c_tensor = TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.c.as_slice()))?;
 
     let decoder_outputs = decoder
         .run(ort::inputs![target_tensor, h_tensor, c_tensor])
@@ -125,10 +119,8 @@ fn run_joiner_single(
     enc_frame: &[f32],
     dec_data: &[f32],
 ) -> Result<Vec<f32>> {
-    let enc_tensor =
-        TensorRef::from_array_view(([1_usize, ENC_DIM, 1], enc_frame))?;
-    let dec_tensor =
-        TensorRef::from_array_view(([1_usize, PRED_HIDDEN, 1], dec_data))?;
+    let enc_tensor = TensorRef::from_array_view(([1_usize, ENC_DIM, 1], enc_frame))?;
+    let dec_tensor = TensorRef::from_array_view(([1_usize, PRED_HIDDEN, 1], dec_data))?;
 
     let joiner_outputs = joiner
         .run(ort::inputs![enc_tensor, dec_tensor])
@@ -152,7 +144,7 @@ fn run_joiner_single(
 pub fn greedy_decode(
     decoder: &mut Session,
     joiner: &mut Session,
-    encoded: &[f32],    // [1, 768, enc_len] — channels-first
+    encoded: &[f32], // [1, 768, enc_len] — channels-first
     encoded_len: usize,
     blank_id: usize,
     state: &mut DecoderState,
@@ -174,7 +166,8 @@ pub fn greedy_decode(
     anyhow::ensure!(
         encoded.len() >= ENC_DIM * encoded_len,
         "Encoder output size mismatch: got {}, expected >= {}",
-        encoded.len(), ENC_DIM * encoded_len
+        encoded.len(),
+        ENC_DIM * encoded_len
     );
 
     for t in 0..encoded_len {
@@ -237,7 +230,9 @@ pub fn greedy_decode(
             if decoder_out.new_h.len() != PRED_HIDDEN || decoder_out.new_c.len() != PRED_HIDDEN {
                 anyhow::bail!(
                     "Unexpected decoder state shape: h={}, c={}, expected {}",
-                    decoder_out.new_h.len(), decoder_out.new_c.len(), PRED_HIDDEN
+                    decoder_out.new_h.len(),
+                    decoder_out.new_c.len(),
+                    PRED_HIDDEN
                 );
             }
             state.h.copy_from_slice(&decoder_out.new_h);
@@ -258,7 +253,10 @@ pub fn greedy_decode(
         encoded_len,
         "decode_loop_stats"
     );
-    Ok(DecodeResult { tokens, endpoint_detected })
+    Ok(DecodeResult {
+        tokens,
+        endpoint_detected,
+    })
 }
 
 #[cfg(test)]

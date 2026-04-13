@@ -11,9 +11,13 @@ use tokio_tungstenite::tungstenite::Message;
 
 fn home_dir() -> Option<PathBuf> {
     #[cfg(unix)]
-    { std::env::var_os("HOME").map(PathBuf::from) }
+    {
+        std::env::var_os("HOME").map(PathBuf::from)
+    }
     #[cfg(windows)]
-    { std::env::var_os("USERPROFILE").map(PathBuf::from) }
+    {
+        std::env::var_os("USERPROFILE").map(PathBuf::from)
+    }
 }
 
 /// Find a free port by binding to port 0.
@@ -61,7 +65,9 @@ async fn test_single_client_receives_ready() {
     assert_eq!(v["sample_rate"], 48000);
     assert!(v["model"].as_str().unwrap().contains("gigaam"));
     // Verify supported_rates is present and includes expected rates
-    let rates = v["supported_rates"].as_array().expect("supported_rates missing");
+    let rates = v["supported_rates"]
+        .as_array()
+        .expect("supported_rates missing");
     assert!(rates.len() >= 5);
     assert!(rates.contains(&serde_json::json!(8000)));
     assert!(rates.contains(&serde_json::json!(48000)));
@@ -113,7 +119,10 @@ async fn test_four_clients_connect_concurrently() {
 
             let text = msg.into_text().unwrap();
             let v: serde_json::Value = serde_json::from_str(&text).unwrap();
-            assert_eq!(v["type"], "final", "Client {i} did not receive Final after Stop");
+            assert_eq!(
+                v["type"], "final",
+                "Client {i} did not receive Final after Stop"
+            );
 
             i
         }));
@@ -202,7 +211,8 @@ async fn test_sse_ttfe_under_threshold() {
     wav.extend_from_slice(&data_size.to_le_bytes());
     // Add a tiny sine wave instead of pure silence so the encoder has something
     for i in 0..num_samples {
-        let sample = (440.0_f64 * 2.0 * std::f64::consts::PI * i as f64 / sample_rate as f64).sin() * 1000.0;
+        let sample =
+            (440.0_f64 * 2.0 * std::f64::consts::PI * i as f64 / sample_rate as f64).sin() * 1000.0;
         wav.extend_from_slice(&(sample as i16).to_le_bytes());
     }
 
@@ -230,8 +240,16 @@ async fn test_sse_ttfe_under_threshold() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(2000);
 
-    eprintln!("TTFE: {}ms (threshold: {}ms)", ttfe.as_millis(), threshold_ms);
-    eprintln!("First chunk ({} bytes): {:?}", first_chunk.len(), String::from_utf8_lossy(&first_chunk[..first_chunk.len().min(200)]));
+    eprintln!(
+        "TTFE: {}ms (threshold: {}ms)",
+        ttfe.as_millis(),
+        threshold_ms
+    );
+    eprintln!(
+        "First chunk ({} bytes): {:?}",
+        first_chunk.len(),
+        String::from_utf8_lossy(&first_chunk[..first_chunk.len().min(200)])
+    );
 
     assert!(
         ttfe.as_millis() < threshold_ms as u128,
@@ -329,9 +347,11 @@ async fn test_configure_invalid_sample_rate() {
 
     // Send Configure with invalid sample rate
     let configure = serde_json::json!({"type": "configure", "sample_rate": 7000});
-    sink.send(Message::Text(serde_json::to_string(&configure).unwrap().into()))
-        .await
-        .unwrap();
+    sink.send(Message::Text(
+        serde_json::to_string(&configure).unwrap().into(),
+    ))
+    .await
+    .unwrap();
 
     // Should receive Error with code "invalid_sample_rate"
     let msg = tokio::time::timeout(Duration::from_secs(5), stream.next())

@@ -37,9 +37,9 @@ async fn test_shutdown_during_ws_session() {
 
     match result {
         // Timed out — connection hung, which is the failure we are guarding against
-        Err(_elapsed) => panic!(
-            "WebSocket stream did not terminate within 5s after server shutdown"
-        ),
+        Err(_elapsed) => {
+            panic!("WebSocket stream did not terminate within 5s after server shutdown")
+        }
         // Stream ended cleanly (None) or returned a Close frame or an error — all acceptable
         Ok(_) => {}
     }
@@ -69,7 +69,11 @@ async fn test_shutdown_during_sse_stream() {
     .await
     .expect("POST /v1/transcribe/stream timed out waiting for response headers");
 
-    assert_eq!(resp.status(), 200, "Expected 200 from /v1/transcribe/stream");
+    assert_eq!(
+        resp.status(),
+        200,
+        "Expected 200 from /v1/transcribe/stream"
+    );
 
     let mut bytes_stream = resp.bytes_stream();
 
@@ -98,9 +102,9 @@ async fn test_shutdown_during_sse_stream() {
 
     match result {
         // Timed out — stream hung after shutdown signal, which is the failure we guard against
-        Err(_elapsed) => panic!(
-            "SSE bytes_stream did not terminate within 5s after server shutdown"
-        ),
+        Err(_elapsed) => {
+            panic!("SSE bytes_stream did not terminate within 5s after server shutdown")
+        }
         // Stream ended (None) or returned an error — both are acceptable termination signals
         Ok(_) => {}
     }

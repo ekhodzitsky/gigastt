@@ -2,10 +2,10 @@
 //!
 //! Loads encoder, decoder, and joiner ONNX models and runs the RNN-T streaming decode loop.
 
+pub mod audio;
 mod decode;
 mod features;
 mod tokenizer;
-pub mod audio;
 
 #[cfg(feature = "diarization")]
 pub mod diarization;
@@ -80,7 +80,9 @@ impl SessionPool {
         let total = triplets.len();
         let (sender, receiver) = tokio::sync::mpsc::channel(total);
         for triplet in triplets {
-            sender.try_send(triplet).expect("channel capacity matches triplet count");
+            sender
+                .try_send(triplet)
+                .expect("channel capacity matches triplet count");
         }
         Self {
             sender,
@@ -272,7 +274,10 @@ impl Engine {
     }
 
     /// Load a single set of encoder/decoder/joiner ONNX sessions from disk.
-    fn load_sessions(dir: &Path, prepacked: &ort::session::builder::PrepackedWeights) -> anyhow::Result<(Session, Session, Session)> {
+    fn load_sessions(
+        dir: &Path,
+        prepacked: &ort::session::builder::PrepackedWeights,
+    ) -> anyhow::Result<(Session, Session, Session)> {
         let encoder_path = if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
             dir.join("v3_e2e_rnnt_encoder_int8.onnx")
         } else {
@@ -407,9 +412,16 @@ impl Engine {
                 .map(|i| {
                     let pp = &prepacked;
                     s.spawn(move || {
-                        tracing::info!("Loading session triplet {}/{pool_size} (shared weights)", i + 1);
+                        tracing::info!(
+                            "Loading session triplet {}/{pool_size} (shared weights)",
+                            i + 1
+                        );
                         let (encoder, decoder, joiner) = Self::load_sessions(dir, pp)?;
-                        Ok(SessionTriplet { encoder, decoder, joiner })
+                        Ok(SessionTriplet {
+                            encoder,
+                            decoder,
+                            joiner,
+                        })
                     })
                 })
                 .collect();
@@ -422,7 +434,10 @@ impl Engine {
         let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
         let mel = MelSpectrogram::new();
 
-        tracing::info!("Models loaded (vocab_size={}, pool_size={pool_size})", tokenizer.vocab_size());
+        tracing::info!(
+            "Models loaded (vocab_size={}, pool_size={pool_size})",
+            tokenizer.vocab_size()
+        );
 
         #[cfg(feature = "diarization")]
         let speaker_encoder = match diarization::SpeakerEncoder::load(dir) {
@@ -457,7 +472,10 @@ impl Engine {
     /// Pass `diarization_enabled = true` to activate speaker diarization for
     /// this session (requires the `diarization` feature and a loaded speaker
     /// encoder; silently ignored otherwise).
-    pub fn create_state(&self, #[cfg(feature = "diarization")] diarization_enabled: bool) -> StreamingState {
+    pub fn create_state(
+        &self,
+        #[cfg(feature = "diarization")] diarization_enabled: bool,
+    ) -> StreamingState {
         #[cfg(feature = "diarization")]
         let diarization_state = if diarization_enabled && self.speaker_encoder.is_some() {
             Some(DiarizationStreamState {
@@ -517,14 +535,23 @@ impl Engine {
 
         let mel_start = std::time::Instant::now();
         let (features, num_frames) = self.mel.compute(samples);
-        tracing::debug!(elapsed_us = mel_start.elapsed().as_micros() as u64, "mel_compute");
+        tracing::debug!(
+            elapsed_us = mel_start.elapsed().as_micros() as u64,
+            "mel_compute"
+        );
         if num_frames == 0 {
             return Ok(vec![]);
         }
 
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
         let (mut new_words, endpoint) = self
-            .run_inference(triplet, &features, num_frames, &mut state.decoder, state.total_frames)
+            .run_inference(
+                triplet,
+                &features,
+                num_frames,
+                &mut state.decoder,
+                state.total_frames,
+            )
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
         state.total_frames += num_frames;
 
@@ -538,8 +565,10 @@ impl Engine {
             dia.audio_buffer.extend_from_slice(copy);
 
             while dia.audio_buffer.len() >= diarization::SEGMENT_SAMPLES {
-                let segment: Vec<f32> =
-                    dia.audio_buffer.drain(..diarization::SEGMENT_SAMPLES).collect();
+                let segment: Vec<f32> = dia
+                    .audio_buffer
+                    .drain(..diarization::SEGMENT_SAMPLES)
+                    .collect();
                 match enc.extract_embedding(&segment) {
                     Ok(embedding) => {
                         let speaker = dia.cluster.assign(&embedding);
@@ -581,10 +610,20 @@ impl Engine {
             state.accumulated_text.clear();
             state.accumulated_words.clear();
             state.decoder.consecutive_blanks = 0;
-            Ok(vec![TranscriptSegment { text, words, is_final: true, timestamp: ts }])
+            Ok(vec![TranscriptSegment {
+                text,
+                words,
+                is_final: true,
+                timestamp: ts,
+            }])
         } else {
             // Ongoing speech: emit Partial
-            Ok(vec![TranscriptSegment { text, words, is_final: false, timestamp: ts }])
+            Ok(vec![TranscriptSegment {
+                text,
+                words,
+                is_final: false,
+                timestamp: ts,
+            }])
         }
     }
 
@@ -611,7 +650,11 @@ impl Engine {
     ///
     /// Returns [`GigasttError::InvalidAudio`] if the file cannot be decoded, or
     /// [`GigasttError::Inference`] if the ONNX runtime fails.
-    pub fn transcribe_file(&self, path: &str, triplet: &mut SessionTriplet) -> Result<TranscribeResult, GigasttError> {
+    pub fn transcribe_file(
+        &self,
+        path: &str,
+        triplet: &mut SessionTriplet,
+    ) -> Result<TranscribeResult, GigasttError> {
         let float_samples = audio::decode_audio_file(path)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
         let duration_s = float_samples.len() as f64 / 16000.0;
@@ -623,12 +666,24 @@ impl Engine {
         let (words, _endpoint) = self
             .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
-        let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
-        Ok(TranscribeResult { text, words, duration_s })
+        let text: String = words
+            .iter()
+            .map(|w| w.word.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
+        Ok(TranscribeResult {
+            text,
+            words,
+            duration_s,
+        })
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
-    pub fn transcribe_bytes(&self, data: &[u8], triplet: &mut SessionTriplet) -> Result<TranscribeResult, GigasttError> {
+    pub fn transcribe_bytes(
+        &self,
+        data: &[u8],
+        triplet: &mut SessionTriplet,
+    ) -> Result<TranscribeResult, GigasttError> {
         let float_samples = audio::decode_audio_bytes(data)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
         let duration_s = float_samples.len() as f64 / 16000.0;
@@ -640,8 +695,16 @@ impl Engine {
         let (words, _endpoint) = self
             .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
             .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
-        let text: String = words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
-        Ok(TranscribeResult { text, words, duration_s })
+        let text: String = words
+            .iter()
+            .map(|w| w.word.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
+        Ok(TranscribeResult {
+            text,
+            words,
+            duration_s,
+        })
     }
 
     fn run_inference(
@@ -653,17 +716,19 @@ impl Engine {
         frame_offset: usize,
     ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
         // Encoder input: audio_signal [1, 64, num_frames], length [1]
-        let signal_tensor =
-            TensorRef::from_array_view(([1_usize, N_MELS, num_frames], features))?;
+        let signal_tensor = TensorRef::from_array_view(([1_usize, N_MELS, num_frames], features))?;
         let length_data = [num_frames as i64];
-        let length_tensor =
-            TensorRef::from_array_view(([1_usize], length_data.as_slice()))?;
+        let length_tensor = TensorRef::from_array_view(([1_usize], length_data.as_slice()))?;
 
         let enc_start = std::time::Instant::now();
-        let encoder_outputs = triplet.encoder
+        let encoder_outputs = triplet
+            .encoder
             .run(ort::inputs![signal_tensor, length_tensor])
             .context("Encoder inference failed")?;
-        tracing::info!(elapsed_ms = enc_start.elapsed().as_millis() as u64, "encoder_inference");
+        tracing::info!(
+            elapsed_ms = enc_start.elapsed().as_millis() as u64,
+            "encoder_inference"
+        );
 
         let (_enc_shape, enc_data) = encoder_outputs[0]
             .try_extract_tensor::<f32>()
@@ -690,14 +755,25 @@ impl Engine {
             self.tokenizer.blank_id(),
             decoder_state,
         )?;
-        tracing::info!(elapsed_ms = dec_start.elapsed().as_millis() as u64, "greedy_decode");
+        tracing::info!(
+            elapsed_ms = dec_start.elapsed().as_millis() as u64,
+            "greedy_decode"
+        );
 
         // Convert token infos to words with timestamps
         let words = self.tokens_to_words(&result.tokens, frame_offset);
 
-        let preview: String = words.iter().take(10).map(|w| w.word.as_str()).collect::<Vec<_>>().join(" ");
+        let preview: String = words
+            .iter()
+            .take(10)
+            .map(|w| w.word.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
         let ellipsis = if words.len() > 10 { "..." } else { "" };
-        tracing::info!("Decoded {} tokens → \"{preview}{ellipsis}\"", result.tokens.len());
+        tracing::info!(
+            "Decoded {} tokens → \"{preview}{ellipsis}\"",
+            result.tokens.len()
+        );
 
         Ok((words, result.endpoint_detected))
     }
@@ -734,7 +810,8 @@ impl Engine {
                 };
                 words.push(WordInfo {
                     word: current_word.clone(),
-                    start: (word_start_frame.unwrap_or(0) + frame_offset) as f64 * SECONDS_PER_FRAME,
+                    start: (word_start_frame.unwrap_or(0) + frame_offset) as f64
+                        * SECONDS_PER_FRAME,
                     end: (word_end_frame + frame_offset) as f64 * SECONDS_PER_FRAME,
                     confidence: avg_conf,
                     speaker: None,

@@ -198,7 +198,13 @@ mod tests {
         assert!(num_frames > 0);
         // Sine wave should produce non-floor values in some mel bins
         let floor = (1e-10_f32).ln();
-        let non_floor = features.iter().filter(|&&v| (v - floor).abs() > 1.0).count();
-        assert!(non_floor > 0, "Expected some non-floor values for sine wave");
+        let non_floor = features
+            .iter()
+            .filter(|&&v| (v - floor).abs() > 1.0)
+            .count();
+        assert!(
+            non_floor > 0,
+            "Expected some non-floor values for sine wave"
+        );
     }
 }

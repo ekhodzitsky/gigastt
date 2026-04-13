@@ -3,7 +3,11 @@ use gigastt::{inference, model, server};
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
-#[command(name = "gigastt", version, about = "Local STT server powered by GigaAM v3")]
+#[command(
+    name = "gigastt",
+    version,
+    about = "Local STT server powered by GigaAM v3"
+)]
 struct Cli {
     /// Log level [default: info]
     #[arg(long, global = true, default_value = "info")]
@@ -84,7 +88,9 @@ fn log_rss() {
         if let Ok(output) = std::process::Command::new("ps")
             .args(["-o", "rss=", "-p", &std::process::id().to_string()])
             .output()
-            && let Ok(rss) = String::from_utf8_lossy(&output.stdout).trim().parse::<u64>()
+            && let Ok(rss) = String::from_utf8_lossy(&output.stdout)
+                .trim()
+                .parse::<u64>()
         {
             tracing::info!(rss_mb = rss / 1024, "memory_after_load");
         }
@@ -101,11 +107,17 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     match cli.command {
-        Commands::Serve { port, host, model_dir, pool_size } => {
+        Commands::Serve {
+            port,
+            host,
+            model_dir,
+            pool_size,
+        } => {
             model::ensure_model(&model_dir).await?;
             #[cfg(feature = "quantize")]
             {
-                let int8_path = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
+                let int8_path =
+                    std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
                 if !int8_path.exists() {
                     tracing::info!("Auto-quantizing encoder to INT8 (4x smaller, same quality)...");
                     let input = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder.onnx");
@@ -132,7 +144,8 @@ async fn main() -> anyhow::Result<()> {
             // Auto-quantize encoder to INT8 if not already done
             #[cfg(feature = "quantize")]
             {
-                let int8_path = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
+                let int8_path =
+                    std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
                 if !int8_path.exists() {
                     tracing::info!("Auto-quantizing encoder to INT8 (4x smaller, same quality)...");
                     let input = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder.onnx");
@@ -142,9 +155,12 @@ async fn main() -> anyhow::Result<()> {
             }
             #[cfg(not(feature = "quantize"))]
             {
-                let int8_path = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
+                let int8_path =
+                    std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
                 if !int8_path.exists() {
-                    tracing::info!("Tip: install with --features quantize for 4x smaller model: cargo install gigastt --features quantize && gigastt quantize");
+                    tracing::info!(
+                        "Tip: install with --features quantize for 4x smaller model: cargo install gigastt --features quantize && gigastt quantize"
+                    );
                 }
             }
             tracing::info!("Model ready at {model_dir}");

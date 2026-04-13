@@ -44,7 +44,9 @@ impl SpeakerEncoder {
             .context("Failed to create ONNX session builder")?
             .commit_from_file(&path)
             .context("Failed to load speaker encoder model")?;
-        Ok(Self { session: Mutex::new(session) })
+        Ok(Self {
+            session: Mutex::new(session),
+        })
     }
 
     /// Extract an L2-normalised speaker embedding from raw 16 kHz f32 samples.
@@ -130,7 +132,11 @@ impl SpeakerCluster {
 
     /// Create an empty cluster with a custom cosine similarity threshold.
     pub fn with_threshold(threshold: f32) -> Self {
-        Self { centroids: Vec::new(), counts: Vec::new(), threshold }
+        Self {
+            centroids: Vec::new(),
+            counts: Vec::new(),
+            threshold,
+        }
     }
 
     /// Assign an embedding to a speaker ID.
@@ -284,7 +290,10 @@ mod tests {
 
         let id1 = cluster.assign(&emb_a);
         let id2 = cluster.assign(&emb_b);
-        assert_eq!(id1, id2, "similar embeddings should map to the same speaker");
+        assert_eq!(
+            id1, id2,
+            "similar embeddings should map to the same speaker"
+        );
         assert_eq!(cluster.num_speakers(), 1);
     }
 
@@ -297,7 +306,10 @@ mod tests {
 
         let id1 = cluster.assign(&emb_a);
         let id2 = cluster.assign(&emb_b);
-        assert_ne!(id1, id2, "orthogonal embeddings should be different speakers");
+        assert_ne!(
+            id1, id2,
+            "orthogonal embeddings should be different speakers"
+        );
         assert_eq!(cluster.num_speakers(), 2);
     }
 
@@ -318,7 +330,10 @@ mod tests {
         assert_eq!(id_a1, 0);
         assert_eq!(id_b, 1);
         assert_eq!(id_c, 2);
-        assert_eq!(id_a2, id_a1, "returning to speaker A should yield the same ID");
+        assert_eq!(
+            id_a2, id_a1,
+            "returning to speaker A should yield the same ID"
+        );
         assert_eq!(cluster.num_speakers(), 3);
     }
 

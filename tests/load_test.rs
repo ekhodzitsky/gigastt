@@ -36,7 +36,9 @@ async fn test_load_4_concurrent_ws_streaming() {
 
             // Send Stop
             sink.send(Message::Text(
-                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+                serde_json::to_string(&serde_json::json!({"type": "stop"}))
+                    .unwrap()
+                    .into(),
             ))
             .await
             .unwrap_or_else(|e| panic!("Client {i}: send stop failed: {e}"));
@@ -116,11 +118,7 @@ async fn test_load_4_concurrent_rest_transcribe() {
                 .unwrap_or_else(|e| panic!("Client {i}: POST /v1/transcribe failed: {e}"));
 
             let status = resp.status();
-            assert_eq!(
-                status,
-                200,
-                "Client {i}: expected 200, got {status}"
-            );
+            assert_eq!(status, 200, "Client {i}: expected 200, got {status}");
 
             i
         }));
@@ -171,7 +169,9 @@ async fn test_load_burst_20_connections() {
 
             // Send Stop immediately — no audio
             sink.send(Message::Text(
-                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+                serde_json::to_string(&serde_json::json!({"type": "stop"}))
+                    .unwrap()
+                    .into(),
             ))
             .await
             .unwrap_or_else(|e| panic!("Client {i}: send stop failed: {e}"));

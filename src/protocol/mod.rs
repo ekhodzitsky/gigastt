@@ -227,7 +227,10 @@ mod tests {
         let json = r#"{"type":"configure","sample_rate":8000}"#;
         let msg: ClientMessage = serde_json::from_str(json).unwrap();
         match msg {
-            ClientMessage::Configure { sample_rate, diarization } => {
+            ClientMessage::Configure {
+                sample_rate,
+                diarization,
+            } => {
                 assert_eq!(sample_rate, Some(8000));
                 assert_eq!(diarization, None);
             }

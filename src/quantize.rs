@@ -26,7 +26,8 @@ const MIN_ELEMENTS: usize = 1024;
 /// original operator, with per-channel scale and zero_point initializers.
 pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     let model_bytes = std::fs::read(input).context("Failed to read ONNX model")?;
-    let mut model = ModelProto::decode(&model_bytes[..]).context("Failed to decode ONNX protobuf")?;
+    let mut model =
+        ModelProto::decode(&model_bytes[..]).context("Failed to decode ONNX protobuf")?;
     let graph = model.graph.as_mut().context("Model has no graph")?;
 
     // Build map: initializer_name → index
@@ -94,7 +95,9 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
         if expected_elements != float_data.len() {
             tracing::warn!(
                 "Skipping tensor '{}': shape mismatch (dims={:?}, data={})",
-                init.name, dims, float_data.len()
+                init.name,
+                dims,
+                float_data.len()
             );
             continue;
         }
@@ -161,7 +164,7 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
             name: format!("dequant_{}", weight_name),
             attribute: vec![onnx_pb::AttributeProto {
                 name: "axis".into(),
-                i: 0, // per-channel on axis 0
+                i: 0,      // per-channel on axis 0
                 r#type: 2, // AttributeType::INT
                 ..Default::default()
             }],
@@ -182,7 +185,9 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     }
 
     // Remove original float initializers for quantized weights
-    graph.initializer.retain(|t| !quantized_names.contains(&t.name));
+    graph
+        .initializer
+        .retain(|t| !quantized_names.contains(&t.name));
 
     // Add new initializers (quantized weights, scales, zero_points)
     graph.initializer.extend(new_initializers);
@@ -220,7 +225,8 @@ fn extract_float_data(tensor: &TensorProto) -> Result<Vec<f32>> {
         anyhow::ensure!(
             tensor.raw_data.len().is_multiple_of(4),
             "Tensor '{}' raw_data length {} is not aligned to 4 bytes",
-            tensor.name, tensor.raw_data.len()
+            tensor.name,
+            tensor.raw_data.len()
         );
         let num_floats = tensor.raw_data.len() / 4;
         let mut data = Vec::with_capacity(num_floats);

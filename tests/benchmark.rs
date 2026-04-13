@@ -8,9 +8,13 @@ use std::path::{Path, PathBuf};
 
 fn home_dir() -> Option<PathBuf> {
     #[cfg(unix)]
-    { std::env::var_os("HOME").map(PathBuf::from) }
+    {
+        std::env::var_os("HOME").map(PathBuf::from)
+    }
     #[cfg(windows)]
-    { std::env::var_os("USERPROFILE").map(PathBuf::from) }
+    {
+        std::env::var_os("USERPROFILE").map(PathBuf::from)
+    }
 }
 
 #[derive(Deserialize)]
@@ -22,23 +26,55 @@ struct Sample {
 // --- Russian number-to-words tables ---
 
 const ONES: &[&str] = &[
-    "", "один", "два", "три", "четыре", "пять",
-    "шесть", "семь", "восемь", "девять",
+    "",
+    "один",
+    "два",
+    "три",
+    "четыре",
+    "пять",
+    "шесть",
+    "семь",
+    "восемь",
+    "девять",
 ];
 
 const TEENS: &[&str] = &[
-    "десять", "одиннадцать", "двенадцать", "тринадцать", "четырнадцать",
-    "пятнадцать", "шестнадцать", "семнадцать", "восемнадцать", "девятнадцать",
+    "десять",
+    "одиннадцать",
+    "двенадцать",
+    "тринадцать",
+    "четырнадцать",
+    "пятнадцать",
+    "шестнадцать",
+    "семнадцать",
+    "восемнадцать",
+    "девятнадцать",
 ];
 
 const TENS: &[&str] = &[
-    "", "", "двадцать", "тридцать", "сорок", "пятьдесят",
-    "шестьдесят", "семьдесят", "восемьдесят", "девяносто",
+    "",
+    "",
+    "двадцать",
+    "тридцать",
+    "сорок",
+    "пятьдесят",
+    "шестьдесят",
+    "семьдесят",
+    "восемьдесят",
+    "девяносто",
 ];
 
 const HUNDREDS: &[&str] = &[
-    "", "сто", "двести", "триста", "четыреста", "пятьсот",
-    "шестьсот", "семьсот", "восемьсот", "девятьсот",
+    "",
+    "сто",
+    "двести",
+    "триста",
+    "четыреста",
+    "пятьсот",
+    "шестьсот",
+    "семьсот",
+    "восемьсот",
+    "девятьсот",
 ];
 
 /// Convert a cardinal number (0–999_999) to Russian words.
@@ -66,8 +102,8 @@ fn number_to_words(n: u64) -> String {
         if t >= 20 {
             parts.push(TENS[t / 10]);
             match t % 10 {
-                1 => parts.push("одна"),   // feminine for тысяча
-                2 => parts.push("две"),    // feminine for тысяча
+                1 => parts.push("одна"), // feminine for тысяча
+                2 => parts.push("две"),  // feminine for тысяча
                 o @ 3..=9 => parts.push(ONES[o]),
                 _ => {}
             }
@@ -170,7 +206,8 @@ fn resolve_ordinals(words: &[String]) -> Vec<String> {
     let mut result = Vec::new();
     let mut i = 0;
     while i < words.len() {
-        if i + 1 < words.len() && words[i + 1] == "й"
+        if i + 1 < words.len()
+            && words[i + 1] == "й"
             && let Ok(n) = words[i].parse::<u64>()
             && let Some(ordinal) = try_ordinal_masculine(n)
         {
@@ -188,7 +225,8 @@ fn resolve_ordinals(words: &[String]) -> Vec<String> {
 fn convert_cardinal_numbers(words: &[String]) -> Vec<String> {
     let mut result = Vec::new();
     for w in words {
-        if w.chars().all(|c| c.is_ascii_digit()) && !w.is_empty()
+        if w.chars().all(|c| c.is_ascii_digit())
+            && !w.is_empty()
             && let Ok(n) = w.parse::<u64>()
         {
             for part in number_to_words(n).split_whitespace() {
@@ -263,8 +301,7 @@ fn main() {
     .expect("Failed to parse manifest");
 
     let model_dir_str = model_dir.to_string_lossy();
-    let engine =
-        gigastt::inference::Engine::load(&model_dir_str).expect("Failed to load engine");
+    let engine = gigastt::inference::Engine::load(&model_dir_str).expect("Failed to load engine");
 
     let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
     let mut triplet = rt.block_on(engine.pool.checkout());

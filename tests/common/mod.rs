@@ -74,9 +74,7 @@ pub async fn wait_for_ready(port: u16, timeout: Duration) {
 
     loop {
         if start.elapsed() > timeout {
-            panic!(
-                "Server on port {port} did not become ready within {timeout:?}"
-            );
+            panic!("Server on port {port} did not become ready within {timeout:?}");
         }
         match client.get(&url).send().await {
             Ok(resp) if resp.status().is_success() => return,
@@ -113,8 +111,7 @@ pub fn generate_wav(duration_s: u32, sample_rate: u32) -> Vec<u8> {
     wav.extend_from_slice(&data_size.to_le_bytes());
     for i in 0..num_samples {
         let sample =
-            (440.0_f64 * 2.0 * std::f64::consts::PI * i as f64 / sample_rate as f64).sin()
-                * 1000.0;
+            (440.0_f64 * 2.0 * std::f64::consts::PI * i as f64 / sample_rate as f64).sin() * 1000.0;
         wav.extend_from_slice(&(sample as i16).to_le_bytes());
     }
     wav

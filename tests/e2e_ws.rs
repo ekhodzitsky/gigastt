@@ -63,12 +63,16 @@ async fn test_ws_audio_produces_final() {
     // 2 seconds of PCM16 silence at 48kHz = 192000 bytes
     let silence = common::generate_pcm16_silence(2.0, 48000);
     for chunk in silence.chunks(9600) {
-        sink.send(Message::Binary(chunk.to_vec().into())).await.unwrap();
+        sink.send(Message::Binary(chunk.to_vec().into()))
+            .await
+            .unwrap();
     }
 
     // Send Stop
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
     ))
     .await
     .unwrap();
@@ -110,7 +114,9 @@ async fn test_ws_stop_without_audio() {
     let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
 
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
     ))
     .await
     .unwrap();
@@ -144,7 +150,8 @@ async fn test_ws_configure_valid_sample_rate() {
     // Configure to 16kHz
     sink.send(Message::Text(
         serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
-            .unwrap().into(),
+            .unwrap()
+            .into(),
     ))
     .await
     .unwrap();
@@ -155,7 +162,9 @@ async fn test_ws_configure_valid_sample_rate() {
 
     // Send Stop
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
     ))
     .await
     .unwrap();
@@ -192,7 +201,8 @@ async fn test_ws_configure_invalid_sample_rate() {
 
     sink.send(Message::Text(
         serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 7000}))
-            .unwrap().into(),
+            .unwrap()
+            .into(),
     ))
     .await
     .unwrap();
@@ -230,7 +240,8 @@ async fn test_ws_configure_after_audio() {
     // Now try to configure — should be rejected
     sink.send(Message::Text(
         serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
-            .unwrap().into(),
+            .unwrap()
+            .into(),
     ))
     .await
     .unwrap();
@@ -268,7 +279,9 @@ async fn test_ws_malformed_json() {
 
     // Connection must NOT be closed; send Stop and expect Final
     sink.send(Message::Text(
-        serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
     ))
     .await
     .unwrap();
@@ -353,7 +366,9 @@ async fn test_ws_concurrent_4_clients() {
 
             // Send Stop
             sink.send(Message::Text(
-                serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+                serde_json::to_string(&serde_json::json!({"type": "stop"}))
+                    .unwrap()
+                    .into(),
             ))
             .await
             .unwrap();
@@ -366,7 +381,10 @@ async fn test_ws_concurrent_4_clients() {
                 .expect("ws error");
             let text = msg.into_text().unwrap();
             let v: serde_json::Value = serde_json::from_str(&text).unwrap();
-            assert_eq!(v["type"], "final", "Client {i} did not receive Final after Stop");
+            assert_eq!(
+                v["type"], "final",
+                "Client {i} did not receive Final after Stop"
+            );
 
             i
         }));

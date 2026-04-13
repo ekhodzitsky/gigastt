@@ -40,9 +40,7 @@ async fn test_soak_ws_continuous() {
     let mut error_count: u64 = 0;
     let start = Instant::now();
 
-    println!(
-        "[soak] starting — port={port}, duration={soak_duration_secs}s"
-    );
+    println!("[soak] starting — port={port}, duration={soak_duration_secs}s");
 
     while start.elapsed() < soak_duration {
         iteration += 1;
@@ -70,7 +68,9 @@ async fn test_soak_ws_continuous() {
             tokio::time::timeout(
                 Duration::from_secs(10),
                 sink.send(Message::Text(
-                    serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap().into(),
+                    serde_json::to_string(&serde_json::json!({"type": "stop"}))
+                        .unwrap()
+                        .into(),
                 )),
             )
             .await
@@ -97,7 +97,7 @@ async fn test_soak_ws_continuous() {
                     other => {
                         return Err(format!(
                             "iter {iteration}: unexpected message type: {other}"
-                        ))
+                        ));
                     }
                 }
             }
