@@ -124,8 +124,10 @@ async fn main() -> anyhow::Result<()> {
         } => {
             model::ensure_model(&model_dir).await?;
             #[cfg(feature = "diarization")]
-            if diarization {
-                model::ensure_speaker_model(&model_dir).await?;
+            {
+                if diarization {
+                    model::ensure_speaker_model(&model_dir).await?;
+                }
             }
             // Auto-quantize encoder to INT8 if not already done
             #[cfg(feature = "quantize")]

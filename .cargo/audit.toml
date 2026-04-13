@@ -1,0 +1,6 @@
+[advisories]
+ignore = [
+    # prost-types 0.6.1 via onnx-pb (optional quantize feature only, not production)
+    # Timestamp→SystemTime overflow — not used in our quantization code path
+    "RUSTSEC-2021-0073",
+]
