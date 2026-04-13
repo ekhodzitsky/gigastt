@@ -72,10 +72,10 @@ enum Commands {
 fn log_rss() {
     #[cfg(target_os = "linux")]
     {
-        if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
-            if let Some(line) = status.lines().find(|l| l.starts_with("VmRSS:")) {
-                tracing::info!("{}", line.trim());
-            }
+        if let Ok(status) = std::fs::read_to_string("/proc/self/status")
+            && let Some(line) = status.lines().find(|l| l.starts_with("VmRSS:"))
+        {
+            tracing::info!("{}", line.trim());
         }
     }
     // On macOS/other platforms, use `ps` as a simple cross-platform fallback
