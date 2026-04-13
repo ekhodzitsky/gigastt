@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-04-13
+
+### Added
+
+- **`--log-level` CLI option** — global flag for all commands (`gigastt --log-level debug serve`), replaces `RUST_LOG`-only config.
+- **`GET /v1/models` endpoint** — returns model info: encoder type (int8/fp32), vocab size, pool status, supported formats and sample rates.
+- **Auto-quantize** — `download` and `serve` commands auto-quantize encoder to INT8 when built with `--features quantize`.
+- **`Engine::is_int8()`** method exposes encoder quantization status.
+
+### Fixed
+
+- **Benchmark overflow** — `number_to_words` now handles numbers > 999,999 without panic.
+- **CI e2e tests** — serialized with `--test-threads=1` to prevent OOM on GitHub Actions runners.
+- **Dead code warnings** — suppressed in shared test helpers (`tests/common/mod.rs`).
+
+### Changed
+
+- **WER benchmark** verified on 993 Golos samples (4991 words): FP32 10.5%, INT8 10.4% — 0% degradation.
+- **README** updated with verified metrics: WER 10.4%, latency ~700ms, memory ~560MB. Expanded comparison table.
+
 ## [0.4.3] - 2026-04-13
 
 ### Added
@@ -175,7 +195,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.4...HEAD
+[0.4.4]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.3...v0.4.4
 [0.4.3]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.2...v0.4.3
 [0.4.2]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/ekhodzitsky/gigastt/compare/v0.4.0...v0.4.1
