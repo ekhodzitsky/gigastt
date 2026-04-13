@@ -107,28 +107,43 @@ impl SpeakerEncoder {
 /// below it, a new speaker identity is created.
 const COSINE_THRESHOLD: f32 = 0.5;
 
+/// Maximum number of distinct speaker identities tracked by [`SpeakerCluster`].
+///
+/// Once the limit is reached, new embeddings are assigned to the closest existing
+/// centroid regardless of the similarity threshold.
+const MAX_SPEAKERS: usize = 64;
+
 /// Online incremental speaker clustering.
 ///
 /// Maintains a set of speaker centroids and assigns incoming embeddings to the
-/// nearest centroid (if above [`COSINE_THRESHOLD`]) or creates a new speaker.
+/// nearest centroid (if above the configured threshold) or creates a new speaker.
 /// Centroids are updated via running average after each assignment.
 pub struct SpeakerCluster {
     centroids: Vec<[f32; EMBEDDING_DIM]>,
     counts: Vec<usize>,
+    threshold: f32,
 }
 
 impl SpeakerCluster {
-    /// Create an empty cluster with no known speakers.
+    /// Create an empty cluster with no known speakers using the default threshold.
     pub fn new() -> Self {
-        Self { centroids: Vec::new(), counts: Vec::new() }
+        Self::with_threshold(COSINE_THRESHOLD)
+    }
+
+    /// Create an empty cluster with a custom cosine similarity threshold.
+    pub fn with_threshold(threshold: f32) -> Self {
+        Self { centroids: Vec::new(), counts: Vec::new(), threshold }
     }
 
     /// Assign an embedding to a speaker ID.
     ///
     /// Computes cosine similarity against all known centroids. If the best match
-    /// exceeds [`COSINE_THRESHOLD`], the centroid is updated via running average
+    /// exceeds the configured threshold, the centroid is updated via running average
     /// and the corresponding speaker ID is returned. Otherwise, a new speaker is
     /// registered and its ID (index) is returned.
+    ///
+    /// When [`MAX_SPEAKERS`] is reached, the embedding is always assigned to the
+    /// closest existing centroid.
     pub fn assign(&mut self, embedding: &[f32; EMBEDDING_DIM]) -> u32 {
         let mut best_id: Option<usize> = None;
         let mut best_sim = f32::NEG_INFINITY;
@@ -141,8 +156,27 @@ impl SpeakerCluster {
             }
         }
 
+        // At speaker limit — assign to closest centroid regardless of threshold
+        if self.centroids.len() >= MAX_SPEAKERS {
+            let id = best_id.unwrap_or(0);
+            let n = self.counts[id] as f32;
+            let centroid = &mut self.centroids[id];
+            for (c, &e) in centroid.iter_mut().zip(embedding.iter()) {
+                *c = (*c * n + e) / (n + 1.0);
+            }
+            // Re-normalize centroid to prevent drift
+            let norm: f32 = self.centroids[id].iter().map(|x| x * x).sum::<f32>().sqrt();
+            if norm > 1e-8 {
+                for x in &mut self.centroids[id] {
+                    *x /= norm;
+                }
+            }
+            self.counts[id] += 1;
+            return id as u32;
+        }
+
         if let Some(id) = best_id
-            && best_sim > COSINE_THRESHOLD
+            && best_sim > self.threshold
         {
             // Update centroid via running average
             let n = self.counts[id] as f32;
@@ -151,6 +185,13 @@ impl SpeakerCluster {
                 *c = (*c * n + e) / (n + 1.0);
             }
             self.counts[id] += 1;
+            // Re-normalize centroid to prevent drift
+            let norm: f32 = self.centroids[id].iter().map(|x| x * x).sum::<f32>().sqrt();
+            if norm > 1e-8 {
+                for x in &mut self.centroids[id] {
+                    *x /= norm;
+                }
+            }
             return id as u32;
         }
 
@@ -179,7 +220,7 @@ pub fn cosine_similarity(a: &[f32; EMBEDDING_DIM], b: &[f32; EMBEDDING_DIM]) -> 
     let dot: f32 = a.iter().zip(b.iter()).map(|(&x, &y)| x * y).sum();
     let norm_a: f32 = a.iter().map(|&x| x * x).sum::<f32>().sqrt();
     let norm_b: f32 = b.iter().map(|&x| x * x).sum::<f32>().sqrt();
-    if norm_a == 0.0 || norm_b == 0.0 {
+    if norm_a < 1e-8 || norm_b < 1e-8 {
         return 0.0;
     }
     dot / (norm_a * norm_b)

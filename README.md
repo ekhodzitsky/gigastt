@@ -28,7 +28,7 @@
 ```sh
 cargo install gigastt
 gigastt serve
-# Listening on ws://127.0.0.1:9876
+# Listening on ws://127.0.0.1:9876/ws
 ```
 
 ### Docker
@@ -78,7 +78,7 @@ gigastt download
 
 ### Connection & Message Flow
 
-Connect to `ws://127.0.0.1:9876` and send PCM16 mono audio frames at 48kHz. Server auto-resamples to 16kHz internally.
+Connect to `ws://127.0.0.1:9876/ws` and send PCM16 mono audio frames. Default sample rate is 48kHz; configure via the `configure` message. Server resamples to 16kHz internally.
 
 ```
 Client                          Server
@@ -111,7 +111,7 @@ Full protocol documentation in [`docs/asyncapi.yaml`](docs/asyncapi.yaml).
 | **Server** | `final` | `text`, `timestamp`, `words` | Complete utterance with punctuation |
 | **Server** | `error` | `message`, `code` | Error occurred; connection may close |
 | **Client** | `stop` | — | Request finalization of buffered audio |
-| **Client** | `configure` | `sample_rate` | Set input sample rate (8000/16000/24000/44100/48000). Send before first audio frame. |
+| **Client** | `configure` | `sample_rate`, `diarization` | Set input sample rate (8000/16000/24000/44100/48000) and optionally enable speaker diarization. Send before first audio frame. |
 
 ### Example Session
 
@@ -122,6 +122,41 @@ Full protocol documentation in [`docs/asyncapi.yaml`](docs/asyncapi.yaml).
 {"type": "partial", "text": "что такое", "timestamp": 0.5}
 {"type": "partial", "text": "что такое Node", "timestamp": 1.2}
 {"type": "final", "text": "Что такое Node.js?", "timestamp": 2.1}
+```
+
+## REST API
+
+The server exposes HTTP endpoints on the same port as the WebSocket endpoint.
+
+### GET /health
+
+Returns server status.
+
+```sh
+curl http://127.0.0.1:9876/health
+# {"status":"ok"}
+```
+
+### POST /v1/transcribe
+
+Transcribe an audio file (WAV, M4A, MP3, OGG, FLAC). Returns the full transcript when complete.
+
+```sh
+curl -X POST http://127.0.0.1:9876/v1/transcribe \
+  -F "file=@recording.wav"
+# {"text":"Что такое Node.js?"}
+```
+
+### POST /v1/transcribe/stream
+
+Transcribe an audio file with streaming Server-Sent Events (SSE). Returns partial results as they arrive.
+
+```sh
+curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
+  -F "file=@recording.wav"
+# data: {"type":"partial","text":"что такое"}
+# data: {"type":"partial","text":"что такое Node"}
+# data: {"type":"final","text":"Что такое Node.js?"}
 ```
 
 ## Client Examples

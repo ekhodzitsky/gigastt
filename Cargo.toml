@@ -25,7 +25,6 @@ tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8", features = ["ws", "multipart"] }
 tower-http = { version = "0.6", features = ["limit", "cors"] }
 async-stream = "0.3"
-tokio-tungstenite = "0.24"
 futures-util = "0.3"
 
 # CLI
@@ -58,7 +57,6 @@ rustfft = "6"
 rubato = "0.16"
 
 # Audio file reading (for `transcribe` command)
-hound = "3.5"
 symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
 
 # Directory management
@@ -73,6 +71,7 @@ harness = false
 
 [dev-dependencies]
 tempfile = "3"
+tokio-tungstenite = "0.24"
 
 [profile.release]
 lto = true

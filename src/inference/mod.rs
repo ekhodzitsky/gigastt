@@ -347,9 +347,14 @@ impl Engine {
         }
 
         // Keep a copy of the 16kHz samples for diarization before the buffer
-        // logic potentially pads/realigns them.
+        // logic potentially pads/realigns them. Skip allocation when diarization
+        // is not active for this session.
         #[cfg(feature = "diarization")]
-        let samples_16k_copy = samples.to_vec();
+        let samples_16k_copy = if state.diarization_state.is_some() {
+            Some(samples.to_vec())
+        } else {
+            None
+        };
 
         let samples = match audio::prepare_audio_buffer(samples, &mut state.audio_buffer) {
             Some(s) => s,
@@ -370,10 +375,12 @@ impl Engine {
 
         // --- Diarization: accumulate audio, extract embeddings, assign speakers ---
         #[cfg(feature = "diarization")]
-        if let (Some(dia), Some(enc)) =
-            (state.diarization_state.as_mut(), self.speaker_encoder.as_ref())
-        {
-            dia.audio_buffer.extend_from_slice(&samples_16k_copy);
+        if let (Some(dia), Some(copy), Some(enc)) = (
+            state.diarization_state.as_mut(),
+            samples_16k_copy.as_ref(),
+            self.speaker_encoder.as_ref(),
+        ) {
+            dia.audio_buffer.extend_from_slice(copy);
 
             while dia.audio_buffer.len() >= diarization::SEGMENT_SAMPLES {
                 let segment: Vec<f32> =

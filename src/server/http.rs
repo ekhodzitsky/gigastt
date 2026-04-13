@@ -61,13 +61,28 @@ pub async fn transcribe(
         return Err(api_error(StatusCode::BAD_REQUEST, "Empty request body", "empty_body"));
     }
 
-    let _permit = state.semaphore.acquire().await
-        .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy", "busy"))?;
+    // C2: timeout on semaphore acquisition
+    let _permit = tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        state.semaphore.acquire(),
+    )
+    .await
+    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?
+    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server shutting down", "busy"))?;
 
-    let tmp = tempfile::NamedTempFile::new()
-        .map_err(|e| api_error(StatusCode::INTERNAL_SERVER_ERROR, &format!("{e}"), "internal"))?;
-    std::fs::write(tmp.path(), &body)
-        .map_err(|e| api_error(StatusCode::INTERNAL_SERVER_ERROR, &format!("{e}"), "internal"))?;
+    let tmp = tempfile::NamedTempFile::new().map_err(|e| {
+        tracing::error!("Failed to create temp file: {e}");
+        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
+    })?;
+
+    // M5: async fs write
+    tokio::fs::write(tmp.path(), &body).await.map_err(|e| {
+        tracing::error!("Failed to write temp file: {e}");
+        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
+    })?;
+
+    // H7: drop body after write
+    drop(body);
 
     let path = tmp.path().to_string_lossy().to_string();
     let engine = state.engine.clone();
@@ -80,8 +95,14 @@ pub async fn transcribe(
             words: vec![],
             duration: 0.0, // not available from transcribe_file
         })),
-        Ok(Err(e)) => Err(api_error(StatusCode::UNPROCESSABLE_ENTITY, &format!("{e}"), "transcription_error")),
-        Err(e) => Err(api_error(StatusCode::INTERNAL_SERVER_ERROR, &format!("{e}"), "internal")),
+        Ok(Err(e)) => {
+            tracing::error!("Transcription error: {e}");
+            Err(api_error(StatusCode::UNPROCESSABLE_ENTITY, "Transcription failed. Check audio format.", "transcription_error"))
+        }
+        Err(e) => {
+            tracing::error!("spawn_blocking join error: {e}");
+            Err(api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal"))
+        }
     }
 }
 
@@ -94,13 +115,29 @@ pub async fn transcribe_stream(
         return Err(api_error(StatusCode::BAD_REQUEST, "Empty request body", "empty_body"));
     }
 
-    let _permit = state.semaphore.acquire().await
-        .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy", "busy"))?;
+    // C2: timeout on semaphore acquisition; H1: acquire before writing, move into stream
+    let semaphore = state.semaphore.clone();
+    let permit = tokio::time::timeout(
+        std::time::Duration::from_secs(30),
+        semaphore.acquire_owned(),
+    )
+    .await
+    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server busy, try again later", "timeout"))?
+    .map_err(|_| api_error(StatusCode::SERVICE_UNAVAILABLE, "Server shutting down", "busy"))?;
 
-    let tmp = tempfile::NamedTempFile::new()
-        .map_err(|e| api_error(StatusCode::INTERNAL_SERVER_ERROR, &format!("{e}"), "internal"))?;
-    std::fs::write(tmp.path(), &body)
-        .map_err(|e| api_error(StatusCode::INTERNAL_SERVER_ERROR, &format!("{e}"), "internal"))?;
+    let tmp = tempfile::NamedTempFile::new().map_err(|e| {
+        tracing::error!("Failed to create temp file: {e}");
+        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
+    })?;
+
+    // M5: async fs write
+    tokio::fs::write(tmp.path(), &body).await.map_err(|e| {
+        tracing::error!("Failed to write temp file: {e}");
+        api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
+    })?;
+
+    // H7: drop body after write
+    drop(body);
 
     let path = tmp.path().to_string_lossy().to_string();
     let engine = state.engine.clone();
@@ -108,36 +145,60 @@ pub async fn transcribe_stream(
     let samples = crate::inference::audio::decode_audio_file(&path)
         .map_err(|e| api_error(StatusCode::UNPROCESSABLE_ENTITY, &format!("{e}"), "invalid_audio"))?;
 
-    let stream = async_stream::stream! {
-        let mut stream_state = engine.create_state(
+    // H2: run all blocking inference in spawn_blocking, collect segments upfront
+    let engine_clone = engine.clone();
+    let segments_result = tokio::task::spawn_blocking(move || {
+        let mut stream_state = engine_clone.create_state(
             #[cfg(feature = "diarization")]
             false,
         );
         let chunk_size = 16000; // 1 second at 16kHz
+        let mut all_segments = Vec::new();
+        let mut had_error = None;
 
         for chunk in samples.chunks(chunk_size) {
-            match engine.process_chunk(chunk, &mut stream_state) {
-                Ok(segments) => {
-                    for seg in segments {
-                        let msg = if seg.is_final {
-                            serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-                        } else {
-                            serde_json::json!({"type": "partial", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-                        };
-                        yield Ok(Event::default().data(msg.to_string()));
-                    }
-                }
+            match engine_clone.process_chunk(chunk, &mut stream_state) {
+                Ok(segs) => all_segments.extend(segs),
                 Err(e) => {
-                    let msg = serde_json::json!({"type": "error", "message": format!("{e}"), "code": "inference_error"});
-                    yield Ok(Event::default().data(msg.to_string()));
+                    had_error = Some(format!("{e}"));
                     break;
                 }
             }
         }
 
-        if let Some(seg) = engine.flush_state(&mut stream_state) {
-            let msg = serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words});
+        if had_error.is_none() && let Some(seg) = engine_clone.flush_state(&mut stream_state) {
+            all_segments.push(seg);
+        }
+
+        (all_segments, had_error)
+    })
+    .await;
+
+    let (all_segments, inference_error) = match segments_result {
+        Ok(pair) => pair,
+        Err(e) => {
+            tracing::error!("spawn_blocking join error: {e}");
+            return Err(api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal"));
+        }
+    };
+
+    let stream = async_stream::stream! {
+        // H1: move permit into stream so it lives until the stream is exhausted
+        let _permit = permit;
+
+        if let Some(_err) = inference_error {
+            tracing::error!("SSE inference error: {_err}");
+            let msg = serde_json::json!({"type": "error", "message": "Transcription failed. Check audio format.", "code": "inference_error"});
             yield Ok(Event::default().data(msg.to_string()));
+        } else {
+            for seg in all_segments {
+                let msg = if seg.is_final {
+                    serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
+                } else {
+                    serde_json::json!({"type": "partial", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
+                };
+                yield Ok(Event::default().data(msg.to_string()));
+            }
         }
     };
 

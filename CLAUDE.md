@@ -17,7 +17,7 @@ cargo build                          # CPU-only debug build (default, any platfo
 cargo build --features coreml        # macOS ARM64 (CoreML / Neural Engine)
 cargo build --features cuda          # Linux x86_64 (CUDA 12+)
 cargo build --release                # Release build (LTO, stripped)
-cargo test                           # Run all 39 unit tests, CPU (no model required)
+cargo test                           # Run all 63 unit tests, CPU (no model required)
 cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
 cargo test --test server_integration -- --ignored  # 1 integration test (requires model)
 cargo clippy             # Lint (no expected warnings)
@@ -57,13 +57,16 @@ src/
     features.rs           # Mel spectrogram (64 bins, FFT=320, hop=160, HTK)
     tokenizer.rs          # BPE tokenizer (1025 tokens)
     decode.rs             # RNN-T greedy decode loop
+    audio.rs              # Audio loading, resampling, channel mixing (symphonia + rubato)
+    diarization.rs        # Speaker diarization (optional feature)
+  error.rs                # Typed error types (GigasttError)
   server/
     mod.rs                # axum router: HTTP + WebSocket on single port
     http.rs               # REST handlers: /health, /v1/transcribe, /v1/transcribe/stream (SSE)
   protocol/mod.rs         # JSON message types (Ready, Partial, Final, Error)
 ```
 
-### Performance optimizations (v0.2)
+### Performance optimizations (v0.4)
 - **CoreML execution provider** (`--features coreml`, macOS ARM64): MLProgram format + Neural Engine + model cache directory
   - Automatically loads quantized encoder if available (~4x smaller, ~43% faster)
   - Caches compiled models in `~/.gigastt/models/coreml_cache/`
@@ -109,7 +112,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - Unit tests live in `#[cfg(test)] mod tests` at bottom of each file
 - Tests use synthetic data (no model download required)
 - Test names: `test_<what>_<expected_behavior>`
-- Current: 39 unit tests (tokenizer, features, decode, inference, protocol) + 1 integration test (WebSocket)
+- Current: 63 unit tests (tokenizer, features, decode, inference, protocol, audio, diarization) + 1 integration test (WebSocket)
 - Benchmark suite (WER evaluation on Golos fixtures) in `tests/benchmark.rs` (harness disabled)
 
 ### Code style
@@ -122,7 +125,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 
 ### Audio format support
 - File transcription: WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC (via symphonia)
-- WebSocket: raw PCM16 binary frames at 48kHz (resampled server-side)
+- WebSocket: raw PCM16 binary frames at configurable sample rate (8kHz/16kHz/24kHz/44.1kHz/48kHz, default 48kHz); resampled to 16kHz server-side via rubato
 - Auto mono mix for multi-channel files
 
 ### Security
@@ -152,6 +155,5 @@ python scripts/quantize.py --model-dir ~/.gigastt/models
 
 Engine auto-detects and prefers INT8 if available; falls back to FP32.
 
-## Known limitations (v0.2)
+## Known limitations (v0.4)
 - CPU EP runs on any platform; CoreML EP requires macOS ARM64; CUDA EP requires Linux x86_64 with CUDA 12+
-- Linear interpolation resampler (upgrade to polyphase FIR for better quality in future releases)

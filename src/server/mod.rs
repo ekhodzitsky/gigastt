@@ -125,14 +125,28 @@ async fn handle_ws_inner(
         false,
     ));
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
+    let mut audio_received = false;
 
-    while let Some(msg) = source.next().await {
-        let msg = msg?;
+    loop {
+        let msg = match tokio::time::timeout(
+            std::time::Duration::from_secs(300),
+            source.next(),
+        )
+        .await
+        {
+            Ok(Some(msg)) => msg?,
+            Ok(None) => break,
+            Err(_) => {
+                tracing::info!("Client {peer} idle timeout (300s)");
+                break;
+            }
+        };
         match msg {
             WsMessage::Binary(data) if data.is_empty() => {
                 tracing::debug!("Empty binary frame from {peer}, skipping");
             }
             WsMessage::Binary(data) => {
+                audio_received = true;
                 if data.len() % 2 != 0 {
                     tracing::warn!(
                         "Odd-length PCM frame ({} bytes) from {peer}, dropping last byte",
@@ -198,6 +212,15 @@ async fn handle_ws_inner(
             WsMessage::Text(text) => {
                 match serde_json::from_str::<ClientMessage>(&text) {
                     Ok(ClientMessage::Configure { sample_rate, diarization }) => {
+                        if audio_received {
+                            let err = ServerMessage::Error {
+                                message: "Configure must be sent before first audio frame".into(),
+                                code: "configure_too_late".into(),
+                            };
+                            sink.send(WsMessage::Text(serde_json::to_string(&err)?.into()))
+                                .await?;
+                            continue;
+                        }
                         if let Some(rate) = sample_rate {
                             if SUPPORTED_RATES.contains(&rate) {
                                 client_sample_rate = rate;
