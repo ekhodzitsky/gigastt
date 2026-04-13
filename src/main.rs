@@ -42,6 +42,18 @@ enum Commands {
         diarization: bool,
     },
 
+    /// Quantize encoder model to INT8 (replaces scripts/quantize.py)
+    #[cfg(feature = "quantize")]
+    Quantize {
+        /// Model directory
+        #[arg(long, default_value_t = model::default_model_dir())]
+        model_dir: String,
+
+        /// Force re-quantization even if INT8 model exists
+        #[arg(long)]
+        force: bool,
+    },
+
     /// Transcribe an audio file (offline)
     Transcribe {
         /// Path to WAV file (PCM16 mono)
@@ -101,6 +113,19 @@ async fn main() -> anyhow::Result<()> {
                 model::ensure_speaker_model(&model_dir).await?;
             }
             tracing::info!("Model ready at {model_dir}");
+        }
+        #[cfg(feature = "quantize")]
+        Commands::Quantize { model_dir, force } => {
+            model::ensure_model(&model_dir).await?;
+            let input = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder.onnx");
+            let output = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
+            if output.exists() && !force {
+                tracing::info!("INT8 model already exists: {}", output.display());
+                tracing::info!("Use --force to re-quantize.");
+                return Ok(());
+            }
+            gigastt::quantize::quantize_model(&input, &output)?;
+            tracing::info!("Quantized model saved to {}", output.display());
         }
         Commands::Transcribe { file, model_dir } => {
             model::ensure_model(&model_dir).await?;

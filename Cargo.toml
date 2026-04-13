@@ -13,6 +13,7 @@ default = []
 coreml = ["ort/coreml"]
 cuda = ["ort/cuda"]
 diarization = []
+quantize = ["dep:onnx-pb", "dep:prost"]
 
 [dependencies]
 # ONNX Runtime
@@ -56,6 +57,8 @@ tokio-stream = "0.1"
 
 # Audio file reading (for `transcribe` command)
 symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
+onnx-pb = { version = "0.1.4", optional = true }
+prost = { version = "0.6", optional = true }
 
 [[test]]
 name = "benchmark"
