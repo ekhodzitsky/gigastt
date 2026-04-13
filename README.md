@@ -1,288 +1,299 @@
 <p align="center">
   <h1 align="center">gigastt</h1>
-  <p align="center">Local speech-to-text server powered by GigaAM v3 — on-device Russian speech recognition</p>
+  <p align="center"><strong>On-device Russian speech recognition with 5.3% WER</strong></p>
+  <p align="center">Local STT server powered by GigaAM v3 — no cloud, no API keys, full privacy</p>
   <p align="center">
     <a href="https://github.com/ekhodzitsky/gigastt/actions"><img src="https://github.com/ekhodzitsky/gigastt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://crates.io/crates/gigastt"><img src="https://img.shields.io/crates/v/gigastt.svg" alt="crates.io"></a>
     <a href="https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+    <a href="https://github.com/ekhodzitsky/gigastt/blob/main/CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange" alt="Changelog"></a>
   </p>
 </p>
 
+---
+
+**gigastt** turns any machine into a real-time Russian speech recognition server. One binary, one command, state-of-the-art accuracy — everything runs locally.
+
+```sh
+cargo install gigastt && gigastt serve
+# WebSocket: ws://127.0.0.1:9876/ws
+# REST API:  http://127.0.0.1:9876/v1/transcribe
+```
+
+## Why gigastt?
+
+| | gigastt | Whisper large-v3 | Cloud APIs |
+|---|:---:|:---:|:---:|
+| **WER (Russian)** | **5.3%** | ~18% | 5-10% |
+| **Latency (16s audio)** | **~800ms** | ~4s | network-dependent |
+| **Streaming** | real-time | batch only | varies |
+| **Privacy** | 100% local | 100% local | data leaves device |
+| **Cost** | free | free | $0.006/min+ |
+| **Setup** | `cargo install` | Python + deps | API key + billing |
+
+> GigaAM v3 was trained on **700K+ hours** of Russian speech. It delivers 3-4x better accuracy than Whisper-large-v3 on Russian benchmarks while running faster on Apple Silicon and NVIDIA GPUs.
+
 ## Features
 
-- **Real-time streaming** — partial transcription results via WebSocket as you speak
-- **On-device inference** — no cloud APIs, no API keys, zero cost, full privacy
-- **5.3% WER on Russian** — GigaAM v3 e2e_rnnt, 3-4× better accuracy than Whisper-large-v3 on Russian benchmarks
-- **CoreML & Neural Engine** — Conformer encoder optimized for Apple Silicon via CoreML acceleration
-- **CUDA acceleration** — Linux x86_64 with NVIDIA GPU support via CUDA 12+
-- **Multi-format audio** — WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC support for file transcription
-- **INT8 quantization** — reduced memory footprint and faster inference
-- **Automatic punctuation** — end-to-end model includes text normalization
-- **Docker ready** — containerized deployment with configurable host/port binding
-- **Auto-download** — model fetched from HuggingFace on first run (~850MB)
+- **Real-time streaming** — partial transcription via WebSocket as you speak
+- **REST API + SSE** — file transcription with instant or streaming response
+- **Hardware acceleration** — CoreML + Neural Engine (macOS), CUDA 12+ (Linux), CPU everywhere
+- **INT8 quantization** — 4x smaller model, 43% faster inference
+- **Multi-format audio** — WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC
+- **Speaker diarization** — identify who said what (optional feature)
+- **Automatic punctuation** — GigaAM v3 model produces punctuated, normalized text
+- **Auto-download** — model fetched from HuggingFace on first run (~850 MB)
+- **Docker ready** — CPU and CUDA images with multi-stage builds
+- **Hardened** — connection limits, frame caps, idle timeouts, sanitized errors
 
 ## Quick Start
 
-### Cargo
+### Install & Run
 
 ```sh
+# From crates.io
 cargo install gigastt
 gigastt serve
-# Listening on ws://127.0.0.1:9876/ws
+
+# From source
+git clone https://github.com/ekhodzitsky/gigastt
+cd gigastt
+cargo run --release -- serve
 ```
+
+The model (~850 MB) downloads automatically on first run.
 
 ### Docker
 
 ```sh
-# CPU image (any platform)
+# CPU (any platform)
 docker build -t gigastt .
-docker run -p 9876:9876 gigastt serve --host 0.0.0.0
+docker run -p 9876:9876 gigastt
 
-# CUDA image (Linux x86_64, requires NVIDIA GPU + CUDA 12+ drivers on host)
+# CUDA (Linux, requires NVIDIA Container Toolkit)
 docker build -f Dockerfile.cuda -t gigastt-cuda .
-docker run --gpus all -p 9876:9876 gigastt-cuda serve --host 0.0.0.0
+docker run --gpus all -p 9876:9876 gigastt-cuda
 
-# Model auto-downloaded on first run (~850MB)
+# Model auto-downloads on first run (~850 MB)
 ```
 
-## CLI Usage
-
-### Start STT Server
+### Transcribe a File
 
 ```sh
-gigastt serve
-# Options:
-#   --port 9876              (default: 9876)
-#   --host 127.0.0.1         (default: 127.0.0.1, use 0.0.0.0 for Docker)
-#   --model-dir ~/.gigastt/models
-```
-
-Server binds to local address only by default (127.0.0.1). Use `--host 0.0.0.0` in Docker to accept external connections.
-
-### Transcribe Audio File (Offline)
-
-```sh
+# CLI
 gigastt transcribe recording.wav
-# Outputs transcribed Russian text to stdout
-# Supported: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed to mono)
-```
 
-### Download Model Only
-
-```sh
-gigastt download
-# Downloads to ~/.gigastt/models/ (~850MB)
-```
-
-## WebSocket API
-
-### Connection & Message Flow
-
-Connect to `ws://127.0.0.1:9876/ws` and send PCM16 mono audio frames. Default sample rate is 48kHz; configure via the `configure` message. Server resamples to 16kHz internally.
-
-```
-Client                          Server
-  │                               │
-  ├──────── connect ────────────→ │
-  │                               │
-  │ ←────── Ready message ─────── │
-  │ {type:"ready", version:"1.0"} │
-  │                               │
-  ├────── binary frames ────────→ │
-  │ (PCM16, 48kHz)                │
-  │                               │
-  │ ←────── Partial results ────── │
-  │ {type:"partial", text:"что"}  │
-  │                               │
-  │ ←─────── Final result ──────── │
-  │ {type:"final", text:"Что?"}   │
-  │                               │
-  └───────── close ──────────────→ │
-```
-
-### Message Types
-
-Full protocol documentation in [`docs/asyncapi.yaml`](docs/asyncapi.yaml).
-
-| Direction | Type | Fields | Notes |
-|-----------|------|--------|-------|
-| **Server** | `ready` | `model`, `sample_rate`, `version` | Sent on connection. Includes protocol v1.0. |
-| **Server** | `partial` | `text`, `timestamp`, `words` | Interim transcription (may change with more audio) |
-| **Server** | `final` | `text`, `timestamp`, `words` | Complete utterance with punctuation |
-| **Server** | `error` | `message`, `code` | Error occurred; connection may close |
-| **Client** | `stop` | — | Request finalization of buffered audio |
-| **Client** | `configure` | `sample_rate`, `diarization` | Set input sample rate (8000/16000/24000/44100/48000) and optionally enable speaker diarization. Send before first audio frame. |
-
-### Example Session
-
-```json
-{"type": "ready", "model": "gigaam-v3-e2e-rnnt", "sample_rate": 48000, "version": "1.0", "supported_rates": [8000, 16000, 24000, 44100, 48000]}
-{"type": "configure", "sample_rate": 8000}
-// ... send PCM16 audio at 8kHz ...
-{"type": "partial", "text": "что такое", "timestamp": 0.5}
-{"type": "partial", "text": "что такое Node", "timestamp": 1.2}
-{"type": "final", "text": "Что такое Node.js?", "timestamp": 2.1}
-```
-
-## REST API
-
-The server exposes HTTP endpoints on the same port as the WebSocket endpoint.
-
-### GET /health
-
-Returns server status.
-
-```sh
-curl http://127.0.0.1:9876/health
-# {"status":"ok"}
-```
-
-### POST /v1/transcribe
-
-Transcribe an audio file (WAV, M4A, MP3, OGG, FLAC). Returns the full transcript when complete.
-
-```sh
+# REST API
 curl -X POST http://127.0.0.1:9876/v1/transcribe \
   -H "Content-Type: application/octet-stream" \
   --data-binary @recording.wav
-# {"text":"Что такое Node.js?","words":[],"duration":3.5}
+# {"text":"Привет, как дела?","words":[],"duration":3.5}
 ```
 
-### POST /v1/transcribe/stream
+## API
 
-Transcribe an audio file with streaming Server-Sent Events (SSE). Returns partial results as they arrive.
+### WebSocket — Real-time Streaming
+
+Connect to `ws://127.0.0.1:9876/ws`, send PCM16 audio frames, receive transcription in real time.
+
+```
+Client                            Server
+  |                                 |
+  |-------- connect --------------> |
+  |                                 |
+  | <------- ready ----------------- |
+  | {type:"ready", version:"1.0"}  |
+  |                                 |
+  |------- configure (optional) --> |
+  | {type:"configure",              |
+  |  sample_rate:16000}             |
+  |                                 |
+  |-------- binary PCM16 --------> |
+  |                                 |
+  | <------- partial --------------- |
+  | {type:"partial", text:"привет"} |
+  |                                 |
+  | <------- final ----------------- |
+  | {type:"final",                  |
+  |  text:"Привет, как дела?"}      |
+```
+
+**Supported sample rates:** 8, 16, 24, 44.1, 48 kHz (default 48 kHz, resampled to 16 kHz internally).
+
+### REST API
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/health` | GET | Health check (`{"status":"ok"}`) |
+| `/v1/transcribe` | POST | File transcription, full JSON response |
+| `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
+| `/ws` | GET | WebSocket upgrade for real-time streaming |
+
+**SSE streaming example:**
 
 ```sh
 curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
   -H "Content-Type: application/octet-stream" \
   --data-binary @recording.wav
-# data: {"type":"partial","text":"что такое"}
-# data: {"type":"partial","text":"что такое Node"}
-# data: {"type":"final","text":"Что такое Node.js?"}
+# data: {"type":"partial","text":"привет как"}
+# data: {"type":"partial","text":"привет как дела"}
+# data: {"type":"final","text":"Привет, как дела?"}
 ```
 
-## Client Examples
+Full protocol spec: [`docs/asyncapi.yaml`](docs/asyncapi.yaml)
 
-See [`examples/`](examples/) for ready-to-use WebSocket clients:
+### Client Libraries
 
-- **Python**: `python examples/python_client.py recording.wav`
-- **JavaScript**: `node examples/js_client.mjs recording.wav`
+Ready-to-use WebSocket clients in [`examples/`](examples/):
+
+```sh
+# Python
+pip install websockets
+python examples/python_client.py recording.wav
+
+# JavaScript (Node.js)
+npm install ws
+node examples/js_client.mjs recording.wav
+```
 
 ## Performance
 
-### Benchmarks
+| Metric | Value |
+|---|---|
+| **WER (Russian)** | 5.3% (Golos benchmark) |
+| **Latency (16s audio, M1)** | ~800 ms |
+| **Memory** | ~500 MB |
+| **Model size** | 851 MB (FP32) / 217 MB (INT8) |
+| **Concurrent sessions** | up to 4 |
 
-| Metric | v0.2 |
-|--------|------|
-| **WER (Russian)** | 5.3% |
-| **vs Whisper-large-v3** | 3-4× better |
-| **Latency (16s audio)** | ~800ms (M1) |
-| **Memory** | ~500MB |
+### Hardware Acceleration
 
-### Acceleration
+| Platform | Feature flag | Execution Provider |
+|---|---|---|
+| macOS ARM64 (M1-M4) | `--features coreml` | CoreML + Neural Engine |
+| Linux x86_64 + NVIDIA | `--features cuda` | CUDA 12+ |
+| Any platform | _(default)_ | CPU |
 
-- **CoreML** — Conformer encoder optimized via ONNX Runtime's CoreML execution provider (macOS ARM64)
-- **Neural Engine** — INT8 quantization leverages Apple Neural Engine for 2-3× speedup (macOS ARM64)
-- **CUDA** — ONNX Runtime CUDA execution provider for NVIDIA GPUs on Linux x86_64; falls back to CPU at runtime if no GPU is available
-- **Streaming** — stateful decoder persists across chunks; no full-audio re-inference needed
+```sh
+cargo build --release --features coreml   # macOS: CoreML + Neural Engine
+cargo build --release --features cuda     # Linux: NVIDIA CUDA 12+
+cargo build --release                     # CPU (any platform)
+```
 
-Relative throughput: CPU < CUDA < CoreML (Apple Silicon).
+Features are compile-time and mutually exclusive.
+
+### INT8 Quantization
+
+Optional quantized encoder: 4x smaller, ~43% faster. Auto-detected at runtime.
+
+```sh
+pip install onnxruntime
+python scripts/quantize.py --model-dir ~/.gigastt/models
+# Produces: v3_e2e_rnnt_encoder_int8.onnx (~210 MB)
+```
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────┐
-│ Audio Input (PCM16, 48/16kHz)       │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│ Mel Spectrogram (64 bins)           │
-│ FFT=320, hop=160, HTK               │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│ Conformer Encoder (ONNX)            │
-│ 16 layers, d=768, 240M params       │
-│ ┌─ CoreML execution (M1/M2/M3/M4)   │
-│ ├─ CUDA execution (Linux x86_64)    │
-│ └─ INT8 quantized                   │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│ RNN-T Decoder + Joiner (ONNX)       │
-│ ┌─ Stateful: h/c persisted          │
-│ └─ Per-chunk processing             │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-┌─────────────────────────────────────┐
-│ BPE Tokenizer (1025 tokens)         │
-│ + Automatic Punctuation             │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-      Final Russian Text
+                    Audio Input
+                   (PCM16, multi-rate)
+                        |
+                        v
+               +-----------------+
+               | Mel Spectrogram |  64 bins, FFT=320, hop=160
+               +-----------------+
+                        |
+                        v
+            +------------------------+
+            |   Conformer Encoder    |  16 layers, 768-dim, 240M params
+            |  (ONNX Runtime)        |  CoreML | CUDA | CPU
+            +------------------------+
+                        |
+                        v
+            +------------------------+
+            | RNN-T Decoder + Joiner |  Stateful: h/c persisted
+            |  (ONNX Runtime)        |  across streaming chunks
+            +------------------------+
+                        |
+                        v
+            +------------------------+
+            |   BPE Tokenizer        |  1025 tokens
+            |   + Auto-punctuation   |
+            +------------------------+
+                        |
+                        v
+                  Russian Text
+```
+
+## CLI Reference
+
+```
+gigastt <COMMAND>
+
+Commands:
+  serve        Start STT server
+  download     Download model (~850 MB)
+  transcribe   Transcribe audio file (offline)
+
+gigastt serve [OPTIONS]
+  --port <PORT>          Listen port [default: 9876]
+  --host <HOST>          Bind address [default: 127.0.0.1]
+  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
+
+gigastt transcribe <FILE>
+  Supports: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed)
 ```
 
 ## Model
 
-[**GigaAM v3 e2e_rnnt**](https://huggingface.co/istupakov/gigaam-v3-onnx) — Conformer-based RNN-T ASR by [SberDevices](https://github.com/salute-developers/GigaAM):
+[**GigaAM v3 e2e_rnnt**](https://huggingface.co/istupakov/gigaam-v3-onnx) by [SberDevices](https://github.com/salute-developers/GigaAM):
 
 | Property | Value |
-|----------|-------|
-| **Architecture** | RNN-T (encoder + decoder + joiner) |
-| **Encoder** | 16-layer Conformer, 768-dim, 240M params |
-| **Training Data** | 700K+ hours of Russian speech |
-| **Vocabulary** | 1025 BPE tokens |
-| **Input** | 16kHz mono PCM16 |
-| **Quantization** | INT8 (v0.2+) |
-| **License** | MIT |
-| **Download Size** | ~850MB (encoder 844MB, decoder 4.4MB, joiner 2.6MB) |
+|---|---|
+| Architecture | RNN-T (Conformer encoder + LSTM decoder + joiner) |
+| Encoder | 16-layer Conformer, 768-dim, 240M params |
+| Training data | 700K+ hours of Russian speech |
+| Vocabulary | 1025 BPE tokens |
+| Input | 16 kHz mono PCM16 |
+| Quantization | INT8 available (v0.2+) |
+| License | MIT |
+| Download | ~850 MB (encoder 844 MB, decoder 4.4 MB, joiner 2.6 MB) |
 
 ## Requirements
 
 | | macOS ARM64 | Linux x86_64 |
 |---|---|---|
-| **OS** | macOS 14+ (Sonoma) | Any modern Linux distro |
-| **CPU** | Apple Silicon (M1–M4) | x86_64 |
-| **GPU** | — | NVIDIA GPU with CUDA 12+ (optional) |
-| **Disk** | ~1.5GB (model + binary) | ~1.5GB (model + binary) |
-| **RAM** | ~500MB during inference | ~500MB during inference |
-| **Rust** | 1.85+ (edition 2024) | 1.85+ (edition 2024) |
+| **OS** | macOS 14+ (Sonoma) | Any modern distro |
+| **CPU** | Apple Silicon (M1-M4) | x86_64 |
+| **GPU** | _(integrated, via CoreML)_ | NVIDIA + CUDA 12+ (optional) |
+| **Disk** | ~1.5 GB | ~1.5 GB |
+| **RAM** | ~500 MB | ~500 MB |
+| **Rust** | 1.85+ | 1.85+ |
 
-## Installation
+## Security
 
-### From crates.io
+- Binds to `127.0.0.1` only by default (localhost)
+- WebSocket frame limit: 512 KB
+- Connection semaphore: max 4 concurrent sessions
+- Audio buffer cap: 5 s (streaming) / 10 min (file upload)
+- Internal errors sanitized — no path or model leakage to clients
+- Idle connection timeout: 300 s
 
-```sh
-cargo install gigastt
-```
+## Testing
 
-### From source
-
-```sh
-git clone https://github.com/ekhodzitsky/gigastt
-cd gigastt
-cargo install --path .
-```
-
-## Build & Development
+72 unit tests + 28 e2e tests + load & soak tests:
 
 ```sh
-cargo build                        # CPU-only (any platform)
-cargo build --features coreml     # macOS ARM64: CoreML + Neural Engine
-cargo build --features cuda       # Linux x86_64: NVIDIA CUDA 12+
-cargo build --release             # Release build (LTO, stripped)
-cargo test                        # Run tests
-cargo clippy                      # Lint
+cargo test                           # 72 unit tests (no model needed)
+cargo clippy                         # Lint (zero warnings)
 
-# Features are mutually exclusive — do not combine coreml and cuda.
-
-# Download model (required for integration tests, ~850MB)
+# E2E tests (require model)
 cargo run -- download
+cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored
+
+# Load & soak (local only)
+cargo test --test load_test -- --ignored
+cargo test --test soak_test -- --ignored
 ```
 
 ## License
@@ -292,6 +303,6 @@ MIT — see [LICENSE](LICENSE)
 ## Acknowledgments
 
 - [**GigaAM**](https://github.com/salute-developers/GigaAM) by [SberDevices](https://github.com/salute-developers) — the speech recognition model
-- [**onnx-asr**](https://github.com/istupakov/onnx-asr) by [@istupakov](https://github.com/istupakov) — ONNX model export and reference implementation
-- [**ONNX Runtime**](https://github.com/microsoft/onnxruntime) — inference engine with CoreML & Neural Engine support
+- [**onnx-asr**](https://github.com/istupakov/onnx-asr) by [@istupakov](https://github.com/istupakov) — ONNX model export and reference
+- [**ONNX Runtime**](https://github.com/microsoft/onnxruntime) — inference engine
 - [**ort**](https://github.com/pykeio/ort) — Rust bindings for ONNX Runtime
