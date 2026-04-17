@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-17
+
+### Added
+
+- **Prometheus `/metrics` endpoint** (closes `specs/todo.md` item 7). Enabled via `--metrics` (env `GIGASTT_METRICS=1`); off by default. Exposes
+  - `gigastt_http_requests_total{method,path,status}` (counter)
+  - `gigastt_http_request_duration_seconds{method,path}` (histogram).
+  The endpoint sits behind the Origin allowlist and (when configured) the per-IP rate limiter. Recorder install is tolerant of double-install: emits a warning and keeps the server running instead of failing.
+- **Per-IP rate limiting** (closes `specs/todo.md` item 17). `--rate-limit-per-minute N` (env `GIGASTT_RATE_LIMIT_PER_MINUTE`) + `--rate-limit-burst N` (env `GIGASTT_RATE_LIMIT_BURST`). Off by default. Applies to `/v1/*` and `/v1/ws`; `/health` is exempt. Implemented with `tower_governor` using `SmartIpKeyExtractor`. Returns 429 on violations. A background task evicts expired token buckets every 60 s.
+- **`docs/deployment.md`** (closes `specs/todo.md` item 20). Reverse-proxy recipes for Caddy and nginx (certbot + `auth_basic`), Origin header behaviour, Docker binding strategy, health-check target, and a hardening checklist for remote deployments.
+
+### Changed
+
+- `ServerConfig` gained a `metrics_enabled: bool` field; `RuntimeLimits` gained `rate_limit_per_minute` + `rate_limit_burst`.
+- `http::AppState` now carries `metrics_handle: Option<PrometheusHandle>`.
+- The axum router splits into `/health` (public) and a `protected` sub-router for `/v1/*`, `/ws` alias, `/v1/ws`, and `/metrics` — rate limiter is layered on the protected branch only.
+
+### Dependencies
+
+- `tower_governor = "0.7"`
+- `metrics = "0.24"`
+- `metrics-exporter-prometheus = "0.17"` (default-features off)
+
 ## [0.7.2] - 2026-04-17
 
 ### Fixed
