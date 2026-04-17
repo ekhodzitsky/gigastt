@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
+use gigastt::server::{OriginPolicy, ServerConfig};
 use gigastt::{inference, model, server};
+use std::net::IpAddr;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -25,7 +27,7 @@ enum Commands {
         #[arg(short, long, default_value_t = 9876)]
         port: u16,
 
-        /// Bind address (use 0.0.0.0 for Docker)
+        /// Bind address. Loopback by default; non-loopback requires `--bind-all`.
         #[arg(long, default_value = "127.0.0.1")]
         host: String,
 
@@ -36,6 +38,25 @@ enum Commands {
         /// Number of concurrent inference sessions
         #[arg(long, default_value_t = 4)]
         pool_size: usize,
+
+        /// Explicitly acknowledge binding to a non-loopback address.
+        /// Can also be enabled via `GIGASTT_ALLOW_BIND_ANY=1`.
+        /// Without this flag the server refuses to listen on anything other than
+        /// 127.0.0.1 / ::1 / localhost to prevent accidental public exposure.
+        #[arg(long, default_value_t = false)]
+        bind_all: bool,
+
+        /// Additional Origin allowed to call the REST / WebSocket API (repeatable).
+        /// Loopback origins (localhost, 127.0.0.1, ::1) are always allowed.
+        /// Match is exact and case-insensitive, e.g. `https://app.example.com`.
+        #[arg(long = "allow-origin", value_name = "URL")]
+        allow_origin: Vec<String>,
+
+        /// Echo `Access-Control-Allow-Origin: *` and accept any cross-origin
+        /// caller. Disabled by default — every non-loopback Origin must be
+        /// listed explicitly via `--allow-origin` unless this flag is set.
+        #[arg(long, default_value_t = false)]
+        cors_allow_any: bool,
     },
 
     /// Download model without starting server
@@ -97,6 +118,94 @@ fn log_rss() {
     }
 }
 
+/// Guard non-loopback binds. Privacy-first default: the server will only
+/// listen on 127.0.0.1 / ::1 / localhost unless the operator opts in via
+/// `--bind-all` or `GIGASTT_ALLOW_BIND_ANY=1`. Mirrors the intent of Docker's
+/// `--host 0.0.0.0` — explicit consent to expose a local STT service.
+fn ensure_bind_allowed(host: &str, bind_all_flag: bool) -> anyhow::Result<()> {
+    if is_loopback_host(host) {
+        return Ok(());
+    }
+    let env_opt_in = std::env::var("GIGASTT_ALLOW_BIND_ANY")
+        .map(|v| matches!(v.trim(), "1" | "true" | "TRUE" | "yes" | "YES"))
+        .unwrap_or(false);
+    if bind_all_flag || env_opt_in {
+        tracing::warn!(
+            host = %host,
+            "binding to non-loopback address — anyone on the network can reach this server"
+        );
+        return Ok(());
+    }
+    anyhow::bail!(
+        "refusing to bind to '{host}': non-loopback addresses require \
+         `--bind-all` (or env GIGASTT_ALLOW_BIND_ANY=1) to prevent accidental \
+         public exposure of local transcription"
+    )
+}
+
+fn is_loopback_host(host: &str) -> bool {
+    // Accept the common human forms first.
+    let lowered = host.trim().to_ascii_lowercase();
+    if lowered == "localhost" || lowered == "::1" {
+        return true;
+    }
+    // Strip optional brackets around IPv6 literals.
+    let stripped = lowered.trim_start_matches('[').trim_end_matches(']');
+    if let Ok(ip) = stripped.parse::<IpAddr>() {
+        return ip.is_loopback();
+    }
+    false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_loopback_host_recognises_common_forms() {
+        assert!(is_loopback_host("127.0.0.1"));
+        assert!(is_loopback_host("localhost"));
+        assert!(is_loopback_host("::1"));
+        assert!(is_loopback_host("[::1]"));
+        assert!(is_loopback_host("127.0.0.2")); // loopback /8
+        assert!(!is_loopback_host("0.0.0.0"));
+        assert!(!is_loopback_host("192.168.1.10"));
+        assert!(!is_loopback_host("example.com"));
+    }
+
+    #[test]
+    fn test_ensure_bind_allowed_loopback_ok() {
+        ensure_bind_allowed("127.0.0.1", false).expect("loopback must be allowed");
+        ensure_bind_allowed("localhost", false).expect("localhost must be allowed");
+    }
+
+    #[test]
+    fn test_ensure_bind_allowed_non_loopback_requires_flag() {
+        // Temporarily strip any env opt-in that might exist on the runner.
+        // SAFETY: single-threaded test harness inside this fn body; env mutation is fine.
+        let previous = std::env::var("GIGASTT_ALLOW_BIND_ANY").ok();
+        // SAFETY: tests are run sequentially within this module — transient env mutation.
+        unsafe {
+            std::env::remove_var("GIGASTT_ALLOW_BIND_ANY");
+        }
+        let result = ensure_bind_allowed("0.0.0.0", false);
+        if let Some(v) = previous {
+            unsafe {
+                std::env::set_var("GIGASTT_ALLOW_BIND_ANY", v);
+            }
+        }
+        assert!(
+            result.is_err(),
+            "0.0.0.0 without --bind-all must be rejected"
+        );
+    }
+
+    #[test]
+    fn test_ensure_bind_allowed_explicit_flag_ok() {
+        ensure_bind_allowed("0.0.0.0", true).expect("explicit --bind-all must pass");
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -112,7 +221,11 @@ async fn main() -> anyhow::Result<()> {
             host,
             model_dir,
             pool_size,
+            bind_all,
+            allow_origin,
+            cors_allow_any,
         } => {
+            ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
             #[cfg(feature = "quantize")]
             {
@@ -127,7 +240,15 @@ async fn main() -> anyhow::Result<()> {
             }
             let engine = inference::Engine::load_with_pool_size(&model_dir, pool_size)?;
             log_rss();
-            server::run(engine, port, &host).await?;
+            let config = ServerConfig {
+                port,
+                host,
+                origin_policy: OriginPolicy {
+                    allow_any: cors_allow_any,
+                    allowed_origins: allow_origin,
+                },
+            };
+            server::run_with_config(engine, config, None).await?;
         }
         Commands::Download {
             model_dir,

@@ -3,13 +3,15 @@
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum::response::Json;
+use axum::http::header;
 use axum::response::sse::{Event, KeepAlive, Sse};
+use axum::response::{IntoResponse, Json, Response};
 use futures_util::StreamExt;
 use futures_util::stream::Stream;
 use serde::Serialize;
 use std::sync::Arc;
 
+use super::{POOL_RETRY_AFTER_MS, POOL_RETRY_AFTER_SECS};
 use crate::inference::Engine;
 
 /// Shared application state for all handlers.
@@ -48,13 +50,34 @@ pub struct TranscribeResponse {
     pub duration: f64,
 }
 
-type ApiError = (StatusCode, Json<serde_json::Value>);
+/// Error response produced by the REST handlers. Using `Response` directly
+/// (rather than a `(StatusCode, Json<_>)` tuple) lets timeout paths attach
+/// a `Retry-After` header without changing the handler signatures.
+type ApiError = Response;
 
 fn api_error(status: StatusCode, msg: &str, code: &str) -> ApiError {
     (
         status,
         Json(serde_json::json!({"error": msg, "code": code})),
     )
+        .into_response()
+}
+
+/// 503 response for pool-saturation backpressure: carries both the standard
+/// `Retry-After` header (seconds, per RFC 9110 §10.2.3) and a machine-readable
+/// `retry_after_ms` field in the JSON body so clients on either surface can
+/// back off with the same hint.
+fn api_timeout_error() -> ApiError {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        [(header::RETRY_AFTER, POOL_RETRY_AFTER_SECS.to_string())],
+        Json(serde_json::json!({
+            "error": "Server busy, try again later",
+            "code": "timeout",
+            "retry_after_ms": POOL_RETRY_AFTER_MS,
+        })),
+    )
+        .into_response()
 }
 
 /// GET /health — health check for monitoring and Docker HEALTHCHECK.
@@ -116,13 +139,7 @@ pub async fn transcribe(
         state.engine.pool.checkout(),
     )
     .await
-    .map_err(|_| {
-        api_error(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Server busy, try again later",
-            "timeout",
-        )
-    })?;
+    .map_err(|_| api_timeout_error())?;
 
     let body_bytes = body.to_vec();
     drop(body);
@@ -222,13 +239,7 @@ pub async fn transcribe_stream(
         state.engine.pool.checkout(),
     )
     .await
-    .map_err(|_| {
-        api_error(
-            StatusCode::SERVICE_UNAVAILABLE,
-            "Server busy, try again later",
-            "timeout",
-        )
-    })?;
+    .map_err(|_| api_timeout_error())?;
 
     // Create mpsc channel for streaming segments from spawn_blocking to SSE
     let (tx, rx) =

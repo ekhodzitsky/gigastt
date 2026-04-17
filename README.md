@@ -268,6 +268,12 @@ gigastt serve [OPTIONS]
   --host <HOST>          Bind address [default: 127.0.0.1]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
   --pool-size <N>        Concurrent inference sessions [default: 4]
+  --bind-all             Required to listen on a non-loopback address (e.g. 0.0.0.0).
+                         Can also be enabled via GIGASTT_ALLOW_BIND_ANY=1.
+  --allow-origin <URL>   Additional Origin allowed to call the API (repeatable).
+                         Loopback origins are always allowed.
+  --cors-allow-any       Accept any cross-origin caller (echoes Access-Control-Allow-Origin: *).
+                         Off by default.
 
 gigastt download [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
@@ -310,12 +316,24 @@ gigastt quantize [OPTIONS]          # requires --features quantize
 
 ## Security
 
-- Binds to `127.0.0.1` only by default (localhost)
-- WebSocket frame limit: 512 KB
-- Session pool: max 4 concurrent sessions
-- Audio buffer cap: 5 s (streaming) / 10 min (file upload)
-- Internal errors sanitized — no path or model leakage to clients
-- Idle connection timeout: 300 s
+- **Loopback-only bind.** The server refuses to listen on anything other than
+  `127.0.0.1` / `::1` / `localhost` unless the operator explicitly passes
+  `--bind-all` (or sets `GIGASTT_ALLOW_BIND_ANY=1`). Prevents accidental public
+  exposure behind a reverse proxy or stray port forward.
+- **Cross-origin requests denied by default.** A browser page at
+  `https://evil.example.com` cannot drive-by connect to the local WebSocket /
+  REST API. Loopback origins are always allowed; extra origins must be added
+  via `--allow-origin https://app.example.com` (repeatable). Legacy
+  `Access-Control-Allow-Origin: *` behaviour is opt-in via
+  `--cors-allow-any`.
+- **Retry-After on backpressure.** Pool saturation returns HTTP 503 with a
+  `Retry-After: 30` header; WebSocket `error` payloads include
+  `retry_after_ms: 30000` so clients can back off without guessing.
+- **WebSocket frame limit:** 512 KB.
+- **Session pool:** max 4 concurrent sessions (configurable via `--pool-size`).
+- **Audio buffer cap:** 5 s (streaming) / 10 min (file upload).
+- **Internal errors sanitized** — no path or model leakage to clients.
+- **Idle connection timeout:** 300 s.
 
 ## Testing
 

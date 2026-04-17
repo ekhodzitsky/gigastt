@@ -54,6 +54,11 @@ pub enum ServerMessage {
         message: String,
         /// Machine-readable error code (e.g., `"inference_error"`).
         code: String,
+        /// Suggested delay (milliseconds) before retry. Present only for transient
+        /// backpressure errors (e.g. pool saturation). Optional; omitted from JSON
+        /// when absent to preserve backward-compatible payloads.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        retry_after_ms: Option<u32>,
     },
 }
 
@@ -132,11 +137,30 @@ mod tests {
         let msg = ServerMessage::Error {
             message: "fail".into(),
             code: "err".into(),
+            retry_after_ms: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["type"], "error");
         assert!(v.get("version").is_none());
+        assert!(
+            v.get("retry_after_ms").is_none(),
+            "retry_after_ms must be omitted when None"
+        );
+    }
+
+    #[test]
+    fn test_error_serialization_with_retry_after() {
+        let msg = ServerMessage::Error {
+            message: "Server busy, try again later".into(),
+            code: "timeout".into(),
+            retry_after_ms: Some(30_000),
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["type"], "error");
+        assert_eq!(v["code"], "timeout");
+        assert_eq!(v["retry_after_ms"], 30_000);
     }
 
     #[test]

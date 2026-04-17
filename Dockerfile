@@ -34,7 +34,8 @@ EXPOSE 9876
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD curl -f http://localhost:9876/health || exit 1
 
-# Download model if not present, then start server
-# Bind 0.0.0.0 inside container (not 127.0.0.1)
+# Download model if not present, then start server.
+# `--bind-all` acknowledges that container networking requires listening on
+# 0.0.0.0; outside Docker the default `127.0.0.1` bind stays in effect.
 ENTRYPOINT ["gigastt"]
-CMD ["serve", "--port", "9876", "--host", "0.0.0.0"]
+CMD ["serve", "--port", "9876", "--host", "0.0.0.0", "--bind-all"]

@@ -29,6 +29,115 @@ fn json_text(msg: &impl serde::Serialize) -> String {
 const SUPPORTED_RATES: &[u32] = &[8000, 16000, 24000, 44100, 48000];
 const DEFAULT_SAMPLE_RATE: u32 = 48000;
 
+/// Hint (milliseconds) returned to clients that hit pool backpressure —
+/// matches the `Retry-After` header emitted by the REST handlers and keeps
+/// transient 503 / WebSocket error payloads consistent with the 30 s
+/// checkout timeout used throughout the server.
+pub(crate) const POOL_RETRY_AFTER_MS: u32 = 30_000;
+pub(crate) const POOL_RETRY_AFTER_SECS: u64 = 30;
+
+/// Origin policy for CORS + cross-origin deny middleware.
+///
+/// gigastt is a privacy-first local server: by default we deny cross-origin
+/// requests outright so a malicious page cannot trigger transcription from a
+/// logged-in user's microphone via a drive-by WebSocket. Loopback origins
+/// (`localhost`, `127.0.0.1`, `[::1]`) are always permitted; additional origins
+/// must be listed explicitly via `--allow-origin`, and the wildcard `*`
+/// behavior is opt-in via `--cors-allow-any`.
+#[derive(Debug, Clone, Default)]
+pub struct OriginPolicy {
+    /// When true, the server accepts ANY `Origin` and echoes `*` in the CORS
+    /// response — matches the old v0.5.x behavior. Dangerous default-off.
+    pub allow_any: bool,
+    /// Exact-match allowlist (e.g. `https://app.example.com`). Case-insensitive.
+    pub allowed_origins: Vec<String>,
+}
+
+impl OriginPolicy {
+    /// Loopback-only default policy: cross-origin requests from non-local
+    /// pages are denied until the operator adds explicit allowlist entries.
+    pub fn loopback_only() -> Self {
+        Self::default()
+    }
+}
+
+#[derive(Debug)]
+enum OriginVerdict {
+    /// No `Origin` header or opaque `null` — treat as non-browser client,
+    /// no CORS echo required.
+    AllowedNoEcho,
+    /// Origin matches the policy; echo the exact string (or `*` if
+    /// `allow_any` is on).
+    Allowed(String),
+    /// Origin present but not allowed — respond 403 before reaching the
+    /// handler.
+    Denied,
+}
+
+fn is_loopback_origin(origin: &str) -> bool {
+    // Normalize once; compare lowercase prefixes. The prefix must be followed
+    // by a port separator (`:`), a path (`/`), or end-of-string — otherwise
+    // `http://localhost.evil.com` would be accepted as a DNS continuation of
+    // the loopback hostname.
+    let lowered = origin.to_ascii_lowercase();
+    const HOST_PREFIXES: &[&str] = &[
+        "http://localhost",
+        "https://localhost",
+        "http://127.0.0.1",
+        "https://127.0.0.1",
+        "http://[::1]",
+        "https://[::1]",
+    ];
+    HOST_PREFIXES.iter().any(|p| match lowered.strip_prefix(p) {
+        None => false,
+        Some(rest) => rest.is_empty() || rest.starts_with(':') || rest.starts_with('/'),
+    })
+}
+
+impl OriginPolicy {
+    fn evaluate(&self, origin: Option<&str>) -> OriginVerdict {
+        let Some(origin) = origin else {
+            return OriginVerdict::AllowedNoEcho;
+        };
+        if origin.eq_ignore_ascii_case("null") {
+            return OriginVerdict::AllowedNoEcho;
+        }
+        if self.allow_any || is_loopback_origin(origin) {
+            return OriginVerdict::Allowed(origin.to_string());
+        }
+        if self
+            .allowed_origins
+            .iter()
+            .any(|a| a.eq_ignore_ascii_case(origin))
+        {
+            return OriginVerdict::Allowed(origin.to_string());
+        }
+        OriginVerdict::Denied
+    }
+}
+
+/// Server runtime configuration. `run_with_config` is the canonical entry
+/// point; `run` / `run_with_shutdown` remain as thin wrappers for callers
+/// that only need the pre-0.6 positional parameters.
+#[derive(Debug, Clone)]
+pub struct ServerConfig {
+    pub port: u16,
+    pub host: String,
+    pub origin_policy: OriginPolicy,
+}
+
+impl ServerConfig {
+    /// Sensible local-only default: listen on `127.0.0.1:9876`, deny
+    /// non-loopback origins.
+    pub fn local(port: u16) -> Self {
+        Self {
+            port,
+            host: "127.0.0.1".to_string(),
+            origin_policy: OriginPolicy::loopback_only(),
+        }
+    }
+}
+
 /// Start the HTTP + WebSocket STT server on the given host and port.
 ///
 /// Serves REST API endpoints and WebSocket on a single port:
@@ -52,13 +161,39 @@ pub async fn run_with_shutdown(
     host: &str,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
 ) -> Result<()> {
-    let addr: SocketAddr = format!("{host}:{port}")
+    let config = ServerConfig {
+        port,
+        host: host.to_string(),
+        origin_policy: OriginPolicy::loopback_only(),
+    };
+    run_with_config(engine, config, shutdown).await
+}
+
+/// Start server with a full [`ServerConfig`] and optional programmatic
+/// shutdown signal. This is the canonical entry point — the other `run_*`
+/// helpers construct a default `ServerConfig` and dispatch here.
+pub async fn run_with_config(
+    engine: Engine,
+    config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+) -> Result<()> {
+    let addr: SocketAddr = format!("{}:{}", config.host, config.port)
         .parse()
         .context("Invalid host:port")?;
 
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
     });
+
+    let policy = Arc::new(config.origin_policy.clone());
+
+    let origin_layer = {
+        let policy = policy.clone();
+        axum::middleware::from_fn(move |req, next| {
+            let policy = policy.clone();
+            async move { origin_middleware(policy, req, next).await }
+        })
+    };
 
     let app = Router::new()
         .route("/health", get(http::health))
@@ -67,12 +202,23 @@ pub async fn run_with_shutdown(
         .route("/v1/transcribe/stream", post(http::transcribe_stream))
         .route("/ws", get(ws_handler))
         .layer(DefaultBodyLimit::max(50 * 1024 * 1024)) // 50MB
-        .layer(axum::middleware::from_fn(cors_middleware))
+        .layer(origin_layer)
         .with_state(state);
 
     tracing::info!("gigastt server listening on http://{addr}");
     tracing::info!("  WebSocket: ws://{addr}/ws");
     tracing::info!("  REST API:  http://{addr}/health, /v1/transcribe, /v1/transcribe/stream");
+    if config.origin_policy.allow_any {
+        tracing::warn!(
+            "CORS allow-any is ON: any cross-origin page can call this server. \
+             Only use with trusted callers."
+        );
+    } else if !config.origin_policy.allowed_origins.is_empty() {
+        tracing::info!(
+            "CORS allowlist (in addition to loopback): {:?}",
+            config.origin_policy.allowed_origins
+        );
+    }
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
@@ -98,37 +244,72 @@ pub async fn run_with_shutdown(
     Ok(())
 }
 
-async fn cors_middleware(req: axum::extract::Request, next: axum::middleware::Next) -> Response {
-    let mut response = next.run(req).await;
-    let headers = response.headers_mut();
-    headers.insert(
-        axum::http::header::ACCESS_CONTROL_ALLOW_ORIGIN,
-        axum::http::HeaderValue::from_static("*"),
-    );
-    headers.insert(
-        axum::http::header::ACCESS_CONTROL_ALLOW_METHODS,
-        axum::http::HeaderValue::from_static("GET, POST, OPTIONS"),
-    );
-    headers.insert(
-        axum::http::header::ACCESS_CONTROL_ALLOW_HEADERS,
-        axum::http::HeaderValue::from_static("*"),
-    );
-    response
+async fn origin_middleware(
+    policy: Arc<OriginPolicy>,
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Response {
+    use axum::http::{StatusCode, header};
+    use axum::response::IntoResponse;
+
+    // `/health` is a liveness probe for container orchestrators and monitoring
+    // tools that don't send Origin — let it through unconditionally.
+    if req.uri().path() == "/health" {
+        return next.run(req).await;
+    }
+
+    let origin = req
+        .headers()
+        .get("origin")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_string);
+
+    match policy.evaluate(origin.as_deref()) {
+        OriginVerdict::AllowedNoEcho => next.run(req).await,
+        OriginVerdict::Allowed(echo) => {
+            let mut response = next.run(req).await;
+            let headers = response.headers_mut();
+            let value = if policy.allow_any { "*".into() } else { echo };
+            if let Ok(v) = axum::http::HeaderValue::from_str(&value) {
+                headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, v);
+            }
+            headers.insert(
+                header::ACCESS_CONTROL_ALLOW_METHODS,
+                axum::http::HeaderValue::from_static("GET, POST, OPTIONS"),
+            );
+            headers.insert(
+                header::ACCESS_CONTROL_ALLOW_HEADERS,
+                axum::http::HeaderValue::from_static("*"),
+            );
+            response
+        }
+        OriginVerdict::Denied => {
+            let origin_str = origin.as_deref().unwrap_or("");
+            let path = req.uri().path().to_string();
+            tracing::warn!(
+                origin = %origin_str,
+                path = %path,
+                "cross-origin request denied by default policy"
+            );
+            (
+                StatusCode::FORBIDDEN,
+                axum::response::Json(serde_json::json!({
+                    "error": "Origin not allowed",
+                    "code": "origin_denied",
+                })),
+            )
+                .into_response()
+        }
+    }
 }
 
 async fn ws_handler(
     ws: WebSocketUpgrade,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
-    headers: axum::http::HeaderMap,
     State(state): State<Arc<http::AppState>>,
 ) -> Response {
-    if let Some(origin) = headers
-        .get("origin")
-        .and_then(|v| v.to_str().ok())
-        .filter(|o| !o.contains("127.0.0.1") && !o.contains("localhost"))
-    {
-        tracing::warn!("WebSocket connection from non-local origin: {origin} (peer: {peer})");
-    }
+    // Origin allowlist is enforced by `origin_middleware` before the request
+    // reaches this handler; anything that arrives here has already been cleared.
     ws.max_message_size(512 * 1024)
         .max_frame_size(512 * 1024)
         .on_upgrade(move |socket| handle_ws(socket, peer, state))
@@ -148,6 +329,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
             let err = ServerMessage::Error {
                 message: "Server busy, try again later".into(),
                 code: "timeout".into(),
+                retry_after_ms: Some(POOL_RETRY_AFTER_MS),
             };
             let _ = sink.send(WsMessage::Text(json_text(&err).into())).await;
             return;
@@ -304,6 +486,7 @@ async fn handle_ws_inner(
                             let err = ServerMessage::Error {
                                 message: "Inference failed. Please check audio format.".into(),
                                 code: "inference_error".into(),
+                                retry_after_ms: None,
                             };
                             if let Err(e) = sink.send(WsMessage::Text(json_text(&err).into())).await
                             {
@@ -327,6 +510,7 @@ async fn handle_ws_inner(
                             let err = ServerMessage::Error {
                                 message: "Inference failed unexpectedly. Session reset.".into(),
                                 code: "inference_panic".into(),
+                                retry_after_ms: None,
                             };
                             if let Err(e) = sink.send(WsMessage::Text(json_text(&err).into())).await
                             {
@@ -353,6 +537,7 @@ async fn handle_ws_inner(
                                     message: "Configure must be sent before first audio frame"
                                         .into(),
                                     code: "configure_too_late".into(),
+                                    retry_after_ms: None,
                                 };
                                 if let Err(e) =
                                     sink.send(WsMessage::Text(json_text(&err).into())).await
@@ -373,6 +558,7 @@ async fn handle_ws_inner(
                                             "Unsupported sample rate: {rate}Hz. Supported: {SUPPORTED_RATES:?}"
                                         ),
                                         code: "invalid_sample_rate".into(),
+                                        retry_after_ms: None,
                                     };
                                     if let Err(e) =
                                         sink.send(WsMessage::Text(json_text(&err).into())).await
@@ -467,6 +653,79 @@ mod tests {
             SUPPORTED_RATES.contains(&DEFAULT_SAMPLE_RATE),
             "DEFAULT_SAMPLE_RATE ({DEFAULT_SAMPLE_RATE}) must be present in SUPPORTED_RATES"
         );
+    }
+
+    #[test]
+    fn test_loopback_origin_matcher() {
+        assert!(is_loopback_origin("http://localhost"));
+        assert!(is_loopback_origin("https://localhost:3000"));
+        assert!(is_loopback_origin("http://127.0.0.1:9876"));
+        assert!(is_loopback_origin("HTTPS://127.0.0.1")); // case-insensitive
+        assert!(is_loopback_origin("http://[::1]:9876"));
+        assert!(!is_loopback_origin("https://evil.example.com"));
+        assert!(!is_loopback_origin("http://192.168.1.10"));
+        // Foiled prefix spoof: host must be exactly localhost / 127.0.0.1 / [::1]
+        assert!(!is_loopback_origin("http://localhost.evil.example.com"));
+    }
+
+    #[test]
+    fn test_origin_policy_default_denies_third_party() {
+        let policy = OriginPolicy::loopback_only();
+        assert!(matches!(
+            policy.evaluate(Some("https://evil.example.com")),
+            OriginVerdict::Denied
+        ));
+    }
+
+    #[test]
+    fn test_origin_policy_allows_loopback_by_default() {
+        let policy = OriginPolicy::loopback_only();
+        assert!(matches!(
+            policy.evaluate(Some("http://localhost:3000")),
+            OriginVerdict::Allowed(_)
+        ));
+    }
+
+    #[test]
+    fn test_origin_policy_allows_listed_origin() {
+        let policy = OriginPolicy {
+            allow_any: false,
+            allowed_origins: vec!["https://app.example.com".into()],
+        };
+        assert!(matches!(
+            policy.evaluate(Some("https://app.example.com")),
+            OriginVerdict::Allowed(_)
+        ));
+        // Trailing-path mutations are not a match — allowlist is exact origin only.
+        assert!(matches!(
+            policy.evaluate(Some("https://app.example.com.evil.com")),
+            OriginVerdict::Denied
+        ));
+    }
+
+    #[test]
+    fn test_origin_policy_allow_any_short_circuits() {
+        let policy = OriginPolicy {
+            allow_any: true,
+            allowed_origins: vec![],
+        };
+        assert!(matches!(
+            policy.evaluate(Some("https://anything.example.com")),
+            OriginVerdict::Allowed(_)
+        ));
+    }
+
+    #[test]
+    fn test_origin_policy_no_header_allowed() {
+        let policy = OriginPolicy::loopback_only();
+        assert!(matches!(
+            policy.evaluate(None),
+            OriginVerdict::AllowedNoEcho
+        ));
+        assert!(matches!(
+            policy.evaluate(Some("null")),
+            OriginVerdict::AllowedNoEcho
+        ));
     }
 
     #[test]
