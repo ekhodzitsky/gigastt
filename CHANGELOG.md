@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-04-17
+
+### Security
+
+- **`rustls-webpki` 0.103.10 → 0.103.12** (`Cargo.lock`) — resolves RUSTSEC-2026-0098 (name constraints for URI names incorrectly accepted) and RUSTSEC-2026-0099 (name constraints accepted for certificates asserting a wildcard name). Pulled in transitively via `reqwest → hyper-rustls → rustls`.
+
 ## [0.5.2] - 2026-04-17
 
 ### Fixed
