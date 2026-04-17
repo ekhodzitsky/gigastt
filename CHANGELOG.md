@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-04-17
+
+### Fixed
+
+- **CoreML / CUDA startup crash on macOS 26+ (`Unable to serialize model as it contains compiled nodes`)** — `src/inference/mod.rs` previously called `.with_optimized_model_path(...)` after registering the CoreML / CUDA execution providers. Those EPs replace parts of the graph with compiled nodes that cannot be re-serialized as ONNX, so ORT aborted session creation before the server could bind. Regression introduced in v0.5.0. The optimized-ONNX cache path is removed from both EP paths; the CoreML block keeps its dedicated `coreml_cache/` (compiled-model cache) and the CUDA EP keeps its internal caches. Cost: ~1–2 s additional cold start. Benefit: `gigastt serve --features coreml` works again on macOS 14+.
+
 ## [0.8.0] - 2026-04-17
 
 ### Added
