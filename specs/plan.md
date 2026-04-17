@@ -5,6 +5,18 @@ that each milestone unblocks the next and keeps `main` shippable
 at every boundary. Every phase ends with a git tag + release-notes
 bullet.
 
+## Milestones delivered (2026-04-17)
+
+| Phase | Tag | Highlights |
+|-------|-----|-----------|
+| 0 | v0.5.2 / v0.5.3 | release.yml + CONTRIBUTING + `rustls-webpki` advisory fix |
+| 1 | v0.6.0 | origin allowlist, Retry-After, `--bind-all` guard, pool recovery via `catch_unwind` |
+| 1.5 | v0.6.1 | `handle_ws_inner` split + origin middleware integration test |
+
+Still open for Phase 1: item 6 (hard-coded limits) + item 7 (`/metrics`).
+Phase 2 onward untouched. CUDA Linux asset temporarily removed from
+release matrix (P0 addendum in `specs/todo.md`).
+
 ## Phase 0 — stop the bleeding (1 day)
 
 **Goal:** prevent the class of problems we already hit (Murmur
