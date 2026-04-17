@@ -143,6 +143,7 @@ Client                            Server
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
 | `/v1/ws` | GET | WebSocket upgrade for real-time streaming (canonical) |
 | `/ws` | GET | Deprecated alias for `/v1/ws` — removal planned for v1.0 |
+| `/metrics` | GET | Prometheus metrics (enabled with `--metrics`). Returns 404 otherwise |
 
 **SSE streaming example:**
 
@@ -290,6 +291,13 @@ gigastt serve [OPTIONS]
                             Env: GIGASTT_WS_FRAME_MAX_BYTES.
   --body-limit-bytes <B>    Max REST body size [default: 52428800 = 50 MiB].
                             Env: GIGASTT_BODY_LIMIT_BYTES.
+  --rate-limit-per-minute <N>  Per-IP rate limit (requests/min). 0 = off (default).
+                            Applies to /v1/* only; /health is exempt.
+                            Env: GIGASTT_RATE_LIMIT_PER_MINUTE.
+  --rate-limit-burst <N>    Token-bucket burst size [default: 10].
+                            Env: GIGASTT_RATE_LIMIT_BURST.
+  --metrics                 Expose Prometheus metrics at GET /metrics.
+                            Off by default. Env: GIGASTT_METRICS.
 
 gigastt download [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
@@ -350,6 +358,11 @@ gigastt quantize [OPTIONS]          # requires --features quantize
 - **Audio buffer cap:** 5 s (streaming) / 10 min (file upload).
 - **Internal errors sanitized** — no path or model leakage to clients.
 - **Idle connection timeout:** 300 s.
+- **Per-IP rate limiting** (optional, off by default): `--rate-limit-per-minute N`
+  enables a token-bucket limiter on all `/v1/*` endpoints; `/health` is exempt.
+  Returns HTTP 429 when the bucket is exhausted. Privacy-first default: disabled.
+
+Remote deployment (TLS + reverse proxy): see [`docs/deployment.md`](docs/deployment.md).
 
 ## Testing
 

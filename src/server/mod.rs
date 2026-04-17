@@ -16,6 +16,9 @@ use axum::routing::{get, post};
 use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
+use tower_governor::GovernorLayer;
+use tower_governor::governor::GovernorConfigBuilder;
+use tower_governor::key_extractor::SmartIpKeyExtractor;
 
 /// Serialize a server message to JSON with a safe fallback on error.
 fn json_text(msg: &impl serde::Serialize) -> String {
@@ -127,6 +130,11 @@ pub struct RuntimeLimits {
     pub ws_frame_max_bytes: usize,
     /// Maximum REST request body in bytes. Default: 50 MiB.
     pub body_limit_bytes: usize,
+    /// Per-IP rate limit: requests-per-minute. `0` disables the limiter
+    /// (default). Applies to /v1/* and /v1/ws; /health is exempt.
+    pub rate_limit_per_minute: u32,
+    /// Max burst size before the token bucket starts refilling.
+    pub rate_limit_burst: u32,
 }
 
 impl Default for RuntimeLimits {
@@ -135,6 +143,8 @@ impl Default for RuntimeLimits {
             idle_timeout_secs: 300,
             ws_frame_max_bytes: 512 * 1024,
             body_limit_bytes: 50 * 1024 * 1024,
+            rate_limit_per_minute: 0,
+            rate_limit_burst: 10,
         }
     }
 }
@@ -148,17 +158,23 @@ pub struct ServerConfig {
     pub host: String,
     pub origin_policy: OriginPolicy,
     pub limits: RuntimeLimits,
+    /// Expose Prometheus metrics at `GET /metrics`. Off by default — keeps
+    /// the server quiet for single-user local installs. When on, a
+    /// `PrometheusHandle` is attached to `AppState` and the endpoint is
+    /// added to the protected router so the Origin allowlist still applies.
+    pub metrics_enabled: bool,
 }
 
 impl ServerConfig {
     /// Sensible local-only default: listen on `127.0.0.1:9876`, deny
-    /// non-loopback origins, default runtime limits.
+    /// non-loopback origins, default runtime limits, metrics off.
     pub fn local(port: u16) -> Self {
         Self {
             port,
             host: "127.0.0.1".to_string(),
             origin_policy: OriginPolicy::loopback_only(),
             limits: RuntimeLimits::default(),
+            metrics_enabled: false,
         }
     }
 }
@@ -191,6 +207,7 @@ pub async fn run_with_shutdown(
         host: host.to_string(),
         origin_policy: OriginPolicy::loopback_only(),
         limits: RuntimeLimits::default(),
+        metrics_enabled: false,
     };
     run_with_config(engine, config, shutdown).await
 }
@@ -207,9 +224,29 @@ pub async fn run_with_config(
         .parse()
         .context("Invalid host:port")?;
 
+    // Install the Prometheus recorder once if metrics are requested. Failures
+    // here (recorder already installed by another run, which happens in tests
+    // that restart the server) are demoted to a warning so the server still
+    // starts — the second install just won't emit fresh metrics.
+    let metrics_handle = if config.metrics_enabled {
+        match metrics_exporter_prometheus::PrometheusBuilder::new().install_recorder() {
+            Ok(handle) => {
+                tracing::info!("Prometheus /metrics endpoint enabled");
+                Some(handle)
+            }
+            Err(e) => {
+                tracing::warn!("Failed to install Prometheus recorder (already installed?): {e}");
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
         limits: config.limits.clone(),
+        metrics_handle,
     });
 
     let policy = Arc::new(config.origin_policy.clone());
@@ -222,8 +259,9 @@ pub async fn run_with_config(
         })
     };
 
-    let app = Router::new()
-        .route("/health", get(http::health))
+    // Protected sub-router: /v1/*, /ws alias, and /metrics — all subject to
+    // the origin allowlist and (when enabled) the per-IP rate limiter.
+    let protected = Router::new()
         .route("/v1/models", get(http::models))
         .route("/v1/transcribe", post(http::transcribe))
         .route("/v1/transcribe/stream", post(http::transcribe_stream))
@@ -232,6 +270,45 @@ pub async fn run_with_config(
         // warning on each upgrade. Plan: drop `/ws` in v1.0.
         .route("/v1/ws", get(ws_handler))
         .route("/ws", get(ws_handler_legacy))
+        .route("/metrics", get(http::metrics))
+        .layer(axum::middleware::from_fn(http_metrics_middleware))
+        .with_state(state.clone());
+
+    let protected = if config.limits.rate_limit_per_minute > 0 {
+        let per_second = (config.limits.rate_limit_per_minute / 60).max(1);
+        let governor_conf = std::sync::Arc::new(
+            GovernorConfigBuilder::default()
+                .per_second(per_second as u64)
+                .burst_size(config.limits.rate_limit_burst)
+                .key_extractor(SmartIpKeyExtractor)
+                .finish()
+                .context("Failed to build rate-limiter config")?,
+        );
+
+        // Background task: periodically evict expired entries to bound memory.
+        let limiter = governor_conf.limiter().clone();
+        std::thread::spawn(move || {
+            loop {
+                std::thread::sleep(std::time::Duration::from_secs(60));
+                limiter.retain_recent();
+            }
+        });
+
+        tracing::info!(
+            rpm = config.limits.rate_limit_per_minute,
+            burst = config.limits.rate_limit_burst,
+            "per-IP rate limiting enabled"
+        );
+        protected.layer(GovernorLayer {
+            config: governor_conf,
+        })
+    } else {
+        protected
+    };
+
+    let app = Router::new()
+        .route("/health", get(http::health))
+        .merge(protected)
         .layer(DefaultBodyLimit::max(config.limits.body_limit_bytes))
         .layer(origin_layer)
         .with_state(state);
@@ -273,6 +350,36 @@ pub async fn run_with_config(
     .await?;
 
     Ok(())
+}
+
+/// Instrumentation middleware: records HTTP request counters and a duration
+/// histogram under the `gigastt_http_*` namespace. When the Prometheus
+/// recorder is not installed (default / `--metrics` off), the `metrics` crate
+/// macros are no-ops, so the overhead is one `Instant::now()` per request.
+async fn http_metrics_middleware(
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Response {
+    let method = req.method().as_str().to_string();
+    let path = req.uri().path().to_string();
+    let start = std::time::Instant::now();
+    let response = next.run(req).await;
+    let elapsed = start.elapsed().as_secs_f64();
+    let status = response.status().as_u16().to_string();
+    metrics::counter!(
+        "gigastt_http_requests_total",
+        "method" => method.clone(),
+        "path" => path.clone(),
+        "status" => status.clone(),
+    )
+    .increment(1);
+    metrics::histogram!(
+        "gigastt_http_request_duration_seconds",
+        "method" => method,
+        "path" => path,
+    )
+    .record(elapsed);
+    response
 }
 
 async fn origin_middleware(
@@ -741,6 +848,16 @@ async fn handle_ws_inner(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_runtime_limits_default_rate_limit_disabled() {
+        let limits = RuntimeLimits::default();
+        assert_eq!(
+            limits.rate_limit_per_minute, 0,
+            "rate limiting must be off by default (privacy-first)"
+        );
+        assert_eq!(limits.rate_limit_burst, 10, "default burst size must be 10");
+    }
 
     #[test]
     fn test_supported_rates_contains_common() {

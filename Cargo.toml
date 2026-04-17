@@ -1,6 +1,6 @@
 [package]
 name = "gigastt"
-version = "0.7.2"
+version = "0.8.0"
 edition = "2024"
 description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 license = "MIT"
@@ -57,6 +57,13 @@ tokio-stream = "0.1"
 
 # Audio file reading (for `transcribe` command)
 symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
+
+# Per-IP rate limiting (token bucket, optional — off by default)
+tower_governor = "0.7"
+
+# Prometheus-compatible metrics (exposed behind `--metrics` flag, off by default)
+metrics = "0.24"
+metrics-exporter-prometheus = { version = "0.17", default-features = false }
 onnx-pb = { version = "0.1.4", optional = true }
 prost = { version = "0.6", optional = true }
 

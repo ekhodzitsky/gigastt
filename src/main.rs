@@ -70,6 +70,20 @@ enum Commands {
         /// Maximum REST request body size (bytes).
         #[arg(long, env = "GIGASTT_BODY_LIMIT_BYTES", default_value_t = 50 * 1024 * 1024)]
         body_limit_bytes: usize,
+
+        /// Per-IP rate limit — requests per minute. 0 = off (default).
+        #[arg(long, env = "GIGASTT_RATE_LIMIT_PER_MINUTE", default_value_t = 0)]
+        rate_limit_per_minute: u32,
+
+        /// Rate-limit burst size (default 10).
+        #[arg(long, env = "GIGASTT_RATE_LIMIT_BURST", default_value_t = 10)]
+        rate_limit_burst: u32,
+
+        /// Expose Prometheus metrics at `GET /metrics`. Off by default —
+        /// keeps the server quiet for single-user installs. The endpoint is
+        /// attached to the protected router so the Origin allowlist applies.
+        #[arg(long, env = "GIGASTT_METRICS", default_value_t = false)]
+        metrics: bool,
     },
 
     /// Download model without starting server
@@ -240,6 +254,9 @@ async fn main() -> anyhow::Result<()> {
             idle_timeout_secs,
             ws_frame_max_bytes,
             body_limit_bytes,
+            rate_limit_per_minute,
+            rate_limit_burst,
+            metrics,
         } => {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
@@ -267,7 +284,10 @@ async fn main() -> anyhow::Result<()> {
                     idle_timeout_secs,
                     ws_frame_max_bytes,
                     body_limit_bytes,
+                    rate_limit_per_minute,
+                    rate_limit_burst,
                 },
+                metrics_enabled: metrics,
             };
             server::run_with_config(engine, config, None).await?;
         }

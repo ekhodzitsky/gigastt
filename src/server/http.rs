@@ -13,13 +13,40 @@ use std::sync::Arc;
 
 use super::{POOL_RETRY_AFTER_MS, POOL_RETRY_AFTER_SECS, RuntimeLimits};
 use crate::inference::Engine;
+use metrics_exporter_prometheus::PrometheusHandle;
 
 /// Shared application state for all handlers. Carries runtime limits so the
 /// WebSocket path can enforce configurable frame / idle bounds without
-/// re-threading every CLI arg through each handler.
+/// re-threading every CLI arg through each handler, plus an optional
+/// Prometheus handle for the `/metrics` endpoint.
 pub struct AppState {
     pub engine: Arc<Engine>,
     pub limits: RuntimeLimits,
+    pub metrics_handle: Option<PrometheusHandle>,
+}
+
+/// GET /metrics — Prometheus text-format exposition. Returns 404 when the
+/// server was started without `--metrics`.
+pub async fn metrics(State(state): State<Arc<AppState>>) -> Response {
+    match &state.metrics_handle {
+        Some(handle) => (
+            StatusCode::OK,
+            [(
+                header::CONTENT_TYPE,
+                "text/plain; version=0.0.4; charset=utf-8",
+            )],
+            handle.render(),
+        )
+            .into_response(),
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({
+                "error": "metrics endpoint disabled",
+                "code": "metrics_disabled",
+            })),
+        )
+            .into_response(),
+    }
 }
 
 /// Health check response.
