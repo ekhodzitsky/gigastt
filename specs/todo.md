@@ -8,6 +8,34 @@ Each item: **P0/P1/P2** priority, a short problem statement, the
 concrete symptom, and the proposed direction. Full rollout sequence
 lives in `specs/plan.md`.
 
+## Progress snapshot (2026-04-17)
+
+| Item | Priority | Status |
+|------|----------|--------|
+| 1. Release pipeline | P0 | ✅ v0.5.2 (`release.yml` matrix, SHA256SUMS) |
+| 2. Semver violation | P0 | ✅ v0.5.2 (CONTRIBUTING release checklist) |
+| 3. Pool depletion on panic | P0 | ✅ v0.5.1 (`catch_unwind` in WS handler) |
+| 4. CORS `*` + weak Origin check | P1 | ✅ v0.6.0 (origin_middleware) |
+| 5. Pool timeout without Retry-After | P1 | ✅ v0.6.0 (header + retry_after_ms) |
+| 6. Hard-coded runtime limits | P1 | ⏳ open |
+| 7. `/metrics` / observability | P1 | ⏳ open |
+| 8. Origin-check covers REST | P1 | ✅ v0.6.0 (middleware before routing) |
+| 9. `--bind-all` guard | P1 | ✅ v0.6.0 (CLI + Dockerfiles) |
+| 10. Docker bake-model option | P1 | ⏳ open |
+| 11. `/v1/ws` canonical path | P2 | ⏳ open |
+| 12. `/v1/models.capabilities` | P2 | ⏳ open |
+| 13. `handle_ws_inner` split | P2 | ✅ v0.6.1 (three frame handlers + e2e test) |
+| 14. `cargo deny` + SBOM | P2 | ⏳ open |
+| 15. WER histogram breakdown | P2 | ⏳ open |
+| 16. Self-hosted nightly soak | P2 | ⏳ open |
+| 17. Per-IP rate limiting | P2 | ⏳ open |
+| 18. `ort_err()` wrapper audit | P2 | ⏳ open |
+| 19. Hot-reload model | P2 | ⏳ open |
+| 20. TLS/auth deployment docs | P2 | ⏳ open |
+| CUDA in release matrix | P0 addendum | ⏳ open (removed from matrix v0.5.2+) |
+
+Also shipped alongside (2026-04-14 advisory): `rustls-webpki` 0.103.10→0.103.12 closing RUSTSEC-2026-0098/99 in v0.5.3.
+
 ---
 
 ## P0 — production-correctness blockers
