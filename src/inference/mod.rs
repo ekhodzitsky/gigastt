@@ -286,9 +286,13 @@ impl Engine {
 
         #[cfg(feature = "coreml")]
         let (encoder, decoder, joiner) = {
+            // CoreML has its own cache (`coreml_cache/`) for compiled subgraphs.
+            // We do NOT call `.with_optimized_model_path(...)` here: CoreML EP
+            // replaces part of the graph with compiled nodes that cannot be
+            // re-serialized as ONNX, and ORT errors out with
+            // `Unable to serialize model as it contains compiled nodes`
+            // on macOS 14+. The CoreML cache below is sufficient.
             let cache_dir = dir.join("coreml_cache");
-            let optimized_cache_dir = dir.join("optimized_cache");
-            std::fs::create_dir_all(&optimized_cache_dir).ok();
             let coreml_ep = ep::CoreML::default()
                 .with_compute_units(ep::coreml::ComputeUnits::CPUAndNeuralEngine)
                 .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
@@ -300,8 +304,6 @@ impl Engine {
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
                 .with_execution_providers([coreml_ep.clone()])
-                .map_err(ort_err)?
-                .with_optimized_model_path(optimized_cache_dir.join("encoder_optimized.onnx"))
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
@@ -326,8 +328,10 @@ impl Engine {
 
         #[cfg(feature = "cuda")]
         let (encoder, decoder, joiner) = {
-            let cache_dir = dir.join("optimized_cache");
-            std::fs::create_dir_all(&cache_dir).ok();
+            // CUDA EP compiles subgraphs that cannot be re-serialized as ONNX,
+            // so we do NOT call `.with_optimized_model_path(...)` here — same
+            // reason as the CoreML block. ORT's CUDA EP keeps its own caches
+            // internally.
             let cuda_ep = ep::CUDA::default().build();
 
             let encoder = Session::builder()
@@ -335,8 +339,6 @@ impl Engine {
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
                 .with_execution_providers([cuda_ep.clone()])
-                .map_err(ort_err)?
-                .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
