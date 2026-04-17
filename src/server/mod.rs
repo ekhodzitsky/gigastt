@@ -247,11 +247,11 @@ async fn handle_ws_inner(
                         }
                     };
 
-                    let mut state = match state_opt.take() {
+                    let state = match state_opt.take() {
                         Some(s) => s,
                         None => break 'outer Err(anyhow::anyhow!("Streaming state lost")),
                     };
-                    let mut triplet = match triplet_opt.take() {
+                    let triplet = match triplet_opt.take() {
                         Some(t) => t,
                         None => {
                             tracing::error!("Triplet unexpectedly missing for {peer}");
@@ -260,63 +260,85 @@ async fn handle_ws_inner(
                     };
                     let eng = engine.clone();
                     let join_result = tokio::task::spawn_blocking(move || {
-                        let r = eng.process_chunk(&samples_16k, &mut state, &mut triplet);
+                        // Move ownership into the closure so state and triplet are
+                        // returned unconditionally — including after a panic inside
+                        // `process_chunk`. Mirrors the pattern in src/server/http.rs.
+                        let mut state = state;
+                        let mut triplet = triplet;
+                        let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            eng.process_chunk(&samples_16k, &mut state, &mut triplet)
+                        }));
                         (r, state, triplet)
                     })
                     .await;
 
                     match join_result {
-                        Ok((result, state_back, triplet_back)) => {
+                        Ok((Ok(Ok(segments)), state_back, triplet_back)) => {
                             state_opt = Some(state_back);
                             triplet_opt = Some(triplet_back);
-                            match result {
-                                Ok(segments) => {
-                                    for seg in segments {
-                                        let msg = if seg.is_final {
-                                            ServerMessage::Final {
-                                                text: seg.text,
-                                                timestamp: seg.timestamp,
-                                                words: seg.words,
-                                            }
-                                        } else {
-                                            ServerMessage::Partial {
-                                                text: seg.text,
-                                                timestamp: seg.timestamp,
-                                                words: seg.words,
-                                            }
-                                        };
-                                        if let Err(e) =
-                                            sink.send(WsMessage::Text(json_text(&msg).into())).await
-                                        {
-                                            break 'outer Err(e.into());
-                                        }
+                            for seg in segments {
+                                let msg = if seg.is_final {
+                                    ServerMessage::Final {
+                                        text: seg.text,
+                                        timestamp: seg.timestamp,
+                                        words: seg.words,
                                     }
-                                }
-                                Err(e) => {
-                                    tracing::error!("Inference error for {peer}: {e:#}");
-                                    let err = ServerMessage::Error {
-                                        message: "Inference failed. Please check audio format."
-                                            .into(),
-                                        code: "inference_error".into(),
-                                    };
-                                    if let Err(e) =
-                                        sink.send(WsMessage::Text(json_text(&err).into())).await
-                                    {
-                                        break 'outer Err(e.into());
+                                } else {
+                                    ServerMessage::Partial {
+                                        text: seg.text,
+                                        timestamp: seg.timestamp,
+                                        words: seg.words,
                                     }
+                                };
+                                if let Err(e) =
+                                    sink.send(WsMessage::Text(json_text(&msg).into())).await
+                                {
+                                    break 'outer Err(e.into());
                                 }
                             }
                         }
-                        Err(e) => {
-                            // spawn_blocking panicked — triplet is permanently lost.
-                            // The pool degrades gracefully with one fewer slot.
-                            // Recovering the triplet would require restructuring closure
-                            // ownership (see SSE handler pattern in http.rs).
-                            tracing::warn!(
-                                "spawn_blocking panicked for {peer}: {e} — \
-                                 triplet lost, pool capacity reduced"
+                        Ok((Ok(Err(e)), state_back, triplet_back)) => {
+                            state_opt = Some(state_back);
+                            triplet_opt = Some(triplet_back);
+                            tracing::error!("Inference error for {peer}: {e:#}");
+                            let err = ServerMessage::Error {
+                                message: "Inference failed. Please check audio format.".into(),
+                                code: "inference_error".into(),
+                            };
+                            if let Err(e) = sink.send(WsMessage::Text(json_text(&err).into())).await
+                            {
+                                break 'outer Err(e.into());
+                            }
+                        }
+                        Ok((Err(_panic), _state_back, triplet_back)) => {
+                            // Inference panicked: triplet is recovered, but the streaming
+                            // state (LSTM h/c buffers) may be mid-update and unsafe to
+                            // reuse. Drop it and install a fresh state so the session can
+                            // continue instead of tearing down the connection.
+                            tracing::error!(
+                                "Panic in WS inference for {peer} — triplet recovered, \
+                                 streaming state reset"
                             );
-                            break 'outer Err(anyhow::anyhow!("Inference thread panicked"));
+                            triplet_opt = Some(triplet_back);
+                            state_opt = Some(engine.create_state(
+                                #[cfg(feature = "diarization")]
+                                false,
+                            ));
+                            let err = ServerMessage::Error {
+                                message: "Inference failed unexpectedly. Session reset.".into(),
+                                code: "inference_panic".into(),
+                            };
+                            if let Err(e) = sink.send(WsMessage::Text(json_text(&err).into())).await
+                            {
+                                break 'outer Err(e.into());
+                            }
+                        }
+                        Err(e) => {
+                            // spawn_blocking itself failed (runtime shutdown or cancellation).
+                            // Triplet is truly lost in this branch; bail out so the outer
+                            // loop does not retry with invalid state.
+                            tracing::error!("spawn_blocking join error for {peer}: {e}");
+                            break 'outer Err(anyhow::anyhow!("Blocking task join failed"));
                         }
                     }
                 }
@@ -444,6 +466,32 @@ mod tests {
         assert!(
             SUPPORTED_RATES.contains(&DEFAULT_SAMPLE_RATE),
             "DEFAULT_SAMPLE_RATE ({DEFAULT_SAMPLE_RATE}) must be present in SUPPORTED_RATES"
+        );
+    }
+
+    #[test]
+    fn test_catch_unwind_preserves_ownership_across_panic() {
+        // Locks in the ownership contract used by `handle_ws_inner`'s spawn_blocking
+        // block: moving captured values into the closure and wrapping the inner
+        // computation in `catch_unwind(AssertUnwindSafe(_))` guarantees that the
+        // values are observable after a panic, so the triplet can be returned to the
+        // pool and the streaming state can be reset.
+        use std::panic::{AssertUnwindSafe, catch_unwind};
+
+        let mut state = 42u32;
+        let mut triplet_marker = String::from("pool_slot");
+
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            state = 99;
+            triplet_marker.push_str("/taken");
+            panic!("simulated inference panic");
+        }));
+
+        assert!(result.is_err(), "catch_unwind must report the panic");
+        assert_eq!(state, 99, "state must remain accessible after panic");
+        assert_eq!(
+            triplet_marker, "pool_slot/taken",
+            "triplet marker must survive panic"
         );
     }
 }

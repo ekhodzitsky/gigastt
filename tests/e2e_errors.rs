@@ -148,11 +148,8 @@ async fn test_ws_fifth_client_hangs() {
             .await
             .unwrap();
         // Drain until Final or stream ends.
-        while let Ok(Some(Ok(_))) =
-            tokio::time::timeout(Duration::from_secs(5), stream.next()).await
-        {
-            break;
-        }
+        // Drain at most one message; we only need to confirm the Stop roundtrip.
+        let _ = tokio::time::timeout(Duration::from_secs(5), stream.next()).await;
     }
 
     let _ = shutdown.send(());
@@ -215,11 +212,8 @@ async fn test_rest_saturated_pool_returns_503() {
         sink.send(Message::Text(stop_json.clone().into()))
             .await
             .unwrap();
-        while let Ok(Some(Ok(_))) =
-            tokio::time::timeout(Duration::from_secs(5), stream.next()).await
-        {
-            break;
-        }
+        // Drain at most one message; we only need to confirm the Stop roundtrip.
+        let _ = tokio::time::timeout(Duration::from_secs(5), stream.next()).await;
     }
 
     let _ = shutdown.send(());
