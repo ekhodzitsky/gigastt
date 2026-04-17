@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-04-17
+
+### Fixed
+
+- **`cargo-deny` licenses + advisories** (`deny.toml`).
+  - Added `CDLA-Permissive-2.0` to the license allowlist — `webpki-root-certs` (the Mozilla CA bundle) publishes under CDLA; behaves like MIT for our use.
+  - Added `RUSTSEC-2021-0073` to `ignore` in `[advisories]`. `prost-types 0.6.1` is a build-time transitive of `onnx-pb` under the `quantize` feature; the affected `From<Timestamp> for SystemTime` path is not reached by our pipeline.
+
 ## [0.7.1] - 2026-04-17
 
 ### Fixed
