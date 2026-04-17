@@ -33,12 +33,9 @@ jobs:
             features: ""
             asset_suffix: x86_64-unknown-linux-gnu
             cuda: false
-          - name: linux-x86_64-cuda
-            os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            features: cuda
-            asset_suffix: x86_64-unknown-linux-gnu-cuda
-            cuda: true
+          # linux-x86_64-cuda is intentionally omitted until the CUDA install
+          # path is stabilized (Jimver/cuda-toolkit breaks on ubuntu-latest for
+          # 12.4.x package names). Tracked in specs/todo.md.
     steps:
       - uses: actions/checkout@v4
 

@@ -26,11 +26,10 @@ impl DownloadProgress {
 
     fn update(&mut self, bytes: u64) {
         self.current += bytes;
-        let percent = if self.total > 0 {
-            (self.current * 100 / self.total) as u8
-        } else {
-            0
-        };
+        let percent = (self.current * 100)
+            .checked_div(self.total)
+            .map(|p| p as u8)
+            .unwrap_or(0);
         if percent != self.last_percent {
             self.last_percent = percent;
             eprint!(

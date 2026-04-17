@@ -41,9 +41,10 @@ source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
    It must produce:
    - `gigastt-x.y.z-aarch64-apple-darwin.tar.gz`
    - `gigastt-x.y.z-x86_64-unknown-linux-gnu.tar.gz`
-   - `gigastt-x.y.z-x86_64-unknown-linux-gnu-cuda.tar.gz`
    - `SHA256SUMS.txt`
    - Per-asset `*.sha256` files
+
+   The CUDA Linux build is not yet automated — see `specs/todo.md` (Phase 0 addendum). Until it lands, CUDA users build from source.
 7. **Verify the release page** on GitHub — all assets attached, release notes generated.
 8. **Publish to crates.io** (only after step 7):
    ```sh
