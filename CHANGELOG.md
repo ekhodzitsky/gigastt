@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-04-17
+
+### Changed
+
+- **`handle_ws_inner` refactor** (`src/server/mod.rs`) — extracted three frame handlers (`handle_binary_frame`, `handle_configure_message`, `handle_stop_message`) and a `send_server_message` helper; the session loop is now ~60 lines with a single `FrameOutcome` dispatch. Behavior unchanged (same tests + clippy clean); reduces future risk when touching the hot path.
+
+### Added
+
+- **Integration test for origin middleware** (`src/server/mod.rs::tests::test_origin_middleware_integration`) — spins a minimal axum router with `origin_middleware` on a real port and verifies: `/health` is exempt, cross-origin `/v1/*` returns 403 `origin_denied`, loopback Origin is echoed into `Access-Control-Allow-Origin`, no-Origin requests pass through, and `localhost.evil.example.com` DNS-continuation attempts are denied.
+
 ## [0.6.0] - 2026-04-17
 
 ### Added
