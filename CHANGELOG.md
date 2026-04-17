@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-04-17
+
 ### Added
 
+- **Release automation** (`.github/workflows/release.yml`) — tag-triggered matrix workflow that produces `gigastt-<ver>-aarch64-apple-darwin.tar.gz` (coreml), `gigastt-<ver>-x86_64-unknown-linux-gnu.tar.gz` (cpu), `gigastt-<ver>-x86_64-unknown-linux-gnu-cuda.tar.gz`, per-asset `.sha256` files, and aggregated `SHA256SUMS.txt`. Replaces ad-hoc manual uploads that previously broke SHA-pinned downstream clients.
+- **`CONTRIBUTING.md`** — release checklist and contribution guidelines, including an explicit prohibition on manual `gh release upload` of binary assets.
 - **`examples/bun_client.ts`, `examples/go_client.go`, `examples/KotlinClient.kt`** — WebSocket client samples in Go, Kotlin (OkHttp), and Bun-native TypeScript.
+- **`specs/todo.md` + `specs/plan.md`** — 20-item follow-up list from the v0.5.0 critique, ranked P0/P1/P2 and sequenced into six phases through v1.0.0.
+
+### Fixed
+
+- **WebSocket pool recovery after inference panic** (`src/server/mod.rs`) — a panic inside `process_chunk` used to leak the `SessionTriplet` and permanently shrink the pool. Now the blocking task owns the state and triplet, wraps the inner call in `catch_unwind(AssertUnwindSafe(_))`, and returns both unconditionally. On panic the WS session sends an `inference_panic` error, resets its streaming state, and continues instead of tearing down.
+- **`clippy::never_loop`** in `tests/e2e_errors.rs` (two occurrences) — replaced the single-iteration `while let` drains with a `tokio::time::timeout(_).await` call, unblocking stricter lint levels.
 
 ### Removed
 
