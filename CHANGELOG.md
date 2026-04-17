@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-17
+
+### Added
+
+- **Configurable runtime limits** (`gigastt::server::RuntimeLimits`, closes `specs/todo.md` item 6). Three knobs exposed via CLI + environment variables:
+  - `--idle-timeout-secs` / `GIGASTT_IDLE_TIMEOUT_SECS` — WebSocket idle timeout (default 300).
+  - `--ws-frame-max-bytes` / `GIGASTT_WS_FRAME_MAX_BYTES` — max WS frame / message (default 512 KiB).
+  - `--body-limit-bytes` / `GIGASTT_BODY_LIMIT_BYTES` — max REST body (default 50 MiB).
+  Delivered via a new `RuntimeLimits` field on `ServerConfig` and `http::AppState`; TOML config file support stays for a follow-up.
+- **Canonical WebSocket path `/v1/ws`** (closes `specs/todo.md` item 11). Versioned path aligned with REST; legacy `/ws` remains as an alias with a warn-level deprecation log on every upgrade. Removal planned for v1.0.
+- **`diarization` capability in `GET /v1/models`** (closes `specs/todo.md` item 12). Mirrors the WebSocket `Ready` field so clients can probe capabilities without opening a WS.
+- **Docker `GIGASTT_BAKE_MODEL=1` build-arg** (closes `specs/todo.md` item 10). When set, a dedicated `model-fetcher` stage runs `gigastt download` during image build and the runtime stage copies the model into `/home/gigastt/.gigastt/models/`. Default (`0`) preserves the slim image.
+- **`cargo deny check` in CI + `deny.toml`** (closes first half of `specs/todo.md` item 14 — SBOM stays for later). Enforces license allowlist + advisory scan + crates.io-only source + wildcard ban on every PR via `EmbarkStudios/cargo-deny-action@v2`.
+
+### Changed
+
+- `http::AppState` now carries `limits: RuntimeLimits` alongside `engine`; `handle_ws_inner` takes `&RuntimeLimits` so the idle timeout is no longer hard-coded.
+- `DefaultBodyLimit::max` in the Axum router reads from `config.limits.body_limit_bytes` instead of the old `50 * 1024 * 1024` literal.
+- `ws_handler` reads `ws_frame_max_bytes` from `AppState` instead of baking 512 KiB into the code path.
+
+### Notes
+
+- `RuntimeLimits`, `ServerConfig::local`, and `run_with_config` are public — downstream embedders can construct a fully customised server without CLI.
+- Murmur remains on v0.6.0: no wire protocol break, new limits are additive + opt-in.
+
 ## [0.6.1] - 2026-04-17
 
 ### Changed
