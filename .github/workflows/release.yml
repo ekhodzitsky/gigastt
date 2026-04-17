@@ -1,0 +1,158 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v0.5.1)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-arm64
+            os: macos-14
+            target: aarch64-apple-darwin
+            features: coreml
+            asset_suffix: aarch64-apple-darwin
+            cuda: false
+          - name: linux-x86_64-cpu
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            features: ""
+            asset_suffix: x86_64-unknown-linux-gnu
+            cuda: false
+          - name: linux-x86_64-cuda
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            features: cuda
+            asset_suffix: x86_64-unknown-linux-gnu-cuda
+            cuda: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install CUDA toolkit
+        if: matrix.cuda
+        uses: Jimver/cuda-toolkit@v0.2.19
+        with:
+          cuda: '12.4.1'
+          method: network
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev"]'
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: release-${{ matrix.asset_suffix }}
+
+      - name: Build release
+        shell: bash
+        env:
+          FEATURES: ${{ matrix.features }}
+        run: |
+          if [ -n "$FEATURES" ]; then
+            cargo build --release --locked --target ${{ matrix.target }} --features "$FEATURES"
+          else
+            cargo build --release --locked --target ${{ matrix.target }}
+          fi
+
+      - name: Package tarball
+        id: package
+        shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          SUFFIX: ${{ matrix.asset_suffix }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          VERSION="${TAG#v}"
+          ASSET="gigastt-${VERSION}-${SUFFIX}.tar.gz"
+
+          STAGE="$(mktemp -d)"
+          cp "target/${TARGET}/release/gigastt" "$STAGE/gigastt"
+          cp LICENSE README.md CHANGELOG.md "$STAGE/" 2>/dev/null || true
+
+          tar -C "$STAGE" -czf "$ASSET" .
+          sha256sum "$ASSET" > "${ASSET}.sha256" 2>/dev/null || shasum -a 256 "$ASSET" > "${ASSET}.sha256"
+
+          echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+          echo "sha_file=${ASSET}.sha256" >> "$GITHUB_OUTPUT"
+          ls -la "$ASSET" "${ASSET}.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gigastt-${{ matrix.asset_suffix }}
+          path: |
+            ${{ steps.package.outputs.asset }}
+            ${{ steps.package.outputs.sha_file }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish GitHub release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Aggregate SHA256SUMS.txt
+        shell: bash
+        working-directory: dist
+        run: |
+          : > SHA256SUMS.txt
+          for f in *.tar.gz; do
+            (sha256sum "$f" 2>/dev/null || shasum -a 256 "$f") >> SHA256SUMS.txt
+          done
+          cat SHA256SUMS.txt
+
+      - name: Create / update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: ${{ steps.tag.outputs.tag }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/*.sha256
+            dist/SHA256SUMS.txt
