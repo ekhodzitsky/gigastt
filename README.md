@@ -80,6 +80,16 @@ docker run --gpus all -p 9876:9876 gigastt-cuda
 # Model auto-downloads on first run (~850 MB)
 ```
 
+#### Baked image (model included at build time)
+
+```sh
+# Slim image (model downloaded on first run, ~850 MB extra at startup)
+docker build -t gigastt .
+
+# Baked image (model included, zero cold-start, ~1.1 GB)
+docker build --build-arg GIGASTT_BAKE_MODEL=1 -t gigastt:baked .
+```
+
 ### Transcribe a File
 
 ```sh
@@ -97,7 +107,7 @@ curl -X POST http://127.0.0.1:9876/v1/transcribe \
 
 ### WebSocket — Real-time Streaming
 
-Connect to `ws://127.0.0.1:9876/ws`, send PCM16 audio frames, receive transcription in real time.
+Connect to `ws://127.0.0.1:9876/v1/ws` (canonical; `ws://…/ws` is a deprecated alias), send PCM16 audio frames, receive transcription in real time.
 
 ```
 Client                            Server
@@ -131,7 +141,8 @@ Client                            Server
 | `/v1/models` | GET | Model info (encoder type, pool size, capabilities) |
 | `/v1/transcribe` | POST | File transcription, full JSON response |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
-| `/ws` | GET | WebSocket upgrade for real-time streaming |
+| `/v1/ws` | GET | WebSocket upgrade for real-time streaming (canonical) |
+| `/ws` | GET | Deprecated alias for `/v1/ws` — removal planned for v1.0 |
 
 **SSE streaming example:**
 
@@ -264,16 +275,21 @@ Commands:
   quantize     Quantize encoder to INT8 (requires --features quantize)
 
 gigastt serve [OPTIONS]
-  --port <PORT>          Listen port [default: 9876]
-  --host <HOST>          Bind address [default: 127.0.0.1]
-  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
-  --pool-size <N>        Concurrent inference sessions [default: 4]
-  --bind-all             Required to listen on a non-loopback address (e.g. 0.0.0.0).
-                         Can also be enabled via GIGASTT_ALLOW_BIND_ANY=1.
-  --allow-origin <URL>   Additional Origin allowed to call the API (repeatable).
-                         Loopback origins are always allowed.
-  --cors-allow-any       Accept any cross-origin caller (echoes Access-Control-Allow-Origin: *).
-                         Off by default.
+  --port <PORT>             Listen port [default: 9876]
+  --host <HOST>             Bind address [default: 127.0.0.1]
+  --model-dir <DIR>         Model directory [default: ~/.gigastt/models]
+  --pool-size <N>           Concurrent inference sessions [default: 4]
+  --bind-all                Required to listen on a non-loopback address.
+                            Also: GIGASTT_ALLOW_BIND_ANY=1.
+  --allow-origin <URL>      Additional Origin allowed (repeatable).
+                            Loopback origins are always allowed.
+  --cors-allow-any          Accept any cross-origin caller (wildcard CORS).
+  --idle-timeout-secs <S>   WebSocket idle timeout [default: 300].
+                            Env: GIGASTT_IDLE_TIMEOUT_SECS.
+  --ws-frame-max-bytes <B>  Max WS frame size [default: 524288 = 512 KiB].
+                            Env: GIGASTT_WS_FRAME_MAX_BYTES.
+  --body-limit-bytes <B>    Max REST body size [default: 52428800 = 50 MiB].
+                            Env: GIGASTT_BODY_LIMIT_BYTES.
 
 gigastt download [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]

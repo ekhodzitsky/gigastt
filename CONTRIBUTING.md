@@ -19,6 +19,7 @@ For E2E / load / soak tests see [`CLAUDE.md`](CLAUDE.md).
 
 - One logical change per PR; rebase on `main` before opening.
 - CI (`ci.yml`) must be green: clippy, unit tests, feature compile checks, audit.
+- `cargo deny check` passes (license + advisory + sources).
 - For user-visible changes: add a bullet under the `## [Unreleased]` section of `CHANGELOG.md`.
 - Keep commit messages short and present-tense (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).
 

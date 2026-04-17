@@ -137,3 +137,13 @@ jobs:
         run: cargo install cargo-audit --locked
       - name: Run audit
         run: cargo audit
+
+  deny:
+    runs-on: ubuntu-latest
+    name: Cargo Deny
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: licenses advisories bans sources
