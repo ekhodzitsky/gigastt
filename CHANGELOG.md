@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-04-17
+
+### Fixed
+
+- **`cargo-deny` CI job** (`.github/workflows/ci.yml`) — removed the trailing `arguments: licenses advisories bans sources`. The installed `cargo-deny` on stable-musl interpreted them as subcommands and failed with `unrecognized subcommand 'licenses'`. Default `check` already covers licenses, advisories, bans, and sources.
+
 ## [0.7.0] - 2026-04-17
 
 ### Added
