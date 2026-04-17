@@ -29,7 +29,7 @@ cargo clippy             # Lint (no expected warnings)
 Model download (required for E2E testing and file transcription, ~850MB):
 ```sh
 cargo run -- download                    # Downloads to ~/.gigastt/models/
-python scripts/quantize.py               # Optional: generate INT8 encoder (~210MB)
+cargo run --features quantize -- quantize  # Optional: generate INT8 encoder (~210MB)
 ```
 
 ## Docker
@@ -76,7 +76,7 @@ src/
 - **CUDA execution provider** (`--features cuda`, Linux x86_64 CUDA 12+): GPU inference via ONNX Runtime CUDA EP
   - Features are compile-time and mutually exclusive; default build uses CPU EP on all platforms
 - **INT8 quantization** (optional): encoder_int8.onnx (~210MB vs 844MB)
-  - Run `python scripts/quantize.py` to generate (requires onnxruntime)
+  - Rust-native quantization: `gigastt quantize` (requires `--features quantize`, see `src/quantize.rs`)
   - Auto-detection: Engine uses INT8 encoder if present, falls back to FP32
 
 ### Key constants (defined in `inference/mod.rs`)
@@ -176,10 +176,9 @@ GigaAM v3 e2e_rnnt from `istupakov/gigaam-v3-onnx` on HuggingFace:
 
 ### Quantization (optional)
 
-`scripts/quantize.py` generates INT8 quantized encoder (QInt8, per-channel):
+Rust-native quantization via `src/quantize.rs` (requires `--features quantize`):
 ```sh
-pip install onnxruntime
-python scripts/quantize.py --model-dir ~/.gigastt/models
+cargo run --features quantize -- quantize --model-dir ~/.gigastt/models
 # Produces: v3_e2e_rnnt_encoder_int8.onnx (~210MB, ~4x smaller, ~43% faster)
 ```
 

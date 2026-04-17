@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`examples/bun_client.ts`, `examples/go_client.go`, `examples/KotlinClient.kt`** — WebSocket client samples in Go, Kotlin (OkHttp), and Bun-native TypeScript.
+
+### Removed
+
+- **`scripts/quantize.py`** — superseded by native Rust quantization (`gigastt quantize --features quantize`).
+- **`examples/js_client.mjs`** — replaced by `examples/bun_client.ts`.
+
 ## [0.5.0] - 2026-04-13
 
 ### Added

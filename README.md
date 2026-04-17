@@ -150,14 +150,28 @@ Full protocol spec: [`docs/asyncapi.yaml`](docs/asyncapi.yaml)
 
 Ready-to-use WebSocket clients in [`examples/`](examples/):
 
+#### Python
 ```sh
-# Python
 pip install websockets
 python examples/python_client.py recording.wav
+```
 
-# JavaScript (Node.js)
-npm install ws
-node examples/js_client.mjs recording.wav
+#### Bun (TypeScript)
+```sh
+bun examples/bun_client.ts recording.wav
+```
+
+#### Go
+```sh
+# go mod init gigastt-client && go get github.com/gorilla/websocket
+go run examples/go_client.go recording.wav
+```
+
+#### Kotlin
+```sh
+# See header in KotlinClient.kt for Gradle/Maven deps
+kotlinc examples/KotlinClient.kt -include-runtime -d client.jar
+java -jar client.jar recording.wav
 ```
 
 ## Performance
@@ -200,7 +214,6 @@ gigastt serve   # downloads model + auto-quantizes on first run
 
 # Manual
 gigastt quantize                     # native Rust quantization
-python scripts/quantize.py           # legacy Python alternative
 ```
 
 ## Architecture

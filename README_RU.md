@@ -151,14 +151,28 @@ curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
 
 Готовые WebSocket-клиенты в [`examples/`](examples/):
 
+#### Python
 ```sh
-# Python
 pip install websockets
 python examples/python_client.py recording.wav
+```
 
-# JavaScript (Node.js)
-npm install ws
-node examples/js_client.mjs recording.wav
+#### Bun (TypeScript)
+```sh
+bun examples/bun_client.ts recording.wav
+```
+
+#### Go
+```sh
+# go mod init gigastt-client && go get github.com/gorilla/websocket
+go run examples/go_client.go recording.wav
+```
+
+#### Kotlin
+```sh
+# Зависимости — см. заголовок KotlinClient.kt (Gradle/Maven)
+kotlinc examples/KotlinClient.kt -include-runtime -d client.jar
+java -jar client.jar recording.wav
 ```
 
 ## Производительность
@@ -201,7 +215,6 @@ gigastt serve   # скачивает модель + автоквантизаци
 
 # Вручную
 gigastt quantize                     # нативная квантизация на Rust
-python scripts/quantize.py           # альтернатива на Python
 ```
 
 ## Архитектура
