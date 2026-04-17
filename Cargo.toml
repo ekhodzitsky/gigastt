@@ -1,6 +1,6 @@
 [package]
 name = "gigastt"
-version = "0.6.1"
+version = "0.7.0"
 edition = "2024"
 description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 license = "MIT"
@@ -27,7 +27,7 @@ axum = { version = "0.8", features = ["ws", "multipart"] }
 futures-util = "0.3"
 
 # CLI
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 
 # HTTP client for model download
 reqwest = { version = "0.12", features = ["stream"] }

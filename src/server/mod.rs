@@ -116,6 +116,29 @@ impl OriginPolicy {
     }
 }
 
+/// Runtime limits surfaced to per-request handlers. Separate from `ServerConfig`
+/// because it needs to travel through `http::AppState` to the WebSocket handler.
+#[derive(Debug, Clone)]
+pub struct RuntimeLimits {
+    /// WebSocket idle timeout. If no frame arrives within this window the
+    /// server closes the connection. Default: 300s.
+    pub idle_timeout_secs: u64,
+    /// Maximum WebSocket frame / message size in bytes. Default: 512 KiB.
+    pub ws_frame_max_bytes: usize,
+    /// Maximum REST request body in bytes. Default: 50 MiB.
+    pub body_limit_bytes: usize,
+}
+
+impl Default for RuntimeLimits {
+    fn default() -> Self {
+        Self {
+            idle_timeout_secs: 300,
+            ws_frame_max_bytes: 512 * 1024,
+            body_limit_bytes: 50 * 1024 * 1024,
+        }
+    }
+}
+
 /// Server runtime configuration. `run_with_config` is the canonical entry
 /// point; `run` / `run_with_shutdown` remain as thin wrappers for callers
 /// that only need the pre-0.6 positional parameters.
@@ -124,16 +147,18 @@ pub struct ServerConfig {
     pub port: u16,
     pub host: String,
     pub origin_policy: OriginPolicy,
+    pub limits: RuntimeLimits,
 }
 
 impl ServerConfig {
     /// Sensible local-only default: listen on `127.0.0.1:9876`, deny
-    /// non-loopback origins.
+    /// non-loopback origins, default runtime limits.
     pub fn local(port: u16) -> Self {
         Self {
             port,
             host: "127.0.0.1".to_string(),
             origin_policy: OriginPolicy::loopback_only(),
+            limits: RuntimeLimits::default(),
         }
     }
 }
@@ -165,6 +190,7 @@ pub async fn run_with_shutdown(
         port,
         host: host.to_string(),
         origin_policy: OriginPolicy::loopback_only(),
+        limits: RuntimeLimits::default(),
     };
     run_with_config(engine, config, shutdown).await
 }
@@ -183,6 +209,7 @@ pub async fn run_with_config(
 
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
+        limits: config.limits.clone(),
     });
 
     let policy = Arc::new(config.origin_policy.clone());
@@ -200,8 +227,12 @@ pub async fn run_with_config(
         .route("/v1/models", get(http::models))
         .route("/v1/transcribe", post(http::transcribe))
         .route("/v1/transcribe/stream", post(http::transcribe_stream))
-        .route("/ws", get(ws_handler))
-        .layer(DefaultBodyLimit::max(50 * 1024 * 1024)) // 50MB
+        // `/v1/ws` is the canonical path (versioned, aligned with REST); `/ws`
+        // remains as an alias for existing clients and logs a deprecation
+        // warning on each upgrade. Plan: drop `/ws` in v1.0.
+        .route("/v1/ws", get(ws_handler))
+        .route("/ws", get(ws_handler_legacy))
+        .layer(DefaultBodyLimit::max(config.limits.body_limit_bytes))
         .layer(origin_layer)
         .with_state(state);
 
@@ -310,8 +341,27 @@ async fn ws_handler(
 ) -> Response {
     // Origin allowlist is enforced by `origin_middleware` before the request
     // reaches this handler; anything that arrives here has already been cleared.
-    ws.max_message_size(512 * 1024)
-        .max_frame_size(512 * 1024)
+    let max_bytes = state.limits.ws_frame_max_bytes;
+    ws.max_message_size(max_bytes)
+        .max_frame_size(max_bytes)
+        .on_upgrade(move |socket| handle_ws(socket, peer, state))
+}
+
+/// Deprecated WebSocket endpoint at `/ws`. Identical behaviour to `/v1/ws`
+/// but emits a warn-level log on every upgrade so operators can spot clients
+/// that still need migration before v1.0 drops the alias.
+async fn ws_handler_legacy(
+    ws: WebSocketUpgrade,
+    axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
+    State(state): State<Arc<http::AppState>>,
+) -> Response {
+    tracing::warn!(
+        peer = %peer,
+        "WebSocket client connected to deprecated /ws path — switch to /v1/ws before v1.0"
+    );
+    let max_bytes = state.limits.ws_frame_max_bytes;
+    ws.max_message_size(max_bytes)
+        .max_frame_size(max_bytes)
         .on_upgrade(move |socket| handle_ws(socket, peer, state))
 }
 
@@ -336,7 +386,8 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
         }
     };
 
-    let (triplet_opt, result) = handle_ws_inner(socket, peer, &state.engine, triplet).await;
+    let (triplet_opt, result) =
+        handle_ws_inner(socket, peer, &state.engine, &state.limits, triplet).await;
     if let Err(e) = result {
         tracing::error!("WebSocket error from {peer}: {e}");
     }
@@ -588,6 +639,7 @@ async fn handle_ws_inner(
     socket: WebSocket,
     peer: SocketAddr,
     engine: &Arc<Engine>,
+    limits: &RuntimeLimits,
     triplet: SessionTriplet,
 ) -> (Option<SessionTriplet>, Result<()>) {
     let (mut sink, mut source) = socket.split();
@@ -617,17 +669,17 @@ async fn handle_ws_inner(
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
     let mut audio_received = false;
 
+    let idle_timeout = std::time::Duration::from_secs(limits.idle_timeout_secs);
     let result: Result<()> = loop {
-        let msg =
-            match tokio::time::timeout(std::time::Duration::from_secs(300), source.next()).await {
-                Ok(Some(Ok(msg))) => msg,
-                Ok(Some(Err(e))) => break Err(e.into()),
-                Ok(None) => break Ok(()),
-                Err(_) => {
-                    tracing::info!("Client {peer} idle timeout (300s)");
-                    break Ok(());
-                }
-            };
+        let msg = match tokio::time::timeout(idle_timeout, source.next()).await {
+            Ok(Some(Ok(msg))) => msg,
+            Ok(Some(Err(e))) => break Err(e.into()),
+            Ok(None) => break Ok(()),
+            Err(_) => {
+                tracing::info!("Client {peer} idle timeout ({}s)", limits.idle_timeout_secs);
+                break Ok(());
+            }
+        };
 
         let outcome = match msg {
             WsMessage::Binary(data) => {

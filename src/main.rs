@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use gigastt::server::{OriginPolicy, ServerConfig};
+use gigastt::server::{OriginPolicy, RuntimeLimits, ServerConfig};
 use gigastt::{inference, model, server};
 use std::net::IpAddr;
 use tracing_subscriber::EnvFilter;
@@ -57,6 +57,19 @@ enum Commands {
         /// listed explicitly via `--allow-origin` unless this flag is set.
         #[arg(long, default_value_t = false)]
         cors_allow_any: bool,
+
+        /// WebSocket idle timeout (seconds). Server closes the connection
+        /// when no frame arrives within this window.
+        #[arg(long, env = "GIGASTT_IDLE_TIMEOUT_SECS", default_value_t = 300)]
+        idle_timeout_secs: u64,
+
+        /// Maximum WebSocket frame / message size (bytes).
+        #[arg(long, env = "GIGASTT_WS_FRAME_MAX_BYTES", default_value_t = 512 * 1024)]
+        ws_frame_max_bytes: usize,
+
+        /// Maximum REST request body size (bytes).
+        #[arg(long, env = "GIGASTT_BODY_LIMIT_BYTES", default_value_t = 50 * 1024 * 1024)]
+        body_limit_bytes: usize,
     },
 
     /// Download model without starting server
@@ -224,6 +237,9 @@ async fn main() -> anyhow::Result<()> {
             bind_all,
             allow_origin,
             cors_allow_any,
+            idle_timeout_secs,
+            ws_frame_max_bytes,
+            body_limit_bytes,
         } => {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
@@ -246,6 +262,11 @@ async fn main() -> anyhow::Result<()> {
                 origin_policy: OriginPolicy {
                     allow_any: cors_allow_any,
                     allowed_origins: allow_origin,
+                },
+                limits: RuntimeLimits {
+                    idle_timeout_secs,
+                    ws_frame_max_bytes,
+                    body_limit_bytes,
                 },
             };
             server::run_with_config(engine, config, None).await?;

@@ -11,12 +11,15 @@ use futures_util::stream::Stream;
 use serde::Serialize;
 use std::sync::Arc;
 
-use super::{POOL_RETRY_AFTER_MS, POOL_RETRY_AFTER_SECS};
+use super::{POOL_RETRY_AFTER_MS, POOL_RETRY_AFTER_SECS, RuntimeLimits};
 use crate::inference::Engine;
 
-/// Shared application state for all handlers.
+/// Shared application state for all handlers. Carries runtime limits so the
+/// WebSocket path can enforce configurable frame / idle bounds without
+/// re-threading every CLI arg through each handler.
 pub struct AppState {
     pub engine: Arc<Engine>,
+    pub limits: RuntimeLimits,
 }
 
 /// Health check response.
@@ -40,6 +43,10 @@ pub struct ModelInfo {
     pub pool_available: usize,
     pub supported_formats: Vec<String>,
     pub supported_rates: Vec<u32>,
+    /// Whether speaker diarization is available (feature-gated build + model loaded).
+    /// Added in v0.7.0 so clients can probe capabilities via REST instead of
+    /// opening a WebSocket just to read the `Ready` frame.
+    pub diarization: bool,
 }
 
 /// Transcription response.
@@ -93,6 +100,10 @@ pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> 
 /// GET /v1/models — list loaded models and capabilities.
 pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
     let engine = &state.engine;
+    #[cfg(feature = "diarization")]
+    let diarization = engine.has_speaker_encoder();
+    #[cfg(not(feature = "diarization"))]
+    let diarization = false;
     Json(ModelInfo {
         id: "gigaam-v3-e2e-rnnt".into(),
         name: "GigaAM v3 RNN-T".into(),
@@ -114,6 +125,7 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
             "flac".into(),
         ],
         supported_rates: vec![8000, 16000, 24000, 44100, 48000],
+        diarization,
     })
 }
 
