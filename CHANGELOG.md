@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-04-17
+
+### Added
+
+- **Origin allowlist middleware.** Cross-origin requests from non-loopback pages are denied by default across `/v1/*` and `/ws`; loopback origins (`localhost`, `127.0.0.1`, `[::1]`) always pass. New CLI flags:
+  - `--allow-origin <URL>` (repeatable) — exact-match, case-insensitive Origin allowlist.
+  - `--cors-allow-any` — legacy `Access-Control-Allow-Origin: *` behaviour, opt-in.
+  `/health` remains free of Origin checks for monitoring / Docker `HEALTHCHECK`.
+- **`--bind-all` guard.** `gigastt serve` refuses non-loopback `--host` values (`0.0.0.0`, LAN IPs, …) unless `--bind-all` is passed or `GIGASTT_ALLOW_BIND_ANY=1` is set. Both `Dockerfile` and `Dockerfile.cuda` now pass `--bind-all` in their `CMD` line.
+- **`Retry-After` on pool saturation.**
+  - REST `/v1/transcribe` and `/v1/transcribe/stream` return HTTP 503 with a `Retry-After: 30` header (RFC 9110 §10.2.3) and `retry_after_ms: 30000` in the JSON body.
+  - WebSocket `ServerMessage::Error` gained an optional `retry_after_ms` field (omitted from JSON when absent, preserving backward compatibility); the pool-timeout path at connect emits `retry_after_ms: 30000`.
+- **`gigastt::server::{ServerConfig, OriginPolicy, run_with_config}`** — new public API for programmatic startup with explicit origin policy.
+
+### Changed
+
+- **Default cross-origin posture is now deny.** Previous behaviour (wildcard CORS + non-local Origin only warned about) is preserved behind `--cors-allow-any`. Browser integrations hitting the server from a non-loopback page must either add their origin via `--allow-origin` or run the server with `--cors-allow-any`.
+
+### Security
+
+- Closes `specs/todo.md` P1 items 4, 5, 8, 9. Reduces the risk that a malicious webpage can drive-by-connect to the local transcription server and exfiltrate microphone audio.
+
 ## [0.5.3] - 2026-04-17
 
 ### Security
