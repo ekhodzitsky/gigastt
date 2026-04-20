@@ -97,6 +97,13 @@ enum Commands {
         /// your orchestrator's `terminationGracePeriodSeconds`.
         #[arg(long, env = "GIGASTT_SHUTDOWN_DRAIN_SECS", default_value_t = 10)]
         shutdown_drain_secs: u64,
+
+        /// Skip the automatic INT8 quantization step after download.
+        /// Default behaviour is to quantize the encoder (~2 min, one-time)
+        /// so the pool loads the 210 MB INT8 encoder instead of the 844 MB
+        /// FP32. Opt out when you need the FP32 encoder for debugging.
+        #[arg(long, env = "GIGASTT_SKIP_QUANTIZE", default_value_t = false)]
+        skip_quantize: bool,
     },
 
     /// Download model without starting server
@@ -109,10 +116,16 @@ enum Commands {
         #[cfg(feature = "diarization")]
         #[arg(long, default_value_t = false)]
         diarization: bool,
+
+        /// Skip the automatic INT8 quantization step after download.
+        /// Default behaviour is to quantize the encoder (~2 min, one-time)
+        /// so subsequent `gigastt serve` calls load the 210 MB INT8 encoder.
+        /// Opt out when you need the FP32 encoder for debugging.
+        #[arg(long, env = "GIGASTT_SKIP_QUANTIZE", default_value_t = false)]
+        skip_quantize: bool,
     },
 
     /// Quantize encoder model to INT8 (replaces scripts/quantize.py)
-    #[cfg(feature = "quantize")]
     Quantize {
         /// Model directory
         #[arg(long, default_value_t = model::default_model_dir())]
@@ -197,6 +210,33 @@ fn is_loopback_host(host: &str) -> bool {
     false
 }
 
+/// Ensure the INT8 encoder exists, producing it via the native Rust
+/// quantization pipeline if missing. Honoured by `serve` and `download`.
+/// First-time quantization takes ~2 minutes on the 844 MB FP32 encoder.
+fn ensure_int8_encoder(model_dir: &str, skip: bool) -> anyhow::Result<()> {
+    let int8_path = std::path::Path::new(model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
+    if int8_path.exists() {
+        return Ok(());
+    }
+    if skip {
+        tracing::info!(
+            "Skipping INT8 quantization (--skip-quantize). Engine will load the FP32 encoder."
+        );
+        return Ok(());
+    }
+    let input = std::path::Path::new(model_dir).join("v3_e2e_rnnt_encoder.onnx");
+    if !input.exists() {
+        anyhow::bail!(
+            "Cannot quantize: FP32 encoder not found at {}",
+            input.display()
+        );
+    }
+    tracing::info!("Quantizing encoder to INT8 (~2 min, one-time)…");
+    gigastt::quantize::quantize_model(&input, &int8_path)?;
+    tracing::info!("INT8 encoder saved to {}", int8_path.display());
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,20 +312,11 @@ async fn main() -> anyhow::Result<()> {
             metrics,
             max_session_secs,
             shutdown_drain_secs,
+            skip_quantize,
         } => {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
-            #[cfg(feature = "quantize")]
-            {
-                let int8_path =
-                    std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
-                if !int8_path.exists() {
-                    tracing::info!("Auto-quantizing encoder to INT8 (4x smaller, same quality)...");
-                    let input = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder.onnx");
-                    gigastt::quantize::quantize_model(&input, &int8_path)?;
-                    tracing::info!("INT8 encoder saved to {}", int8_path.display());
-                }
-            }
+            ensure_int8_encoder(&model_dir, skip_quantize)?;
             let engine = inference::Engine::load_with_pool_size(&model_dir, pool_size)?;
             log_rss();
             let config = ServerConfig {
@@ -312,6 +343,7 @@ async fn main() -> anyhow::Result<()> {
             model_dir,
             #[cfg(feature = "diarization")]
             diarization,
+            skip_quantize,
         } => {
             model::ensure_model(&model_dir).await?;
             #[cfg(feature = "diarization")]
@@ -320,31 +352,9 @@ async fn main() -> anyhow::Result<()> {
                     model::ensure_speaker_model(&model_dir).await?;
                 }
             }
-            // Auto-quantize encoder to INT8 if not already done
-            #[cfg(feature = "quantize")]
-            {
-                let int8_path =
-                    std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
-                if !int8_path.exists() {
-                    tracing::info!("Auto-quantizing encoder to INT8 (4x smaller, same quality)...");
-                    let input = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder.onnx");
-                    gigastt::quantize::quantize_model(&input, &int8_path)?;
-                    tracing::info!("INT8 encoder saved to {}", int8_path.display());
-                }
-            }
-            #[cfg(not(feature = "quantize"))]
-            {
-                let int8_path =
-                    std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder_int8.onnx");
-                if !int8_path.exists() {
-                    tracing::info!(
-                        "Tip: install with --features quantize for 4x smaller model: cargo install gigastt --features quantize && gigastt quantize"
-                    );
-                }
-            }
+            ensure_int8_encoder(&model_dir, skip_quantize)?;
             tracing::info!("Model ready at {model_dir}");
         }
-        #[cfg(feature = "quantize")]
         Commands::Quantize { model_dir, force } => {
             model::ensure_model(&model_dir).await?;
             let input = std::path::Path::new(&model_dir).join("v3_e2e_rnnt_encoder.onnx");
