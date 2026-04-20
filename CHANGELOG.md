@@ -7,10 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Nightly soak + load CI** (V1-09). New `.github/workflows/soak.yml` runs `cargo test --test soak_test -- --ignored` at 03:17 UTC daily (plus `workflow_dispatch` for on-demand checks), reusing the main-CI model cache so regressions in pool drift / descriptor leaks / RSS growth surface outside the fast-feedback envelope.
+- **`docs/deployment.md`: rate-limiter & X-Forwarded-For section** (V1-11). The published nginx recipe used `$proxy_add_x_forwarded_for`, which appends client-supplied headers, and the Caddy recipe did not forward the real peer at all — operators who turned on `--rate-limit-per-minute` were running a defence attackers could trivially bypass. Both recipes now overwrite the header with `$remote_addr` / `{remote_host}`, and a new section explains why it's not optional.
+
+### Changed
+
+- **`Engine::create_state` accepts `diarization_enabled` unconditionally** (V1-08, `src/inference/mod.rs`). The parameter used to be gated behind `#[cfg(feature = "diarization")]`, so the same public API mutated between feature builds — `src/lib.rs`'s doctest compiled only with `--features diarization`, and external consumers had to wrap every call site in their own gate. The bool is now always present; without the feature a `warn!` is emitted if the caller asked for diarization so the contract mismatch stays observable.
+
 ### Fixed
 
 - **Model download TOCTOU** (V1-01, `src/model/mod.rs`). `download_file` used to stream each `v3_e2e_rnnt_*.onnx` blob directly into its final path, compute SHA-256 afterwards, and `remove_file` on mismatch. Between the last `write` and the hash comparison another process (or a second `ensure_model` call on restart) could observe an unverified file under the canonical name — and a crash in that window left a corrupt artefact that `model_files_exist()` would later accept, skipping re-download on next boot. Downloads now stream into `<filename>.partial`, SHA-256 is computed against the partial, and only after verification does `std::fs::rename` (atomic on the same filesystem) promote it to the final path. Mismatch or crash leaves nothing under the final name. Stale `.partial` files from previous crashed runs are deleted before the new download begins.
 - **Speaker diarization model lacked SHA-256 verification** (V1-02, `src/model/mod.rs`, `--features diarization`). `ensure_speaker_model` streamed `wespeaker_resnet34.onnx` (26 535 549 bytes, from `onnx-community/wespeaker-voxceleb-resnet34-LM`) straight to its final path with no integrity check, so a tampered mirror or corrupted redirect was loaded into `ort::Session` without complaint — the same failure class as V1-01. The downloader now stages into `<name>.partial`, verifies SHA-256 against the new `SPEAKER_MODEL_SHA256 = "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb"` constant (pinned to the 2026-04-20 HuggingFace copy), and only then atomically renames.
+- **Odd-length PCM16 WebSocket frames corrupted subsequent frames** (V1-25, `src/server/mod.rs`). `handle_binary_frame` called `chunks_exact(2)` directly, silently dropping a trailing odd byte whenever a client split their PCM16 stream on an odd boundary. The dropped byte put the following frame 1 sample out of phase with the audio decoded so far — subtle in the waveform, measurable in the inference output, hard to diagnose. A per-connection `pending_byte: Option<u8>` now carries the remainder across frames (prepended before the next `chunks_exact`, re-stashed if the combined length is again odd).
+- **`tests/e2e_rest.rs::test_rest_large_body_rss_within_budget` was mis-sized**. The helper call `generate_wav(150, 16000)` produced a 4.6 MiB WAV but the test asserted `> 30 MiB` and panicked before running. Regenerated at `generate_wav(300, 16000)` (9.6 MiB) with a budget that now accounts for the PCM16 → f32 expansion (2× wav.len() + 40 MiB slack).
 
 ## [0.9.0-rc.2] - 2026-04-20
 
