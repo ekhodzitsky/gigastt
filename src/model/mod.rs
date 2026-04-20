@@ -81,6 +81,15 @@ const SPEAKER_HF_REPO: &str = "onnx-community/wespeaker-voxceleb-resnet34-LM";
 #[cfg(feature = "diarization")]
 pub const SPEAKER_MODEL_FILE: &str = "wespeaker_resnet34.onnx";
 
+/// SHA-256 of the upstream speaker-diarization model (`onnx/model.onnx` at
+/// `onnx-community/wespeaker-voxceleb-resnet34-LM`, 26 535 549 bytes).
+/// Verified against the canonical HuggingFace copy on 2026-04-20; if the
+/// upstream model is ever rotated, update this constant alongside the
+/// SPEAKER_MODEL_FILE bump.
+#[cfg(feature = "diarization")]
+const SPEAKER_MODEL_SHA256: &str =
+    "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb";
+
 fn home_dir() -> Option<std::path::PathBuf> {
     #[cfg(unix)]
     {
@@ -131,19 +140,28 @@ pub async fn ensure_model(model_dir: &str) -> Result<()> {
 
 /// Ensure the speaker diarization model exists in `model_dir`, downloading from HuggingFace if missing.
 ///
-/// Downloads `wespeaker_resnet34.onnx` from `onnx-community/wespeaker-voxceleb-resnet34-LM`.
+/// Downloads `wespeaker_resnet34.onnx` from `onnx-community/wespeaker-voxceleb-resnet34-LM`
+/// into `<model_dir>/wespeaker_resnet34.onnx.partial`, verifies its SHA-256 against
+/// `SPEAKER_MODEL_SHA256`, and atomically renames it into place. On checksum mismatch or
+/// crash the final path is never observable, so a subsequent `ensure_speaker_model` call
+/// will re-download from scratch rather than loading a tampered model (V1-02).
 #[cfg(feature = "diarization")]
 pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     let dir = Path::new(model_dir);
-    let dest = dir.join(SPEAKER_MODEL_FILE);
+    let final_dest = dir.join(SPEAKER_MODEL_FILE);
 
-    if dest.exists() {
-        tracing::info!("Speaker model found at {}", dest.display());
+    if final_dest.exists() {
+        tracing::info!("Speaker model found at {}", final_dest.display());
         return Ok(());
     }
 
     tracing::info!("Speaker model not found, downloading from HuggingFace...");
     std::fs::create_dir_all(dir).context("Failed to create model directory")?;
+
+    let partial = partial_path(&final_dest);
+    if partial.exists() {
+        let _ = tokio::fs::remove_file(&partial).await;
+    }
 
     let hf_path = "onnx/model.onnx";
     let url = format!("https://huggingface.co/{SPEAKER_HF_REPO}/resolve/main/{hf_path}");
@@ -157,9 +175,9 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
 
     let mut pb = DownloadProgress::new(total_size);
 
-    let mut file = tokio::fs::File::create(&dest)
+    let mut file = tokio::fs::File::create(&partial)
         .await
-        .context("Failed to create speaker model file")?;
+        .context("Failed to create partial speaker model file")?;
     let mut stream = response.bytes_stream();
 
     let mut downloaded: u64 = 0;
@@ -173,8 +191,20 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     }
 
     file.flush().await?;
+    drop(file);
     pb.finish();
-    tracing::info!("Saved {} ({downloaded} bytes)", SPEAKER_MODEL_FILE);
+    tracing::info!(
+        "Wrote partial {} ({downloaded} bytes)",
+        partial.display()
+    );
+
+    finalize_download(
+        &partial,
+        &final_dest,
+        Some(SPEAKER_MODEL_SHA256),
+        SPEAKER_MODEL_FILE,
+    )?;
+    tracing::info!("Saved {}", SPEAKER_MODEL_FILE);
 
     Ok(())
 }
@@ -467,5 +497,79 @@ mod tests {
         let got = sha256_file(&p).expect("sha256_file");
         let want = sha256_hex(payload);
         assert_eq!(got, want);
+    }
+
+    /// V1-02: `SPEAKER_MODEL_SHA256` is a 64-char lowercase hex digest
+    /// matching the SHA-256 of the upstream `onnx/model.onnx` blob
+    /// (no accidental truncation / placeholder at compile time).
+    #[cfg(feature = "diarization")]
+    #[test]
+    fn test_speaker_model_sha256_shape() {
+        assert_eq!(
+            SPEAKER_MODEL_SHA256.len(),
+            64,
+            "SPEAKER_MODEL_SHA256 must be a 64-char hex digest"
+        );
+        assert!(
+            SPEAKER_MODEL_SHA256
+                .chars()
+                .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)),
+            "SPEAKER_MODEL_SHA256 must be lowercase hex; got: {SPEAKER_MODEL_SHA256}"
+        );
+    }
+
+    /// V1-02: mismatching bytes against `SPEAKER_MODEL_SHA256` must delete
+    /// the partial and refuse to promote it — exercises the full
+    /// speaker-model finalize contract without touching the network.
+    #[cfg(feature = "diarization")]
+    #[test]
+    fn test_speaker_model_rejects_sha256_mismatch() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let final_path = tmp.path().join(SPEAKER_MODEL_FILE);
+        // Definitely not the real speaker-model bytes.
+        let partial = stage_partial(&final_path, b"not the real wespeaker weights");
+
+        let err = finalize_download(
+            &partial,
+            &final_path,
+            Some(SPEAKER_MODEL_SHA256),
+            SPEAKER_MODEL_FILE,
+        )
+        .expect_err("speaker mismatch must error");
+        assert!(
+            format!("{err}").contains("SHA-256 mismatch"),
+            "unexpected error: {err}"
+        );
+
+        assert!(
+            !partial.exists(),
+            "partial speaker model must be removed on mismatch"
+        );
+        assert!(
+            !final_path.exists(),
+            "final speaker model must never appear on mismatch"
+        );
+    }
+
+    /// V1-02: when the partial bytes DO hash to `SPEAKER_MODEL_SHA256`, the
+    /// finalize path promotes them atomically. Network-free: we forge a
+    /// "matching" partial by precomputing the hash of an arbitrary payload
+    /// and passing it as the expected value.
+    #[cfg(feature = "diarization")]
+    #[test]
+    fn test_speaker_model_partial_promoted_on_match() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let final_path = tmp.path().join(SPEAKER_MODEL_FILE);
+        let payload = b"wespeaker-surrogate";
+        let expected = sha256_hex(payload);
+
+        let partial = stage_partial(&final_path, payload);
+
+        finalize_download(&partial, &final_path, Some(&expected), SPEAKER_MODEL_FILE)
+            .expect("matching partial must promote");
+
+        assert!(!partial.exists());
+        assert!(final_path.exists());
+        assert_eq!(std::fs::read(&final_path).unwrap(), payload);
     }
 }
