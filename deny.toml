@@ -3,10 +3,14 @@ version = 2
 yanked = "deny"
 ignore = [
     # prost-types 0.6.1 (RUSTSEC-2021-0073) is pulled in transitively by
-    # onnx-pb 0.1.4 → prost-build 0.6.x ONLY under the `quantize` build
-    # feature. The affected code path (`From<Timestamp> for SystemTime`)
-    # is not reached by our quantization pipeline — we never convert an
-    # untrusted protobuf `Timestamp`. Remove once onnx-pb upgrades.
+    # onnx-pb 0.1.4 → prost-build 0.6.x. As of 2026-04 `onnx-pb` has no
+    # newer release on crates.io (0.1.4 is the only published version) and
+    # no modern replacement with equivalent API exists (`onnx-protobuf` on
+    # the `protobuf` crate family has an unrelated compile bug at 0.2.3).
+    # The affected code path (`From<Timestamp> for SystemTime`) is not
+    # reached by our quantization pipeline — we never convert an untrusted
+    # protobuf `Timestamp`. Re-evaluate when a modern ONNX protobuf crate
+    # becomes available.
     "RUSTSEC-2021-0073",
 ]
 

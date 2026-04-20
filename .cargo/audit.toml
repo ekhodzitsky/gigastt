@@ -1,6 +1,8 @@
 [advisories]
 ignore = [
-    # prost-types 0.6.1 via onnx-pb (optional quantize feature only, not production)
-    # Timestamp→SystemTime overflow — not used in our quantization code path
+    # prost-types 0.6.1 via onnx-pb 0.1.4 (only published version on crates.io).
+    # Affected `From<Timestamp> for SystemTime` code path is never reached by
+    # our quantization pipeline — we do not convert untrusted Timestamp values.
+    # Re-evaluate when a modern ONNX protobuf crate becomes available.
     "RUSTSEC-2021-0073",
 ]
