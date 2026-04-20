@@ -74,8 +74,11 @@ symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac"
 # the dependency direct so the zero-copy decode contract is discoverable.
 bytes = "1"
 
-# Per-IP rate limiting (token bucket, optional — off by default)
-tower_governor = "0.7"
+# Per-IP rate limiting (token bucket, optional — off by default). Implemented
+# in `src/server/rate_limit.rs`; `dashmap` gives lock-free reads on the common
+# path. Previously this was `tower_governor = "0.7"`, which pulled
+# `governor` + `forwarded-header-value` + `quanta` transitively.
+dashmap = "6"
 
 # Prometheus-compatible metrics (exposed behind `--metrics` flag, off by default)
 metrics = "0.24"
