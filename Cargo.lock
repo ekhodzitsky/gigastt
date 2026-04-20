@@ -659,6 +659,7 @@ dependencies = [
  "anyhow",
  "async-channel",
  "axum",
+ "bytes 1.11.1",
  "clap",
  "futures-util",
  "metrics",
