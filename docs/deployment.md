@@ -140,7 +140,7 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## Rate-limiter & X-Forwarded-For (V1-11)
 
-When `--rate-limit-per-minute` is enabled, gigastt reads the peer IP from `X-Forwarded-For` / `X-Real-IP` (via `tower_governor::SmartIpKeyExtractor`) so each real client gets its own token bucket instead of hashing every request behind the single proxy IP.
+When `--rate-limit-per-minute` is enabled, gigastt reads the peer IP from `X-Forwarded-For` (first hop, trimmed), then `X-Real-IP`, then the TCP `ConnectInfo` — see `src/server/rate_limit.rs::extract_client_ip` — so each real client gets its own token bucket instead of hashing every request behind the single proxy IP.
 
 **The proxy is the trust boundary.** A client can put any value they want in an `X-Forwarded-For` header they send you; if the proxy blindly passes that header through (or _appends_ the peer address to the client's forgery), the rate-limiter bucket is keyed on attacker-controlled data and easily bypassed.
 

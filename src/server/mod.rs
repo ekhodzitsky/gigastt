@@ -3,6 +3,7 @@
 //! Single port serves both REST API (health, transcribe, SSE) and WebSocket.
 
 pub mod http;
+pub mod rate_limit;
 
 use crate::inference::{Engine, SessionTriplet};
 use crate::protocol::{ClientMessage, ServerMessage};
@@ -16,9 +17,6 @@ use axum::routing::{get, post};
 use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tower_governor::GovernorLayer;
-use tower_governor::governor::GovernorConfigBuilder;
-use tower_governor::key_extractor::SmartIpKeyExtractor;
 
 /// Serialize a server message to JSON with a safe fallback on error.
 fn json_text(msg: &impl serde::Serialize) -> String {
@@ -309,18 +307,14 @@ pub async fn run_with_config(
         .with_state(state.clone());
 
     let protected = if config.limits.rate_limit_per_minute > 0 {
-        // Convert rpm to a millisecond-precision interval. Integer-divides on
-        // `rpm/60` truncated every value below 60 to a 1-rps refill (i.e.
-        // 60 rpm), so a defender setting `--rate-limit-per-minute 10` actually
-        // got 60 rpm (V1-06). Using `60_000 / rpm` keeps the math accurate
-        // for every rate `≥ 1`. `tower_governor` 0.7 maps `per_millisecond`
-        // onto the same `Nanoseconds` representation as `per_second`, so the
-        // change is purely numeric.
-        let rpm = config.limits.rate_limit_per_minute as u64;
-        // Clamp at 60_000 rpm: above that, `60_000 / rpm` would round down to
-        // 0 ms and `per_millisecond(0)` would saturate the bucket. Warn
-        // operators who try to configure a faster rate than the math allows.
-        const MAX_RPM: u64 = 60_000;
+        // Replacing `tower_governor` with our own token-bucket implementation
+        // (see `rate_limit.rs`) drops the `governor` + `dashmap` +
+        // `forwarded-header-value` transitive crates and restores control of
+        // the V1-06 refill math: `refill_per_ms = rpm / 60_000`. The V1-11
+        // IP-extraction contract (X-Forwarded-For → X-Real-IP → ConnectInfo)
+        // is preserved bit-for-bit.
+        let rpm = config.limits.rate_limit_per_minute;
+        const MAX_RPM: u32 = 60_000;
         if rpm > MAX_RPM {
             tracing::warn!(
                 rpm,
@@ -329,22 +323,33 @@ pub async fn run_with_config(
             );
         }
         let effective_rpm = rpm.min(MAX_RPM);
-        let interval_ms = (60_000u64 / effective_rpm).max(1);
-        let governor_conf = std::sync::Arc::new(
-            GovernorConfigBuilder::default()
-                .per_millisecond(interval_ms)
-                .burst_size(config.limits.rate_limit_burst)
-                .key_extractor(SmartIpKeyExtractor)
-                .finish()
-                .context("Failed to build rate-limiter config")?,
-        );
+        let interval_ms = (60_000u64 / effective_rpm as u64).max(1);
 
-        // Background task: periodically evict expired entries to bound memory.
-        let limiter = governor_conf.limiter().clone();
-        std::thread::spawn(move || {
+        let limiter = Arc::new(rate_limit::RateLimiter::new(
+            rpm,
+            config.limits.rate_limit_burst,
+        ));
+
+        // Background eviction: bound memory under sustained traffic by
+        // dropping buckets that haven't been touched in 5 minutes. `tokio`
+        // task (not `std::thread::spawn`, V1-15 style) tied to `shutdown_root`
+        // so the GC loop exits cleanly on SIGTERM instead of leaking.
+        let evict_limiter = limiter.clone();
+        let evict_cancel = shutdown_root.clone();
+        tokio::spawn(async move {
+            let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
+            ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+            // First tick fires immediately; skip it so the limiter is populated
+            // before the first eviction pass.
+            ticker.tick().await;
             loop {
-                std::thread::sleep(std::time::Duration::from_secs(60));
-                limiter.retain_recent();
+                tokio::select! {
+                    biased;
+                    _ = evict_cancel.cancelled() => break,
+                    _ = ticker.tick() => {
+                        evict_limiter.evict_stale(std::time::Duration::from_secs(300));
+                    }
+                }
             }
         });
 
@@ -354,9 +359,11 @@ pub async fn run_with_config(
             burst = config.limits.rate_limit_burst,
             "per-IP rate limiting enabled"
         );
-        protected.layer(GovernorLayer {
-            config: governor_conf,
-        })
+        let layer_limiter = limiter.clone();
+        protected.layer(axum::middleware::from_fn(move |req, next| {
+            let limiter = layer_limiter.clone();
+            async move { rate_limit::rate_limit_middleware(limiter, req, next).await }
+        }))
     } else {
         protected
     };
