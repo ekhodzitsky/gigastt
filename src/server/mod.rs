@@ -718,6 +718,7 @@ async fn handle_binary_frame(
     triplet_opt: &mut Option<SessionTriplet>,
     audio_received: &mut bool,
     client_sample_rate: u32,
+    pending_byte: &mut Option<u8>,
     peer: SocketAddr,
     data: axum::body::Bytes,
 ) -> Result<FrameOutcome> {
@@ -726,16 +727,37 @@ async fn handle_binary_frame(
         return Ok(FrameOutcome::Continue);
     }
     *audio_received = true;
-    if !data.len().is_multiple_of(2) {
-        tracing::warn!(
-            "Odd-length PCM frame ({} bytes) from {peer}, dropping last byte",
-            data.len()
-        );
-    }
-    let samples_f32: Vec<f32> = data
-        .chunks_exact(2)
-        .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
-        .collect();
+
+    // V1-25: PCM16 samples are 2 bytes each. Previously we called
+    // `chunks_exact(2)` directly and silently dropped a trailing odd byte,
+    // which introduced a 1-sample phase shift for every subsequent frame —
+    // subtle on the decode side, hard to diagnose. Carry the odd byte
+    // across frames: prepend the one left over from the previous frame
+    // (if any), then save the new remainder for next time. Observation-only
+    // `warn!` remains so server-side logs still flag misaligned streams.
+    let carry_prev = pending_byte.take();
+    let samples_f32: Vec<f32> = if carry_prev.is_some() || !data.len().is_multiple_of(2) {
+        let mut combined = Vec::with_capacity(data.len() + 1);
+        if let Some(prev) = carry_prev {
+            combined.push(prev);
+        }
+        combined.extend_from_slice(&data);
+        if !combined.len().is_multiple_of(2) {
+            tracing::warn!(
+                "Odd-length PCM stream from {peer}: {} bytes incl. carry, deferring 1 byte",
+                combined.len()
+            );
+            *pending_byte = combined.pop();
+        }
+        combined
+            .chunks_exact(2)
+            .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
+            .collect()
+    } else {
+        data.chunks_exact(2)
+            .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
+            .collect()
+    };
     let samples_16k = if client_sample_rate == 16000 {
         samples_f32
     } else {
@@ -976,6 +998,10 @@ async fn handle_ws_inner(
     let mut triplet_opt = Some(triplet);
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
     let mut audio_received = false;
+    // V1-25: carries the trailing odd byte across PCM16 frames so clients
+    // that split their streams on odd boundaries don't accumulate a
+    // 1-sample phase shift in the decoded audio.
+    let mut pending_byte: Option<u8> = None;
 
     let idle_timeout = std::time::Duration::from_secs(limits.idle_timeout_secs);
 
@@ -1103,6 +1129,7 @@ async fn handle_ws_inner(
                             &mut triplet_opt,
                             &mut audio_received,
                             client_sample_rate,
+                            &mut pending_byte,
                             peer,
                             data,
                         )
