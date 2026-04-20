@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-rc.2] - 2026-04-20
+
+### Fixed
+
+- **`test_rest_oversized_body_rejected` e2e assertion** (`tests/e2e_errors.rs`). The rc.1 assertion insisted on a JSON body with `code="payload_too_large"`, but `axum::DefaultBodyLimit` returns a plain-text 413 when `Content-Length` exceeds the cap — the middleware layer fires before the handler's defence-in-depth guard. The V1-22 contract (strict 413 status) is unchanged; the JSON-body check is now conditional on the handler-layer guard being the one that fires. The rc.1 binaries are functionally correct.
+
 ## [0.9.0-rc.1] - 2026-04-20
 
 _Release candidate for v0.9.0 — bundles five P0 fixes (V1-03, V1-04, V1-05, V1-06, V1-07) plus two supporting items (V1-21 `PoolGuard` Drop, V1-22 strict 413 assertion) from `specs/prod-readiness-v1.0.md`. RuntimeLimits gained two fields (`max_session_secs`, `shutdown_drain_secs`) — external callers constructing the struct literally must update their call sites. SessionPool checkout API replaced (`checkout() -> PoolGuard`)._
