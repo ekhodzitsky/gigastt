@@ -24,6 +24,12 @@ stt.example.com {
         transport http {
             versions h1 h2c
         }
+        # Forward the real peer address so gigastt's per-IP rate-limiter
+        # sees each client individually. `{remote_host}` comes from Caddy's
+        # view of the TCP connection — clients cannot spoof it, unlike any
+        # `X-Forwarded-For` header they may supply.
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
     }
     basic_auth /* {
         admin {env.CADDY_BASIC_AUTH_HASH}
@@ -87,7 +93,12 @@ server {
         proxy_set_header Connection $connection_upgrade;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Overwrite, do NOT append. Using $proxy_add_x_forwarded_for would
+        # concatenate the client-supplied X-Forwarded-For header, letting a
+        # malicious client spoof their source IP and bypass the per-IP
+        # rate-limiter (`--rate-limit-per-minute`). We want gigastt to see
+        # the real peer address only.
+        proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_read_timeout 600s;
     }
@@ -124,8 +135,18 @@ sudo nginx -t && sudo systemctl reload nginx
 **Why these settings:**
 - `proxy_http_version 1.1` + `Upgrade`/`Connection` headers handle WebSocket upgrade
 - `proxy_read_timeout 600s` — transcribing 10 minutes of audio takes time
-- `X-Forwarded-*` headers let gigastt log real client IP if needed (optional)
+- `X-Forwarded-For $remote_addr` (overwrite, not append) — see warning below for the rate-limiter implications
 - `$connection_upgrade` map prevents connection pooling on HTTP/1.0
+
+## Rate-limiter & X-Forwarded-For (V1-11)
+
+When `--rate-limit-per-minute` is enabled, gigastt reads the peer IP from `X-Forwarded-For` / `X-Real-IP` (via `tower_governor::SmartIpKeyExtractor`) so each real client gets its own token bucket instead of hashing every request behind the single proxy IP.
+
+**The proxy is the trust boundary.** A client can put any value they want in an `X-Forwarded-For` header they send you; if the proxy blindly passes that header through (or _appends_ the peer address to the client's forgery), the rate-limiter bucket is keyed on attacker-controlled data and easily bypassed.
+
+Both recipes above **overwrite** the header with the proxy's view of the TCP peer (`$remote_addr` in nginx, `{remote_host}` in Caddy) — never `$proxy_add_x_forwarded_for` or the default Caddy behaviour, which concatenate. Copy the snippets verbatim unless you know you need per-hop tracing.
+
+If you deploy without a proxy (not recommended for public exposure), leave `--rate-limit-per-minute 0` (default). The server-level semaphore (`MAX_CONCURRENT_CONNECTIONS = 4`) is your only limit; it prevents exhaustion but will not keep a single attacker from reconnecting as fast as the kernel allows.
 
 ## Origin header and CORS
 
