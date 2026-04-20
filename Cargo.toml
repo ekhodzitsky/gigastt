@@ -55,6 +55,10 @@ rubato = "0.16"
 # Async stream adapters (ReceiverStream for SSE)
 tokio-stream = "0.1"
 
+# Cancellation + task tracking for graceful WS/SSE drain on shutdown (V1-03).
+# `rt` pulls in `CancellationToken` + `TaskTracker` (tokio-util 0.7).
+tokio-util = { version = "0.7", features = ["rt"] }
+
 # Audio file reading (for `transcribe` command)
 symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
 

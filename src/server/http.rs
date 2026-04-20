@@ -19,10 +19,18 @@ use metrics_exporter_prometheus::PrometheusHandle;
 /// WebSocket path can enforce configurable frame / idle bounds without
 /// re-threading every CLI arg through each handler, plus an optional
 /// Prometheus handle for the `/metrics` endpoint.
+///
+/// Also carries a shutdown `CancellationToken` and a `TaskTracker` used to
+/// drain in-flight WebSocket / SSE tasks on SIGTERM (V1-03). `axum::serve`'s
+/// built-in `with_graceful_shutdown` only tracks the HTTP router; upgraded
+/// WebSocket handlers and `spawn_blocking` SSE tasks fall outside that lane
+/// and must be drained explicitly.
 pub struct AppState {
     pub engine: Arc<Engine>,
     pub limits: RuntimeLimits,
     pub metrics_handle: Option<PrometheusHandle>,
+    pub shutdown: tokio_util::sync::CancellationToken,
+    pub tracker: tokio_util::task::TaskTracker,
 }
 
 /// GET /metrics — Prometheus text-format exposition. Returns 404 when the

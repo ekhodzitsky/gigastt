@@ -135,6 +135,14 @@ pub struct RuntimeLimits {
     pub rate_limit_per_minute: u32,
     /// Max burst size before the token bucket starts refilling.
     pub rate_limit_burst: u32,
+    /// Maximum wall-clock duration of a single WebSocket session (seconds).
+    /// `0` disables the cap entirely (not recommended — a silence-streaming
+    /// client would hold a triplet forever). Default: 3600 (1 hour).
+    pub max_session_secs: u64,
+    /// Grace window (seconds) after the shutdown signal during which in-flight
+    /// WebSocket / SSE tasks may emit their final frames and close cleanly.
+    /// Values of `0` are clamped to `1` to avoid a no-op drain. Default: 10.
+    pub shutdown_drain_secs: u64,
 }
 
 impl Default for RuntimeLimits {
@@ -145,6 +153,8 @@ impl Default for RuntimeLimits {
             body_limit_bytes: 50 * 1024 * 1024,
             rate_limit_per_minute: 0,
             rate_limit_burst: 10,
+            max_session_secs: 3600,
+            shutdown_drain_secs: 10,
         }
     }
 }
@@ -243,10 +253,34 @@ pub async fn run_with_config(
         None
     };
 
+    // V1-04 sanity check: an `idle_timeout` larger than `max_session_secs`
+    // is usually a misconfiguration — the cap fires before the idle timeout
+    // can ever apply, which is surprising. Warn without rejecting so
+    // operators who intentionally want both can keep the behaviour.
+    if config.limits.max_session_secs != 0
+        && config.limits.max_session_secs < config.limits.idle_timeout_secs
+    {
+        tracing::warn!(
+            max_session_secs = config.limits.max_session_secs,
+            idle_timeout_secs = config.limits.idle_timeout_secs,
+            "max_session_secs < idle_timeout_secs — sessions will be capped before \
+             the idle timer can fire; this is probably not what you want"
+        );
+    }
+
+    // Shutdown lane (V1-03): `shutdown_root` is cancelled when the caller's
+    // oneshot fires (or Ctrl-C is received). Every WS / SSE handler gets a
+    // clone so a SIGTERM propagates without racing `axum::serve`'s own
+    // graceful shutdown.
+    let shutdown_root = tokio_util::sync::CancellationToken::new();
+    let tracker = tokio_util::task::TaskTracker::new();
+
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
         limits: config.limits.clone(),
         metrics_handle,
+        shutdown: shutdown_root.clone(),
+        tracker: tracker.clone(),
     });
 
     let policy = Arc::new(config.origin_policy.clone());
@@ -330,16 +364,25 @@ pub async fn run_with_config(
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
-    let shutdown_fut = async {
-        match shutdown {
-            Some(rx) => {
-                rx.await.ok();
+    let shutdown_drain_secs = config.limits.shutdown_drain_secs.max(1);
+
+    let shutdown_fut = {
+        let shutdown_root = shutdown_root.clone();
+        async move {
+            match shutdown {
+                Some(rx) => {
+                    rx.await.ok();
+                }
+                None => {
+                    tokio::signal::ctrl_c().await.ok();
+                }
             }
-            None => {
-                tokio::signal::ctrl_c().await.ok();
-            }
+            tracing::info!("Shutting down server");
+            // Cancel the per-handler token FIRST so WS / SSE tasks start
+            // draining while axum is still completing the in-flight HTTP
+            // futures.
+            shutdown_root.cancel();
         }
-        tracing::info!("Shutting down server");
     };
 
     axum::serve(
@@ -348,6 +391,27 @@ pub async fn run_with_config(
     )
     .with_graceful_shutdown(shutdown_fut)
     .await?;
+
+    // Drain window: give WS / SSE tasks `shutdown_drain_secs` to emit their
+    // Final frames and close cleanly. TaskTracker::wait() returns when every
+    // tracked future completes; we close() first so no new futures can be
+    // added after shutdown.
+    tracker.close();
+    match tokio::time::timeout(
+        std::time::Duration::from_secs(shutdown_drain_secs),
+        tracker.wait(),
+    )
+    .await
+    {
+        Ok(()) => tracing::info!("Drain complete: all tracked WS/SSE tasks finished"),
+        Err(_) => tracing::warn!(
+            drain_secs = shutdown_drain_secs,
+            pending = tracker.len(),
+            "Drain window expired with tracked tasks still running — forcing exit"
+        ),
+    }
+
+    // TODO: engine.pool.close() once V1-07 lands (SessionPool shutdown API).
 
     Ok(())
 }
@@ -857,6 +921,23 @@ mod tests {
             "rate limiting must be off by default (privacy-first)"
         );
         assert_eq!(limits.rate_limit_burst, 10, "default burst size must be 10");
+    }
+
+    #[test]
+    fn test_runtime_limits_default_session_and_drain() {
+        // V1-03 / V1-04: locks in the documented defaults so a silent change
+        // can't quietly disable the shutdown drain or the session cap.
+        let limits = RuntimeLimits::default();
+        assert_eq!(
+            limits.max_session_secs, 3600,
+            "default session cap must be 1 hour to stop silence-streamers from \
+             holding a triplet forever"
+        );
+        assert_eq!(
+            limits.shutdown_drain_secs, 10,
+            "default shutdown drain must be 10 s — comfortably inside the usual \
+             k8s terminationGracePeriodSeconds = 30"
+        );
     }
 
     #[test]

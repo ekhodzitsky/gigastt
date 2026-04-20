@@ -84,6 +84,19 @@ enum Commands {
         /// attached to the protected router so the Origin allowlist applies.
         #[arg(long, env = "GIGASTT_METRICS", default_value_t = false)]
         metrics: bool,
+
+        /// Maximum wall-clock duration of a single WebSocket session (seconds).
+        /// `0` disables the cap (not recommended — a silence-streaming client
+        /// will hold a triplet forever).
+        #[arg(long, env = "GIGASTT_MAX_SESSION_SECS", default_value_t = 3600)]
+        max_session_secs: u64,
+
+        /// Grace window (seconds) after shutdown during which in-flight
+        /// WebSocket / SSE sessions may emit their Final frames and close.
+        /// Values of `0` are clamped to `1`. Should comfortably fit inside
+        /// your orchestrator's `terminationGracePeriodSeconds`.
+        #[arg(long, env = "GIGASTT_SHUTDOWN_DRAIN_SECS", default_value_t = 10)]
+        shutdown_drain_secs: u64,
     },
 
     /// Download model without starting server
@@ -257,6 +270,8 @@ async fn main() -> anyhow::Result<()> {
             rate_limit_per_minute,
             rate_limit_burst,
             metrics,
+            max_session_secs,
+            shutdown_drain_secs,
         } => {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
@@ -286,6 +301,8 @@ async fn main() -> anyhow::Result<()> {
                     body_limit_bytes,
                     rate_limit_per_minute,
                     rate_limit_burst,
+                    max_session_secs,
+                    shutdown_drain_secs,
                 },
                 metrics_enabled: metrics,
             };
