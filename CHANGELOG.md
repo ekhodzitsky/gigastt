@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Model download TOCTOU** (V1-01, `src/model/mod.rs`). `download_file` used to stream each `v3_e2e_rnnt_*.onnx` blob directly into its final path, compute SHA-256 afterwards, and `remove_file` on mismatch. Between the last `write` and the hash comparison another process (or a second `ensure_model` call on restart) could observe an unverified file under the canonical name — and a crash in that window left a corrupt artefact that `model_files_exist()` would later accept, skipping re-download on next boot. Downloads now stream into `<filename>.partial`, SHA-256 is computed against the partial, and only after verification does `std::fs::rename` (atomic on the same filesystem) promote it to the final path. Mismatch or crash leaves nothing under the final name. Stale `.partial` files from previous crashed runs are deleted before the new download begins.
+
 ## [0.9.0-rc.2] - 2026-04-20
 
 ### Fixed

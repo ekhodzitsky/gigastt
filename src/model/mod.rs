@@ -183,9 +183,67 @@ fn model_files_exist(dir: &Path) -> bool {
     MODEL_FILES.iter().all(|f| dir.join(f).exists())
 }
 
+/// Append `.partial` to a path; used as the staging location for downloads
+/// so a crash between the write and the SHA verification never leaves a
+/// half-written file under the final name that `model_files_exist` accepts.
+fn partial_path(final_path: &Path) -> std::path::PathBuf {
+    let mut s: std::ffi::OsString = final_path.as_os_str().to_owned();
+    s.push(".partial");
+    std::path::PathBuf::from(s)
+}
+
+/// Compute SHA-256 for a file synchronously, returning the lowercase hex digest.
+fn sha256_file(path: &Path) -> Result<String> {
+    let data = std::fs::read(path)
+        .with_context(|| format!("Failed to read file for verification: {}", path.display()))?;
+    let mut hasher = Sha256::new();
+    hasher.update(&data);
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+/// Verify a staged `.partial` file against `expected_sha256` (when provided)
+/// and atomically rename it into `final_path`. On mismatch the partial is
+/// removed so a corrupt artefact cannot be mistaken for a good download on
+/// restart. On success the partial no longer exists and `final_path` is the
+/// only visible artefact. Separated from the network path so the filesystem
+/// contract can be unit-tested without a mock HTTP server.
+fn finalize_download(
+    partial_path: &Path,
+    final_path: &Path,
+    expected_sha256: Option<&str>,
+    label: &str,
+) -> Result<()> {
+    if let Some(expected) = expected_sha256 {
+        let actual = sha256_file(partial_path)?;
+        if actual != expected {
+            // Remove the corrupt partial so a retry starts clean and so a
+            // restart cannot promote the partial to final via race.
+            let _ = std::fs::remove_file(partial_path);
+            anyhow::bail!("SHA-256 mismatch for {label}: expected {expected}, got {actual}");
+        }
+        tracing::info!("SHA-256 verified: {label}");
+    }
+
+    std::fs::rename(partial_path, final_path).with_context(|| {
+        format!(
+            "Failed to rename {} -> {}",
+            partial_path.display(),
+            final_path.display()
+        )
+    })?;
+    Ok(())
+}
+
 async fn download_file(filename: &str, dir: &Path) -> Result<()> {
     let url = format!("https://huggingface.co/{HF_REPO}/resolve/main/{filename}");
-    let dest = dir.join(filename);
+    let final_dest = dir.join(filename);
+    let partial = partial_path(&final_dest);
+
+    // If a stale partial from a previous crashed run exists, drop it before
+    // writing the new one so we never concatenate chunks into an old prefix.
+    if partial.exists() {
+        let _ = tokio::fs::remove_file(&partial).await;
+    }
 
     tracing::info!("Downloading {filename}...");
 
@@ -198,9 +256,9 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
 
     let mut progress = DownloadProgress::new(total_size);
 
-    let mut file = tokio::fs::File::create(&dest)
+    let mut file = tokio::fs::File::create(&partial)
         .await
-        .context("Failed to create model file")?;
+        .context("Failed to create partial model file")?;
     let mut stream = response.bytes_stream();
 
     let mut downloaded: u64 = 0;
@@ -214,27 +272,19 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
     }
 
     file.flush().await?;
+    drop(file);
     progress.finish();
-    tracing::info!("Saved {filename} ({downloaded} bytes)");
+    tracing::info!("Wrote partial {} ({downloaded} bytes)", partial.display());
 
-    // Verify SHA-256 if checksum is known
-    if let Some(expected) = MODEL_CHECKSUMS
+    // Verify SHA-256 on the partial file (TOCTOU-safe: never rename an
+    // unverified file into the final path). Missing checksum falls through
+    // to a plain atomic rename.
+    let expected = MODEL_CHECKSUMS
         .iter()
         .find(|(name, _)| *name == filename)
-        .and_then(|(_, hash)| *hash)
-    {
-        let data = tokio::fs::read(&dest)
-            .await
-            .context("Failed to read downloaded file for verification")?;
-        let mut hasher = Sha256::new();
-        hasher.update(&data);
-        let actual = format!("{:x}", hasher.finalize());
-        if actual != expected {
-            tokio::fs::remove_file(&dest).await.ok();
-            anyhow::bail!("SHA-256 mismatch for {filename}: expected {expected}, got {actual}");
-        }
-        tracing::info!("SHA-256 verified: {filename}");
-    }
+        .and_then(|(_, hash)| *hash);
+    finalize_download(&partial, &final_dest, expected, filename)?;
+    tracing::info!("Saved {filename}");
 
     Ok(())
 }
@@ -242,6 +292,7 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
 
     #[test]
     fn test_home_dir_returns_some() {
@@ -278,5 +329,143 @@ mod tests {
         progress.update(100);
         assert_eq!(progress.last_percent, 0);
         progress.finish();
+    }
+
+    /// Compute the SHA-256 of a byte slice as a lowercase hex digest.
+    fn sha256_hex(bytes: &[u8]) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(bytes);
+        format!("{:x}", hasher.finalize())
+    }
+
+    /// V1-01: Helper to stage a `.partial` file with arbitrary bytes, mimicking
+    /// the state of a fully streamed download prior to verification.
+    fn stage_partial(final_path: &Path, bytes: &[u8]) -> std::path::PathBuf {
+        let partial = partial_path(final_path);
+        let mut f = std::fs::File::create(&partial).expect("create partial");
+        f.write_all(bytes).expect("write partial");
+        f.sync_all().expect("sync partial");
+        partial
+    }
+
+    #[test]
+    fn test_partial_path_appends_suffix() {
+        let p = partial_path(Path::new("/tmp/gigastt/encoder.onnx"));
+        assert_eq!(
+            p,
+            std::path::PathBuf::from("/tmp/gigastt/encoder.onnx.partial"),
+        );
+    }
+
+    /// V1-01: on the success path, `.partial` disappears and the final path
+    /// appears in a single atomic step.
+    #[test]
+    fn test_download_writes_partial_then_renames() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let final_path = tmp.path().join("encoder.onnx");
+        let payload = b"fake encoder weights";
+        let expected = sha256_hex(payload);
+
+        let partial = stage_partial(&final_path, payload);
+        assert!(partial.exists(), "precondition: partial is present");
+        assert!(!final_path.exists(), "precondition: final is absent");
+
+        finalize_download(&partial, &final_path, Some(&expected), "encoder.onnx")
+            .expect("finalize should succeed");
+
+        assert!(
+            !partial.exists(),
+            "partial must be gone after atomic rename"
+        );
+        assert!(
+            final_path.exists(),
+            "final path must exist after atomic rename"
+        );
+        assert_eq!(std::fs::read(&final_path).unwrap(), payload);
+    }
+
+    /// V1-01: if the process dies between the network write and the
+    /// SHA verification / rename, `model_files_exist` must NOT see the
+    /// file under its final name. We simulate the crash by staging a
+    /// `.partial` and never calling `finalize_download`.
+    #[test]
+    fn test_download_crash_before_rename_leaves_no_final_file() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let final_path = tmp.path().join("encoder.onnx");
+        let partial = stage_partial(&final_path, b"half-written junk");
+
+        assert!(partial.exists(), "partial must exist to simulate crash");
+        assert!(
+            !final_path.exists(),
+            "crash before rename must never leave the final artefact visible"
+        );
+
+        // All four MODEL_FILES stay missing from this tempdir, so
+        // model_files_exist must refuse to short-circuit the download path.
+        assert!(
+            !model_files_exist(tmp.path()),
+            "model_files_exist must not accept a staged partial"
+        );
+    }
+
+    /// V1-01: SHA mismatch removes the partial and leaves the final path
+    /// empty, so a retry starts from a clean slate.
+    #[test]
+    fn test_download_rejects_sha256_mismatch() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let final_path = tmp.path().join("decoder.onnx");
+        let payload = b"real bytes";
+        // Intentionally wrong expected hash (hash of different bytes).
+        let wrong_expected = sha256_hex(b"different bytes");
+
+        let partial = stage_partial(&final_path, payload);
+
+        let err = finalize_download(&partial, &final_path, Some(&wrong_expected), "decoder.onnx")
+            .expect_err("mismatch must error");
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("SHA-256 mismatch"),
+            "unexpected error: {msg}"
+        );
+
+        assert!(
+            !partial.exists(),
+            "partial must be removed on SHA mismatch"
+        );
+        assert!(
+            !final_path.exists(),
+            "final must never appear on SHA mismatch"
+        );
+    }
+
+    /// V1-01: success path with no checksum available still renames
+    /// atomically (partial gone, final present, bytes preserved).
+    #[test]
+    fn test_download_atomic_on_success_without_checksum() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let final_path = tmp.path().join("vocab.txt");
+        let payload = b"token0\ntoken1\n";
+
+        let partial = stage_partial(&final_path, payload);
+
+        finalize_download(&partial, &final_path, None, "vocab.txt")
+            .expect("no-checksum finalize should succeed");
+
+        assert!(!partial.exists(), "partial must be gone after rename");
+        assert!(final_path.exists(), "final path must exist");
+        assert_eq!(std::fs::read(&final_path).unwrap(), payload);
+    }
+
+    /// V1-01: sha256_file matches the in-memory hash of the same bytes.
+    #[test]
+    fn test_sha256_file_matches_in_memory_hash() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let p = tmp.path().join("blob");
+        let payload = b"gigastt-model-bytes";
+        std::fs::write(&p, payload).unwrap();
+
+        let got = sha256_file(&p).expect("sha256_file");
+        let want = sha256_hex(payload);
+        assert_eq!(got, want);
     }
 }
