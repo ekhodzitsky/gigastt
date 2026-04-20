@@ -368,3 +368,78 @@ async fn test_sse_midstream_disconnect() {
 
     let _ = shutdown.send(());
 }
+
+// ---------------------------------------------------------------------------
+// 9. Zero-copy REST decode path — RSS must not balloon during large upload
+// ---------------------------------------------------------------------------
+
+/// Verify the REST upload path does not double or triple resident memory
+/// while decoding a large body. Before the zero-copy refactor a 40 MiB upload
+/// transiently held ~120 MiB (axum Bytes + `body.to_vec()` + symphonia
+/// Cursor clone). With `BytesMediaSource` the decoded-sample buffer is the
+/// only large allocation.
+///
+/// Linux-only: reads `/proc/self/status` VmRSS. macOS would need libproc
+/// bindings; we skip instead of pulling in an extra dep for one test.
+#[cfg(target_os = "linux")]
+#[tokio::test]
+#[ignore]
+async fn test_rest_large_body_rss_within_budget() {
+    fn read_vm_rss_kb() -> Option<u64> {
+        let status = std::fs::read_to_string("/proc/self/status").ok()?;
+        for line in status.lines() {
+            if let Some(rest) = line.strip_prefix("VmRSS:") {
+                let kb: u64 = rest
+                    .trim()
+                    .split_whitespace()
+                    .next()?
+                    .parse()
+                    .ok()?;
+                return Some(kb);
+            }
+        }
+        None
+    }
+
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+
+    // 40 MiB WAV (2.5 minutes @ 16 kHz / 16-bit mono). Large enough that a
+    // second copy would blow the budget; small enough to stay under the
+    // 50 MiB body limit.
+    let wav = common::generate_wav(150, 16000);
+    assert!(
+        wav.len() > 30 * 1024 * 1024,
+        "generated WAV should be >30 MiB, got {}",
+        wav.len()
+    );
+
+    let before_kb = read_vm_rss_kb().expect("/proc/self/status unavailable");
+
+    let resp = tokio::time::timeout(Duration::from_secs(60), async {
+        reqwest::Client::new()
+            .post(format!("http://127.0.0.1:{port}/v1/transcribe"))
+            .body(wav.clone())
+            .send()
+            .await
+            .expect("POST /v1/transcribe failed")
+    })
+    .await
+    .expect("POST /v1/transcribe timed out");
+
+    assert_eq!(resp.status(), 200);
+    let _ = resp.text().await;
+
+    let after_kb = read_vm_rss_kb().expect("/proc/self/status unavailable");
+    let delta_kb = after_kb.saturating_sub(before_kb);
+    // Budget: upload size + ~20 MiB slack for decoded f32 samples + ONNX
+    // scratch. Double-copy regressions land well outside this bound.
+    let budget_kb = (wav.len() as u64 / 1024) + 20 * 1024;
+    assert!(
+        delta_kb < budget_kb,
+        "RSS grew by {delta_kb} KiB during upload; expected < {budget_kb} KiB \
+         (wav {} KiB)",
+        wav.len() / 1024
+    );
+
+    let _ = shutdown.send(());
+}

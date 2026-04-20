@@ -12,7 +12,9 @@ use tokio_tungstenite::tungstenite::Message;
 // ─── 1. REST oversized body ─────────────────────────────────────────────────
 
 /// POST /v1/transcribe with a body larger than the 50MB DefaultBodyLimit.
-/// Expects a non-200 response (typically 413 Payload Too Large).
+/// Expects a 413 Payload Too Large with machine-readable code
+/// `payload_too_large` — the strict version of the previous `!= 200` assertion
+/// that was too permissive to catch regressions in the body-limit guard.
 #[tokio::test]
 #[ignore]
 async fn test_rest_oversized_body_rejected() {
@@ -34,10 +36,21 @@ async fn test_rest_oversized_body_rejected() {
         .await
         .expect("Request should complete (connection not refused)");
 
-    assert_ne!(
+    assert_eq!(
         response.status().as_u16(),
-        200,
-        "Expected non-200 for oversized body, got 200"
+        413,
+        "Expected 413 Payload Too Large for oversized body"
+    );
+
+    let body_text = response
+        .text()
+        .await
+        .expect("Response body should be readable");
+    let body: serde_json::Value =
+        serde_json::from_str(&body_text).expect("Response body should be JSON");
+    assert_eq!(
+        body["code"], "payload_too_large",
+        "Expected code='payload_too_large', got: {body}"
     );
 
     let _ = shutdown.send(());
