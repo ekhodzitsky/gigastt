@@ -13,7 +13,11 @@ default = []
 coreml = ["ort/coreml"]
 cuda = ["ort/cuda"]
 diarization = []
-quantize = ["dep:onnx-pb", "dep:prost"]
+# `quantize` used to gate the INT8 quantization pipeline. It is now always
+# compiled in (the user's core workflow is: download → quantize → serve),
+# so the feature is retained as a no-op for backwards compatibility with
+# `cargo install gigastt --features quantize`.
+quantize = []
 
 [dependencies]
 # ONNX Runtime
@@ -76,8 +80,13 @@ tower_governor = "0.7"
 # Prometheus-compatible metrics (exposed behind `--metrics` flag, off by default)
 metrics = "0.24"
 metrics-exporter-prometheus = { version = "0.17", default-features = false }
-onnx-pb = { version = "0.1.4", optional = true }
-prost = { version = "0.6", optional = true }
+# ONNX protobuf types for the native INT8 quantization pipeline
+# (`src/quantize.rs`). `onnx-pb 0.1.4` is the only published version on
+# crates.io; it pulls `prost 0.6` transitively, which is the source of the
+# `RUSTSEC-2021-0073` advisory we ignore in `deny.toml` (unreachable code
+# path — we never convert a `Timestamp` to `SystemTime`).
+onnx-pb = "0.1.4"
+prost = "0.6"
 
 [[test]]
 name = "benchmark"
