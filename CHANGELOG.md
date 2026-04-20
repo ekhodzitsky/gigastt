@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Per-IP rate-limiter math (V1-06, `src/server/mod.rs`).** `(rate_limit_per_minute / 60).max(1)` truncated every value below 60 rpm to a 1 rps refill (= 60 rpm), so a defender setting `--rate-limit-per-minute 10` actually allowed 60 rpm — 6× weaker than declared. Switched to `tower_governor`'s `per_millisecond(60_000 / rpm)`, which preserves sub-second precision down to 1 rpm and clamps the upper bound at 60 000 rpm with a `warn!`. The startup log now includes the resolved `interval_ms` alongside `rpm` for diagnostics.
 - **Session pool panic + unfairness (V1-07, V1-21, `src/inference/mod.rs`).** Replaced the `tokio::sync::mpsc::Receiver` behind a `tokio::sync::Mutex` with a lock-free `async_channel`. The new `Pool<T>` (alias `SessionPool = Pool<SessionTriplet>`) is FIFO under contention, exposes `close()` so graceful shutdown wakes every waiter with `PoolError::Closed` instead of panicking via `.expect("Pool sender dropped")`, and returns a `PoolGuard` whose `Drop` impl auto-checks-in the triplet on panic unwind. Server shutdown now wires `engine.pool.close()` into the shutdown future, and the REST handlers translate `PoolError::Closed` into a distinct 503 `pool_closed` response (separate from the 503 `timeout` for the 30 s checkout deadline).
+- **REST oversized-body rejection is now strict 413** (V1-22, `tests/e2e_errors.rs::test_rest_oversized_body_rejected`). Handlers in `src/server/http.rs` now add an explicit `body.len() > limits.body_limit_bytes → 413 payload_too_large` guard as defence-in-depth behind `DefaultBodyLimit`, and the e2e assertion upgrades from `!= 200` to a strict `== 413` with `code="payload_too_large"`.
 
 ### Changed
 
@@ -30,11 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `handle_ws_inner` switches from a bare `timeout(idle, source.next())` to a `biased;` `select!` with explicit cancel + deadline branches.
 - `/v1/transcribe/stream` SSE task now runs on `TaskTracker::spawn_blocking` and polls the shutdown token between chunks so SIGTERM aborts long transcriptions instead of waiting them out.
 - `SessionPool::{checkout, checkin, blocking_checkin}` replaced by `SessionPool::checkout() -> Result<PoolGuard, PoolError>`. The guard `Deref`s to `SessionTriplet` and auto-checks-in on drop. For `'static` consumers (`spawn_blocking`), call `guard.into_owned()` to get a `(SessionTriplet, OwnedReservation)` pair and return the triplet via `OwnedReservation::checkin(triplet)`.
+- **Zero-copy REST upload decode path** (V1-05, `src/inference/audio.rs`, `src/inference/mod.rs`, `src/server/http.rs`). The `/v1/transcribe` and `/v1/transcribe/stream` handlers used to call `body.to_vec()` on the incoming `axum::body::Bytes`, then `decode_audio_bytes` cloned that `Vec<u8>` into a `std::io::Cursor`, and symphonia decoded the PCM into another `Vec<f32>` — four concurrent copies of the upload were in RAM at peak. A 4× concurrent upload of a 10-minute WAV held ~1 GiB transiently and could OOM on a 1 GiB container. New path: `bytes::Bytes` flows end-to-end via a crate-private `BytesMediaSource` that implements `Read + Seek + MediaSource` directly on the refcounted buffer; new `decode_audio_bytes_shared(Bytes)` and `Engine::transcribe_bytes_shared(Bytes, _)` entry points. The legacy `decode_audio_bytes(&[u8])` / `Engine::transcribe_bytes(&[u8], _)` functions remain as thin shims (one `Bytes::copy_from_slice` for non-REST callers), so no public API breakage.
+- **Incremental 10-minute duration cap** inside the decode loop (V1-05). The check used to fire only after the full PCM buffer was assembled, so a malformed or hostile upload could still allocate hundreds of MiB before being rejected. Now each packet's samples are accumulated against a precomputed sample budget and the decoder bails out on the first packet that breaks the cap.
 
 ### Dependencies
 
 - Promoted `tokio-util = { version = "0.7", features = ["rt"] }` from transitive to direct. Dev-deps gained `tracing-subscriber` so integration tests can surface server logs on failure.
 - `async-channel = "2"` (transitive pieces — `concurrent-queue`, `event-listener` — were already in the graph).
+- Added explicit `bytes = "1"` pin (previously transitive via `axum` / `tokio`) — makes the zero-copy contract between axum and symphonia visible in `Cargo.toml`.
 
 ## [0.8.1] - 2026-04-17
 
