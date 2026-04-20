@@ -809,10 +809,7 @@ async fn handle_binary_frame(
                 "Panic in WS inference for {peer} — triplet recovered, streaming state reset"
             );
             *triplet_opt = Some(triplet_back);
-            *state_opt = Some(engine.create_state(
-                #[cfg(feature = "diarization")]
-                false,
-            ));
+            *state_opt = Some(engine.create_state(false));
             send_server_message(
                 sink,
                 &ServerMessage::Error {
@@ -975,10 +972,7 @@ async fn handle_ws_inner(
         return (Some(triplet), Err(e));
     }
 
-    let mut state_opt = Some(engine.create_state(
-        #[cfg(feature = "diarization")]
-        false,
-    ));
+    let mut state_opt = Some(engine.create_state(false));
     let mut triplet_opt = Some(triplet);
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
     let mut audio_received = false;

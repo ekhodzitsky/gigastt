@@ -575,12 +575,11 @@ impl Engine {
     /// Create a fresh streaming state for a new connection.
     ///
     /// Pass `diarization_enabled = true` to activate speaker diarization for
-    /// this session (requires the `diarization` feature and a loaded speaker
-    /// encoder; silently ignored otherwise).
-    pub fn create_state(
-        &self,
-        #[cfg(feature = "diarization")] diarization_enabled: bool,
-    ) -> StreamingState {
+    /// this session. Without the `diarization` feature or a loaded speaker
+    /// encoder, the flag is silently ignored (a `warn!` is emitted when the
+    /// caller asked for diarization but the build does not support it, so the
+    /// contract mismatch is visible in logs).
+    pub fn create_state(&self, diarization_enabled: bool) -> StreamingState {
         #[cfg(feature = "diarization")]
         let diarization_state = if diarization_enabled && self.speaker_encoder.is_some() {
             Some(DiarizationStreamState {
@@ -591,6 +590,13 @@ impl Engine {
         } else {
             None
         };
+
+        #[cfg(not(feature = "diarization"))]
+        if diarization_enabled {
+            tracing::warn!(
+                "diarization_enabled=true ignored: build lacks the `diarization` feature"
+            );
+        }
 
         StreamingState {
             decoder: DecoderState::new(self.tokenizer.blank_id()),

@@ -14,7 +14,7 @@
 //! let text = engine.transcribe_file("audio.wav")?;
 //!
 //! // Streaming recognition
-//! let mut state = engine.create_state(/* diarization_enabled (diarization feature only): */ false);
+//! let mut state = engine.create_state(/* diarization_enabled: */ false);
 //! let segments = engine.process_chunk(&audio_16khz, &mut state)?;
 //! ```
 //!
