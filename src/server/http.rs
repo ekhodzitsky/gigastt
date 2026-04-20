@@ -122,6 +122,20 @@ fn api_timeout_error() -> ApiError {
         .into_response()
 }
 
+/// 503 response for the case where the pool was closed (graceful shutdown
+/// in progress). Distinct from `timeout` so clients can decide whether to
+/// retry: a closed pool is not coming back, so no `retry_after_ms` hint.
+fn api_pool_closed_error() -> ApiError {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(serde_json::json!({
+            "error": "Server is shutting down",
+            "code": "pool_closed",
+        })),
+    )
+        .into_response()
+}
+
 /// GET /health — health check for monitoring and Docker HEALTHCHECK.
 pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
     let _ = &state.engine;
@@ -180,13 +194,20 @@ pub async fn transcribe(
         ));
     }
 
-    // Checkout a session triplet from the pool (blocks if none available)
-    let triplet = tokio::time::timeout(
+    // Checkout a session triplet from the pool (blocks if none available).
+    // The guard's lifetime is stripped via `into_owned` so the triplet can
+    // travel through `spawn_blocking`; the reservation handles checkin.
+    let guard = match tokio::time::timeout(
         std::time::Duration::from_secs(30),
         state.engine.pool.checkout(),
     )
     .await
-    .map_err(|_| api_timeout_error())?;
+    {
+        Ok(Ok(guard)) => guard,
+        Ok(Err(_pool_closed)) => return Err(api_pool_closed_error()),
+        Err(_timeout) => return Err(api_timeout_error()),
+    };
+    let (triplet, reservation) = guard.into_owned();
 
     let body_bytes = body.to_vec();
     drop(body);
@@ -216,7 +237,7 @@ pub async fn transcribe(
 
     match result {
         Ok((Ok(result), triplet)) => {
-            state.engine.pool.checkin(triplet).await;
+            reservation.checkin(triplet);
             Ok(Json(TranscribeResponse {
                 text: result.text,
                 words: result.words,
@@ -224,7 +245,7 @@ pub async fn transcribe(
             }))
         }
         Ok((Err(e), triplet)) => {
-            state.engine.pool.checkin(triplet).await;
+            reservation.checkin(triplet);
             tracing::error!("Transcription error: {e}");
             Err(api_error(
                 StatusCode::UNPROCESSABLE_ENTITY,
@@ -233,7 +254,9 @@ pub async fn transcribe(
             ))
         }
         Err(e) => {
-            // spawn_blocking task itself failed (e.g., runtime shutdown)
+            // spawn_blocking task itself failed (e.g., runtime shutdown).
+            // Triplet is lost in this branch; reservation is dropped without
+            // sending. The pool degrades by one slot.
             tracing::error!("spawn_blocking join error: {e}");
             Err(api_error(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -280,13 +303,19 @@ pub async fn transcribe_stream(
         })?
     };
 
-    // Checkout a session triplet from the pool
-    let triplet = tokio::time::timeout(
+    // Checkout a session triplet from the pool. Strip the lifetime via
+    // `into_owned` so the triplet can travel through `spawn_blocking`.
+    let guard = match tokio::time::timeout(
         std::time::Duration::from_secs(30),
         state.engine.pool.checkout(),
     )
     .await
-    .map_err(|_| api_timeout_error())?;
+    {
+        Ok(Ok(guard)) => guard,
+        Ok(Err(_pool_closed)) => return Err(api_pool_closed_error()),
+        Err(_timeout) => return Err(api_timeout_error()),
+    };
+    let (triplet, reservation) = guard.into_owned();
 
     // Create mpsc channel for streaming segments from spawn_blocking to SSE
     let (tx, rx) =
@@ -343,8 +372,10 @@ pub async fn transcribe_stream(
             tracing::error!("Panic in SSE inference task — triplet recovered");
         }
 
-        // Always return triplet to pool (even after panic)
-        engine.pool.blocking_checkin(triplet);
+        // Always return triplet to pool (even after panic). Sync `try_send`
+        // is safe from a blocking thread; if the pool was closed in the
+        // interim the triplet is silently dropped.
+        reservation.checkin(triplet);
     });
 
     // Convert receiver to SSE stream

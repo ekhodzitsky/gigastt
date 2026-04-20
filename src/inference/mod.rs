@@ -19,8 +19,8 @@ use ort::ep;
 use ort::session::Session;
 use ort::value::TensorRef;
 use serde::Serialize;
+use std::ops::{Deref, DerefMut};
 use std::path::Path;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::error::GigasttError;
 
@@ -63,73 +63,176 @@ pub struct SessionTriplet {
     pub(crate) joiner: Session,
 }
 
-/// Pool of pre-loaded [`SessionTriplet`]s backed by an mpsc channel.
-///
-/// Checkout = `recv` from channel, checkin = `send` back.
-/// The pool size acts as the concurrency limit — no separate semaphore needed.
-pub struct SessionPool {
-    sender: tokio::sync::mpsc::Sender<SessionTriplet>,
-    receiver: tokio::sync::Mutex<tokio::sync::mpsc::Receiver<SessionTriplet>>,
-    total: usize,
-    available: AtomicUsize,
+/// Errors returned by [`Pool::checkout`].
+#[derive(Debug)]
+pub enum PoolError {
+    /// The pool was closed (graceful shutdown). All current and future
+    /// waiters resolve to this variant; the caller should respond with a
+    /// 503 / `pool_closed` to the client.
+    Closed,
 }
 
-impl SessionPool {
-    /// Create a pool pre-filled with the given triplets.
-    pub fn new(triplets: Vec<SessionTriplet>) -> Self {
-        let total = triplets.len();
-        let (sender, receiver) = tokio::sync::mpsc::channel(total);
-        for triplet in triplets {
+impl std::fmt::Display for PoolError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PoolError::Closed => write!(f, "session pool is closed"),
+        }
+    }
+}
+
+impl std::error::Error for PoolError {}
+
+/// Pool of pre-loaded items of type `T` backed by an MPMC `async-channel`.
+///
+/// `SessionPool = Pool<SessionTriplet>` is the only public instantiation
+/// outside this module. Generic `T` exists so the pool semantics can be
+/// unit-tested without ONNX models.
+///
+/// Checkout = `recv` from the channel, checkin = `send` back via the
+/// [`PoolGuard`] returned by [`checkout`](Self::checkout). The pool size acts
+/// as the concurrency limit — no separate semaphore needed. FIFO ordering is
+/// intrinsic to the underlying channel, and `close()` flips all current and
+/// future waiters into [`PoolError::Closed`] so graceful shutdown can drain
+/// without panicking.
+pub struct Pool<T> {
+    sender: async_channel::Sender<T>,
+    receiver: async_channel::Receiver<T>,
+    total: usize,
+}
+
+/// Public alias for the production pool: holds [`SessionTriplet`] instances.
+pub type SessionPool = Pool<SessionTriplet>;
+
+impl<T> Pool<T> {
+    /// Create a pool pre-filled with the given items.
+    pub fn new(items: Vec<T>) -> Self {
+        let total = items.len();
+        // Bounded channel with capacity == total: send is always immediate
+        // (try_send never returns Full while we own the only sender for
+        // checked-out items), and the channel's internal queue holds the
+        // available pool inventory.
+        let (sender, receiver) = async_channel::bounded(total.max(1));
+        for item in items {
             sender
-                .try_send(triplet)
-                .expect("channel capacity matches triplet count");
+                .try_send(item)
+                .expect("channel capacity matches item count");
         }
         Self {
             sender,
-            receiver: tokio::sync::Mutex::new(receiver),
+            receiver,
             total,
-            available: AtomicUsize::new(total),
         }
     }
 
-    /// Checkout a triplet from the pool. Blocks if none available.
-    pub async fn checkout(&self) -> SessionTriplet {
-        let triplet = self
-            .receiver
-            .lock()
-            .await
-            .recv()
-            .await
-            .expect("Pool sender dropped — this is a bug");
-        self.available.fetch_sub(1, Ordering::Relaxed);
-        triplet
+    /// Checkout an item from the pool. Awaits FIFO if none available.
+    ///
+    /// Returns [`PoolError::Closed`] if the pool was shut down via
+    /// [`close`](Self::close) before an item became available.
+    pub async fn checkout(&self) -> Result<PoolGuard<'_, T>, PoolError> {
+        match self.receiver.recv().await {
+            Ok(item) => Ok(PoolGuard {
+                pool: self,
+                item: Some(item),
+            }),
+            Err(_) => Err(PoolError::Closed),
+        }
     }
 
-    /// Return a triplet to the pool (async).
-    pub async fn checkin(&self, triplet: SessionTriplet) {
-        self.sender
-            .send(triplet)
-            .await
-            .expect("Pool receiver dropped — this is a bug");
-        self.available.fetch_add(1, Ordering::Relaxed);
+    /// Close the pool: all current and future [`checkout`](Self::checkout)
+    /// callers resolve to [`PoolError::Closed`]. Used by graceful shutdown.
+    /// Idempotent.
+    pub fn close(&self) {
+        self.sender.close();
+        self.receiver.close();
     }
 
-    /// Return a triplet to the pool (blocking, for use inside `spawn_blocking`).
-    pub fn blocking_checkin(&self, triplet: SessionTriplet) {
-        self.sender
-            .blocking_send(triplet)
-            .expect("Pool receiver dropped — this is a bug");
-        self.available.fetch_add(1, Ordering::Relaxed);
-    }
-
-    /// Total number of triplets in the pool.
+    /// Total number of items the pool was created with.
     pub fn total(&self) -> usize {
         self.total
     }
 
-    /// Number of currently available (not checked-out) triplets.
+    /// Number of currently available (not checked-out) items. O(1).
     pub fn available(&self) -> usize {
-        self.available.load(Ordering::Relaxed)
+        self.receiver.len()
+    }
+}
+
+/// RAII guard that auto-checks-in an item when dropped.
+///
+/// Returned by [`Pool::checkout`]. Deref to access the inner item.
+/// On drop (including panic unwind) the item is returned to the pool;
+/// if the pool was closed in the meantime the item is silently dropped.
+pub struct PoolGuard<'a, T> {
+    pool: &'a Pool<T>,
+    item: Option<T>,
+}
+
+impl<T> PoolGuard<'_, T> {
+    /// Strip the lifetime so the guard can be moved into a `'static`
+    /// context (e.g. `tokio::task::spawn_blocking`). Returns the owned
+    /// item together with an [`OwnedReservation`] that must receive the
+    /// item back via [`OwnedReservation::checkin`] when the blocking task
+    /// is done. Forgets the original guard so the inner Drop does not also
+    /// try to check-in.
+    pub fn into_owned(mut self) -> (T, OwnedReservation<T>) {
+        let item = self
+            .item
+            .take()
+            .expect("PoolGuard::into_owned called after drop");
+        let reservation = OwnedReservation {
+            sender: self.pool.sender.clone(),
+        };
+        (item, reservation)
+    }
+}
+
+impl<T> Deref for PoolGuard<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.item
+            .as_ref()
+            .expect("PoolGuard accessed after item taken")
+    }
+}
+
+impl<T> DerefMut for PoolGuard<'_, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.item
+            .as_mut()
+            .expect("PoolGuard accessed after item taken")
+    }
+}
+
+impl<T> Drop for PoolGuard<'_, T> {
+    fn drop(&mut self) {
+        if let Some(item) = self.item.take() {
+            // Best-effort checkin. `try_send` is non-blocking and the
+            // channel capacity equals total items, so it can only fail
+            // if the pool was closed — in which case dropping the item
+            // is the right thing.
+            let _ = self.pool.sender.try_send(item);
+        }
+    }
+}
+
+/// Owned counterpart to [`PoolGuard`] for `'static` contexts (e.g.
+/// `spawn_blocking`). The item must be returned via [`Self::checkin`].
+///
+/// This is intentionally not a Drop-guard: the blocking task takes ownership
+/// of the item (and may even mutate it during inference), so the item must
+/// travel back through the closure return path. After a panic the call site
+/// is expected to recover the item via `catch_unwind` and call `checkin` to
+/// keep the pool full.
+pub struct OwnedReservation<T> {
+    sender: async_channel::Sender<T>,
+}
+
+impl<T> OwnedReservation<T> {
+    /// Return the item to the pool from a synchronous (blocking) context.
+    /// Silently drops the item if the pool has been closed.
+    pub fn checkin(self, item: T) {
+        let _ = self.sender.try_send(item);
     }
 }
 
@@ -223,9 +326,9 @@ pub struct StreamingState {
 ///
 /// ```ignore
 /// let engine = Engine::load("~/.gigastt/models")?;
-/// let mut triplet = engine.pool.checkout().await;
-/// let text = engine.transcribe_file("audio.wav", &mut triplet)?;
-/// engine.pool.checkin(triplet).await;
+/// let mut guard = engine.pool.checkout().await?;
+/// let text = engine.transcribe_file("audio.wav", &mut guard)?;
+/// // guard is returned to the pool on drop
 /// ```
 ///
 /// For streaming recognition, use [`create_state`](Engine::create_state) +

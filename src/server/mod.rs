@@ -340,6 +340,11 @@ pub async fn run_with_config(
         protected
     };
 
+    // Clone the engine handle before `state` is consumed by `with_state` so
+    // the shutdown closure can call `pool.close()` after the listener task
+    // begins draining.
+    let shutdown_engine = state.engine.clone();
+
     let app = Router::new()
         .route("/health", get(http::health))
         .merge(protected)
@@ -382,6 +387,11 @@ pub async fn run_with_config(
             // draining while axum is still completing the in-flight HTTP
             // futures.
             shutdown_root.cancel();
+            // Wake every waiter still blocked on `pool.checkout()` with
+            // PoolError::Closed so they fall through to a 503 / `pool_closed`
+            // response instead of being stranded for the full 30 s timeout.
+            // Idempotent — safe even if the pool was already closed.
+            shutdown_engine.pool.close();
         }
     };
 
@@ -588,7 +598,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
     // `select!` the pool checkout against the shutdown token so SIGTERM
     // during pool saturation returns immediately instead of waiting the full
     // 30 s checkout window. `biased;` keeps cancel priority over progress.
-    let triplet = tokio::select! {
+    let guard = tokio::select! {
         biased;
         _ = state.shutdown.cancelled() => {
             tracing::info!(peer = %peer, "Shutdown requested before pool checkout");
@@ -605,7 +615,18 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
             std::time::Duration::from_secs(30),
             state.engine.pool.checkout(),
         ) => match res {
-            Ok(triplet) => triplet,
+            Ok(Ok(guard)) => guard,
+            Ok(Err(_pool_closed)) => {
+                tracing::info!("WebSocket pool closed for {peer} — server is shutting down");
+                let (mut sink, _) = socket.split();
+                let err = ServerMessage::Error {
+                    message: "Server is shutting down".into(),
+                    code: "pool_closed".into(),
+                    retry_after_ms: None,
+                };
+                let _ = sink.send(WsMessage::Text(json_text(&err).into())).await;
+                return;
+            }
             Err(_) => {
                 tracing::warn!("WebSocket pool checkout timeout for {peer}");
                 let (mut sink, _) = socket.split();
@@ -619,6 +640,13 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
             }
         }
     };
+
+    // Strip the lifetime so the triplet can travel through `handle_ws_inner`,
+    // which currently owns it directly. The reservation handles checkin on
+    // the way back; if the inner loop loses the triplet to a spawn_blocking
+    // panic, the reservation is dropped without sending and the pool
+    // degrades gracefully — matches the pre-rewrite contract.
+    let (triplet, reservation) = guard.into_owned();
 
     let (triplet_opt, result) = handle_ws_inner(
         socket,
@@ -634,7 +662,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
     }
 
     if let Some(triplet) = triplet_opt {
-        state.engine.pool.checkin(triplet).await;
+        reservation.checkin(triplet);
     }
     // If triplet_opt is None, the triplet was lost due to a spawn_blocking panic.
     // The pool degrades gracefully with fewer available slots.

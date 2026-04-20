@@ -361,9 +361,9 @@ async fn main() -> anyhow::Result<()> {
             model::ensure_model(&model_dir).await?;
             let engine = inference::Engine::load_with_pool_size(&model_dir, 1)?;
             log_rss();
-            let mut triplet = engine.pool.checkout().await;
-            let result = engine.transcribe_file(&file, &mut triplet);
-            engine.pool.checkin(triplet).await;
+            let mut guard = engine.pool.checkout().await?;
+            let result = engine.transcribe_file(&file, &mut guard);
+            drop(guard);
             println!("{}", result?.text);
         }
     }

@@ -22,6 +22,9 @@ ort = "2.0.0-rc.12"
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 
+# Async MPMC channel — backs the SessionPool (FIFO + close semantics)
+async-channel = "2"
+
 # HTTP + WebSocket server (single port via axum)
 axum = { version = "0.8", features = ["ws", "multipart"] }
 futures-util = "0.3"
