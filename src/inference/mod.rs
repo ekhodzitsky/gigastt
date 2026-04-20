@@ -784,12 +784,32 @@ impl Engine {
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
+    ///
+    /// Backwards-compatible shim: clones `data` into a [`bytes::Bytes`] and
+    /// delegates to [`Engine::transcribe_bytes_shared`]. Prefer the shared
+    /// variant on hot paths (REST/SSE) to avoid the extra copy.
     pub fn transcribe_bytes(
         &self,
         data: &[u8],
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
-        let float_samples = audio::decode_audio_bytes(data)
+        self.transcribe_bytes_shared(bytes::Bytes::copy_from_slice(data), triplet)
+    }
+
+    /// Transcribe audio from a reference-counted [`bytes::Bytes`] buffer
+    /// without cloning.
+    ///
+    /// Reuses the same decode/inference pipeline as [`Engine::transcribe_bytes`]
+    /// but hands the buffer straight to symphonia via [`audio::decode_audio_bytes_shared`].
+    /// This is the zero-copy entry point used by the REST upload handler so a
+    /// 50 MiB `axum::body::Bytes` body stays as a single in-memory buffer
+    /// instead of being cloned into a `Vec<u8>` before decode.
+    pub fn transcribe_bytes_shared(
+        &self,
+        data: bytes::Bytes,
+        triplet: &mut SessionTriplet,
+    ) -> Result<TranscribeResult, GigasttError> {
+        let float_samples = audio::decode_audio_bytes_shared(data)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
         let duration_s = float_samples.len() as f64 / 16000.0;
 
