@@ -8,7 +8,13 @@ Each item: **P0/P1/P2** priority, a short problem statement, the
 concrete symptom, and the proposed direction. Full rollout sequence
 lives in `specs/plan.md`.
 
-## Progress snapshot (2026-04-17)
+## Progress snapshot (2026-04-20)
+
+> **v1.0 readiness work is tracked in [`specs/prod-readiness-v1.0.md`](prod-readiness-v1.0.md)** —
+> 50 findings (P0/P1/P2) + 14 sustainability items from the 4-critic review
+> on 2026-04-18. Items below are the v0.5.0 carry-over; once each row is
+> closed it stays here for the historical trail and migrates to v1.0 plan
+> if further work is required.
 
 | Item | Priority | Status |
 |------|----------|--------|
@@ -17,24 +23,52 @@ lives in `specs/plan.md`.
 | 3. Pool depletion on panic | P0 | ✅ v0.5.1 (`catch_unwind` in WS handler) |
 | 4. CORS `*` + weak Origin check | P1 | ✅ v0.6.0 (origin_middleware) |
 | 5. Pool timeout without Retry-After | P1 | ✅ v0.6.0 (header + retry_after_ms) |
-| 6. Hard-coded runtime limits | P1 | ⏳ open |
-| 7. `/metrics` / observability | P1 | ⏳ open |
+| 6. Hard-coded runtime limits | P1 | ✅ v0.7.0 (CLI + env flags for limits) |
+| 7. `/metrics` / observability | P1 | ✅ v0.8.0 (Prometheus exporter, `--metrics` flag) |
 | 8. Origin-check covers REST | P1 | ✅ v0.6.0 (middleware before routing) |
 | 9. `--bind-all` guard | P1 | ✅ v0.6.0 (CLI + Dockerfiles) |
-| 10. Docker bake-model option | P1 | ⏳ open |
-| 11. `/v1/ws` canonical path | P2 | ⏳ open |
-| 12. `/v1/models.capabilities` | P2 | ⏳ open |
+| 10. Docker bake-model option | P1 | ✅ v0.7.0 (`GIGASTT_BAKE_MODEL=1` build arg) |
+| 11. `/v1/ws` canonical path | P2 | ✅ v0.7.0 (`/ws` kept as deprecated alias) |
+| 12. `/v1/models.capabilities` | P2 | ✅ v0.7.0 (capabilities payload) |
 | 13. `handle_ws_inner` split | P2 | ✅ v0.6.1 (three frame handlers + e2e test) |
-| 14. `cargo deny` + SBOM | P2 | ⏳ open |
-| 15. WER histogram breakdown | P2 | ⏳ open |
-| 16. Self-hosted nightly soak | P2 | ⏳ open |
-| 17. Per-IP rate limiting | P2 | ⏳ open |
+| 14. `cargo deny` + SBOM | P2 | 🔨 partial — `cargo deny` in CI; SBOM still open (see SUS-02) |
+| 15. WER histogram breakdown | P2 | ⏳ open (see V1-41 / V1-42) |
+| 16. Self-hosted nightly soak | P2 | ⏳ open (see V1-09) |
+| 17. Per-IP rate limiting | P2 | ✅ v0.8.0 (`tower_governor` per-IP) — but math bug filed as V1-06 |
 | 18. `ort_err()` wrapper audit | P2 | ⏳ open |
 | 19. Hot-reload model | P2 | ⏳ open |
-| 20. TLS/auth deployment docs | P2 | ⏳ open |
+| 20. TLS/auth deployment docs | P2 | ✅ v0.8.0 (`docs/deployment.md` Caddy/nginx recipes) — but see V1-11 |
 | CUDA in release matrix | P0 addendum | ⏳ open (removed from matrix v0.5.2+) |
 
 Also shipped alongside (2026-04-14 advisory): `rustls-webpki` 0.103.10→0.103.12 closing RUSTSEC-2026-0098/99 in v0.5.3.
+
+## Next-up: v1.0 plan
+
+All new findings from the 2026-04-18 review are catalogued in
+[`specs/prod-readiness-v1.0.md`](prod-readiness-v1.0.md). Highlights:
+
+- **P0 blockers (10):** WS graceful drain (V1-03), max session cap
+  (V1-04), REST `body.to_vec()` double-buffer (V1-05), rate-limiter
+  `/60` bug (V1-06), pool `Mutex<Receiver>` + `.expect` (V1-07),
+  `Engine::create_state` API break (V1-08), model download TOCTOU
+  (V1-01), speaker-model SHA256 (V1-02), nightly soak CI (V1-09),
+  `prost 0.6` supply chain (V1-10).
+- **P1 (20):** X-Forwarded-For spoofing (V1-11), `/metrics` separate
+  listener (V1-12), WS protocol negotiation (V1-13), deprecation
+  headers (V1-14), background-thread leaks (V1-15), `thread::scope`
+  panic-abort (V1-16), global `PrometheusBuilder` (V1-17), decode
+  hot-path allocations (V1-18), per-chunk resampler (V1-19), quantize
+  `axis=0` bug (V1-20), pool `Drop`-guard (V1-21), weak assertions
+  (V1-22), legacy integration tests (V1-23), split REST/WS pools
+  (V1-24), odd-PCM frame (V1-25), Engine god-object (V1-26), real
+  readiness probe (V1-27), configurable checkout timeout (V1-28),
+  idle-timeout test (V1-29), missing metrics (V1-30).
+- **P2 (20):** endpointing semantics, AsyncAPI sync, Prom-label
+  cardinality, WS ping timer, baseline gate, multi-model manifest,
+  VAD endpointing, etc. — see v1.0 plan.
+- **Sustainability (14):** SECURITY.md, SBOM, signed releases,
+  Dependabot, SLSA attestations, fuzz, sanitizers, coverage,
+  dashboards, runbook, privacy doc, semver-checks.
 
 ---
 
