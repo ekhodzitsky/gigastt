@@ -309,10 +309,30 @@ pub async fn run_with_config(
         .with_state(state.clone());
 
     let protected = if config.limits.rate_limit_per_minute > 0 {
-        let per_second = (config.limits.rate_limit_per_minute / 60).max(1);
+        // Convert rpm to a millisecond-precision interval. Integer-divides on
+        // `rpm/60` truncated every value below 60 to a 1-rps refill (i.e.
+        // 60 rpm), so a defender setting `--rate-limit-per-minute 10` actually
+        // got 60 rpm (V1-06). Using `60_000 / rpm` keeps the math accurate
+        // for every rate `≥ 1`. `tower_governor` 0.7 maps `per_millisecond`
+        // onto the same `Nanoseconds` representation as `per_second`, so the
+        // change is purely numeric.
+        let rpm = config.limits.rate_limit_per_minute as u64;
+        // Clamp at 60_000 rpm: above that, `60_000 / rpm` would round down to
+        // 0 ms and `per_millisecond(0)` would saturate the bucket. Warn
+        // operators who try to configure a faster rate than the math allows.
+        const MAX_RPM: u64 = 60_000;
+        if rpm > MAX_RPM {
+            tracing::warn!(
+                rpm,
+                max_rpm = MAX_RPM,
+                "rate_limit_per_minute exceeds {MAX_RPM}; clamped to {MAX_RPM} (1 ms minimum interval)"
+            );
+        }
+        let effective_rpm = rpm.min(MAX_RPM);
+        let interval_ms = (60_000u64 / effective_rpm).max(1);
         let governor_conf = std::sync::Arc::new(
             GovernorConfigBuilder::default()
-                .per_second(per_second as u64)
+                .per_millisecond(interval_ms)
                 .burst_size(config.limits.rate_limit_burst)
                 .key_extractor(SmartIpKeyExtractor)
                 .finish()
@@ -330,6 +350,7 @@ pub async fn run_with_config(
 
         tracing::info!(
             rpm = config.limits.rate_limit_per_minute,
+            interval_ms,
             burst = config.limits.rate_limit_burst,
             "per-IP rate limiting enabled"
         );
@@ -1365,6 +1386,35 @@ mod tests {
             403,
             "localhost.* DNS continuation must not impersonate loopback"
         );
+    }
+
+    #[test]
+    fn test_rate_limit_interval_formula() {
+        // Mirrors the formula used in `run_with_config` so a regression on the
+        // V1-06 fix (integer-divide `/60` truncates sub-60 rpm to 1 rps) trips
+        // a unit test before reaching the e2e path.
+        const MAX_RPM: u64 = 60_000;
+        fn interval_ms_for(rpm: u32) -> u64 {
+            let rpm = (rpm as u64).min(MAX_RPM);
+            (60_000u64 / rpm).max(1)
+        }
+        let cases: &[(u32, u64)] = &[
+            (1, 60_000),
+            (10, 6_000),
+            (30, 2_000),
+            (59, 1_016), // 60_000 / 59 = 1016 (rounds down) → ~59.05 rpm
+            (60, 1_000),
+            (600, 100),
+            (60_000, 1),
+            (120_000, 1), // clamped to MAX_RPM, stays at 1 ms
+        ];
+        for (rpm, expected) in cases {
+            assert_eq!(
+                interval_ms_for(*rpm),
+                *expected,
+                "rpm={rpm} should map to interval_ms={expected}"
+            );
+        }
     }
 
     #[test]
