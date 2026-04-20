@@ -65,6 +65,33 @@ pub async fn start_server(model_dir: &str) -> (u16, oneshot::Sender<()>) {
     (port, shutdown_tx)
 }
 
+/// Start the server with a custom `RuntimeLimits`. Used by V1-03 / V1-04
+/// e2e tests that need a short drain window or session cap.
+pub async fn start_server_with_limits(
+    model_dir: &str,
+    limits: gigastt::server::RuntimeLimits,
+) -> (u16, oneshot::Sender<()>) {
+    let port = free_port().await;
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+
+    let engine = gigastt::inference::Engine::load(model_dir).unwrap();
+    let config = gigastt::server::ServerConfig {
+        port,
+        host: "127.0.0.1".into(),
+        origin_policy: gigastt::server::OriginPolicy::loopback_only(),
+        limits,
+        metrics_enabled: false,
+    };
+    tokio::spawn(gigastt::server::run_with_config(
+        engine,
+        config,
+        Some(shutdown_rx),
+    ));
+
+    wait_for_ready(port, Duration::from_secs(30)).await;
+    (port, shutdown_tx)
+}
+
 /// Poll GET /health with exponential backoff until 200 OK or timeout.
 pub async fn wait_for_ready(port: u16, timeout: Duration) {
     let url = format!("http://127.0.0.1:{port}/health");
@@ -121,6 +148,21 @@ pub fn generate_wav(duration_s: u32, sample_rate: u32) -> Vec<u8> {
 pub fn generate_pcm16_silence(duration_s: f32, sample_rate: u32) -> Vec<u8> {
     let num_samples = (sample_rate as f32 * duration_s) as usize;
     vec![0u8; num_samples * 2]
+}
+
+/// Generate raw PCM16 mono tone bytes. Non-silence payload so the server's
+/// encoder actually runs — used by the V1-03 / V1-04 e2e tests that need to
+/// prove the session deadline fires even when audio is streaming.
+pub fn generate_pcm16_tone(duration_s: f32, sample_rate: u32, freq_hz: f32) -> Vec<u8> {
+    let num_samples = (sample_rate as f32 * duration_s) as usize;
+    let mut bytes = Vec::with_capacity(num_samples * 2);
+    for i in 0..num_samples {
+        let t = i as f32 / sample_rate as f32;
+        let sample =
+            (freq_hz * t * 2.0 * std::f32::consts::PI).sin() * (i16::MAX as f32 * 0.2);
+        bytes.extend_from_slice(&(sample as i16).to_le_bytes());
+    }
+    bytes
 }
 
 /// Connect to WebSocket, receive Ready message, return (sink, stream, ready_value).

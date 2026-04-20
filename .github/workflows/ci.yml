@@ -125,7 +125,7 @@ jobs:
         run: cargo run -- download
 
       - name: Run e2e tests
-        run: cargo test --test e2e_rest --test e2e_ws --test e2e_errors -- --ignored --test-threads=1
+        run: cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored --test-threads=1
         timeout-minutes: 30
 
   audit:

@@ -1,19 +1,20 @@
-//! Graceful shutdown tests for the gigastt server.
+//! Graceful shutdown tests for the gigastt server (V1-03).
 //!
 //! Verifies that in-flight WebSocket sessions and SSE streams terminate cleanly
 //! when the server receives a shutdown signal, rather than hanging forever.
 //!
 //! All tests require the GigaAM ONNX model to be downloaded (~850MB).
-//! Run with: `cargo test --test e2e_shutdown -- --ignored`
+//! Run with: `cargo test --test e2e_shutdown -- --ignored --test-threads=1`
 
 mod common;
 
 use futures_util::{SinkExt, StreamExt};
 use std::time::Duration;
 use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::tungstenite::protocol::CloseFrame;
 
 // ---------------------------------------------------------------------------
-// 1. Shutdown during an active WebSocket session
+// 1. Shutdown during an active WebSocket session — liveness check
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
@@ -32,21 +33,19 @@ async fn test_shutdown_during_ws_session() {
     // Trigger server shutdown while the session is still open
     let _ = shutdown.send(());
 
-    // The stream must terminate within 5 seconds — no hanging forever
+    // The stream must terminate within 15 seconds — no hanging forever
     let result = tokio::time::timeout(Duration::from_secs(15), stream.next()).await;
 
     match result {
-        // Timed out — connection hung, which is the failure we are guarding against
         Err(_elapsed) => {
             panic!("WebSocket stream did not terminate within 15s after server shutdown")
         }
-        // Stream ended cleanly (None) or returned a Close frame or an error — all acceptable
         Ok(_) => {}
     }
 }
 
 // ---------------------------------------------------------------------------
-// 2. Shutdown during an active SSE transcription stream
+// 2. Shutdown during an active SSE transcription stream — liveness check
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
@@ -55,8 +54,11 @@ async fn test_shutdown_during_sse_stream() {
     let model_dir = common::model_dir();
     let (port, shutdown) = common::start_server(&model_dir).await;
 
-    // POST a 10-second WAV to start a long-running SSE stream
-    let wav = common::generate_wav(10, 16000);
+    // POST a long WAV so the SSE task is still running when we signal
+    // shutdown. 440 Hz sine at 16 kHz does not produce transcript tokens —
+    // so the stream may deliver no events at all. The assertion here is
+    // purely about *clean termination*, not event delivery.
+    let wav = common::generate_wav(60, 16000);
 
     let resp = tokio::time::timeout(Duration::from_secs(30), async {
         reqwest::Client::new()
@@ -77,35 +79,147 @@ async fn test_shutdown_during_sse_stream() {
 
     let mut bytes_stream = resp.bytes_stream();
 
-    // Read the first SSE event to confirm the stream is live
-    let first_event = tokio::time::timeout(Duration::from_secs(10), bytes_stream.next())
-        .await
-        .expect("Timed out waiting for first SSE event before shutdown")
-        .expect("SSE stream ended before first event arrived");
-
-    match first_event {
-        Ok(bytes) => {
-            let raw = String::from_utf8_lossy(&bytes);
-            assert!(
-                !raw.is_empty(),
-                "First SSE chunk should contain data, got empty bytes"
-            );
-        }
-        Err(e) => panic!("Error reading first SSE event: {e}"),
-    }
+    // Give the spawn_blocking task a beat to enter its inference loop so
+    // the shutdown signal has something to cancel.
+    tokio::time::sleep(Duration::from_millis(200)).await;
 
     // Trigger server shutdown while the SSE stream is still open
     let _ = shutdown.send(());
 
-    // The bytes stream must terminate within 5 seconds — no hanging forever
-    let result = tokio::time::timeout(Duration::from_secs(5), bytes_stream.next()).await;
-
-    match result {
-        // Timed out — stream hung after shutdown signal, which is the failure we guard against
-        Err(_elapsed) => {
-            panic!("SSE bytes_stream did not terminate within 15s after server shutdown")
+    // The bytes stream must terminate within the default drain window (10 s)
+    // plus a safety margin — no hanging forever.
+    let start = tokio::time::Instant::now();
+    loop {
+        if start.elapsed() > Duration::from_secs(15) {
+            panic!("SSE bytes_stream did not terminate within 15 s after server shutdown");
         }
-        // Stream ended (None) or returned an error — both are acceptable termination signals
-        Ok(_) => {}
+        match tokio::time::timeout(Duration::from_secs(1), bytes_stream.next()).await {
+            Ok(None) => break,
+            Ok(Some(Err(_))) => break,
+            Ok(Some(Ok(_))) => continue,
+            Err(_) => continue,
+        }
     }
 }
+
+// ---------------------------------------------------------------------------
+// 3. V1-03: shutdown emits a Final frame + Close(1001) before socket EOF
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore] // Requires model download
+async fn test_shutdown_ws_emits_final_and_close() {
+    let model_dir = common::model_dir();
+    // Use custom limits so the drain window is generous even on slow CI.
+    let limits = gigastt::server::RuntimeLimits {
+        shutdown_drain_secs: 10,
+        ..Default::default()
+    };
+    let (port, shutdown) = common::start_server_with_limits(&model_dir, limits).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // Stream 0.5s of 440 Hz tone at 48 kHz so the encoder has something to process.
+    let tone = common::generate_pcm16_tone(0.5, 48000, 440.0);
+    sink.send(Message::Binary(tone.into())).await.unwrap();
+
+    // Give the server a moment to start processing.
+    tokio::time::sleep(Duration::from_millis(200)).await;
+
+    let _ = shutdown.send(());
+
+    // Drain the socket; assert we see a Final and a Close(1001).
+    let mut saw_final = false;
+    let mut saw_close_1001 = false;
+
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    while tokio::time::Instant::now() < deadline {
+        let next = tokio::time::timeout(Duration::from_secs(5), stream.next()).await;
+        match next {
+            Ok(Some(Ok(Message::Text(text)))) => {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text)
+                    && v["type"] == "final"
+                {
+                    saw_final = true;
+                }
+            }
+            Ok(Some(Ok(Message::Close(Some(CloseFrame { code, .. }))))) => {
+                if u16::from(code) == 1001 {
+                    saw_close_1001 = true;
+                }
+                break;
+            }
+            Ok(Some(Ok(Message::Close(None)))) => break,
+            Ok(None) => break,
+            Ok(Some(Err(_))) => break,
+            Err(_) => break,
+            _ => continue,
+        }
+    }
+
+    assert!(
+        saw_final,
+        "Shutdown must emit a Final frame before closing the socket"
+    );
+    assert!(
+        saw_close_1001,
+        "Shutdown must close with status 1001 (Going Away)"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// 4. V1-03: SSE stream terminates cleanly within the drain window
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore] // Requires model download
+async fn test_shutdown_sse_stream_terminates_cleanly() {
+    let model_dir = common::model_dir();
+    let limits = gigastt::server::RuntimeLimits {
+        shutdown_drain_secs: 10,
+        ..Default::default()
+    };
+    let (port, shutdown) = common::start_server_with_limits(&model_dir, limits).await;
+
+    // 60 s WAV — long enough that the SSE task is still processing chunks
+    // when we signal shutdown. 440 Hz sine doesn't produce transcript
+    // tokens, so we don't rely on any SSE event ever arriving; we only
+    // assert that the HTTP stream terminates within the drain window.
+    let wav = common::generate_wav(60, 16000);
+
+    let resp = reqwest::Client::new()
+        .post(format!("http://127.0.0.1:{port}/v1/transcribe/stream"))
+        .body(wav)
+        .send()
+        .await
+        .expect("POST /v1/transcribe/stream failed");
+    assert_eq!(resp.status(), 200);
+
+    let mut bytes_stream = resp.bytes_stream();
+
+    // Let the spawn_blocking task enter the inference loop.
+    tokio::time::sleep(Duration::from_millis(200)).await;
+    let shutdown_instant = tokio::time::Instant::now();
+    let _ = shutdown.send(());
+
+    // Must terminate well inside the drain window (10 s). Allow a small
+    // slack (15 s total) to cover cold-start jitter on CI runners.
+    let start = tokio::time::Instant::now();
+    let mut saw_end = false;
+    while start.elapsed() < Duration::from_secs(15) {
+        match tokio::time::timeout(Duration::from_secs(1), bytes_stream.next()).await {
+            Ok(None) | Ok(Some(Err(_))) => {
+                saw_end = true;
+                break;
+            }
+            Ok(Some(Ok(_))) | Err(_) => continue,
+        }
+    }
+
+    assert!(
+        saw_end,
+        "SSE bytes_stream must terminate after shutdown (observed elapsed: {:?})",
+        shutdown_instant.elapsed()
+    );
+}
+

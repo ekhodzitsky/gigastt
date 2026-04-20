@@ -253,21 +253,6 @@ pub async fn run_with_config(
         None
     };
 
-    // V1-04 sanity check: an `idle_timeout` larger than `max_session_secs`
-    // is usually a misconfiguration — the cap fires before the idle timeout
-    // can ever apply, which is surprising. Warn without rejecting so
-    // operators who intentionally want both can keep the behaviour.
-    if config.limits.max_session_secs != 0
-        && config.limits.max_session_secs < config.limits.idle_timeout_secs
-    {
-        tracing::warn!(
-            max_session_secs = config.limits.max_session_secs,
-            idle_timeout_secs = config.limits.idle_timeout_secs,
-            "max_session_secs < idle_timeout_secs — sessions will be capped before \
-             the idle timer can fire; this is probably not what you want"
-        );
-    }
-
     // Shutdown lane (V1-03): `shutdown_root` is cancelled when the caller's
     // oneshot fires (or Ctrl-C is received). Every WS / SSE handler gets a
     // clone so a SIGTERM propagates without racing `axum::serve`'s own
@@ -512,10 +497,39 @@ async fn ws_handler(
 ) -> Response {
     // Origin allowlist is enforced by `origin_middleware` before the request
     // reaches this handler; anything that arrives here has already been cleared.
+    //
+    // V1-03: if shutdown has already been requested, refuse the upgrade
+    // instead of handing the client a socket we're about to drain. Returning
+    // a plain 503 with the `shutting_down` error code keeps the surface
+    // consistent with the pool-saturation 503.
+    if state.shutdown.is_cancelled() {
+        use axum::http::StatusCode;
+        use axum::response::IntoResponse;
+        tracing::warn!(peer = %peer, "Rejecting WS upgrade after shutdown");
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            axum::response::Json(serde_json::json!({
+                "error": "Server shutting down",
+                "code": "shutting_down",
+            })),
+        )
+            .into_response();
+    }
     let max_bytes = state.limits.ws_frame_max_bytes;
+    let state_cloned = state.clone();
     ws.max_message_size(max_bytes)
         .max_frame_size(max_bytes)
-        .on_upgrade(move |socket| handle_ws(socket, peer, state))
+        .on_upgrade(move |socket| async move {
+            // Track every upgraded handler on the shared TaskTracker so
+            // `run_with_config` can wait for in-flight sessions to drain
+            // before the process exits. `track_future` returns a wrapper
+            // that decrements the tracker when dropped.
+            state_cloned
+                .tracker
+                .clone()
+                .track_future(handle_ws(socket, peer, state_cloned.clone()))
+                .await
+        })
 }
 
 /// Deprecated WebSocket endpoint at `/ws`. Identical behaviour to `/v1/ws`
@@ -530,35 +544,76 @@ async fn ws_handler_legacy(
         peer = %peer,
         "WebSocket client connected to deprecated /ws path — switch to /v1/ws before v1.0"
     );
+    if state.shutdown.is_cancelled() {
+        use axum::http::StatusCode;
+        use axum::response::IntoResponse;
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            axum::response::Json(serde_json::json!({
+                "error": "Server shutting down",
+                "code": "shutting_down",
+            })),
+        )
+            .into_response();
+    }
     let max_bytes = state.limits.ws_frame_max_bytes;
+    let state_cloned = state.clone();
     ws.max_message_size(max_bytes)
         .max_frame_size(max_bytes)
-        .on_upgrade(move |socket| handle_ws(socket, peer, state))
+        .on_upgrade(move |socket| async move {
+            state_cloned
+                .tracker
+                .clone()
+                .track_future(handle_ws(socket, peer, state_cloned.clone()))
+                .await
+        })
 }
 
 async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppState>) {
-    let triplet = match tokio::time::timeout(
-        std::time::Duration::from_secs(30),
-        state.engine.pool.checkout(),
-    )
-    .await
-    {
-        Ok(triplet) => triplet,
-        Err(_) => {
-            tracing::warn!("WebSocket pool checkout timeout for {peer}");
+    // `select!` the pool checkout against the shutdown token so SIGTERM
+    // during pool saturation returns immediately instead of waiting the full
+    // 30 s checkout window. `biased;` keeps cancel priority over progress.
+    let triplet = tokio::select! {
+        biased;
+        _ = state.shutdown.cancelled() => {
+            tracing::info!(peer = %peer, "Shutdown requested before pool checkout");
             let (mut sink, _) = socket.split();
-            let err = ServerMessage::Error {
-                message: "Server busy, try again later".into(),
-                code: "timeout".into(),
-                retry_after_ms: Some(POOL_RETRY_AFTER_MS),
-            };
-            let _ = sink.send(WsMessage::Text(json_text(&err).into())).await;
+            let _ = sink
+                .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
+                    code: 1001,
+                    reason: "server shutdown".into(),
+                })))
+                .await;
             return;
+        }
+        res = tokio::time::timeout(
+            std::time::Duration::from_secs(30),
+            state.engine.pool.checkout(),
+        ) => match res {
+            Ok(triplet) => triplet,
+            Err(_) => {
+                tracing::warn!("WebSocket pool checkout timeout for {peer}");
+                let (mut sink, _) = socket.split();
+                let err = ServerMessage::Error {
+                    message: "Server busy, try again later".into(),
+                    code: "timeout".into(),
+                    retry_after_ms: Some(POOL_RETRY_AFTER_MS),
+                };
+                let _ = sink.send(WsMessage::Text(json_text(&err).into())).await;
+                return;
+            }
         }
     };
 
-    let (triplet_opt, result) =
-        handle_ws_inner(socket, peer, &state.engine, &state.limits, triplet).await;
+    let (triplet_opt, result) = handle_ws_inner(
+        socket,
+        peer,
+        &state.engine,
+        &state.limits,
+        triplet,
+        state.shutdown.clone(),
+    )
+    .await;
     if let Err(e) = result {
         tracing::error!("WebSocket error from {peer}: {e}");
     }
@@ -803,6 +858,31 @@ async fn handle_stop_message(
     Ok(FrameOutcome::Break)
 }
 
+/// Flush any pending streaming state and emit a `Final` frame (even an empty
+/// one) so e2e tests and clients can reliably assert that every session ends
+/// with a Final before the Close. Used by the cancel and session-cap branches
+/// of `handle_ws_inner`.
+async fn flush_and_final(
+    sink: &mut WsSink,
+    engine: &Arc<Engine>,
+    state_opt: &mut Option<crate::inference::StreamingState>,
+) -> Result<()> {
+    let flush_seg = state_opt.as_mut().and_then(|state| engine.flush_state(state));
+    let final_msg = match flush_seg {
+        Some(seg) => ServerMessage::Final {
+            text: seg.text,
+            timestamp: seg.timestamp,
+            words: seg.words,
+        },
+        None => ServerMessage::Final {
+            text: String::new(),
+            timestamp: crate::inference::now_timestamp(),
+            words: vec![],
+        },
+    };
+    send_server_message(sink, &final_msg).await
+}
+
 /// Runs the WebSocket session loop. Always tries to return the triplet so the
 /// caller can check it back into the pool. Returns `None` only if the triplet
 /// was lost due to a thread panic inside `spawn_blocking`.
@@ -812,6 +892,7 @@ async fn handle_ws_inner(
     engine: &Arc<Engine>,
     limits: &RuntimeLimits,
     triplet: SessionTriplet,
+    cancel: tokio_util::sync::CancellationToken,
 ) -> (Option<SessionTriplet>, Result<()>) {
     let (mut sink, mut source) = socket.split();
     tracing::info!("Client connected: {peer}");
@@ -841,67 +922,111 @@ async fn handle_ws_inner(
     let mut audio_received = false;
 
     let idle_timeout = std::time::Duration::from_secs(limits.idle_timeout_secs);
+
     let result: Result<()> = loop {
-        let msg = match tokio::time::timeout(idle_timeout, source.next()).await {
-            Ok(Some(Ok(msg))) => msg,
-            Ok(Some(Err(e))) => break Err(e.into()),
-            Ok(None) => break Ok(()),
-            Err(_) => {
-                tracing::info!("Client {peer} idle timeout ({}s)", limits.idle_timeout_secs);
+        // Fast-path cancel check: if a client streams frames continuously,
+        // the `source.next()` arm is always ready when we re-enter
+        // `select!`, and with `biased;` the runtime still polls cancel
+        // first — but only if it has a registered waker. A cheap pre-check
+        // here guarantees the cancel branch wins.
+        if cancel.is_cancelled() {
+            tracing::info!(peer = %peer, "Shutdown signalled — flushing WS session");
+            let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
+            let _ = sink
+                .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
+                    code: 1001,
+                    reason: "server shutdown".into(),
+                })))
+                .await;
+            break Ok(());
+        }
+
+        tokio::select! {
+            // `biased;` — cancel > frame. Guarantees that a SIGTERM always
+            // wins a race against a pending frame, so the drain path is
+            // deterministic.
+            biased;
+
+            _ = cancel.cancelled() => {
+                tracing::info!(peer = %peer, "Shutdown signalled — flushing WS session");
+                // Best-effort: the socket may already be dead if the peer
+                // closed first, so every send is swallowed.
+                let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
+                let _ = sink
+                    .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
+                        code: 1001,
+                        reason: "server shutdown".into(),
+                    })))
+                    .await;
                 break Ok(());
             }
-        };
 
-        let outcome = match msg {
-            WsMessage::Binary(data) => {
-                handle_binary_frame(
-                    &mut sink,
-                    engine,
-                    &mut state_opt,
-                    &mut triplet_opt,
-                    &mut audio_received,
-                    client_sample_rate,
-                    peer,
-                    data,
-                )
-                .await
+            maybe_msg = tokio::time::timeout(idle_timeout, source.next()) => {
+                let msg = match maybe_msg {
+                    Ok(Some(Ok(msg))) => msg,
+                    Ok(Some(Err(e))) => break Err(e.into()),
+                    Ok(None) => break Ok(()),
+                    Err(_) => {
+                        tracing::info!(
+                            "Client {peer} idle timeout ({}s)",
+                            limits.idle_timeout_secs
+                        );
+                        break Ok(());
+                    }
+                };
+
+                let outcome = match msg {
+                    WsMessage::Binary(data) => {
+                        handle_binary_frame(
+                            &mut sink,
+                            engine,
+                            &mut state_opt,
+                            &mut triplet_opt,
+                            &mut audio_received,
+                            client_sample_rate,
+                            peer,
+                            data,
+                        )
+                        .await
+                    }
+                    WsMessage::Text(text) => match serde_json::from_str::<ClientMessage>(&text) {
+                        Ok(ClientMessage::Configure {
+                            sample_rate,
+                            diarization,
+                        }) => {
+                            handle_configure_message(
+                                &mut sink,
+                                engine,
+                                &mut state_opt,
+                                &mut client_sample_rate,
+                                audio_received,
+                                sample_rate,
+                                diarization,
+                                peer,
+                            )
+                            .await
+                        }
+                        Ok(ClientMessage::Stop) => {
+                            handle_stop_message(&mut sink, engine, &mut state_opt, peer).await
+                        }
+                        Err(_) => {
+                            tracing::debug!(
+                                "Unrecognized text message from {peer}: {}",
+                                &text[..text.len().min(100)]
+                            );
+                            Ok(FrameOutcome::Continue)
+                        }
+                    },
+                    WsMessage::Close(_) => Ok(FrameOutcome::Break),
+                    _ => Ok(FrameOutcome::Continue), // ignore ping/pong
+                };
+
+                match outcome {
+                    Ok(FrameOutcome::Continue) => continue,
+                    Ok(FrameOutcome::Break) => break Ok(()),
+                    Err(e) => break Err(e),
+                }
             }
-            WsMessage::Text(text) => match serde_json::from_str::<ClientMessage>(&text) {
-                Ok(ClientMessage::Configure {
-                    sample_rate,
-                    diarization,
-                }) => {
-                    handle_configure_message(
-                        &mut sink,
-                        engine,
-                        &mut state_opt,
-                        &mut client_sample_rate,
-                        audio_received,
-                        sample_rate,
-                        diarization,
-                        peer,
-                    )
-                    .await
-                }
-                Ok(ClientMessage::Stop) => {
-                    handle_stop_message(&mut sink, engine, &mut state_opt, peer).await
-                }
-                Err(_) => {
-                    tracing::debug!(
-                        "Unrecognized text message from {peer}: {}",
-                        &text[..text.len().min(100)]
-                    );
-                    Ok(FrameOutcome::Continue)
-                }
-            },
-            WsMessage::Close(_) => Ok(FrameOutcome::Break),
-            _ => Ok(FrameOutcome::Continue), // ignore ping/pong
-        };
-
-        match outcome {
-            Ok(FrameOutcome::Continue) => continue,
-            Ok(FrameOutcome::Break) => break Ok(()),
-            Err(e) => break Err(e),
         }
     };
 

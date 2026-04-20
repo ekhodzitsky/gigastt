@@ -293,7 +293,13 @@ pub async fn transcribe_stream(
         tokio::sync::mpsc::channel::<Result<crate::inference::TranscriptSegment, String>>(16);
 
     let engine = state.engine.clone();
-    tokio::task::spawn_blocking(move || {
+    // V1-03: the axum handler future has already returned by the time the
+    // SSE stream starts flowing, so `with_graceful_shutdown` can't observe
+    // this task. Clone the shutdown token and check it before every chunk
+    // so SIGTERM during a long transcription drops cleanly.
+    let cancel = state.shutdown.clone();
+    let tracker = state.tracker.clone();
+    tracker.spawn_blocking(move || {
         let mut triplet = triplet;
 
         // catch_unwind ensures triplet is returned to pool even on panic
@@ -305,6 +311,10 @@ pub async fn transcribe_stream(
             let chunk_size = 16000; // 1 second at 16kHz
 
             for chunk in samples.chunks(chunk_size) {
+                if cancel.is_cancelled() {
+                    tracing::info!("SSE transcription cancelled by shutdown");
+                    return;
+                }
                 match engine.process_chunk(chunk, &mut stream_state, &mut triplet) {
                     Ok(segs) => {
                         for seg in segs {
@@ -321,8 +331,10 @@ pub async fn transcribe_stream(
                 }
             }
 
-            // Flush final segment
-            if let Some(seg) = engine.flush_state(&mut stream_state) {
+            // Flush final segment — best-effort; skipped on cancel.
+            if !cancel.is_cancelled()
+                && let Some(seg) = engine.flush_state(&mut stream_state)
+            {
                 let _ = tx.blocking_send(Ok(seg));
             }
         }));
