@@ -14,9 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI flags.**
   - `--max-session-secs` / `GIGASTT_MAX_SESSION_SECS` (default `3600`).
   - `--shutdown-drain-secs` / `GIGASTT_SHUTDOWN_DRAIN_SECS` (default `10`, clamped to `>= 1`).
-- **`tests/e2e_shutdown.rs` re-enabled in CI** with three additional assertions: `test_shutdown_ws_emits_final_and_close`, `test_shutdown_sse_stream_terminates_cleanly`, and `test_max_session_duration_cap`. The main-push e2e job now runs the full `--test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown` matrix.
+- **`tests/e2e_shutdown.rs` re-enabled in CI** with four additional assertions: `test_shutdown_ws_emits_final_and_close`, `test_shutdown_sse_stream_terminates_cleanly`, `test_max_session_duration_cap`, and `test_shutdown_during_pool_saturation_returns_503_not_500`. The main-push e2e job now runs the full `--test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown` matrix.
 - **`docs/runbook.md`** — rollback + on-call guidance for the new knobs.
 - **`docs/deployment.md`** — `terminationGracePeriodSeconds` recommendation for k8s / docker-compose.
+
+### Fixed
+
+- **Per-IP rate-limiter math (V1-06, `src/server/mod.rs`).** `(rate_limit_per_minute / 60).max(1)` truncated every value below 60 rpm to a 1 rps refill (= 60 rpm), so a defender setting `--rate-limit-per-minute 10` actually allowed 60 rpm — 6× weaker than declared. Switched to `tower_governor`'s `per_millisecond(60_000 / rpm)`, which preserves sub-second precision down to 1 rpm and clamps the upper bound at 60 000 rpm with a `warn!`. The startup log now includes the resolved `interval_ms` alongside `rpm` for diagnostics.
+- **Session pool panic + unfairness (V1-07, V1-21, `src/inference/mod.rs`).** Replaced the `tokio::sync::mpsc::Receiver` behind a `tokio::sync::Mutex` with a lock-free `async_channel`. The new `Pool<T>` (alias `SessionPool = Pool<SessionTriplet>`) is FIFO under contention, exposes `close()` so graceful shutdown wakes every waiter with `PoolError::Closed` instead of panicking via `.expect("Pool sender dropped")`, and returns a `PoolGuard` whose `Drop` impl auto-checks-in the triplet on panic unwind. Server shutdown now wires `engine.pool.close()` into the shutdown future, and the REST handlers translate `PoolError::Closed` into a distinct 503 `pool_closed` response (separate from the 503 `timeout` for the 30 s checkout deadline).
 
 ### Changed
 
@@ -24,10 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `http::AppState` carries `shutdown: CancellationToken` and `tracker: TaskTracker`.
 - `handle_ws_inner` switches from a bare `timeout(idle, source.next())` to a `biased;` `select!` with explicit cancel + deadline branches.
 - `/v1/transcribe/stream` SSE task now runs on `TaskTracker::spawn_blocking` and polls the shutdown token between chunks so SIGTERM aborts long transcriptions instead of waiting them out.
+- `SessionPool::{checkout, checkin, blocking_checkin}` replaced by `SessionPool::checkout() -> Result<PoolGuard, PoolError>`. The guard `Deref`s to `SessionTriplet` and auto-checks-in on drop. For `'static` consumers (`spawn_blocking`), call `guard.into_owned()` to get a `(SessionTriplet, OwnedReservation)` pair and return the triplet via `OwnedReservation::checkin(triplet)`.
 
 ### Dependencies
 
 - Promoted `tokio-util = { version = "0.7", features = ["rt"] }` from transitive to direct. Dev-deps gained `tracing-subscriber` so integration tests can surface server logs on failure.
+- `async-channel = "2"` (transitive pieces — `concurrent-queue`, `event-listener` — were already in the graph).
 
 ## [0.8.1] - 2026-04-17
 
