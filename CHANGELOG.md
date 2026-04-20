@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Graceful WebSocket / SSE drain on shutdown** (V1-03; closes `specs/prod-readiness-v1.0.md` P0). `axum::serve.with_graceful_shutdown` only tracks the HTTP router — WebSocket upgrades and SSE `spawn_blocking` tasks used to outlive the signal, so clients lost their `Final` frame on deploy. New `CancellationToken` + `TaskTracker` cascade through every handler; on SIGTERM each live session flushes, emits an empty-if-needed `Final`, and closes with `Close(1001 Going Away)`. After `axum::serve` returns, `run_with_config` waits up to `shutdown_drain_secs` for the tracker to drain.
+- **Wall-clock max-session cap** (V1-04; closes `specs/prod-readiness-v1.0.md` P0). `idle_timeout` is reset on every frame, so a client that streams silence every 100 ms held a `SessionTriplet` forever. New `max_session_secs` limit closes the session with `Close(1008 Policy Violation)` + `Error { code: "max_session_duration_exceeded" }`. `0` disables the cap (not recommended).
+- **CLI flags.**
+  - `--max-session-secs` / `GIGASTT_MAX_SESSION_SECS` (default `3600`).
+  - `--shutdown-drain-secs` / `GIGASTT_SHUTDOWN_DRAIN_SECS` (default `10`, clamped to `>= 1`).
+- **`tests/e2e_shutdown.rs` re-enabled in CI** with three additional assertions: `test_shutdown_ws_emits_final_and_close`, `test_shutdown_sse_stream_terminates_cleanly`, and `test_max_session_duration_cap`. The main-push e2e job now runs the full `--test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown` matrix.
+- **`docs/runbook.md`** — rollback + on-call guidance for the new knobs.
+- **`docs/deployment.md`** — `terminationGracePeriodSeconds` recommendation for k8s / docker-compose.
+
+### Changed
+
+- `RuntimeLimits` gained `max_session_secs: u64` and `shutdown_drain_secs: u64`. External callers constructing `RuntimeLimits` literally will need to add the new fields (pre-1.0 minor bump — acceptable).
+- `http::AppState` carries `shutdown: CancellationToken` and `tracker: TaskTracker`.
+- `handle_ws_inner` switches from a bare `timeout(idle, source.next())` to a `biased;` `select!` with explicit cancel + deadline branches.
+- `/v1/transcribe/stream` SSE task now runs on `TaskTracker::spawn_blocking` and polls the shutdown token between chunks so SIGTERM aborts long transcriptions instead of waiting them out.
+
+### Dependencies
+
+- Promoted `tokio-util = { version = "0.7", features = ["rt"] }` from transitive to direct. Dev-deps gained `tracing-subscriber` so integration tests can surface server logs on failure.
+
 ## [0.8.1] - 2026-04-17
 
 ### Fixed

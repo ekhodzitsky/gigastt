@@ -198,6 +198,55 @@ curl http://127.0.0.1:9876/health
 # {"status":"ok"}
 ```
 
+## Graceful shutdown & session caps
+
+gigastt drains live WebSocket / SSE sessions on `SIGTERM` so clients receive a `Final` frame + `Close(1001 Going Away)` instead of a TCP reset. Two flags control the behaviour:
+
+- `--max-session-secs N` / `GIGASTT_MAX_SESSION_SECS` (default `3600`). Wall-clock cap per WebSocket session. When exceeded the server emits `Error { code: "max_session_duration_exceeded" }` + `Close(1008 Policy Violation)`. `0` disables the cap (not recommended — a silence-streaming client will hold an inference slot forever).
+- `--shutdown-drain-secs N` / `GIGASTT_SHUTDOWN_DRAIN_SECS` (default `10`, clamped to `>= 1`). Grace window after `SIGTERM` during which in-flight sessions may finish. Should comfortably fit inside your orchestrator's termination grace period so the process is not `SIGKILL`ed mid-drain.
+
+### Kubernetes
+
+Set `terminationGracePeriodSeconds` to **at least `shutdown_drain_secs + 5`** so the kubelet doesn't `SIGKILL` before the drain completes. Example (defaults):
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      # drain (10 s) + safety margin (5 s) + LB deregistration hook (~15 s)
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: gigastt
+          image: ghcr.io/ekhodzitsky/gigastt:latest
+          env:
+            - name: GIGASTT_SHUTDOWN_DRAIN_SECS
+              value: "10"
+            - name: GIGASTT_MAX_SESSION_SECS
+              value: "3600"
+          lifecycle:
+            preStop:
+              exec:
+                # Give the LB a beat to stop routing new traffic before SIGTERM
+                command: ["/bin/sh", "-c", "sleep 10"]
+```
+
+### docker-compose
+
+```yaml
+services:
+  gigastt:
+    build: .
+    # drain (10 s) + safety margin
+    stop_grace_period: 15s
+    environment:
+      GIGASTT_SHUTDOWN_DRAIN_SECS: "10"
+      GIGASTT_MAX_SESSION_SECS: "3600"
+```
+
+If you observe clients hanging past the cap or not receiving `Final` on deploy, see `docs/runbook.md` for the rollback escape hatches.
+
 ## Hardening checklist
 
 - **Bind address:** Keep `--host 127.0.0.1` unless you're running in a container (then use the port binding strategy above).
