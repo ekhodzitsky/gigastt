@@ -442,8 +442,6 @@ pub async fn run_with_config(
         ),
     }
 
-    // TODO: engine.pool.close() once V1-07 lands (SessionPool shutdown API).
-
     Ok(())
 }
 
