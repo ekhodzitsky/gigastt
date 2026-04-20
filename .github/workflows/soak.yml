@@ -1,0 +1,69 @@
+name: Nightly Soak
+
+# V1-09 nightly soak + load sanity check. Runs on schedule so pool drift,
+# descriptor leaks, and memory growth surface outside the fast-CI envelope.
+# Also triggerable on demand via workflow_dispatch for hotfix verification.
+
+on:
+  schedule:
+    # 03:17 UTC daily — off-peak for GitHub runners. Skewed minute keeps the
+    # job off the same slot as release/CI bursts.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      duration_secs:
+        description: 'Soak duration (seconds). Default 300 (~5 min).'
+        required: false
+        default: '300'
+
+concurrency:
+  group: soak-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  soak:
+    runs-on: ubuntu-latest
+    name: Soak (${{ github.event.inputs.duration_secs || 300 }}s)
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache model
+        id: cache-model
+        uses: actions/cache@v4
+        with:
+          path: ~/.gigastt/models
+          key: gigastt-model-v3-onnx-${{ hashFiles('src/model/mod.rs') }}
+
+      - name: Download model
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: cargo run -- download
+
+      - name: Run soak test
+        env:
+          GIGASTT_SOAK_DURATION_SECS: ${{ github.event.inputs.duration_secs || '300' }}
+          RUST_BACKTRACE: '1'
+        run: cargo test --release --test soak_test -- --ignored --nocapture --test-threads=1
+
+      - name: Run load tests
+        env:
+          RUST_BACKTRACE: '1'
+        run: cargo test --release --test load_test -- --ignored --test-threads=1
+
+      - name: Upload test artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soak-logs-${{ github.run_id }}
+          path: |
+            target/release/deps/soak_test-*.log
+          if-no-files-found: ignore
+          retention-days: 14
