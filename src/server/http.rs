@@ -181,7 +181,8 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
 /// POST /v1/transcribe — upload audio file, get full transcript.
 ///
 /// Accepts raw audio body. Supported formats: WAV, MP3, M4A/AAC, OGG, FLAC.
-/// Max body size enforced by tower-http layer (50MB).
+/// Max body size enforced by the axum `DefaultBodyLimit` layer configured
+/// from [`RuntimeLimits::body_limit_bytes`] (default 50 MiB).
 pub async fn transcribe(
     State(state): State<Arc<AppState>>,
     body: Bytes,
@@ -191,6 +192,20 @@ pub async fn transcribe(
             StatusCode::BAD_REQUEST,
             "Empty request body",
             "empty_body",
+        ));
+    }
+
+    // Defence-in-depth: `DefaultBodyLimit` already rejects oversized bodies
+    // before they reach this handler, but a mis-ordered middleware stack or
+    // a `Content-Length`-spoofing client could still deliver too many bytes.
+    // The explicit 413 keeps the REST contract honest and gives clients a
+    // machine-readable `payload_too_large` code alongside the spec-conformant
+    // status. Cheap: `Bytes::len()` is a load, not a walk.
+    if body.len() > state.limits.body_limit_bytes {
+        return Err(api_error(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "Request body exceeds the configured size limit",
+            "payload_too_large",
         ));
     }
 
@@ -209,16 +224,16 @@ pub async fn transcribe(
     };
     let (triplet, reservation) = guard.into_owned();
 
-    let body_bytes = body.to_vec();
-    drop(body);
-
     let engine = state.engine.clone();
 
     let result = tokio::task::spawn_blocking(move || {
         let mut triplet = triplet;
         // catch_unwind ensures triplet is returned to pool even on panic
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            engine.transcribe_bytes(&body_bytes, &mut triplet)
+            // `body` is an `axum::body::Bytes` (re-export of `bytes::Bytes`):
+            // `clone()` is a refcount bump, not a data copy, so the decode
+            // path shares the original upload buffer.
+            engine.transcribe_bytes_shared(body, &mut triplet)
         }));
         match r {
             Ok(inference_result) => (inference_result, triplet),
@@ -283,25 +298,40 @@ pub async fn transcribe_stream(
         ));
     }
 
-    let body_bytes = body.to_vec();
-    drop(body);
+    // Defence-in-depth early reject; matches `/v1/transcribe` — see that
+    // handler for the rationale.
+    if body.len() > state.limits.body_limit_bytes {
+        return Err(api_error(
+            StatusCode::PAYLOAD_TOO_LARGE,
+            "Request body exceeds the configured size limit",
+            "payload_too_large",
+        ));
+    }
 
-    // Decode audio first (in spawn_blocking since symphonia is blocking)
-    let samples = {
-        let bytes = body_bytes;
-        tokio::task::spawn_blocking(move || {
-            crate::inference::audio::decode_audio_bytes(&bytes)
-        })
-        .await
-        .map_err(|e| {
-            tracing::error!("spawn_blocking join error: {e}");
-            api_error(StatusCode::INTERNAL_SERVER_ERROR, "Internal server error", "internal")
-        })?
-        .map_err(|e| {
-            tracing::error!("Audio decode error: {e:#}");
-            api_error(StatusCode::UNPROCESSABLE_ENTITY, "Failed to decode audio file. Check format (WAV, MP3, M4A, OGG, FLAC supported).", "invalid_audio")
-        })?
-    };
+    // Decode audio first (in spawn_blocking since symphonia is blocking).
+    // `body` is `axum::body::Bytes`, so the move into the blocking closure is
+    // a refcount bump and `decode_audio_bytes_shared` reads the upload
+    // buffer in place.
+    let samples = tokio::task::spawn_blocking(move || {
+        crate::inference::audio::decode_audio_bytes_shared(body)
+    })
+    .await
+    .map_err(|e| {
+        tracing::error!("spawn_blocking join error: {e}");
+        api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Internal server error",
+            "internal",
+        )
+    })?
+    .map_err(|e| {
+        tracing::error!("Audio decode error: {e:#}");
+        api_error(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Failed to decode audio file. Check format (WAV, MP3, M4A, OGG, FLAC supported).",
+            "invalid_audio",
+        )
+    })?;
 
     // Checkout a session triplet from the pool. Strip the lifetime via
     // `into_owned` so the triplet can travel through `spawn_blocking`.
