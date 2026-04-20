@@ -403,13 +403,15 @@ async fn test_rest_large_body_rss_within_budget() {
 
     let (port, shutdown) = common::start_server(&common::model_dir()).await;
 
-    // 40 MiB WAV (2.5 minutes @ 16 kHz / 16-bit mono). Large enough that a
-    // second copy would blow the budget; small enough to stay under the
-    // 50 MiB body limit.
-    let wav = common::generate_wav(150, 16000);
+    // ~9.6 MiB WAV (300 s @ 16 kHz / 16-bit mono). Large enough that the
+    // pre-fix double-buffer (4× peak) would blow the budget below, while
+    // staying comfortably under the 50 MiB body limit and the 10-minute
+    // file cap. Picked at 16 kHz so the decoded-PCM buffer is a predictable
+    // `wav.len() * 2` (PCM16 → f32) with no resampling overhead on top.
+    let wav = common::generate_wav(300, 16000);
     assert!(
-        wav.len() > 30 * 1024 * 1024,
-        "generated WAV should be >30 MiB, got {}",
+        wav.len() > 9 * 1024 * 1024,
+        "generated WAV should be >9 MiB, got {}",
         wav.len()
     );
 
@@ -431,9 +433,13 @@ async fn test_rest_large_body_rss_within_budget() {
 
     let after_kb = read_vm_rss_kb().expect("/proc/self/status unavailable");
     let delta_kb = after_kb.saturating_sub(before_kb);
-    // Budget: upload size + ~20 MiB slack for decoded f32 samples + ONNX
-    // scratch. Double-copy regressions land well outside this bound.
-    let budget_kb = (wav.len() as u64 / 1024) + 20 * 1024;
+    // Budget accounts for:
+    //   - `wav.len()`     — refcounted axum Bytes (1× copy)
+    //   - `wav.len() * 2` — PCM16 → f32 sample buffer
+    //   - 40 MiB slack    — ONNX scratch, tracing buffers, libc overhead
+    // Pre-fix regression kept a second `body.to_vec()` alive → delta would
+    // exceed `wav.len() * 4 + slack`, comfortably past the bound below.
+    let budget_kb = (wav.len() as u64 / 1024) * 3 + 40 * 1024;
     assert!(
         delta_kb < budget_kb,
         "RSS grew by {delta_kb} KiB during upload; expected < {budget_kb} KiB \
