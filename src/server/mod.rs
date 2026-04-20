@@ -253,6 +253,21 @@ pub async fn run_with_config(
         None
     };
 
+    // V1-04 sanity check: an `idle_timeout` larger than `max_session_secs`
+    // is usually a misconfiguration — the cap fires before the idle timeout
+    // can ever apply, which is surprising. Warn without rejecting so
+    // operators who intentionally want both can keep the behaviour.
+    if config.limits.max_session_secs != 0
+        && config.limits.max_session_secs < config.limits.idle_timeout_secs
+    {
+        tracing::warn!(
+            max_session_secs = config.limits.max_session_secs,
+            idle_timeout_secs = config.limits.idle_timeout_secs,
+            "max_session_secs < idle_timeout_secs — sessions will be capped before \
+             the idle timer can fire; this is probably not what you want"
+        );
+    }
+
     // Shutdown lane (V1-03): `shutdown_root` is cancelled when the caller's
     // oneshot fires (or Ctrl-C is received). Every WS / SSE handler gets a
     // clone so a SIGTERM propagates without racing `axum::serve`'s own
@@ -923,12 +938,26 @@ async fn handle_ws_inner(
 
     let idle_timeout = std::time::Duration::from_secs(limits.idle_timeout_secs);
 
+    // V1-04: wall-clock deadline independent of `idle_timeout`. Setting
+    // `max_session_secs = 0` disables the cap by parking the deadline far in
+    // the future (u64::MAX / 2 ≈ 292 billion years) so `sleep_until` never
+    // fires — callers who deliberately want unlimited sessions don't pay for
+    // an additional branch in the select.
+    let session_deadline = if limits.max_session_secs == 0 {
+        tokio::time::Instant::now() + std::time::Duration::from_secs(u64::MAX / 2)
+    } else {
+        tokio::time::Instant::now() + std::time::Duration::from_secs(limits.max_session_secs)
+    };
+
     let result: Result<()> = loop {
-        // Fast-path cancel check: if a client streams frames continuously,
-        // the `source.next()` arm is always ready when we re-enter
-        // `select!`, and with `biased;` the runtime still polls cancel
-        // first — but only if it has a registered waker. A cheap pre-check
-        // here guarantees the cancel branch wins.
+        // Fast-path deadline / cancel check: if a client streams frames
+        // continuously (e.g. 20 ms silence every 100 ms) the `source.next()`
+        // arm is always ready when we re-enter `select!`, and with `biased;`
+        // the runtime still polls cancel / sleep_until first — but only if
+        // they have a registered waker. `sleep_until` registers its waker
+        // correctly, yet a subtle race on fast CI runners can let the frame
+        // arm fire before the timer's waker is installed. A cheap
+        // pre-check here guarantees the deadline / cancel wins.
         if cancel.is_cancelled() {
             tracing::info!(peer = %peer, "Shutdown signalled — flushing WS session");
             let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
@@ -940,11 +969,35 @@ async fn handle_ws_inner(
                 .await;
             break Ok(());
         }
+        if tokio::time::Instant::now() >= session_deadline {
+            tracing::warn!(
+                peer = %peer,
+                max_session_secs = limits.max_session_secs,
+                "Session cap reached — closing WS"
+            );
+            let _ = send_server_message(
+                &mut sink,
+                &ServerMessage::Error {
+                    message: "Maximum session duration exceeded".into(),
+                    code: "max_session_duration_exceeded".into(),
+                    retry_after_ms: None,
+                },
+            )
+            .await;
+            let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
+            let _ = sink
+                .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
+                    code: 1008,
+                    reason: "max session duration".into(),
+                })))
+                .await;
+            break Ok(());
+        }
 
         tokio::select! {
-            // `biased;` — cancel > frame. Guarantees that a SIGTERM always
-            // wins a race against a pending frame, so the drain path is
-            // deterministic.
+            // `biased;` — cancel > deadline > frame. Guarantees that a
+            // SIGTERM always wins a race against a pending frame, so the
+            // drain path is deterministic.
             biased;
 
             _ = cancel.cancelled() => {
@@ -956,6 +1009,31 @@ async fn handle_ws_inner(
                     .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
                         code: 1001,
                         reason: "server shutdown".into(),
+                    })))
+                    .await;
+                break Ok(());
+            }
+
+            _ = tokio::time::sleep_until(session_deadline) => {
+                tracing::warn!(
+                    peer = %peer,
+                    max_session_secs = limits.max_session_secs,
+                    "Session cap reached — closing WS"
+                );
+                let _ = send_server_message(
+                    &mut sink,
+                    &ServerMessage::Error {
+                        message: "Maximum session duration exceeded".into(),
+                        code: "max_session_duration_exceeded".into(),
+                        retry_after_ms: None,
+                    },
+                )
+                .await;
+                let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
+                let _ = sink
+                    .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
+                        code: 1008,
+                        reason: "max session duration".into(),
                     })))
                     .await;
                 break Ok(());

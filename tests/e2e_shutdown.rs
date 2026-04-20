@@ -1,7 +1,8 @@
-//! Graceful shutdown tests for the gigastt server (V1-03).
+//! Graceful shutdown + session-cap tests for the gigastt server (V1-03 / V1-04).
 //!
 //! Verifies that in-flight WebSocket sessions and SSE streams terminate cleanly
-//! when the server receives a shutdown signal, rather than hanging forever.
+//! when the server receives a shutdown signal, rather than hanging forever, and
+//! that long-running WS sessions are capped by wall-clock duration.
 //!
 //! All tests require the GigaAM ONNX model to be downloaded (~850MB).
 //! Run with: `cargo test --test e2e_shutdown -- --ignored --test-threads=1`
@@ -223,3 +224,82 @@ async fn test_shutdown_sse_stream_terminates_cleanly() {
     );
 }
 
+// ---------------------------------------------------------------------------
+// 5. V1-04: session duration cap fires even for a silence-streaming client
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore] // Requires model download
+async fn test_max_session_duration_cap() {
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter("gigastt=debug")
+        .try_init();
+    let model_dir = common::model_dir();
+    let limits = gigastt::server::RuntimeLimits {
+        max_session_secs: 3,
+        ..Default::default()
+    };
+    let (port, _shutdown) = common::start_server_with_limits(&model_dir, limits).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // Silence streamer: 20 ms of silence every 250 ms for up to 15 s total.
+    // Sending at 250 ms is slow enough that the server isn't buried in a
+    // backlog of frames and the cap branch of the `select!` can preempt
+    // between inferences. Each idle_timeout reset happens on every frame —
+    // so *without* V1-04 the connection would live forever.
+    let stream_task = tokio::spawn(async move {
+        let chunk = common::generate_pcm16_silence(0.02, 48000);
+        for _ in 0..60 {
+            if sink.send(Message::Binary(chunk.clone().into())).await.is_err() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(250)).await;
+        }
+    });
+
+    // Within cap (3 s) + generous slack we expect the error frame + Close(1008).
+    // Slack covers test boot (~500 ms model checkout) + up to 1 s tail for the
+    // in-flight spawn_blocking inference that was running when the cap expired.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    let mut saw_error_code = false;
+    let mut saw_close_1008 = false;
+
+    while tokio::time::Instant::now() < deadline {
+        let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
+        let next = tokio::time::timeout(remaining, stream.next()).await;
+        match next {
+            Ok(Some(Ok(Message::Text(text)))) => {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text)
+                    && v["type"] == "error"
+                    && v["code"] == "max_session_duration_exceeded"
+                {
+                    saw_error_code = true;
+                }
+            }
+            Ok(Some(Ok(Message::Close(Some(CloseFrame { code, .. }))))) => {
+                if u16::from(code) == 1008 {
+                    saw_close_1008 = true;
+                }
+                break;
+            }
+            Ok(Some(Ok(Message::Close(None)))) => break,
+            Ok(None) => break,
+            Ok(Some(Err(_))) => break,
+            Err(_) => break,
+            _ => continue,
+        }
+    }
+
+    stream_task.abort();
+    let _ = stream_task.await;
+
+    assert!(
+        saw_error_code,
+        "Session cap must emit Error with code=max_session_duration_exceeded"
+    );
+    assert!(
+        saw_close_1008,
+        "Session cap must close with status 1008 (Policy Violation)"
+    );
+}
