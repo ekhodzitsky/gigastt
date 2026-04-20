@@ -303,3 +303,81 @@ async fn test_max_session_duration_cap() {
         "Session cap must close with status 1008 (Policy Violation)"
     );
 }
+
+// ---------------------------------------------------------------------------
+// 6. V1-07 + V1-21: shutdown while pool is saturated returns 503, not 500
+// ---------------------------------------------------------------------------
+
+/// Pool saturation + shutdown: occupy every triplet with a long-running REST
+/// transcribe, queue a waiter that's blocked in `pool.checkout()`, fire the
+/// shutdown signal, and assert the waiter resolves to a 503 `pool_closed`
+/// response — not the legacy 500 cascade caused by the
+/// `.expect("Pool sender dropped")` panic.
+#[tokio::test]
+#[ignore] // Requires model download
+async fn test_shutdown_during_pool_saturation_returns_503_not_500() {
+    let model_dir = common::model_dir();
+    let (port, shutdown) = common::start_server(&model_dir).await;
+
+    // Build a 60s WAV so the inference holds the pool slot well past the
+    // moment we fire shutdown.
+    let long_wav = common::generate_wav(60, 16000);
+
+    // Saturate: pool has 4 triplets by default (DEFAULT_POOL_SIZE). Send 4
+    // long-running REST jobs that won't return before shutdown. We don't
+    // care about the result — only that they keep the pool busy.
+    let client = reqwest::Client::new();
+    let mut occupiers = Vec::new();
+    for _ in 0..4 {
+        let url = format!("http://127.0.0.1:{port}/v1/transcribe");
+        let body = long_wav.clone();
+        let c = client.clone();
+        occupiers.push(tokio::spawn(async move {
+            let _ = c.post(&url).body(body).send().await;
+        }));
+    }
+
+    // Give the occupiers a moment to acquire their pool slots.
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // Now fire a 5th request that has to wait in `pool.checkout()`.
+    let waiter_url = format!("http://127.0.0.1:{port}/v1/transcribe");
+    let waiter_body = long_wav.clone();
+    let waiter = tokio::spawn(async move {
+        reqwest::Client::new()
+            .post(&waiter_url)
+            .body(waiter_body)
+            .send()
+            .await
+    });
+
+    // Park briefly so the waiter is actually inside the checkout future.
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // Trigger shutdown. The pool's `close()` should wake the waiter with
+    // `PoolError::Closed`, which the REST handler turns into 503 + body
+    // `{"code":"pool_closed"}`.
+    let _ = shutdown.send(());
+
+    // The waiter must resolve within 10 s — anything longer means the pool
+    // close didn't propagate through the checkout future.
+    let resp = tokio::time::timeout(Duration::from_secs(10), waiter)
+        .await
+        .expect("waiter did not resolve within 10s after shutdown")
+        .expect("waiter task panicked");
+
+    let resp = resp.expect("waiter request failed before reaching the server");
+    assert_eq!(
+        resp.status().as_u16(),
+        503,
+        "shutdown during pool saturation must return 503, not 500"
+    );
+    let body_text = resp.text().await.expect("read body");
+    let body: serde_json::Value = serde_json::from_str(&body_text).expect("invalid JSON body");
+    assert_eq!(body["code"], "pool_closed");
+
+    // Drain the occupier tasks so the runtime exits cleanly.
+    for h in occupiers {
+        let _ = h.await;
+    }
+}

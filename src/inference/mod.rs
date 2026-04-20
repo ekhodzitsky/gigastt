@@ -1007,4 +1007,130 @@ mod tests {
         let state = DecoderState::new(42);
         assert_eq!(state.prev_token, 42);
     }
+
+    // ---- Pool tests (B.7) ---------------------------------------------------
+    //
+    // These exercise `Pool<T>` with synthetic items so the contract is
+    // observable without loading ONNX models. `SessionPool = Pool<SessionTriplet>`
+    // is just an alias, so any property proven here also holds for the real
+    // pool.
+
+    #[tokio::test]
+    async fn test_pool_guard_returns_triplet_on_normal_drop() {
+        let pool = Pool::new(vec![1u32, 2, 3]);
+        assert_eq!(pool.available(), 3);
+        {
+            let _guard = pool.checkout().await.expect("checkout");
+            assert_eq!(pool.available(), 2);
+        }
+        // Dropping the guard returns the item.
+        assert_eq!(pool.available(), 3);
+    }
+
+    #[tokio::test]
+    async fn test_pool_guard_returns_triplet_on_panic_unwind() {
+        // The guard's Drop impl runs during unwind, so a panic between
+        // checkout and the natural end of scope still restores capacity.
+        let pool = std::sync::Arc::new(Pool::new(vec![1u32]));
+        assert_eq!(pool.available(), 1);
+
+        let pool_clone = pool.clone();
+        let result = tokio::spawn(async move {
+            let _guard = pool_clone.checkout().await.expect("checkout");
+            assert_eq!(pool_clone.available(), 0);
+            panic!("synthetic inference panic");
+        })
+        .await;
+        assert!(result.is_err(), "spawned task must report the panic");
+
+        // Capacity is restored thanks to PoolGuard::drop running on unwind.
+        assert_eq!(pool.available(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_pool_close_wakes_waiters_with_closed() {
+        // A waiter blocked in `checkout` after the inventory is exhausted
+        // must resolve to PoolError::Closed when `close()` fires. Map the
+        // borrowed guard to the `()` success path so the spawn doesn't
+        // need to carry the pool's lifetime.
+        let pool = std::sync::Arc::new(Pool::<u32>::new(vec![]));
+        let waiter = tokio::spawn({
+            let pool = pool.clone();
+            async move { pool.checkout().await.map(|_g| ()) }
+        });
+
+        // Give the waiter a moment to park on the channel.
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        pool.close();
+
+        let res = waiter.await.expect("join");
+        assert!(matches!(res, Err(PoolError::Closed)));
+    }
+
+    #[tokio::test]
+    async fn test_pool_fifo_under_contention() {
+        // With a single-slot pool and three queued waiters, the order of
+        // wake-ups must match the order in which `checkout` was called.
+        // `async_channel` is internally FIFO; this test guards against
+        // accidental Mutex<mpsc> regressions that lose that property.
+        let pool = std::sync::Arc::new(Pool::new(vec![0u32]));
+
+        let primary = pool.checkout().await.expect("primary checkout");
+        assert_eq!(pool.available(), 0);
+
+        let waker_log = std::sync::Arc::new(tokio::sync::Mutex::new(Vec::new()));
+        let mut handles = Vec::new();
+        for id in 0u32..3 {
+            let pool = pool.clone();
+            let log = waker_log.clone();
+            handles.push(tokio::spawn(async move {
+                let g = pool.checkout().await.expect("checkout");
+                log.lock().await.push(id);
+                drop(g);
+            }));
+            // Stagger spawns so each waiter is parked before the next one
+            // is registered with the channel.
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+
+        // Release the only inventory slot so the queued waiters can run.
+        drop(primary);
+        for h in handles {
+            h.await.expect("join");
+        }
+
+        let log = waker_log.lock().await.clone();
+        assert_eq!(log, vec![0, 1, 2], "waiters must wake in FIFO order");
+    }
+
+    #[tokio::test]
+    async fn test_into_owned_for_spawn_blocking() {
+        // `into_owned` strips the lifetime so the item can be moved into a
+        // blocking thread, then `OwnedReservation::checkin` returns it.
+        let pool = std::sync::Arc::new(Pool::new(vec![String::from("triplet")]));
+        let guard = pool.checkout().await.expect("checkout");
+        let (item, reservation) = guard.into_owned();
+
+        let item = tokio::task::spawn_blocking(move || {
+            // Pretend we're running blocking inference.
+            assert_eq!(item, "triplet");
+            reservation.checkin(item.clone());
+            item
+        })
+        .await
+        .expect("join");
+
+        // After the blocking task returns the item, the pool is full again.
+        assert_eq!(pool.available(), 1);
+        assert_eq!(item, "triplet");
+    }
+
+    #[tokio::test]
+    async fn test_pool_close_is_idempotent() {
+        // `pool.close()` is wired into the shutdown hook; calling it twice
+        // (e.g. shutdown signal + Drop) must not panic.
+        let pool = Pool::<u32>::new(vec![]);
+        pool.close();
+        pool.close();
+    }
 }
