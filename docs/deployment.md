@@ -271,7 +271,7 @@ If you observe clients hanging past the cap or not receiving `Final` on deploy, 
 ## Hardening checklist
 
 - **Bind address:** Keep `--host 127.0.0.1` unless you're running in a container (then use the port binding strategy above).
-- **Rate limiting:** Use `--rate-limit-per-minute N` (v0.7.3+) on the server, or rate-limit at the proxy.
+- **Rate limiting:** Use `--rate-limit-per-minute N` (v0.8.0+) on the server, or rate-limit at the proxy.
 - **TLS termination:** Only at the proxy, never expose the server's raw port to the internet.
 - **Origin allowlist:** Explicit `--allow-origin` values; never use `--cors-allow-any` in production.
 - **Authentication:** At the proxy (Caddy/nginx basic auth, OAuth, JWT, mTLS, etc.).

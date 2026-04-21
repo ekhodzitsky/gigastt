@@ -22,7 +22,6 @@ cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
 cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1  # E2E tests (requires model)
 cargo test --test load_test -- --ignored           # Load tests (requires model, local only)
 cargo test --test soak_test -- --ignored           # Soak test (requires model, local only)
-cargo test --test server_integration -- --ignored  # Legacy integration tests (requires model)
 cargo clippy             # Lint (no expected warnings)
 ```
 
@@ -155,9 +154,6 @@ Three-tier test architecture:
 - `tests/load_test.rs` — 3 load tests (concurrent WS, concurrent REST, burst connections)
 - `tests/soak_test.rs` — 1 soak test (continuous WS cycling, configurable via `GIGASTT_SOAK_DURATION_SECS`)
 - `cargo test --test load_test -- --ignored` / `cargo test --test soak_test -- --ignored`
-
-**Legacy integration tests** (kept for backward compat, slated for removal per V1-23):
-- `tests/server_integration.rs` — 6 tests, `#[ignore]`, `cargo test --test server_integration -- --ignored`
 
 **Benchmark suite:**
 - `tests/benchmark.rs` — WER evaluation on Golos fixtures (custom harness, `harness = false`)
