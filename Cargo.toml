@@ -81,8 +81,8 @@ bytes = "1"
 dashmap = "6"
 
 # Prometheus-compatible metrics (exposed behind `--metrics` flag, off by default)
-metrics = "0.24"
-metrics-exporter-prometheus = { version = "0.17", default-features = false }
+
+
 # ONNX protobuf types for the native INT8 quantization pipeline
 # (`src/quantize.rs`). Vendored `.proto` + `prost-build` (build-dep) replaces
 # the unmaintained `onnx-pb 0.1.4` crate and unblocks `RUSTSEC-2021-0073`.

@@ -11,14 +11,14 @@ use futures_util::stream::Stream;
 use serde::Serialize;
 use std::sync::Arc;
 
+use super::metrics::MetricsRegistry;
 use super::{POOL_RETRY_AFTER_MS, POOL_RETRY_AFTER_SECS, RuntimeLimits};
 use crate::inference::Engine;
-use metrics_exporter_prometheus::PrometheusHandle;
 
 /// Shared application state for all handlers. Carries runtime limits so the
 /// WebSocket path can enforce configurable frame / idle bounds without
 /// re-threading every CLI arg through each handler, plus an optional
-/// Prometheus handle for the `/metrics` endpoint.
+/// in-tree `MetricsRegistry` backing the `/metrics` endpoint.
 ///
 /// Also carries a shutdown `CancellationToken` and a `TaskTracker` used to
 /// drain in-flight WebSocket / SSE tasks on SIGTERM (V1-03). `axum::serve`'s
@@ -28,7 +28,7 @@ use metrics_exporter_prometheus::PrometheusHandle;
 pub struct AppState {
     pub engine: Arc<Engine>,
     pub limits: RuntimeLimits,
-    pub metrics_handle: Option<PrometheusHandle>,
+    pub metrics_registry: Option<Arc<MetricsRegistry>>,
     pub shutdown: tokio_util::sync::CancellationToken,
     pub tracker: tokio_util::task::TaskTracker,
 }
@@ -36,14 +36,14 @@ pub struct AppState {
 /// GET /metrics — Prometheus text-format exposition. Returns 404 when the
 /// server was started without `--metrics`.
 pub async fn metrics(State(state): State<Arc<AppState>>) -> Response {
-    match &state.metrics_handle {
-        Some(handle) => (
+    match &state.metrics_registry {
+        Some(registry) => (
             StatusCode::OK,
             [(
                 header::CONTENT_TYPE,
                 "text/plain; version=0.0.4; charset=utf-8",
             )],
-            handle.render(),
+            registry.render_prometheus(),
         )
             .into_response(),
         None => (

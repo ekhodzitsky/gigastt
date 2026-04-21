@@ -3,6 +3,7 @@
 //! Single port serves both REST API (health, transcribe, SSE) and WebSocket.
 
 pub mod http;
+pub mod metrics;
 pub mod rate_limit;
 
 use crate::inference::{Engine, SessionTriplet};
@@ -232,21 +233,24 @@ pub async fn run_with_config(
         .parse()
         .context("Invalid host:port")?;
 
-    // Install the Prometheus recorder once if metrics are requested. Failures
-    // here (recorder already installed by another run, which happens in tests
-    // that restart the server) are demoted to a warning so the server still
-    // starts — the second install just won't emit fresh metrics.
-    let metrics_handle = if config.metrics_enabled {
-        match metrics_exporter_prometheus::PrometheusBuilder::new().install_recorder() {
-            Ok(handle) => {
-                tracing::info!("Prometheus /metrics endpoint enabled");
-                Some(handle)
-            }
-            Err(e) => {
-                tracing::warn!("Failed to install Prometheus recorder (already installed?): {e}");
-                None
-            }
-        }
+    // Stand up our in-tree metrics registry when the operator asked for it.
+    // Unlike the old `PrometheusBuilder::install_recorder()` path this is
+    // per-`run_with_config` rather than process-global — restarting the
+    // server in tests cannot collide with itself, so we do not need the
+    // "already installed" warning fallback the old stack needed.
+    let metrics_registry = if config.metrics_enabled {
+        let reg = std::sync::Arc::new(self::metrics::MetricsRegistry::new());
+        reg.register_counter(
+            "gigastt_http_requests_total",
+            "Total HTTP requests processed",
+        );
+        reg.register_histogram(
+            "gigastt_http_request_duration_seconds",
+            "HTTP request duration in seconds",
+            self::metrics::DEFAULT_BUCKETS,
+        );
+        tracing::info!("Prometheus /metrics endpoint enabled");
+        Some(reg)
     } else {
         None
     };
@@ -276,7 +280,7 @@ pub async fn run_with_config(
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
         limits: config.limits.clone(),
-        metrics_handle,
+        metrics_registry,
         shutdown: shutdown_root.clone(),
         tracker: tracker.clone(),
     });
@@ -303,7 +307,10 @@ pub async fn run_with_config(
         .route("/v1/ws", get(ws_handler))
         .route("/ws", get(ws_handler_legacy))
         .route("/metrics", get(http::metrics))
-        .layer(axum::middleware::from_fn(http_metrics_middleware))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            http_metrics_middleware,
+        ))
         .with_state(state.clone());
 
     let protected = if config.limits.rate_limit_per_minute > 0 {
@@ -453,32 +460,41 @@ pub async fn run_with_config(
 }
 
 /// Instrumentation middleware: records HTTP request counters and a duration
-/// histogram under the `gigastt_http_*` namespace. When the Prometheus
-/// recorder is not installed (default / `--metrics` off), the `metrics` crate
-/// macros are no-ops, so the overhead is one `Instant::now()` per request.
+/// histogram under the `gigastt_http_*` namespace. Takes the whole
+/// `AppState` so we can reach `metrics_registry` — when the operator did
+/// not pass `--metrics` the registry is `None` and the middleware
+/// degrades to a single `Instant::now()` per request.
 async fn http_metrics_middleware(
+    State(state): State<Arc<http::AppState>>,
     req: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> Response {
+    let Some(registry) = state.metrics_registry.clone() else {
+        return next.run(req).await;
+    };
     let method = req.method().as_str().to_string();
     let path = req.uri().path().to_string();
     let start = std::time::Instant::now();
     let response = next.run(req).await;
     let elapsed = start.elapsed().as_secs_f64();
     let status = response.status().as_u16().to_string();
-    metrics::counter!(
+    registry.counter_inc(
         "gigastt_http_requests_total",
-        "method" => method.clone(),
-        "path" => path.clone(),
-        "status" => status.clone(),
-    )
-    .increment(1);
-    metrics::histogram!(
+        vec![
+            ("method".into(), method.clone()),
+            ("path".into(), path.clone()),
+            ("status".into(), status),
+        ],
+        1,
+    );
+    registry.histogram_record(
         "gigastt_http_request_duration_seconds",
-        "method" => method,
-        "path" => path,
-    )
-    .record(elapsed);
+        vec![
+            ("method".into(), method),
+            ("path".into(), path),
+        ],
+        elapsed,
+    );
     response
 }
 
