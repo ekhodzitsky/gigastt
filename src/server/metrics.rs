@@ -119,7 +119,7 @@ impl MetricsRegistry {
     /// Buckets are sorted and deduplicated; callers may pass
     /// [`DEFAULT_BUCKETS`] for the Prometheus client default.
     pub fn register_histogram(&self, name: &str, help: &str, buckets: &[f64]) {
-        let mut normalised: Vec<f64> = buckets.iter().copied().collect();
+        let mut normalised: Vec<f64> = buckets.to_vec();
         normalised.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         normalised.dedup();
         let mut map = self.histograms.write().expect("histograms lock poisoned");
