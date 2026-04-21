@@ -24,11 +24,12 @@ When the maintainer's minisign key is loaded in CI, every tarball +
 protects against a compromised release (the attacker would also need
 the minisign private key).
 
-Public key (copy to `gigastt.pub`):
+Public key (save as `gigastt.pub`; the two-line `untrusted comment:`
+header is part of the file format — keep it verbatim):
 
 ```
-# to be populated once the keypair is generated
-RWT2bWeL7i1BbZvuoiPcMWtgzqfzp7JIYmXwvlPXbHEm7eaA1lHpJKtV
+untrusted comment: minisign public key C1A4D4B7428907DA
+RWTaB4lCt9SkwerVa5kINWK8Jh/I96jUQDybbvmcpQr0g3lvGnymrXfm
 ```
 
 Verify with [minisign](https://jedisct1.github.io/minisign/) or
