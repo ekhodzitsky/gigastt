@@ -162,7 +162,7 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
         } else {
             "fp32".into()
         },
-        vocab_size: 1025,
+        vocab_size: engine.vocab_size(),
         sample_rate: 16000,
         pool_size: engine.pool.total(),
         pool_available: engine.pool.available(),

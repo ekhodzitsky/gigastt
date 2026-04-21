@@ -351,6 +351,13 @@ impl Engine {
         self.int8
     }
 
+    /// Size of the BPE vocabulary the loaded tokenizer covers. Exposed so the
+    /// REST `/v1/models` handler can report the real value instead of a
+    /// hardcoded literal that would drift if the upstream model rev changes.
+    pub fn vocab_size(&self) -> usize {
+        self.tokenizer.vocab_size()
+    }
+
     /// Load ONNX models from the given directory and create an inference engine.
     ///
     /// Creates a pool of [`DEFAULT_POOL_SIZE`] session triplets for concurrent inference.
