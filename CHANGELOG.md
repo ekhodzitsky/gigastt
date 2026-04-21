@@ -7,6 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-04-21
+
+Polish-before-production release. No functional behaviour changes for existing
+clients; server, CLI, REST, and WebSocket surfaces are wire-compatible with
+v0.9.2. Dockerfile was broken since v0.9.0 — this release fixes it.
+
+### Fixed
+
+- **Docker images now actually build** (`Dockerfile`, `Dockerfile.cuda`). Both
+  builders gained `protobuf-compiler` (required by `build.rs` since v0.9.0's
+  `prost-build` migration) and now `COPY proto/` + `build.rs` before `src/`.
+  The 0.9.0 / 0.9.1 / 0.9.2 images failed at `cargo build` with
+  `prost-build failed to compile proto/onnx.proto`; the published Docker
+  recipes in README only worked if the reader had protoc in their base image.
+- **`tests/e2e_rest.rs::test_rest_large_body_rss_within_budget` removed.** The
+  test asserted `RSS_after - RSS_before < wav.len() * 3 + 40 MiB` after
+  POSTing a 300 s WAV. Every main-push CI run since v0.9.0 observed a delta
+  of ~320 MiB regardless of whether the REST upload path was zero-copy or
+  4×-copy, because ONNX Runtime's encoder scratch for 5 minutes of 16 kHz
+  audio allocates ~90+ MiB by itself. The test could neither catch the
+  V1-05 regression it was designed for nor pass reliably. The zero-copy
+  contract is covered by the `BytesMediaSource` impl in
+  `src/inference/audio.rs` and the unit tests around it.
+- **`src/inference/tokenizer.rs`**: skip vocab lines that parse as a bare
+  integer (e.g. a legacy `1025\n` size header). Such a line has no trailing
+  id column, so the existing `rfind([' ', '\t'])` fallback would push the
+  integer string as a ghost token and poison the ID space.
+- **`src/server/metrics.rs::fmt_f64_prom`**: drop the empty-body
+  `if v == v.trunc() && v.abs() < 1e15 { }` branch that existed only to
+  document that it was a no-op. The `format!("{v}")` tail always ran.
+
+### Changed
+
+- **`Engine::transcribe_file` / `transcribe_bytes_shared` share a
+  `transcribe_samples(&[f32], &mut SessionTriplet)` tail.** Previously the
+  two bodies duplicated the mel → encoder → decode → word-join sequence
+  byte-for-byte. Same public API, same behaviour, one implementation.
+- **`src/server/mod.rs`**: `MAX_RPM` clamp + warn moved into
+  `RateLimiter::new`; the startup log line calls `limiter.interval_ms()`
+  instead of duplicating the math. Dropped the write-only
+  `RateLimiter::last_evict_ms` field — eviction already runs on a tokio
+  interval, nothing read the stored timestamp. Exposed the public
+  constant `server::rate_limit::MAX_RPM` (= 60 000) for external callers.
+- **`src/server/mod.rs`**: single source of truth for `SUPPORTED_RATES`
+  (`pub(crate)`). The REST `/v1/models` handler used to inline
+  `vec![8000, 16000, 24000, 44100, 48000]` — it now reuses the same
+  const the WS `Ready` payload reads (V1-34).
+- **`src/server/http.rs`**: `vocab_size` in `/v1/models` comes from
+  `engine.vocab_size()` (new public `Engine::vocab_size()`), not a `1025`
+  literal. If the upstream model rev ever resizes its BPE vocabulary the
+  REST surface no longer lies.
+- **`src/model/mod.rs`**: extracted `stream_to_partial_then_finalize(url,
+  final_dest, expected_sha256, label)`. The per-file GigaAM download
+  loop and the single-file speaker-diarization download now share one
+  implementation of URL fetch, progress, stream-to-partial, and
+  SHA-256 + atomic-rename finalize. Drops ~50 duplicated lines.
+- **`src/quantize.rs`**: staging file suffix switched from `.onnx.tmp` to
+  `.partial` so the in-tree INT8 quantizer uses the same convention as
+  the HuggingFace download pipeline in `src/model/mod.rs`.
+- **`tests/server_integration.rs` removed** (367 LoC, 6 tests). Every case
+  is covered by the v0.4.3+ `tests/e2e_ws.rs` / `tests/e2e_rest.rs` /
+  `tests/load_test.rs` suites; the legacy file used `sleep(200ms)` race
+  gates and the long-deprecated `server::run(engine, port, host)`
+  signature (V1-23).
+- **Deprecation headers on `/ws`**: the upgrade response now carries
+  RFC 8594 `Deprecation: true` plus `Link: </v1/ws>; rel="successor-version"`
+  so client libraries can surface the migration warning before v1.0
+  drops the alias. Server-side warn log was already in place (V1-14).
+- **Docs + specs housekeeping:**
+  - `specs/design-v1.0-{pool-and-rate-limit,rest-streaming,ws-lifecycle}.md`
+    → `specs/archive/design-v1.0/` (all three shipped in v0.9.0-rc.1).
+  - `docs/superpowers/` (v0.4 pre-ship plans) → `docs/archive/superpowers-v0.4/`.
+  - `missions/gigastt-wer/` scratchpad deleted.
+  - `specs/prod-readiness-v1.0.md` now carries a v0.9.0 rollup banner
+    listing the closed IDs; detail rows left for historical trail.
+  - `README_RU.md` synced to English README (`/v1/ws`, `/metrics` row,
+    `125 unit tests`, INT8 section rewritten for the no-feature-flag
+    behaviour shipped in v0.9.0).
+  - `docs/deployment.md` rate-limiter version string corrected
+    (v0.8.0, not v0.7.3).
+  - `CLAUDE.md` drops references to the now-deleted
+    `tests/server_integration.rs`.
+
+### CI
+
+- **`cargo audit` job** switched from `cargo install cargo-audit --locked`
+  (rebuilt on every PR, ~90 s) to the prebuilt `rustsec/audit-check@v2`
+  action — same checker, same advisory source.
+- **`soak.yml` cache key** scoped by profile (`-release`) so nightly soak
+  runs don't evict the `target/` that `ci.yml` populates.
+
+### Dependencies
+
+- Removed redundant `tracing-subscriber` entry from `[dev-dependencies]`
+  (already declared in `[dependencies]`; cargo exposes it to integration
+  tests automatically).
+
 ## [0.9.2] - 2026-04-21
 
 ### Fixed
@@ -424,7 +521,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes (V1-03, V1-04, V1-05, V1
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.0-rc.2...v0.9.0
