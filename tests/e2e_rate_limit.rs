@@ -50,8 +50,7 @@ async fn test_rate_limit_burst_then_refill() {
         "Retry-After header must be set to 60"
     );
     let body_text = r2.text().await.expect("429 body readable");
-    let body: serde_json::Value =
-        serde_json::from_str(&body_text).expect("429 body is JSON");
+    let body: serde_json::Value = serde_json::from_str(&body_text).expect("429 body is JSON");
     assert_eq!(body["code"], "rate_limited");
 
     // Wait more than the refill interval (2 s for 30 rpm) and retry.

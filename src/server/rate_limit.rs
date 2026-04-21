@@ -57,7 +57,10 @@ impl TokenBucket {
     /// Refill the bucket based on elapsed time and try to consume one token.
     /// Returns `true` when the request is allowed.
     pub fn try_consume(&mut self, now: Instant, now_ms: u64) -> bool {
-        let elapsed_ms = now.saturating_duration_since(self.last_refill).as_secs_f64() * 1000.0;
+        let elapsed_ms = now
+            .saturating_duration_since(self.last_refill)
+            .as_secs_f64()
+            * 1000.0;
         if elapsed_ms > 0.0 {
             self.tokens = (self.tokens + elapsed_ms * self.refill_per_ms).min(self.capacity);
             self.last_refill = now;
@@ -119,7 +122,8 @@ impl RateLimiter {
     /// under sustained single-visitor traffic.
     pub fn evict_stale(&self, older_than: Duration) {
         let cutoff = unix_ms().saturating_sub(older_than.as_millis() as u64);
-        self.buckets.retain(|_, bucket| bucket.last_seen_ms >= cutoff);
+        self.buckets
+            .retain(|_, bucket| bucket.last_seen_ms >= cutoff);
         self.last_evict_ms.store(unix_ms(), Ordering::Relaxed);
     }
 
@@ -236,7 +240,10 @@ mod tests {
         let a: IpAddr = "10.0.0.1".parse().unwrap();
         let b: IpAddr = "10.0.0.2".parse().unwrap();
         assert!(limiter.check(a), "A first call allowed");
-        assert!(limiter.check(b), "B first call allowed (independent bucket)");
+        assert!(
+            limiter.check(b),
+            "B first call allowed (independent bucket)"
+        );
         assert!(!limiter.check(a), "A second call rate-limited");
         assert!(!limiter.check(b), "B second call rate-limited");
     }
@@ -251,7 +258,10 @@ mod tests {
             let limiter = RateLimiter::new(rpm, 1);
             let ip: IpAddr = "10.0.0.3".parse().unwrap();
             assert!(limiter.check(ip), "rpm={rpm}: initial burst allowed");
-            assert!(!limiter.check(ip), "rpm={rpm}: second immediate call blocked");
+            assert!(
+                !limiter.check(ip),
+                "rpm={rpm}: second immediate call blocked"
+            );
             // Advance the bucket's last_refill manually by draining, waiting,
             // and re-checking. Real tests use sleeps; here we inject the
             // refill via `try_consume` with a later instant.

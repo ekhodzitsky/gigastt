@@ -172,8 +172,8 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
             name: Some(format!("dequant_{weight_name}")),
             attribute: vec![AttributeProto {
                 name: Some("axis".into()),
-                i: Some(0),         // per-channel on axis 0
-                r#type: Some(2),    // AttributeType::INT
+                i: Some(0),      // per-channel on axis 0
+                r#type: Some(2), // AttributeType::INT
                 ..Default::default()
             }],
             ..Default::default()

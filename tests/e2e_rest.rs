@@ -389,12 +389,7 @@ async fn test_rest_large_body_rss_within_budget() {
         let status = std::fs::read_to_string("/proc/self/status").ok()?;
         for line in status.lines() {
             if let Some(rest) = line.strip_prefix("VmRSS:") {
-                let kb: u64 = rest
-                    .trim()
-                    .split_whitespace()
-                    .next()?
-                    .parse()
-                    .ok()?;
+                let kb: u64 = rest.trim().split_whitespace().next()?.parse().ok()?;
                 return Some(kb);
             }
         }

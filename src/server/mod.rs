@@ -489,10 +489,7 @@ async fn http_metrics_middleware(
     );
     registry.histogram_record(
         "gigastt_http_request_duration_seconds",
-        vec![
-            ("method".into(), method),
-            ("path".into(), path),
-        ],
+        vec![("method".into(), method), ("path".into(), path)],
         elapsed,
     );
     response
@@ -971,7 +968,9 @@ async fn flush_and_final(
     engine: &Arc<Engine>,
     state_opt: &mut Option<crate::inference::StreamingState>,
 ) -> Result<()> {
-    let flush_seg = state_opt.as_mut().and_then(|state| engine.flush_state(state));
+    let flush_seg = state_opt
+        .as_mut()
+        .and_then(|state| engine.flush_state(state));
     let final_msg = match flush_seg {
         Some(seg) => ServerMessage::Final {
             text: seg.text,

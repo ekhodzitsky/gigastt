@@ -110,9 +110,7 @@ impl MetricsRegistry {
     /// overwrites any previously registered help text for the same name.
     pub fn register_counter(&self, name: &str, help: &str) {
         let mut map = self.counters.write().expect("counters lock poisoned");
-        map.entry(name.to_string())
-            .or_default()
-            .help = help.to_string();
+        map.entry(name.to_string()).or_default().help = help.to_string();
     }
 
     /// Set the `# HELP` text and bucket bounds for a histogram family.
@@ -145,11 +143,14 @@ impl MetricsRegistry {
         if family.buckets.is_empty() {
             family.buckets = DEFAULT_BUCKETS.to_vec();
         }
-        let series = family.series.entry(labels).or_insert_with(|| HistogramSeries {
-            counts: vec![0; family.buckets.len()],
-            sum: 0.0,
-            count: 0,
-        });
+        let series = family
+            .series
+            .entry(labels)
+            .or_insert_with(|| HistogramSeries {
+                counts: vec![0; family.buckets.len()],
+                sum: 0.0,
+                count: 0,
+            });
         // Keep the cumulative-counts vector in sync with the (possibly
         // re-registered) bucket list. Extending with zeros is correct
         // because extra buckets haven't seen observations yet.
@@ -230,18 +231,8 @@ impl MetricsRegistry {
                     "{name}_bucket{{{inner}{le_prefix}le=\"+Inf\"}} {}",
                     series.count
                 );
-                let _ = writeln!(
-                    out,
-                    "{name}_sum{} {}",
-                    base,
-                    fmt_f64_prom(series.sum),
-                );
-                let _ = writeln!(
-                    out,
-                    "{name}_count{} {}",
-                    base,
-                    series.count,
-                );
+                let _ = writeln!(out, "{name}_sum{} {}", base, fmt_f64_prom(series.sum),);
+                let _ = writeln!(out, "{name}_count{} {}", base, series.count,);
             }
             out.push('\n');
         }
@@ -268,7 +259,11 @@ fn trim_outer_braces(formatted: &str) -> &str {
 /// infinity, fixed-point for integer values, and default `{}` otherwise.
 fn fmt_f64_prom(v: f64) -> String {
     if v.is_infinite() {
-        return if v.is_sign_positive() { "+Inf".into() } else { "-Inf".into() };
+        return if v.is_sign_positive() {
+            "+Inf".into()
+        } else {
+            "-Inf".into()
+        };
     }
     if v.is_nan() {
         return "NaN".into();
@@ -288,7 +283,10 @@ mod tests {
 
     fn registry() -> MetricsRegistry {
         let r = MetricsRegistry::new();
-        r.register_counter("gigastt_http_requests_total", "Total HTTP requests processed");
+        r.register_counter(
+            "gigastt_http_requests_total",
+            "Total HTTP requests processed",
+        );
         r.register_histogram(
             "gigastt_http_request_duration_seconds",
             "HTTP request duration",
@@ -327,7 +325,9 @@ mod tests {
         let text = r.render_prometheus();
         assert!(text.contains("# HELP gigastt_http_requests_total Total HTTP requests processed"));
         assert!(text.contains("# TYPE gigastt_http_requests_total counter"));
-        assert!(text.contains("gigastt_http_requests_total{method=\"GET\",path=\"/health\",status=\"200\"} 3"));
+        assert!(text.contains(
+            "gigastt_http_requests_total{method=\"GET\",path=\"/health\",status=\"200\"} 3"
+        ));
     }
 
     #[test]
@@ -335,29 +335,43 @@ mod tests {
         let r = registry();
         let labels = vec![("method".into(), "GET".into())];
         for v in [0.001, 0.03, 0.3, 1.5] {
-            r.histogram_record(
-                "gigastt_http_request_duration_seconds",
-                labels.clone(),
-                v,
-            );
+            r.histogram_record("gigastt_http_request_duration_seconds", labels.clone(), v);
         }
         let text = r.render_prometheus();
         // 0.001 ≤ 0.005 → contributes to every bucket including 0.005+
         // 0.03  ≤ 0.05  → contributes to 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0
         // 0.3   ≤ 0.5   → contributes to 0.5, 1.0, 2.5, 5.0, 10.0
         // 1.5   ≤ 2.5   → contributes to 2.5, 5.0, 10.0
-        assert!(text.contains("gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"0.005\"} 1"));
-        assert!(text.contains("gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"0.05\"} 2"));
-        assert!(text.contains("gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"0.5\"} 3"));
-        assert!(text.contains("gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"+Inf\"} 4"));
+        assert!(text.contains(
+            "gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"0.005\"} 1"
+        ));
+        assert!(text.contains(
+            "gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"0.05\"} 2"
+        ));
+        assert!(
+            text.contains(
+                "gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"0.5\"} 3"
+            )
+        );
+        assert!(text.contains(
+            "gigastt_http_request_duration_seconds_bucket{method=\"GET\",le=\"+Inf\"} 4"
+        ));
         assert!(text.contains("gigastt_http_request_duration_seconds_count{method=\"GET\"} 4"));
     }
 
     #[test]
     fn test_label_ordering_stable() {
         let r = MetricsRegistry::new();
-        r.counter_inc("c", vec![("b".into(), "1".into()), ("a".into(), "2".into())], 1);
-        r.counter_inc("c", vec![("a".into(), "2".into()), ("b".into(), "1".into())], 4);
+        r.counter_inc(
+            "c",
+            vec![("b".into(), "1".into()), ("a".into(), "2".into())],
+            1,
+        );
+        r.counter_inc(
+            "c",
+            vec![("a".into(), "2".into()), ("b".into(), "1".into())],
+            4,
+        );
         let text = r.render_prometheus();
         // Same counter despite different insert order — totals to 5.
         assert!(text.contains("c{a=\"2\",b=\"1\"} 5"));
@@ -368,7 +382,10 @@ mod tests {
         let r = MetricsRegistry::new();
         r.counter_inc("c", vec![("l".into(), "a\"b\\c\nd".into())], 1);
         let text = r.render_prometheus();
-        assert!(text.contains("c{l=\"a\\\"b\\\\c\\nd\"} 1"), "escape failed: {text}");
+        assert!(
+            text.contains("c{l=\"a\\\"b\\\\c\\nd\"} 1"),
+            "escape failed: {text}"
+        );
     }
 
     #[test]

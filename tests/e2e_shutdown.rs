@@ -251,7 +251,11 @@ async fn test_max_session_duration_cap() {
     let stream_task = tokio::spawn(async move {
         let chunk = common::generate_pcm16_silence(0.02, 48000);
         for _ in 0..60 {
-            if sink.send(Message::Binary(chunk.clone().into())).await.is_err() {
+            if sink
+                .send(Message::Binary(chunk.clone().into()))
+                .await
+                .is_err()
+            {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(250)).await;

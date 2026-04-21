@@ -193,10 +193,7 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     file.flush().await?;
     drop(file);
     pb.finish();
-    tracing::info!(
-        "Wrote partial {} ({downloaded} bytes)",
-        partial.display()
-    );
+    tracing::info!("Wrote partial {} ({downloaded} bytes)", partial.display());
 
     finalize_download(
         &partial,
@@ -453,15 +450,9 @@ mod tests {
         let err = finalize_download(&partial, &final_path, Some(&wrong_expected), "decoder.onnx")
             .expect_err("mismatch must error");
         let msg = format!("{err}");
-        assert!(
-            msg.contains("SHA-256 mismatch"),
-            "unexpected error: {msg}"
-        );
+        assert!(msg.contains("SHA-256 mismatch"), "unexpected error: {msg}");
 
-        assert!(
-            !partial.exists(),
-            "partial must be removed on SHA mismatch"
-        );
+        assert!(!partial.exists(), "partial must be removed on SHA mismatch");
         assert!(
             !final_path.exists(),
             "final must never appear on SHA mismatch"

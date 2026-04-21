@@ -158,8 +158,7 @@ pub fn generate_pcm16_tone(duration_s: f32, sample_rate: u32, freq_hz: f32) -> V
     let mut bytes = Vec::with_capacity(num_samples * 2);
     for i in 0..num_samples {
         let t = i as f32 / sample_rate as f32;
-        let sample =
-            (freq_hz * t * 2.0 * std::f32::consts::PI).sin() * (i16::MAX as f32 * 0.2);
+        let sample = (freq_hz * t * 2.0 * std::f32::consts::PI).sin() * (i16::MAX as f32 * 0.2);
         bytes.extend_from_slice(&(sample as i16).to_le_bytes());
     }
     bytes
