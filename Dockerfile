@@ -5,12 +5,29 @@
 # --- Builder stage ---
 FROM rust:1.85-bookworm AS builder
 
-WORKDIR /build
-COPY Cargo.toml Cargo.lock ./
-COPY src/ src/
-COPY tests/ tests/
+# `prost-build` (via build.rs) requires `protoc` at compile time; without it
+# the build aborts with "prost-build failed to compile proto/onnx.proto".
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends protobuf-compiler && \
+    rm -rf /var/lib/apt/lists/*
 
-# Build release binary
+WORKDIR /build
+
+# Dependency-compilation cache: copy manifests + build.rs + proto/ first and
+# compile a dummy binary so `cargo build` downloads + builds every transitive
+# crate. Subsequent edits to src/ only invalidate the final compilation
+# layer, cutting incremental rebuild time from minutes to seconds.
+COPY Cargo.toml Cargo.lock build.rs ./
+COPY proto/ proto/
+RUN mkdir -p src && \
+    echo 'fn main() {}' > src/main.rs && \
+    touch src/lib.rs && \
+    cargo build --release && \
+    rm -rf src target/release/deps/gigastt-* target/release/gigastt*
+
+# Now bring in the actual source and build the real binary.
+COPY src/ src/
+
 RUN cargo build --release && \
     strip target/release/gigastt
 

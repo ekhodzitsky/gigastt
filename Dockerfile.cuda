@@ -7,17 +7,27 @@
 # --- Builder stage ---
 FROM nvidia/cuda:12.6.3-devel-ubuntu22.04 AS builder
 
+# `protobuf-compiler` feeds prost-build (build.rs); everything else is the
+# baseline toolchain needed to compile the crate + its C deps.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl build-essential pkg-config && \
+    apt-get install -y --no-install-recommends curl build-essential pkg-config protobuf-compiler && \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.85.0 && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 WORKDIR /build
-COPY Cargo.toml Cargo.lock ./
+
+# Dependency-compilation cache (see Dockerfile for rationale).
+COPY Cargo.toml Cargo.lock build.rs ./
+COPY proto/ proto/
+RUN mkdir -p src && \
+    echo 'fn main() {}' > src/main.rs && \
+    touch src/lib.rs && \
+    cargo build --release --features cuda && \
+    rm -rf src target/release/deps/gigastt-* target/release/gigastt*
+
 COPY src/ src/
-COPY tests/ tests/
 
 # ort's download-binaries feature fetches CUDA-enabled ONNX Runtime.
 # copy-dylibs copies libonnxruntime*.so to target/release/.

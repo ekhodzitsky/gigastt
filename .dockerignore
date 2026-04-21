@@ -1,5 +1,34 @@
+# Keep the build context small: only files the Dockerfile actually COPYs
+# should reach the daemon. Everything else here either bloats the upload
+# or is a source of unnecessary cache invalidations on edits.
+
+# Build artefacts
 target/
-.omc/
-.git/
-missions/
 *.tar.gz
+
+# IDE / editor / OS noise
+.git/
+.github/
+.idea/
+.vscode/
+.DS_Store
+
+# OMC workspace state
+.omc/
+.omx/
+.claude/
+
+# Tests never compiled in --release
+tests/
+benches/
+missions/
+
+# Docs & specs
+docs/
+specs/
+CHANGELOG.md
+CONTRIBUTING.md
+README.md
+README_RU.md
+CLAUDE.md
+AGENTS.md
