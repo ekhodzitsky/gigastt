@@ -908,9 +908,10 @@ impl Engine {
             return Vec::new();
         }
 
-        let token_ids: Vec<usize> = tokens.iter().map(|t| t.token_id).collect();
-        let raw_text = self.tokenizer.decode(&token_ids);
-        if raw_text.is_empty() {
+        // Fast path for the no-speech frame case. The word-boundary loop
+        // below would also return `Vec::new()` on an empty input, but
+        // bailing early skips the allocation of the intermediate state.
+        if tokens.is_empty() {
             return Vec::new();
         }
 
