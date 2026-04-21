@@ -1,0 +1,59 @@
+# SUS-04: weekly Dependabot scan. We pin Rust deps in `Cargo.lock` and
+# several direct deps (`ort = "2.0.0-rc.12"`, `prost = "0.13"`, …) that
+# would otherwise drift silently — Dependabot keeps the supply chain
+# honest by surfacing new RUSTSEC advisories and minor-version bumps as
+# PRs the maintainer can triage on a predictable cadence.
+
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:00'
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - rust
+    commit-message:
+      prefix: deps
+      include: scope
+    groups:
+      # Group tokio ecosystem bumps together so we don't merge tokio
+      # 1.49 while tokio-util still expects 1.48 — they release close
+      # enough that grouping cuts noise without hiding real churn.
+      tokio-ecosystem:
+        patterns:
+          - 'tokio'
+          - 'tokio-*'
+      # axum + tower + hyper move together for the same reason.
+      axum-ecosystem:
+        patterns:
+          - 'axum'
+          - 'axum-*'
+          - 'tower'
+          - 'tower-*'
+          - 'hyper'
+          - 'hyper-*'
+      # symphonia-* releases are always co-ordinated (bundle versions).
+      symphonia:
+        patterns:
+          - 'symphonia'
+          - 'symphonia-*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '05:00'
+      timezone: Europe/Moscow
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: ci
+      include: scope

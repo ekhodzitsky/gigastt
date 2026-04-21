@@ -12,6 +12,10 @@ on:
 
 permissions:
   contents: write
+  # SUS-05: signed build provenance attestations require the GitHub-issued
+  # id-token for Sigstore + write access to the `attestations` API.
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -140,6 +144,40 @@ jobs:
           done
           cat SHA256SUMS.txt
 
+      # SUS-02: CycloneDX SBOM for the published tag. Generated from the
+      # workspace Cargo.lock so consumers can audit exactly which crate
+      # versions went into the released binary. Output name matches the
+      # release tag so GitHub's asset resolver can find it verbatim.
+      - name: Install Rust toolchain for SBOM generation
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Generate CycloneDX SBOM
+        shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -euo pipefail
+          cargo install --locked --version 0.5.5 cargo-cyclonedx
+          VERSION="${TAG#v}"
+          # cargo-cyclonedx writes `<crate>.cdx.json` next to Cargo.toml.
+          cargo cyclonedx --format json --spec-version 1.5
+          mkdir -p dist
+          # Pin the artifact name to the release tag for reproducibility.
+          cp gigastt.cdx.json "dist/gigastt-${VERSION}.cdx.json"
+          ls -la "dist/gigastt-${VERSION}.cdx.json"
+
+      # SUS-05: SLSA build provenance attestation. Every artefact in
+      # `dist/` gets a signed in-toto provenance statement anchored to
+      # this workflow run. Downstream consumers verify with
+      # `gh attestation verify <file> --repo ekhodzitsky/gigastt`.
+      - name: Generate SLSA build provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: |
+            dist/*.tar.gz
+            dist/SHA256SUMS.txt
+            dist/*.cdx.json
+
       - name: Create / update release
         uses: softprops/action-gh-release@v2
         with:
@@ -153,3 +191,4 @@ jobs:
             dist/*.tar.gz
             dist/*.sha256
             dist/SHA256SUMS.txt
+            dist/*.cdx.json
