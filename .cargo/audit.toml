@@ -1,8 +1,4 @@
 [advisories]
-ignore = [
-    # prost-types 0.6.1 via onnx-pb 0.1.4 (only published version on crates.io).
-    # Affected `From<Timestamp> for SystemTime` code path is never reached by
-    # our quantization pipeline — we do not convert untrusted Timestamp values.
-    # Re-evaluate when a modern ONNX protobuf crate becomes available.
-    "RUSTSEC-2021-0073",
-]
+# (no ignores — RUSTSEC-2021-0073 was retired when we migrated the ONNX
+# protobuf pipeline from `onnx-pb 0.1.4 + prost 0.6` to vendored
+# `proto/onnx.proto` + `prost 0.13` via `build.rs`. See `src/onnx_proto.rs`.)

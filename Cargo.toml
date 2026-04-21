@@ -84,12 +84,14 @@ dashmap = "6"
 metrics = "0.24"
 metrics-exporter-prometheus = { version = "0.17", default-features = false }
 # ONNX protobuf types for the native INT8 quantization pipeline
-# (`src/quantize.rs`). `onnx-pb 0.1.4` is the only published version on
-# crates.io; it pulls `prost 0.6` transitively, which is the source of the
-# `RUSTSEC-2021-0073` advisory we ignore in `deny.toml` (unreachable code
-# path — we never convert a `Timestamp` to `SystemTime`).
-onnx-pb = "0.1.4"
-prost = "0.6"
+# (`src/quantize.rs`). Vendored `.proto` + `prost-build` (build-dep) replaces
+# the unmaintained `onnx-pb 0.1.4` crate and unblocks `RUSTSEC-2021-0073`.
+prost = "0.13"
+
+[build-dependencies]
+# Regenerates ONNX types from `proto/onnx.proto` into `OUT_DIR/onnx.rs`
+# at build time. Requires `protoc` in `PATH` (see `build.rs`).
+prost-build = "0.13"
 
 [[test]]
 name = "benchmark"
