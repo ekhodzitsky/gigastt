@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-04-21
+
+Dependency-bump rollup. No functional source changes; every entry here is
+a Dependabot PR that landed green on the polish-green main from 0.9.3.
+
+### Dependencies
+
+- `reqwest` 0.12.28 → 0.13.2 (new TLS backend pulls `aws-lc-rs`).
+- `prost-build` 0.13.5 → 0.14.3 (`petgraph` 0.7 → 0.8 transitively).
+- `axum` 0.8.8 → 0.8.9 + `tokio-tungstenite` 0.28 → 0.29 in dev-deps
+  (wire-protocol unchanged).
+- `tokio`-ecosystem group bump (tokio + tokio-* minors).
+
+### CI / workflow actions
+
+- `actions/checkout` 4 → 6 across ci.yml, release.yml, soak.yml, homebrew.yml.
+- `actions/upload-artifact` 4 → 7 in release.yml, soak.yml.
+- `actions/attest-build-provenance` 3 → 4 in release.yml.
+- `softprops/action-gh-release` 2 → 3 in release.yml.
+
+### Not landed
+
+- `rubato` 0.16 → 2.0 (Dependabot PR #9) closed: the 2.0 release removes
+  `SincFixedIn` in favour of a new `audioadapter` API; migrating
+  `src/inference/audio.rs::resample` is a code change Dependabot can't
+  generate automatically. Pinned at 0.16.2 until someone ports the
+  resampler.
+
 ## [0.9.3] - 2026-04-21
 
 Polish-before-production release. No functional behaviour changes for existing
@@ -521,7 +549,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes (V1-03, V1-04, V1-05, V1
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.0...v0.9.1
