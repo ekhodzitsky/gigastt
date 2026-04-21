@@ -256,7 +256,7 @@ fn trim_outer_braces(formatted: &str) -> &str {
 }
 
 /// Format a float the way the Prometheus go client does: `+Inf` for
-/// infinity, fixed-point for integer values, and default `{}` otherwise.
+/// infinity, `NaN` for NaN, default `{}` otherwise.
 fn fmt_f64_prom(v: f64) -> String {
     if v.is_infinite() {
         return if v.is_sign_positive() {
@@ -267,12 +267,6 @@ fn fmt_f64_prom(v: f64) -> String {
     }
     if v.is_nan() {
         return "NaN".into();
-    }
-    if v == v.trunc() && v.abs() < 1e15 {
-        // Render bucket bounds like `1` rather than `1` (prost float default is `1`)
-        // but avoid scientific notation for small fractional boundaries.
-        // `.fract() == 0` floats print as "1" via `{}` in Rust, so use the
-        // default format and we're done.
     }
     format!("{v}")
 }

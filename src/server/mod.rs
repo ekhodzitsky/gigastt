@@ -319,23 +319,13 @@ pub async fn run_with_config(
         // `forwarded-header-value` transitive crates and restores control of
         // the V1-06 refill math: `refill_per_ms = rpm / 60_000`. The V1-11
         // IP-extraction contract (X-Forwarded-For → X-Real-IP → ConnectInfo)
-        // is preserved bit-for-bit.
-        let rpm = config.limits.rate_limit_per_minute;
-        const MAX_RPM: u32 = 60_000;
-        if rpm > MAX_RPM {
-            tracing::warn!(
-                rpm,
-                max_rpm = MAX_RPM,
-                "rate_limit_per_minute exceeds {MAX_RPM}; clamped to {MAX_RPM} (1 ms minimum interval)"
-            );
-        }
-        let effective_rpm = rpm.min(MAX_RPM);
-        let interval_ms = (60_000u64 / effective_rpm as u64).max(1);
-
+        // is preserved bit-for-bit. `RateLimiter::new` owns the `rpm > MAX_RPM`
+        // clamp + warn so the log line below stays consistent.
         let limiter = Arc::new(rate_limit::RateLimiter::new(
-            rpm,
+            config.limits.rate_limit_per_minute,
             config.limits.rate_limit_burst,
         ));
+        let interval_ms = limiter.interval_ms();
 
         // Background eviction: bound memory under sustained traffic by
         // dropping buckets that haven't been touched in 5 minutes. `tokio`
@@ -388,7 +378,7 @@ pub async fn run_with_config(
         .with_state(state);
 
     tracing::info!("gigastt server listening on http://{addr}");
-    tracing::info!("  WebSocket: ws://{addr}/ws");
+    tracing::info!("  WebSocket: ws://{addr}/v1/ws (legacy alias: ws://{addr}/ws)");
     tracing::info!("  REST API:  http://{addr}/health, /v1/transcribe, /v1/transcribe/stream");
     if config.origin_policy.allow_any {
         tracing::warn!(
@@ -597,8 +587,10 @@ async fn ws_handler(
 }
 
 /// Deprecated WebSocket endpoint at `/ws`. Identical behaviour to `/v1/ws`
-/// but emits a warn-level log on every upgrade so operators can spot clients
-/// that still need migration before v1.0 drops the alias.
+/// but emits a warn-level log on every upgrade and adds RFC 8594 `Deprecation`
+/// plus `Link: </v1/ws>; rel="successor-version"` headers on the upgrade
+/// response so client libraries can surface the migration warning to users
+/// before v1.0 drops the alias.
 async fn ws_handler_legacy(
     ws: WebSocketUpgrade,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
@@ -622,7 +614,8 @@ async fn ws_handler_legacy(
     }
     let max_bytes = state.limits.ws_frame_max_bytes;
     let state_cloned = state.clone();
-    ws.max_message_size(max_bytes)
+    let mut response = ws
+        .max_message_size(max_bytes)
         .max_frame_size(max_bytes)
         .on_upgrade(move |socket| async move {
             state_cloned
@@ -630,7 +623,14 @@ async fn ws_handler_legacy(
                 .clone()
                 .track_future(handle_ws(socket, peer, state_cloned.clone()))
                 .await
-        })
+        });
+    let headers = response.headers_mut();
+    headers.insert("deprecation", axum::http::HeaderValue::from_static("true"));
+    headers.insert(
+        "link",
+        axum::http::HeaderValue::from_static("</v1/ws>; rel=\"successor-version\""),
+    );
+    response
 }
 
 async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppState>) {

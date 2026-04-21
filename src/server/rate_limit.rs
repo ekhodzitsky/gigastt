@@ -24,7 +24,6 @@ use axum::response::{IntoResponse, Json, Response};
 use dashmap::DashMap;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 /// Single per-IP bucket. Fractional tokens (`f64`) let us express arbitrary
@@ -75,33 +74,47 @@ impl TokenBucket {
     }
 }
 
+/// Upper bound on `rpm` accepted by [`RateLimiter::new`]. Beyond this the
+/// 1 ms refill interval would truncate to zero and the bucket would saturate.
+pub const MAX_RPM: u32 = 60_000;
+
 /// Concurrent map of per-IP buckets. `DashMap` gives us lock-free reads on
 /// the common path; writes only lock a single shard.
 pub struct RateLimiter {
     buckets: DashMap<IpAddr, TokenBucket>,
     capacity: u32,
     refill_per_ms: f64,
-    /// Unix-ms timestamp of the most recent `evict_stale` scan. Used to make
-    /// the background GC tokio task observable and idempotent.
-    last_evict_ms: AtomicU64,
+    effective_rpm: u32,
 }
 
 impl RateLimiter {
     /// Construct from the same `(rpm, burst)` pair the CLI exposes.
     ///
-    /// `rpm` is clamped to the 60 000 rpm maximum documented in V1-06 (the
+    /// `rpm` is clamped to the [`MAX_RPM`] maximum documented in V1-06 (the
     /// interval hits 1 ms precision there; anything higher would truncate to
-    /// zero and saturate the bucket).
+    /// zero and saturate the bucket). Emits a `warn!` once when clamping.
     pub fn new(rpm: u32, burst: u32) -> Self {
-        const MAX_RPM: u32 = 60_000;
+        if rpm > MAX_RPM {
+            tracing::warn!(
+                rpm,
+                max_rpm = MAX_RPM,
+                "rate_limit_per_minute exceeds {MAX_RPM}; clamped to {MAX_RPM} (1 ms minimum interval)"
+            );
+        }
         let effective_rpm = rpm.min(MAX_RPM);
         let refill_per_ms = effective_rpm as f64 / 60_000.0;
         Self {
             buckets: DashMap::new(),
             capacity: burst.max(1),
             refill_per_ms,
-            last_evict_ms: AtomicU64::new(unix_ms()),
+            effective_rpm,
         }
+    }
+
+    /// Minimum interval between successful requests for the effective (clamped)
+    /// rpm, in milliseconds. Used for the startup log line.
+    pub fn interval_ms(&self) -> u64 {
+        (60_000u64 / self.effective_rpm.max(1) as u64).max(1)
     }
 
     /// Check a request from `ip`. Returns `true` when the bucket had a token,
@@ -124,7 +137,6 @@ impl RateLimiter {
         let cutoff = unix_ms().saturating_sub(older_than.as_millis() as u64);
         self.buckets
             .retain(|_, bucket| bucket.last_seen_ms >= cutoff);
-        self.last_evict_ms.store(unix_ms(), Ordering::Relaxed);
     }
 
     #[cfg(test)]
