@@ -91,7 +91,7 @@ prost = "0.13"
 [build-dependencies]
 # Regenerates ONNX types from `proto/onnx.proto` into `OUT_DIR/onnx.rs`
 # at build time. Requires `protoc` in `PATH` (see `build.rs`).
-prost-build = "0.13"
+prost-build = "0.14"
 
 [[test]]
 name = "benchmark"
