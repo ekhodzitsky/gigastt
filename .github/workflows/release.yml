@@ -116,6 +116,10 @@ jobs:
     name: Publish GitHub release
     needs: build
     runs-on: ubuntu-latest
+    env:
+      # GitHub Actions forbids referencing `secrets.*` in `if:` conditions
+      # directly; expose presence as a boolean env var at job scope instead.
+      HAS_MINISIGN_KEY: ${{ secrets.MINISIGN_SECRET_KEY != '' && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -178,6 +182,44 @@ jobs:
             dist/SHA256SUMS.txt
             dist/*.cdx.json
 
+      # SUS-03: minisign signatures for tarballs + SHA256SUMS.txt. The
+      # signing secret is injected via the `MINISIGN_SECRET_KEY` and
+      # `MINISIGN_PASSWORD` repository secrets. When the secret is not
+      # configured (forks, preview runs), the step degrades to a warning
+      # so we don't break the release pipeline — minisign is added to
+      # the tarball asset list only if signing succeeds.
+      - name: Sign tarballs + SHA256SUMS with minisign
+        if: env.HAS_MINISIGN_KEY == 'true'
+        id: minisign
+        shell: bash
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          # rsign2 is a drop-in `minisign`-compatible signer in pure Rust;
+          # cheaper to install than apt on ubuntu-latest and reproducible.
+          cargo install --locked --version 0.6.5 rsign2
+          printf '%s' "$MINISIGN_SECRET_KEY" > minisign.key
+          chmod 600 minisign.key
+          for f in *.tar.gz SHA256SUMS.txt *.cdx.json; do
+            [ -f "$f" ] || continue
+            # rsign emits `<file>.minisig` next to the input.
+            RSIGN_PASSWORD="$MINISIGN_PASSWORD" \
+              rsign sign -s minisign.key -W "$f" \
+              -c "gigastt release $(basename "$f")"
+          done
+          rm -f minisign.key
+          ls -la *.minisig
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Warn on missing minisign secret
+        if: env.HAS_MINISIGN_KEY != 'true'
+        shell: bash
+        run: |
+          echo "::warning ::MINISIGN_SECRET_KEY not configured — release artefacts will not carry minisign signatures."
+
       - name: Create / update release
         uses: softprops/action-gh-release@v2
         with:
@@ -192,3 +234,4 @@ jobs:
             dist/*.sha256
             dist/SHA256SUMS.txt
             dist/*.cdx.json
+            dist/*.minisig
