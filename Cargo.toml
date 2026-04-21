@@ -57,7 +57,7 @@ sha2 = "0.10"
 rustfft = "6"
 
 # High-quality audio resampling
-rubato = "0.16"
+rubato = "2.0"
 
 # Async stream adapters (ReceiverStream for SSE)
 tokio-stream = "0.1"
