@@ -8,21 +8,23 @@ Each item: **P0/P1/P2** priority, a short problem statement, the
 concrete symptom, and the proposed direction. Full rollout sequence
 lives in `specs/plan.md`.
 
-## Progress snapshot (2026-04-20)
+## Progress snapshot (2026-04-21)
 
 > **v1.0 readiness work is tracked in [`specs/prod-readiness-v1.0.md`](prod-readiness-v1.0.md)** —
 > 50 findings (P0/P1/P2) + 14 sustainability items from the 4-critic review
-> on 2026-04-18. Items below are the v0.5.0 carry-over; once each row is
-> closed it stays here for the historical trail and migrates to v1.0 plan
-> if further work is required.
+> on 2026-04-18. The P0 lane (V1-01 … V1-10) plus the SBOM / release-signing
+> sustainability items shipped in v0.9.0 — see `CHANGELOG.md` for the rollup.
+> Items below are the v0.5.0 carry-over; once each row is closed it stays
+> here for the historical trail and migrates to the v1.0 plan if further
+> work is required.
 
 | Item | Priority | Status |
 |------|----------|--------|
 | 1. Release pipeline | P0 | ✅ v0.5.2 (`release.yml` matrix, SHA256SUMS) |
 | 2. Semver violation | P0 | ✅ v0.5.2 (CONTRIBUTING release checklist) |
-| 3. Pool depletion on panic | P0 | ✅ v0.5.1 (`catch_unwind` in WS handler) |
+| 3. Pool depletion on panic | P0 | ✅ v0.5.1 (`catch_unwind` in WS handler) + v0.9.0-rc.1 (`PoolGuard` Drop) |
 | 4. CORS `*` + weak Origin check | P1 | ✅ v0.6.0 (origin_middleware) |
-| 5. Pool timeout without Retry-After | P1 | ✅ v0.6.0 (header + retry_after_ms) |
+| 5. Pool timeout without Retry-After | P1 | ✅ v0.6.0 (header + `retry_after_ms`) |
 | 6. Hard-coded runtime limits | P1 | ✅ v0.7.0 (CLI + env flags for limits) |
 | 7. `/metrics` / observability | P1 | ✅ v0.8.0 (Prometheus exporter, `--metrics` flag) |
 | 8. Origin-check covers REST | P1 | ✅ v0.6.0 (middleware before routing) |
@@ -31,16 +33,17 @@ lives in `specs/plan.md`.
 | 11. `/v1/ws` canonical path | P2 | ✅ v0.7.0 (`/ws` kept as deprecated alias) |
 | 12. `/v1/models.capabilities` | P2 | ✅ v0.7.0 (capabilities payload) |
 | 13. `handle_ws_inner` split | P2 | ✅ v0.6.1 (three frame handlers + e2e test) |
-| 14. `cargo deny` + SBOM | P2 | 🔨 partial — `cargo deny` in CI; SBOM still open (see SUS-02) |
+| 14. `cargo deny` + SBOM | P2 | ✅ v0.9.0 (CycloneDX SBOM + SLSA provenance + minisign signatures in `release.yml`) |
 | 15. WER histogram breakdown | P2 | ⏳ open (see V1-41 / V1-42) |
-| 16. Self-hosted nightly soak | P2 | ⏳ open (see V1-09) |
-| 17. Per-IP rate limiting | P2 | ✅ v0.8.0 (`tower_governor` per-IP) — but math bug filed as V1-06 |
+| 16. Self-hosted nightly soak | P2 | ✅ v0.9.0 (`.github/workflows/soak.yml` runs 03:17 UTC, V1-09) |
+| 17. Per-IP rate limiting | P2 | ✅ v0.8.0 (initial) + v0.9.0 (math fix V1-06 + in-tree implementation dropping `tower_governor`) |
 | 18. `ort_err()` wrapper audit | P2 | ⏳ open |
 | 19. Hot-reload model | P2 | ⏳ open |
-| 20. TLS/auth deployment docs | P2 | ✅ v0.8.0 (`docs/deployment.md` Caddy/nginx recipes) — but see V1-11 |
+| 20. TLS/auth deployment docs | P2 | ✅ v0.8.0 (`docs/deployment.md` Caddy/nginx) + v0.9.0 (`X-Forwarded-For` trust-boundary fix, V1-11) |
 | CUDA in release matrix | P0 addendum | ⏳ open (removed from matrix v0.5.2+) |
 
 Also shipped alongside (2026-04-14 advisory): `rustls-webpki` 0.103.10→0.103.12 closing RUSTSEC-2026-0098/99 in v0.5.3.
+2026-04-21 patch series (v0.9.1 / v0.9.2): CI-only fixes so the v0.9.0 release tarballs could actually publish — `protoc` provisioning on every cargo-build job, minisign non-interactive passphrase via stdin. No source changes.
 
 ## Next-up: v1.0 plan
 

@@ -215,17 +215,22 @@ Features are compile-time and mutually exclusive.
 
 ### INT8 Quantization
 
-Optional quantized encoder: 4x smaller, ~43% faster, 0% WER degradation (verified on 993 Golos samples / 4991 words). Auto-detected at runtime.
+Quantized encoder: 4x smaller, ~43% faster, 0% WER degradation (verified on 993 Golos samples / 4991 words). Auto-detected at runtime.
 
-When built with `--features quantize`, INT8 encoder is created automatically on first `download` or `serve` — no manual steps needed.
+Since v0.9.0 quantization is always compiled in and auto-invoked on first `download` or `serve` — no feature flag and no manual steps needed. The `quantize` Cargo feature is retained as a no-op for backward compat.
 
 ```sh
 # Automatic (recommended)
-cargo install gigastt --features quantize
-gigastt serve   # downloads model + auto-quantizes on first run
+cargo install gigastt
+gigastt serve           # downloads model + auto-quantizes on first run
 
-# Manual
+# Opt out of auto-quantization (FP32 only)
+gigastt serve --skip-quantize
+# or: GIGASTT_SKIP_QUANTIZE=1 gigastt serve
+
+# Manual re-quantization
 gigastt quantize                     # native Rust quantization
+gigastt quantize --force             # re-quantize even if INT8 model exists
 ```
 
 ## Architecture
@@ -271,9 +276,9 @@ Options:
 
 Commands:
   serve        Start STT server
-  download     Download model (~850 MB)
+  download     Download model (~850 MB) and auto-generate INT8 encoder
   transcribe   Transcribe audio file (offline)
-  quantize     Quantize encoder to INT8 (requires --features quantize)
+  quantize     Quantize encoder to INT8 (always available since v0.9.0)
 
 gigastt serve [OPTIONS]
   --port <PORT>             Listen port [default: 9876]
@@ -299,15 +304,24 @@ gigastt serve [OPTIONS]
   --metrics                 Expose Prometheus metrics at GET /metrics.
                             Off by default. Env: GIGASTT_METRICS.
 
+gigastt serve (continued)
+  --max-session-secs <S>        Wall-clock session cap [default: 3600]. 0 = disabled.
+                                Env: GIGASTT_MAX_SESSION_SECS.
+  --shutdown-drain-secs <S>     Max wait for in-flight sessions on SIGTERM [default: 10].
+                                Env: GIGASTT_SHUTDOWN_DRAIN_SECS.
+  --skip-quantize               Skip auto-quantization step on first run.
+                                Env: GIGASTT_SKIP_QUANTIZE.
+
 gigastt download [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
   --diarization          Also download speaker diarization model (requires --features diarization)
+  --skip-quantize        Skip auto-quantization after download (FP32 only)
 
 gigastt transcribe [OPTIONS] <FILE>
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
   Supports: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed)
 
-gigastt quantize [OPTIONS]          # requires --features quantize
+gigastt quantize [OPTIONS]          # always available since v0.9.0
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
   --force                Re-quantize even if INT8 model exists
 ```
@@ -366,10 +380,10 @@ Remote deployment (TLS + reverse proxy): see [`docs/deployment.md`](docs/deploym
 
 ## Testing
 
-87 unit tests + 24 e2e tests + load & soak tests:
+125 unit tests + 30 e2e tests + load & soak tests:
 
 ```sh
-cargo test                           # 87 unit tests (no model needed)
+cargo test                           # 125 unit tests (no model needed)
 cargo clippy                         # Lint (zero warnings)
 
 # E2E tests (require model, serial to avoid OOM)

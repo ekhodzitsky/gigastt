@@ -9,27 +9,40 @@ info:
 
     ## Connection Flow
 
-    1. Client connects to `ws://{host}:{port}/ws` (default: `ws://127.0.0.1:9876/ws`)
-       - Use `--host 0.0.0.0` for Docker; `--host 127.0.0.1` for local (default)
-    2. Server sends `ready` message with model info and protocol version
-    3. Client streams raw PCM16 audio as binary frames (48kHz mono)
-    4. Server responds with `partial` and `final` transcript messages
-    5. Client sends `stop` (JSON) or closes connection to end session
+    1. Client connects to `ws://{host}:{port}/v1/ws` (default: `ws://127.0.0.1:9876/v1/ws`).
+       `/ws` remains as a deprecated alias — removal planned for v1.0.
+       - Server binds `127.0.0.1` by default; use `--bind-all` (or `GIGASTT_ALLOW_BIND_ANY=1`) plus `--host 0.0.0.0` for Docker.
+    2. Server sends `ready` message with model info, protocol version, `supported_rates`, and `diarization` capability
+    3. (Optional) Client sends `configure` to pick a non-default `sample_rate` and/or enable `diarization`
+    4. Client streams raw PCM16 audio as binary frames (default 48 kHz mono, or the negotiated rate)
+    5. Server responds with `partial` and `final` transcript messages
+    6. Client sends `stop` (JSON) or closes connection to end session
 
     ## Audio Format
 
     - Encoding: PCM16 signed little-endian
-    - Sample rate: 48,000 Hz (server resamples to 16kHz internally)
+    - Sample rate: 8,000 / 16,000 / 24,000 / 44,100 / 48,000 Hz supported; default 48 kHz for backward compat (server resamples to 16 kHz internally via rubato polyphase FIR)
     - Channels: 1 (mono)
-    - Frame size: up to 512 KiB per WebSocket frame (~16s of audio)
+    - Frame size: up to the server's `--ws-frame-max-bytes` (default 512 KiB ≈ 16 s at 16 kHz PCM16)
 
     ## Limits & Security
 
-    - Max concurrent connections: 4
-    - Max WebSocket frame: 512 KiB
+    All defaults below are configurable from v0.7.0 onward via CLI flags or environment variables
+    (see `gigastt serve --help`):
+
+    - `--pool-size` (default 4) — concurrent inference sessions
+    - `--ws-frame-max-bytes` (default 512 KiB) — max WebSocket frame / message
+    - `--body-limit-bytes` (default 50 MiB) — max REST request body
+    - `--idle-timeout-secs` (default 300) — WebSocket idle disconnect
+    - `--max-session-secs` (default 3600) — wall-clock session cap (silence-stream DoS guard; 0 disables)
+    - `--shutdown-drain-secs` (default 10) — max wait for in-flight sessions on SIGTERM
+    - `--rate-limit-per-minute` (default 0 = off) — per-IP token-bucket limit on `/v1/*` (HTTP 429 + `Retry-After` when exhausted; `/health` exempt)
     - Audio buffer cap: 5 seconds (WebSocket streaming)
     - File transcription cap: 10 minutes (offline mode)
-    - Bind address: 127.0.0.1 (default, use --host 0.0.0.0 for Docker)
+    - Bind address: 127.0.0.1 by default; `--bind-all` / `GIGASTT_ALLOW_BIND_ANY=1` required for non-loopback
+    - Cross-origin requests: denied by default; use `--allow-origin URL` (repeatable) or `--cors-allow-any` to opt in
+    - Pool saturation: WebSocket `error` payload includes `retry_after_ms`; REST returns 503 + `Retry-After: 30`
+    - Graceful shutdown: live WS/SSE sessions flush a final transcript and close with `1001 Going Away` on SIGTERM
     - Internal errors hidden from clients (generic message sent)
   license:
     name: MIT
@@ -52,10 +65,11 @@ defaultContentType: application/json
 
 channels:
   audio:
-    address: /ws
+    address: /v1/ws
     description: |
-      Single WebSocket endpoint for audio streaming and transcription.
+      Canonical WebSocket endpoint for audio streaming and transcription.
       Accepts binary PCM16 frames and JSON control messages.
+      `/ws` remains as a deprecated alias — removal planned for v1.0.
     messages:
       ready:
         $ref: "#/components/messages/ready"
@@ -184,12 +198,13 @@ components:
       summary: Raw PCM16 audio data
       description: |
         Binary WebSocket frame containing signed 16-bit little-endian PCM samples.
-        Sample rate: 48,000 Hz, mono. Each sample is 2 bytes.
+        Sample rate: one of the server's `supported_rates` (default 48 kHz), mono. Each sample is 2 bytes.
+        Odd-length frames are carried over into the next frame to preserve PCM alignment.
       contentType: application/octet-stream
       payload:
         type: string
         format: binary
-        description: Raw PCM16 signed little-endian audio samples at 48kHz mono
+        description: Raw PCM16 signed little-endian audio samples at the negotiated rate (mono)
 
   schemas:
     ReadyMessage:
@@ -300,8 +315,19 @@ components:
           description: Machine-readable error code
           enum:
             - inference_error
+            - inference_panic
             - configure_too_late
             - invalid_sample_rate
+            - timeout
+            - pool_closed
+            - max_session_duration_exceeded
+            - payload_too_large
+        retry_after_ms:
+          type: integer
+          example: 30000
+          description: |
+            Suggested delay before retry (milliseconds). Present only for transient backpressure
+            errors (e.g. pool saturation). Omitted from JSON otherwise.
 
     ConfigureMessage:
       type: object
