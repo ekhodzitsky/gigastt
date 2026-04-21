@@ -16,7 +16,8 @@
 **gigastt** превращает любой компьютер в сервер распознавания русской речи в реальном времени. Один бинарник, одна команда, точность на уровне лучших решений — всё работает локально.
 
 ```sh
-cargo install gigastt && gigastt serve
+brew tap ekhodzitsky/gigastt https://github.com/ekhodzitsky/gigastt
+brew install gigastt && gigastt serve
 # WebSocket: ws://127.0.0.1:9876/v1/ws
 # REST API:  http://127.0.0.1:9876/v1/transcribe
 ```
@@ -55,7 +56,12 @@ cargo install gigastt && gigastt serve
 ### Установка и запуск
 
 ```sh
-# Из crates.io
+# Homebrew (macOS ARM64 / Linux x86_64)
+brew tap ekhodzitsky/gigastt https://github.com/ekhodzitsky/gigastt
+brew install gigastt
+gigastt serve
+
+# Из crates.io (нужен `protoc`: `brew install protobuf` / `apt install protobuf-compiler`)
 cargo install gigastt
 gigastt serve
 

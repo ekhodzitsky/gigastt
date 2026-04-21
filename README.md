@@ -54,7 +54,12 @@ cargo install gigastt && gigastt serve
 ### Install & Run
 
 ```sh
-# From crates.io
+# Homebrew (macOS ARM64 / Linux x86_64)
+brew tap ekhodzitsky/gigastt https://github.com/ekhodzitsky/gigastt
+brew install gigastt
+gigastt serve
+
+# From crates.io (requires `protoc` on PATH: `brew install protobuf` / `apt install protobuf-compiler`)
 cargo install gigastt
 gigastt serve
 
