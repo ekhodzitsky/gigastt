@@ -27,8 +27,10 @@ fn json_text(msg: &impl serde::Serialize) -> String {
     })
 }
 
-/// Supported input sample rates (Hz). Default is 48000 for backward compatibility.
-const SUPPORTED_RATES: &[u32] = &[8000, 16000, 24000, 44100, 48000];
+/// Supported input sample rates (Hz). Default is 48000 for backward
+/// compatibility. Single source of truth for both the WebSocket `Ready`
+/// payload and the REST `/v1/models` capabilities response.
+pub(crate) const SUPPORTED_RATES: &[u32] = &[8000, 16000, 24000, 44100, 48000];
 const DEFAULT_SAMPLE_RATE: u32 = 48000;
 
 /// Hint (milliseconds) returned to clients that hit pool backpressure —

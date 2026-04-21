@@ -173,7 +173,7 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
             "ogg".into(),
             "flac".into(),
         ],
-        supported_rates: vec![8000, 16000, 24000, 44100, 48000],
+        supported_rates: super::SUPPORTED_RATES.to_vec(),
         diarization,
     })
 }
