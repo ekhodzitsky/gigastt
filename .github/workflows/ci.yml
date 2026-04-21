@@ -157,10 +157,11 @@ jobs:
     name: Security Audit
     steps:
       - uses: actions/checkout@v4
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-      - name: Run audit
-        run: cargo audit
+      # `rustsec/audit-check` ships a prebuilt cargo-audit, saving the ~90 s
+      # `cargo install --locked` rebuild on every PR run.
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   deny:
     runs-on: ubuntu-latest

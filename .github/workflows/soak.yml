@@ -38,7 +38,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          # Scope by profile so --release builds don't evict the --debug
+          # artefacts that ci.yml populates (and vice-versa).
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache model
         id: cache-model
