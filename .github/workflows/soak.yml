@@ -26,7 +26,7 @@ jobs:
     name: Soak (${{ github.event.inputs.duration_secs || 300 }}s)
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: arduino/setup-protoc@v3
         with:
