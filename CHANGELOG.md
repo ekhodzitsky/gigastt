@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-04-21
+
+_Stable release promoting `0.9.0-rc.2` + the follow-up supply-chain
+lockdown (vendored ONNX protobuf, in-tree token-bucket rate limiter,
+in-tree Prometheus encoder, CycloneDX SBOM, SLSA provenance, minisign
+release signing). See the [Unreleased] rows moved in below for the
+full rollup; no functional regressions since rc.2._
+
+
 ### Added
 
 - **Vendored ONNX protobuf schema + native codegen** (V1-10 follow-up, `proto/onnx.proto`, `build.rs`, `src/onnx_proto.rs`). `proto/onnx.proto` is copied verbatim from github.com/onnx/onnx (MIT-licensed, 1 000 LoC) and regenerated on every build by `prost-build 0.13` — replacing the unmaintained `onnx-pb 0.1.4` crate (last published 2020, transitively pinned to `prost 0.6`). Requires `protoc` in `PATH` at build time (`brew install protobuf`, `apt install protobuf-compiler`); see `build.rs` for the friendly failure message. Closes `RUSTSEC-2021-0073`: the advisory targeted `prost-types 0.6`'s `From<Timestamp> for SystemTime` path, which no longer ships in our dependency graph — the ignore block is gone from `deny.toml` and `.cargo/audit.toml`.
