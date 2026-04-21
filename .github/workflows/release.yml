@@ -207,20 +207,26 @@ jobs:
         working-directory: dist
         run: |
           set -euo pipefail
-          # rsign2 is a drop-in `minisign`-compatible signer in pure Rust;
-          # cheaper to install than apt on ubuntu-latest and reproducible.
-          cargo install --locked --version 0.6.5 rsign2
-          printf '%s' "$MINISIGN_SECRET_KEY" > minisign.key
+          # Install system `minisign` (apt-cacher is fast) — it accepts the
+          # passphrase on stdin when stdout is not a TTY, which is exactly
+          # what we need in CI. `rsign2` 0.6 does not expose a
+          # non-interactive password flag, so we avoid it here.
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends minisign
+          printf '%s\n' "$MINISIGN_SECRET_KEY" > minisign.key
           chmod 600 minisign.key
           for f in *.tar.gz SHA256SUMS.txt *.cdx.json; do
             [ -f "$f" ] || continue
-            # rsign emits `<file>.minisig` next to the input.
-            RSIGN_PASSWORD="$MINISIGN_PASSWORD" \
-              rsign sign -s minisign.key -W "$f" \
-              -c "gigastt release $(basename "$f")"
+            # `-S` = sign; `-s` = secret key; `-c` = comment; `-t` = trusted
+            # comment (appears in `-Vm` output). Pipe the password so
+            # minisign reads it from stdin instead of prompting.
+            printf '%s\n' "$MINISIGN_PASSWORD" | \
+              minisign -Sm "$f" -s minisign.key \
+                -c "gigastt release $(basename "$f")" \
+                -t "gigastt $(basename "$f") ${{ steps.tag.outputs.tag }}"
           done
-          rm -f minisign.key
-          ls -la *.minisig
+          shred -u minisign.key 2>/dev/null || rm -f minisign.key
+          ls -la ./*.minisig
           echo "signed=true" >> "$GITHUB_OUTPUT"
 
       - name: Warn on missing minisign secret

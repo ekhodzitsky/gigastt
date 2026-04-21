@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-04-21
+
+### Fixed
+
+- **CI: minisign signing step accepts password non-interactively** (`.github/workflows/release.yml`). v0.9.1 release job got through the build + SBOM + provenance steps but failed at `Sign tarballs + SHA256SUMS with minisign` because `rsign2 sign -W` interprets `-W` as "write signature" (not "password"), so the process still prompted for a passphrase and rejected the key with `Wrong password for that key`. Switched to the apt-installed `minisign` binary, which reads the passphrase on stdin when stdout is non-TTY — a well-supported CI pattern.
+
 ## [0.9.1] - 2026-04-21
 
 ### Fixed
