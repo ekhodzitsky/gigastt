@@ -768,25 +768,7 @@ impl Engine {
     ) -> Result<TranscribeResult, GigasttError> {
         let float_samples = audio::decode_audio_file(path)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
-        let duration_s = float_samples.len() as f64 / 16000.0;
-
-        let (features, num_frames) = self.mel.compute(&float_samples);
-        tracing::info!("Extracted {} mel frames", num_frames);
-
-        let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
-        let (words, _endpoint) = self
-            .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
-            .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
-        let text: String = words
-            .iter()
-            .map(|w| w.word.as_str())
-            .collect::<Vec<_>>()
-            .join(" ");
-        Ok(TranscribeResult {
-            text,
-            words,
-            duration_s,
-        })
+        self.transcribe_samples(&float_samples, triplet)
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
@@ -817,9 +799,20 @@ impl Engine {
     ) -> Result<TranscribeResult, GigasttError> {
         let float_samples = audio::decode_audio_bytes_shared(data)
             .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
+        self.transcribe_samples(&float_samples, triplet)
+    }
+
+    /// Run the full mel + encoder + RNN-T decode pipeline on an already-decoded
+    /// 16 kHz f32 sample buffer. Shared tail of [`Engine::transcribe_file`] and
+    /// [`Engine::transcribe_bytes_shared`].
+    fn transcribe_samples(
+        &self,
+        float_samples: &[f32],
+        triplet: &mut SessionTriplet,
+    ) -> Result<TranscribeResult, GigasttError> {
         let duration_s = float_samples.len() as f64 / 16000.0;
 
-        let (features, num_frames) = self.mel.compute(&float_samples);
+        let (features, num_frames) = self.mel.compute(float_samples);
         tracing::info!("Extracted {} mel frames", num_frames);
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
