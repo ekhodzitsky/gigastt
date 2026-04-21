@@ -184,7 +184,7 @@ jobs:
       # this workflow run. Downstream consumers verify with
       # `gh attestation verify <file> --repo ekhodzitsky/gigastt`.
       - name: Generate SLSA build provenance
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/*.tar.gz
