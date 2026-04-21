@@ -236,7 +236,7 @@ jobs:
           echo "::warning ::MINISIGN_SECRET_KEY not configured — release artefacts will not carry minisign signatures."
 
       - name: Create / update release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: ${{ steps.tag.outputs.tag }}
