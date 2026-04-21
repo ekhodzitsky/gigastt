@@ -27,6 +27,30 @@ Within each tier the order is prescriptive: start at the top, finish the
 tier before moving on unless a lower item can be parallelised with zero
 coupling.
 
+## v0.9.0 rollup (2026-04-21)
+
+The following IDs shipped in v0.9.0 (plus the 0.9.0-rc.1/rc.2 + 0.9.1/0.9.2
+patch releases that cleaned the release pipeline around it). The detail
+rows further down still carry their original `⏳ open` status for the
+historical audit trail; trust this rollup over the table cells for
+"what's already fixed":
+
+- **P0 lane (closed):** V1-01 (model download TOCTOU + `.partial` atomic
+  rename), V1-02 (speaker-model SHA-256), V1-03 (graceful WS / SSE drain
+  on SIGTERM), V1-04 (max-session-secs cap), V1-05 (REST zero-copy
+  `BytesMediaSource`), V1-06 (rate-limiter per-ms math + clamp), V1-07
+  (pool `async-channel` + `PoolGuard`), V1-08 (`Engine::create_state`
+  unconditional), V1-09 (`soak.yml` nightly CI), V1-10 (vendored ONNX
+  proto + in-tree quantizer, drops `onnx-pb`/`prost 0.6`).
+- **P1 (closed):** V1-11 (X-Forwarded-For trust boundary + recipe
+  correctness), V1-14 (Deprecation + Link headers on `/ws` —
+  shipped 2026-04-21), V1-22 (strict 413 assertion), V1-23
+  (`server_integration.rs` deletion — shipped 2026-04-21), V1-25
+  (odd-length PCM frame carry).
+- **Sustainability (closed):** SUS-02 (CycloneDX SBOM in `release.yml`),
+  SUS-03 (minisign signatures + public key published), SUS-05 (SLSA
+  provenance attestations).
+
 ## Progress snapshot (2026-04-20) — priority-sorted
 
 ### P0 — blockers (ordered most → least critical)
