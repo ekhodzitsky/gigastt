@@ -19,6 +19,13 @@ impl Tokenizer {
             if line.is_empty() {
                 continue;
             }
+            // Skip lines that are a bare integer (header like "1025\n") — no
+            // real vocab entry ever hashes to just decimal digits, so treating
+            // such a line as a token would poison the ID space with a ghost
+            // entry.
+            if line.parse::<usize>().is_ok() {
+                continue;
+            }
             // Try "token<whitespace>id" format first, fall back to just token
             let token = if let Some(pos) = line.rfind(['\t', ' ']) {
                 // Check if what follows is a valid number

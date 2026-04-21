@@ -199,14 +199,18 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     all_nodes.append(&mut graph.node);
     graph.node = all_nodes;
 
-    // Write quantized model (atomic: write to tmp, then rename).
+    // Write quantized model (atomic: write to partial, then rename).
+    // Uses the `.partial` suffix convention shared with `src/model/mod.rs`
+    // downloads so both pipelines leave identical breadcrumbs after a crash.
     let mut output_bytes = Vec::new();
     model
         .encode(&mut output_bytes)
         .context("Failed to encode quantized model")?;
-    let tmp = output.with_extension("onnx.tmp");
-    std::fs::write(&tmp, &output_bytes).context("Failed to write quantized model")?;
-    std::fs::rename(&tmp, output).context("Failed to finalize quantized model")?;
+    let mut partial_os: std::ffi::OsString = output.as_os_str().to_owned();
+    partial_os.push(".partial");
+    let partial = std::path::PathBuf::from(partial_os);
+    std::fs::write(&partial, &output_bytes).context("Failed to write quantized model")?;
+    std::fs::rename(&partial, output).context("Failed to finalize quantized model")?;
 
     let in_mb = model_bytes.len() as f64 / (1024.0 * 1024.0);
     let out_mb = output_bytes.len() as f64 / (1024.0 * 1024.0);

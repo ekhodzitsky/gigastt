@@ -158,52 +158,14 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     tracing::info!("Speaker model not found, downloading from HuggingFace...");
     std::fs::create_dir_all(dir).context("Failed to create model directory")?;
 
-    let partial = partial_path(&final_dest);
-    if partial.exists() {
-        let _ = tokio::fs::remove_file(&partial).await;
-    }
-
-    let hf_path = "onnx/model.onnx";
-    let url = format!("https://huggingface.co/{SPEAKER_HF_REPO}/resolve/main/{hf_path}");
-
-    let response = reqwest::get(&url).await.context("HTTP request failed")?;
-    let status = response.status();
-    if !status.is_success() {
-        anyhow::bail!("Download failed for {SPEAKER_MODEL_FILE}: HTTP {status}");
-    }
-    let total_size = response.content_length().unwrap_or(0);
-
-    let mut pb = DownloadProgress::new(total_size);
-
-    let mut file = tokio::fs::File::create(&partial)
-        .await
-        .context("Failed to create partial speaker model file")?;
-    let mut stream = response.bytes_stream();
-
-    let mut downloaded: u64 = 0;
-    while let Some(chunk) = stream.next().await {
-        let chunk = chunk.context("Download stream error")?;
-        file.write_all(&chunk)
-            .await
-            .context("Failed to write chunk")?;
-        downloaded += chunk.len() as u64;
-        pb.update(chunk.len() as u64);
-    }
-
-    file.flush().await?;
-    drop(file);
-    pb.finish();
-    tracing::info!("Wrote partial {} ({downloaded} bytes)", partial.display());
-
-    finalize_download(
-        &partial,
+    let url = format!("https://huggingface.co/{SPEAKER_HF_REPO}/resolve/main/onnx/model.onnx");
+    stream_to_partial_then_finalize(
+        &url,
         &final_dest,
         Some(SPEAKER_MODEL_SHA256),
         SPEAKER_MODEL_FILE,
-    )?;
-    tracing::info!("Saved {}", SPEAKER_MODEL_FILE);
-
-    Ok(())
+    )
+    .await
 }
 
 fn model_files_exist(dir: &Path) -> bool {
@@ -264,20 +226,43 @@ fn finalize_download(
 async fn download_file(filename: &str, dir: &Path) -> Result<()> {
     let url = format!("https://huggingface.co/{HF_REPO}/resolve/main/{filename}");
     let final_dest = dir.join(filename);
-    let partial = partial_path(&final_dest);
+    let expected = MODEL_CHECKSUMS
+        .iter()
+        .find(|(name, _)| *name == filename)
+        .and_then(|(_, hash)| *hash);
+    stream_to_partial_then_finalize(&url, &final_dest, expected, filename).await
+}
 
-    // If a stale partial from a previous crashed run exists, drop it before
-    // writing the new one so we never concatenate chunks into an old prefix.
+/// Streaming download with SHA-256 verification and atomic rename.
+///
+/// Stages the response into `<final_dest>.partial`, verifies the hash (when
+/// `expected_sha256` is provided), and atomically renames the partial into
+/// the final path. On checksum mismatch or crash the final path is never
+/// observable, so a retry starts from a clean slate.
+///
+/// Shared by [`ensure_model`] (per-file download loop) and
+/// [`ensure_speaker_model`] (single-file diarization download) so the
+/// TOCTOU + progress + retry semantics match bit-for-bit.
+async fn stream_to_partial_then_finalize(
+    url: &str,
+    final_dest: &Path,
+    expected_sha256: Option<&str>,
+    label: &str,
+) -> Result<()> {
+    let partial = partial_path(final_dest);
+
+    // Drop a stale partial from a previous crashed run before writing the
+    // new one so we never concatenate chunks into an old prefix.
     if partial.exists() {
         let _ = tokio::fs::remove_file(&partial).await;
     }
 
-    tracing::info!("Downloading {filename}...");
+    tracing::info!("Downloading {label}...");
 
-    let response = reqwest::get(&url).await.context("HTTP request failed")?;
+    let response = reqwest::get(url).await.context("HTTP request failed")?;
     let status = response.status();
     if !status.is_success() {
-        anyhow::bail!("Download failed for {filename}: HTTP {status}");
+        anyhow::bail!("Download failed for {label}: HTTP {status}");
     }
     let total_size = response.content_length().unwrap_or(0);
 
@@ -303,15 +288,8 @@ async fn download_file(filename: &str, dir: &Path) -> Result<()> {
     progress.finish();
     tracing::info!("Wrote partial {} ({downloaded} bytes)", partial.display());
 
-    // Verify SHA-256 on the partial file (TOCTOU-safe: never rename an
-    // unverified file into the final path). Missing checksum falls through
-    // to a plain atomic rename.
-    let expected = MODEL_CHECKSUMS
-        .iter()
-        .find(|(name, _)| *name == filename)
-        .and_then(|(_, hash)| *hash);
-    finalize_download(&partial, &final_dest, expected, filename)?;
-    tracing::info!("Saved {filename}");
+    finalize_download(&partial, final_dest, expected_sha256, label)?;
+    tracing::info!("Saved {label}");
 
     Ok(())
 }
