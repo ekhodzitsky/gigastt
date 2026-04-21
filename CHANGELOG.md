@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-04-21
+
+### Fixed
+
+- **CI: install `protoc` on every cargo-build job** (`.github/workflows/ci.yml`, `.github/workflows/release.yml`, `.github/workflows/soak.yml`). v0.9.0 rollout failed in the release workflow because `prost-build` shells out to `protoc` and the GitHub-hosted `macos-14` + `ubuntu-latest` runners don't carry it. Every cargo-build-facing job now runs `arduino/setup-protoc@v3` right after `rust-toolchain`. No source change — the v0.9.0 binaries would have been bit-identical if the CI had succeeded; v0.9.1 is purely a rebuild.
+
 ## [0.9.0] - 2026-04-21
 
 _Stable release promoting `0.9.0-rc.2` + the follow-up supply-chain

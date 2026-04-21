@@ -58,6 +58,15 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      # `build.rs` invokes `prost-build` which shells out to `protoc`.
+      # Both GitHub-hosted macos and ubuntu images need it installed
+      # explicitly; the `arduino/setup-protoc` action handles both.
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: '29.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install CUDA toolkit
         if: matrix.cuda
         uses: Jimver/cuda-toolkit@v0.2.19
