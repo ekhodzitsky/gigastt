@@ -34,10 +34,12 @@ This document describes the architecture, build process, and integration steps n
 2. **JNI glue** — generated headers from `javac -h` (or `cargo-jni`). The Kotlin signatures map directly to the C symbols in `src/ffi.rs`.
 3. **Rust FFI layer** — `src/ffi.rs` exposes:
    - `gigastt_engine_new(model_dir)` → opaque engine handle
+   - `gigastt_engine_new_with_pool_size(model_dir, pool_size)` → opaque engine handle
    - `gigastt_transcribe_file(engine, wav_path)` → allocated C string
    - `gigastt_stream_new(engine)` → opaque stream handle
    - `gigastt_stream_process_chunk(engine, stream, pcm16_bytes, len, sample_rate)` → JSON segments
    - `gigastt_stream_flush(engine, stream)` → final JSON segments
+   - `gigastt_quantize_model(model_dir, force)` → allocated C string (`"ok"` or error)
    - `gigastt_string_free(s)` — frees the C string safely
    - `gigastt_stream_free(stream)` — returns triplet to pool
    - `gigastt_engine_free(engine)` — tears down the engine
@@ -195,6 +197,23 @@ class MainActivity : AppCompatActivity() {
 ```
 
 ---
+
+## On-device Quantization
+
+Instead of bundling or downloading the ~210 MB INT8 encoder, you can ship the ~850 MB FP32 encoder and quantize it on the device after download. This is a one-time operation that takes about 2 minutes on a modern flagship phone and produces `v3_e2e_rnnt_encoder_int8.onnx` in the same directory.
+
+```kotlin
+val modelDir = File(context.filesDir, "gigastt_models")
+
+// Run once after the FP32 model is downloaded.
+val result = GigasttBridge.quantizeModel(modelDir.absolutePath, force = false)
+if (result != "ok") {
+    Log.e("GigaSTT", "Quantization failed: $result")
+}
+GigasttBridge.stringFree(result)
+```
+
+> **Why?** If your backend already stores the FP32 model, you can avoid maintaining a separate INT8 artifact. The quantization is deterministic, so every device produces the same INT8 weights.
 
 ## Size Considerations
 

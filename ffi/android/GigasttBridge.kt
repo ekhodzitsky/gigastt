@@ -48,6 +48,19 @@ object GigasttBridge {
     external fun engineNewWithPoolSize(modelDir: String, poolSize: Int): Long
 
     /**
+     * Quantize the FP32 encoder to INT8 on-device.
+     *
+     * Looks for `v3_e2e_rnnt_encoder.onnx` inside [modelDir] and produces
+     * `v3_e2e_rnnt_encoder_int8.onnx` in the same directory.
+     * If the INT8 file already exists and [force] is false, returns immediately.
+     *
+     * Returns `"ok"` on success, or an error message on failure.
+     * The returned string must be freed with [stringFree].
+     */
+    @JvmStatic
+    external fun quantizeModel(modelDir: String, force: Boolean): String
+
+    /**
      * Transcribe a WAV file and return the recognized text.
      *
      * The returned string must be freed with [stringFree] when no longer needed.

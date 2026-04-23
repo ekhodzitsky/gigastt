@@ -178,6 +178,77 @@ pub unsafe extern "C" fn gigastt_engine_free(engine: *mut GigasttEngine) {
 }
 
 // ---------------------------------------------------------------------------
+// Quantization API
+// ---------------------------------------------------------------------------
+
+/// Quantize the FP32 encoder model to INT8 in-place.
+///
+/// Looks for `v3_e2e_rnnt_encoder.onnx` inside `model_dir` and produces
+/// `v3_e2e_rnnt_encoder_int8.onnx` in the same directory.
+/// If the INT8 file already exists and `force` is `false`, returns immediately.
+///
+/// # Safety
+/// `model_dir` must be a valid, null-terminated UTF-8 string.
+///
+/// Returns a newly allocated C string on both success and error.
+/// The caller **must** free the returned string with `gigastt_string_free`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gigastt_quantize_model(
+    model_dir: *const c_char,
+    force: bool,
+) -> *mut c_char {
+    if model_dir.is_null() {
+        tracing::error!("gigastt_quantize_model: model_dir is null");
+        eprintln!("gigastt_quantize_model: model_dir is null");
+        return match CString::new("model_dir is null") {
+            Ok(cstr) => cstr.into_raw(),
+            Err(_) => CString::new("quantization error").unwrap().into_raw(),
+        };
+    }
+
+    let dir_str = match unsafe { CStr::from_ptr(model_dir) }.to_str() {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::error!("gigastt_quantize_model: model_dir is not valid UTF-8: {e}");
+            eprintln!("gigastt_quantize_model: model_dir is not valid UTF-8: {e}");
+            let msg = format!("model_dir is not valid UTF-8: {e}");
+            return match CString::new(msg) {
+                Ok(cstr) => cstr.into_raw(),
+                Err(_) => CString::new("model_dir is not valid UTF-8")
+                    .unwrap()
+                    .into_raw(),
+            };
+        }
+    };
+
+    let model_dir = std::path::Path::new(dir_str);
+    let input = model_dir.join("v3_e2e_rnnt_encoder.onnx");
+    let output = model_dir.join("v3_e2e_rnnt_encoder_int8.onnx");
+
+    if !force && output.exists() {
+        return match CString::new("ok") {
+            Ok(cstr) => cstr.into_raw(),
+            Err(_) => CString::new("ok").unwrap().into_raw(),
+        };
+    }
+
+    if let Err(e) = crate::quantize::quantize_model(&input, &output) {
+        tracing::error!("gigastt_quantize_model: quantization failed: {e}");
+        eprintln!("gigastt_quantize_model: quantization failed: {e}");
+        let msg = format!("quantization failed: {e}");
+        return match CString::new(msg) {
+            Ok(cstr) => cstr.into_raw(),
+            Err(_) => CString::new("quantization failed").unwrap().into_raw(),
+        };
+    }
+
+    match CString::new("ok") {
+        Ok(cstr) => cstr.into_raw(),
+        Err(_) => CString::new("ok").unwrap().into_raw(),
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Streaming API
 // ---------------------------------------------------------------------------
 
@@ -370,5 +441,24 @@ mod tests {
     fn test_stream_free_null() {
         // Should be a no-op, not a crash.
         unsafe { gigastt_stream_free(ptr::null_mut()) };
+    }
+
+    #[test]
+    fn test_quantize_model_null_dir() {
+        let r = unsafe { gigastt_quantize_model(ptr::null(), false) };
+        assert!(!r.is_null());
+        let s = unsafe { CStr::from_ptr(r) }.to_str().unwrap();
+        assert!(s.contains("null"));
+        unsafe { gigastt_string_free(r) };
+    }
+
+    #[test]
+    fn test_quantize_model_invalid_utf8() {
+        let bad = [0x80u8, 0x81, 0x82, 0];
+        let r = unsafe { gigastt_quantize_model(bad.as_ptr() as *const c_char, false) };
+        assert!(!r.is_null());
+        let s = unsafe { CStr::from_ptr(r) }.to_str().unwrap();
+        assert!(s.contains("UTF-8"));
+        unsafe { gigastt_string_free(r) };
     }
 }
