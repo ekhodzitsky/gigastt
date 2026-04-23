@@ -10,14 +10,30 @@
   <p align="center"><b>English</b> | <a href="README_RU.md">Русский</a></p>
 </p>
 
+<p align="center">
+  <sub>Latest: <b>v0.9.4</b> — dependency rollup, zero functional changes. See <a href="CHANGELOG.md">CHANGELOG</a>.</sub>
+</p>
+
 ---
 
 **gigastt** turns any machine into a real-time Russian speech recognition server. One binary, one command, state-of-the-art accuracy — everything runs locally.
 
 ```sh
 cargo install gigastt && gigastt serve
-# WebSocket: ws://127.0.0.1:9876/ws
+# WebSocket: ws://127.0.0.1:9876/v1/ws
 # REST API:  http://127.0.0.1:9876/v1/transcribe
+```
+
+### Demo
+
+```sh
+$ gigastt transcribe recording.wav
+Привет, как дела?
+
+$ curl -X POST http://127.0.0.1:9876/v1/transcribe \
+    -H "Content-Type: application/octet-stream" \
+    --data-binary @recording.wav
+{"text":"Привет, как дела?","words":[],"duration":3.5}
 ```
 
 ## Why gigastt?
@@ -32,7 +48,7 @@ cargo install gigastt && gigastt serve
 | **Setup** | `cargo install` | Python + deps | API key + billing |
 | **Binary size** | single binary | Python runtime | N/A |
 | **INT8 quantization** | auto, 0% WER loss | manual | N/A |
-| **Concurrent sessions** | 4 (configurable) | 1 | unlimited |
+| **Concurrent sessions** | 4 (configurable) | 1 | provider limits |
 
 > GigaAM v3 was trained on **700K+ hours** of Russian speech. It delivers better accuracy than Whisper-large-v3 on Russian benchmarks while running faster on Apple Silicon and NVIDIA GPUs. WER measured on 993 Golos crowd-sourced samples (4991 words).
 
@@ -74,7 +90,7 @@ The model (~850 MB) downloads automatically on first run.
 ### Docker
 
 ```sh
-# CPU (any platform)
+# CPU — model auto-downloads on first run (~850 MB)
 docker build -t gigastt .
 docker run -p 9876:9876 gigastt
 
@@ -82,16 +98,7 @@ docker run -p 9876:9876 gigastt
 docker build -f Dockerfile.cuda -t gigastt-cuda .
 docker run --gpus all -p 9876:9876 gigastt-cuda
 
-# Model auto-downloads on first run (~850 MB)
-```
-
-#### Baked image (model included at build time)
-
-```sh
-# Slim image (model downloaded on first run, ~850 MB extra at startup)
-docker build -t gigastt .
-
-# Baked image (model included, zero cold-start, ~1.1 GB)
+# Baked image — model included at build time, zero cold-start (~1.1 GB)
 docker build --build-arg GIGASTT_BAKE_MODEL=1 -t gigastt:baked .
 ```
 
@@ -162,6 +169,24 @@ curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
 ```
 
 Full protocol spec: [`docs/asyncapi.yaml`](docs/asyncapi.yaml)
+
+#### Error Responses
+
+| HTTP | Code | When |
+|---|---|---|
+| 400 | `bad_request` | Invalid audio format or malformed request |
+| 413 | `payload_too_large` | File exceeds `--body-limit-bytes` (default 50 MiB) |
+| 429 | `rate_limit_exceeded` | Per-IP token bucket exhausted; `Retry-After` header included |
+| 503 | `pool_saturated` | All inference sessions busy; `Retry-After: 30` |
+| 503 | `pool_closed` | Server is shutting down, pool closed to new checkouts |
+
+```json
+// Example: pool saturation
+HTTP/1.1 503 Service Unavailable
+Retry-After: 30
+
+{"code":"pool_saturated","message":"All inference sessions are busy"}
+```
 
 ### Client Libraries
 
@@ -273,63 +298,30 @@ gigastt quantize --force             # re-quantize even if INT8 model exists
 
 ## CLI Reference
 
+Key flags for the most common commands. Every flag also has an environment variable — see the [full CLI reference](docs/cli.md).
+
+```sh
+# Start server
+gigastt serve --port 9876 --bind-all --metrics
+
+# Transcribe a file
+gigastt transcribe recording.wav
+
+# Re-quantize encoder (native Rust, ~2 min one-time)
+gigastt quantize --force
 ```
-gigastt [OPTIONS] <COMMAND>
 
-Options:
-  --log-level <LEVEL>    Log level [default: info]
-
-Commands:
-  serve        Start STT server
-  download     Download model (~850 MB) and auto-generate INT8 encoder
-  transcribe   Transcribe audio file (offline)
-  quantize     Quantize encoder to INT8 (always available since v0.9.0)
-
-gigastt serve [OPTIONS]
-  --port <PORT>             Listen port [default: 9876]
-  --host <HOST>             Bind address [default: 127.0.0.1]
-  --model-dir <DIR>         Model directory [default: ~/.gigastt/models]
-  --pool-size <N>           Concurrent inference sessions [default: 4]
-  --bind-all                Required to listen on a non-loopback address.
-                            Also: GIGASTT_ALLOW_BIND_ANY=1.
-  --allow-origin <URL>      Additional Origin allowed (repeatable).
-                            Loopback origins are always allowed.
-  --cors-allow-any          Accept any cross-origin caller (wildcard CORS).
-  --idle-timeout-secs <S>   WebSocket idle timeout [default: 300].
-                            Env: GIGASTT_IDLE_TIMEOUT_SECS.
-  --ws-frame-max-bytes <B>  Max WS frame size [default: 524288 = 512 KiB].
-                            Env: GIGASTT_WS_FRAME_MAX_BYTES.
-  --body-limit-bytes <B>    Max REST body size [default: 52428800 = 50 MiB].
-                            Env: GIGASTT_BODY_LIMIT_BYTES.
-  --rate-limit-per-minute <N>  Per-IP rate limit (requests/min). 0 = off (default).
-                            Applies to /v1/* only; /health is exempt.
-                            Env: GIGASTT_RATE_LIMIT_PER_MINUTE.
-  --rate-limit-burst <N>    Token-bucket burst size [default: 10].
-                            Env: GIGASTT_RATE_LIMIT_BURST.
-  --metrics                 Expose Prometheus metrics at GET /metrics.
-                            Off by default. Env: GIGASTT_METRICS.
-
-gigastt serve (continued)
-  --max-session-secs <S>        Wall-clock session cap [default: 3600]. 0 = disabled.
-                                Env: GIGASTT_MAX_SESSION_SECS.
-  --shutdown-drain-secs <S>     Max wait for in-flight sessions on SIGTERM [default: 10].
-                                Env: GIGASTT_SHUTDOWN_DRAIN_SECS.
-  --skip-quantize               Skip auto-quantization step on first run.
-                                Env: GIGASTT_SKIP_QUANTIZE.
-
-gigastt download [OPTIONS]
-  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
-  --diarization          Also download speaker diarization model (requires --features diarization)
-  --skip-quantize        Skip auto-quantization after download (FP32 only)
-
-gigastt transcribe [OPTIONS] <FILE>
-  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
-  Supports: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed)
-
-gigastt quantize [OPTIONS]          # always available since v0.9.0
-  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
-  --force                Re-quantize even if INT8 model exists
-```
+| Flag | Default | Description |
+|---|---|---|
+| `--port` | 9876 | Listen port |
+| `--host` | 127.0.0.1 | Bind address (loopback-only by default) |
+| `--bind-all` | — | Allow non-loopback bind |
+| `--pool-size` | 4 | Concurrent inference sessions |
+| `--metrics` | — | Expose Prometheus at `/metrics` |
+| `--idle-timeout-secs` | 300 | WebSocket idle timeout |
+| `--max-session-secs` | 3600 | Wall-clock session cap |
+| `--rate-limit-per-minute` | 0 | Per-IP rate limit (0 = off) |
+| `--skip-quantize` | — | Skip INT8 quantization on first run |
 
 ## Model
 
@@ -383,6 +375,20 @@ gigastt quantize [OPTIONS]          # always available since v0.9.0
 
 Remote deployment (TLS + reverse proxy): see [`docs/deployment.md`](docs/deployment.md).
 
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `protoc` not found during build | Missing Protocol Buffers compiler | `brew install protobuf` (macOS) or `apt install protobuf-compiler` (Debian/Ubuntu) |
+| Model download hangs or fails | Network / HuggingFace availability | Retry `gigastt download`; check `~/.gigastt/models/` permissions |
+| `Cannot quantize: FP32 encoder not found` | Partial download | Delete `~/.gigastt/models/` and re-run `gigastt download` |
+| OOM on startup | Pool size too large for available RAM | Lower `--pool-size` (default 4); each session loads the full encoder |
+| CoreML not used on macOS | Built without `--features coreml` | Re-build: `cargo build --release --features coreml` |
+| CUDA not available on Linux | Built without `--features cuda` or missing CUDA 12+ | Re-build: `cargo build --release --features cuda`; verify `nvidia-smi` |
+| WebSocket closes with 1008 | Session exceeded `--max-session-secs` | Increase `--max-session-secs` or send shorter streams |
+| 429 Too Many Requests | Rate limiter enabled and bucket exhausted | Wait for `Retry-After` interval, or disable with `--rate-limit-per-minute 0` |
+| Empty transcription for noisy audio | Input too quiet or wrong format | Ensure 16-bit PCM; normalize audio level; check supported formats |
+
 ## Testing
 
 125 unit tests + 30 e2e tests + load & soak tests:
@@ -399,6 +405,10 @@ cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -
 cargo test --test load_test -- --ignored
 cargo test --test soak_test -- --ignored
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) — development setup, PR guidelines, and release checklist.
 
 ## License
 
