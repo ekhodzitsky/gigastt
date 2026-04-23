@@ -1,0 +1,68 @@
+name: Android FFI Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  check-ffi:
+    runs-on: ubuntu-latest
+    name: Check FFI (lean build)
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: '29.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo check --no-default-features --features ffi
+
+  build-android:
+    runs-on: ubuntu-latest
+    name: Build Android (arm64)
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: '29.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-android-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Build libgigastt.so (arm64)
+        run: |
+          cargo ndk \
+            -t arm64-v8a \
+            -o ./target/android \
+            build --release \
+            --no-default-features \
+            --features ffi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libgigastt-arm64
+          path: target/android/arm64-v8a/libgigastt.so

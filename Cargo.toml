@@ -1,12 +1,15 @@
 [package]
 name = "gigastt"
-version = "0.9.4"
+version = "0.9.5"
 edition = "2024"
 description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 license = "MIT"
 repository = "https://github.com/ekhodzitsky/gigastt"
 keywords = ["stt", "speech-recognition", "gigaam", "onnx", "russian"]
 categories = ["multimedia::audio", "command-line-utilities"]
+
+[lib]
+crate-type = ["rlib", "cdylib"]
 
 [features]
 default = ["server"]

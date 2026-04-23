@@ -51,6 +51,9 @@ pub(crate) fn now_timestamp() -> f64 {
 const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64) * 4.0 / 16000.0;
 
 /// Default number of session triplets in the pool.
+#[cfg(target_os = "android")]
+const DEFAULT_POOL_SIZE: usize = 1;
+#[cfg(not(target_os = "android"))]
 const DEFAULT_POOL_SIZE: usize = 4;
 
 /// A set of ONNX sessions for one inference pipeline (encoder + decoder + joiner).

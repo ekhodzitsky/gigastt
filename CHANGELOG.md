@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-04-23
+
+Production-hardening release: security fix, Android FFI support, and lean builds.
+
+### Security
+
+- **RUSTSEC-2026-0104** — `rustls-webpki` 0.103.12 → 0.103.13. Reachable panic in CRL parsing fixed.
+
+### Added
+
+- **Android FFI layer** (`src/ffi.rs`, feature `ffi`). C-ABI exports:
+  `gigastt_engine_new`, `gigastt_engine_new_with_pool_size`,
+  `gigastt_transcribe_file`, `gigastt_stream_new`,
+  `gigastt_stream_process_chunk`, `gigastt_stream_flush`,
+  `gigastt_stream_free`, `gigastt_string_free`, `gigastt_engine_free`.
+  Enables embedding gigastt as `libgigastt.so` in Android apps.
+- **`ort/nnapi`** via feature `ffi` — Android NPU/DSP acceleration when available.
+- **`Pool::checkout_blocking()`** — synchronous pool checkout for FFI callers.
+- **`Serialize` derive on `TranscriptSegment`** — JSON serialization for FFI streaming.
+- **Android default pool size = 1** — reduces mobile RSS from ~560 MB to ~350 MB.
+- **`server` Cargo feature** (enabled by default) — gates `axum`, `tokio-stream`,
+  `tokio-util`. Building `--no-default-features --features ffi` strips server
+  dead code from mobile `.so` binaries.
+- **Binary target** (`gigastt` bin) requires `server` feature via
+  `required-features` in `Cargo.toml`.
+- **Android CI workflow** (`.github/workflows/android.yml`) — builds
+  `libgigastt.so` for `arm64-v8a` on every PR/push.
+
+### Changed
+
+- **README refactor** — added terminal demo block, Troubleshooting section,
+  HTTP error codes table, extracted full CLI reference to `docs/cli.md`,
+  fixed "unlimited concurrent" comparison, added Contributing link.
+
+### Fixed
+
+- Clippy warnings: `clippy::single_match`, `clippy::items_after_test_module`,
+  `clippy::manual_is_multiple_of`.
+
 ## [0.9.4] - 2026-04-21
 
 Dependency-bump rollup. No functional source changes; every entry here is
