@@ -18,6 +18,7 @@ diarization = []
 # so the feature is retained as a no-op for backwards compatibility with
 # `cargo install gigastt --features quantize`.
 quantize = []
+ffi = ["ort/nnapi"]
 
 [dependencies]
 # ONNX Runtime

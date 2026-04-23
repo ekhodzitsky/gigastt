@@ -138,6 +138,17 @@ impl<T> Pool<T> {
         }
     }
 
+    /// Synchronous (blocking) checkout. Used by FFI and other synchronous callers.
+    pub fn checkout_blocking(&self) -> Result<PoolGuard<'_, T>, PoolError> {
+        match self.receiver.recv_blocking() {
+            Ok(item) => Ok(PoolGuard {
+                pool: self,
+                item: Some(item),
+            }),
+            Err(_) => Err(PoolError::Closed),
+        }
+    }
+
     /// Close the pool: all current and future [`checkout`](Self::checkout)
     /// callers resolve to [`PoolError::Closed`]. Used by graceful shutdown.
     /// Idempotent.
@@ -996,7 +1007,7 @@ pub struct TranscribeResult {
 ///
 /// Partial segments (`is_final == false`) represent interim results that may change.
 /// Final segments (`is_final == true`) represent completed utterances after endpointing.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 #[non_exhaustive]
 pub struct TranscriptSegment {
     /// Recognized text for this segment.
