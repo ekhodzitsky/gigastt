@@ -12,20 +12,20 @@
 class Gigastt < Formula
   desc "On-device Russian speech recognition server powered by GigaAM v3"
   homepage "https://github.com/ekhodzitsky/gigastt"
-  version "0.9.4"
+  version "0.9.5"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/ekhodzitsky/gigastt/releases/download/v0.9.4/gigastt-0.9.4-aarch64-apple-darwin.tar.gz"
-      sha256 "325d13d398bc6e1a6bc5e15dfcf917ea426db1d48c9ff7b9397cb6b6569dba2f"
+      url "https://github.com/ekhodzitsky/gigastt/releases/download/v0.9.5/gigastt-0.9.5-aarch64-apple-darwin.tar.gz"
+      sha256 "03828caa4fc0dbdf7859ba7f71ae9740a9d812b2302bc9820934250f80779d13"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/ekhodzitsky/gigastt/releases/download/v0.9.4/gigastt-0.9.4-x86_64-unknown-linux-gnu.tar.gz"
-      sha256 "653b77a0574ad2b9d68df1ed46589e7eace5174d179e8098087b3a7e98f622c5"
+      url "https://github.com/ekhodzitsky/gigastt/releases/download/v0.9.5/gigastt-0.9.5-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "754ae391ccce4c6a91362b0b23540432e984b7a601bbceb939728e2ea4709f36"
     end
   end
 
