@@ -32,6 +32,8 @@ pub mod model;
 pub mod onnx_proto;
 pub mod protocol;
 pub mod quantize;
+
+#[cfg(feature = "server")]
 pub mod server;
 
 #[cfg(feature = "ffi")]

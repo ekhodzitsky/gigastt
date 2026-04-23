@@ -9,7 +9,8 @@ keywords = ["stt", "speech-recognition", "gigaam", "onnx", "russian"]
 categories = ["multimedia::audio", "command-line-utilities"]
 
 [features]
-default = []
+default = ["server"]
+server = ["dep:axum", "dep:tokio-stream", "dep:tokio-util"]
 coreml = ["ort/coreml"]
 cuda = ["ort/cuda"]
 diarization = []
@@ -31,7 +32,7 @@ tokio = { version = "1", features = ["full"] }
 async-channel = "2"
 
 # HTTP + WebSocket server (single port via axum)
-axum = { version = "0.8", features = ["ws", "multipart"] }
+axum = { version = "0.8", features = ["ws", "multipart"], optional = true }
 futures-util = "0.3"
 
 # CLI
@@ -61,11 +62,11 @@ rustfft = "6"
 rubato = "0.16"
 
 # Async stream adapters (ReceiverStream for SSE)
-tokio-stream = "0.1"
+tokio-stream = { version = "0.1", optional = true }
 
 # Cancellation + task tracking for graceful WS/SSE drain on shutdown (V1-03).
 # `rt` pulls in `CancellationToken` + `TaskTracker` (tokio-util 0.7).
-tokio-util = { version = "0.7", features = ["rt"] }
+tokio-util = { version = "0.7", features = ["rt"], optional = true }
 
 # Audio file reading (for `transcribe` command)
 symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
@@ -93,6 +94,10 @@ prost = "0.13"
 # Regenerates ONNX types from `proto/onnx.proto` into `OUT_DIR/onnx.rs`
 # at build time. Requires `protoc` in `PATH` (see `build.rs`).
 prost-build = "0.14"
+
+[[bin]]
+name = "gigastt"
+required-features = ["server"]
 
 [[test]]
 name = "benchmark"

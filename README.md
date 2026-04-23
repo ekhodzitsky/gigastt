@@ -296,6 +296,31 @@ gigastt quantize --force             # re-quantize even if INT8 model exists
                   Russian Text
 ```
 
+## Android / FFI
+
+gigastt can be embedded into Android applications via a C-ABI FFI layer (no HTTP server, no JNI boilerplate required).
+
+```sh
+# Build libgigastt.so for Android (arm64)
+cargo ndk -t arm64-v8a -o ./jniLibs build --release \
+  --no-default-features --features ffi
+```
+
+| Function | Purpose |
+|---|---|
+| `gigastt_engine_new(model_dir)` | Load engine (default pool_size = 4) |
+| `gigastt_engine_new_with_pool_size(model_dir, pool_size)` | Load engine with custom RAM budget |
+| `gigastt_transcribe_file(engine, wav_path)` | Synchronous file transcription |
+| `gigastt_stream_new(engine)` | Start a real-time streaming session |
+| `gigastt_stream_process_chunk(...)` | Feed PCM16 audio, get JSON segments |
+| `gigastt_stream_flush(...)` | Finalize stream |
+
+The `ffi` feature pulls in `ort/nnapi` for NPU/DSP acceleration on Android.
+For pool sizing on mobile: use `pool_size = 1` to stay within ~350 MB RAM.
+
+Full integration guide: [`ANDROID.md`](ANDROID.md)  
+Kotlin bridge: [`ffi/android/GigasttBridge.kt`](ffi/android/GigasttBridge.kt)
+
 ## CLI Reference
 
 Key flags for the most common commands. Every flag also has an environment variable — see the [full CLI reference](docs/cli.md).

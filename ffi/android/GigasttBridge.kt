@@ -26,10 +26,26 @@ object GigasttBridge {
     /**
      * Load the ONNX models from [modelDir] and create an inference engine.
      *
+     * Uses the default pool size (4). On mobile devices prefer
+     * [engineNewWithPoolSize] with `poolSize = 1` to reduce RAM.
+     *
      * Returns an opaque handle (pointer cast to Long) or 0L on failure.
      */
     @JvmStatic
     external fun engineNew(modelDir: String): Long
+
+    /**
+     * Load the ONNX models from [modelDir] with a custom session pool size.
+     *
+     * `poolSize` controls concurrent inference sessions. Each session loads
+     * the full encoder, so RAM scales linearly:
+     * - 1: ~350 MB (recommended for mobile)
+     * - 4: ~560 MB (default desktop/server)
+     *
+     * Returns an opaque handle or 0L on failure.
+     */
+    @JvmStatic
+    external fun engineNewWithPoolSize(modelDir: String, poolSize: Int): Long
 
     /**
      * Transcribe a WAV file and return the recognized text.

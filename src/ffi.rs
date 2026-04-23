@@ -35,34 +35,55 @@ pub struct GigasttStream {
 
 /// Load the ONNX models from `model_dir` and create an inference engine.
 ///
+/// Uses the default pool size (4). For mobile devices, prefer
+/// `gigastt_engine_new_with_pool_size` with `pool_size = 1` to reduce RAM.
+///
 /// # Safety
 /// `model_dir` must be a valid, null-terminated UTF-8 string.
 /// Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_engine_new(model_dir: *const c_char) -> *mut GigasttEngine {
+    unsafe { gigastt_engine_new_with_pool_size(model_dir, 4) }
+}
+
+/// Load the ONNX models with a custom session pool size.
+///
+/// `pool_size` controls how many concurrent inference sessions are kept in
+/// memory. Each session loads the full encoder, so RAM scales linearly:
+/// - pool_size = 1: ~350 MB (recommended for mobile)
+/// - pool_size = 4: ~560 MB (default desktop/server)
+///
+/// # Safety
+/// `model_dir` must be a valid, null-terminated UTF-8 string.
+/// Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gigastt_engine_new_with_pool_size(
+    model_dir: *const c_char,
+    pool_size: usize,
+) -> *mut GigasttEngine {
     if model_dir.is_null() {
-        tracing::error!("gigastt_engine_new: model_dir is null");
-        eprintln!("gigastt_engine_new: model_dir is null");
+        tracing::error!("gigastt_engine_new_with_pool_size: model_dir is null");
+        eprintln!("gigastt_engine_new_with_pool_size: model_dir is null");
         return ptr::null_mut();
     }
 
     let dir_str = match unsafe { CStr::from_ptr(model_dir) }.to_str() {
         Ok(s) => s,
         Err(e) => {
-            tracing::error!("gigastt_engine_new: model_dir is not valid UTF-8: {e}");
-            eprintln!("gigastt_engine_new: model_dir is not valid UTF-8: {e}");
+            tracing::error!("gigastt_engine_new_with_pool_size: model_dir is not valid UTF-8: {e}");
+            eprintln!("gigastt_engine_new_with_pool_size: model_dir is not valid UTF-8: {e}");
             return ptr::null_mut();
         }
     };
 
-    match Engine::load(dir_str) {
+    match Engine::load_with_pool_size(dir_str, pool_size) {
         Ok(engine) => {
             let handle = Box::new(GigasttEngine { engine });
             Box::into_raw(handle)
         }
         Err(e) => {
-            tracing::error!("gigastt_engine_new: failed to load engine: {e}");
-            eprintln!("gigastt_engine_new: failed to load engine: {e}");
+            tracing::error!("gigastt_engine_new_with_pool_size: failed to load engine: {e}");
+            eprintln!("gigastt_engine_new_with_pool_size: failed to load engine: {e}");
             ptr::null_mut()
         }
     }
