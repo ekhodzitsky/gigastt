@@ -72,6 +72,7 @@ impl Tokenizer {
         self.tokens.len()
     }
 
+    #[allow(dead_code)]
     pub fn decode(&self, ids: &[usize]) -> String {
         let mut text = String::new();
         for &id in ids {

@@ -237,55 +237,6 @@ fn ensure_int8_encoder(model_dir: &str, skip: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_is_loopback_host_recognises_common_forms() {
-        assert!(is_loopback_host("127.0.0.1"));
-        assert!(is_loopback_host("localhost"));
-        assert!(is_loopback_host("::1"));
-        assert!(is_loopback_host("[::1]"));
-        assert!(is_loopback_host("127.0.0.2")); // loopback /8
-        assert!(!is_loopback_host("0.0.0.0"));
-        assert!(!is_loopback_host("192.168.1.10"));
-        assert!(!is_loopback_host("example.com"));
-    }
-
-    #[test]
-    fn test_ensure_bind_allowed_loopback_ok() {
-        ensure_bind_allowed("127.0.0.1", false).expect("loopback must be allowed");
-        ensure_bind_allowed("localhost", false).expect("localhost must be allowed");
-    }
-
-    #[test]
-    fn test_ensure_bind_allowed_non_loopback_requires_flag() {
-        // Temporarily strip any env opt-in that might exist on the runner.
-        // SAFETY: single-threaded test harness inside this fn body; env mutation is fine.
-        let previous = std::env::var("GIGASTT_ALLOW_BIND_ANY").ok();
-        // SAFETY: tests are run sequentially within this module — transient env mutation.
-        unsafe {
-            std::env::remove_var("GIGASTT_ALLOW_BIND_ANY");
-        }
-        let result = ensure_bind_allowed("0.0.0.0", false);
-        if let Some(v) = previous {
-            unsafe {
-                std::env::set_var("GIGASTT_ALLOW_BIND_ANY", v);
-            }
-        }
-        assert!(
-            result.is_err(),
-            "0.0.0.0 without --bind-all must be rejected"
-        );
-    }
-
-    #[test]
-    fn test_ensure_bind_allowed_explicit_flag_ok() {
-        ensure_bind_allowed("0.0.0.0", true).expect("explicit --bind-all must pass");
-    }
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -379,4 +330,53 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_loopback_host_recognises_common_forms() {
+        assert!(is_loopback_host("127.0.0.1"));
+        assert!(is_loopback_host("localhost"));
+        assert!(is_loopback_host("::1"));
+        assert!(is_loopback_host("[::1]"));
+        assert!(is_loopback_host("127.0.0.2")); // loopback /8
+        assert!(!is_loopback_host("0.0.0.0"));
+        assert!(!is_loopback_host("192.168.1.10"));
+        assert!(!is_loopback_host("example.com"));
+    }
+
+    #[test]
+    fn test_ensure_bind_allowed_loopback_ok() {
+        ensure_bind_allowed("127.0.0.1", false).expect("loopback must be allowed");
+        ensure_bind_allowed("localhost", false).expect("localhost must be allowed");
+    }
+
+    #[test]
+    fn test_ensure_bind_allowed_non_loopback_requires_flag() {
+        // Temporarily strip any env opt-in that might exist on the runner.
+        // SAFETY: single-threaded test harness inside this fn body; env mutation is fine.
+        let previous = std::env::var("GIGASTT_ALLOW_BIND_ANY").ok();
+        // SAFETY: tests are run sequentially within this module — transient env mutation.
+        unsafe {
+            std::env::remove_var("GIGASTT_ALLOW_BIND_ANY");
+        }
+        let result = ensure_bind_allowed("0.0.0.0", false);
+        if let Some(v) = previous {
+            unsafe {
+                std::env::set_var("GIGASTT_ALLOW_BIND_ANY", v);
+            }
+        }
+        assert!(
+            result.is_err(),
+            "0.0.0.0 without --bind-all must be rejected"
+        );
+    }
+
+    #[test]
+    fn test_ensure_bind_allowed_explicit_flag_ok() {
+        ensure_bind_allowed("0.0.0.0", true).expect("explicit --bind-all must pass");
+    }
 }

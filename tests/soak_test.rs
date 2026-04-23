@@ -117,7 +117,7 @@ async fn test_soak_ws_continuous() {
         }
 
         let iter_ms = iter_start.elapsed().as_millis();
-        if iteration % 10 == 0 {
+        if iteration.is_multiple_of(10) {
             println!(
                 "[soak] iter={iteration} errors={error_count} elapsed={:.1}s iter_ms={iter_ms}",
                 start.elapsed().as_secs_f64()

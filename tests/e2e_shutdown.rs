@@ -37,11 +37,8 @@ async fn test_shutdown_during_ws_session() {
     // The stream must terminate within 15 seconds — no hanging forever
     let result = tokio::time::timeout(Duration::from_secs(15), stream.next()).await;
 
-    match result {
-        Err(_elapsed) => {
-            panic!("WebSocket stream did not terminate within 15s after server shutdown")
-        }
-        Ok(_) => {}
+    if let Err(_elapsed) = result {
+        panic!("WebSocket stream did not terminate within 15s after server shutdown")
     }
 }
 
