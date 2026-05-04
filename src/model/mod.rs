@@ -187,7 +187,7 @@ fn sha256_file(path: &Path) -> Result<String> {
         .with_context(|| format!("Failed to read file for verification: {}", path.display()))?;
     let mut hasher = Sha256::new();
     hasher.update(&data);
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(hex::encode(hasher.finalize()))
 }
 
 /// Verify a staged `.partial` file against `expected_sha256` (when provided)
@@ -340,7 +340,7 @@ mod tests {
     fn sha256_hex(bytes: &[u8]) -> String {
         let mut hasher = Sha256::new();
         hasher.update(bytes);
-        format!("{:x}", hasher.finalize())
+        hex::encode(hasher.finalize())
     }
 
     /// V1-01: Helper to stage a `.partial` file with arbitrary bytes, mimicking
