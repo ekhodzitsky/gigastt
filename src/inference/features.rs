@@ -100,6 +100,22 @@ impl MelSpectrogram {
     /// Returns features in shape [n_mels, num_frames] as a flat Vec.
     pub fn compute(&self, samples: &[f32]) -> (Vec<f32>, usize) {
         let n_freqs = self.n_fft / 2 + 1;
+        let mut fft_input = vec![Complex::new(0.0_f32, 0.0); self.n_fft];
+        let mut power = vec![0.0_f32; n_freqs];
+        self.compute_with_buffers(samples, &mut fft_input, &mut power)
+    }
+
+    /// Compute log-mel spectrogram reusing pre-allocated `fft_input` and `power` buffers.
+    ///
+    /// `fft_input` must have length >= `self.n_fft`; `power` must have length >= `n_freqs`.
+    /// Both buffers are resized automatically if too small.
+    pub fn compute_with_buffers(
+        &self,
+        samples: &[f32],
+        fft_input: &mut Vec<Complex<f32>>,
+        power: &mut Vec<f32>,
+    ) -> (Vec<f32>, usize) {
+        let n_freqs = self.n_fft / 2 + 1;
 
         // Number of frames (center=false)
         if samples.len() < self.n_fft {
@@ -110,9 +126,13 @@ impl MelSpectrogram {
         let n_mels = self.mel_filterbank.len();
         let mut output = vec![0.0_f32; n_mels * num_frames];
 
-        // Pre-allocate buffers reused across frames
-        let mut fft_input = vec![Complex::new(0.0_f32, 0.0); self.n_fft];
-        let mut power = vec![0.0_f32; n_freqs];
+        // Ensure reusable buffers are large enough
+        if fft_input.len() < self.n_fft {
+            fft_input.resize(self.n_fft, Complex::new(0.0_f32, 0.0));
+        }
+        if power.len() < n_freqs {
+            power.resize(n_freqs, 0.0_f32);
+        }
 
         for frame_idx in 0..num_frames {
             let start = frame_idx * self.hop_length;
@@ -128,7 +148,7 @@ impl MelSpectrogram {
             }
 
             // FFT
-            self.fft.process(&mut fft_input);
+            self.fft.process(&mut fft_input[..self.n_fft]);
 
             // Power spectrum (first n_fft/2 + 1 bins)
             for k in 0..n_freqs {

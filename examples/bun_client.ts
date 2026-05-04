@@ -5,7 +5,7 @@ const WAV_HEADER_BYTES = 44;
 const CHUNK_BYTES = 32768; // ~1s at 16kHz PCM16
 
 const wavPath = Bun.argv[2];
-const server = Bun.argv[3] ?? "ws://127.0.0.1:9876/ws";
+const server = Bun.argv[3] ?? "ws://127.0.0.1:9876/v1/ws";
 
 if (!wavPath) {
   console.error(`Usage: bun ${Bun.argv[1]} <audio.wav> [ws://host:port]`);
@@ -48,7 +48,11 @@ ws.onmessage = async (event) => {
     ws.close();
     done();
   } else if (msg.type === "error") {
-    console.error(`\n  ERR: ${msg.message}`);
+    if (msg.retry_after_ms) {
+      console.error(`\n  ERR: ${msg.message} (retry after ${msg.retry_after_ms}ms)`);
+    } else {
+      console.error(`\n  ERR: ${msg.message}`);
+    }
     ws.close();
     done();
   }

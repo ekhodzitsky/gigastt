@@ -59,6 +59,8 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - run: cargo test
+      - uses: taiki-e/install-action@nextest
+      - run: cargo nextest run --retries 2
 
   build-coreml:
     runs-on: macos-14

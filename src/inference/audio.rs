@@ -2,6 +2,7 @@
 
 use anyhow::{Context, Result};
 use bytes::Bytes;
+use rubato::Resampler;
 use symphonia::core::audio::SampleBuffer;
 use symphonia::core::codecs::DecoderOptions;
 use symphonia::core::formats::FormatOptions;
@@ -13,6 +14,29 @@ use super::{HOP_LENGTH, N_FFT};
 
 const MAX_BUFFER_SAMPLES: usize = 16000 * 5; // 5 seconds at 16kHz
 const MAX_DURATION_S: f64 = 600.0; // 10 minutes
+
+/// Sample rate in Hz. Invariant: `rate > 0`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SampleRate(pub u32);
+
+impl SampleRate {
+    /// { rate > 0 }
+    /// fn new(rate: u32) -> Result<SampleRate, String>
+    /// { ret.as_ref().map(|r| r.0 > 0).unwrap_or(true) }
+    pub fn new(rate: u32) -> Result<Self, String> {
+        if rate == 0 {
+            return Err("sample rate must be > 0".into());
+        }
+        Ok(SampleRate(rate))
+    }
+
+    /// { true }
+    /// fn get(self) -> u32
+    /// { ret > 0 }
+    pub fn get(self) -> u32 {
+        self.0
+    }
+}
 
 /// A [`MediaSource`] that borrows its data from a reference-counted [`Bytes`]
 /// buffer instead of cloning into a `Vec<u8>`.
@@ -91,6 +115,10 @@ impl MediaSource for BytesMediaSource {
 /// # Errors
 ///
 /// Returns an error if the file cannot be opened, decoded, or exceeds the duration limit.
+///
+/// { !path.is_empty() }
+/// fn decode_audio_file(path: &str) -> Result<Vec<f32>>
+/// { ret.as_ref().map(|v| !v.is_empty() || path.is_empty()).unwrap_or(true) }
 pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
     let file =
         std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
@@ -124,6 +152,10 @@ pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
 /// # Errors
 ///
 /// Returns an error if the bytes cannot be decoded or the audio exceeds the duration limit.
+///
+/// { true }
+/// fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>>
+/// { ret.as_ref().map(|v| !v.is_empty()).unwrap_or(true) }
 pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
     decode_audio_bytes_shared(Bytes::copy_from_slice(data))
 }
@@ -140,6 +172,10 @@ pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
 ///
 /// Returns an error if the bytes cannot be decoded or the audio exceeds the
 /// duration limit.
+///
+/// { true }
+/// fn decode_audio_bytes_shared(data: Bytes) -> Result<Vec<f32>>
+/// { ret.as_ref().map(|v| !v.is_empty()).unwrap_or(true) }
 pub fn decode_audio_bytes_shared(data: Bytes) -> Result<Vec<f32>> {
     let source = BytesMediaSource::new(data);
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
@@ -249,7 +285,8 @@ fn decode_audio_inner(mss: MediaSourceStream, hint: Hint, source_label: &str) ->
 
     // Resample to 16kHz if needed
     if sample_rate != 16000 {
-        all_samples = resample(&all_samples, sample_rate, 16000).context("Resampling failed")?;
+        all_samples = resample(&all_samples, SampleRate(sample_rate), SampleRate(16000))
+            .context("Resampling failed")?;
         tracing::info!("Resampled to 16kHz: {} samples", all_samples.len());
     }
 
@@ -259,8 +296,12 @@ fn decode_audio_inner(mss: MediaSourceStream, hint: Hint, source_label: &str) ->
 /// High-quality polyphase FIR resampler (rubato SincFixedIn).
 ///
 /// Non-finite samples (NaN, infinity) are replaced with `0.0` before resampling.
-pub fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Result<Vec<f32>> {
-    if samples.is_empty() || from_rate == 0 || to_rate == 0 {
+///
+/// { from_rate.0 > 0 && to_rate.0 > 0 }
+/// fn resample(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate) -> Result<Vec<f32>>
+/// { ret.as_ref().map(|v| !v.is_empty() || samples.is_empty() || from_rate == to_rate).unwrap_or(true) }
+pub fn resample(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate) -> Result<Vec<f32>> {
+    if samples.is_empty() || from_rate.0 == 0 || to_rate.0 == 0 {
         return Ok(Vec::new());
     }
     if from_rate == to_rate {
@@ -285,7 +326,7 @@ pub fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Result<Vec<f32
         window: WindowFunction::BlackmanHarris2,
     };
 
-    let ratio = to_rate as f64 / from_rate as f64;
+    let ratio = to_rate.0 as f64 / from_rate.0 as f64;
     let mut resampler = SincFixedIn::<f32>::new(
         ratio,
         2.0,
@@ -302,37 +343,101 @@ pub fn resample(samples: &[f32], from_rate: u32, to_rate: u32) -> Result<Vec<f32
     Ok(waves_out.remove(0))
 }
 
+/// Resample audio using an optional cached resampler.
+///
+/// The cached resampler is created on first call and reused when the input
+/// chunk size matches. If the chunk size changes, the cache is recreated.
+///
+/// { from_rate.0 > 0 && to_rate.0 > 0 }
+/// fn resample_with_cache(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate, cache: &mut Option<rubato::SincFixedIn<f32>>) -> anyhow::Result<Vec<f32>>
+/// { ret.as_ref().map(|v| !v.is_empty() || samples.is_empty() || from_rate == to_rate).unwrap_or(true) }
+pub fn resample_with_cache(
+    samples: &[f32],
+    from_rate: SampleRate,
+    to_rate: SampleRate,
+    cache: &mut Option<rubato::SincFixedIn<f32>>,
+) -> anyhow::Result<Vec<f32>> {
+    if samples.is_empty() || from_rate.0 == 0 || to_rate.0 == 0 {
+        return Ok(Vec::new());
+    }
+    if from_rate == to_rate {
+        return Ok(samples.to_vec());
+    }
+
+    // Sanitize non-finite values
+    let samples: Vec<f32> = samples
+        .iter()
+        .map(|&s| if s.is_finite() { s } else { 0.0 })
+        .collect();
+
+    let ratio = to_rate.0 as f64 / from_rate.0 as f64;
+
+    let needs_new = match cache {
+        Some(r) => r.set_chunk_size(samples.len()).is_err(),
+        None => true,
+    };
+
+    if needs_new {
+        use rubato::{
+            SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
+        };
+        let params = SincInterpolationParameters {
+            sinc_len: 256,
+            f_cutoff: 0.95,
+            interpolation: SincInterpolationType::Linear,
+            oversampling_factor: 256,
+            window: WindowFunction::BlackmanHarris2,
+        };
+        let r = SincFixedIn::<f32>::new(ratio, 2.0, params, samples.len(), 1)
+            .map_err(|e| anyhow::anyhow!("Resampler init failed: {e}"))?;
+        *cache = Some(r);
+    }
+
+    let resampler = cache.as_mut().unwrap_or_else(|| unreachable!());
+    let out = resampler
+        .process(&[samples], None)
+        .map_err(|e| anyhow::anyhow!("Resampling failed: {e}"))?;
+    Ok(out.into_iter().next().unwrap_or_default())
+}
+
 /// Prepare audio buffer for processing: merge new samples with leftover,
 /// truncate if too long, split into usable samples and new leftover.
 ///
 /// Returns `Some(usable_samples)` if enough data for at least one frame,
 /// `None` if all data was buffered for the next call.
 /// Updates `buffer` in-place with leftover samples.
+///
+/// { true }
+/// fn prepare_audio_buffer(new_samples: &[f32], buffer: &mut Vec<f32>) -> Option<Vec<f32>>
+/// { ret.is_none() == (buffer.len() < N_FFT) }
 pub(crate) fn prepare_audio_buffer(new_samples: &[f32], buffer: &mut Vec<f32>) -> Option<Vec<f32>> {
-    let mut all_samples = std::mem::take(buffer);
-    all_samples.extend_from_slice(new_samples);
+    buffer.extend_from_slice(new_samples);
 
-    if all_samples.len() > MAX_BUFFER_SAMPLES {
+    if buffer.len() > MAX_BUFFER_SAMPLES {
         tracing::warn!("Audio buffer exceeded 5s limit, truncating");
-        all_samples = all_samples[all_samples.len() - MAX_BUFFER_SAMPLES..].to_vec();
+        let excess = buffer.len() - MAX_BUFFER_SAMPLES;
+        buffer.copy_within(excess.., 0);
+        buffer.truncate(MAX_BUFFER_SAMPLES);
     }
 
     let hop_length = HOP_LENGTH;
     let n_fft = N_FFT;
-    let usable = if all_samples.len() >= n_fft {
-        let num_frames = (all_samples.len() - n_fft) / hop_length + 1;
+    let usable = if buffer.len() >= n_fft {
+        let num_frames = (buffer.len() - n_fft) / hop_length + 1;
         (num_frames - 1) * hop_length + n_fft
     } else {
         0
     };
 
     if usable == 0 {
-        *buffer = all_samples;
         return None;
     }
 
-    *buffer = all_samples[usable..].to_vec();
-    Some(all_samples[..usable].to_vec())
+    let mut result = Vec::with_capacity(usable);
+    result.extend_from_slice(&buffer[..usable]);
+    buffer.copy_within(usable.., 0);
+    buffer.truncate(buffer.len() - usable);
+    Some(result)
 }
 
 #[cfg(test)]
@@ -344,7 +449,7 @@ mod tests {
     #[test]
     fn test_resample_downsample_length() {
         let input: Vec<f32> = (0..4800).map(|i| (i as f32).sin()).collect();
-        let output = resample(&input, 48000, 16000).unwrap();
+        let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
         // Rubato FIR filter has sinc_len/2 delay; output is shorter than ideal ratio.
         // For 4800 samples at 3:1 ratio, expect ~1556 (not exact 1600).
         assert!(!output.is_empty());
@@ -358,7 +463,7 @@ mod tests {
     #[test]
     fn test_resample_upsample_length() {
         let input: Vec<f32> = (0..800).map(|i| (i as f32).sin()).collect();
-        let output = resample(&input, 8000, 16000).unwrap();
+        let output = resample(&input, SampleRate(8000), SampleRate(16000)).unwrap();
         // Rubato FIR delay reduces output; expect ~1340 (not exact 1600).
         assert!(!output.is_empty());
         assert!(
@@ -373,7 +478,7 @@ mod tests {
         // Constant signal should remain approximately constant after resampling.
         // Rubato FIR filter may cause transients at edges; check the middle 80%.
         let input = vec![0.5_f32; 4800];
-        let output = resample(&input, 48000, 16000).unwrap();
+        let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
         let start = output.len() / 10;
         let end = output.len() - start;
         for &sample in &output[start..end] {
@@ -386,21 +491,29 @@ mod tests {
 
     #[test]
     fn test_resample_empty() {
-        let output = resample(&[], 48000, 16000).unwrap();
+        let output = resample(&[], SampleRate(48000), SampleRate(16000)).unwrap();
         assert!(output.is_empty());
     }
 
     #[test]
     fn test_resample_zero_rate_returns_empty() {
         let input = vec![1.0, 2.0, 3.0];
-        assert!(resample(&input, 0, 16000).unwrap().is_empty());
-        assert!(resample(&input, 16000, 0).unwrap().is_empty());
+        assert!(
+            resample(&input, SampleRate(0), SampleRate(16000))
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            resample(&input, SampleRate(16000), SampleRate(0))
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
     fn test_resample_same_rate() {
         let input = vec![1.0, 2.0, 3.0, 4.0];
-        let output = resample(&input, 16000, 16000).unwrap();
+        let output = resample(&input, SampleRate(16000), SampleRate(16000)).unwrap();
         assert_eq!(output.len(), input.len());
         for (a, b) in input.iter().zip(output.iter()) {
             assert!((a - b).abs() < 1e-5);
@@ -487,7 +600,7 @@ mod tests {
     #[test]
     fn test_resample_nan_input() {
         let input = vec![f32::NAN; 1000];
-        let output = resample(&input, 48000, 16000).unwrap();
+        let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
         // NaN should be replaced with zeros
         assert!(!output.is_empty());
         for &s in &output {
@@ -498,7 +611,7 @@ mod tests {
     #[test]
     fn test_resample_infinity_input() {
         let input = vec![f32::INFINITY; 500];
-        let output = resample(&input, 48000, 16000).unwrap();
+        let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
         assert!(!output.is_empty());
         for &s in &output {
             assert!(
@@ -513,7 +626,7 @@ mod tests {
         let mut input = vec![0.5_f32; 480];
         input[100] = f32::NAN;
         input[200] = f32::NEG_INFINITY;
-        let output = resample(&input, 48000, 16000).unwrap();
+        let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
         assert!(!output.is_empty());
         for &s in &output {
             assert!(s.is_finite(), "Non-finite values should be sanitized");

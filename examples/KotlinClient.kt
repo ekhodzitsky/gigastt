@@ -24,7 +24,7 @@ fun main(args: Array<String>) {
 
     val wavPath = args[0]
     val serverBase = if (args.size > 1) args[1] else "ws://127.0.0.1:9876"
-    val serverUrl = if (serverBase.endsWith("/ws")) serverBase else "$serverBase/ws"
+    val serverUrl = if (serverBase.endsWith("/v1/ws")) serverBase else "$serverBase/v1/ws"
 
     val fileBytes = File(wavPath).readBytes()
     if (fileBytes.size <= WAV_HEADER_BYTES) {
@@ -39,17 +39,20 @@ fun main(args: Array<String>) {
 
     val listener = object : WebSocketListener() {
         override fun onOpen(ws: WebSocket, response: Response) {
-            // Send audio once connection is open
-            pcm.toList().chunked(CHUNK_BYTES).forEach { chunk ->
-                ws.send(okio.ByteString.of(*chunk.toByteArray()))
-            }
-            ws.send("""{"type":"stop"}""")
+            // Audio is sent after the server sends the ready message
         }
 
         override fun onMessage(ws: WebSocket, text: String) {
             val msg = JSONObject(text)
             when (msg.getString("type")) {
-                "ready" -> print("Connected: ${msg.optString("model")} @ ${msg.optInt("sample_rate")}Hz\n\n")
+                "ready" -> {
+                    print("Connected: ${msg.optString("model")} @ ${msg.optInt("sample_rate")}Hz\n\n")
+                    // Send audio once ready is received
+                    pcm.toList().chunked(CHUNK_BYTES).forEach { chunk ->
+                        ws.send(okio.ByteString.of(*chunk.toByteArray()))
+                    }
+                    ws.send("""{"type":"stop"}""")
+                }
                 "partial" -> print("\r  ... ${msg.getString("text")}")
                 "final" -> {
                     print("\r  >>> ${msg.getString("text")}\n")
@@ -57,7 +60,12 @@ fun main(args: Array<String>) {
                     latch.countDown()
                 }
                 "error" -> {
-                    System.err.println("\n  ERR: ${msg.optString("message")}")
+                    val retry = msg.optInt("retry_after_ms", 0)
+                    if (retry > 0) {
+                        System.err.println("\n  ERR: ${msg.optString("message")} (retry after ${retry}ms)")
+                    } else {
+                        System.err.println("\n  ERR: ${msg.optString("message")}")
+                    }
                     ws.close(1000, null)
                     latch.countDown()
                 }

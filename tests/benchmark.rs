@@ -6,6 +6,8 @@
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
+const MAX_WER: f64 = 12.0;
+
 fn home_dir() -> Option<PathBuf> {
     #[cfg(unix)]
     {
@@ -280,6 +282,14 @@ fn word_edit_distance(reference: &[String], hypothesis: &[String]) -> usize {
 }
 
 fn main() {
+    // nextest (and cargo test --list) invoke us with --list --format terse.
+    // Emit the expected line so the test runner can discover us.
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() > 1 && args[1] == "--list" {
+        println!("benchmark: test");
+        return;
+    }
+
     let fixture_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures");
     let manifest_path = fixture_dir.join("manifest.json");
 
@@ -359,6 +369,8 @@ fn main() {
         "\n  WER: {:.1}% ({} errors / {} words)  Score: {:.1}",
         wer, total_errors, total_ref_words, score
     );
+
+    assert!(wer < MAX_WER, "WER regression: {:.1}%", wer);
 
     let output = serde_json::json!({
         "pass": true,

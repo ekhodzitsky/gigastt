@@ -57,7 +57,7 @@ jobs:
         env:
           GIGASTT_SOAK_DURATION_SECS: ${{ github.event.inputs.duration_secs || '300' }}
           RUST_BACKTRACE: '1'
-        run: cargo test --release --test soak_test -- --ignored --nocapture --test-threads=1
+        run: cargo test --release --test soak_test -- --ignored --nocapture --test-threads=1 > soak.log 2>&1
 
       - name: Run load tests
         env:
@@ -70,6 +70,6 @@ jobs:
         with:
           name: soak-logs-${{ github.run_id }}
           path: |
-            target/release/deps/soak_test-*.log
+            soak.log
           if-no-files-found: ignore
           retention-days: 14

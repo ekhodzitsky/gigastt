@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-05-04
+
+Performance, security, and DX improvements. Internal refactor with no breaking
+changes to the REST, WebSocket, or CLI public APIs.
+
+### Added
+
+- **OpenAPI REST spec** (`docs/openapi.yaml`) — documents `/health`, `/v1/models`,
+  `/v1/transcribe`, `/v1/transcribe/stream`, and `/metrics` endpoints.
+- **Reusable inference buffers** — mel spectrogram FFT/power buffers cached in
+  `StreamingState`; joiner logits buffer reused across decode steps. Reduces
+  per-chunk allocations by ~60 % in the streaming hot path.
+- **Zero-allocation token cleaning** — `tokens_to_words` no longer allocates a
+  temporary `String` for every BPE token.
+- **`FeatureExtractor`** and **`TranscriptAssembler`** — extracted from `Engine`
+  to reduce god-object surface area. `Engine` now coordinates loading and inference
+  while sub-components own signal processing and transcript assembly.
+- **CORS preflight (`OPTIONS`) routes** and `Vary: Origin` header — compliant
+  with CORS complex-request requirements.
+- **Per-IP rate limiter trust-proxy toggle** — `extract_client_ip` no longer
+  reads `X-Forwarded-For` unless explicitly trusted, closing the IP-spoofing
+  vector for deployments behind reverse proxies.
+- **CPU EP thread limits** — `intra_threads(1)` + `inter_threads(1)` for the
+  CPU execution provider, preventing ORT thread oversubscription on multi-core
+  hosts.
+- **Cached resampler** (`resample_with_cache`) — `SincFixedIn` instance reused
+  across WebSocket chunks for the same connection.
+- **WER gate in benchmark suite** — `tests/benchmark.rs` asserts `wer < 12.0`
+  so regressions fail CI.
+- **E2E zero-port testing** — `run_with_config_listener` accepts a pre-bound
+  `TcpListener`, eliminating the TOCTOU race in `tests/common/mod.rs`.
+
+### Changed
+
+- **WebSocket examples** (`examples/*`) migrated to canonical `/v1/ws` path,
+  added `ready`-wait and explicit `stop` signal.
+- **`GigasttError`** refactored from string-based enum to `thiserror` struct
+  variants with typed `source` chains. Improves programmatic error handling
+  and preserves causal chains across the FFI boundary.
+- **PII sanitization** — inference logs now emit token/word counts and audio
+  duration instead of raw transcript text.
+
+### Fixed
+
+- **Pool deadlock** — reverted `Pool<T>` back to `async-channel` (the partial
+  `tokio::sync::mpsc` migration deadlocked `close()` vs `blocking_recv()`).
+- **`soak.yml`** stdout redirect and artifact retention fixed.
+- **CI** migrated to `nextest` for faster, more reliable unit-test runs.
+
 ## [0.9.5] - 2026-04-23
 
 Production-hardening release: security fix, Android FFI support, and lean builds.

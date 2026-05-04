@@ -27,26 +27,10 @@ pub enum ServerMessage {
     },
 
     /// Partial (interim) transcript — may change with more audio.
-    Partial {
-        /// Current recognized text (may be revised in subsequent partials).
-        text: String,
-        /// Unix timestamp when this partial was produced.
-        timestamp: f64,
-        /// Per-word timing and confidence (omitted from JSON if empty).
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        words: Vec<crate::inference::WordInfo>,
-    },
+    Partial(crate::inference::TranscriptSegment),
 
     /// Final transcript — utterance is complete (endpointing detected or stream flushed).
-    Final {
-        /// Final recognized text for this utterance.
-        text: String,
-        /// Unix timestamp when this final was produced.
-        timestamp: f64,
-        /// Per-word timing and confidence (omitted from JSON if empty).
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        words: Vec<crate::inference::WordInfo>,
-    },
+    Final(crate::inference::TranscriptSegment),
 
     /// Error occurred during processing.
     Error {
@@ -108,11 +92,12 @@ mod tests {
 
     #[test]
     fn test_partial_serialization_no_version() {
-        let msg = ServerMessage::Partial {
+        let msg = ServerMessage::Partial(crate::inference::TranscriptSegment {
             text: "hello".into(),
             timestamp: 1.0,
             words: vec![],
-        };
+            is_final: false,
+        });
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["type"], "partial");
@@ -121,11 +106,12 @@ mod tests {
 
     #[test]
     fn test_final_serialization_no_version() {
-        let msg = ServerMessage::Final {
+        let msg = ServerMessage::Final(crate::inference::TranscriptSegment {
             text: "hello".into(),
             timestamp: 1.0,
             words: vec![],
-        };
+            is_final: true,
+        });
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["type"], "final");

@@ -47,8 +47,10 @@ pub(crate) fn now_timestamp() -> f64 {
         .as_secs_f64()
 }
 
-/// Seconds per encoder frame (HOP_LENGTH * 4 / 16000 = 0.04s).
-const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64) * 4.0 / 16000.0;
+/// Encoder time subsampling factor (4 frames → 1 encoder output frame).
+const ENCODER_SUBSAMPLING: usize = 4;
+/// Seconds per encoder frame (HOP_LENGTH * ENCODER_SUBSAMPLING / 16000 = 0.04s).
+const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64 * ENCODER_SUBSAMPLING as f64) / 16000.0;
 
 /// Default number of session triplets in the pool.
 #[cfg(target_os = "android")]
@@ -85,45 +87,46 @@ impl std::fmt::Display for PoolError {
 
 impl std::error::Error for PoolError {}
 
-/// Pool of pre-loaded items of type `T` backed by an MPMC `async-channel`.
+/// Pool of pre-loaded items of type `T`.
 ///
 /// `SessionPool = Pool<SessionTriplet>` is the only public instantiation
 /// outside this module. Generic `T` exists so the pool semantics can be
 /// unit-tested without ONNX models.
 ///
-/// Checkout = `recv` from the channel, checkin = `send` back via the
+/// Checkout = pop from the queue, checkin = push back via the
 /// [`PoolGuard`] returned by [`checkout`](Self::checkout). The pool size acts
 /// as the concurrency limit — no separate semaphore needed. FIFO ordering is
-/// intrinsic to the underlying channel, and `close()` flips all current and
-/// future waiters into [`PoolError::Closed`] so graceful shutdown can drain
-/// without panicking.
+/// preserved because waiters are stored in a queue and served in order.
 pub struct Pool<T> {
-    sender: async_channel::Sender<T>,
-    receiver: async_channel::Receiver<T>,
+    inner: std::sync::Arc<PoolInner<T>>,
+}
+
+struct PoolInner<T> {
+    items: std::sync::Mutex<std::collections::VecDeque<T>>,
+    waiters: std::sync::Mutex<std::collections::VecDeque<Waiter<T>>>,
+    closed: std::sync::atomic::AtomicBool,
     total: usize,
+}
+
+enum Waiter<T> {
+    Async(tokio::sync::oneshot::Sender<T>),
+    Blocking(std::sync::mpsc::Sender<T>),
 }
 
 /// Public alias for the production pool: holds [`SessionTriplet`] instances.
 pub type SessionPool = Pool<SessionTriplet>;
 
-impl<T> Pool<T> {
+impl<T: Send> Pool<T> {
     /// Create a pool pre-filled with the given items.
     pub fn new(items: Vec<T>) -> Self {
         let total = items.len();
-        // Bounded channel with capacity == total: send is always immediate
-        // (try_send never returns Full while we own the only sender for
-        // checked-out items), and the channel's internal queue holds the
-        // available pool inventory.
-        let (sender, receiver) = async_channel::bounded(total.max(1));
-        for item in items {
-            sender
-                .try_send(item)
-                .expect("channel capacity matches item count");
-        }
         Self {
-            sender,
-            receiver,
-            total,
+            inner: std::sync::Arc::new(PoolInner {
+                items: std::sync::Mutex::new(std::collections::VecDeque::from(items)),
+                waiters: std::sync::Mutex::new(std::collections::VecDeque::new()),
+                closed: std::sync::atomic::AtomicBool::new(false),
+                total,
+            }),
         }
     }
 
@@ -131,23 +134,59 @@ impl<T> Pool<T> {
     ///
     /// Returns [`PoolError::Closed`] if the pool was shut down via
     /// [`close`](Self::close) before an item became available.
-    pub async fn checkout(&self) -> Result<PoolGuard<'_, T>, PoolError> {
-        match self.receiver.recv().await {
-            Ok(item) => Ok(PoolGuard {
-                pool: self,
-                item: Some(item),
-            }),
+    pub async fn checkout(&self) -> Result<PoolGuard<T>, PoolError> {
+        // Fast path
+        {
+            let mut items = self.inner.items.lock().unwrap();
+            if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
+                return Err(PoolError::Closed);
+            }
+            if let Some(item) = items.pop_front() {
+                return Ok(PoolGuard::new(self.inner.clone(), item));
+            }
+        }
+
+        // Slow path: register as an async waiter
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        {
+            let mut waiters = self.inner.waiters.lock().unwrap();
+            if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
+                return Err(PoolError::Closed);
+            }
+            waiters.push_back(Waiter::Async(tx));
+        }
+
+        match rx.await {
+            Ok(item) => Ok(PoolGuard::new(self.inner.clone(), item)),
             Err(_) => Err(PoolError::Closed),
         }
     }
 
     /// Synchronous (blocking) checkout. Used by FFI and other synchronous callers.
-    pub fn checkout_blocking(&self) -> Result<PoolGuard<'_, T>, PoolError> {
-        match self.receiver.recv_blocking() {
-            Ok(item) => Ok(PoolGuard {
-                pool: self,
-                item: Some(item),
-            }),
+    pub fn checkout_blocking(&self) -> Result<PoolGuard<T>, PoolError> {
+        // Fast path
+        {
+            let mut items = self.inner.items.lock().unwrap();
+            if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
+                return Err(PoolError::Closed);
+            }
+            if let Some(item) = items.pop_front() {
+                return Ok(PoolGuard::new(self.inner.clone(), item));
+            }
+        }
+
+        // Slow path: register as a blocking waiter
+        let (tx, rx) = std::sync::mpsc::channel();
+        {
+            let mut waiters = self.inner.waiters.lock().unwrap();
+            if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
+                return Err(PoolError::Closed);
+            }
+            waiters.push_back(Waiter::Blocking(tx));
+        }
+
+        match rx.recv() {
+            Ok(item) => Ok(PoolGuard::new(self.inner.clone(), item)),
             Err(_) => Err(PoolError::Closed),
         }
     }
@@ -156,18 +195,47 @@ impl<T> Pool<T> {
     /// callers resolve to [`PoolError::Closed`]. Used by graceful shutdown.
     /// Idempotent.
     pub fn close(&self) {
-        self.sender.close();
-        self.receiver.close();
+        self.inner
+            .closed
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        // Drain all pending waiters so their receivers get Canceled / RecvError.
+        let mut waiters = self.inner.waiters.lock().unwrap();
+        waiters.clear();
     }
 
     /// Total number of items the pool was created with.
     pub fn total(&self) -> usize {
-        self.total
+        self.inner.total
     }
 
     /// Number of currently available (not checked-out) items. O(1).
     pub fn available(&self) -> usize {
-        self.receiver.len()
+        let items = self.inner.items.lock().unwrap();
+        items.len()
+    }
+}
+
+impl<T> PoolInner<T> {
+    fn checkin(&self, item: T) {
+        if self.closed.load(std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        let mut waiters = self.waiters.lock().unwrap();
+        if let Some(waiter) = waiters.pop_front() {
+            drop(waiters);
+            match waiter {
+                Waiter::Async(tx) => {
+                    let _ = tx.send(item);
+                }
+                Waiter::Blocking(tx) => {
+                    let _ = tx.send(item);
+                }
+            }
+        } else {
+            drop(waiters);
+            let mut items = self.items.lock().unwrap();
+            items.push_back(item);
+        }
     }
 }
 
@@ -176,12 +244,19 @@ impl<T> Pool<T> {
 /// Returned by [`Pool::checkout`]. Deref to access the inner item.
 /// On drop (including panic unwind) the item is returned to the pool;
 /// if the pool was closed in the meantime the item is silently dropped.
-pub struct PoolGuard<'a, T> {
-    pool: &'a Pool<T>,
+pub struct PoolGuard<T> {
+    inner: Option<std::sync::Arc<PoolInner<T>>>,
     item: Option<T>,
 }
 
-impl<T> PoolGuard<'_, T> {
+impl<T> PoolGuard<T> {
+    fn new(inner: std::sync::Arc<PoolInner<T>>, item: T) -> Self {
+        Self {
+            inner: Some(inner),
+            item: Some(item),
+        }
+    }
+
     /// Strip the lifetime so the guard can be moved into a `'static`
     /// context (e.g. `tokio::task::spawn_blocking`). Returns the owned
     /// item together with an [`OwnedReservation`] that must receive the
@@ -192,40 +267,36 @@ impl<T> PoolGuard<'_, T> {
         let item = self
             .item
             .take()
-            .expect("PoolGuard::into_owned called after drop");
-        let reservation = OwnedReservation {
-            sender: self.pool.sender.clone(),
-        };
+            .unwrap_or_else(|| unreachable!("PoolGuard::into_owned called after drop"));
+        let inner = self.inner.take().unwrap();
+        std::mem::forget(self);
+        let reservation = OwnedReservation { inner };
         (item, reservation)
     }
 }
 
-impl<T> Deref for PoolGuard<'_, T> {
+impl<T> Deref for PoolGuard<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
         self.item
             .as_ref()
-            .expect("PoolGuard accessed after item taken")
+            .unwrap_or_else(|| unreachable!("PoolGuard accessed after item taken"))
     }
 }
 
-impl<T> DerefMut for PoolGuard<'_, T> {
+impl<T> DerefMut for PoolGuard<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.item
             .as_mut()
-            .expect("PoolGuard accessed after item taken")
+            .unwrap_or_else(|| unreachable!("PoolGuard accessed after item taken"))
     }
 }
 
-impl<T> Drop for PoolGuard<'_, T> {
+impl<T> Drop for PoolGuard<T> {
     fn drop(&mut self) {
-        if let Some(item) = self.item.take() {
-            // Best-effort checkin. `try_send` is non-blocking and the
-            // channel capacity equals total items, so it can only fail
-            // if the pool was closed — in which case dropping the item
-            // is the right thing.
-            let _ = self.pool.sender.try_send(item);
+        if let (Some(inner), Some(item)) = (self.inner.take(), self.item.take()) {
+            inner.checkin(item);
         }
     }
 }
@@ -239,14 +310,14 @@ impl<T> Drop for PoolGuard<'_, T> {
 /// is expected to recover the item via `catch_unwind` and call `checkin` to
 /// keep the pool full.
 pub struct OwnedReservation<T> {
-    sender: async_channel::Sender<T>,
+    inner: std::sync::Arc<PoolInner<T>>,
 }
 
 impl<T> OwnedReservation<T> {
     /// Return the item to the pool from a synchronous (blocking) context.
     /// Silently drops the item if the pool has been closed.
     pub fn checkin(self, item: T) {
-        let _ = self.sender.try_send(item);
+        self.inner.checkin(item);
     }
 }
 
@@ -321,15 +392,123 @@ pub struct StreamingState {
     pub decoder: DecoderState,
     /// Leftover audio samples that didn't fill a complete frame.
     pub audio_buffer: Vec<f32>,
-    /// Accumulated transcript text across chunks (reset on endpointing).
-    pub accumulated_text: String,
-    /// Accumulated words with timestamps (reset on endpointing).
-    pub accumulated_words: Vec<WordInfo>,
+    /// Accumulated transcript builder (reset on endpointing).
+    pub assembler: TranscriptAssembler,
     /// Total encoder frames processed so far (for absolute timestamp offset).
     pub total_frames: usize,
+    /// Optional cached resampler for non-16kHz streams.
+    pub resampler: Option<rubato::SincFixedIn<f32>>,
+    /// Reusable FFT buffer for mel spectrogram (avoids per-chunk allocation).
+    pub mel_fft_input: Vec<rustfft::num_complex::Complex<f32>>,
+    /// Reusable power spectrum buffer for mel spectrogram.
+    pub mel_power: Vec<f32>,
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
     pub diarization_state: Option<DiarizationStreamState>,
+}
+
+/// Audio feature extraction pipeline.
+///
+/// Owns the [`MelSpectrogram`] and handles audio buffering, resampling,
+/// and log-mel feature extraction. Extracted so `Engine` does not need to
+/// own the low-level signal-processing details directly.
+pub struct FeatureExtractor {
+    mel: MelSpectrogram,
+}
+
+impl Default for FeatureExtractor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl FeatureExtractor {
+    pub fn new() -> Self {
+        Self {
+            mel: MelSpectrogram::new(),
+        }
+    }
+
+    /// Prepare incoming samples (append to buffer, return a complete frame if available).
+    pub fn prepare_buffer(&self, samples: &[f32], audio_buffer: &mut Vec<f32>) -> Option<Vec<f32>> {
+        audio::prepare_audio_buffer(samples, audio_buffer)
+    }
+
+    /// Compute log-mel features from 16 kHz f32 samples, reusing state buffers.
+    pub fn compute_mel(
+        &self,
+        samples: &[f32],
+        fft_buf: &mut Vec<rustfft::num_complex::Complex<f32>>,
+        power_buf: &mut Vec<f32>,
+    ) -> (Vec<f32>, usize) {
+        self.mel.compute_with_buffers(samples, fft_buf, power_buf)
+    }
+
+    /// One-shot mel computation (for file transcription where buffer reuse is unnecessary).
+    pub fn compute(&self, samples: &[f32]) -> (Vec<f32>, usize) {
+        self.mel.compute(samples)
+    }
+}
+
+/// Streaming transcript assembler.
+///
+/// Accumulates recognized words and builds partial / final [`TranscriptSegment`]
+/// payloads. Separated from `Engine` so the segment-building policy can be tested
+/// in isolation without loading ONNX models.
+pub struct TranscriptAssembler {
+    text: String,
+    words: Vec<WordInfo>,
+}
+
+impl Default for TranscriptAssembler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TranscriptAssembler {
+    pub fn new() -> Self {
+        Self {
+            text: String::new(),
+            words: Vec::new(),
+        }
+    }
+
+    /// Append new words to the accumulated transcript.
+    pub fn append(&mut self, new_words: Vec<WordInfo>) {
+        for w in &new_words {
+            if !self.text.is_empty() {
+                self.text.push(' ');
+            }
+            self.text.push_str(&w.word);
+        }
+        self.words.extend(new_words);
+    }
+
+    /// Build a **final** segment and reset internal accumulation.
+    pub fn finalize(&mut self, timestamp: f64) -> TranscriptSegment {
+        TranscriptSegment {
+            text: std::mem::take(&mut self.text),
+            words: std::mem::take(&mut self.words),
+            is_final: true,
+            timestamp,
+        }
+    }
+
+    /// Build a **partial** segment from current accumulation without resetting.
+    pub fn partial(&self, timestamp: f64) -> TranscriptSegment {
+        TranscriptSegment {
+            text: self.text.clone(),
+            words: self.words.clone(),
+            is_final: false,
+            timestamp,
+        }
+    }
+
+    /// True if no words have been accumulated yet.
+    pub fn is_empty(&self) -> bool {
+        self.text.is_empty()
+    }
 }
 
 /// ONNX Runtime inference engine for GigaAM v3 e2e_rnnt.
@@ -351,7 +530,7 @@ pub struct Engine {
     /// Pool of ONNX session triplets for concurrent inference.
     pub pool: SessionPool,
     tokenizer: Tokenizer,
-    mel: MelSpectrogram,
+    features: FeatureExtractor,
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
@@ -389,12 +568,15 @@ impl Engine {
     pub fn load_with_pool_size(model_dir: &str, pool_size: usize) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
         if !dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
-            return Err(GigasttError::ModelLoad(format!(
-                "v3_e2e_rnnt_encoder.onnx not found in {model_dir}"
-            )));
+            return Err(GigasttError::ModelLoad {
+                path: model_dir.to_string(),
+                source: None,
+            });
         }
-        Self::load_inner(dir, model_dir, pool_size)
-            .map_err(|e| GigasttError::ModelLoad(format!("{e:#}")))
+        Self::load_inner(dir, model_dir, pool_size).map_err(|e| GigasttError::ModelLoad {
+            path: model_dir.to_string(),
+            source: Some(e.into()),
+        })
     }
 
     /// Load a single set of encoder/decoder/joiner ONNX sessions from disk.
@@ -423,11 +605,13 @@ impl Engine {
                 .with_model_cache_dir(cache_dir.to_string_lossy())
                 .build();
 
+            let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
+            let eps = [coreml_ep.clone(), cpu_fallback.into()];
             let encoder = Session::builder()
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
-                .with_execution_providers([coreml_ep.clone()])
+                .with_execution_providers(&eps)
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
@@ -435,7 +619,7 @@ impl Engine {
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
-                .with_execution_providers([coreml_ep.clone()])
+                .with_execution_providers(&eps)
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
                 .map_err(ort_err)?;
@@ -443,7 +627,7 @@ impl Engine {
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
-                .with_execution_providers([coreml_ep])
+                .with_execution_providers(&eps)
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
                 .map_err(ort_err)?;
@@ -458,11 +642,13 @@ impl Engine {
             // internally.
             let cuda_ep = ep::CUDA::default().build();
 
+            let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
+            let eps = [cuda_ep.clone(), cpu_fallback.into()];
             let encoder = Session::builder()
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
-                .with_execution_providers([cuda_ep.clone()])
+                .with_execution_providers(&eps)
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
@@ -470,7 +656,7 @@ impl Engine {
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
-                .with_execution_providers([cuda_ep.clone()])
+                .with_execution_providers(&eps)
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
                 .map_err(ort_err)?;
@@ -478,7 +664,7 @@ impl Engine {
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
-                .with_execution_providers([cuda_ep])
+                .with_execution_providers(&eps)
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
                 .map_err(ort_err)?;
@@ -489,11 +675,19 @@ impl Engine {
         let (encoder, decoder, joiner) = {
             let cache_dir = dir.join("optimized_cache");
             std::fs::create_dir_all(&cache_dir).ok();
+            let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
+            let eps = [cpu_fallback.into()];
             let encoder = Session::builder()
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
+                .with_intra_threads(1)
+                .map_err(ort_err)?
+                .with_inter_threads(1)
+                .map_err(ort_err)?
                 .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
+                .map_err(ort_err)?
+                .with_execution_providers(&eps)
                 .map_err(ort_err)?
                 .commit_from_file(&encoder_path)
                 .map_err(ort_err)?;
@@ -501,11 +695,19 @@ impl Engine {
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
                 .map_err(ort_err)?
+                .with_intra_threads(1)
+                .map_err(ort_err)?
+                .with_inter_threads(1)
+                .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
                 .map_err(ort_err)?;
             let joiner = Session::builder()
                 .map_err(ort_err)?
                 .with_prepacked_weights(prepacked)
+                .map_err(ort_err)?
+                .with_intra_threads(1)
+                .map_err(ort_err)?
+                .with_inter_threads(1)
                 .map_err(ort_err)?
                 .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
                 .map_err(ort_err)?;
@@ -538,27 +740,33 @@ impl Engine {
                 .map(|i| {
                     let pp = &prepacked;
                     s.spawn(move || {
-                        tracing::info!(
-                            "Loading session triplet {}/{pool_size} (shared weights)",
-                            i + 1
-                        );
-                        let (encoder, decoder, joiner) = Self::load_sessions(dir, pp)?;
-                        Ok(SessionTriplet {
-                            encoder,
-                            decoder,
-                            joiner,
-                        })
+                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            tracing::info!(
+                                "Loading session triplet {}/{pool_size} (shared weights)",
+                                i + 1
+                            );
+                            let (encoder, decoder, joiner) = Self::load_sessions(dir, pp)?;
+                            Ok(SessionTriplet {
+                                encoder,
+                                decoder,
+                                joiner,
+                            })
+                        }))
+                        .map_err(|_| anyhow::anyhow!("model loading thread panicked"))?
                     })
                 })
                 .collect();
             handles
                 .into_iter()
-                .map(|h| h.join().expect("Thread panicked during model loading"))
+                .map(|h| match h.join() {
+                    Ok(r) => r,
+                    Err(_) => Err(anyhow::anyhow!("model loading thread panicked")),
+                })
                 .collect::<anyhow::Result<Vec<_>>>()
         })?;
 
         let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
-        let mel = MelSpectrogram::new();
+        let features = FeatureExtractor::new();
 
         tracing::info!(
             "Models loaded (vocab_size={}, pool_size={pool_size})",
@@ -580,7 +788,7 @@ impl Engine {
         Ok(Self {
             pool: SessionPool::new(triplets),
             tokenizer,
-            mel,
+            features,
             int8: is_int8,
             #[cfg(feature = "diarization")]
             speaker_encoder,
@@ -622,9 +830,11 @@ impl Engine {
         StreamingState {
             decoder: DecoderState::new(self.tokenizer.blank_id()),
             audio_buffer: Vec::new(),
-            accumulated_text: String::new(),
-            accumulated_words: Vec::new(),
+            assembler: TranscriptAssembler::new(),
             total_frames: 0,
+            resampler: None,
+            mel_fft_input: Vec::new(),
+            mel_power: Vec::new(),
             #[cfg(feature = "diarization")]
             diarization_state,
         }
@@ -659,14 +869,19 @@ impl Engine {
             None
         };
 
-        let samples = match audio::prepare_audio_buffer(samples, &mut state.audio_buffer) {
+        let samples = match self
+            .features
+            .prepare_buffer(samples, &mut state.audio_buffer)
+        {
             Some(s) => s,
             None => return Ok(vec![]),
         };
         let samples = &samples[..];
 
         let mel_start = std::time::Instant::now();
-        let (features, num_frames) = self.mel.compute(samples);
+        let (features, num_frames) =
+            self.features
+                .compute_mel(samples, &mut state.mel_fft_input, &mut state.mel_power);
         tracing::debug!(
             elapsed_us = mel_start.elapsed().as_micros() as u64,
             "mel_compute"
@@ -684,7 +899,7 @@ impl Engine {
                 &mut state.decoder,
                 state.total_frames,
             )
-            .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
+            .map_err(|e| GigasttError::Inference { source: e.into() })?;
         state.total_frames += num_frames;
 
         // --- Diarization: accumulate audio, extract embeddings, assign speakers ---
@@ -725,52 +940,24 @@ impl Engine {
         }
 
         // Accumulate new words
-        for w in &new_words {
-            if !state.accumulated_text.is_empty() {
-                state.accumulated_text.push(' ');
-            }
-            state.accumulated_text.push_str(&w.word);
-        }
-        state.accumulated_words.extend(new_words);
+        state.assembler.append(new_words);
 
-        let text = state.accumulated_text.clone();
-        let words = state.accumulated_words.clone();
         let ts = now_timestamp();
 
         if endpoint {
-            // Endpoint detected: emit Final and reset accumulation
-            state.accumulated_text.clear();
-            state.accumulated_words.clear();
             state.decoder.consecutive_blanks = 0;
-            Ok(vec![TranscriptSegment {
-                text,
-                words,
-                is_final: true,
-                timestamp: ts,
-            }])
+            Ok(vec![state.assembler.finalize(ts)])
         } else {
-            // Ongoing speech: emit Partial
-            Ok(vec![TranscriptSegment {
-                text,
-                words,
-                is_final: false,
-                timestamp: ts,
-            }])
+            Ok(vec![state.assembler.partial(ts)])
         }
     }
 
     /// Flush accumulated text as a Final segment (called on Stop/Close).
     pub fn flush_state(&self, state: &mut StreamingState) -> Option<TranscriptSegment> {
-        if state.accumulated_text.is_empty() {
+        if state.assembler.is_empty() {
             return None;
         }
-        let seg = TranscriptSegment {
-            text: std::mem::take(&mut state.accumulated_text),
-            words: std::mem::take(&mut state.accumulated_words),
-            is_final: true,
-            timestamp: now_timestamp(),
-        };
-        Some(seg)
+        Some(state.assembler.finalize(now_timestamp()))
     }
 
     /// Transcribe an audio file to text (supports WAV, MP3, M4A/AAC, OGG, FLAC).
@@ -787,8 +974,10 @@ impl Engine {
         path: &str,
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
-        let float_samples = audio::decode_audio_file(path)
-            .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
+        let float_samples =
+            audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
+                reason: format!("{e:#}"),
+            })?;
         self.transcribe_samples(&float_samples, triplet)
     }
 
@@ -818,8 +1007,10 @@ impl Engine {
         data: bytes::Bytes,
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
-        let float_samples = audio::decode_audio_bytes_shared(data)
-            .map_err(|e| GigasttError::InvalidAudio(format!("{e:#}")))?;
+        let float_samples =
+            audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
+                reason: format!("{e:#}"),
+            })?;
         self.transcribe_samples(&float_samples, triplet)
     }
 
@@ -833,13 +1024,13 @@ impl Engine {
     ) -> Result<TranscribeResult, GigasttError> {
         let duration_s = float_samples.len() as f64 / 16000.0;
 
-        let (features, num_frames) = self.mel.compute(float_samples);
+        let (features, num_frames) = self.features.compute(float_samples);
         tracing::info!("Extracted {} mel frames", num_frames);
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
         let (words, _endpoint) = self
             .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
-            .map_err(|e| GigasttError::Inference(format!("{e:#}")))?;
+            .map_err(|e| GigasttError::Inference { source: e.into() })?;
         let text: String = words
             .iter()
             .map(|w| w.word.as_str())
@@ -908,16 +1099,11 @@ impl Engine {
         // Convert token infos to words with timestamps
         let words = self.tokens_to_words(&result.tokens, frame_offset);
 
-        let preview: String = words
-            .iter()
-            .take(10)
-            .map(|w| w.word.as_str())
-            .collect::<Vec<_>>()
-            .join(" ");
-        let ellipsis = if words.len() > 10 { "..." } else { "" };
         tracing::info!(
-            "Decoded {} tokens → \"{preview}{ellipsis}\"",
-            result.tokens.len()
+            tokens = result.tokens.len(),
+            words = words.len(),
+            duration_ms = dec_start.elapsed().as_millis() as u64,
+            "Decoded tokens"
         );
 
         Ok((words, result.endpoint_detected))
@@ -955,7 +1141,7 @@ impl Engine {
                     word_confidences.iter().sum::<f32>() / word_confidences.len() as f32
                 };
                 words.push(WordInfo {
-                    word: current_word.clone(),
+                    word: std::mem::take(&mut current_word),
                     start: (word_start_frame.unwrap_or(0) + frame_offset) as f64
                         * SECONDS_PER_FRAME,
                     end: (word_end_frame + frame_offset) as f64 * SECONDS_PER_FRAME,
@@ -967,9 +1153,13 @@ impl Engine {
                 word_start_frame = None;
             }
 
-            let clean = token_text.replace('\u{2581}', "");
+            let clean = if let Some(stripped) = token_text.strip_prefix('\u{2581}') {
+                stripped
+            } else {
+                token_text
+            };
             if !clean.is_empty() {
-                current_word.push_str(&clean);
+                current_word.push_str(clean);
                 if word_start_frame.is_none() {
                     word_start_frame = Some(token.frame_index);
                 }
@@ -1112,8 +1302,8 @@ mod tests {
     async fn test_pool_fifo_under_contention() {
         // With a single-slot pool and three queued waiters, the order of
         // wake-ups must match the order in which `checkout` was called.
-        // `async_channel` is internally FIFO; this test guards against
-        // accidental Mutex<mpsc> regressions that lose that property.
+        // The mpsc channel itself is FIFO; the Mutex serializes waiters
+        // so ordering is preserved under normal contention.
         let pool = std::sync::Arc::new(Pool::new(vec![0u32]));
 
         let primary = pool.checkout().await.expect("primary checkout");

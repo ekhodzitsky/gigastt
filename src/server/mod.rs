@@ -13,8 +13,9 @@ use axum::Router;
 use axum::extract::DefaultBodyLimit;
 use axum::extract::State;
 use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
+use axum::http::StatusCode;
 use axum::response::Response;
-use axum::routing::{get, post};
+use axum::routing::{get, options, post};
 use futures_util::{SinkExt, StreamExt};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -174,6 +175,8 @@ pub struct ServerConfig {
     /// `PrometheusHandle` is attached to `AppState` and the endpoint is
     /// added to the protected router so the Origin allowlist still applies.
     pub metrics_enabled: bool,
+    /// Trust `X-Forwarded-For` / `X-Real-IP` for rate-limit IP extraction.
+    pub trust_proxy: bool,
 }
 
 impl ServerConfig {
@@ -186,6 +189,7 @@ impl ServerConfig {
             origin_policy: OriginPolicy::loopback_only(),
             limits: RuntimeLimits::default(),
             metrics_enabled: false,
+            trust_proxy: false,
         }
     }
 }
@@ -219,6 +223,7 @@ pub async fn run_with_shutdown(
         origin_policy: OriginPolicy::loopback_only(),
         limits: RuntimeLimits::default(),
         metrics_enabled: false,
+        trust_proxy: false,
     };
     run_with_config(engine, config, shutdown).await
 }
@@ -230,6 +235,22 @@ pub async fn run_with_config(
     engine: Engine,
     config: ServerConfig,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+) -> Result<()> {
+    let addr: SocketAddr = format!("{}:{}", config.host, config.port)
+        .parse()
+        .context("Invalid host:port")?;
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    run_with_config_listener(engine, config, shutdown, listener).await
+}
+
+/// Start server with a full [`ServerConfig`], an optional shutdown signal,
+/// and an already-bound TCP listener. Used by tests to eliminate the TOCTOU
+/// race between `free_port()` and server startup.
+pub async fn run_with_config_listener(
+    engine: Engine,
+    config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+    listener: tokio::net::TcpListener,
 ) -> Result<()> {
     let addr: SocketAddr = format!("{}:{}", config.host, config.port)
         .parse()
@@ -302,7 +323,15 @@ pub async fn run_with_config(
     let protected = Router::new()
         .route("/v1/models", get(http::models))
         .route("/v1/transcribe", post(http::transcribe))
+        .route(
+            "/v1/transcribe",
+            options(|| async { StatusCode::NO_CONTENT }),
+        )
         .route("/v1/transcribe/stream", post(http::transcribe_stream))
+        .route(
+            "/v1/transcribe/stream",
+            options(|| async { StatusCode::NO_CONTENT }),
+        )
         // `/v1/ws` is the canonical path (versioned, aligned with REST); `/ws`
         // remains as an alias for existing clients and logs a deprecation
         // warning on each upgrade. Plan: drop `/ws` in v1.0.
@@ -359,9 +388,10 @@ pub async fn run_with_config(
             "per-IP rate limiting enabled"
         );
         let layer_limiter = limiter.clone();
+        let layer_trust_proxy = config.trust_proxy;
         protected.layer(axum::middleware::from_fn(move |req, next| {
             let limiter = layer_limiter.clone();
-            async move { rate_limit::rate_limit_middleware(limiter, req, next).await }
+            async move { rate_limit::rate_limit_middleware(limiter, layer_trust_proxy, req, next).await }
         }))
     } else {
         protected
@@ -393,8 +423,6 @@ pub async fn run_with_config(
             config.origin_policy.allowed_origins
         );
     }
-
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
 
     let shutdown_drain_secs = config.limits.shutdown_drain_secs.max(1);
 
@@ -524,6 +552,7 @@ async fn origin_middleware(
                 header::ACCESS_CONTROL_ALLOW_HEADERS,
                 axum::http::HeaderValue::from_static("*"),
             );
+            headers.insert(header::VARY, axum::http::HeaderValue::from_static("origin"));
             response
         }
         OriginVerdict::Denied => {
@@ -783,7 +812,15 @@ async fn handle_binary_frame(
     let samples_16k = if client_sample_rate == 16000 {
         samples_f32
     } else {
-        crate::inference::audio::resample(&samples_f32, client_sample_rate, 16000)?
+        let state_ref = state_opt
+            .as_mut()
+            .ok_or_else(|| anyhow::anyhow!("Streaming state lost"))?;
+        crate::inference::audio::resample_with_cache(
+            &samples_f32,
+            crate::inference::audio::SampleRate(client_sample_rate),
+            crate::inference::audio::SampleRate(16000),
+            &mut state_ref.resampler,
+        )?
     };
 
     let state = state_opt
@@ -814,17 +851,9 @@ async fn handle_binary_frame(
             *triplet_opt = Some(triplet_back);
             for seg in segments {
                 let msg = if seg.is_final {
-                    ServerMessage::Final {
-                        text: seg.text,
-                        timestamp: seg.timestamp,
-                        words: seg.words,
-                    }
+                    ServerMessage::Final(seg)
                 } else {
-                    ServerMessage::Partial {
-                        text: seg.text,
-                        timestamp: seg.timestamp,
-                        words: seg.words,
-                    }
+                    ServerMessage::Partial(seg)
                 };
                 send_server_message(sink, &msg).await?;
             }
@@ -945,17 +974,14 @@ async fn handle_stop_message(
     let flush_seg = engine.flush_state(&mut state);
     drop(state);
     let final_msg = if let Some(seg) = flush_seg {
-        ServerMessage::Final {
-            text: seg.text,
-            timestamp: seg.timestamp,
-            words: seg.words,
-        }
+        ServerMessage::Final(seg)
     } else {
-        ServerMessage::Final {
+        ServerMessage::Final(crate::inference::TranscriptSegment {
             text: String::new(),
             timestamp: crate::inference::now_timestamp(),
             words: vec![],
-        }
+            is_final: true,
+        })
     };
     send_server_message(sink, &final_msg).await?;
     Ok(FrameOutcome::Break)
@@ -974,16 +1000,13 @@ async fn flush_and_final(
         .as_mut()
         .and_then(|state| engine.flush_state(state));
     let final_msg = match flush_seg {
-        Some(seg) => ServerMessage::Final {
-            text: seg.text,
-            timestamp: seg.timestamp,
-            words: seg.words,
-        },
-        None => ServerMessage::Final {
+        Some(seg) => ServerMessage::Final(seg),
+        None => ServerMessage::Final(crate::inference::TranscriptSegment {
             text: String::new(),
             timestamp: crate::inference::now_timestamp(),
             words: vec![],
-        },
+            is_final: true,
+        }),
     };
     send_server_message(sink, &final_msg).await
 }

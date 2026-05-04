@@ -13,6 +13,7 @@
 
 use std::ffi::{CStr, CString, c_char};
 use std::ptr;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::inference::{Engine, OwnedReservation, SessionTriplet, StreamingState, audio};
 
@@ -21,6 +22,7 @@ use crate::inference::{Engine, OwnedReservation, SessionTriplet, StreamingState,
 /// The Kotlin side sees this as a `Long` (pointer-sized integer).
 pub struct GigasttEngine {
     engine: Engine,
+    disposed: AtomicBool,
 }
 
 /// Opaque handle to a streaming transcription session.
@@ -31,6 +33,7 @@ pub struct GigasttStream {
     state: StreamingState,
     triplet: SessionTriplet,
     reservation: OwnedReservation<SessionTriplet>,
+    disposed: AtomicBool,
 }
 
 /// Load the ONNX models from `model_dir` and create an inference engine.
@@ -78,7 +81,10 @@ pub unsafe extern "C" fn gigastt_engine_new_with_pool_size(
 
     match Engine::load_with_pool_size(dir_str, pool_size) {
         Ok(engine) => {
-            let handle = Box::new(GigasttEngine { engine });
+            let handle = Box::new(GigasttEngine {
+                engine,
+                disposed: AtomicBool::new(false),
+            });
             Box::into_raw(handle)
         }
         Err(e) => {
@@ -121,6 +127,37 @@ pub unsafe extern "C" fn gigastt_transcribe_file(
             return ptr::null_mut();
         }
     };
+
+    // Path sanitization: reject absolute paths, parent-dir traversal, and
+    // paths that escape the working directory.
+    let path = std::path::Path::new(path_str);
+    if path.is_absolute() {
+        tracing::error!("gigastt_transcribe_file: absolute paths are not allowed");
+        eprintln!("gigastt_transcribe_file: absolute paths are not allowed");
+        return ptr::null_mut();
+    }
+    if path
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        tracing::error!("gigastt_transcribe_file: paths containing '..' are not allowed");
+        eprintln!("gigastt_transcribe_file: paths containing '..' are not allowed");
+        return ptr::null_mut();
+    }
+    let cwd = match std::env::current_dir() {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::error!("gigastt_transcribe_file: failed to get working directory: {e}");
+            eprintln!("gigastt_transcribe_file: failed to get working directory: {e}");
+            return ptr::null_mut();
+        }
+    };
+    let resolved = cwd.join(path);
+    if !resolved.starts_with(&cwd) {
+        tracing::error!("gigastt_transcribe_file: path escapes working directory");
+        eprintln!("gigastt_transcribe_file: path escapes working directory");
+        return ptr::null_mut();
+    }
 
     let engine_ref = unsafe { &(*engine).engine };
 
@@ -173,6 +210,10 @@ pub unsafe extern "C" fn gigastt_string_free(s: *mut c_char) {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_engine_free(engine: *mut GigasttEngine) {
     if !engine.is_null() {
+        let disposed = unsafe { std::ptr::addr_of_mut!((*engine).disposed) };
+        if unsafe { (*disposed).swap(true, Ordering::Relaxed) } {
+            return;
+        }
         let _ = unsafe { Box::from_raw(engine) };
     }
 }
@@ -288,6 +329,7 @@ pub unsafe extern "C" fn gigastt_stream_new(engine: *mut GigasttEngine) -> *mut 
         state,
         triplet,
         reservation,
+        disposed: AtomicBool::new(false),
     };
     Box::into_raw(Box::new(stream))
 }
@@ -334,7 +376,12 @@ pub unsafe extern "C" fn gigastt_stream_process_chunk(
 
     // Resample to 16 kHz if needed.
     if sample_rate != 16000 {
-        samples_f32 = match audio::resample(&samples_f32, sample_rate, 16000) {
+        samples_f32 = match audio::resample_with_cache(
+            &samples_f32,
+            audio::SampleRate(sample_rate),
+            audio::SampleRate(16000),
+            &mut stream_ref.state.resampler,
+        ) {
             Ok(s) => s,
             Err(e) => {
                 tracing::error!("gigastt_stream_process_chunk: resample failed: {e}");
@@ -343,14 +390,16 @@ pub unsafe extern "C" fn gigastt_stream_process_chunk(
         };
     }
 
-    let segments = match engine_ref.process_chunk(
-        &samples_f32,
-        &mut stream_ref.state,
-        &mut stream_ref.triplet,
-    ) {
-        Ok(segs) => segs,
-        Err(e) => {
+    let segments = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        engine_ref.process_chunk(&samples_f32, &mut stream_ref.state, &mut stream_ref.triplet)
+    })) {
+        Ok(Ok(segs)) => segs,
+        Ok(Err(e)) => {
             tracing::error!("gigastt_stream_process_chunk: inference failed: {e}");
+            return ptr::null_mut();
+        }
+        Err(_) => {
+            tracing::error!("gigastt_stream_process_chunk: panic during inference");
             return ptr::null_mut();
         }
     };
@@ -407,6 +456,10 @@ pub unsafe extern "C" fn gigastt_stream_flush(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_stream_free(stream: *mut GigasttStream) {
     if !stream.is_null() {
+        let disposed = unsafe { std::ptr::addr_of_mut!((*stream).disposed) };
+        if unsafe { (*disposed).swap(true, Ordering::Relaxed) } {
+            return;
+        }
         let stream = unsafe { Box::from_raw(stream) };
         stream.reservation.checkin(stream.triplet);
         // `state` is dropped automatically when `stream` goes out of scope.

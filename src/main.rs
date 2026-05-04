@@ -104,6 +104,12 @@ enum Commands {
         /// FP32. Opt out when you need the FP32 encoder for debugging.
         #[arg(long, env = "GIGASTT_SKIP_QUANTIZE", default_value_t = false)]
         skip_quantize: bool,
+
+        /// Trust `X-Forwarded-For` and `X-Real-IP` headers for rate-limit IP
+        /// extraction. When enabled, the direct peer must be loopback or an
+        /// RFC1918 private address; otherwise headers are ignored.
+        #[arg(long, env = "GIGASTT_TRUST_PROXY", default_value_t = false)]
+        trust_proxy: bool,
     },
 
     /// Download model without starting server
@@ -264,6 +270,7 @@ async fn main() -> anyhow::Result<()> {
             max_session_secs,
             shutdown_drain_secs,
             skip_quantize,
+            trust_proxy,
         } => {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
@@ -287,6 +294,7 @@ async fn main() -> anyhow::Result<()> {
                     shutdown_drain_secs,
                 },
                 metrics_enabled: metrics,
+                trust_proxy,
             };
             server::run_with_config(engine, config, None).await?;
         }

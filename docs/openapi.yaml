@@ -1,0 +1,483 @@
+openapi: 3.1.0
+
+info:
+  title: gigastt REST API
+  version: "1.0"
+  description: |
+    Offline and streaming speech-to-text REST API powered by GigaAM v3 e2e_rnnt.
+    On-device Russian speech recognition via ONNX Runtime.
+
+    ## Endpoints
+
+    - **Health & discovery**: `GET /health`, `GET /v1/models`
+    - **File transcription**: `POST /v1/transcribe` — upload audio, receive full transcript
+    - **Streaming transcription**: `POST /v1/transcribe/stream` — upload audio, receive SSE stream of partial/final segments
+    - **Metrics**: `GET /metrics` — Prometheus text format (optional, behind `--metrics` flag)
+
+    ## Audio Formats
+
+    Supported upload formats: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC.
+    All formats are decoded server-side via [symphonia](https://github.com/pdeljanov/Symphonia)
+    and resampled to 16 kHz mono.
+
+    ## Limits
+
+    All defaults are configurable via CLI flags or environment variables
+    (see `gigastt serve --help`):
+
+    - `--body-limit-bytes` (default 50 MiB) — max upload size
+    - `--pool-size` (default 4) — concurrent inference sessions
+    - `--rate-limit-per-minute` (default 0 = off) — per-IP token bucket
+    - File transcription cap: 10 minutes of audio
+    - Pool saturation: REST returns `503 Service Unavailable` + `Retry-After: 30`
+
+    ## Error Responses
+
+    All error responses follow a consistent JSON schema:
+
+    ```json
+    {
+      "error": "Human-readable description",
+      "code": "machine_readable_code"
+    }
+    ```
+
+    Common HTTP status codes:
+
+    | Status | Code | Meaning |
+    |--------|------|---------|
+    | 400 | `empty_body` | Request body is empty |
+    | 413 | `payload_too_large` | Body exceeds `--body-limit-bytes` |
+    | 422 | `transcription_error` | Audio decoded but inference failed |
+    | 422 | `invalid_audio` | Audio could not be decoded |
+    | 503 | `timeout` | Pool saturated; retry after `Retry-After` |
+    | 503 | `pool_closed` | Server shutting down |
+    | 404 | `metrics_disabled` | `/metrics` called without `--metrics` flag |
+  license:
+    name: MIT
+    url: https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE
+  contact:
+    name: gigastt
+    url: https://github.com/ekhodzitsky/gigastt
+
+servers:
+  - url: http://127.0.0.1:9876
+    description: Local development server (default)
+  - url: http://0.0.0.0:9876
+    description: Docker container
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: |
+        Returns service health status. Suitable for load balancer health checks
+        and Docker `HEALTHCHECK`.
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: ok
+                model: gigaam-v3-e2e-rnnt
+                version: "0.9.5"
+
+  /v1/models:
+    get:
+      summary: Model information
+      description: |
+        Returns metadata about the loaded model, including capabilities,
+        pool status, and supported audio formats.
+      operationId: getModelInfo
+      responses:
+        "200":
+          description: Model metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelInfo"
+              example:
+                id: gigaam-v3-e2e-rnnt
+                name: GigaAM v3 RNN-T
+                version: "0.9.5"
+                encoder: int8
+                vocab_size: 1025
+                sample_rate: 16000
+                pool_size: 4
+                pool_available: 3
+                supported_formats:
+                  - wav
+                  - mp3
+                  - m4a
+                  - ogg
+                  - flac
+                supported_rates:
+                  - 8000
+                  - 16000
+                  - 24000
+                  - 44100
+                  - 48000
+                diarization: false
+
+  /v1/transcribe:
+    post:
+      summary: Transcribe audio file
+      description: |
+        Upload an audio file and receive a complete transcription.
+        Supports WAV, MP3, M4A/AAC, OGG/Vorbis, and FLAC.
+
+        The entire file is processed in a single inference session.
+        Max audio duration: 10 minutes.
+      operationId: transcribeFile
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+          audio/mpeg:
+            schema:
+              type: string
+              format: binary
+          audio/mp4:
+            schema:
+              type: string
+              format: binary
+          audio/ogg:
+            schema:
+              type: string
+              format: binary
+          audio/flac:
+            schema:
+              type: string
+              format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+            description: Raw audio bytes (format auto-detected)
+      responses:
+        "200":
+          description: Transcription successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranscribeResponse"
+              example:
+                text: "привет как дела"
+                words:
+                  - word: "привет"
+                    start: 0.5
+                    end: 0.8
+                  - word: "как"
+                    start: 0.9
+                    end: 1.0
+                  - word: "дела"
+                    start: 1.1
+                    end: 1.4
+                duration: 2.5
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/TranscriptionError"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /v1/transcribe/stream:
+    post:
+      summary: Transcribe audio file (SSE streaming)
+      description: |
+        Upload an audio file and receive a stream of transcription results
+        via Server-Sent Events (SSE). Results are emitted as partial and final
+        segments as the audio is processed chunk-by-chunk.
+
+        Each SSE event contains a JSON object with `type` discriminator:
+        - `partial` — interim result (may change)
+        - `final` — finalized utterance
+        - `error` — processing error
+      operationId: transcribeStream
+      requestBody:
+        required: true
+        content:
+          audio/wav:
+            schema:
+              type: string
+              format: binary
+          audio/mpeg:
+            schema:
+              type: string
+              format: binary
+          audio/mp4:
+            schema:
+              type: string
+              format: binary
+          audio/ogg:
+            schema:
+              type: string
+              format: binary
+          audio/flac:
+            schema:
+              type: string
+              format: binary
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        "200":
+          description: SSE stream of transcription segments
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                data: {"type": "partial", "text": "привет", "timestamp": 1712700000.123, "words": [{"word": "привет", "start": 0.5, "end": 0.8}]}
+
+                data: {"type": "final", "text": "привет как дела", "timestamp": 1712700001.456, "words": [{"word": "привет", "start": 0.5, "end": 0.8}, {"word": "как", "start": 0.9, "end": 1.0}, {"word": "дела", "start": 1.1, "end": 1.4}]}
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /metrics:
+    get:
+      summary: Prometheus metrics
+      description: |
+        Exposes Prometheus-compatible metrics in text format.
+        Only available when the server was started with `--metrics`.
+      operationId: getMetrics
+      responses:
+        "200":
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                # HELP gigastt_http_requests_total Total HTTP requests
+                # TYPE gigastt_http_requests_total counter
+                gigastt_http_requests_total{method="POST",path="/v1/transcribe",status="200"} 42
+        "404":
+          $ref: "#/components/responses/MetricsDisabled"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - model
+        - version
+      properties:
+        status:
+          type: string
+          example: ok
+          description: Service status
+        model:
+          type: string
+          example: gigaam-v3-e2e-rnnt
+          description: Loaded model identifier
+        version:
+          type: string
+          example: "0.9.5"
+          description: Server version (semver)
+
+    ModelInfo:
+      type: object
+      required:
+        - id
+        - name
+        - version
+        - encoder
+        - vocab_size
+        - sample_rate
+        - pool_size
+        - pool_available
+        - supported_formats
+        - supported_rates
+        - diarization
+      properties:
+        id:
+          type: string
+          example: gigaam-v3-e2e-rnnt
+        name:
+          type: string
+          example: GigaAM v3 RNN-T
+        version:
+          type: string
+          example: "0.9.5"
+        encoder:
+          type: string
+          enum: [fp32, int8]
+          description: Encoder quantization type
+        vocab_size:
+          type: integer
+          example: 1025
+        sample_rate:
+          type: integer
+          example: 16000
+          description: Internal processing sample rate in Hz
+        pool_size:
+          type: integer
+          example: 4
+          description: Total inference session pool size
+        pool_available:
+          type: integer
+          example: 3
+          description: Currently available sessions
+        supported_formats:
+          type: array
+          items:
+            type: string
+          example: [wav, mp3, m4a, ogg, flac]
+          description: Supported audio upload formats
+        supported_rates:
+          type: array
+          items:
+            type: integer
+          example: [8000, 16000, 24000, 44100, 48000]
+          description: Supported input sample rates for WebSocket streaming
+        diarization:
+          type: boolean
+          example: false
+          description: Whether speaker diarization is available
+
+    TranscribeResponse:
+      type: object
+      required:
+        - text
+        - words
+        - duration
+      properties:
+        text:
+          type: string
+          example: "привет как дела"
+          description: Full transcript text
+        words:
+          type: array
+          items:
+            $ref: "#/components/schemas/WordInfo"
+          description: Word-level transcription with timestamps
+        duration:
+          type: number
+          format: double
+          example: 2.5
+          description: Audio duration in seconds
+
+    WordInfo:
+      type: object
+      required:
+        - word
+        - start
+        - end
+      properties:
+        word:
+          type: string
+          example: "привет"
+          description: Recognized word
+        start:
+          type: number
+          format: double
+          example: 0.5
+          description: Word start time in seconds
+        end:
+          type: number
+          format: double
+          example: 0.8
+          description: Word end time in seconds
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          example: "Request body exceeds the configured size limit"
+          description: Human-readable error description
+        code:
+          type: string
+          example: payload_too_large
+          description: Machine-readable error code
+        retry_after_ms:
+          type: integer
+          example: 30000
+          description: |
+            Suggested retry delay in milliseconds. Present only for transient
+            backpressure errors (pool saturation).
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Empty request body"
+            code: empty_body
+
+    PayloadTooLarge:
+      description: Request body too large
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Request body exceeds the configured size limit"
+            code: payload_too_large
+
+    TranscriptionError:
+      description: Transcription failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Transcription failed. Check audio format."
+            code: transcription_error
+
+    ServiceUnavailable:
+      description: Server busy or shutting down
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retry
+          example: 30
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            timeout:
+              summary: Pool saturated
+              value:
+                error: "Server busy, try again later"
+                code: timeout
+                retry_after_ms: 30000
+            pool_closed:
+              summary: Graceful shutdown in progress
+              value:
+                error: "Server is shutting down"
+                code: pool_closed
+
+    MetricsDisabled:
+      description: Metrics endpoint is disabled
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "metrics endpoint disabled"
+            code: metrics_disabled
