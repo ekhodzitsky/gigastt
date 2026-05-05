@@ -240,9 +240,9 @@ pub async fn transcribe(
             Err(_) => {
                 tracing::error!("Panic in REST transcribe — triplet recovered");
                 (
-                    Err(crate::error::GigasttError::Inference(
-                        "Inference thread panicked".into(),
-                    )),
+                    Err(crate::error::GigasttError::Inference {
+                        source: anyhow::anyhow!("Inference thread panicked").into(),
+                    }),
                     triplet,
                 )
             }

@@ -25,11 +25,12 @@ const (
 )
 
 type serverMsg struct {
-	Type    string `json:"type"`
-	Text    string `json:"text"`
-	Model   string `json:"model"`
-	Rate    int    `json:"sample_rate"`
-	Message string `json:"message"`
+	Type       string `json:"type"`
+	Text       string `json:"text"`
+	Model      string `json:"model"`
+	Rate       int    `json:"sample_rate"`
+	Message    string `json:"message"`
+	RetryAfter int    `json:"retry_after_ms"`
 }
 
 func main() {
@@ -39,9 +40,9 @@ func main() {
 	}
 
 	wavPath := os.Args[1]
-	server := "ws://127.0.0.1:9876/ws"
+	server := "ws://127.0.0.1:9876/v1/ws"
 	if len(os.Args) > 2 {
-		server = os.Args[2] + "/ws"
+		server = os.Args[2]
 		if _, err := url.Parse(server); err != nil {
 			log.Fatalf("invalid server URL: %v", err)
 		}
@@ -84,7 +85,11 @@ func main() {
 				fmt.Printf("\r  >>> %s\n", msg.Text)
 				return
 			case "error":
-				fmt.Fprintf(os.Stderr, "\n  ERR: %s\n", msg.Message)
+				if msg.RetryAfter > 0 {
+					fmt.Fprintf(os.Stderr, "\n  ERR: %s (retry after %dms)\n", msg.Message, msg.RetryAfter)
+				} else {
+					fmt.Fprintf(os.Stderr, "\n  ERR: %s\n", msg.Message)
+				}
 				return
 			}
 		}

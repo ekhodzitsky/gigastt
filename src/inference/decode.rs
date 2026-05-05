@@ -118,7 +118,8 @@ fn run_joiner_single(
     joiner: &mut Session,
     enc_frame: &[f32],
     dec_data: &[f32],
-) -> Result<Vec<f32>> {
+    logits_buf: &mut Vec<f32>,
+) -> Result<()> {
     let enc_tensor = TensorRef::from_array_view(([1_usize, ENC_DIM, 1], enc_frame))?;
     let dec_tensor = TensorRef::from_array_view(([1_usize, PRED_HIDDEN, 1], dec_data))?;
 
@@ -130,7 +131,9 @@ fn run_joiner_single(
         .try_extract_tensor::<f32>()
         .context("Failed to extract joiner output")?;
 
-    Ok(logits.to_vec())
+    logits_buf.clear();
+    logits_buf.extend_from_slice(logits);
+    Ok(())
 }
 
 /// Run RNN-T greedy decode on encoder output.
@@ -154,6 +157,8 @@ pub fn greedy_decode(
 
     // Pre-allocate buffer for extracting a single encoder frame [768, 1]
     let mut enc_frame = vec![0.0_f32; ENC_DIM];
+    // Reusable joiner logits buffer to avoid per-call allocation.
+    let mut logits_buf = Vec::new();
     let mut decoder_calls: u32 = 0;
     let mut joiner_calls: u32 = 0;
     let mut skipped_decoder_calls: u32 = 0;
@@ -194,10 +199,10 @@ pub fn greedy_decode(
 
             // === JOINER CALL ===
             joiner_calls += 1;
-            let logits = run_joiner_single(joiner, &enc_frame, &decoder_out.dec_data)?;
+            run_joiner_single(joiner, &enc_frame, &decoder_out.dec_data, &mut logits_buf)?;
 
             // Greedy: argmax with confidence over logits
-            let (token, confidence) = argmax_with_confidence(&logits, blank_id);
+            let (token, confidence) = argmax_with_confidence(&logits_buf, blank_id);
 
             // === TOKEN CLASSIFICATION ===
             if token == blank_id {

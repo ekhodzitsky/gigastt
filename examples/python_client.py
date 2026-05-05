@@ -14,7 +14,7 @@ except ImportError:
     sys.exit(1)
 
 
-async def transcribe(wav_path: str, server: str = "ws://127.0.0.1:9876/ws"):
+async def transcribe(wav_path: str, server: str = "ws://127.0.0.1:9876/v1/ws"):
     async with websockets.connect(server) as ws:
         # Wait for ready
         msg = json.loads(await ws.recv())
@@ -38,16 +38,18 @@ async def transcribe(wav_path: str, server: str = "ws://127.0.0.1:9876/ws"):
             await ws.send(frames[i : i + chunk_bytes])
             await asyncio.sleep(0.05)  # Small delay between chunks
 
-        # Close and collect remaining messages
+        # Signal end of audio and close
+        await ws.send(json.dumps({"type": "stop"}))
         await ws.close()
 
         # Print results (collect during streaming)
         print("Done.")
 
 
-async def stream_and_print(wav_path: str, server: str = "ws://127.0.0.1:9876/ws"):
+async def stream_and_print(wav_path: str, server: str = "ws://127.0.0.1:9876/v1/ws"):
     async with websockets.connect(server) as ws:
         msg = json.loads(await ws.recv())
+        assert msg["type"] == "ready", f"Expected ready, got {msg}"
         print(f"Connected: {msg['model']} @ {msg['sample_rate']}Hz\n")
 
         # Start receiver task
@@ -59,7 +61,11 @@ async def stream_and_print(wav_path: str, server: str = "ws://127.0.0.1:9876/ws"
                 elif msg["type"] == "final":
                     print(f"\r  >>> {msg['text']}")
                 elif msg["type"] == "error":
-                    print(f"\n  ERR: {msg['message']}")
+                    retry = msg.get("retry_after_ms")
+                    if retry:
+                        print(f"\n  ERR: {msg['message']} (retry after {retry}ms)")
+                    else:
+                        print(f"\n  ERR: {msg['message']}")
 
         recv_task = asyncio.create_task(receiver())
 
@@ -72,6 +78,8 @@ async def stream_and_print(wav_path: str, server: str = "ws://127.0.0.1:9876/ws"
             await ws.send(frames[i : i + chunk_bytes])
             await asyncio.sleep(0.1)
 
+        # Signal end of audio
+        await ws.send(json.dumps({"type": "stop"}))
         await asyncio.sleep(1)  # Wait for final results
         recv_task.cancel()
 
@@ -82,5 +90,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     wav = sys.argv[1]
-    server = sys.argv[2] if len(sys.argv) > 2 else "ws://127.0.0.1:9876/ws"
+    server = sys.argv[2] if len(sys.argv) > 2 else "ws://127.0.0.1:9876/v1/ws"
     asyncio.run(stream_and_print(wav, server))

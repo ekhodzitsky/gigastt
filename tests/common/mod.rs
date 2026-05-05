@@ -37,12 +37,13 @@ pub fn model_dir() -> String {
     dir.to_string_lossy().into_owned()
 }
 
-/// Find a free TCP port by binding to port 0.
-pub async fn free_port() -> u16 {
+/// Find a free TCP port by binding to port 0. Returns (port, listener)
+/// so the caller can pass the already-bound listener to the server,
+/// eliminating the TOCTOU race between port discovery and server bind.
+pub async fn free_port() -> (u16, TcpListener) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let port = listener.local_addr().unwrap().port();
-    drop(listener);
-    port
+    (port, listener)
 }
 
 /// Start the server with a shutdown handle. Returns (port, shutdown_sender).
@@ -50,15 +51,16 @@ pub async fn free_port() -> u16 {
 /// Blocks until the server is accepting connections (polls /health).
 /// Drop or send on the returned sender to shut the server down.
 pub async fn start_server(model_dir: &str) -> (u16, oneshot::Sender<()>) {
-    let port = free_port().await;
+    let (port, listener) = free_port().await;
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
     let engine = gigastt::inference::Engine::load(model_dir).unwrap();
-    tokio::spawn(gigastt::server::run_with_shutdown(
+    let config = gigastt::server::ServerConfig::local(port);
+    tokio::spawn(gigastt::server::run_with_config_listener(
         engine,
-        port,
-        "127.0.0.1",
+        config,
         Some(shutdown_rx),
+        listener,
     ));
 
     wait_for_ready(port, Duration::from_secs(30)).await;
@@ -71,7 +73,7 @@ pub async fn start_server_with_limits(
     model_dir: &str,
     limits: gigastt::server::RuntimeLimits,
 ) -> (u16, oneshot::Sender<()>) {
-    let port = free_port().await;
+    let (port, listener) = free_port().await;
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
     let engine = gigastt::inference::Engine::load(model_dir).unwrap();
@@ -81,11 +83,13 @@ pub async fn start_server_with_limits(
         origin_policy: gigastt::server::OriginPolicy::loopback_only(),
         limits,
         metrics_enabled: false,
+        trust_proxy: false,
     };
-    tokio::spawn(gigastt::server::run_with_config(
+    tokio::spawn(gigastt::server::run_with_config_listener(
         engine,
         config,
         Some(shutdown_rx),
+        listener,
     ));
 
     wait_for_ready(port, Duration::from_secs(30)).await;
@@ -183,7 +187,7 @@ pub async fn ws_connect(
 ) {
     use futures_util::StreamExt;
 
-    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/ws"))
+    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/v1/ws"))
         .await
         .expect("WebSocket connection failed");
     let (sink, mut stream) = ws.split();

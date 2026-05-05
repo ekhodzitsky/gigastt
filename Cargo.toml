@@ -1,6 +1,6 @@
 [package]
 name = "gigastt"
-version = "0.9.5"
+version = "0.9.6"
 edition = "2024"
 description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 license = "MIT"
@@ -29,10 +29,7 @@ ffi = ["ort/nnapi"]
 ort = "2.0.0-rc.12"
 
 # Async runtime
-tokio = { version = "1", features = ["full"] }
-
-# Async MPMC channel — backs the SessionPool (FIFO + close semantics)
-async-channel = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"] }
 
 # HTTP + WebSocket server (single port via axum)
 axum = { version = "0.8", features = ["ws", "multipart"], optional = true }
@@ -54,6 +51,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Error handling
 anyhow = "1"
+thiserror = "1"
 
 # Cryptographic hashing for model verification
 sha2 = "0.11"
