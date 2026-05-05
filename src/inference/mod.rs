@@ -8,7 +8,10 @@ mod features;
 mod tokenizer;
 
 #[cfg(feature = "diarization")]
-use polyvoice::{DiarizationConfig as DiaConfig, OfflineDiarizer, OnlineDiarizer, OnnxEmbeddingExtractor, SampleRate};
+use polyvoice::{
+    DiarizationConfig as DiaConfig, OfflineDiarizer, OnlineDiarizer, OnnxEmbeddingExtractor,
+    SampleRate,
+};
 
 #[cfg(feature = "diarization")]
 const SPEAKER_EMBEDDING_DIM: usize = 256;
@@ -773,13 +776,20 @@ impl Engine {
         let speaker_encoder = {
             let model_path = dir.join("wespeaker_resnet34.onnx");
             if model_path.exists() {
-                match OnnxEmbeddingExtractor::new(&model_path, SPEAKER_EMBEDDING_DIM, SPEAKER_SEGMENT_SAMPLES, SPEAKER_POOL_SIZE) {
+                match OnnxEmbeddingExtractor::new(
+                    &model_path,
+                    SPEAKER_EMBEDDING_DIM,
+                    SPEAKER_SEGMENT_SAMPLES,
+                    SPEAKER_POOL_SIZE,
+                ) {
                     Ok(enc) => {
                         tracing::info!("Speaker encoder loaded (diarization available)");
                         Some(enc)
                     }
                     Err(e) => {
-                        tracing::warn!("Speaker encoder not loaded, diarization unavailable: {e:#}");
+                        tracing::warn!(
+                            "Speaker encoder not loaded, diarization unavailable: {e:#}"
+                        );
                         None
                     }
                 }
@@ -1035,9 +1045,11 @@ impl Engine {
                 Ok(dia_result) => {
                     for word in &mut words {
                         let mid = (word.start + word.end) / 2.0;
-                        if let Some(turn) = dia_result.turns.iter().find(|t| {
-                            t.time.start <= mid && t.time.end >= mid
-                        }) {
+                        if let Some(turn) = dia_result
+                            .turns
+                            .iter()
+                            .find(|t| t.time.start <= mid && t.time.end >= mid)
+                        {
                             word.speaker = Some(turn.speaker.0);
                         }
                     }
