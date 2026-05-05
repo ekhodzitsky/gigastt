@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-05-05
+
+Speaker diarization is now a default feature powered by the polyvoice crate
+from crates.io. Breaking CLI change: `--diarization` replaced by `--skip-diarization`.
+
+### Changed
+
+- **Diarization default feature** — `diarization` added to default Cargo features;
+  speaker model downloads automatically with `gigastt download`.
+- **polyvoice from crates.io** — replaced local path dependency (`../polyvoice`)
+  with published `polyvoice = "0.4.3"` from crates.io.
+- **CLI flag renamed** — `gigastt download --diarization` replaced by
+  `gigastt download --skip-diarization` (opt-out instead of opt-in).
+- **API adaptation** — `DiarizationConfig` uses `SampleRate` wrapper type and
+  explicit `max_gap_secs` field to match polyvoice 0.4.3 API.
+
+### Removed
+
+- **In-tree diarization module** (`src/inference/diarization.rs`) — `SpeakerEncoder`,
+  `SpeakerCluster`, and `cosine_similarity` replaced by polyvoice's
+  `OnnxEmbeddingExtractor`, `OnlineDiarizer`, and `OfflineDiarizer`.
+
+### Fixed
+
+- Duplicate `tokens.is_empty()` guard in `tokens_to_words`.
+- Stale `diarization.rs` references in CLAUDE.md and AGENTS.md.
+- Magic numbers in `OnnxEmbeddingExtractor::new()` extracted to named constants.
+- `text` assembly in `transcribe_samples` moved after diarization annotation.
+
 ## [0.9.6] - 2026-05-04
 
 Performance, security, and DX improvements. Internal refactor with no breaking
