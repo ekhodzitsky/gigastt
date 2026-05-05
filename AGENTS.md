@@ -154,7 +154,6 @@ src/
     tokenizer.rs          # BPE tokenizer (1025 tokens)
     decode.rs             # RNN-T greedy decode loop
     audio.rs              # Audio loading, resampling, channel mixing
-    diarization.rs        # Speaker diarization (optional `diarization` feature)
   server/
     mod.rs                # axum router, origin middleware, graceful shutdown
     http.rs               # REST handlers: /health, /v1/models, /v1/transcribe, SSE

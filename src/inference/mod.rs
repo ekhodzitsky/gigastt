@@ -10,6 +10,13 @@ mod tokenizer;
 #[cfg(feature = "diarization")]
 use polyvoice::{DiarizationConfig as DiaConfig, OfflineDiarizer, OnlineDiarizer, OnnxEmbeddingExtractor, SampleRate};
 
+#[cfg(feature = "diarization")]
+const SPEAKER_EMBEDDING_DIM: usize = 256;
+#[cfg(feature = "diarization")]
+const SPEAKER_SEGMENT_SAMPLES: usize = 24000;
+#[cfg(feature = "diarization")]
+const SPEAKER_POOL_SIZE: usize = 4;
+
 #[cfg(all(feature = "coreml", feature = "cuda"))]
 compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.");
 
@@ -766,7 +773,7 @@ impl Engine {
         let speaker_encoder = {
             let model_path = dir.join("wespeaker_resnet34.onnx");
             if model_path.exists() {
-                match OnnxEmbeddingExtractor::new(&model_path, 256, 24000, 4) {
+                match OnnxEmbeddingExtractor::new(&model_path, SPEAKER_EMBEDDING_DIM, SPEAKER_SEGMENT_SAMPLES, SPEAKER_POOL_SIZE) {
                     Ok(enc) => {
                         tracing::info!("Speaker encoder loaded (diarization available)");
                         Some(enc)
@@ -1019,11 +1026,6 @@ impl Engine {
         let (mut words, _endpoint) = self
             .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
             .map_err(|e| GigasttError::Inference { source: e.into() })?;
-        let text: String = words
-            .iter()
-            .map(|w| w.word.as_str())
-            .collect::<Vec<_>>()
-            .join(" ");
 
         #[cfg(feature = "diarization")]
         if let Some(ref enc) = self.speaker_encoder {
@@ -1045,6 +1047,12 @@ impl Engine {
                 }
             }
         }
+
+        let text: String = words
+            .iter()
+            .map(|w| w.word.as_str())
+            .collect::<Vec<_>>()
+            .join(" ");
 
         Ok(TranscribeResult {
             text,
@@ -1121,13 +1129,6 @@ impl Engine {
 
     /// Convert decoded tokens into words with timestamps and confidence.
     fn tokens_to_words(&self, tokens: &[decode::TokenInfo], frame_offset: usize) -> Vec<WordInfo> {
-        if tokens.is_empty() {
-            return Vec::new();
-        }
-
-        // Fast path for the no-speech frame case. The word-boundary loop
-        // below would also return `Vec::new()` on an empty input, but
-        // bailing early skips the allocation of the intermediate state.
         if tokens.is_empty() {
             return Vec::new();
         }

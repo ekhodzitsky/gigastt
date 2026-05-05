@@ -66,7 +66,6 @@ src/
     tokenizer.rs          # BPE tokenizer (1025 tokens)
     decode.rs             # RNN-T greedy decode loop
     audio.rs              # Audio loading, resampling, channel mixing (symphonia + rubato)
-    diarization.rs        # Speaker diarization (optional feature)
   error.rs                # Typed error types (GigasttError)
   quantize.rs             # Native Rust INT8 quantizer (always compiled since v0.9.0)
   onnx_proto.rs           # prost-generated ONNX types from proto/onnx.proto
