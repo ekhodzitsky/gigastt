@@ -8,7 +8,7 @@ mod features;
 mod tokenizer;
 
 #[cfg(feature = "diarization")]
-pub mod diarization;
+use polyvoice::{DiarizationConfig as DiaConfig, OfflineDiarizer, OnlineDiarizer, OnnxEmbeddingExtractor, SampleRate};
 
 #[cfg(all(feature = "coreml", feature = "cuda"))]
 compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.");
@@ -369,17 +369,6 @@ pub struct WordInfo {
     pub speaker: Option<u32>,
 }
 
-/// Per-connection diarization state accumulating audio and speaker assignments.
-#[cfg(feature = "diarization")]
-pub struct DiarizationStreamState {
-    /// Raw 16 kHz f32 samples accumulated since the last embedding extraction.
-    pub audio_buffer: Vec<f32>,
-    /// Online speaker cluster tracking centroids across the session.
-    pub cluster: diarization::SpeakerCluster,
-    /// Speaker ID assigned to the most recent segment.
-    pub current_speaker: Option<u32>,
-}
-
 /// Per-connection streaming state that persists across audio chunks.
 ///
 /// Created via [`Engine::create_state`]. Holds the decoder LSTM state, an audio
@@ -404,7 +393,7 @@ pub struct StreamingState {
     pub mel_power: Vec<f32>,
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
-    pub diarization_state: Option<DiarizationStreamState>,
+    pub diarization_state: Option<OnlineDiarizer>,
 }
 
 /// Audio feature extraction pipeline.
@@ -535,7 +524,7 @@ pub struct Engine {
     int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
     #[cfg(feature = "diarization")]
-    pub speaker_encoder: Option<diarization::SpeakerEncoder>,
+    pub speaker_encoder: Option<OnnxEmbeddingExtractor>,
 }
 
 impl Engine {
@@ -774,13 +763,21 @@ impl Engine {
         );
 
         #[cfg(feature = "diarization")]
-        let speaker_encoder = match diarization::SpeakerEncoder::load(dir) {
-            Ok(enc) => {
-                tracing::info!("Speaker encoder loaded (diarization available)");
-                Some(enc)
-            }
-            Err(e) => {
-                tracing::warn!("Speaker encoder not loaded, diarization unavailable: {e:#}");
+        let speaker_encoder = {
+            let model_path = dir.join("wespeaker_resnet34.onnx");
+            if model_path.exists() {
+                match OnnxEmbeddingExtractor::new(&model_path, 256, 24000, 4) {
+                    Ok(enc) => {
+                        tracing::info!("Speaker encoder loaded (diarization available)");
+                        Some(enc)
+                    }
+                    Err(e) => {
+                        tracing::warn!("Speaker encoder not loaded, diarization unavailable: {e:#}");
+                        None
+                    }
+                }
+            } else {
+                tracing::warn!("wespeaker_resnet34.onnx not found, diarization unavailable");
                 None
             }
         };
@@ -811,11 +808,15 @@ impl Engine {
     pub fn create_state(&self, diarization_enabled: bool) -> StreamingState {
         #[cfg(feature = "diarization")]
         let diarization_state = if diarization_enabled && self.speaker_encoder.is_some() {
-            Some(DiarizationStreamState {
-                audio_buffer: Vec::new(),
-                cluster: diarization::SpeakerCluster::new(),
-                current_speaker: None,
-            })
+            Some(OnlineDiarizer::new(DiaConfig {
+                threshold: 0.5,
+                max_speakers: 64,
+                window_secs: 1.5,
+                hop_secs: 0.75,
+                min_speech_secs: 0.25,
+                max_gap_secs: 0.5,
+                sample_rate: SampleRate::new(16000).expect("16kHz is valid"),
+            }))
         } else {
             None
         };
@@ -902,35 +903,21 @@ impl Engine {
             .map_err(|e| GigasttError::Inference { source: e.into() })?;
         state.total_frames += num_frames;
 
-        // --- Diarization: accumulate audio, extract embeddings, assign speakers ---
+        // --- Diarization: feed audio to OnlineDiarizer and assign speakers ---
         #[cfg(feature = "diarization")]
         if let (Some(dia), Some(copy), Some(enc)) = (
             state.diarization_state.as_mut(),
             samples_16k_copy.as_ref(),
             self.speaker_encoder.as_ref(),
         ) {
-            dia.audio_buffer.extend_from_slice(copy);
-
-            while dia.audio_buffer.len() >= diarization::SEGMENT_SAMPLES {
-                let segment: Vec<f32> = dia
-                    .audio_buffer
-                    .drain(..diarization::SEGMENT_SAMPLES)
-                    .collect();
-                match enc.extract_embedding(&segment) {
-                    Ok(embedding) => {
-                        let speaker = dia.cluster.assign(&embedding);
-                        dia.current_speaker = Some(speaker);
-                    }
-                    Err(e) => {
-                        tracing::warn!("Embedding extraction failed: {e:#}");
-                    }
-                }
+            if let Err(e) = dia.feed(copy, enc).map(|_segs| ()) {
+                tracing::warn!("Diarization feed failed: {e:#}");
             }
 
             // Annotate all words in this chunk with current speaker
-            if let Some(speaker_id) = dia.current_speaker {
+            if let Some(speaker_id) = dia.current_speaker() {
                 for w in &mut new_words {
-                    w.speaker = Some(speaker_id);
+                    w.speaker = Some(speaker_id.0);
                 }
             }
         }
@@ -1028,7 +1015,8 @@ impl Engine {
         tracing::info!("Extracted {} mel frames", num_frames);
 
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
-        let (words, _endpoint) = self
+        #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
+        let (mut words, _endpoint) = self
             .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
             .map_err(|e| GigasttError::Inference { source: e.into() })?;
         let text: String = words
@@ -1036,6 +1024,28 @@ impl Engine {
             .map(|w| w.word.as_str())
             .collect::<Vec<_>>()
             .join(" ");
+
+        #[cfg(feature = "diarization")]
+        if let Some(ref enc) = self.speaker_encoder {
+            let config = DiaConfig::default();
+            let diarizer = OfflineDiarizer::new(config);
+            match diarizer.run(float_samples, enc) {
+                Ok(dia_result) => {
+                    for word in &mut words {
+                        let mid = (word.start + word.end) / 2.0;
+                        if let Some(turn) = dia_result.turns.iter().find(|t| {
+                            t.time.start <= mid && t.time.end >= mid
+                        }) {
+                            word.speaker = Some(turn.speaker.0);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Offline diarization failed: {e:#}");
+                }
+            }
+        }
+
         Ok(TranscribeResult {
             text,
             words,

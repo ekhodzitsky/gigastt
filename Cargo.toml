@@ -12,11 +12,11 @@ categories = ["multimedia::audio", "command-line-utilities"]
 crate-type = ["rlib", "cdylib"]
 
 [features]
-default = ["server"]
+default = ["server", "diarization"]
 server = ["dep:axum", "dep:tokio-stream", "dep:tokio-util"]
 coreml = ["ort/coreml"]
 cuda = ["ort/cuda"]
-diarization = []
+diarization = ["dep:polyvoice"]
 # `quantize` used to gate the INT8 quantization pipeline. It is now always
 # compiled in (the user's core workflow is: download → quantize → serve),
 # so the feature is retained as a no-op for backwards compatibility with
@@ -86,6 +86,9 @@ dashmap = "6"
 
 # Prometheus-compatible metrics (exposed behind `--metrics` flag, off by default)
 
+
+# Speaker diarization (optional, extracted into standalone library)
+polyvoice = { version = "0.4.3", features = ["onnx"], optional = true }
 
 # ONNX protobuf types for the native INT8 quantization pipeline
 # (`src/quantize.rs`). Vendored `.proto` + `prost-build` (build-dep) replaces

@@ -369,6 +369,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "crossbeam-queue"
+version = "0.3.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0f58bbc28f91df819d0aa2a2c00cd19754769c2fad90579b3592b1c9ba7a3115"
+dependencies = [
+ "crossbeam-utils",
+]
+
+[[package]]
 name = "crossbeam-utils"
 version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -680,6 +689,7 @@ dependencies = [
  "futures-util",
  "hex",
  "ort",
+ "polyvoice",
  "prost",
  "prost-build",
  "reqwest",
@@ -1427,6 +1437,24 @@ name = "pkg-config"
 version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
+
+[[package]]
+name = "polyvoice"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73009cfdb9137be14d8246249c42597795da784578f17edecef2119754831957"
+dependencies = [
+ "anyhow",
+ "crossbeam-queue",
+ "ndarray",
+ "num-complex",
+ "ort",
+ "realfft",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
 
 [[package]]
 name = "portable-atomic"

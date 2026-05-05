@@ -118,10 +118,10 @@ enum Commands {
         #[arg(long, default_value_t = model::default_model_dir())]
         model_dir: String,
 
-        /// Also download speaker diarization model
+        /// Skip downloading the speaker diarization model
         #[cfg(feature = "diarization")]
         #[arg(long, default_value_t = false)]
-        diarization: bool,
+        skip_diarization: bool,
 
         /// Skip the automatic INT8 quantization step after download.
         /// Default behaviour is to quantize the encoder (~2 min, one-time)
@@ -301,13 +301,13 @@ async fn main() -> anyhow::Result<()> {
         Commands::Download {
             model_dir,
             #[cfg(feature = "diarization")]
-            diarization,
+            skip_diarization,
             skip_quantize,
         } => {
             model::ensure_model(&model_dir).await?;
             #[cfg(feature = "diarization")]
             {
-                if diarization {
+                if !skip_diarization {
                     model::ensure_speaker_model(&model_dir).await?;
                 }
             }
