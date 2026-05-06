@@ -112,7 +112,10 @@ fn api_error(status: StatusCode, msg: &str, code: &str) -> ApiError {
 fn api_timeout_error(limits: &RuntimeLimits) -> ApiError {
     (
         StatusCode::SERVICE_UNAVAILABLE,
-        [(header::RETRY_AFTER, pool_retry_after_secs(limits).to_string())],
+        [(
+            header::RETRY_AFTER,
+            pool_retry_after_secs(limits).to_string(),
+        )],
         Json(serde_json::json!({
             "error": "Server busy, try again later",
             "code": "timeout",
@@ -224,13 +227,21 @@ pub async fn transcribe(
         Err(_timeout) => {
             if let Some(ref reg) = state.metrics_registry {
                 reg.counter_inc("gigastt_pool_timeouts_total", vec![], 1);
-                reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+                reg.histogram_record(
+                    "gigastt_pool_checkout_duration_seconds",
+                    vec![],
+                    checkout_start.elapsed().as_secs_f64(),
+                );
             }
             return Err(api_timeout_error(&state.limits));
         }
     };
     if let Some(ref reg) = state.metrics_registry {
-        reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+        reg.histogram_record(
+            "gigastt_pool_checkout_duration_seconds",
+            vec![],
+            checkout_start.elapsed().as_secs_f64(),
+        );
     }
     let (triplet, reservation) = guard.into_owned();
 
@@ -261,7 +272,11 @@ pub async fn transcribe(
     })
     .await;
     if let Some(ref reg) = state.metrics_registry {
-        reg.histogram_record("gigastt_inference_duration_seconds", vec![], inference_start.elapsed().as_secs_f64());
+        reg.histogram_record(
+            "gigastt_inference_duration_seconds",
+            vec![],
+            inference_start.elapsed().as_secs_f64(),
+        );
     }
 
     match result {
@@ -361,13 +376,21 @@ pub async fn transcribe_stream(
         Err(_timeout) => {
             if let Some(ref reg) = state.metrics_registry {
                 reg.counter_inc("gigastt_pool_timeouts_total", vec![], 1);
-                reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+                reg.histogram_record(
+                    "gigastt_pool_checkout_duration_seconds",
+                    vec![],
+                    checkout_start.elapsed().as_secs_f64(),
+                );
             }
             return Err(api_timeout_error(&state.limits));
         }
     };
     if let Some(ref reg) = state.metrics_registry {
-        reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+        reg.histogram_record(
+            "gigastt_pool_checkout_duration_seconds",
+            vec![],
+            checkout_start.elapsed().as_secs_f64(),
+        );
     }
     let (triplet, reservation) = guard.into_owned();
 

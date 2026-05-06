@@ -434,7 +434,10 @@ pub async fn run_with_config_listener(
         protected.layer(axum::middleware::from_fn(move |req, next| {
             let limiter = layer_limiter.clone();
             let metrics = layer_metrics.clone();
-            async move { rate_limit::rate_limit_middleware(limiter, layer_trust_proxy, metrics, req, next).await }
+            async move {
+                rate_limit::rate_limit_middleware(limiter, layer_trust_proxy, metrics, req, next)
+                    .await
+            }
         }))
     } else {
         protected
@@ -778,7 +781,11 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
     };
 
     if let Some(ref reg) = state.metrics_registry {
-        reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+        reg.histogram_record(
+            "gigastt_pool_checkout_duration_seconds",
+            vec![],
+            checkout_start.elapsed().as_secs_f64(),
+        );
     }
     // Strip the lifetime so the triplet can travel through `handle_ws_inner`,
     // which currently owns it directly. The reservation handles checkin on
