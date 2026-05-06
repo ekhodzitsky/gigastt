@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-05-06
+
+### Changed
+
+- **polyvoice** dependency bumped from `0.4.3` to `0.5.2` (VAD, AHC
+  clustering, DER evaluation, CLI tooling; no API changes for gigastt).
+
 ## [1.0.0] - 2026-05-06
 
 First stable release. All P0 blockers and P1 ship-before-v1.0 items from the
