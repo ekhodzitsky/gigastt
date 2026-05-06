@@ -88,7 +88,7 @@ dashmap = "6"
 
 
 # Speaker diarization (optional, extracted into standalone library)
-polyvoice = { version = "0.4.3", features = ["onnx"], optional = true }
+polyvoice = { version = "0.5.2", features = ["onnx"], optional = true }
 
 # ONNX protobuf types for the native INT8 quantization pipeline
 # (`src/quantize.rs`). Vendored `.proto` + `prost-build` (build-dep) replaces

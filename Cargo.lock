@@ -768,6 +768,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec9d92d097f4749b64e8cc33d924d9f40a2d4eb91402b458014b781f5733d60f"
 
 [[package]]
+name = "hound"
+version = "3.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62adaabb884c94955b19907d60019f4e145d091c75345379e70d1ee696f7854f"
+
+[[package]]
 name = "http"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1440,12 +1446,13 @@ checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
 name = "polyvoice"
-version = "0.4.3"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73009cfdb9137be14d8246249c42597795da784578f17edecef2119754831957"
+checksum = "49a9888b4f6c659771fad79235bee4b96ea237ac03331a48a26200c8c6263024"
 dependencies = [
  "anyhow",
  "crossbeam-queue",
+ "hound",
  "ndarray",
  "num-complex",
  "ort",
