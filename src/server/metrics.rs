@@ -75,6 +75,12 @@ struct CounterFamily {
 }
 
 #[derive(Debug, Default)]
+struct GaugeFamily {
+    help: String,
+    values: HashMap<Labels, i64>,
+}
+
+#[derive(Debug, Default)]
 struct HistogramFamily {
     help: String,
     buckets: Vec<f64>,
@@ -95,6 +101,7 @@ struct HistogramSeries {
 #[derive(Debug, Default)]
 pub struct MetricsRegistry {
     counters: RwLock<HashMap<String, CounterFamily>>,
+    gauges: RwLock<HashMap<String, GaugeFamily>>,
     histograms: RwLock<HashMap<String, HistogramFamily>>,
 }
 
@@ -104,6 +111,28 @@ impl MetricsRegistry {
     /// methods exist for setting help text ahead of time.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Set the `# HELP` text for a gauge family.
+    pub fn register_gauge(&self, name: &str, help: &str) {
+        let mut map = self.gauges.write().expect("gauges lock poisoned");
+        map.entry(name.to_string()).or_default().help = help.to_string();
+    }
+
+    /// Set a gauge to an absolute value.
+    pub fn gauge_set(&self, name: &str, labels: Labels, value: i64) {
+        let labels = sort_labels(labels);
+        let mut map = self.gauges.write().expect("gauges lock poisoned");
+        let family = map.entry(name.to_string()).or_default();
+        *family.values.entry(labels).or_insert(0) = value;
+    }
+
+    /// Increment a gauge by `delta` (may be negative).
+    pub fn gauge_inc(&self, name: &str, labels: Labels, delta: i64) {
+        let labels = sort_labels(labels);
+        let mut map = self.gauges.write().expect("gauges lock poisoned");
+        let family = map.entry(name.to_string()).or_default();
+        *family.values.entry(labels).or_insert(0) += delta;
     }
 
     /// Set the `# HELP` text for a counter family. Called during startup;
@@ -196,6 +225,29 @@ impl MetricsRegistry {
             out.push('\n');
         }
         drop(counters);
+
+        let gauges = self.gauges.read().expect("gauges lock poisoned");
+        let mut names: Vec<&String> = gauges.keys().collect();
+        names.sort();
+        for name in names {
+            let family = &gauges[name];
+            if !family.help.is_empty() {
+                let _ = writeln!(out, "# HELP {name} {}", family.help);
+            }
+            let _ = writeln!(out, "# TYPE {name} gauge");
+            let mut label_keys: Vec<&Labels> = family.values.keys().collect();
+            label_keys.sort();
+            for labels in label_keys {
+                let _ = writeln!(
+                    out,
+                    "{name}{} {}",
+                    format_labels(labels),
+                    family.values[labels]
+                );
+            }
+            out.push('\n');
+        }
+        drop(gauges);
 
         let histograms = self.histograms.read().expect("histograms lock poisoned");
         let mut names: Vec<&String> = histograms.keys().collect();
@@ -388,6 +440,21 @@ mod tests {
         r.counter_inc("c", vec![], 7);
         let text = r.render_prometheus();
         assert!(text.contains("c 7"));
+    }
+
+    #[test]
+    fn test_gauge_set_inc_and_render() {
+        let r = MetricsRegistry::new();
+        r.register_gauge("g", "A gauge");
+        r.gauge_set("g", vec![], 5);
+        let text = r.render_prometheus();
+        assert!(text.contains("# HELP g A gauge"));
+        assert!(text.contains("# TYPE g gauge"));
+        assert!(text.contains("g 5"));
+
+        r.gauge_inc("g", vec![], -2);
+        let text = r.render_prometheus();
+        assert!(text.contains("g 3"));
     }
 
     #[test]

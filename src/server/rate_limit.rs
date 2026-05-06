@@ -321,6 +321,7 @@ fn is_rfc1918(ip: IpAddr) -> bool {
 pub async fn rate_limit_middleware(
     limiter: Arc<RateLimiter>,
     trust_proxy: bool,
+    metrics: Option<Arc<super::metrics::MetricsRegistry>>,
     req: Request,
     next: Next,
 ) -> Response {
@@ -332,6 +333,9 @@ pub async fn rate_limit_middleware(
         next.run(req).await
     } else {
         tracing::debug!(client_ip = %ip, "rate limit rejected request");
+        if let Some(ref reg) = metrics {
+            reg.counter_inc("gigastt_rate_limit_rejections_total", vec![], 1);
+        }
         (
             StatusCode::TOO_MANY_REQUESTS,
             [(axum::http::header::RETRY_AFTER, "60")],

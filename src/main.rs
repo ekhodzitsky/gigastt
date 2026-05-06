@@ -98,6 +98,11 @@ enum Commands {
         #[arg(long, env = "GIGASTT_SHUTDOWN_DRAIN_SECS", default_value_t = 10)]
         shutdown_drain_secs: u64,
 
+        /// Pool checkout timeout (seconds). REST and WebSocket handlers wait
+        /// this long for a free session triplet before returning 503.
+        #[arg(long, env = "GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS", default_value_t = 30)]
+        pool_checkout_timeout_secs: u64,
+
         /// Skip the automatic INT8 quantization step after download.
         /// Default behaviour is to quantize the encoder (~2 min, one-time)
         /// so the pool loads the 210 MB INT8 encoder instead of the 844 MB
@@ -269,6 +274,7 @@ async fn main() -> anyhow::Result<()> {
             metrics,
             max_session_secs,
             shutdown_drain_secs,
+            pool_checkout_timeout_secs,
             skip_quantize,
             trust_proxy,
         } => {
@@ -292,6 +298,7 @@ async fn main() -> anyhow::Result<()> {
                     rate_limit_burst,
                     max_session_secs,
                     shutdown_drain_secs,
+                    pool_checkout_timeout_secs,
                 },
                 metrics_enabled: metrics,
                 trust_proxy,

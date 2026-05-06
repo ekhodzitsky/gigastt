@@ -24,6 +24,11 @@ pub enum ServerMessage {
         /// Whether diarization is active for this session. Omitted from JSON when false.
         #[serde(skip_serializing_if = "std::ops::Not::not")]
         diarization: bool,
+        /// Minimum protocol version accepted by this server. Lets clients
+        /// discover compatibility without trial-and-error. Omitted when equal
+        /// to `version` (i.e. only one version is supported) for backward compat.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        min_protocol_version: Option<String>,
     },
 
     /// Partial (interim) transcript — may change with more audio.
@@ -61,6 +66,12 @@ pub enum ClientMessage {
         /// Enable speaker diarization for this session. Optional.
         #[serde(default)]
         diarization: Option<bool>,
+        /// Protocol version the client wants to speak (e.g., `"1.0"`).
+        /// When omitted the server defaults to the current version.
+        /// When present but unsupported, the server replies with an error
+        /// (`unsupported_protocol_version`) listing the supported range.
+        #[serde(default)]
+        protocol_version: Option<String>,
     },
 }
 
@@ -81,6 +92,7 @@ mod tests {
             version: PROTOCOL_VERSION.into(),
             supported_rates: vec![],
             diarization: false,
+            min_protocol_version: Some(PROTOCOL_VERSION.into()),
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -88,6 +100,7 @@ mod tests {
         assert_eq!(v["version"], "1.0");
         assert_eq!(v["model"], "test-model");
         assert_eq!(v["sample_rate"], 48000);
+        assert_eq!(v["min_protocol_version"], "1.0");
     }
 
     #[test]
@@ -174,6 +187,7 @@ mod tests {
             version: "1.0".into(),
             supported_rates: vec![8000, 16000, 24000, 44100, 48000],
             diarization: false,
+            min_protocol_version: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -188,6 +202,7 @@ mod tests {
             version: "1.0".into(),
             supported_rates: vec![],
             diarization: false,
+            min_protocol_version: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -240,12 +255,52 @@ mod tests {
             ClientMessage::Configure {
                 sample_rate,
                 diarization,
+                ..
             } => {
                 assert_eq!(sample_rate, Some(8000));
                 assert_eq!(diarization, None);
             }
             _ => panic!("Expected Configure"),
         }
+    }
+
+    #[test]
+    fn test_configure_protocol_version_deserialize() {
+        let json = r#"{"type":"configure","protocol_version":"1.0"}"#;
+        let msg: ClientMessage = serde_json::from_str(json).unwrap();
+        match msg {
+            ClientMessage::Configure {
+                protocol_version, ..
+            } => assert_eq!(protocol_version, Some("1.0".into())),
+            _ => panic!("Expected Configure"),
+        }
+    }
+
+    #[test]
+    fn test_configure_protocol_version_absent() {
+        let json = r#"{"type":"configure","sample_rate":16000}"#;
+        let msg: ClientMessage = serde_json::from_str(json).unwrap();
+        match msg {
+            ClientMessage::Configure {
+                protocol_version, ..
+            } => assert_eq!(protocol_version, None),
+            _ => panic!("Expected Configure"),
+        }
+    }
+
+    #[test]
+    fn test_ready_min_protocol_version_omitted_when_none() {
+        let msg = ServerMessage::Ready {
+            model: "test".into(),
+            sample_rate: 48000,
+            version: "1.0".into(),
+            supported_rates: vec![],
+            diarization: false,
+            min_protocol_version: None,
+        };
+        let json = serde_json::to_string(&msg).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert!(v.get("min_protocol_version").is_none());
     }
 
     #[test]
@@ -256,6 +311,7 @@ mod tests {
             version: "1.0".into(),
             supported_rates: vec![],
             diarization: false,
+            min_protocol_version: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();

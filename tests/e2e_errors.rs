@@ -240,22 +240,22 @@ async fn test_rest_saturated_pool_returns_503() {
     let _ = shutdown.send(());
 }
 
-// ─── 5. WebSocket idle timeout (300 s) ──────────────────────────────────────
+// ─── 5. WebSocket idle timeout ──────────────────────────────────────────────
 
 /// Connect a WebSocket client, receive Ready, then send nothing.
-/// The server closes the connection after 300 seconds of inactivity.
-///
-/// Ignored by default because it takes ~300 seconds.
+/// The server closes the connection after the configured idle timeout.
+/// Uses a short (3 s) idle timeout so the test finishes in under 10 s.
 #[tokio::test]
 #[ignore]
 async fn test_ws_idle_timeout() {
-    // This test does NOT need the model — no pool checkout occurs until Ready
-    // is sent, but actually the server does check out a triplet before Ready.
-    // Use model_dir to start the real server so pool is available.
     let model_dir = common::model_dir();
-    let (port, shutdown) = common::start_server(&model_dir).await;
+    let limits = gigastt::server::RuntimeLimits {
+        idle_timeout_secs: 3,
+        ..Default::default()
+    };
+    let (port, shutdown) = common::start_server_with_limits(&model_dir, limits).await;
 
-    let (mut ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/ws"))
+    let (mut ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/v1/ws"))
         .await
         .expect("WebSocket connection failed");
 
@@ -266,8 +266,8 @@ async fn test_ws_idle_timeout() {
         .expect("stream ended")
         .expect("ws error");
 
-    // Wait up to 310 seconds for the server to close the idle connection.
-    let result = tokio::time::timeout(Duration::from_secs(310), ws.next()).await;
+    // Wait up to 10 seconds for the server to close the idle connection (3 s timeout + margin).
+    let result = tokio::time::timeout(Duration::from_secs(10), ws.next()).await;
 
     match result {
         Ok(None) => {
@@ -284,8 +284,8 @@ async fn test_ws_idle_timeout() {
         }
         Err(_) => {
             panic!(
-                "Server did not close the idle connection within 310 seconds \
-                 (expected 300-second idle timeout)"
+                "Server did not close the idle connection within 10 seconds \
+                 (expected 3-second idle timeout)"
             );
         }
     }

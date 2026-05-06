@@ -12,7 +12,7 @@ use serde::Serialize;
 use std::sync::Arc;
 
 use super::metrics::MetricsRegistry;
-use super::{POOL_RETRY_AFTER_MS, POOL_RETRY_AFTER_SECS, RuntimeLimits};
+use super::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use crate::inference::Engine;
 
 /// Shared application state for all handlers. Carries runtime limits so the
@@ -109,14 +109,14 @@ fn api_error(status: StatusCode, msg: &str, code: &str) -> ApiError {
 /// `Retry-After` header (seconds, per RFC 9110 §10.2.3) and a machine-readable
 /// `retry_after_ms` field in the JSON body so clients on either surface can
 /// back off with the same hint.
-fn api_timeout_error() -> ApiError {
+fn api_timeout_error(limits: &RuntimeLimits) -> ApiError {
     (
         StatusCode::SERVICE_UNAVAILABLE,
-        [(header::RETRY_AFTER, POOL_RETRY_AFTER_SECS.to_string())],
+        [(header::RETRY_AFTER, pool_retry_after_secs(limits).to_string())],
         Json(serde_json::json!({
             "error": "Server busy, try again later",
             "code": "timeout",
-            "retry_after_ms": POOL_RETRY_AFTER_MS,
+            "retry_after_ms": pool_retry_after_ms(limits),
         })),
     )
         .into_response()
@@ -212,20 +212,31 @@ pub async fn transcribe(
     // Checkout a session triplet from the pool (blocks if none available).
     // The guard's lifetime is stripped via `into_owned` so the triplet can
     // travel through `spawn_blocking`; the reservation handles checkin.
+    let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
-        std::time::Duration::from_secs(30),
+        std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
         state.engine.pool.checkout(),
     )
     .await
     {
         Ok(Ok(guard)) => guard,
         Ok(Err(_pool_closed)) => return Err(api_pool_closed_error()),
-        Err(_timeout) => return Err(api_timeout_error()),
+        Err(_timeout) => {
+            if let Some(ref reg) = state.metrics_registry {
+                reg.counter_inc("gigastt_pool_timeouts_total", vec![], 1);
+                reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+            }
+            return Err(api_timeout_error(&state.limits));
+        }
     };
+    if let Some(ref reg) = state.metrics_registry {
+        reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+    }
     let (triplet, reservation) = guard.into_owned();
 
     let engine = state.engine.clone();
 
+    let inference_start = std::time::Instant::now();
     let result = tokio::task::spawn_blocking(move || {
         let mut triplet = triplet;
         // catch_unwind ensures triplet is returned to pool even on panic
@@ -249,6 +260,9 @@ pub async fn transcribe(
         }
     })
     .await;
+    if let Some(ref reg) = state.metrics_registry {
+        reg.histogram_record("gigastt_inference_duration_seconds", vec![], inference_start.elapsed().as_secs_f64());
+    }
 
     match result {
         Ok((Ok(result), triplet)) => {
@@ -335,16 +349,26 @@ pub async fn transcribe_stream(
 
     // Checkout a session triplet from the pool. Strip the lifetime via
     // `into_owned` so the triplet can travel through `spawn_blocking`.
+    let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
-        std::time::Duration::from_secs(30),
+        std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
         state.engine.pool.checkout(),
     )
     .await
     {
         Ok(Ok(guard)) => guard,
         Ok(Err(_pool_closed)) => return Err(api_pool_closed_error()),
-        Err(_timeout) => return Err(api_timeout_error()),
+        Err(_timeout) => {
+            if let Some(ref reg) = state.metrics_registry {
+                reg.counter_inc("gigastt_pool_timeouts_total", vec![], 1);
+                reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+            }
+            return Err(api_timeout_error(&state.limits));
+        }
     };
+    if let Some(ref reg) = state.metrics_registry {
+        reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+    }
     let (triplet, reservation) = guard.into_owned();
 
     // Create mpsc channel for streaming segments from spawn_blocking to SSE

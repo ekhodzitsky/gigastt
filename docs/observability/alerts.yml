@@ -1,0 +1,82 @@
+---
+# Prometheus alerting rules for gigastt operators.
+# Apply with: kubectl apply -f alerts.yml  (or load via your Prometheus operator)
+# Requires gigastt >= 0.8.0 with --metrics enabled.
+
+groups:
+  - name: gigastt
+    rules:
+
+      # Fire when the 5xx error rate exceeds 5% of all requests over 5 minutes.
+      - alert: GigasttHighErrorRate
+        expr: |
+          (
+            sum(rate(gigastt_http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(gigastt_http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gigastt 5xx error rate above 5%"
+          description: >
+            {{ $value | humanizePercentage }} of requests are returning 5xx
+            status codes over the last 5 minutes.
+
+      # Fire when the inference session pool has been fully exhausted for 1 minute.
+      # gigastt_pool_available is emitted when --metrics is enabled
+      # (introduced alongside the pool-saturation backpressure in v0.6.0).
+      - alert: GigasttPoolExhaustion
+        expr: gigastt_pool_available == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gigastt inference pool exhausted"
+          description: >
+            The inference pool has been fully exhausted (0 available sessions)
+            for more than 1 minute. Callers are receiving 503 responses.
+            Consider increasing --pool-size.
+
+      # Fire when the p95 request duration exceeds 10 seconds over 5 minutes.
+      - alert: GigasttHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(gigastt_http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gigastt p95 latency above 10 s"
+          description: >
+            The 95th-percentile request duration is {{ $value | humanizeDuration }}
+            over the last 5 minutes. Check for slow inference or CPU contention.
+
+      # Fire when pool checkout timeouts are sustained (>1 per minute for 5 min).
+      - alert: GigasttPoolTimeouts
+        expr: rate(gigastt_pool_timeouts_total[5m]) > 0.017
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gigastt pool checkout timeouts sustained"
+          description: >
+            Pool checkout timeouts are occurring at a rate of
+            {{ $value | humanize }}/s over the last 5 minutes. Callers are
+            receiving 503 responses. Consider increasing --pool-size.
+
+      # Fire when the /health endpoint has been unreachable for 30 seconds.
+      # Requires a blackbox exporter probe targeting http://<host>:9876/health.
+      - alert: GigasttDown
+        expr: probe_success{job="gigastt-health"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "gigastt health check failing"
+          description: >
+            The gigastt /health endpoint has not returned 200 for 30 seconds.
+            The process may have crashed or the port may be unreachable.

@@ -34,12 +34,18 @@ fn json_text(msg: &impl serde::Serialize) -> String {
 pub(crate) const SUPPORTED_RATES: &[u32] = &[8000, 16000, 24000, 44100, 48000];
 const DEFAULT_SAMPLE_RATE: u32 = 48000;
 
-/// Hint (milliseconds) returned to clients that hit pool backpressure —
-/// matches the `Retry-After` header emitted by the REST handlers and keeps
-/// transient 503 / WebSocket error payloads consistent with the 30 s
-/// checkout timeout used throughout the server.
-pub(crate) const POOL_RETRY_AFTER_MS: u32 = 30_000;
-pub(crate) const POOL_RETRY_AFTER_SECS: u64 = 30;
+/// Derive the pool-backpressure retry hint from the configured checkout
+/// timeout so the `Retry-After` header / `retry_after_ms` JSON field stay
+/// consistent with the actual wait window.
+pub(crate) fn pool_retry_after_ms(limits: &RuntimeLimits) -> u32 {
+    limits
+        .pool_checkout_timeout_secs
+        .saturating_mul(1000)
+        .min(u32::MAX as u64) as u32
+}
+pub(crate) fn pool_retry_after_secs(limits: &RuntimeLimits) -> u64 {
+    limits.pool_checkout_timeout_secs
+}
 
 /// Origin policy for CORS + cross-origin deny middleware.
 ///
@@ -145,6 +151,10 @@ pub struct RuntimeLimits {
     /// WebSocket / SSE tasks may emit their final frames and close cleanly.
     /// Values of `0` are clamped to `1` to avoid a no-op drain. Default: 10.
     pub shutdown_drain_secs: u64,
+    /// Pool checkout timeout (seconds). REST and WebSocket handlers wait this
+    /// long for a free session triplet before returning 503 / `timeout`.
+    /// The `Retry-After` hint echoes the same value. Default: 30.
+    pub pool_checkout_timeout_secs: u64,
 }
 
 impl Default for RuntimeLimits {
@@ -157,6 +167,7 @@ impl Default for RuntimeLimits {
             rate_limit_burst: 10,
             max_session_secs: 3600,
             shutdown_drain_secs: 10,
+            pool_checkout_timeout_secs: 30,
         }
     }
 }
@@ -248,10 +259,14 @@ pub async fn run_with_config(
 /// race between `free_port()` and server startup.
 pub async fn run_with_config_listener(
     engine: Engine,
-    config: ServerConfig,
+    mut config: ServerConfig,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
     listener: tokio::net::TcpListener,
 ) -> Result<()> {
+    if config.limits.pool_checkout_timeout_secs == 0 {
+        tracing::warn!("pool_checkout_timeout_secs=0 would make the pool unusable; clamping to 1");
+        config.limits.pool_checkout_timeout_secs = 1;
+    }
     let addr: SocketAddr = format!("{}:{}", config.host, config.port)
         .parse()
         .context("Invalid host:port")?;
@@ -271,6 +286,32 @@ pub async fn run_with_config_listener(
             "gigastt_http_request_duration_seconds",
             "HTTP request duration in seconds",
             self::metrics::DEFAULT_BUCKETS,
+        );
+        reg.register_gauge(
+            "gigastt_pool_available",
+            "Number of session triplets currently available in the pool",
+        );
+        reg.register_histogram(
+            "gigastt_pool_checkout_duration_seconds",
+            "Time spent waiting for a pool checkout",
+            self::metrics::DEFAULT_BUCKETS,
+        );
+        reg.register_counter(
+            "gigastt_pool_timeouts_total",
+            "Total pool checkout timeouts",
+        );
+        reg.register_gauge(
+            "gigastt_ws_active_connections",
+            "Number of active WebSocket connections",
+        );
+        reg.register_histogram(
+            "gigastt_inference_duration_seconds",
+            "Inference duration in seconds",
+            self::metrics::DEFAULT_BUCKETS,
+        );
+        reg.register_counter(
+            "gigastt_rate_limit_rejections_total",
+            "Total requests rejected by rate limiter",
         );
         tracing::info!("Prometheus /metrics endpoint enabled");
         Some(reg)
@@ -303,7 +344,7 @@ pub async fn run_with_config_listener(
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
         limits: config.limits.clone(),
-        metrics_registry,
+        metrics_registry: metrics_registry.clone(),
         shutdown: shutdown_root.clone(),
         tracker: tracker.clone(),
     });
@@ -334,7 +375,7 @@ pub async fn run_with_config_listener(
         )
         // `/v1/ws` is the canonical path (versioned, aligned with REST); `/ws`
         // remains as an alias for existing clients and logs a deprecation
-        // warning on each upgrade. Plan: drop `/ws` in v1.0.
+        // warning on each upgrade. Planned for removal in a future major version.
         .route("/v1/ws", get(ws_handler))
         .route("/ws", get(ws_handler_legacy))
         .route("/metrics", get(http::metrics))
@@ -389,9 +430,11 @@ pub async fn run_with_config_listener(
         );
         let layer_limiter = limiter.clone();
         let layer_trust_proxy = config.trust_proxy;
+        let layer_metrics = metrics_registry.clone();
         protected.layer(axum::middleware::from_fn(move |req, next| {
             let limiter = layer_limiter.clone();
-            async move { rate_limit::rate_limit_middleware(limiter, layer_trust_proxy, req, next).await }
+            let metrics = layer_metrics.clone();
+            async move { rate_limit::rate_limit_middleware(limiter, layer_trust_proxy, metrics, req, next).await }
         }))
     } else {
         protected
@@ -444,7 +487,7 @@ pub async fn run_with_config_listener(
             shutdown_root.cancel();
             // Wake every waiter still blocked on `pool.checkout()` with
             // PoolError::Closed so they fall through to a 503 / `pool_closed`
-            // response instead of being stranded for the full 30 s timeout.
+            // response instead of being stranded for the full checkout timeout.
             // Idempotent — safe even if the pool was already closed.
             shutdown_engine.pool.close();
         }
@@ -495,6 +538,12 @@ async fn http_metrics_middleware(
     let method = req.method().as_str().to_string();
     let path = req.uri().path().to_string();
     let start = std::time::Instant::now();
+    // Sample pool availability on every request.
+    registry.gauge_set(
+        "gigastt_pool_available",
+        vec![],
+        state.engine.pool.available() as i64,
+    );
     let response = next.run(req).await;
     let elapsed = start.elapsed().as_secs_f64();
     let status = response.status().as_u16().to_string();
@@ -621,7 +670,7 @@ async fn ws_handler(
 /// but emits a warn-level log on every upgrade and adds RFC 8594 `Deprecation`
 /// plus `Link: </v1/ws>; rel="successor-version"` headers on the upgrade
 /// response so client libraries can surface the migration warning to users
-/// before v1.0 drops the alias.
+/// before a future major version drops the alias.
 async fn ws_handler_legacy(
     ws: WebSocketUpgrade,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
@@ -629,7 +678,7 @@ async fn ws_handler_legacy(
 ) -> Response {
     tracing::warn!(
         peer = %peer,
-        "WebSocket client connected to deprecated /ws path — switch to /v1/ws before v1.0"
+        "WebSocket client connected to deprecated /ws path — switch to /v1/ws"
     );
     if state.shutdown.is_cancelled() {
         use axum::http::StatusCode;
@@ -665,9 +714,22 @@ async fn ws_handler_legacy(
 }
 
 async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppState>) {
+    if let Some(ref reg) = state.metrics_registry {
+        reg.gauge_inc("gigastt_ws_active_connections", vec![], 1);
+    }
+    struct WsMetricsGuard(Arc<http::AppState>);
+    impl Drop for WsMetricsGuard {
+        fn drop(&mut self) {
+            if let Some(ref reg) = self.0.metrics_registry {
+                reg.gauge_inc("gigastt_ws_active_connections", vec![], -1);
+            }
+        }
+    }
+    let _ws_guard = WsMetricsGuard(state.clone());
+    let checkout_start = std::time::Instant::now();
     // `select!` the pool checkout against the shutdown token so SIGTERM
     // during pool saturation returns immediately instead of waiting the full
-    // 30 s checkout window. `biased;` keeps cancel priority over progress.
+    // checkout window. `biased;` keeps cancel priority over progress.
     let guard = tokio::select! {
         biased;
         _ = state.shutdown.cancelled() => {
@@ -682,7 +744,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
             return;
         }
         res = tokio::time::timeout(
-            std::time::Duration::from_secs(30),
+            std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
             state.engine.pool.checkout(),
         ) => match res {
             Ok(Ok(guard)) => guard,
@@ -699,11 +761,15 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
             }
             Err(_) => {
                 tracing::warn!("WebSocket pool checkout timeout for {peer}");
+                if let Some(ref reg) = state.metrics_registry {
+                    reg.counter_inc("gigastt_pool_timeouts_total", vec![], 1);
+                    reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+                }
                 let (mut sink, _) = socket.split();
                 let err = ServerMessage::Error {
                     message: "Server busy, try again later".into(),
                     code: "timeout".into(),
-                    retry_after_ms: Some(POOL_RETRY_AFTER_MS),
+                    retry_after_ms: Some(pool_retry_after_ms(&state.limits)),
                 };
                 let _ = sink.send(WsMessage::Text(json_text(&err).into())).await;
                 return;
@@ -711,6 +777,9 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
         }
     };
 
+    if let Some(ref reg) = state.metrics_registry {
+        reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
+    }
     // Strip the lifetime so the triplet can travel through `handle_ws_inner`,
     // which currently owns it directly. The reservation handles checkin on
     // the way back; if the inner loop loses the triplet to a spawn_blocking
@@ -915,6 +984,7 @@ async fn handle_configure_message(
     audio_received: bool,
     sample_rate: Option<u32>,
     diarization: Option<bool>,
+    protocol_version: Option<String>,
     peer: SocketAddr,
 ) -> Result<FrameOutcome> {
     if audio_received {
@@ -928,6 +998,23 @@ async fn handle_configure_message(
         )
         .await?;
         return Ok(FrameOutcome::Continue);
+    }
+    if let Some(ref ver) = protocol_version
+        && ver != crate::protocol::PROTOCOL_VERSION
+    {
+        send_server_message(
+            sink,
+            &ServerMessage::Error {
+                message: format!(
+                    "Unsupported protocol version: {ver}. Supported: {}",
+                    crate::protocol::PROTOCOL_VERSION
+                ),
+                code: "unsupported_protocol_version".into(),
+                retry_after_ms: None,
+            },
+        )
+        .await?;
+        return Ok(FrameOutcome::Break);
     }
     if let Some(rate) = sample_rate {
         if SUPPORTED_RATES.contains(&rate) {
@@ -1036,6 +1123,7 @@ async fn handle_ws_inner(
         version: crate::protocol::PROTOCOL_VERSION.into(),
         supported_rates: SUPPORTED_RATES.to_vec(),
         diarization: diarization_available,
+        min_protocol_version: None,
     };
     if let Err(e) = send_server_message(&mut sink, &ready).await {
         return (Some(triplet), Err(e));
@@ -1186,6 +1274,7 @@ async fn handle_ws_inner(
                         Ok(ClientMessage::Configure {
                             sample_rate,
                             diarization,
+                            protocol_version,
                         }) => {
                             handle_configure_message(
                                 &mut sink,
@@ -1195,6 +1284,7 @@ async fn handle_ws_inner(
                                 audio_received,
                                 sample_rate,
                                 diarization,
+                                protocol_version,
                                 peer,
                             )
                             .await

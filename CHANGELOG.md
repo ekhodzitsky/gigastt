@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-05-06
+
+First stable release. All P0 blockers and P1 ship-before-v1.0 items from the
+production-readiness review are closed. Public API (REST, WebSocket, CLI) is
+now covered by semver guarantees.
+
+### Added
+
+- **Configurable pool checkout timeout** — `--pool-checkout-timeout-secs`
+  (env `GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS`, default 30). `Retry-After`
+  headers and `retry_after_ms` JSON fields derive from the same value.
+- **WebSocket protocol version negotiation** — `Configure` accepts an
+  optional `protocol_version` field; the server rejects unsupported versions
+  with error code `unsupported_protocol_version`. `Ready` includes
+  `min_protocol_version` for client-side discovery.
+- **Extended Prometheus metrics** — `gigastt_pool_available` (gauge),
+  `gigastt_pool_checkout_duration_seconds` (histogram),
+  `gigastt_pool_timeouts_total` (counter), `gigastt_ws_active_connections`
+  (gauge), `gigastt_inference_duration_seconds` (histogram),
+  `gigastt_rate_limit_rejections_total` (counter).
+- **`SECURITY.md`** — responsible disclosure policy (90-day timeline).
+- **`docs/privacy.md`** — auditable privacy-first claim documentation.
+- **`docs/observability/`** — example Prometheus alerting rules and a
+  starter Grafana dashboard JSON.
+- **`cargo-semver-checks`** in CI — catches accidental breaking changes on PRs.
+- **`cargo-tarpaulin`** coverage job — uploads to Codecov on main push.
+
+### Changed
+
+- **Idle timeout e2e test** uses a 3 s server-side timeout instead of the
+  default 300 s, reducing wall-clock from ~310 s to ~5 s.
+
+### Removed
+
+- **`POOL_RETRY_AFTER_MS` / `POOL_RETRY_AFTER_SECS` constants** — replaced
+  by functions that derive the hint from `pool_checkout_timeout_secs`.
+
 ## [0.10.0] - 2026-05-05
 
 Speaker diarization is now a default feature powered by the polyvoice crate
