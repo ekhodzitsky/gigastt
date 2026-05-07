@@ -4,6 +4,7 @@
 # Override global gitignore — CLAUDE.md is part of the project
 !CLAUDE.md
 gigastt-*.tar.gz
+check_raw
 missions/
 .omx/
 .superpowers/
