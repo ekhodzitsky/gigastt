@@ -154,6 +154,62 @@ jobs:
         run: cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored --test-threads=1
         timeout-minutes: 30
 
+  benchmark:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [e2e-tests]
+    runs-on: ubuntu-latest
+    name: WER Benchmark
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: arduino/setup-protoc@v3
+        with:
+          version: '29.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache model
+        id: cache-model
+        uses: actions/cache@v5
+        with:
+          path: ~/.gigastt/models
+          key: gigastt-model-v3-onnx-${{ hashFiles('src/model/mod.rs') }}
+
+      - name: Download model
+        if: steps.cache-model.outputs.cache-hit != 'true'
+        run: cargo run -- download
+
+      - name: Run WER benchmark
+        run: cargo test --test benchmark -- --ignored 2>&1 | tee benchmark_output.txt
+
+      - name: Check WER threshold
+        run: |
+          THRESHOLD=$(cat .github/wer-threshold.txt | tr -d '[:space:]')
+          WER=$(grep -oP 'WER: \K[0-9.]+' benchmark_output.txt | head -1)
+          if [ -z "$WER" ]; then
+            echo "ERROR: Could not extract WER from benchmark output"
+            exit 1
+          fi
+          echo "WER: ${WER}%, Threshold: ${THRESHOLD}%"
+          if awk "BEGIN {exit !($WER > $THRESHOLD)}"; then
+            echo "FAIL: WER ${WER}% exceeds threshold ${THRESHOLD}%"
+            exit 1
+          fi
+          echo "PASS: WER ${WER}% is within threshold ${THRESHOLD}%"
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark_output.txt
+
   semver:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
