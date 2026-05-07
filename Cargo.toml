@@ -44,6 +44,7 @@ reqwest = { version = "0.13", features = ["stream"] }
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+toml = "0.8"
 
 # Logging
 tracing = "0.1"
@@ -78,6 +79,9 @@ symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac"
 # the dependency direct so the zero-copy decode contract is discoverable.
 bytes = "1"
 
+# Lock-free atomic pointer swap for hot-reloadable config (SIGHUP reload)
+arc-swap = "1"
+
 # Per-IP rate limiting (token bucket, optional — off by default). Implemented
 # in `src/server/rate_limit.rs`; `dashmap` gives lock-free reads on the common
 # path. Previously this was `tower_governor = "0.7"`, which pulled
@@ -95,6 +99,9 @@ polyvoice = { version = "0.5.2", features = ["onnx"], optional = true }
 # the unmaintained `onnx-pb 0.1.4` crate and unblocks `RUSTSEC-2021-0073`.
 prost = "0.14"
 
+# UUID generation for X-Request-Id middleware (v7: time-ordered, sortable)
+uuid = { version = "1", features = ["v7"] }
+
 [build-dependencies]
 # Regenerates ONNX types from `proto/onnx.proto` into `OUT_DIR/onnx.rs`
 # at build time. Requires `protoc` in `PATH` (see `build.rs`).
@@ -111,6 +118,7 @@ harness = false
 [dev-dependencies]
 tempfile = "3"
 tokio-tungstenite = "0.29"
+proptest = "1"
 # `tracing-subscriber` is declared in `[dependencies]`; cargo already exposes
 # it to integration tests, so no separate dev-dep is needed.
 

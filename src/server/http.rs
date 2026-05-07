@@ -11,8 +11,10 @@ use futures_util::stream::Stream;
 use serde::Serialize;
 use std::sync::Arc;
 
+use arc_swap::ArcSwap;
+
+use super::config::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use super::metrics::MetricsRegistry;
-use super::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use crate::inference::Engine;
 
 /// Shared application state for all handlers. Carries runtime limits so the
@@ -27,7 +29,7 @@ use crate::inference::Engine;
 /// and must be drained explicitly.
 pub struct AppState {
     pub engine: Arc<Engine>,
-    pub limits: RuntimeLimits,
+    pub limits: Arc<ArcSwap<RuntimeLimits>>,
     pub metrics_registry: Option<Arc<MetricsRegistry>>,
     pub shutdown: tokio_util::sync::CancellationToken,
     pub tracker: tokio_util::task::TaskTracker,
@@ -60,23 +62,36 @@ pub async fn metrics(State(state): State<Arc<AppState>>) -> Response {
 /// Health check response.
 #[derive(Serialize)]
 pub struct HealthResponse {
+    /// Always `"ok"` when the server is running.
     pub status: String,
+    /// Model identifier string (e.g. `"gigaam-v3-e2e-rnnt"`).
     pub model: String,
+    /// Server version from `CARGO_PKG_VERSION`.
     pub version: String,
 }
 
 /// Model info response.
 #[derive(Serialize)]
 pub struct ModelInfo {
+    /// Stable model identifier (e.g. `"gigaam-v3-e2e-rnnt"`).
     pub id: String,
+    /// Human-readable model name.
     pub name: String,
+    /// Server version from `CARGO_PKG_VERSION`.
     pub version: String,
+    /// Encoder precision in use: `"int8"` or `"fp32"`.
     pub encoder: String,
+    /// Number of tokens in the BPE vocabulary.
     pub vocab_size: usize,
+    /// Native sample rate the model operates at (always 16000 Hz).
     pub sample_rate: u32,
+    /// Total number of session triplets in the pool.
     pub pool_size: usize,
+    /// Number of session triplets currently available for checkout.
     pub pool_available: usize,
+    /// Audio container formats accepted by `/v1/transcribe`.
     pub supported_formats: Vec<String>,
+    /// PCM sample rates accepted by the WebSocket endpoint.
     pub supported_rates: Vec<u32>,
     /// Whether speaker diarization is available (feature-gated build + model loaded).
     /// Added in v0.7.0 so clients can probe capabilities via REST instead of
@@ -87,8 +102,11 @@ pub struct ModelInfo {
 /// Transcription response.
 #[derive(Serialize)]
 pub struct TranscribeResponse {
+    /// Full recognized transcript text.
     pub text: String,
+    /// Word-level timing, confidence, and optional speaker annotations.
     pub words: Vec<crate::inference::WordInfo>,
+    /// Duration of the submitted audio in seconds.
     pub duration: f64,
 }
 
@@ -139,6 +157,20 @@ fn api_pool_closed_error() -> ApiError {
         .into_response()
 }
 
+/// Readiness probe response.
+#[derive(Serialize)]
+pub struct ReadinessResponse {
+    /// `"ready"` when the server can accept requests, `"not_ready"` otherwise.
+    pub status: String,
+    /// Number of session triplets currently available for checkout.
+    pub pool_available: usize,
+    /// Total number of session triplets in the pool.
+    pub pool_total: usize,
+    /// Machine-readable reason code when not ready (e.g. `"pool_exhausted"`, `"shutting_down"`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 /// GET /health — health check for monitoring and Docker HEALTHCHECK.
 pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
     let _ = &state.engine;
@@ -147,6 +179,42 @@ pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> 
         model: "gigaam-v3-e2e-rnnt".into(),
         version: env!("CARGO_PKG_VERSION").into(),
     })
+}
+
+/// GET /ready — readiness probe for k8s and orchestrators.
+pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
+    if state.shutdown.is_cancelled() {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(ReadinessResponse {
+                status: "not_ready".into(),
+                pool_available: 0,
+                pool_total: state.engine.pool.total(),
+                reason: Some("shutting_down".into()),
+            }),
+        )
+            .into_response();
+    }
+    let available = state.engine.pool.available();
+    if available == 0 {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(ReadinessResponse {
+                status: "not_ready".into(),
+                pool_available: 0,
+                pool_total: state.engine.pool.total(),
+                reason: Some("pool_exhausted".into()),
+            }),
+        )
+            .into_response();
+    }
+    Json(ReadinessResponse {
+        status: "ready".into(),
+        pool_available: available,
+        pool_total: state.engine.pool.total(),
+        reason: None,
+    })
+    .into_response()
 }
 
 /// GET /v1/models — list loaded models and capabilities.
@@ -176,7 +244,7 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
             "ogg".into(),
             "flac".into(),
         ],
-        supported_rates: super::SUPPORTED_RATES.to_vec(),
+        supported_rates: super::config::SUPPORTED_RATES.to_vec(),
         diarization,
     })
 }
@@ -204,7 +272,8 @@ pub async fn transcribe(
     // The explicit 413 keeps the REST contract honest and gives clients a
     // machine-readable `payload_too_large` code alongside the spec-conformant
     // status. Cheap: `Bytes::len()` is a load, not a walk.
-    if body.len() > state.limits.body_limit_bytes {
+    let limits = state.limits.load();
+    if body.len() > limits.body_limit_bytes {
         return Err(api_error(
             StatusCode::PAYLOAD_TOO_LARGE,
             "Request body exceeds the configured size limit",
@@ -217,7 +286,7 @@ pub async fn transcribe(
     // travel through `spawn_blocking`; the reservation handles checkin.
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
-        std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
+        std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
         state.engine.pool.checkout(),
     )
     .await
@@ -233,7 +302,7 @@ pub async fn transcribe(
                     checkout_start.elapsed().as_secs_f64(),
                 );
             }
-            return Err(api_timeout_error(&state.limits));
+            return Err(api_timeout_error(&limits));
         }
     };
     if let Some(ref reg) = state.metrics_registry {
@@ -329,7 +398,8 @@ pub async fn transcribe_stream(
 
     // Defence-in-depth early reject; matches `/v1/transcribe` — see that
     // handler for the rationale.
-    if body.len() > state.limits.body_limit_bytes {
+    let limits = state.limits.load();
+    if body.len() > limits.body_limit_bytes {
         return Err(api_error(
             StatusCode::PAYLOAD_TOO_LARGE,
             "Request body exceeds the configured size limit",
@@ -366,7 +436,7 @@ pub async fn transcribe_stream(
     // `into_owned` so the triplet can travel through `spawn_blocking`.
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
-        std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
+        std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
         state.engine.pool.checkout(),
     )
     .await
@@ -382,7 +452,7 @@ pub async fn transcribe_stream(
                     checkout_start.elapsed().as_secs_f64(),
                 );
             }
-            return Err(api_timeout_error(&state.limits));
+            return Err(api_timeout_error(&limits));
         }
     };
     if let Some(ref reg) = state.metrics_registry {
@@ -503,5 +573,33 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["text"], "hello");
         assert_eq!(v["duration"], 1.5);
+    }
+
+    #[test]
+    fn test_readiness_response_ready_serialization() {
+        let resp = ReadinessResponse {
+            status: "ready".into(),
+            pool_available: 3,
+            pool_total: 4,
+            reason: None,
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["status"], "ready");
+        assert_eq!(json["pool_available"], 3);
+        assert_eq!(json["pool_total"], 4);
+        assert!(json.get("reason").is_none() || json["reason"].is_null());
+    }
+
+    #[test]
+    fn test_readiness_response_not_ready_serialization() {
+        let resp = ReadinessResponse {
+            status: "not_ready".into(),
+            pool_available: 0,
+            pool_total: 4,
+            reason: Some("pool_exhausted".into()),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["status"], "not_ready");
+        assert_eq!(json["reason"], "pool_exhausted");
     }
 }

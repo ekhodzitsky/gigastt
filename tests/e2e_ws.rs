@@ -343,7 +343,7 @@ async fn test_ws_concurrent_4_clients() {
     let model_dir = common::model_dir();
     let (port, _shutdown) = common::start_server(&model_dir).await;
 
-    let url = format!("ws://127.0.0.1:{port}/ws");
+    let url = format!("ws://127.0.0.1:{port}/v1/ws");
 
     let mut handles = Vec::new();
     for i in 0..4usize {

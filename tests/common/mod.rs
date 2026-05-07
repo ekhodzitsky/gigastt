@@ -84,6 +84,7 @@ pub async fn start_server_with_limits(
         limits,
         metrics_enabled: false,
         trust_proxy: false,
+        config_path: None,
     };
     tokio::spawn(gigastt::server::run_with_config_listener(
         engine,

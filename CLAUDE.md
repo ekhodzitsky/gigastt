@@ -124,7 +124,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 ### API versioning & backward compatibility
 - WebSocket protocol version: `PROTOCOL_VERSION = "1.0"` (in `protocol/mod.rs`)
 - `ServerMessage::Ready` includes `version` field sent on connection
-- Canonical WS path: `/v1/ws` (v0.7.0+). `/ws` remains as a deprecated alias with a warn log on every upgrade; removal planned for v1.0.
+- WebSocket path: `/v1/ws`
 - WebSocket protocol messages are versioned via `type` field
 - New fields are additive only (never remove or rename existing fields). `supported_rates`, `diarization`, and `retry_after_ms` are serialized with `skip_serializing_if` to keep older clients happy.
 - Breaking changes require new message type, not modification of existing

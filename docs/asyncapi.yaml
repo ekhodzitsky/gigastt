@@ -10,7 +10,6 @@ info:
     ## Connection Flow
 
     1. Client connects to `ws://{host}:{port}/v1/ws` (default: `ws://127.0.0.1:9876/v1/ws`).
-       `/ws` remains as a deprecated alias — removal planned for v1.0.
        - Server binds `127.0.0.1` by default; use `--bind-all` (or `GIGASTT_ALLOW_BIND_ANY=1`) plus `--host 0.0.0.0` for Docker.
     2. Server sends `ready` message with model info, protocol version, `supported_rates`, and `diarization` capability
     3. (Optional) Client sends `configure` to pick a non-default `sample_rate` and/or enable `diarization`
@@ -69,7 +68,6 @@ channels:
     description: |
       Canonical WebSocket endpoint for audio streaming and transcription.
       Accepts binary PCM16 frames and JSON control messages.
-      `/ws` remains as a deprecated alias — removal planned for v1.0.
     messages:
       ready:
         $ref: "#/components/messages/ready"
