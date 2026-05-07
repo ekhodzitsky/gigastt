@@ -8,7 +8,7 @@
 
 gigastt's inference engine (`gigastt::inference::Engine`) is pure Rust and has no dependency on the server stack (`axum`, `tokio` runtime, etc.). This makes it an ideal candidate for on-device STT inside Android applications — no network latency, no cloud API keys, and full privacy.
 
-This document describes the architecture, build process, and integration steps needed to ship gigastt as a native library (`libgigastt.so`) inside an Android app.
+This document describes the architecture, build process, and integration steps needed to ship gigastt as a native library (`libgigastt_ffi.so`) inside an Android app.
 
 ---
 
@@ -22,17 +22,17 @@ This document describes the architecture, build process, and integration steps n
 │  GigasttBridge.kt  ──►  JNI            │
 │  (object with external fun declarations)│
 ├─────────────────────────────────────────┤
-│  libgigastt.so  ──►  C-ABI FFI         │
-│  (src/ffi.rs)                           │
+│  libgigastt_ffi.so  ──►  C-ABI FFI         │
+│  (crates/gigastt-ffi/src/lib.rs)                           │
 ├─────────────────────────────────────────┤
 │  gigastt::inference::Engine             │
 │  (ONNX Runtime + GigaAM v3 RNN-T)       │
 └─────────────────────────────────────────┘
 ```
 
-1. **Kotlin layer** — thin bridge that loads `libgigastt.so` and calls the exported functions.
-2. **JNI glue** — generated headers from `javac -h` (or `cargo-jni`). The Kotlin signatures map directly to the C symbols in `src/ffi.rs`.
-3. **Rust FFI layer** — `src/ffi.rs` exposes:
+1. **Kotlin layer** — thin bridge that loads `libgigastt_ffi.so` and calls the exported functions.
+2. **JNI glue** — generated headers from `javac -h` (or `cargo-jni`). The Kotlin signatures map directly to the C symbols in `crates/gigastt-ffi/src/lib.rs`.
+3. **Rust FFI layer** — `crates/gigastt-ffi/src/lib.rs` exposes:
    - `gigastt_engine_new(model_dir)` → opaque engine handle
    - `gigastt_engine_new_with_pool_size(model_dir, pool_size)` → opaque engine handle
    - `gigastt_transcribe_file(engine, wav_path)` → allocated C string
@@ -82,8 +82,10 @@ linker = "armv7a-linux-androideabi35-clang"
 ### 2. Build with cargo-ndk
 
 ```sh
-cargo ndk -t arm64-v8a -o ./android/app/src/main/jniLibs build --release --features ffi
+cargo ndk -t arm64-v8a -o ./android/app/src/main/jniLibs build --release -p gigastt-ffi
 ```
+
+> **Note:** Diarization (speaker identification) is not included by default in FFI builds. To enable it: `cargo ndk ... build --release -p gigastt-ffi --features diarization`.
 
 For multiple architectures:
 
@@ -93,16 +95,16 @@ cargo ndk \
   -t armeabi-v7a \
   -t x86_64 \
   -o ./android/app/src/main/jniLibs \
-  build --release --features ffi
+  build --release -p gigastt-ffi
 ```
 
 The resulting `.so` files land in:
 
 ```
 android/app/src/main/jniLibs/
-├── arm64-v8a/libgigastt.so
-├── armeabi-v7a/libgigastt.so
-└── x86_64/libgigastt.so
+├── arm64-v8a/libgigastt_ffi.so
+├── armeabi-v7a/libgigastt_ffi.so
+└── x86_64/libgigastt_ffi.so
 ```
 
 Gradle packages these automatically into the APK/AAB.
@@ -153,7 +155,7 @@ You have two strategies for shipping models:
 
 The `ort` crate supports Android through multiple execution providers:
 
-- **NNAPI** (Neural Networks API) — uses the device's NPU / DSP when available. Enabled automatically when you build with `--features ffi` because the `ffi` feature pulls in `ort/nnapi`.
+- **NNAPI** (Neural Networks API) — uses the device's NPU / DSP when available. Enable with `cargo ndk ... build -p gigastt-ffi --features nnapi`.
 - **CPU** — pure CPU fallback, works on every device. This is the default when NNAPI is unavailable or fails to initialize.
 
 No code changes are required to switch between EPs; `ort` selects the best available provider at session creation time.
@@ -219,7 +221,7 @@ GigasttBridge.stringFree(result)
 
 | Component | Approximate Size |
 |-----------|------------------|
-| `libgigastt.so` (arm64, stripped, release, LTO) | ~20–30 MB |
+| `libgigastt_ffi.so` (arm64, stripped, release, LTO) | ~20–30 MB |
 | ONNX models (INT8) | ~210 MB |
 | **Total on-device** | ~230–240 MB |
 
@@ -228,7 +230,7 @@ Tips to reduce binary size:
 - `strip = true` and `lto = true` are already enabled in `Cargo.toml` for release builds.
 - Build only for `arm64-v8a` if you do not need 32-bit ARM support.
 - Use `cargo-ndk` with `--release` (debug builds are much larger).
-- Use `--features ffi` (excludes server code paths where possible).
+- Use `-p gigastt-ffi` (excludes server code paths where possible).
 - Consider downloading models at runtime instead of bundling.
 
 ---

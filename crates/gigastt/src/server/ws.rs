@@ -3,13 +3,13 @@
 use super::config::{DEFAULT_SAMPLE_RATE, RuntimeLimits, SUPPORTED_RATES, pool_retry_after_ms};
 use super::http;
 use super::json_text;
-use crate::inference::{Engine, SessionTriplet};
-use crate::protocol::{ClientMessage, ServerMessage};
 use anyhow::Result;
 use axum::extract::State;
 use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
 use axum::response::Response;
 use futures_util::{SinkExt, StreamExt};
+use gigastt_core::inference::{Engine, SessionTriplet};
+use gigastt_core::protocol::{ClientMessage, ServerMessage};
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -191,7 +191,7 @@ async fn send_server_message(sink: &mut WsSink, msg: &ServerMessage) -> Result<(
 async fn handle_binary_frame(
     sink: &mut WsSink,
     engine: &Arc<Engine>,
-    state_opt: &mut Option<crate::inference::StreamingState>,
+    state_opt: &mut Option<gigastt_core::inference::StreamingState>,
     triplet_opt: &mut Option<SessionTriplet>,
     audio_received: &mut bool,
     client_sample_rate: u32,
@@ -207,7 +207,7 @@ async fn handle_binary_frame(
 
     // V1-25: delegate carry-byte logic to the extracted pure function so it
     // can be property-tested independently of the async handler.
-    let samples_f32 = crate::inference::audio::parse_pcm16_with_carry(&data, pending_byte);
+    let samples_f32 = gigastt_core::inference::audio::parse_pcm16_with_carry(&data, pending_byte);
     if pending_byte.is_some() {
         tracing::warn!(
             "Odd-length PCM stream from {peer}: {} bytes, deferring 1 byte",
@@ -220,10 +220,10 @@ async fn handle_binary_frame(
         let state_ref = state_opt
             .as_mut()
             .ok_or_else(|| anyhow::anyhow!("Streaming state lost"))?;
-        crate::inference::audio::resample_with_cache(
+        gigastt_core::inference::audio::resample_with_cache(
             &samples_f32,
-            crate::inference::audio::SampleRate(client_sample_rate),
-            crate::inference::audio::SampleRate(16000),
+            gigastt_core::inference::audio::SampleRate(client_sample_rate),
+            gigastt_core::inference::audio::SampleRate(16000),
             &mut state_ref.resampler,
         )?
     };
@@ -315,7 +315,7 @@ async fn handle_binary_frame(
 async fn handle_configure_message(
     sink: &mut WsSink,
     engine: &Arc<Engine>,
-    state_opt: &mut Option<crate::inference::StreamingState>,
+    state_opt: &mut Option<gigastt_core::inference::StreamingState>,
     client_sample_rate: &mut u32,
     audio_received: bool,
     sample_rate: Option<u32>,
@@ -336,14 +336,14 @@ async fn handle_configure_message(
         return Ok(FrameOutcome::Continue);
     }
     if let Some(ref ver) = protocol_version
-        && ver != crate::protocol::PROTOCOL_VERSION
+        && ver != gigastt_core::protocol::PROTOCOL_VERSION
     {
         send_server_message(
             sink,
             &ServerMessage::Error {
                 message: format!(
                     "Unsupported protocol version: {ver}. Supported: {}",
-                    crate::protocol::PROTOCOL_VERSION
+                    gigastt_core::protocol::PROTOCOL_VERSION
                 ),
                 code: "unsupported_protocol_version".into(),
                 retry_after_ms: None,
@@ -387,7 +387,7 @@ async fn handle_configure_message(
 async fn handle_stop_message(
     sink: &mut WsSink,
     engine: &Arc<Engine>,
-    state_opt: &mut Option<crate::inference::StreamingState>,
+    state_opt: &mut Option<gigastt_core::inference::StreamingState>,
     peer: SocketAddr,
 ) -> Result<FrameOutcome> {
     tracing::info!("Stop received from {peer}, finalizing");
@@ -399,12 +399,7 @@ async fn handle_stop_message(
     let final_msg = if let Some(seg) = flush_seg {
         ServerMessage::Final(seg)
     } else {
-        ServerMessage::Final(crate::inference::TranscriptSegment {
-            text: String::new(),
-            timestamp: crate::inference::now_timestamp(),
-            words: vec![],
-            is_final: true,
-        })
+        ServerMessage::Final(gigastt_core::inference::TranscriptSegment::empty_final())
     };
     send_server_message(sink, &final_msg).await?;
     Ok(FrameOutcome::Break)
@@ -417,19 +412,14 @@ async fn handle_stop_message(
 async fn flush_and_final(
     sink: &mut WsSink,
     engine: &Arc<Engine>,
-    state_opt: &mut Option<crate::inference::StreamingState>,
+    state_opt: &mut Option<gigastt_core::inference::StreamingState>,
 ) -> Result<()> {
     let flush_seg = state_opt
         .as_mut()
         .and_then(|state| engine.flush_state(state));
     let final_msg = match flush_seg {
         Some(seg) => ServerMessage::Final(seg),
-        None => ServerMessage::Final(crate::inference::TranscriptSegment {
-            text: String::new(),
-            timestamp: crate::inference::now_timestamp(),
-            words: vec![],
-            is_final: true,
-        }),
+        None => ServerMessage::Final(gigastt_core::inference::TranscriptSegment::empty_final()),
     };
     send_server_message(sink, &final_msg).await
 }
@@ -456,7 +446,7 @@ async fn handle_ws_inner(
     let ready = ServerMessage::Ready {
         model: "gigaam-v3-e2e-rnnt".into(),
         sample_rate: DEFAULT_SAMPLE_RATE,
-        version: crate::protocol::PROTOCOL_VERSION.into(),
+        version: gigastt_core::protocol::PROTOCOL_VERSION.into(),
         supported_rates: SUPPORTED_RATES.to_vec(),
         diarization: diarization_available,
         min_protocol_version: None,
@@ -628,6 +618,7 @@ async fn handle_ws_inner(
                         Ok(ClientMessage::Stop) => {
                             handle_stop_message(&mut sink, engine, &mut state_opt, peer).await
                         }
+                        Ok(_) => Ok(FrameOutcome::Continue),
                         Err(_) => {
                             tracing::debug!(
                                 "Unrecognized text message from {peer}: {}",

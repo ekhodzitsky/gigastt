@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
+use gigastt::server;
 use gigastt::server::{OriginPolicy, RuntimeLimits, ServerConfig};
-use gigastt::{inference, model, server};
+use gigastt_core::{inference, model};
 use std::net::IpAddr;
 use tracing_subscriber::EnvFilter;
 
@@ -244,7 +245,7 @@ fn ensure_int8_encoder(model_dir: &str, skip: bool) -> anyhow::Result<()> {
         );
     }
     tracing::info!("Quantizing encoder to INT8 (~2 min, one-time)…");
-    gigastt::quantize::quantize_model(&input, &int8_path)?;
+    gigastt_core::quantize::quantize_model(&input, &int8_path)?;
     tracing::info!("INT8 encoder saved to {}", int8_path.display());
     Ok(())
 }
@@ -353,7 +354,7 @@ async fn main() -> anyhow::Result<()> {
                 tracing::info!("Use --force to re-quantize.");
                 return Ok(());
             }
-            gigastt::quantize::quantize_model(&input, &output)?;
+            gigastt_core::quantize::quantize_model(&input, &output)?;
             tracing::info!("Quantized model saved to {}", output.display());
         }
         Commands::Transcribe { file, model_dir } => {

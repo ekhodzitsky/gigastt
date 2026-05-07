@@ -1,0 +1,27 @@
+[package]
+name = "gigastt-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "C FFI bindings for gigastt — embed Russian speech recognition in any language"
+keywords = ["stt", "speech-recognition", "ffi", "gigaam", "russian"]
+categories = ["multimedia::audio", "api-bindings"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = []
+nnapi = ["gigastt-core/nnapi"]
+coreml = ["gigastt-core/coreml"]
+cuda = ["gigastt-core/cuda"]
+diarization = ["gigastt-core/diarization"]
+
+[dependencies]
+gigastt-core = { path = "../gigastt-core", default-features = false }
+serde_json = "1"
+tracing = "0.1"
+
+[build-dependencies]
+cbindgen = "0.28"

@@ -56,25 +56,30 @@ The Dockerfile passes `--bind-all` so the server listens on `0.0.0.0` inside the
 ## Architecture
 
 ```
-src/
-  lib.rs                  # Public module exports
-  main.rs                 # CLI (clap): serve, download, transcribe, quantize
-  model/mod.rs            # HuggingFace model download (streaming + SHA256 + atomic rename)
-  inference/
-    mod.rs                # Engine: ONNX session management, SessionPool, StreamingState, DecoderState
-    features.rs           # Mel spectrogram (64 bins, FFT=320, hop=160, HTK)
-    tokenizer.rs          # BPE tokenizer (1025 tokens)
-    decode.rs             # RNN-T greedy decode loop
-    audio.rs              # Audio loading, resampling, channel mixing (symphonia + rubato)
-  error.rs                # Typed error types (GigasttError)
-  quantize.rs             # Native Rust INT8 quantizer (always compiled since v0.9.0)
-  onnx_proto.rs           # prost-generated ONNX types from proto/onnx.proto
-  server/
-    mod.rs                # axum router: HTTP + WebSocket on single port, origin middleware, graceful drain
-    http.rs               # REST handlers: /health, /v1/models, /v1/transcribe, /v1/transcribe/stream (SSE)
-    rate_limit.rs         # In-tree per-IP token-bucket rate limiter (dashmap-backed)
-    metrics.rs            # In-tree Prometheus text encoder (counters + histograms)
-  protocol/mod.rs         # JSON message types (Ready, Partial, Final, Error + retry_after_ms)
+crates/
+  gigastt-core/src/       # Core library (inference engine, no server deps)
+    lib.rs                # Public module exports
+    model/mod.rs          # HuggingFace model download (streaming + SHA256 + atomic rename)
+    inference/
+      mod.rs              # Engine: ONNX session management, SessionPool, StreamingState, DecoderState
+      features.rs         # Mel spectrogram (64 bins, FFT=320, hop=160, HTK)
+      tokenizer.rs        # BPE tokenizer (1025 tokens)
+      decode.rs           # RNN-T greedy decode loop
+      audio.rs            # Audio loading, resampling, channel mixing (symphonia + rubato)
+    error.rs              # Typed error types (GigasttError)
+    quantize.rs           # Native Rust INT8 quantizer (always compiled since v0.9.0)
+    onnx_proto.rs         # prost-generated ONNX types from proto/onnx.proto
+    protocol/mod.rs       # JSON message types (Ready, Partial, Final, Error + retry_after_ms)
+  gigastt-ffi/src/        # C-ABI FFI layer (cdylib for Android/mobile)
+    lib.rs                # Exported C functions: engine_new, transcribe_file, stream_*, etc.
+  gigastt/src/            # Server binary + CLI
+    lib.rs                # Re-exports gigastt-core::* for backward compat
+    main.rs               # CLI (clap): serve, download, transcribe, quantize
+    server/
+      mod.rs              # axum router: HTTP + WebSocket on single port, origin middleware, graceful drain
+      http.rs             # REST handlers: /health, /v1/models, /v1/transcribe, /v1/transcribe/stream (SSE)
+      rate_limit.rs       # In-tree per-IP token-bucket rate limiter (dashmap-backed)
+      metrics.rs          # In-tree Prometheus text encoder (counters + histograms)
 ```
 
 ### Performance optimizations (v0.9)
@@ -84,13 +89,13 @@ src/
 - **CUDA execution provider** (`--features cuda`, Linux x86_64 CUDA 12+): GPU inference via ONNX Runtime CUDA EP
   - Features are compile-time and mutually exclusive; default build uses CPU EP on all platforms
 - **INT8 quantization** (always compiled, auto-invoked since v0.9.0): encoder_int8.onnx (~210MB vs 844MB)
-  - Rust-native quantization in `src/quantize.rs` (no Cargo feature required; `quantize` feature kept as no-op for backward compat)
+  - Rust-native quantization in `crates/gigastt-core/src/quantize.rs` (no Cargo feature required; `quantize` feature kept as no-op for backward compat)
   - Auto-invoked by `gigastt download` and `gigastt serve` on first run (~2 min one-time)
   - Opt out with `--skip-quantize` or `GIGASTT_SKIP_QUANTIZE=1`
   - Auto-detection: Engine uses INT8 encoder if present, falls back to FP32
 - **Zero-copy REST upload path** (v0.9.0): `bytes::Bytes` flows end-to-end from axum into symphonia via a crate-private `BytesMediaSource`, eliminating the 4× upload copy that used to OOM small containers on concurrent 10-minute uploads.
 
-### Key constants (defined in `inference/mod.rs`)
+### Key constants (defined in `crates/gigastt-core/src/inference/mod.rs`)
 - `N_MELS = 64`, `N_FFT = 320`, `HOP_LENGTH = 160`, `PRED_HIDDEN = 320`
 - Encoder dim: 768, Vocab: 1025 tokens, Blank: 1024
 
@@ -122,7 +127,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 4. `cargo test && cargo clippy` before every commit
 
 ### API versioning & backward compatibility
-- WebSocket protocol version: `PROTOCOL_VERSION = "1.0"` (in `protocol/mod.rs`)
+- WebSocket protocol version: `PROTOCOL_VERSION = "1.0"` (in `crates/gigastt-core/src/protocol/mod.rs`)
 - `ServerMessage::Ready` includes `version` field sent on connection
 - WebSocket path: `/v1/ws`
 - WebSocket protocol messages are versioned via `type` field
@@ -168,9 +173,9 @@ Three-tier test architecture:
 - Rust 2024 edition
 - `anyhow` for error handling, `tracing` for logging
 - No `unwrap()` in production paths (use `?`, `context()`, or `unwrap_or_else`)
-- Shared constants in `inference/mod.rs`, referenced by sub-modules
+- Shared constants in `crates/gigastt-core/src/inference/mod.rs`, referenced by sub-modules
 - `ort` errors wrapped via `ort_err()` helper (Send/Sync workaround)
-- Execution provider selection uses `#[cfg(feature = "coreml")]` / `#[cfg(feature = "cuda")]` blocks in `inference/mod.rs`; default falls through to CPU EP
+- Execution provider selection uses `#[cfg(feature = "coreml")]` / `#[cfg(feature = "cuda")]` blocks in `crates/gigastt-core/src/inference/mod.rs`; default falls through to CPU EP
 
 ### Audio format support
 - File transcription: WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC (via symphonia)
@@ -197,7 +202,7 @@ GigaAM v3 e2e_rnnt from `istupakov/gigaam-v3-onnx` on HuggingFace:
 
 ### Quantization
 
-Rust-native quantization via `src/quantize.rs` (always compiled since v0.9.0):
+Rust-native quantization via `crates/gigastt-core/src/quantize.rs` (always compiled since v0.9.0):
 ```sh
 cargo run -- quantize --model-dir ~/.gigastt/models
 # Produces: v3_e2e_rnnt_encoder_int8.onnx (~210MB, ~4x smaller, ~43% faster)

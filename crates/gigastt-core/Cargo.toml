@@ -1,0 +1,46 @@
+[package]
+name = "gigastt-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Core inference engine for gigastt — GigaAM v3 ONNX Runtime, model management, quantization"
+keywords = ["stt", "speech-recognition", "gigaam", "onnx", "russian"]
+categories = ["multimedia::audio"]
+
+[lib]
+crate-type = ["rlib"]
+
+[features]
+default = ["diarization"]
+coreml = ["ort/coreml"]
+cuda = ["ort/cuda"]
+nnapi = ["ort/nnapi"]
+diarization = ["dep:polyvoice"]
+quantize = []
+
+[dependencies]
+ort = "2.0.0-rc.12"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"] }
+futures-util = "0.3"
+reqwest = { version = "0.13", features = ["stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+anyhow = "1"
+thiserror = "1"
+sha2 = "0.11"
+hex = "0.4"
+rustfft = "6"
+rubato = "0.16"
+symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
+bytes = "1"
+prost = "0.14"
+polyvoice = { version = "0.5.2", features = ["onnx"], optional = true }
+
+[build-dependencies]
+prost-build = "0.14"
+
+[dev-dependencies]
+tempfile = "3"
+proptest = "1"

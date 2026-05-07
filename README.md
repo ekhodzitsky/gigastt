@@ -304,9 +304,8 @@ gigastt quantize --force             # re-quantize even if INT8 model exists
 gigastt can be embedded into Android applications via a C-ABI FFI layer (no HTTP server, no JNI boilerplate required).
 
 ```sh
-# Build libgigastt.so for Android (arm64)
-cargo ndk -t arm64-v8a -o ./jniLibs build --release \
-  --no-default-features --features ffi
+# Build libgigastt_ffi.so for Android (arm64)
+cargo ndk -t arm64-v8a -o ./jniLibs build --release -p gigastt-ffi
 ```
 
 | Function | Purpose |
@@ -318,7 +317,7 @@ cargo ndk -t arm64-v8a -o ./jniLibs build --release \
 | `gigastt_stream_process_chunk(...)` | Feed PCM16 audio, get JSON segments |
 | `gigastt_stream_flush(...)` | Finalize stream |
 
-The `ffi` feature pulls in `ort/nnapi` for NPU/DSP acceleration on Android.
+The `nnapi` feature on `gigastt-ffi` pulls in `ort/nnapi` for NPU/DSP acceleration on Android: `cargo ndk ... build -p gigastt-ffi --features nnapi`.
 For pool sizing on mobile: use `pool_size = 1` to stay within ~350 MB RAM.
 
 Full integration guide: [`ANDROID.md`](ANDROID.md)  

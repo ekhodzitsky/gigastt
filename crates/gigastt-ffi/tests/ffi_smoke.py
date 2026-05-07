@@ -2,11 +2,11 @@
 """Smoke tests for the gigastt C-ABI FFI layer.
 
 Run after building the shared library:
-    cargo build --features ffi
-    python tests/ffi_smoke.py
+    cargo build -p gigastt-ffi
+    python crates/gigastt-ffi/tests/ffi_smoke.py
 
 Expects the library at:
-    target/debug/libgigastt.{so,dylib}   (or release/ if CARGO_PROFILE=release)
+    target/debug/libgigastt_ffi.{so,dylib}   (or release/ if CARGO_PROFILE=release)
 """
 
 import ctypes
@@ -19,16 +19,16 @@ from pathlib import Path
 def find_library() -> Path:
     """Locate libgigastt shared library relative to project root."""
     profile = os.environ.get("CARGO_PROFILE", "debug")
-    root = Path(__file__).parent.parent
+    root = Path(__file__).parent.parent.parent.parent
     target_dir = root / "target" / profile
 
     system = platform.system()
     if system == "Darwin":
-        name = "libgigastt.dylib"
+        name = "libgigastt_ffi.dylib"
     elif system == "Linux":
-        name = "libgigastt.so"
+        name = "libgigastt_ffi.so"
     elif system == "Windows":
-        name = "gigastt.dll"
+        name = "gigastt_ffi.dll"
     else:
         raise RuntimeError(f"Unsupported platform: {system}")
 
@@ -36,7 +36,7 @@ def find_library() -> Path:
     if not candidate.exists():
         raise FileNotFoundError(
             f"Shared library not found: {candidate}\n"
-            f"Build it first: cargo build --features ffi"
+            f"Build it first: cargo build -p gigastt-ffi"
         )
     return candidate
 

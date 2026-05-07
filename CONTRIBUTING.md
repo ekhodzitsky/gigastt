@@ -6,7 +6,7 @@
 cargo build                            # CPU debug build
 cargo build --features coreml          # macOS ARM64 with CoreML
 cargo build --features cuda            # Linux x86_64 with CUDA 12+
-cargo build --features quantize        # adds `gigastt quantize` subcommand
+cargo build -p gigastt-ffi             # C-ABI FFI layer (Android / mobile)
 
 cargo test                             # unit tests (no model needed)
 cargo clippy --all-targets -- -D warnings
@@ -49,9 +49,12 @@ source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
 7. **Verify the release page** on GitHub — all assets attached, release notes generated.
 8. **Publish to crates.io** (only after step 7):
    ```sh
-   cargo publish --dry-run
-   cargo publish
+   cargo publish -p gigastt-core --dry-run
+   cargo publish -p gigastt-core
+   cargo publish -p gigastt --dry-run
+   cargo publish -p gigastt
    ```
+   Publish `gigastt-core` first (it is a dependency of `gigastt`). `gigastt-ffi` is a cdylib and not published to crates.io.
    The dry-run must succeed before the real publish. A failed `cargo publish` after the tag is pushed means the tag and crate diverge — fix forward with `vx.y.z+1`; do NOT re-tag.
 9. **Announce** briefly (GitHub release body already covers it; no separate post required).
 

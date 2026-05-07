@@ -85,9 +85,9 @@ jobs:
           FEATURES: ${{ matrix.features }}
         run: |
           if [ -n "$FEATURES" ]; then
-            cargo build --release --locked --target ${{ matrix.target }} --features "$FEATURES"
+            cargo build --release --locked --target ${{ matrix.target }} -p gigastt --features "$FEATURES"
           else
-            cargo build --release --locked --target ${{ matrix.target }}
+            cargo build --release --locked --target ${{ matrix.target }} -p gigastt
           fi
 
       - name: Package tarball
@@ -173,10 +173,10 @@ jobs:
           cargo install --locked --version 0.5.5 cargo-cyclonedx
           VERSION="${TAG#v}"
           # cargo-cyclonedx writes `<crate>.cdx.json` next to Cargo.toml.
-          cargo cyclonedx --format json --spec-version 1.5
+          cargo cyclonedx --format json --spec-version 1.5 -p gigastt
           mkdir -p dist
           # Pin the artifact name to the release tag for reproducibility.
-          cp gigastt.cdx.json "dist/gigastt-${VERSION}.cdx.json"
+          cp crates/gigastt/gigastt.cdx.json "dist/gigastt-${VERSION}.cdx.json"
           ls -la "dist/gigastt-${VERSION}.cdx.json"
 
       # SUS-05: SLSA build provenance attestation. Every artefact in

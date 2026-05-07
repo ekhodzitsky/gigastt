@@ -49,7 +49,7 @@ gigastt serve [OPTIONS]
 
 gigastt download [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
-  --diarization          Also download speaker diarization model (requires --features diarization)
+  --skip-diarization     Skip downloading the speaker diarization model
   --skip-quantize        Skip auto-quantization after download (FP32 only)
 
 gigastt transcribe [OPTIONS] <FILE>

@@ -405,7 +405,7 @@ pub fn resample_with_cache(
 /// WebSocket clients may split their audio stream on arbitrary byte boundaries.
 /// This function maintains a carry byte across frames so that odd-length payloads
 /// don't introduce a 1-sample phase shift in the decoded audio.
-pub(crate) fn parse_pcm16_with_carry(data: &[u8], pending: &mut Option<u8>) -> Vec<f32> {
+pub fn parse_pcm16_with_carry(data: &[u8], pending: &mut Option<u8>) -> Vec<f32> {
     let carry_prev = pending.take();
     let needs_combine = carry_prev.is_some() || !data.len().is_multiple_of(2);
 

@@ -15,7 +15,7 @@ use arc_swap::ArcSwap;
 
 use super::config::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use super::metrics::MetricsRegistry;
-use crate::inference::Engine;
+use gigastt_core::inference::Engine;
 
 /// Shared application state for all handlers. Carries runtime limits so the
 /// WebSocket path can enforce configurable frame / idle bounds without
@@ -105,7 +105,7 @@ pub struct TranscribeResponse {
     /// Full recognized transcript text.
     pub text: String,
     /// Word-level timing, confidence, and optional speaker annotations.
-    pub words: Vec<crate::inference::WordInfo>,
+    pub words: Vec<gigastt_core::inference::WordInfo>,
     /// Duration of the submitted audio in seconds.
     pub duration: f64,
 }
@@ -331,7 +331,7 @@ pub async fn transcribe(
             Err(_) => {
                 tracing::error!("Panic in REST transcribe — triplet recovered");
                 (
-                    Err(crate::error::GigasttError::Inference {
+                    Err(gigastt_core::error::GigasttError::Inference {
                         source: anyhow::anyhow!("Inference thread panicked").into(),
                     }),
                     triplet,
@@ -412,7 +412,7 @@ pub async fn transcribe_stream(
     // a refcount bump and `decode_audio_bytes_shared` reads the upload
     // buffer in place.
     let samples = tokio::task::spawn_blocking(move || {
-        crate::inference::audio::decode_audio_bytes_shared(body)
+        gigastt_core::inference::audio::decode_audio_bytes_shared(body)
     })
     .await
     .map_err(|e| {
@@ -465,8 +465,9 @@ pub async fn transcribe_stream(
     let (triplet, reservation) = guard.into_owned();
 
     // Create mpsc channel for streaming segments from spawn_blocking to SSE
-    let (tx, rx) =
-        tokio::sync::mpsc::channel::<Result<crate::inference::TranscriptSegment, String>>(16);
+    let (tx, rx) = tokio::sync::mpsc::channel::<
+        Result<gigastt_core::inference::TranscriptSegment, String>,
+    >(16);
 
     let engine = state.engine.clone();
     // V1-03: the axum handler future has already returned by the time the

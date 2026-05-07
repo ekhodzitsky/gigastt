@@ -142,40 +142,43 @@ Custom harness (`harness = false` in `Cargo.toml`).
 ## Code Organization
 
 ```
-src/
-  lib.rs                  # Public module exports
-  main.rs                 # CLI (clap): serve, download, transcribe, quantize
-  error.rs                # Typed error types (GigasttError)
-  quantize.rs             # Native Rust INT8 quantization pipeline
-  onnx_proto.rs           # prost-generated ONNX types (included from OUT_DIR)
-  inference/
-    mod.rs                # Engine: ONNX session management, SessionPool, StreamingState
-    features.rs           # Mel spectrogram (64 bins, FFT=320, hop=160, HTK)
-    tokenizer.rs          # BPE tokenizer (1025 tokens)
-    decode.rs             # RNN-T greedy decode loop
-    audio.rs              # Audio loading, resampling, channel mixing
-  server/
-    mod.rs                # axum router, origin middleware, graceful shutdown
-    http.rs               # REST handlers: /health, /v1/models, /v1/transcribe, SSE
-    rate_limit.rs         # In-tree per-IP token-bucket rate limiter
-    metrics.rs            # In-tree Prometheus text encoder
-  protocol/mod.rs         # WebSocket JSON message types (Ready, Partial, Final, Error)
-  model/mod.rs            # HuggingFace model download (streaming + SHA256 + atomic rename)
-
-tests/
-  common/mod.rs           # Shared e2e helpers
-  benchmark.rs            # WER evaluation (custom harness)
-  e2e_*.rs                # E2E test suites
-  load_test.rs            # Load tests
-  soak_test.rs            # Soak test
-
-proto/
-  onnx.proto              # Vendored ONNX protobuf schema
+crates/
+  gigastt-core/src/       # Core library (inference engine, no server deps)
+    lib.rs                # Public module exports
+    error.rs              # Typed error types (GigasttError)
+    quantize.rs           # Native Rust INT8 quantization pipeline
+    onnx_proto.rs         # prost-generated ONNX types (included from OUT_DIR)
+    inference/
+      mod.rs              # Engine: ONNX session management, SessionPool, StreamingState
+      features.rs         # Mel spectrogram (64 bins, FFT=320, hop=160, HTK)
+      tokenizer.rs        # BPE tokenizer (1025 tokens)
+      decode.rs           # RNN-T greedy decode loop
+      audio.rs            # Audio loading, resampling, channel mixing
+    protocol/mod.rs       # WebSocket JSON message types (Ready, Partial, Final, Error)
+    model/mod.rs          # HuggingFace model download (streaming + SHA256 + atomic rename)
+  gigastt-core/proto/
+    onnx.proto            # Vendored ONNX protobuf schema
+  gigastt-ffi/src/        # C-ABI FFI layer (cdylib for Android/mobile)
+    lib.rs                # Exported C functions: engine_new, transcribe_file, stream_*, etc.
+  gigastt/src/            # Server binary + CLI
+    lib.rs                # Re-exports gigastt-core::* for backward compat
+    main.rs               # CLI (clap): serve, download, transcribe, quantize
+    server/
+      mod.rs              # axum router, origin middleware, graceful shutdown
+      http.rs             # REST handlers: /health, /v1/models, /v1/transcribe, SSE
+      rate_limit.rs       # In-tree per-IP token-bucket rate limiter
+      metrics.rs          # In-tree Prometheus text encoder
+  gigastt/tests/
+    common/mod.rs         # Shared e2e helpers
+    benchmark.rs          # WER evaluation (custom harness)
+    e2e_*.rs              # E2E test suites
+    load_test.rs          # Load tests
+    soak_test.rs          # Soak test
 ```
 
 ## Key Constants
 
-Defined in `src/inference/mod.rs`:
+Defined in `crates/gigastt-core/src/inference/mod.rs`:
 
 | Constant | Value | Meaning |
 |---|---|---|
@@ -248,7 +251,7 @@ Downloaded to `~/.gigastt/models/` from `istupakov/gigaam-v3-onnx`:
 ### E2E test strategy
 
 - E2E tests run **only on main push**, not on PRs, to keep PR feedback fast
-- Model is cached via `actions/cache` with key derived from `src/model/mod.rs`
+- Model is cached via `actions/cache` with key derived from `crates/gigastt-core/src/model/mod.rs`
 - E2E tests run with `--test-threads=1` because each loads the full ONNX model
   into memory; concurrent runs OOM on CI runners
 
@@ -350,7 +353,7 @@ RUST_LOG=gigastt=debug cargo run -- serve
   both `main.rs` and this file.
 - The `quantize` Cargo feature is a no-op retained for backward compatibility;
   do not gate new code behind it.
-- Model download logic is in `src/model/mod.rs`. If you change HF repo or file
+- Model download logic is in `crates/gigastt-core/src/model/mod.rs`. If you change HF repo or file
   names, update `MODEL_CHECKSUMS` and the cache key in `.github/workflows/ci.yml`.
 - The project uses English for all code comments, documentation, and commit
   messages.

@@ -15,7 +15,7 @@ use std::ffi::{CStr, CString, c_char};
 use std::ptr;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::inference::{Engine, OwnedReservation, SessionTriplet, StreamingState, audio};
+use gigastt_core::inference::{Engine, OwnedReservation, SessionTriplet, StreamingState, audio};
 
 /// Opaque handle to the inference engine.
 ///
@@ -273,7 +273,7 @@ pub unsafe extern "C" fn gigastt_quantize_model(
         };
     }
 
-    if let Err(e) = crate::quantize::quantize_model(&input, &output) {
+    if let Err(e) = gigastt_core::quantize::quantize_model(&input, &output) {
         tracing::error!("gigastt_quantize_model: quantization failed: {e}");
         eprintln!("gigastt_quantize_model: quantization failed: {e}");
         let msg = format!("quantization failed: {e}");
@@ -436,7 +436,7 @@ pub unsafe extern "C" fn gigastt_stream_flush(
     let engine_ref = unsafe { &(*engine).engine };
     let stream_ref = unsafe { &mut (*stream) };
 
-    let segments: Vec<crate::inference::TranscriptSegment> = engine_ref
+    let segments: Vec<gigastt_core::inference::TranscriptSegment> = engine_ref
         .flush_state(&mut stream_ref.state)
         .into_iter()
         .collect();

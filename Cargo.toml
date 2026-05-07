@@ -1,126 +1,13 @@
-[package]
-name = "gigastt"
-version = "1.0.2"
+[workspace]
+members = ["crates/gigastt-core", "crates/gigastt-ffi", "crates/gigastt"]
+default-members = ["crates/gigastt"]
+resolver = "3"
+
+[workspace.package]
+version = "2.0.0"
 edition = "2024"
-description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 license = "MIT"
 repository = "https://github.com/ekhodzitsky/gigastt"
-keywords = ["stt", "speech-recognition", "gigaam", "onnx", "russian"]
-categories = ["multimedia::audio", "command-line-utilities"]
-
-[lib]
-crate-type = ["rlib", "cdylib"]
-
-[features]
-default = ["server", "diarization"]
-server = ["dep:axum", "dep:tokio-stream", "dep:tokio-util"]
-coreml = ["ort/coreml"]
-cuda = ["ort/cuda"]
-diarization = ["dep:polyvoice"]
-# `quantize` used to gate the INT8 quantization pipeline. It is now always
-# compiled in (the user's core workflow is: download → quantize → serve),
-# so the feature is retained as a no-op for backwards compatibility with
-# `cargo install gigastt --features quantize`.
-quantize = []
-ffi = ["ort/nnapi"]
-
-[dependencies]
-# ONNX Runtime
-ort = "2.0.0-rc.12"
-
-# Async runtime
-tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"] }
-
-# HTTP + WebSocket server (single port via axum)
-axum = { version = "0.8", features = ["ws", "multipart"], optional = true }
-futures-util = "0.3"
-
-# CLI
-clap = { version = "4", features = ["derive", "env"] }
-
-# HTTP client for model download
-reqwest = { version = "0.13", features = ["stream"] }
-
-# Serialization
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-toml = "0.8"
-
-# Logging
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# Error handling
-anyhow = "1"
-thiserror = "1"
-
-# Cryptographic hashing for model verification
-sha2 = "0.11"
-hex = "0.4"
-
-# FFT for mel spectrogram
-rustfft = "6"
-
-# High-quality audio resampling
-rubato = "0.16"
-
-# Async stream adapters (ReceiverStream for SSE)
-tokio-stream = { version = "0.1", optional = true }
-
-# Cancellation + task tracking for graceful WS/SSE drain on shutdown (V1-03).
-# `rt` pulls in `CancellationToken` + `TaskTracker` (tokio-util 0.7).
-tokio-util = { version = "0.7", features = ["rt"], optional = true }
-
-# Audio file reading (for `transcribe` command)
-symphonia = { version = "0.5", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
-
-# Explicit pin for zero-copy byte buffers shared with symphonia (used by the
-# REST upload decode path). Already transitive via axum/tokio; pinning makes
-# the dependency direct so the zero-copy decode contract is discoverable.
-bytes = "1"
-
-# Lock-free atomic pointer swap for hot-reloadable config (SIGHUP reload)
-arc-swap = "1"
-
-# Per-IP rate limiting (token bucket, optional — off by default). Implemented
-# in `src/server/rate_limit.rs`; `dashmap` gives lock-free reads on the common
-# path. Previously this was `tower_governor = "0.7"`, which pulled
-# `governor` + `forwarded-header-value` + `quanta` transitively.
-dashmap = "6"
-
-# Prometheus-compatible metrics (exposed behind `--metrics` flag, off by default)
-
-
-# Speaker diarization (optional, extracted into standalone library)
-polyvoice = { version = "0.5.2", features = ["onnx"], optional = true }
-
-# ONNX protobuf types for the native INT8 quantization pipeline
-# (`src/quantize.rs`). Vendored `.proto` + `prost-build` (build-dep) replaces
-# the unmaintained `onnx-pb 0.1.4` crate and unblocks `RUSTSEC-2021-0073`.
-prost = "0.14"
-
-# UUID generation for X-Request-Id middleware (v7: time-ordered, sortable)
-uuid = { version = "1", features = ["v7"] }
-
-[build-dependencies]
-# Regenerates ONNX types from `proto/onnx.proto` into `OUT_DIR/onnx.rs`
-# at build time. Requires `protoc` in `PATH` (see `build.rs`).
-prost-build = "0.14"
-
-[[bin]]
-name = "gigastt"
-required-features = ["server"]
-
-[[test]]
-name = "benchmark"
-harness = false
-
-[dev-dependencies]
-tempfile = "3"
-tokio-tungstenite = "0.29"
-proptest = "1"
-# `tracing-subscriber` is declared in `[dependencies]`; cargo already exposes
-# it to integration tests, so no separate dev-dep is needed.
 
 [profile.release]
 lto = true

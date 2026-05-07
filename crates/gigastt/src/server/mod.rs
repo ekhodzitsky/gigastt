@@ -37,7 +37,7 @@ pub(crate) fn json_text(msg: &impl serde::Serialize) -> String {
 /// - `GET /v1/ws` — WebSocket streaming protocol
 ///
 /// Runs until `Ctrl-C` is received.
-pub async fn run(engine: crate::inference::Engine, port: u16, host: &str) -> Result<()> {
+pub async fn run(engine: gigastt_core::inference::Engine, port: u16, host: &str) -> Result<()> {
     run_with_shutdown(engine, port, host, None).await
 }
 
@@ -46,7 +46,7 @@ pub async fn run(engine: crate::inference::Engine, port: u16, host: &str) -> Res
 /// When `shutdown` is `Some`, the server stops when the sender fires (or is dropped).
 /// When `None`, the server stops on Ctrl-C. Used by tests for clean teardown.
 pub async fn run_with_shutdown(
-    engine: crate::inference::Engine,
+    engine: gigastt_core::inference::Engine,
     port: u16,
     host: &str,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
@@ -67,7 +67,7 @@ pub async fn run_with_shutdown(
 /// shutdown signal. This is the canonical entry point — the other `run_*`
 /// helpers construct a default `ServerConfig` and dispatch here.
 pub async fn run_with_config(
-    engine: crate::inference::Engine,
+    engine: gigastt_core::inference::Engine,
     config: ServerConfig,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
 ) -> Result<()> {
@@ -82,7 +82,7 @@ pub async fn run_with_config(
 /// and an already-bound TCP listener. Used by tests to eliminate the TOCTOU
 /// race between `free_port()` and server startup.
 pub async fn run_with_config_listener(
-    engine: crate::inference::Engine,
+    engine: gigastt_core::inference::Engine,
     mut config: ServerConfig,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
     listener: tokio::net::TcpListener,

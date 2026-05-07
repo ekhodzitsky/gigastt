@@ -18,7 +18,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - run: cargo fmt --check
+      - run: cargo fmt --all --check
 
   clippy:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo clippy -- -D warnings -A dead_code
+      - run: cargo clippy --workspace -- -D warnings -A dead_code
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -58,9 +58,9 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo test
+      - run: cargo test --workspace
       - uses: taiki-e/install-action@nextest
-      - run: cargo nextest run --retries 2
+      - run: cargo nextest run --workspace --retries 2
 
   build-coreml:
     runs-on: macos-14
@@ -79,7 +79,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo build --release --features coreml
+      - run: cargo build --release -p gigastt --features coreml
 
   build-cuda:
     runs-on: ubuntu-latest
@@ -98,7 +98,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo build --release --features cuda
+      - run: cargo build --release -p gigastt --features cuda
 
   build-diarization:
     runs-on: ubuntu-latest
@@ -117,7 +117,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      - run: cargo build --release --features diarization
+      - run: cargo build --release -p gigastt --features diarization
 
   e2e-tests:
     # Only run on main push — PRs get fast feedback from unit tests + clippy
@@ -144,14 +144,14 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.gigastt/models
-          key: gigastt-model-v3-onnx-${{ hashFiles('src/model/mod.rs') }}
+          key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/mod.rs') }}
 
       - name: Download model
         if: steps.cache-model.outputs.cache-hit != 'true'
-        run: cargo run -- download
+        run: cargo run -p gigastt -- download
 
       - name: Run e2e tests
-        run: cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored --test-threads=1
+        run: cargo test -p gigastt --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1
         timeout-minutes: 30
 
   benchmark:
@@ -179,14 +179,14 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.gigastt/models
-          key: gigastt-model-v3-onnx-${{ hashFiles('src/model/mod.rs') }}
+          key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/mod.rs') }}
 
       - name: Download model
         if: steps.cache-model.outputs.cache-hit != 'true'
-        run: cargo run -- download
+        run: cargo run -p gigastt -- download
 
       - name: Run WER benchmark
-        run: cargo test --test benchmark -- --ignored 2>&1 | tee benchmark_output.txt
+        run: cargo test -p gigastt --test benchmark -- --ignored 2>&1 | tee benchmark_output.txt
 
       - name: Check WER threshold
         run: |
@@ -205,7 +205,7 @@ jobs:
 
       - name: Upload benchmark results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: benchmark-results
           path: benchmark_output.txt
@@ -251,7 +251,7 @@ jobs:
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin --locked
       - name: Run tarpaulin
-        run: cargo tarpaulin --out xml --skip-clean
+        run: cargo tarpaulin --workspace --out xml --skip-clean
       - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

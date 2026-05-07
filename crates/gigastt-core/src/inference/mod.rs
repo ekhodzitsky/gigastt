@@ -50,7 +50,7 @@ fn ort_err(e: impl std::fmt::Display) -> anyhow::Error {
     anyhow::anyhow!("{e}")
 }
 
-pub(crate) fn now_timestamp() -> f64 {
+pub fn now_timestamp() -> f64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
@@ -1239,6 +1239,17 @@ pub struct TranscriptSegment {
     pub is_final: bool,
     /// Unix timestamp (seconds since epoch) when this segment was produced.
     pub timestamp: f64,
+}
+
+impl TranscriptSegment {
+    pub fn empty_final() -> Self {
+        Self {
+            text: String::new(),
+            words: vec![],
+            is_final: true,
+            timestamp: now_timestamp(),
+        }
+    }
 }
 
 #[cfg(test)]

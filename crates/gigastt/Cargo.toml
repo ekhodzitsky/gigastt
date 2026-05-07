@@ -1,0 +1,48 @@
+[package]
+name = "gigastt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
+keywords = ["stt", "speech-recognition", "gigaam", "onnx", "russian"]
+categories = ["multimedia::audio", "command-line-utilities"]
+
+[[bin]]
+name = "gigastt"
+
+[[test]]
+name = "benchmark"
+harness = false
+
+[features]
+default = ["diarization"]
+coreml = ["gigastt-core/coreml"]
+cuda = ["gigastt-core/cuda"]
+diarization = ["gigastt-core/diarization"]
+quantize = ["gigastt-core/quantize"]
+
+[dependencies]
+gigastt-core = { path = "../gigastt-core", default-features = false }
+
+axum = { version = "0.8", features = ["ws", "multipart"] }
+tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"] }
+tokio-stream = "0.1"
+tokio-util = { version = "0.7", features = ["rt"] }
+futures-util = "0.3"
+clap = { version = "4", features = ["derive", "env"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+anyhow = "1"
+arc-swap = "1"
+dashmap = "6"
+uuid = { version = "1", features = ["v7"] }
+
+[dev-dependencies]
+tempfile = "3"
+tokio-tungstenite = "0.29"
+proptest = "1"
+reqwest = { version = "0.13", features = ["stream"] }

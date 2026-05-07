@@ -17,18 +17,29 @@ WORKDIR /build
 # compile a dummy binary so `cargo build` downloads + builds every transitive
 # crate. Subsequent edits to src/ only invalidate the final compilation
 # layer, cutting incremental rebuild time from minutes to seconds.
-COPY Cargo.toml Cargo.lock build.rs ./
-COPY proto/ proto/
-RUN mkdir -p src && \
-    echo 'fn main() {}' > src/main.rs && \
-    touch src/lib.rs && \
-    cargo build --release && \
-    rm -rf src target/release/deps/gigastt-* target/release/gigastt*
+COPY Cargo.toml Cargo.lock ./
+COPY crates/gigastt-core/Cargo.toml crates/gigastt-core/
+COPY crates/gigastt-core/build.rs crates/gigastt-core/
+COPY crates/gigastt-core/proto/ crates/gigastt-core/proto/
+COPY crates/gigastt-ffi/Cargo.toml crates/gigastt-ffi/
+COPY crates/gigastt/Cargo.toml crates/gigastt/
+RUN mkdir -p crates/gigastt-core/src crates/gigastt-ffi/src crates/gigastt/src/server && \
+    echo 'pub mod error; pub mod inference; pub mod model; pub mod onnx_proto; pub mod protocol; pub mod quantize;' > crates/gigastt-core/src/lib.rs && \
+    mkdir -p crates/gigastt-core/src/inference crates/gigastt-core/src/model crates/gigastt-core/src/protocol && \
+    touch crates/gigastt-core/src/error.rs crates/gigastt-core/src/onnx_proto.rs crates/gigastt-core/src/quantize.rs && \
+    touch crates/gigastt-core/src/inference/mod.rs crates/gigastt-core/src/model/mod.rs crates/gigastt-core/src/protocol/mod.rs && \
+    echo 'pub use gigastt_core::*; pub mod server;' > crates/gigastt/src/lib.rs && \
+    echo 'fn main() {}' > crates/gigastt/src/main.rs && \
+    touch crates/gigastt/src/server/mod.rs && \
+    echo '' > crates/gigastt-ffi/src/lib.rs && \
+    echo 'fn main() {}' > crates/gigastt-ffi/build.rs && \
+    cargo build --release -p gigastt && \
+    rm -rf crates/*/src target/release/deps/gigastt* target/release/gigastt*
 
 # Now bring in the actual source and build the real binary.
-COPY src/ src/
+COPY crates/ crates/
 
-RUN cargo build --release && \
+RUN cargo build --release -p gigastt && \
     strip target/release/gigastt
 
 # --- Model bake stage (runs only when GIGASTT_BAKE_MODEL=1) ---

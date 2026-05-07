@@ -3,7 +3,7 @@ package com.gigastt
 /**
  * Kotlin JNI bridge for the gigastt Russian STT engine.
  *
- * Load `libgigastt.so` from your app's `jniLibs` and call these functions
+ * Load `libgigastt_ffi.so` from your app's `jniLibs` and call these functions
  * to run on-device speech recognition.
  *
  * Typical lifecycle:
@@ -20,7 +20,7 @@ package com.gigastt
 object GigasttBridge {
 
     init {
-        System.loadLibrary("gigastt")
+        System.loadLibrary("gigastt_ffi")
     }
 
     /**

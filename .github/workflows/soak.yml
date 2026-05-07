@@ -47,22 +47,22 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.gigastt/models
-          key: gigastt-model-v3-onnx-${{ hashFiles('src/model/mod.rs') }}
+          key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/mod.rs') }}
 
       - name: Download model
         if: steps.cache-model.outputs.cache-hit != 'true'
-        run: cargo run -- download
+        run: cargo run -p gigastt -- download
 
       - name: Run soak test
         env:
           GIGASTT_SOAK_DURATION_SECS: ${{ github.event.inputs.duration_secs || '300' }}
           RUST_BACKTRACE: '1'
-        run: cargo test --release --test soak_test -- --ignored --nocapture --test-threads=1 > soak.log 2>&1
+        run: cargo test --release -p gigastt --test soak_test -- --ignored --nocapture --test-threads=1 > soak.log 2>&1
 
       - name: Run load tests
         env:
           RUST_BACKTRACE: '1'
-        run: cargo test --release --test load_test -- --ignored --test-threads=1
+        run: cargo test --release -p gigastt --test load_test -- --ignored --test-threads=1
 
       - name: Upload test artefacts
         if: always()
