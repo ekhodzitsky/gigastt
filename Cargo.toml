@@ -95,6 +95,9 @@ polyvoice = { version = "0.5.2", features = ["onnx"], optional = true }
 # the unmaintained `onnx-pb 0.1.4` crate and unblocks `RUSTSEC-2021-0073`.
 prost = "0.14"
 
+# UUID generation for X-Request-Id middleware (v7: time-ordered, sortable)
+uuid = { version = "1", features = ["v7"] }
+
 [build-dependencies]
 # Regenerates ONNX types from `proto/onnx.proto` into `OUT_DIR/onnx.rs`
 # at build time. Requires `protoc` in `PATH` (see `build.rs`).

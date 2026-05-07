@@ -267,12 +267,15 @@ pub async fn run_with_config_listener(
     // begins draining.
     let shutdown_engine = state.engine.clone();
 
+    let request_id_layer = axum::middleware::from_fn(middleware::request_id_middleware);
+
     let app = Router::new()
         .route("/health", get(http::health))
         .route("/ready", get(http::readiness))
         .merge(protected)
         .layer(DefaultBodyLimit::max(config.limits.body_limit_bytes))
         .layer(origin_layer)
+        .layer(request_id_layer)
         .with_state(state);
 
     tracing::info!("gigastt server listening on http://{addr}");

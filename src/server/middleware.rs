@@ -48,6 +48,40 @@ pub(crate) async fn http_metrics_middleware(
     response
 }
 
+/// Middleware that generates a unique `X-Request-Id` for every request (or
+/// echoes one supplied by the caller) and creates a tracing span scoped to
+/// that request lifetime.
+pub(crate) async fn request_id_middleware(
+    req: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> Response {
+    let request_id = req
+        .headers()
+        .get("x-request-id")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| uuid::Uuid::now_v7().to_string());
+
+    let method = req.method().clone();
+    let path = req.uri().path().to_string();
+
+    use tracing::Instrument;
+
+    let span = tracing::info_span!(
+        "request",
+        request_id = %request_id,
+        method = %method,
+        path = %path,
+    );
+
+    let mut response = next.run(req).instrument(span).await;
+
+    if let Ok(v) = axum::http::HeaderValue::from_str(&request_id) {
+        response.headers_mut().insert("x-request-id", v);
+    }
+    response
+}
+
 pub(crate) async fn origin_middleware(
     policy: Arc<OriginPolicy>,
     req: axum::extract::Request,
@@ -113,6 +147,64 @@ pub(crate) async fn origin_middleware(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_request_id_middleware_generates_id() {
+        use axum::Router;
+        use axum::routing::get;
+
+        let app = Router::new()
+            .route("/test", get(|| async { "ok" }))
+            .layer(axum::middleware::from_fn(super::request_id_middleware));
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let _ = axum::serve(listener, app).await;
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+        let client = reqwest::Client::new();
+        let resp = client
+            .get(format!("http://127.0.0.1:{port}/test"))
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), 200);
+        let rid = resp.headers().get("x-request-id").expect("missing X-Request-Id");
+        let rid_str = rid.to_str().unwrap();
+        assert!(uuid::Uuid::parse_str(rid_str).is_ok(), "X-Request-Id must be valid UUID");
+    }
+
+    #[tokio::test]
+    async fn test_request_id_middleware_echoes_client_id() {
+        use axum::Router;
+        use axum::routing::get;
+
+        let app = Router::new()
+            .route("/test", get(|| async { "ok" }))
+            .layer(axum::middleware::from_fn(super::request_id_middleware));
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let _ = axum::serve(listener, app).await;
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+        let client_id = "my-custom-request-id-123";
+        let client = reqwest::Client::new();
+        let resp = client
+            .get(format!("http://127.0.0.1:{port}/test"))
+            .header("X-Request-Id", client_id)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.headers().get("x-request-id").unwrap().to_str().unwrap(),
+            client_id
+        );
+    }
 
     #[tokio::test]
     async fn test_origin_middleware_integration() {

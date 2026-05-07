@@ -28,6 +28,7 @@ pub(super) async fn ws_handler(
     ws: WebSocketUpgrade,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
     State(state): State<Arc<http::AppState>>,
+    headers: axum::http::HeaderMap,
 ) -> Response {
     // Origin allowlist is enforced by `origin_middleware` before the request
     // reaches this handler; anything that arrives here has already been cleared.
@@ -49,20 +50,28 @@ pub(super) async fn ws_handler(
         )
             .into_response();
     }
+
+    let request_id = headers
+        .get("x-request-id")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("unknown")
+        .to_string();
+
     let max_bytes = state.limits.ws_frame_max_bytes;
     let state_cloned = state.clone();
     ws.max_message_size(max_bytes)
         .max_frame_size(max_bytes)
-        .on_upgrade(move |socket| async move {
-            // Track every upgraded handler on the shared TaskTracker so
-            // `run_with_config` can wait for in-flight sessions to drain
-            // before the process exits. `track_future` returns a wrapper
-            // that decrements the tracker when dropped.
-            state_cloned
-                .tracker
-                .clone()
-                .track_future(handle_ws(socket, peer, state_cloned.clone()))
-                .await
+        .on_upgrade(move |socket| {
+            use tracing::Instrument;
+            let span = tracing::info_span!("ws_session", request_id = %request_id, peer = %peer);
+            async move {
+                state_cloned
+                    .tracker
+                    .clone()
+                    .track_future(handle_ws(socket, peer, state_cloned.clone()))
+                    .await
+            }
+            .instrument(span)
         })
 }
 
