@@ -142,7 +142,7 @@ Three-tier test architecture:
 **Unit tests** (no model required, run in CI on every PR):
 - Live in `#[cfg(test)] mod tests` at bottom of each file
 - Use synthetic data, test names: `test_<what>_<expected_behavior>`
-- 163 unit tests across 3 crates (as of v2.0.2)
+- 163 unit tests across 3 crates (as of v2.0.3)
 - `cargo test` — runs all unit tests
 
 **E2E tests** (require model ~850MB, run in CI on main push only):

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.3] - 2026-05-07
+
+### Fixed
+
+- **Documentation sync** — updated Russian README, AGENTS.md, CHANGELOG,
+  SECURITY.md, OpenAPI spec, release verification docs, and production-readiness
+  spec to reflect the v2.0 workspace split accurately.
+
 ## [2.0.2] - 2026-05-07
 
 ### Added
@@ -739,7 +747,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes (V1-03, V1-04, V1-05, V1
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/ekhodzitsky/gigastt/compare/v1.0.1...v2.0.0

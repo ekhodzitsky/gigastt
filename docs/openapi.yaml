@@ -84,7 +84,7 @@ paths:
               example:
                 status: ok
                 model: gigaam-v3-e2e-rnnt
-                version: "2.0.2"
+                version: "2.0.3"
 
   /v1/models:
     get:
@@ -103,7 +103,7 @@ paths:
               example:
                 id: gigaam-v3-e2e-rnnt
                 name: GigaAM v3 RNN-T
-                version: "2.0.2"
+                version: "2.0.3"
                 encoder: int8
                 vocab_size: 1025
                 sample_rate: 16000
@@ -288,7 +288,7 @@ components:
           description: Loaded model identifier
         version:
           type: string
-          example: "2.0.2"
+          example: "2.0.3"
           description: Server version (semver)
 
     ModelInfo:
@@ -314,7 +314,7 @@ components:
           example: GigaAM v3 RNN-T
         version:
           type: string
-          example: "2.0.2"
+          example: "2.0.3"
         encoder:
           type: string
           enum: [fp32, int8]
