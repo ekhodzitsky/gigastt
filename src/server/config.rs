@@ -1,5 +1,8 @@
 //! Server configuration types, origin policy, and runtime limits.
 
+use anyhow::Context;
+use serde::Deserialize;
+
 /// Supported input sample rates (Hz). Default is 48000 for backward
 /// compatibility. Single source of truth for both the WebSocket `Ready`
 /// payload and the REST `/v1/models` capabilities response.
@@ -144,14 +147,82 @@ impl Default for RuntimeLimits {
     }
 }
 
+/// TOML-deserializable representation of `RuntimeLimits`. Fields default to
+/// the same values as `RuntimeLimits::default()` so a partial config file
+/// only overrides what the operator cares about.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+pub struct RuntimeLimitsConfig {
+    /// WebSocket idle timeout in seconds.
+    pub idle_timeout_secs: u64,
+    /// Maximum WebSocket frame size in bytes.
+    pub ws_frame_max_bytes: usize,
+    /// Maximum REST request body size in bytes.
+    pub body_limit_bytes: usize,
+    /// Per-IP rate limit in requests per minute (`0` = disabled).
+    pub rate_limit_per_minute: u32,
+    /// Token-bucket burst size for the rate limiter.
+    pub rate_limit_burst: u32,
+    /// Maximum wall-clock duration of a single WebSocket session in seconds.
+    pub max_session_secs: u64,
+    /// Graceful shutdown drain window in seconds.
+    pub shutdown_drain_secs: u64,
+    /// Pool checkout timeout in seconds before returning 503.
+    pub pool_checkout_timeout_secs: u64,
+}
+
+impl Default for RuntimeLimitsConfig {
+    fn default() -> Self {
+        let d = RuntimeLimits::default();
+        Self {
+            idle_timeout_secs: d.idle_timeout_secs,
+            ws_frame_max_bytes: d.ws_frame_max_bytes,
+            body_limit_bytes: d.body_limit_bytes,
+            rate_limit_per_minute: d.rate_limit_per_minute,
+            rate_limit_burst: d.rate_limit_burst,
+            max_session_secs: d.max_session_secs,
+            shutdown_drain_secs: d.shutdown_drain_secs,
+            pool_checkout_timeout_secs: d.pool_checkout_timeout_secs,
+        }
+    }
+}
+
+impl From<RuntimeLimitsConfig> for RuntimeLimits {
+    fn from(cfg: RuntimeLimitsConfig) -> Self {
+        Self {
+            idle_timeout_secs: cfg.idle_timeout_secs,
+            ws_frame_max_bytes: cfg.ws_frame_max_bytes,
+            body_limit_bytes: cfg.body_limit_bytes,
+            rate_limit_per_minute: cfg.rate_limit_per_minute,
+            rate_limit_burst: cfg.rate_limit_burst,
+            max_session_secs: cfg.max_session_secs,
+            shutdown_drain_secs: cfg.shutdown_drain_secs,
+            pool_checkout_timeout_secs: cfg.pool_checkout_timeout_secs,
+        }
+    }
+}
+
+/// Load runtime limits from a TOML config file.
+pub fn load_config_file(path: &std::path::Path) -> anyhow::Result<RuntimeLimits> {
+    let content = std::fs::read_to_string(path)
+        .with_context(|| format!("Failed to read config file: {}", path.display()))?;
+    let cfg: RuntimeLimitsConfig = toml::from_str(&content)
+        .with_context(|| format!("Failed to parse config file: {}", path.display()))?;
+    Ok(cfg.into())
+}
+
 /// Server runtime configuration. `run_with_config` is the canonical entry
 /// point; `run` / `run_with_shutdown` remain as thin wrappers for callers
 /// that only need the pre-0.6 positional parameters.
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
+    /// TCP port to listen on.
     pub port: u16,
+    /// Bind address (e.g. `"127.0.0.1"` for loopback-only or `"0.0.0.0"` for all interfaces).
     pub host: String,
+    /// Cross-origin request policy (loopback-only by default).
     pub origin_policy: OriginPolicy,
+    /// Runtime limits (timeouts, body sizes, rate-limiting parameters).
     pub limits: RuntimeLimits,
     /// Expose Prometheus metrics at `GET /metrics`. Off by default — keeps
     /// the server quiet for single-user local installs. When on, a
@@ -160,6 +231,8 @@ pub struct ServerConfig {
     pub metrics_enabled: bool,
     /// Trust `X-Forwarded-For` / `X-Real-IP` for rate-limit IP extraction.
     pub trust_proxy: bool,
+    /// Path to TOML config file for runtime limits (reloaded on SIGHUP).
+    pub config_path: Option<std::path::PathBuf>,
 }
 
 impl ServerConfig {
@@ -173,6 +246,7 @@ impl ServerConfig {
             limits: RuntimeLimits::default(),
             metrics_enabled: false,
             trust_proxy: false,
+            config_path: None,
         }
     }
 }
@@ -290,6 +364,27 @@ mod tests {
             policy.evaluate(Some("https://anything.example.com")),
             OriginVerdict::Allowed(_)
         ));
+    }
+
+    #[test]
+    fn test_runtime_limits_from_toml() {
+        let toml_str = r#"
+            idle_timeout_secs = 600
+            rate_limit_per_minute = 120
+        "#;
+        let cfg: RuntimeLimitsConfig = toml::from_str(toml_str).unwrap();
+        assert_eq!(cfg.idle_timeout_secs, 600);
+        assert_eq!(cfg.rate_limit_per_minute, 120);
+        assert_eq!(cfg.max_session_secs, 3600);
+    }
+
+    #[test]
+    fn test_runtime_limits_config_to_limits() {
+        let cfg = RuntimeLimitsConfig::default();
+        let limits: RuntimeLimits = cfg.into();
+        let defaults = RuntimeLimits::default();
+        assert_eq!(limits.idle_timeout_secs, defaults.idle_timeout_secs);
+        assert_eq!(limits.max_session_secs, defaults.max_session_secs);
     }
 
     #[test]

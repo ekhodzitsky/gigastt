@@ -11,6 +11,8 @@ use futures_util::stream::Stream;
 use serde::Serialize;
 use std::sync::Arc;
 
+use arc_swap::ArcSwap;
+
 use super::metrics::MetricsRegistry;
 use super::config::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use crate::inference::Engine;
@@ -27,7 +29,7 @@ use crate::inference::Engine;
 /// and must be drained explicitly.
 pub struct AppState {
     pub engine: Arc<Engine>,
-    pub limits: RuntimeLimits,
+    pub limits: Arc<ArcSwap<RuntimeLimits>>,
     pub metrics_registry: Option<Arc<MetricsRegistry>>,
     pub shutdown: tokio_util::sync::CancellationToken,
     pub tracker: tokio_util::task::TaskTracker,
@@ -60,23 +62,36 @@ pub async fn metrics(State(state): State<Arc<AppState>>) -> Response {
 /// Health check response.
 #[derive(Serialize)]
 pub struct HealthResponse {
+    /// Always `"ok"` when the server is running.
     pub status: String,
+    /// Model identifier string (e.g. `"gigaam-v3-e2e-rnnt"`).
     pub model: String,
+    /// Server version from `CARGO_PKG_VERSION`.
     pub version: String,
 }
 
 /// Model info response.
 #[derive(Serialize)]
 pub struct ModelInfo {
+    /// Stable model identifier (e.g. `"gigaam-v3-e2e-rnnt"`).
     pub id: String,
+    /// Human-readable model name.
     pub name: String,
+    /// Server version from `CARGO_PKG_VERSION`.
     pub version: String,
+    /// Encoder precision in use: `"int8"` or `"fp32"`.
     pub encoder: String,
+    /// Number of tokens in the BPE vocabulary.
     pub vocab_size: usize,
+    /// Native sample rate the model operates at (always 16000 Hz).
     pub sample_rate: u32,
+    /// Total number of session triplets in the pool.
     pub pool_size: usize,
+    /// Number of session triplets currently available for checkout.
     pub pool_available: usize,
+    /// Audio container formats accepted by `/v1/transcribe`.
     pub supported_formats: Vec<String>,
+    /// PCM sample rates accepted by the WebSocket endpoint.
     pub supported_rates: Vec<u32>,
     /// Whether speaker diarization is available (feature-gated build + model loaded).
     /// Added in v0.7.0 so clients can probe capabilities via REST instead of
@@ -87,8 +102,11 @@ pub struct ModelInfo {
 /// Transcription response.
 #[derive(Serialize)]
 pub struct TranscribeResponse {
+    /// Full recognized transcript text.
     pub text: String,
+    /// Word-level timing, confidence, and optional speaker annotations.
     pub words: Vec<crate::inference::WordInfo>,
+    /// Duration of the submitted audio in seconds.
     pub duration: f64,
 }
 
@@ -142,9 +160,13 @@ fn api_pool_closed_error() -> ApiError {
 /// Readiness probe response.
 #[derive(Serialize)]
 pub struct ReadinessResponse {
+    /// `"ready"` when the server can accept requests, `"not_ready"` otherwise.
     pub status: String,
+    /// Number of session triplets currently available for checkout.
     pub pool_available: usize,
+    /// Total number of session triplets in the pool.
     pub pool_total: usize,
+    /// Machine-readable reason code when not ready (e.g. `"pool_exhausted"`, `"shutting_down"`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
 }
@@ -250,7 +272,8 @@ pub async fn transcribe(
     // The explicit 413 keeps the REST contract honest and gives clients a
     // machine-readable `payload_too_large` code alongside the spec-conformant
     // status. Cheap: `Bytes::len()` is a load, not a walk.
-    if body.len() > state.limits.body_limit_bytes {
+    let limits = state.limits.load();
+    if body.len() > limits.body_limit_bytes {
         return Err(api_error(
             StatusCode::PAYLOAD_TOO_LARGE,
             "Request body exceeds the configured size limit",
@@ -263,7 +286,7 @@ pub async fn transcribe(
     // travel through `spawn_blocking`; the reservation handles checkin.
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
-        std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
+        std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
         state.engine.pool.checkout(),
     )
     .await
@@ -279,7 +302,7 @@ pub async fn transcribe(
                     checkout_start.elapsed().as_secs_f64(),
                 );
             }
-            return Err(api_timeout_error(&state.limits));
+            return Err(api_timeout_error(&limits));
         }
     };
     if let Some(ref reg) = state.metrics_registry {
@@ -375,7 +398,8 @@ pub async fn transcribe_stream(
 
     // Defence-in-depth early reject; matches `/v1/transcribe` — see that
     // handler for the rationale.
-    if body.len() > state.limits.body_limit_bytes {
+    let limits = state.limits.load();
+    if body.len() > limits.body_limit_bytes {
         return Err(api_error(
             StatusCode::PAYLOAD_TOO_LARGE,
             "Request body exceeds the configured size limit",
@@ -412,7 +436,7 @@ pub async fn transcribe_stream(
     // `into_owned` so the triplet can travel through `spawn_blocking`.
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
-        std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
+        std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
         state.engine.pool.checkout(),
     )
     .await
@@ -428,7 +452,7 @@ pub async fn transcribe_stream(
                     checkout_start.elapsed().as_secs_f64(),
                 );
             }
-            return Err(api_timeout_error(&state.limits));
+            return Err(api_timeout_error(&limits));
         }
     };
     if let Some(ref reg) = state.metrics_registry {

@@ -408,7 +408,7 @@ pub struct StreamingState {
 
 /// Audio feature extraction pipeline.
 ///
-/// Owns the [`MelSpectrogram`] and handles audio buffering, resampling,
+/// Owns the `MelSpectrogram` and handles audio buffering, resampling,
 /// and log-mel feature extraction. Extracted so `Engine` does not need to
 /// own the low-level signal-processing details directly.
 pub struct FeatureExtractor {
@@ -422,6 +422,7 @@ impl Default for FeatureExtractor {
 }
 
 impl FeatureExtractor {
+    /// Create a new feature extractor with a freshly initialized mel spectrogram.
     pub fn new() -> Self {
         Self {
             mel: MelSpectrogram::new(),
@@ -466,6 +467,7 @@ impl Default for TranscriptAssembler {
 }
 
 impl TranscriptAssembler {
+    /// Create a new, empty transcript assembler.
     pub fn new() -> Self {
         Self {
             text: String::new(),
@@ -552,7 +554,7 @@ impl Engine {
 
     /// Load ONNX models from the given directory and create an inference engine.
     ///
-    /// Creates a pool of [`DEFAULT_POOL_SIZE`] session triplets for concurrent inference.
+    /// Creates a pool of `DEFAULT_POOL_SIZE` session triplets for concurrent inference.
     /// Expects files: `v3_e2e_rnnt_encoder.onnx` (or `_int8.onnx`), `v3_e2e_rnnt_decoder.onnx`,
     /// `v3_e2e_rnnt_joint.onnx`, and `v3_e2e_rnnt_vocab.txt`.
     ///
@@ -1214,8 +1216,11 @@ impl Engine {
 /// Result of file transcription, including word-level details.
 #[derive(Debug, Clone, Serialize)]
 pub struct TranscribeResult {
+    /// Full recognized transcript text (words joined with spaces).
     pub text: String,
+    /// Word-level timing, confidence, and optional speaker annotations.
     pub words: Vec<WordInfo>,
+    /// Duration of the decoded audio in seconds.
     pub duration_s: f64,
 }
 

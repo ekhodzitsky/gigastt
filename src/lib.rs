@@ -25,6 +25,16 @@
 //! - [`protocol`] — WebSocket JSON message types
 //! - [`server`] — WebSocket server entry point
 //! - [`model`] — Model download and management
+//!
+//! ## Feature flags
+//!
+//! | Feature | Default | Description |
+//! |---------|---------|-------------|
+//! | `server` | yes | HTTP + WebSocket server (`axum`) |
+//! | `diarization` | yes | Speaker diarization (`polyvoice`) |
+//! | `coreml` | no | CoreML execution provider (macOS ARM64) |
+//! | `cuda` | no | CUDA execution provider (Linux x86_64) |
+//! | `ffi` | no | C-ABI FFI for mobile integration |
 
 pub mod error;
 pub mod inference;
