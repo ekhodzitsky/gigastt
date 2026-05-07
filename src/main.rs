@@ -58,26 +58,26 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         cors_allow_any: bool,
 
-        /// WebSocket idle timeout (seconds). Server closes the connection
-        /// when no frame arrives within this window.
-        #[arg(long, env = "GIGASTT_IDLE_TIMEOUT_SECS", default_value_t = 300)]
-        idle_timeout_secs: u64,
+        /// WebSocket idle timeout in seconds [default: 300].
+        /// Server closes the connection when no frame arrives within this window.
+        #[arg(long, env = "GIGASTT_IDLE_TIMEOUT_SECS")]
+        idle_timeout_secs: Option<u64>,
 
-        /// Maximum WebSocket frame / message size (bytes).
-        #[arg(long, env = "GIGASTT_WS_FRAME_MAX_BYTES", default_value_t = 512 * 1024)]
-        ws_frame_max_bytes: usize,
+        /// Maximum WebSocket frame / message size in bytes [default: 524288].
+        #[arg(long, env = "GIGASTT_WS_FRAME_MAX_BYTES")]
+        ws_frame_max_bytes: Option<usize>,
 
-        /// Maximum REST request body size (bytes).
-        #[arg(long, env = "GIGASTT_BODY_LIMIT_BYTES", default_value_t = 50 * 1024 * 1024)]
-        body_limit_bytes: usize,
+        /// Maximum REST request body size in bytes [default: 52428800].
+        #[arg(long, env = "GIGASTT_BODY_LIMIT_BYTES")]
+        body_limit_bytes: Option<usize>,
 
-        /// Per-IP rate limit — requests per minute. 0 = off (default).
-        #[arg(long, env = "GIGASTT_RATE_LIMIT_PER_MINUTE", default_value_t = 0)]
-        rate_limit_per_minute: u32,
+        /// Per-IP rate limit — requests per minute. 0 = off [default: 0].
+        #[arg(long, env = "GIGASTT_RATE_LIMIT_PER_MINUTE")]
+        rate_limit_per_minute: Option<u32>,
 
-        /// Rate-limit burst size (default 10).
-        #[arg(long, env = "GIGASTT_RATE_LIMIT_BURST", default_value_t = 10)]
-        rate_limit_burst: u32,
+        /// Rate-limit burst size [default: 10].
+        #[arg(long, env = "GIGASTT_RATE_LIMIT_BURST")]
+        rate_limit_burst: Option<u32>,
 
         /// Expose Prometheus metrics at `GET /metrics`. Off by default —
         /// keeps the server quiet for single-user installs. The endpoint is
@@ -85,23 +85,20 @@ enum Commands {
         #[arg(long, env = "GIGASTT_METRICS", default_value_t = false)]
         metrics: bool,
 
-        /// Maximum wall-clock duration of a single WebSocket session (seconds).
-        /// `0` disables the cap (not recommended — a silence-streaming client
-        /// will hold a triplet forever).
-        #[arg(long, env = "GIGASTT_MAX_SESSION_SECS", default_value_t = 3600)]
-        max_session_secs: u64,
+        /// Maximum wall-clock duration of a single WebSocket session in seconds.
+        /// 0 disables the cap (not recommended) [default: 3600].
+        #[arg(long, env = "GIGASTT_MAX_SESSION_SECS")]
+        max_session_secs: Option<u64>,
 
-        /// Grace window (seconds) after shutdown during which in-flight
-        /// WebSocket / SSE sessions may emit their Final frames and close.
-        /// Values of `0` are clamped to `1`. Should comfortably fit inside
-        /// your orchestrator's `terminationGracePeriodSeconds`.
-        #[arg(long, env = "GIGASTT_SHUTDOWN_DRAIN_SECS", default_value_t = 10)]
-        shutdown_drain_secs: u64,
+        /// Grace window in seconds after shutdown during which in-flight
+        /// sessions may emit Final frames. 0 is clamped to 1 [default: 10].
+        #[arg(long, env = "GIGASTT_SHUTDOWN_DRAIN_SECS")]
+        shutdown_drain_secs: Option<u64>,
 
-        /// Pool checkout timeout (seconds). REST and WebSocket handlers wait
-        /// this long for a free session triplet before returning 503.
-        #[arg(long, env = "GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS", default_value_t = 30)]
-        pool_checkout_timeout_secs: u64,
+        /// Pool checkout timeout in seconds. Handlers wait this long for a
+        /// free session triplet before returning 503 [default: 30].
+        #[arg(long, env = "GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS")]
+        pool_checkout_timeout_secs: Option<u64>,
 
         /// Skip the automatic INT8 quantization step after download.
         /// Default behaviour is to quantize the encoder (~2 min, one-time)
@@ -288,6 +285,35 @@ async fn main() -> anyhow::Result<()> {
             ensure_int8_encoder(&model_dir, skip_quantize)?;
             let engine = inference::Engine::load_with_pool_size(&model_dir, pool_size)?;
             log_rss();
+            let mut limits = if let Some(ref path) = config {
+                server::config::load_config_file(std::path::Path::new(path))?
+            } else {
+                RuntimeLimits::default()
+            };
+            if let Some(v) = idle_timeout_secs {
+                limits.idle_timeout_secs = v;
+            }
+            if let Some(v) = ws_frame_max_bytes {
+                limits.ws_frame_max_bytes = v;
+            }
+            if let Some(v) = body_limit_bytes {
+                limits.body_limit_bytes = v;
+            }
+            if let Some(v) = rate_limit_per_minute {
+                limits.rate_limit_per_minute = v;
+            }
+            if let Some(v) = rate_limit_burst {
+                limits.rate_limit_burst = v;
+            }
+            if let Some(v) = max_session_secs {
+                limits.max_session_secs = v;
+            }
+            if let Some(v) = shutdown_drain_secs {
+                limits.shutdown_drain_secs = v;
+            }
+            if let Some(v) = pool_checkout_timeout_secs {
+                limits.pool_checkout_timeout_secs = v;
+            }
             let config = ServerConfig {
                 port,
                 host,
@@ -295,16 +321,7 @@ async fn main() -> anyhow::Result<()> {
                     allow_any: cors_allow_any,
                     allowed_origins: allow_origin,
                 },
-                limits: RuntimeLimits {
-                    idle_timeout_secs,
-                    ws_frame_max_bytes,
-                    body_limit_bytes,
-                    rate_limit_per_minute,
-                    rate_limit_burst,
-                    max_session_secs,
-                    shutdown_drain_secs,
-                    pool_checkout_timeout_secs,
-                },
+                limits,
                 metrics_enabled: metrics,
                 trust_proxy,
                 config_path: config.map(std::path::PathBuf::from),

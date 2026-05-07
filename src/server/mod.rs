@@ -173,11 +173,23 @@ pub async fn run_with_config_listener(
         tracker: tracker.clone(),
     });
 
+    let rate_limiter_swap = if config.limits.rate_limit_per_minute > 0 {
+        Some(Arc::new(ArcSwap::from(Arc::new(
+            rate_limit::RateLimiter::new(
+                config.limits.rate_limit_per_minute,
+                config.limits.rate_limit_burst,
+            ),
+        ))))
+    } else {
+        None
+    };
+
     #[cfg(unix)]
     {
         let reload_state = state.clone();
         let reload_path = config.config_path.clone();
         let reload_shutdown = shutdown_root.clone();
+        let reload_limiter = rate_limiter_swap.clone();
         tokio::spawn(async move {
             use tokio::signal::unix::{SignalKind, signal};
             let mut sig = signal(SignalKind::hangup()).expect("failed to register SIGHUP handler");
@@ -199,7 +211,25 @@ pub async fn run_with_config_listener(
                                     old.idle_timeout_secs, new_limits.idle_timeout_secs,
                                     old.rate_limit_per_minute, new_limits.rate_limit_per_minute,
                                 );
-                                reload_state.limits.store(std::sync::Arc::new(new_limits));
+                                if let Some(ref rl) = reload_limiter
+                                    && (old.rate_limit_per_minute
+                                        != new_limits.rate_limit_per_minute
+                                        || old.rate_limit_burst != new_limits.rate_limit_burst)
+                                    && new_limits.rate_limit_per_minute > 0
+                                {
+                                    rl.store(Arc::new(rate_limit::RateLimiter::new(
+                                        new_limits.rate_limit_per_minute,
+                                        new_limits.rate_limit_burst,
+                                    )));
+                                    tracing::info!(
+                                        "Rate limiter recreated: rpm {} → {}, burst {} → {}",
+                                        old.rate_limit_per_minute,
+                                        new_limits.rate_limit_per_minute,
+                                        old.rate_limit_burst,
+                                        new_limits.rate_limit_burst,
+                                    );
+                                }
+                                reload_state.limits.store(Arc::new(new_limits));
                             }
                             Err(e) => {
                                 tracing::error!("Failed to reload config on SIGHUP: {e:#}");
@@ -244,38 +274,21 @@ pub async fn run_with_config_listener(
         ))
         .with_state(state.clone());
 
-    let protected = if config.limits.rate_limit_per_minute > 0 {
-        // Replacing `tower_governor` with our own token-bucket implementation
-        // (see `rate_limit.rs`) drops the `governor` + `dashmap` +
-        // `forwarded-header-value` transitive crates and restores control of
-        // the V1-06 refill math: `refill_per_ms = rpm / 60_000`. The V1-11
-        // IP-extraction contract (X-Forwarded-For → X-Real-IP → ConnectInfo)
-        // is preserved bit-for-bit. `RateLimiter::new` owns the `rpm > MAX_RPM`
-        // clamp + warn so the log line below stays consistent.
-        let limiter = Arc::new(rate_limit::RateLimiter::new(
-            config.limits.rate_limit_per_minute,
-            config.limits.rate_limit_burst,
-        ));
-        let interval_ms = limiter.interval_ms();
+    let protected = if let Some(ref limiter_swap) = rate_limiter_swap {
+        let interval_ms = limiter_swap.load().interval_ms();
 
-        // Background eviction: bound memory under sustained traffic by
-        // dropping buckets that haven't been touched in 5 minutes. `tokio`
-        // task (not `std::thread::spawn`, V1-15 style) tied to `shutdown_root`
-        // so the GC loop exits cleanly on SIGTERM instead of leaking.
-        let evict_limiter = limiter.clone();
+        let evict_limiter = limiter_swap.clone();
         let evict_cancel = shutdown_root.clone();
         tokio::spawn(async move {
             let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
             ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
-            // First tick fires immediately; skip it so the limiter is populated
-            // before the first eviction pass.
             ticker.tick().await;
             loop {
                 tokio::select! {
                     biased;
                     _ = evict_cancel.cancelled() => break,
                     _ = ticker.tick() => {
-                        evict_limiter.evict_stale(std::time::Duration::from_secs(300));
+                        evict_limiter.load().evict_stale(std::time::Duration::from_secs(300));
                     }
                 }
             }
@@ -287,11 +300,11 @@ pub async fn run_with_config_listener(
             burst = config.limits.rate_limit_burst,
             "per-IP rate limiting enabled"
         );
-        let layer_limiter = limiter.clone();
+        let layer_limiter = limiter_swap.clone();
         let layer_trust_proxy = config.trust_proxy;
         let layer_metrics = metrics_registry.clone();
         protected.layer(axum::middleware::from_fn(move |req, next| {
-            let limiter = layer_limiter.clone();
+            let limiter = layer_limiter.load_full();
             let metrics = layer_metrics.clone();
             async move {
                 rate_limit::rate_limit_middleware(limiter, layer_trust_proxy, metrics, req, next)
