@@ -17,8 +17,7 @@ async fn main() -> Result<()> {
         std::process::exit(1);
     });
 
-    let url = std::env::var("GIGASTT_URL")
-        .unwrap_or_else(|_| "ws://127.0.0.1:9876/v1/ws".into());
+    let url = std::env::var("GIGASTT_URL").unwrap_or_else(|_| "ws://127.0.0.1:9876/v1/ws".into());
 
     println!("Connecting to {url}...");
     let (ws, _) = tokio_tungstenite::connect_async(&url).await?;

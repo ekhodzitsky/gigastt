@@ -1,10 +1,10 @@
 //! HTTP middleware: origin policy enforcement and metrics instrumentation.
 
-use std::sync::Arc;
-use axum::extract::State;
-use axum::response::Response;
 use super::config::{OriginPolicy, OriginVerdict};
 use super::http;
+use axum::extract::State;
+use axum::response::Response;
+use std::sync::Arc;
 
 /// Instrumentation middleware: records HTTP request counters and a duration
 /// histogram under the `gigastt_http_*` namespace. Takes the whole
@@ -171,9 +171,15 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(resp.status(), 200);
-        let rid = resp.headers().get("x-request-id").expect("missing X-Request-Id");
+        let rid = resp
+            .headers()
+            .get("x-request-id")
+            .expect("missing X-Request-Id");
         let rid_str = rid.to_str().unwrap();
-        assert!(uuid::Uuid::parse_str(rid_str).is_ok(), "X-Request-Id must be valid UUID");
+        assert!(
+            uuid::Uuid::parse_str(rid_str).is_ok(),
+            "X-Request-Id must be valid UUID"
+        );
     }
 
     #[tokio::test]
@@ -201,7 +207,11 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(
-            resp.headers().get("x-request-id").unwrap().to_str().unwrap(),
+            resp.headers()
+                .get("x-request-id")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             client_id
         );
     }

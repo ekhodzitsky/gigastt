@@ -115,6 +115,10 @@ enum Commands {
         /// RFC1918 private address; otherwise headers are ignored.
         #[arg(long, env = "GIGASTT_TRUST_PROXY", default_value_t = false)]
         trust_proxy: bool,
+
+        /// Path to TOML config file for runtime limits (reloaded on SIGHUP)
+        #[arg(long)]
+        config: Option<String>,
     },
 
     /// Download model without starting server
@@ -277,6 +281,7 @@ async fn main() -> anyhow::Result<()> {
             pool_checkout_timeout_secs,
             skip_quantize,
             trust_proxy,
+            config,
         } => {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
@@ -302,6 +307,7 @@ async fn main() -> anyhow::Result<()> {
                 },
                 metrics_enabled: metrics,
                 trust_proxy,
+                config_path: config.map(std::path::PathBuf::from),
             };
             server::run_with_config(engine, config, None).await?;
         }

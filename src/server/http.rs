@@ -13,8 +13,8 @@ use std::sync::Arc;
 
 use arc_swap::ArcSwap;
 
-use super::metrics::MetricsRegistry;
 use super::config::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
+use super::metrics::MetricsRegistry;
 use crate::inference::Engine;
 
 /// Shared application state for all handlers. Carries runtime limits so the

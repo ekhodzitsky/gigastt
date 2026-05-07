@@ -12,6 +12,7 @@ mod ws;
 pub use config::{OriginPolicy, RuntimeLimits, ServerConfig};
 
 use anyhow::{Context, Result};
+use arc_swap::ArcSwap;
 use axum::Router;
 use axum::extract::DefaultBodyLimit;
 use axum::http::StatusCode;
@@ -57,6 +58,7 @@ pub async fn run_with_shutdown(
         limits: RuntimeLimits::default(),
         metrics_enabled: false,
         trust_proxy: false,
+        config_path: None,
     };
     run_with_config(engine, config, shutdown).await
 }
@@ -165,11 +167,49 @@ pub async fn run_with_config_listener(
 
     let state = Arc::new(http::AppState {
         engine: Arc::new(engine),
-        limits: config.limits.clone(),
+        limits: Arc::new(ArcSwap::from_pointee(config.limits.clone())),
         metrics_registry: metrics_registry.clone(),
         shutdown: shutdown_root.clone(),
         tracker: tracker.clone(),
     });
+
+    #[cfg(unix)]
+    {
+        let reload_state = state.clone();
+        let reload_path = config.config_path.clone();
+        let reload_shutdown = shutdown_root.clone();
+        tokio::spawn(async move {
+            use tokio::signal::unix::{SignalKind, signal};
+            let mut sig = signal(SignalKind::hangup()).expect("failed to register SIGHUP handler");
+            loop {
+                tokio::select! {
+                    biased;
+                    _ = reload_shutdown.cancelled() => break,
+                    _ = sig.recv() => {
+                        let Some(ref path) = reload_path else {
+                            tracing::info!("No config file specified, ignoring SIGHUP");
+                            continue;
+                        };
+                        match config::load_config_file(path) {
+                            Ok(new_limits) => {
+                                let old = reload_state.limits.load();
+                                tracing::info!(
+                                    "RuntimeLimits reloaded from {}: idle_timeout_secs {} → {}, rate_limit_per_minute {} → {}",
+                                    path.display(),
+                                    old.idle_timeout_secs, new_limits.idle_timeout_secs,
+                                    old.rate_limit_per_minute, new_limits.rate_limit_per_minute,
+                                );
+                                reload_state.limits.store(std::sync::Arc::new(new_limits));
+                            }
+                            Err(e) => {
+                                tracing::error!("Failed to reload config on SIGHUP: {e:#}");
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     let policy = Arc::new(config.origin_policy.clone());
 
@@ -280,7 +320,9 @@ pub async fn run_with_config_listener(
 
     tracing::info!("gigastt server listening on http://{addr}");
     tracing::info!("  WebSocket: ws://{addr}/v1/ws");
-    tracing::info!("  REST API:  http://{addr}/health, /ready, /v1/transcribe, /v1/transcribe/stream");
+    tracing::info!(
+        "  REST API:  http://{addr}/health, /ready, /v1/transcribe, /v1/transcribe/stream"
+    );
     if config.origin_policy.allow_any {
         tracing::warn!(
             "CORS allow-any is ON: any cross-origin page can call this server. \

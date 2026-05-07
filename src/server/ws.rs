@@ -1,17 +1,17 @@
 //! WebSocket handler: upgrade, session loop, PCM16 processing, and inference dispatch.
 
-use std::net::SocketAddr;
-use std::sync::Arc;
-use anyhow::Result;
-use axum::extract::State;
-use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
-use axum::response::Response;
-use futures_util::{SinkExt, StreamExt};
 use super::config::{DEFAULT_SAMPLE_RATE, RuntimeLimits, SUPPORTED_RATES, pool_retry_after_ms};
 use super::http;
 use super::json_text;
 use crate::inference::{Engine, SessionTriplet};
 use crate::protocol::{ClientMessage, ServerMessage};
+use anyhow::Result;
+use axum::extract::State;
+use axum::extract::ws::{Message as WsMessage, WebSocket, WebSocketUpgrade};
+use axum::response::Response;
+use futures_util::{SinkExt, StreamExt};
+use std::net::SocketAddr;
+use std::sync::Arc;
 
 /// Outcome returned by per-frame handlers. Keeps `handle_ws_inner` a thin
 /// orchestration loop instead of a 250-line one-big-match.
