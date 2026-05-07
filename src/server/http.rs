@@ -12,7 +12,7 @@ use serde::Serialize;
 use std::sync::Arc;
 
 use super::metrics::MetricsRegistry;
-use super::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
+use super::config::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use crate::inference::Engine;
 
 /// Shared application state for all handlers. Carries runtime limits so the
@@ -176,7 +176,7 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
             "ogg".into(),
             "flac".into(),
         ],
-        supported_rates: super::SUPPORTED_RATES.to_vec(),
+        supported_rates: super::config::SUPPORTED_RATES.to_vec(),
         diarization,
     })
 }
