@@ -198,7 +198,11 @@ pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
     let available = state.engine.pool.available();
     if let Some(ref reg) = state.metrics_registry {
         reg.gauge_set("gigastt_pool_available", vec![], available as i64);
-        reg.gauge_set("gigastt_pool_waiters", vec![], state.engine.pool.waiters() as i64);
+        reg.gauge_set(
+            "gigastt_pool_waiters",
+            vec![],
+            state.engine.pool.waiters() as i64,
+        );
     }
     if available == 0 {
         return (
@@ -229,7 +233,11 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
     #[cfg(not(feature = "diarization"))]
     let diarization = false;
     if let Some(ref reg) = state.metrics_registry {
-        reg.gauge_set("gigastt_pool_available", vec![], engine.pool.available() as i64);
+        reg.gauge_set(
+            "gigastt_pool_available",
+            vec![],
+            engine.pool.available() as i64,
+        );
         reg.gauge_set("gigastt_pool_waiters", vec![], engine.pool.waiters() as i64);
     }
     Json(ModelInfo {
@@ -356,13 +364,11 @@ pub async fn transcribe(
     }
 
     match result {
-        Ok(Ok(result)) => {
-            Ok(Json(TranscribeResponse {
-                text: result.text,
-                words: result.words,
-                duration: result.duration_s,
-            }))
-        }
+        Ok(Ok(result)) => Ok(Json(TranscribeResponse {
+            text: result.text,
+            words: result.words,
+            duration: result.duration_s,
+        })),
         Ok(Err(e)) => {
             tracing::error!("Transcription error: {e}");
             Err(api_error(

@@ -19,9 +19,9 @@
 //! from the Prometheus Go client library. Tweakable per-metric via
 //! `register_histogram_with_buckets`.
 
+use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::fmt::Write;
-use parking_lot::RwLock;
 
 /// Default histogram bucket bounds (seconds-scaled). Upper bound `f64::INFINITY`
 /// is appended implicitly when rendering — consumers do not need to supply it.

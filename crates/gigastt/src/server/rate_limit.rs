@@ -221,12 +221,14 @@ impl RateLimiter {
 
         // Cap enforcement: if we're at the limit and this is a new IP,
         // evict the oldest bucket before inserting.
-        if !self.buckets.contains_key(&ip) && self.buckets.len() >= self.max_entries
-            && let Some(oldest) = self.buckets.iter().min_by_key(|e| e.value().last_seen_ms) {
-                let key = *oldest.key();
-                drop(oldest);
-                self.buckets.remove(&key);
-            }
+        if !self.buckets.contains_key(&ip)
+            && self.buckets.len() >= self.max_entries
+            && let Some(oldest) = self.buckets.iter().min_by_key(|e| e.value().last_seen_ms)
+        {
+            let key = *oldest.key();
+            drop(oldest);
+            self.buckets.remove(&key);
+        }
 
         let mut entry = self
             .buckets

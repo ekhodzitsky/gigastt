@@ -206,6 +206,15 @@ fn model_files_exist(dir: &Path) -> bool {
     MODEL_FILES.iter().all(|f| dir.join(f).exists())
 }
 
+/// Append `.partial` to a path; retained for tests that assert the legacy
+/// staging name. Production download path uses `partial_path_unique`.
+#[cfg(test)]
+fn partial_path(final_path: &Path) -> std::path::PathBuf {
+    let mut s: std::ffi::OsString = final_path.as_os_str().to_owned();
+    s.push(".partial");
+    std::path::PathBuf::from(s)
+}
+
 /// Generate a unique `.partial` path so concurrent processes never write
 /// to the same staging file. Uses PID and nanosecond timestamp.
 fn partial_path_unique(final_path: &Path) -> std::path::PathBuf {

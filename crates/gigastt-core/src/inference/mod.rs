@@ -1414,7 +1414,7 @@ mod tests {
         // blocking thread, then `OwnedReservation::checkin` returns it.
         let pool = std::sync::Arc::new(Pool::new(vec![String::from("triplet")]));
         let guard = pool.checkout().await.expect("checkout");
-        let mut reservation = guard.into_owned();
+        let reservation = guard.into_owned();
 
         let result = tokio::task::spawn_blocking(move || {
             // Pretend we're running blocking inference.
@@ -1445,7 +1445,11 @@ mod tests {
         .await;
 
         assert!(result.is_err(), "spawn_blocking must report the panic");
-        assert_eq!(pool.available(), 1, "reservation must be returned after panic");
+        assert_eq!(
+            pool.available(),
+            1,
+            "reservation must be returned after panic"
+        );
     }
 
     #[tokio::test]
@@ -1504,7 +1508,8 @@ mod tests {
         let (res_back, val) = tokio::task::spawn_blocking(move || {
             let mut r = reservation.take().unwrap();
             *r += 1;
-            (r, *r)
+            let v = *r;
+            (r, v)
         })
         .await
         .expect("join");

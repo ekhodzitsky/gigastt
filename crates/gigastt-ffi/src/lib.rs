@@ -389,7 +389,11 @@ pub unsafe extern "C" fn gigastt_stream_process_chunk(
     }
 
     let segments = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        engine_ref.process_chunk(&samples_f32, &mut stream_ref.state, &mut *stream_ref.reservation)
+        engine_ref.process_chunk(
+            &samples_f32,
+            &mut stream_ref.state,
+            &mut stream_ref.reservation,
+        )
     })) {
         Ok(Ok(segs)) => segs,
         Ok(Err(e)) => {

@@ -200,7 +200,9 @@ async fn handle_binary_frame(
             tracing::warn!("Empty binary frame spam from {peer}, closing connection");
             return Err(anyhow::anyhow!("Empty frame limit exceeded"));
         }
-        tracing::debug!("Empty binary frame from {peer}, skipping ({empty_frame_count}/{MAX_EMPTY_FRAMES_PER_SESSION})");
+        tracing::debug!(
+            "Empty binary frame from {peer}, skipping ({empty_frame_count}/{MAX_EMPTY_FRAMES_PER_SESSION})"
+        );
         return Ok(FrameOutcome::Continue);
     }
     *audio_received = true;
