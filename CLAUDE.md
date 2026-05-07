@@ -17,7 +17,7 @@ cargo build                          # CPU-only debug build (default, any platfo
 cargo build --features coreml        # macOS ARM64 (CoreML / Neural Engine)
 cargo build --features cuda          # Linux x86_64 (CUDA 12+)
 cargo build --release                # Release build (LTO, stripped)
-cargo test                           # Run all 153 unit tests, CPU (no model required)
+cargo test --workspace               # Run all 163 unit tests, CPU (no model required)
 cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
 cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1  # E2E tests (requires model)
 cargo test --test load_test -- --ignored           # Load tests (requires model, local only)
@@ -142,7 +142,7 @@ Three-tier test architecture:
 **Unit tests** (no model required, run in CI on every PR):
 - Live in `#[cfg(test)] mod tests` at bottom of each file
 - Use synthetic data, test names: `test_<what>_<expected_behavior>`
-- 153 unit tests across 17 modules (as of v1.0.2)
+- 163 unit tests across 3 crates (as of v2.0.1)
 - `cargo test` — runs all unit tests
 
 **E2E tests** (require model ~850MB, run in CI on main push only):

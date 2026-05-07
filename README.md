@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <sub>Latest: <b>v1.0.2</b> — see <a href="CHANGELOG.md">CHANGELOG</a>.</sub>
+  <sub>Latest: <b>v2.0.1</b> — see <a href="CHANGELOG.md">CHANGELOG</a>.</sub>
 </p>
 
 ---
@@ -266,6 +266,18 @@ gigastt quantize                     # native Rust quantization
 gigastt quantize --force             # re-quantize even if INT8 model exists
 ```
 
+## Project Structure
+
+gigastt is organized as a 3-crate Cargo workspace:
+
+| Crate | Type | Purpose |
+|---|---|---|
+| [`gigastt-core`](crates/gigastt-core) | lib (rlib) | Inference engine, model download, quantization, protocol types |
+| [`gigastt-ffi`](crates/gigastt-ffi) | lib (cdylib) | C-ABI FFI layer for Android / mobile embedding |
+| [`gigastt`](crates/gigastt) | bin | Server binary (axum HTTP/WS) + CLI |
+
+`gigastt-core` has no server dependencies — embed inference in any Rust project with `gigastt-core = "2.0"`.
+
 ## Architecture
 
 ```
@@ -418,19 +430,19 @@ Remote deployment (TLS + reverse proxy): see [`docs/deployment.md`](docs/deploym
 
 ## Testing
 
-153 unit tests (including property-based via proptest) + 30 e2e tests + load & soak tests + WER benchmark:
+163 unit tests (including property-based via proptest) + 35 e2e/load/soak tests + WER benchmark:
 
 ```sh
-cargo test                           # 153 unit tests (no model needed)
-cargo clippy                         # Lint (zero warnings)
+cargo test --workspace               # 163 unit tests (no model needed)
+cargo clippy --workspace             # Lint (zero warnings)
 
 # E2E tests (require model, serial to avoid OOM)
-cargo run -- download
-cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1
+cargo run -p gigastt -- download
+cargo test -p gigastt --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1
 
 # Load & soak (local only)
-cargo test --test load_test -- --ignored
-cargo test --test soak_test -- --ignored
+cargo test -p gigastt --test load_test -- --ignored
+cargo test -p gigastt --test soak_test -- --ignored
 ```
 
 ## Contributing
