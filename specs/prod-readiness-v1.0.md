@@ -57,26 +57,26 @@ historical audit trail; trust this rollup over the table cells for
 
 | Rank | # | Area | Status |
 |------|---|------|--------|
-| P0.1 | V1-03 | Graceful WS drain on SIGTERM **[C]** (data loss on every deploy; `e2e_shutdown` disabled in CI) | ⏳ open |
-| P0.2 | V1-05 | REST `body.to_vec()` double-buffer **[C]** (515 MiB peak per upload → OOM) | ⏳ open |
-| P0.3 | V1-04 | Max session duration cap (silence-stream DoS; pool starvation in 5 connections) | ⏳ open |
-| P0.4 | V1-06 | Rate-limiter `/60` int-division (documented protection 60× weaker than declared) | ⏳ open |
-| P0.5 | V1-07 | Pool `Mutex<mpsc::Receiver>` + `.expect("Pool sender dropped")` (unfair + panic cascade) | ⏳ open |
-| P0.6 | V1-01 | Model download TOCTOU (SHA256 verified after write → RCE-class via tampered model) | ⏳ open |
-| P0.7 | V1-02 | Speaker model has no SHA256 verify at all (same class as V1-01, under feature) | ⏳ open |
-| P0.8 | V1-08 | `Engine::create_state` signature toggles on feature (breaks crates.io doctest, SemVer) | ⏳ open |
-| P0.9 | V1-10 | `prost 0.6` + `onnx-pb 0.1.4` supply-chain (3+ yr unmaintained, `cargo install` UX) | ⏳ open |
-| P0.10 | V1-09 | Nightly soak/load in CI (infra, not a bug — but without it P0 regressions ship) | ⏳ open |
+| P0.1 | V1-03 | Graceful WS drain on SIGTERM **[C]** (data loss on every deploy; `e2e_shutdown` disabled in CI) | ✅ done (v0.9.0) |
+| P0.2 | V1-05 | REST `body.to_vec()` double-buffer **[C]** (515 MiB peak per upload → OOM) | ✅ done (v0.9.0) |
+| P0.3 | V1-04 | Max session duration cap (silence-stream DoS; pool starvation in 5 connections) | ✅ done (v0.9.0) |
+| P0.4 | V1-06 | Rate-limiter `/60` int-division (documented protection 60× weaker than declared) | ✅ done (v0.9.0) |
+| P0.5 | V1-07 | Pool `Mutex<mpsc::Receiver>` + `.expect("Pool sender dropped")` (unfair + panic cascade) | ✅ done (v0.9.0) |
+| P0.6 | V1-01 | Model download TOCTOU (SHA256 verified after write → RCE-class via tampered model) | ✅ done (v0.9.0) |
+| P0.7 | V1-02 | Speaker model has no SHA256 verify at all (same class as V1-01, under feature) | ✅ done (v0.9.0) |
+| P0.8 | V1-08 | `Engine::create_state` signature toggles on feature (breaks crates.io doctest, SemVer) | ✅ done (v0.9.0) |
+| P0.9 | V1-10 | `prost 0.6` + `onnx-pb 0.1.4` supply-chain (3+ yr unmaintained, `cargo install` UX) | ✅ done (v0.9.0) |
+| P0.10 | V1-09 | Nightly soak/load in CI (infra, not a bug — but without it P0 regressions ship) | ✅ done (v0.9.0) |
 
 ### P1 — ship-before-v1.0 (ordered most → least critical)
 
 | Rank | # | Area | Status |
 |------|---|------|--------|
-| P1.1 | V1-11 | `X-Forwarded-For` spoofing in published nginx/Caddy recipes (per-IP RL bypass) | ⏳ open |
+| P1.1 | V1-11 | `X-Forwarded-For` spoofing in published nginx/Caddy recipes (per-IP RL bypass) | ✅ done (v0.9.0) |
 | P1.2 | V1-12 | `/metrics` on CORS-allowlisted router + rate-limited (info leak + Prom throttle) | ⏳ open |
 | P1.3 | V1-16 | `thread::scope` panic on pool-load aborts the whole process (OOM on 4 GB box) | ⏳ open |
 | P1.4 | V1-21 | `SessionPool` lacks Drop-guard (per-call `catch_unwind` is opt-in, bugs pool) | ⏳ open |
-| P1.5 | V1-25 | Odd-length PCM frame drops last byte silently (phase-shift corruption) | ⏳ open |
+| P1.5 | V1-25 | Odd-length PCM frame drops last byte silently (phase-shift corruption) | ✅ done (v0.9.0) |
 | P1.6 | V1-27 | `/health` does not probe encoder (k8s liveness false-positive) | ⏳ open |
 | P1.7 | V1-24 | Batch REST pool starves WS streaming (9 min jobs → 30 s WS timeouts) | ⏳ open |
 | P1.8 | V1-17 | Global `PrometheusBuilder` forces `--test-threads=1` (CI slowdown + stale `/metrics`) | ⏳ open |
@@ -84,13 +84,13 @@ historical audit trail; trust this rollup over the table cells for
 | P1.10 | V1-15 | Rate-limiter retain-recent `std::thread` never exits (leak + slow SIGTERM) | ⏳ open |
 | P1.11 | V1-28 | Pool checkout timeout hardcoded in two places (operational rigidity) | ⏳ open |
 | P1.12 | V1-13 | WebSocket protocol version is declarative, no negotiation (future breakage) | ⏳ open |
-| P1.13 | V1-14 | `/ws` deprecation has no `Deprecation` / `Sunset` hint for clients | ⏳ open |
+| P1.13 | V1-14 | `/ws` deprecation has no `Deprecation` / `Sunset` hint for clients | ✅ done (v0.9.0) |
 | P1.14 | V1-18 | Decoder loop allocations in hot path (millions of `.to_vec()` per 40 s clip) | ⏳ open |
 | P1.15 | V1-19 | `SincFixedIn::new(chunk_size = samples.len())` rebuilds FIR per streaming chunk | ⏳ open |
 | P1.16 | V1-20 | `quantize.rs` hardcodes `axis=0` for all ops (silent WER regression on MatMul) | ⏳ open |
-| P1.17 | V1-22 | `test_rest_oversized_body_rejected` asserts `!= 200` (fake test) | ⏳ open |
+| P1.17 | V1-22 | `test_rest_oversized_body_rejected` asserts `!= 200` (fake test) | ✅ done (v0.9.0) |
 | P1.18 | V1-29 | Idle timeout test burns 310 s wall-clock in CI main push | ⏳ open |
-| P1.19 | V1-23 | Remove `tests/server_integration.rs` (6 `sleep(200 ms)` duplicates of `e2e_ws`) | ⏳ open |
+| P1.19 | V1-23 | Remove `tests/server_integration.rs` (6 `sleep(200 ms)` duplicates of `e2e_ws`) | ✅ done (v0.9.0) |
 | P1.20 | V1-26 | Engine god-object (`transcribe_file` / `process_chunk` / `tokens_to_words`) | ⏳ open |
 
 ### P2 — polish for v1.x (ordered most → least critical)
@@ -124,11 +124,11 @@ historical audit trail; trust this rollup over the table cells for
 |------|---|------|--------|
 | S.1 | SUS-01 | `SECURITY.md` (disclosure contact, supported versions) — mandatory for crates.io | ⏳ open |
 | S.2 | SUS-04 | Dependabot / Renovate weekly (enables the `prost` / `ort-rc` upgrades of V1-10) | ⏳ open |
-| S.3 | SUS-03 | Signed releases (GPG / minisign) + publish `SHA256SUMS.asc` (MITM vector today) | ⏳ open |
+| S.3 | SUS-03 | Signed releases (GPG / minisign) + publish `SHA256SUMS.asc` (MITM vector today) | ✅ done (v0.9.0) |
 | S.4 | SUS-14 | `cargo-semver-checks` in CI (protects against accidental breaking changes) | ⏳ open |
 | S.5 | SUS-13 | `docs/privacy.md` — make the privacy-first claim auditable | ⏳ open |
-| S.6 | SUS-02 | CycloneDX SBOM in release workflow | ⏳ open |
-| S.7 | SUS-05 | SLSA build provenance attestations in release workflow | ⏳ open |
+| S.6 | SUS-02 | CycloneDX SBOM in release workflow | ✅ done (v0.9.0) |
+| S.7 | SUS-05 | SLSA build provenance attestations in release workflow | ✅ done (v0.9.0) |
 | S.8 | SUS-10 | `docs/runbook.md` (pool exhaustion, model-download failure, OOM) | ⏳ open |
 | S.9 | SUS-11 | `terminationGracePeriodSeconds` + shutdown guide in `deployment.md` | ⏳ open |
 | S.10 | SUS-09 | Grafana dashboard JSON + `alerts.yml` examples | ⏳ open |

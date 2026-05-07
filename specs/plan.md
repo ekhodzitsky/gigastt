@@ -14,6 +14,10 @@ bullet.
 | 1.5 | v0.6.1 | `handle_ws_inner` split + origin middleware integration test |
 | 2 | v0.7.x | configurable runtime limits, bake-model, `/v1/ws` canonical, capabilities |
 | 3 | v0.8.x | `/metrics`, per-IP rate limit, deployment docs, CoreML/CUDA startup fix |
+| 4 | v0.9.x | Security hardening, Android FFI (`gigastt-ffi`), vendored ONNX proto, lean builds |
+| 5 | v0.10.x | Speaker diarization as default feature (`polyvoice` integration) |
+| 6 | v1.0.x | First stable release, semver guarantees, pool checkout timeout, protocol version negotiation, extended metrics |
+| 7 | v2.0.x | Workspace split into `gigastt-core` / `gigastt-ffi` / `gigastt` crates |
 
 **Carry-over not in v1.0 critique:** item 15 (WER histograms), item 16
 (nightly soak), item 18 (`ort_err()` audit), item 19 (hot-reload model),

@@ -12,7 +12,7 @@ GitHub release (an attacker with release access could publish matching
 checksums alongside tampered binaries).
 
 ```sh
-gh release download v0.9.0 -R ekhodzitsky/gigastt \
+gh release download v2.0.2 -R ekhodzitsky/gigastt \
     -p 'gigastt-*.tar.gz' -p 'SHA256SUMS.txt'
 shasum -a 256 -c SHA256SUMS.txt
 ```
@@ -36,9 +36,9 @@ Verify with [minisign](https://jedisct1.github.io/minisign/) or
 [rsign2](https://github.com/jedisct1/rsign2):
 
 ```sh
-gh release download v0.9.0 -R ekhodzitsky/gigastt \
+gh release download v2.0.2 -R ekhodzitsky/gigastt \
     -p '*.tar.gz' -p '*.tar.gz.minisig'
-minisign -Vm gigastt-0.9.0-aarch64-apple-darwin.tar.gz -p gigastt.pub
+minisign -Vm gigastt-2.0.2-aarch64-apple-darwin.tar.gz -p gigastt.pub
 ```
 
 ## 3. SLSA build provenance (SUS-05)
@@ -49,7 +49,7 @@ built by the `release.yml` workflow on a specific commit in
 `ekhodzitsky/gigastt` — no special public key required.
 
 ```sh
-gh attestation verify gigastt-0.9.0-aarch64-apple-darwin.tar.gz \
+gh attestation verify gigastt-2.0.2-aarch64-apple-darwin.tar.gz \
     --repo ekhodzitsky/gigastt
 ```
 

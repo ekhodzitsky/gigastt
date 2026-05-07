@@ -5,6 +5,7 @@
   <p align="center">
     <a href="https://github.com/ekhodzitsky/gigastt/actions"><img src="https://github.com/ekhodzitsky/gigastt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://crates.io/crates/gigastt"><img src="https://img.shields.io/crates/v/gigastt.svg" alt="crates.io"></a>
+    <a href="https://crates.io/crates/gigastt"><img src="https://img.shields.io/crates/d/gigastt.svg" alt="crates.io downloads"></a>
     <a href="https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
     <a href="https://github.com/ekhodzitsky/gigastt/blob/main/CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange" alt="Changelog"></a>
   <p align="center"><b>English</b> | <a href="README_RU.md">Русский</a></p>
@@ -54,6 +55,14 @@ $ curl -X POST http://127.0.0.1:9876/v1/transcribe \
 | **Cost** | free | free | free | free | free | $0.006/min+ |
 
 > **Trade-off:** gigastt supports Russian only. If you need multilingual recognition, consider whisper.cpp or sherpa-onnx. If you need the best Russian accuracy running locally — gigastt is the only Rust-native option built on GigaAM v3, the current SOTA for Russian ASR. Trained on **700K+ hours** of Russian speech. WER measured on 993 Golos crowd-sourced samples (4991 words).
+
+## Who is this for?
+
+- **Real-time voice assistants** — WebSocket streaming with sub-second latency
+- **Call-center transcription** — speaker diarization + REST batch processing
+- **Offline document processing** — transcribe meeting recordings without cloud upload
+- **Privacy-first mobile apps** — embed via C-ABI FFI on Android with on-device inference
+- **Research & ML pipelines** — standalone `gigastt-core` library for Rust ML stacks
 
 ## Features
 

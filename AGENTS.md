@@ -93,7 +93,7 @@ The project uses a three-tier test architecture:
 ### Unit tests (no model required, run in CI on every PR)
 
 ```sh
-cargo test                           # 125 unit tests across 15 modules
+cargo test --workspace               # 163 unit tests across 15 modules
 cargo clippy                         # Lint (zero warnings expected)
 cargo fmt --check                    # Format check
 ```
@@ -108,7 +108,7 @@ They use synthetic data. Test naming convention: `test_<what>_<expected_behavior
 cargo run -- download
 
 # Run all e2e tests serially (single-threaded to avoid OOM)
-cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1
+cargo test -p gigastt --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1
 ```
 
 | Test file | Coverage |
@@ -125,8 +125,8 @@ WAV generation, WebSocket connect, readiness polling).
 ### Load & soak tests (require model, run locally + nightly CI)
 
 ```sh
-cargo test --test load_test -- --ignored           # 3 load tests
-cargo test --test soak_test -- --ignored           # Continuous WS cycling
+cargo test -p gigastt --test load_test -- --ignored           # 3 load tests
+cargo test -p gigastt --test soak_test -- --ignored           # Continuous WS cycling
 ```
 
 Soak duration is configurable via `GIGASTT_SOAK_DURATION_SECS` (default 300s).
@@ -134,7 +134,7 @@ Soak duration is configurable via `GIGASTT_SOAK_DURATION_SECS` (default 300s).
 ### Benchmark suite
 
 ```sh
-cargo test --test benchmark -- --ignored            # WER on Golos fixtures
+cargo test -p gigastt --test benchmark -- --ignored            # WER on Golos fixtures
 ```
 
 Custom harness (`harness = false` in `Cargo.toml`).
@@ -338,7 +338,7 @@ cargo audit
 cargo deny check
 
 # Run a specific e2e test
-cargo test --test e2e_ws -- --ignored test_ws_ready_message
+cargo test -p gigastt --test e2e_ws -- --ignored test_ws_ready_message
 
 # Run with tracing at debug level
 RUST_LOG=gigastt=debug cargo run -- serve

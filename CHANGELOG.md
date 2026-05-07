@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-05-07
+
+### Added
+
+- **`crates/gigastt-core/README.md`** — dedicated README for the `gigastt-core`
+  crate on crates.io.
+
+## [2.0.1] - 2026-05-07
+
+### Fixed
+
+- **crates.io publishing** — added `readme` path to all crate manifests for
+  proper crates.io display.
+- **Path dependency versions** — added explicit versions to `gigastt-core` path
+  dependencies for crates.io publish compatibility.
+- **Workspace README** — updated top-level README for the workspace split.
+
+## [2.0.0] - 2026-05-07
+
+### Changed
+
+- **Workspace split** — monolith refactored into a 3-crate Cargo workspace:
+  - `gigastt-core` — inference engine, model download, quantization, audio
+    decoding (library crate)
+  - `gigastt-ffi` — C-ABI bindings for Android (cdylib)
+  - `gigastt` — CLI + axum server (binary crate)
+  This enables embedding `gigastt-core` as a standalone library in other Rust
+  projects.
+
 ## [1.0.1] - 2026-05-06
 
 ### Changed
@@ -710,7 +739,14 @@ _Release candidate for v0.9.0 — bundles five P0 fixes (V1-03, V1-04, V1-05, V1
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.2...HEAD
+[2.0.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.1...v2.0.2
+[2.0.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/ekhodzitsky/gigastt/compare/v1.0.1...v2.0.0
+[1.0.1]: https://github.com/ekhodzitsky/gigastt/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.10.0...v1.0.0
+[0.10.0]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.6...v0.10.0
+[0.9.6]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.5...v0.9.6
 [0.9.4]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/ekhodzitsky/gigastt/compare/v0.9.1...v0.9.2
