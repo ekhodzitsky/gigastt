@@ -78,7 +78,7 @@ async fn test_ws_oversized_frame_rejected() {
     // Use raw tokio_tungstenite so we can send an oversized frame without
     // the client library enforcing its own limit.
     let (mut ws, _) = tokio_tungstenite::connect_async_with_config(
-        format!("ws://127.0.0.1:{port}/ws"),
+        format!("ws://127.0.0.1:{port}/v1/ws"),
         Some({
             let mut cfg = tokio_tungstenite::tungstenite::protocol::WebSocketConfig::default();
             cfg.max_message_size = None;
@@ -150,7 +150,7 @@ async fn test_ws_fifth_client_hangs() {
 
     // Attempt to connect a 5th client using raw connect_async (we don't want
     // ws_connect because that helper expects a Ready message).
-    let (mut fifth_ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/ws"))
+    let (mut fifth_ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/v1/ws"))
         .await
         .expect("TCP connection for 5th client should succeed");
 

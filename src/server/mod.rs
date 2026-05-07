@@ -211,7 +211,7 @@ impl ServerConfig {
 /// - `GET /health` — health check
 /// - `POST /v1/transcribe` — file transcription
 /// - `POST /v1/transcribe/stream` — SSE streaming transcription
-/// - `GET /ws` — WebSocket streaming protocol
+/// - `GET /v1/ws` — WebSocket streaming protocol
 ///
 /// Runs until `Ctrl-C` is received.
 pub async fn run(engine: Engine, port: u16, host: &str) -> Result<()> {
@@ -373,11 +373,8 @@ pub async fn run_with_config_listener(
             "/v1/transcribe/stream",
             options(|| async { StatusCode::NO_CONTENT }),
         )
-        // `/v1/ws` is the canonical path (versioned, aligned with REST); `/ws`
-        // remains as an alias for existing clients and logs a deprecation
-        // warning on each upgrade. Planned for removal in a future major version.
+        // /v1/ws is the canonical WebSocket path (versioned, aligned with REST).
         .route("/v1/ws", get(ws_handler))
-        .route("/ws", get(ws_handler_legacy))
         .route("/metrics", get(http::metrics))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -456,7 +453,7 @@ pub async fn run_with_config_listener(
         .with_state(state);
 
     tracing::info!("gigastt server listening on http://{addr}");
-    tracing::info!("  WebSocket: ws://{addr}/v1/ws (legacy alias: ws://{addr}/ws)");
+    tracing::info!("  WebSocket: ws://{addr}/v1/ws");
     tracing::info!("  REST API:  http://{addr}/health, /v1/transcribe, /v1/transcribe/stream");
     if config.origin_policy.allow_any {
         tracing::warn!(
@@ -667,53 +664,6 @@ async fn ws_handler(
                 .track_future(handle_ws(socket, peer, state_cloned.clone()))
                 .await
         })
-}
-
-/// Deprecated WebSocket endpoint at `/ws`. Identical behaviour to `/v1/ws`
-/// but emits a warn-level log on every upgrade and adds RFC 8594 `Deprecation`
-/// plus `Link: </v1/ws>; rel="successor-version"` headers on the upgrade
-/// response so client libraries can surface the migration warning to users
-/// before a future major version drops the alias.
-async fn ws_handler_legacy(
-    ws: WebSocketUpgrade,
-    axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
-    State(state): State<Arc<http::AppState>>,
-) -> Response {
-    tracing::warn!(
-        peer = %peer,
-        "WebSocket client connected to deprecated /ws path — switch to /v1/ws"
-    );
-    if state.shutdown.is_cancelled() {
-        use axum::http::StatusCode;
-        use axum::response::IntoResponse;
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            axum::response::Json(serde_json::json!({
-                "error": "Server shutting down",
-                "code": "shutting_down",
-            })),
-        )
-            .into_response();
-    }
-    let max_bytes = state.limits.ws_frame_max_bytes;
-    let state_cloned = state.clone();
-    let mut response = ws
-        .max_message_size(max_bytes)
-        .max_frame_size(max_bytes)
-        .on_upgrade(move |socket| async move {
-            state_cloned
-                .tracker
-                .clone()
-                .track_future(handle_ws(socket, peer, state_cloned.clone()))
-                .await
-        });
-    let headers = response.headers_mut();
-    headers.insert("deprecation", axum::http::HeaderValue::from_static("true"));
-    headers.insert(
-        "link",
-        axum::http::HeaderValue::from_static("</v1/ws>; rel=\"successor-version\""),
-    );
-    response
 }
 
 async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppState>) {
