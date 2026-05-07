@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <sub>Latest: <b>v0.9.4</b> — dependency rollup, zero functional changes. See <a href="CHANGELOG.md">CHANGELOG</a>.</sub>
+  <sub>Latest: <b>v1.0.2</b> — see <a href="CHANGELOG.md">CHANGELOG</a>.</sub>
 </p>
 
 ---
@@ -38,19 +38,22 @@ $ curl -X POST http://127.0.0.1:9876/v1/transcribe \
 
 ## Why gigastt?
 
-| | gigastt | Whisper large-v3 | Cloud APIs |
-|---|:---:|:---:|:---:|
-| **WER (Russian)** | **10.4%** | ~18% | 5-10% |
-| **Latency (16s audio, M1)** | **~700ms** | ~4s | network-dependent |
-| **Streaming** | real-time WebSocket | batch only | varies |
-| **Privacy** | 100% local | 100% local | data leaves device |
-| **Cost** | free forever | free | $0.006/min+ |
-| **Setup** | `cargo install` | Python + deps | API key + billing |
-| **Binary size** | single binary | Python runtime | N/A |
-| **INT8 quantization** | auto, 0% WER loss | manual | N/A |
-| **Concurrent sessions** | 4 (configurable) | 1 | provider limits |
+| | gigastt | whisper.cpp | faster-whisper | Vosk | sherpa-onnx | Cloud APIs |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Model** | GigaAM v3 | Whisper large-v3 | Whisper large-v3 | Vosk models | varies | vendor |
+| **WER (Russian)** | **10.4%** | ~18% | ~18% | ~20%+ | model-dependent | 5–10% |
+| **Languages** | Russian | 99 | 99 | 20+ | 10+ | 100+ |
+| **Streaming** | real-time WebSocket | — | — | WebSocket + gRPC | WebSocket + TCP | varies |
+| **Latency (16s, M1)** | **~700ms** | ~4s | ~2s | ~3s | ~1.5s | network |
+| **Privacy** | 100% local | 100% local | 100% local | 100% local | 100% local | data leaves device |
+| **Setup** | `cargo install` | cmake + make | `pip install` | `pip install` | cmake or pip | API key + billing |
+| **Implementation** | Rust | C/C++ | Python/C++ | C++/Java | C++ | N/A |
+| **Bindings** | Rust, C FFI | C, Python, Go, JS… | Python | Python, Java, JS, Go… | C, Python, Java, Swift… | SDK per vendor |
+| **INT8 quantization** | auto, 0% WER loss | GGML quant | CTranslate2 quant | — | — | N/A |
+| **Concurrent sessions** | configurable pool | 1 | 1 | 1 | 1 | provider limits |
+| **Cost** | free | free | free | free | free | $0.006/min+ |
 
-> GigaAM v3 was trained on **700K+ hours** of Russian speech. It delivers better accuracy than Whisper-large-v3 on Russian benchmarks while running faster on Apple Silicon and NVIDIA GPUs. WER measured on 993 Golos crowd-sourced samples (4991 words).
+> **Trade-off:** gigastt supports Russian only. If you need multilingual recognition, consider whisper.cpp or sherpa-onnx. If you need the best Russian accuracy running locally — gigastt is the only Rust-native option built on GigaAM v3, the current SOTA for Russian ASR. Trained on **700K+ hours** of Russian speech. WER measured on 993 Golos crowd-sourced samples (4991 words).
 
 ## Features
 
@@ -119,7 +122,7 @@ curl -X POST http://127.0.0.1:9876/v1/transcribe \
 
 ### WebSocket — Real-time Streaming
 
-Connect to `ws://127.0.0.1:9876/v1/ws` (canonical; `ws://…/ws` is a deprecated alias), send PCM16 audio frames, receive transcription in real time.
+Connect to `ws://127.0.0.1:9876/v1/ws`, send PCM16 audio frames, receive transcription in real time.
 
 ```
 Client                            Server
@@ -150,12 +153,12 @@ Client                            Server
 | Endpoint | Method | Description |
 |---|---|---|
 | `/health` | GET | Health check (`{"status":"ok"}`) |
+| `/ready` | GET | Readiness probe (200 when engine pool is ready) |
 | `/v1/models` | GET | Model info (encoder type, pool size, capabilities) |
 | `/v1/transcribe` | POST | File transcription, full JSON response |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
-| `/v1/ws` | GET | WebSocket upgrade for real-time streaming (canonical) |
-| `/ws` | GET | Deprecated alias for `/v1/ws` — removal planned for v1.0 |
-| `/metrics` | GET | Prometheus metrics (enabled with `--metrics`). Returns 404 otherwise |
+| `/v1/ws` | GET | WebSocket upgrade for real-time streaming |
+| `/metrics` | GET | Prometheus metrics (enabled with `--metrics`) |
 
 **SSE streaming example:**
 
@@ -416,15 +419,15 @@ Remote deployment (TLS + reverse proxy): see [`docs/deployment.md`](docs/deploym
 
 ## Testing
 
-125 unit tests + 30 e2e tests + load & soak tests:
+153 unit tests (including property-based via proptest) + 30 e2e tests + load & soak tests + WER benchmark:
 
 ```sh
-cargo test                           # 125 unit tests (no model needed)
+cargo test                           # 153 unit tests (no model needed)
 cargo clippy                         # Lint (zero warnings)
 
 # E2E tests (require model, serial to avoid OOM)
 cargo run -- download
-cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown -- --ignored --test-threads=1
+cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1
 
 # Load & soak (local only)
 cargo test --test load_test -- --ignored
