@@ -8,6 +8,9 @@ use sha2::{Digest, Sha256};
 use std::path::Path;
 use tokio::io::AsyncWriteExt;
 
+#[cfg(unix)]
+use std::os::fd::AsRawFd;
+
 /// Simple download progress reporter (no external deps).
 struct DownloadProgress {
     total: u64,
@@ -115,15 +118,46 @@ pub fn default_model_dir() -> String {
         .unwrap_or_else(|| ".gigastt/models".into())
 }
 
+/// Acquire an advisory exclusive lock on a file inside `dir` so that only
+/// one process downloads models at a time. The lock is released when the
+/// returned file is dropped.
+#[cfg(unix)]
+fn acquire_download_lock(dir: &Path) -> Result<std::fs::File> {
+    let lock_path = dir.join(".download.lock");
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(&lock_path)
+        .context("Failed to create download lock file")?;
+    let fd = file.as_raw_fd();
+    let ret = unsafe { libc::flock(fd, libc::LOCK_EX) };
+    if ret != 0 {
+        anyhow::bail!("Failed to acquire download lock (another process is downloading)");
+    }
+    Ok(file)
+}
+
 /// Ensure model files exist in `model_dir`, downloading from HuggingFace if missing.
 ///
 /// Downloads encoder, decoder, joiner ONNX models and vocabulary from
 /// the `istupakov/gigaam-v3-onnx` repository. Shows progress bars during download.
+/// Uses an advisory flock so concurrent processes do not corrupt `.partial` files.
 pub async fn ensure_model(model_dir: &str) -> Result<()> {
     let dir = Path::new(model_dir);
 
     if model_files_exist(dir) {
         tracing::info!("Model found at {model_dir}");
+        return Ok(());
+    }
+
+    #[cfg(unix)]
+    let _lock = acquire_download_lock(dir)?;
+
+    // Double-check after acquiring the lock in case another process finished
+    // the download while we were waiting.
+    if model_files_exist(dir) {
+        tracing::info!("Model found at {model_dir} after lock acquisition");
         return Ok(());
     }
 
@@ -172,12 +206,15 @@ fn model_files_exist(dir: &Path) -> bool {
     MODEL_FILES.iter().all(|f| dir.join(f).exists())
 }
 
-/// Append `.partial` to a path; used as the staging location for downloads
-/// so a crash between the write and the SHA verification never leaves a
-/// half-written file under the final name that `model_files_exist` accepts.
-fn partial_path(final_path: &Path) -> std::path::PathBuf {
+/// Generate a unique `.partial` path so concurrent processes never write
+/// to the same staging file. Uses PID and nanosecond timestamp.
+fn partial_path_unique(final_path: &Path) -> std::path::PathBuf {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
     let mut s: std::ffi::OsString = final_path.as_os_str().to_owned();
-    s.push(".partial");
+    s.push(format!(".partial.{}.{}", std::process::id(), stamp));
     std::path::PathBuf::from(s)
 }
 
@@ -249,13 +286,7 @@ async fn stream_to_partial_then_finalize(
     expected_sha256: Option<&str>,
     label: &str,
 ) -> Result<()> {
-    let partial = partial_path(final_dest);
-
-    // Drop a stale partial from a previous crashed run before writing the
-    // new one so we never concatenate chunks into an old prefix.
-    if partial.exists() {
-        let _ = tokio::fs::remove_file(&partial).await;
-    }
+    let partial = partial_path_unique(final_dest);
 
     tracing::info!("Downloading {label}...");
 

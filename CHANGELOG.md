@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.4] - 2026-05-07
+
+### Security / Reliability
+
+- **Pool lock poisoning eliminated** — replaced `std::sync::Mutex` with `parking_lot::Mutex` in `PoolInner`. A panic in any inference thread no longer poisons the mutex and permanently disables the pool.
+- **Pool session leak fixed** — `OwnedReservation` now owns the `SessionTriplet` and implements `Drop`, guaranteeing the slot is returned even when `spawn_blocking` panics or is cancelled.
+- **Rate limiter memory cap** — `DashMap` now has a hard limit of 100 000 buckets. Oldest entries are evicted when the cap is hit, preventing unbounded growth under rotating-IP botnets.
+- **WS empty-frame spam protection** — connections are closed after 1 000 empty binary frames to prevent CPU/queue exhaustion.
+- **Model download TOCTOU fixed** — `ensure_model` uses advisory `flock()` and unique `.partial` filenames so concurrent processes cannot corrupt partial downloads.
+- **CLI validation** — `--rate-limit-burst 0` with `--rate-limit-per-minute > 0` is now rejected at startup.
+- **SSE keep-alive** — explicit 15-second heartbeat comments keep proxies (nginx, ALB) from silently closing idle streams.
+- **Metrics lock poisoning fixed** — `std::sync::RwLock` replaced with `parking_lot::RwLock` in the Prometheus registry.
+- **Distributed tracing spans** — `tracing::Span::current()` is propagated across `spawn_blocking` boundaries so the full request path (pool wait → inference → output) is traceable.
+
+### Added
+
+- New Prometheus gauge `gigastt_pool_waiters` exposing the number of tasks blocked on pool checkout.
+- Unit tests for `OwnedReservation` panic recovery and `Option<OwnedReservation>` round-trips.
+
 ## [2.0.3] - 2026-05-07
 
 ### Fixed

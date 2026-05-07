@@ -196,6 +196,10 @@ pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
             .into_response();
     }
     let available = state.engine.pool.available();
+    if let Some(ref reg) = state.metrics_registry {
+        reg.gauge_set("gigastt_pool_available", vec![], available as i64);
+        reg.gauge_set("gigastt_pool_waiters", vec![], state.engine.pool.waiters() as i64);
+    }
     if available == 0 {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -224,6 +228,10 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
     let diarization = engine.has_speaker_encoder();
     #[cfg(not(feature = "diarization"))]
     let diarization = false;
+    if let Some(ref reg) = state.metrics_registry {
+        reg.gauge_set("gigastt_pool_available", vec![], engine.pool.available() as i64);
+        reg.gauge_set("gigastt_pool_waiters", vec![], engine.pool.waiters() as i64);
+    }
     Json(ModelInfo {
         id: "gigaam-v3-e2e-rnnt".into(),
         name: "GigaAM v3 RNN-T".into(),
@@ -312,32 +320,31 @@ pub async fn transcribe(
             checkout_start.elapsed().as_secs_f64(),
         );
     }
-    let (triplet, reservation) = guard.into_owned();
+    let mut reservation = guard.into_owned();
 
     let engine = state.engine.clone();
 
     let inference_start = std::time::Instant::now();
+    let span = tracing::Span::current();
     let result = tokio::task::spawn_blocking(move || {
-        let mut triplet = triplet;
+        let _enter = span.enter();
         // catch_unwind ensures triplet is returned to pool even on panic
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             // `body` is an `axum::body::Bytes` (re-export of `bytes::Bytes`):
             // `clone()` is a refcount bump, not a data copy, so the decode
             // path shares the original upload buffer.
-            engine.transcribe_bytes_shared(body, &mut triplet)
+            engine.transcribe_bytes_shared(body, &mut reservation)
         }));
         match r {
-            Ok(inference_result) => (inference_result, triplet),
+            Ok(inference_result) => inference_result,
             Err(_) => {
                 tracing::error!("Panic in REST transcribe — triplet recovered");
-                (
-                    Err(gigastt_core::error::GigasttError::Inference {
-                        source: anyhow::anyhow!("Inference thread panicked").into(),
-                    }),
-                    triplet,
-                )
+                Err(gigastt_core::error::GigasttError::Inference {
+                    source: anyhow::anyhow!("Inference thread panicked").into(),
+                })
             }
         }
+        // reservation dropped here automatically returns the triplet to the pool
     })
     .await;
     if let Some(ref reg) = state.metrics_registry {
@@ -349,16 +356,14 @@ pub async fn transcribe(
     }
 
     match result {
-        Ok((Ok(result), triplet)) => {
-            reservation.checkin(triplet);
+        Ok(Ok(result)) => {
             Ok(Json(TranscribeResponse {
                 text: result.text,
                 words: result.words,
                 duration: result.duration_s,
             }))
         }
-        Ok((Err(e), triplet)) => {
-            reservation.checkin(triplet);
+        Ok(Err(e)) => {
             tracing::error!("Transcription error: {e}");
             Err(api_error(
                 StatusCode::UNPROCESSABLE_ENTITY,
@@ -368,8 +373,8 @@ pub async fn transcribe(
         }
         Err(e) => {
             // spawn_blocking task itself failed (e.g., runtime shutdown).
-            // Triplet is lost in this branch; reservation is dropped without
-            // sending. The pool degrades by one slot.
+            // The reservation was dropped inside the closure and the triplet
+            // was returned to the pool automatically.
             tracing::error!("spawn_blocking join error: {e}");
             Err(api_error(
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -462,7 +467,7 @@ pub async fn transcribe_stream(
             checkout_start.elapsed().as_secs_f64(),
         );
     }
-    let (triplet, reservation) = guard.into_owned();
+    let mut reservation = guard.into_owned();
 
     // Create mpsc channel for streaming segments from spawn_blocking to SSE
     let (tx, rx) = tokio::sync::mpsc::channel::<
@@ -476,9 +481,9 @@ pub async fn transcribe_stream(
     // so SIGTERM during a long transcription drops cleanly.
     let cancel = state.shutdown.clone();
     let tracker = state.tracker.clone();
+    let span = tracing::Span::current();
     tracker.spawn_blocking(move || {
-        let mut triplet = triplet;
-
+        let _enter = span.enter();
         // catch_unwind ensures triplet is returned to pool even on panic
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let mut stream_state = engine.create_state(false);
@@ -489,7 +494,7 @@ pub async fn transcribe_stream(
                     tracing::info!("SSE transcription cancelled by shutdown");
                     return;
                 }
-                match engine.process_chunk(chunk, &mut stream_state, &mut triplet) {
+                match engine.process_chunk(chunk, &mut stream_state, &mut reservation) {
                     Ok(segs) => {
                         for seg in segs {
                             if tx.blocking_send(Ok(seg)).is_err() {
@@ -517,10 +522,7 @@ pub async fn transcribe_stream(
             tracing::error!("Panic in SSE inference task — triplet recovered");
         }
 
-        // Always return triplet to pool (even after panic). Sync `try_send`
-        // is safe from a blocking thread; if the pool was closed in the
-        // interim the triplet is silently dropped.
-        reservation.checkin(triplet);
+        // reservation dropped here automatically returns the triplet to the pool
     });
 
     // Convert receiver to SSE stream
@@ -543,7 +545,13 @@ pub async fn transcribe_stream(
             Ok(event)
         });
 
-    Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
+    // Explicit keep-alive: send a comment (`: \n\n`) every 15 s so nginx / ALB
+    // do not close the connection during long transcriptions.
+    Ok(Sse::new(stream).keep_alive(
+        KeepAlive::new()
+            .interval(std::time::Duration::from_secs(15))
+            .text(""),
+    ))
 }
 
 #[cfg(test)]

@@ -306,6 +306,9 @@ async fn main() -> anyhow::Result<()> {
             if let Some(v) = rate_limit_burst {
                 limits.rate_limit_burst = v;
             }
+            if limits.rate_limit_per_minute > 0 && limits.rate_limit_burst == 0 {
+                anyhow::bail!("--rate-limit-burst must be > 0 when --rate-limit-per-minute is enabled");
+            }
             if let Some(v) = max_session_secs {
                 limits.max_session_secs = v;
             }

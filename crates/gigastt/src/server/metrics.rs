@@ -21,7 +21,7 @@
 
 use std::collections::HashMap;
 use std::fmt::Write;
-use std::sync::RwLock;
+use parking_lot::RwLock;
 
 /// Default histogram bucket bounds (seconds-scaled). Upper bound `f64::INFINITY`
 /// is appended implicitly when rendering — consumers do not need to supply it.
@@ -115,14 +115,14 @@ impl MetricsRegistry {
 
     /// Set the `# HELP` text for a gauge family.
     pub fn register_gauge(&self, name: &str, help: &str) {
-        let mut map = self.gauges.write().expect("gauges lock poisoned");
+        let mut map = self.gauges.write();
         map.entry(name.to_string()).or_default().help = help.to_string();
     }
 
     /// Set a gauge to an absolute value.
     pub fn gauge_set(&self, name: &str, labels: Labels, value: i64) {
         let labels = sort_labels(labels);
-        let mut map = self.gauges.write().expect("gauges lock poisoned");
+        let mut map = self.gauges.write();
         let family = map.entry(name.to_string()).or_default();
         *family.values.entry(labels).or_insert(0) = value;
     }
@@ -130,7 +130,7 @@ impl MetricsRegistry {
     /// Increment a gauge by `delta` (may be negative).
     pub fn gauge_inc(&self, name: &str, labels: Labels, delta: i64) {
         let labels = sort_labels(labels);
-        let mut map = self.gauges.write().expect("gauges lock poisoned");
+        let mut map = self.gauges.write();
         let family = map.entry(name.to_string()).or_default();
         *family.values.entry(labels).or_insert(0) += delta;
     }
@@ -138,7 +138,7 @@ impl MetricsRegistry {
     /// Set the `# HELP` text for a counter family. Called during startup;
     /// overwrites any previously registered help text for the same name.
     pub fn register_counter(&self, name: &str, help: &str) {
-        let mut map = self.counters.write().expect("counters lock poisoned");
+        let mut map = self.counters.write();
         map.entry(name.to_string()).or_default().help = help.to_string();
     }
 
@@ -149,7 +149,7 @@ impl MetricsRegistry {
         let mut normalised: Vec<f64> = buckets.to_vec();
         normalised.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         normalised.dedup();
-        let mut map = self.histograms.write().expect("histograms lock poisoned");
+        let mut map = self.histograms.write();
         let family = map.entry(name.to_string()).or_default();
         family.help = help.to_string();
         family.buckets = normalised;
@@ -158,7 +158,7 @@ impl MetricsRegistry {
     /// Increment a counter. Lazily creates the family if it didn't exist.
     pub fn counter_inc(&self, name: &str, labels: Labels, delta: u64) {
         let labels = sort_labels(labels);
-        let mut map = self.counters.write().expect("counters lock poisoned");
+        let mut map = self.counters.write();
         let family = map.entry(name.to_string()).or_default();
         *family.values.entry(labels).or_insert(0) += delta;
     }
@@ -167,7 +167,7 @@ impl MetricsRegistry {
     /// with [`DEFAULT_BUCKETS`] if it didn't exist.
     pub fn histogram_record(&self, name: &str, labels: Labels, value: f64) {
         let labels = sort_labels(labels);
-        let mut map = self.histograms.write().expect("histograms lock poisoned");
+        let mut map = self.histograms.write();
         let family = map.entry(name.to_string()).or_default();
         if family.buckets.is_empty() {
             family.buckets = DEFAULT_BUCKETS.to_vec();
@@ -203,7 +203,7 @@ impl MetricsRegistry {
 
         // Counters first — stable alphabetical order for reproducible
         // scrape output across invocations.
-        let counters = self.counters.read().expect("counters lock poisoned");
+        let counters = self.counters.read();
         let mut names: Vec<&String> = counters.keys().collect();
         names.sort();
         for name in names {
@@ -226,7 +226,7 @@ impl MetricsRegistry {
         }
         drop(counters);
 
-        let gauges = self.gauges.read().expect("gauges lock poisoned");
+        let gauges = self.gauges.read();
         let mut names: Vec<&String> = gauges.keys().collect();
         names.sort();
         for name in names {
@@ -249,7 +249,7 @@ impl MetricsRegistry {
         }
         drop(gauges);
 
-        let histograms = self.histograms.read().expect("histograms lock poisoned");
+        let histograms = self.histograms.read();
         let mut names: Vec<&String> = histograms.keys().collect();
         names.sort();
         for name in names {

@@ -154,6 +154,11 @@ impl TokenBucket {
 /// 1 ms refill interval would truncate to zero and the bucket would saturate.
 pub const MAX_RPM: u32 = 60_000;
 
+/// Hard cap on the number of per-IP buckets to prevent unbounded memory
+/// growth under a rotating-IP botnet. When the cap is hit the oldest bucket
+/// is evicted before the new one is inserted.
+const MAX_BUCKETS: usize = 100_000;
+
 /// Concurrent map of per-IP buckets. `DashMap` gives us lock-free reads on
 /// the common path; writes only lock a single shard.
 pub struct RateLimiter {
@@ -161,6 +166,7 @@ pub struct RateLimiter {
     capacity: Burst,
     refill_per_ms: f64,
     effective_rpm: Rpm,
+    max_entries: usize,
 }
 
 impl RateLimiter {
@@ -188,6 +194,7 @@ impl RateLimiter {
             capacity: Burst::from_raw(burst.max(1)),
             refill_per_ms,
             effective_rpm: Rpm::from_raw(effective_rpm),
+            max_entries: MAX_BUCKETS,
         }
     }
 
@@ -211,6 +218,16 @@ impl RateLimiter {
     pub fn check(&self, ip: IpAddr) -> bool {
         let now = Instant::now();
         let now_ms = unix_ms();
+
+        // Cap enforcement: if we're at the limit and this is a new IP,
+        // evict the oldest bucket before inserting.
+        if !self.buckets.contains_key(&ip) && self.buckets.len() >= self.max_entries
+            && let Some(oldest) = self.buckets.iter().min_by_key(|e| e.value().last_seen_ms) {
+                let key = *oldest.key();
+                drop(oldest);
+                self.buckets.remove(&key);
+            }
+
         let mut entry = self
             .buckets
             .entry(ip)

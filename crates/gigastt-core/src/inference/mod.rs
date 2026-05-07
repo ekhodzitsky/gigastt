@@ -112,8 +112,8 @@ pub struct Pool<T> {
 }
 
 struct PoolInner<T> {
-    items: std::sync::Mutex<std::collections::VecDeque<T>>,
-    waiters: std::sync::Mutex<std::collections::VecDeque<Waiter<T>>>,
+    items: parking_lot::Mutex<std::collections::VecDeque<T>>,
+    waiters: parking_lot::Mutex<std::collections::VecDeque<Waiter<T>>>,
     closed: std::sync::atomic::AtomicBool,
     total: usize,
 }
@@ -132,8 +132,8 @@ impl<T: Send> Pool<T> {
         let total = items.len();
         Self {
             inner: std::sync::Arc::new(PoolInner {
-                items: std::sync::Mutex::new(std::collections::VecDeque::from(items)),
-                waiters: std::sync::Mutex::new(std::collections::VecDeque::new()),
+                items: parking_lot::Mutex::new(std::collections::VecDeque::from(items)),
+                waiters: parking_lot::Mutex::new(std::collections::VecDeque::new()),
                 closed: std::sync::atomic::AtomicBool::new(false),
                 total,
             }),
@@ -147,7 +147,7 @@ impl<T: Send> Pool<T> {
     pub async fn checkout(&self) -> Result<PoolGuard<T>, PoolError> {
         // Fast path
         {
-            let mut items = self.inner.items.lock().unwrap();
+            let mut items = self.inner.items.lock();
             if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
                 return Err(PoolError::Closed);
             }
@@ -159,7 +159,7 @@ impl<T: Send> Pool<T> {
         // Slow path: register as an async waiter
         let (tx, rx) = tokio::sync::oneshot::channel();
         {
-            let mut waiters = self.inner.waiters.lock().unwrap();
+            let mut waiters = self.inner.waiters.lock();
             if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
                 return Err(PoolError::Closed);
             }
@@ -176,7 +176,7 @@ impl<T: Send> Pool<T> {
     pub fn checkout_blocking(&self) -> Result<PoolGuard<T>, PoolError> {
         // Fast path
         {
-            let mut items = self.inner.items.lock().unwrap();
+            let mut items = self.inner.items.lock();
             if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
                 return Err(PoolError::Closed);
             }
@@ -188,7 +188,7 @@ impl<T: Send> Pool<T> {
         // Slow path: register as a blocking waiter
         let (tx, rx) = std::sync::mpsc::channel();
         {
-            let mut waiters = self.inner.waiters.lock().unwrap();
+            let mut waiters = self.inner.waiters.lock();
             if self.inner.closed.load(std::sync::atomic::Ordering::SeqCst) {
                 return Err(PoolError::Closed);
             }
@@ -209,7 +209,7 @@ impl<T: Send> Pool<T> {
             .closed
             .store(true, std::sync::atomic::Ordering::SeqCst);
         // Drain all pending waiters so their receivers get Canceled / RecvError.
-        let mut waiters = self.inner.waiters.lock().unwrap();
+        let mut waiters = self.inner.waiters.lock();
         waiters.clear();
     }
 
@@ -220,8 +220,14 @@ impl<T: Send> Pool<T> {
 
     /// Number of currently available (not checked-out) items. O(1).
     pub fn available(&self) -> usize {
-        let items = self.inner.items.lock().unwrap();
+        let items = self.inner.items.lock();
         items.len()
+    }
+
+    /// Number of waiters currently blocked on checkout. O(1).
+    pub fn waiters(&self) -> usize {
+        let waiters = self.inner.waiters.lock();
+        waiters.len()
     }
 }
 
@@ -230,7 +236,7 @@ impl<T> PoolInner<T> {
         if self.closed.load(std::sync::atomic::Ordering::SeqCst) {
             return;
         }
-        let mut waiters = self.waiters.lock().unwrap();
+        let mut waiters = self.waiters.lock();
         if let Some(waiter) = waiters.pop_front() {
             drop(waiters);
             match waiter {
@@ -243,7 +249,7 @@ impl<T> PoolInner<T> {
             }
         } else {
             drop(waiters);
-            let mut items = self.items.lock().unwrap();
+            let mut items = self.items.lock();
             items.push_back(item);
         }
     }
@@ -268,20 +274,20 @@ impl<T> PoolGuard<T> {
     }
 
     /// Strip the lifetime so the guard can be moved into a `'static`
-    /// context (e.g. `tokio::task::spawn_blocking`). Returns the owned
-    /// item together with an [`OwnedReservation`] that must receive the
-    /// item back via [`OwnedReservation::checkin`] when the blocking task
-    /// is done. Forgets the original guard so the inner Drop does not also
-    /// try to check-in.
-    pub fn into_owned(mut self) -> (T, OwnedReservation<T>) {
+    /// context (e.g. `tokio::task::spawn_blocking`). Returns an
+    /// [`OwnedReservation`] that owns the item and automatically returns it
+    /// to the pool on drop. Call [`OwnedReservation::checkin`] to return the
+    /// item explicitly before the reservation is dropped.
+    pub fn into_owned(mut self) -> OwnedReservation<T> {
         let item = self
             .item
             .take()
             .unwrap_or_else(|| unreachable!("PoolGuard::into_owned called after drop"));
         let inner = self.inner.take().unwrap();
-        std::mem::forget(self);
-        let reservation = OwnedReservation { inner };
-        (item, reservation)
+        OwnedReservation {
+            inner,
+            item: Some(item),
+        }
     }
 }
 
@@ -312,22 +318,51 @@ impl<T> Drop for PoolGuard<T> {
 }
 
 /// Owned counterpart to [`PoolGuard`] for `'static` contexts (e.g.
-/// `spawn_blocking`). The item must be returned via [`Self::checkin`].
+/// `spawn_blocking`). The item is returned to the pool automatically on drop.
 ///
-/// This is intentionally not a Drop-guard: the blocking task takes ownership
-/// of the item (and may even mutate it during inference), so the item must
-/// travel back through the closure return path. After a panic the call site
-/// is expected to recover the item via `catch_unwind` and call `checkin` to
-/// keep the pool full.
+/// Call [`Self::checkin`] to return the item explicitly and invalidate the
+/// guard. If the reservation is dropped without calling `checkin`, the item
+/// is still returned to the pool via the [`Drop`] impl. This guarantees that
+/// the pool does not leak slots when a `spawn_blocking` task panics or is
+/// cancelled.
 pub struct OwnedReservation<T> {
     inner: std::sync::Arc<PoolInner<T>>,
+    item: Option<T>,
+}
+
+impl<T> std::ops::Deref for OwnedReservation<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        self.item
+            .as_ref()
+            .unwrap_or_else(|| unreachable!("OwnedReservation accessed after checkin"))
+    }
+}
+
+impl<T> std::ops::DerefMut for OwnedReservation<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.item
+            .as_mut()
+            .unwrap_or_else(|| unreachable!("OwnedReservation accessed after checkin"))
+    }
 }
 
 impl<T> OwnedReservation<T> {
-    /// Return the item to the pool from a synchronous (blocking) context.
-    /// Silently drops the item if the pool has been closed.
-    pub fn checkin(self, item: T) {
-        self.inner.checkin(item);
+    /// Return the item to the pool explicitly. After this call the reservation
+    /// is empty and its [`Drop`] is a no-op.
+    pub fn checkin(mut self) {
+        if let Some(item) = self.item.take() {
+            self.inner.checkin(item);
+        }
+    }
+}
+
+impl<T> Drop for OwnedReservation<T> {
+    fn drop(&mut self) {
+        if let Some(item) = self.item.take() {
+            self.inner.checkin(item);
+        }
     }
 }
 
@@ -1379,20 +1414,55 @@ mod tests {
         // blocking thread, then `OwnedReservation::checkin` returns it.
         let pool = std::sync::Arc::new(Pool::new(vec![String::from("triplet")]));
         let guard = pool.checkout().await.expect("checkout");
-        let (item, reservation) = guard.into_owned();
+        let mut reservation = guard.into_owned();
 
-        let item = tokio::task::spawn_blocking(move || {
+        let result = tokio::task::spawn_blocking(move || {
             // Pretend we're running blocking inference.
-            assert_eq!(item, "triplet");
-            reservation.checkin(item.clone());
-            item
+            assert_eq!(*reservation, "triplet");
+            reservation.checkin();
+            "done"
         })
         .await
         .expect("join");
 
         // After the blocking task returns the item, the pool is full again.
         assert_eq!(pool.available(), 1);
-        assert_eq!(item, "triplet");
+        assert_eq!(result, "done");
+    }
+
+    #[tokio::test]
+    async fn test_owned_reservation_returns_on_spawn_blocking_panic() {
+        // If the blocking task panics, the reservation's Drop must still
+        // return the item so the pool does not leak capacity.
+        let pool = std::sync::Arc::new(Pool::new(vec![String::from("triplet")]));
+        let guard = pool.checkout().await.expect("checkout");
+        let reservation = guard.into_owned();
+
+        let result = tokio::task::spawn_blocking(move || {
+            let _reservation = reservation;
+            panic!("simulated inference panic");
+        })
+        .await;
+
+        assert!(result.is_err(), "spawn_blocking must report the panic");
+        assert_eq!(pool.available(), 1, "reservation must be returned after panic");
+    }
+
+    #[tokio::test]
+    async fn test_owned_reservation_drop_returns_item() {
+        // Dropping an unchecked-in reservation still returns the item.
+        let pool = std::sync::Arc::new(Pool::new(vec![String::from("triplet")]));
+        let guard = pool.checkout().await.expect("checkout");
+        let reservation = guard.into_owned();
+
+        tokio::task::spawn_blocking(move || {
+            let _reservation = reservation;
+            // reservation dropped here
+        })
+        .await
+        .expect("join");
+
+        assert_eq!(pool.available(), 1);
     }
 
     #[tokio::test]
@@ -1402,5 +1472,46 @@ mod tests {
         let pool = Pool::<u32>::new(vec![]);
         pool.close();
         pool.close();
+    }
+
+    #[tokio::test]
+    async fn test_pool_waiters_count() {
+        let pool = std::sync::Arc::new(Pool::<u32>::new(vec![]));
+        let w1 = tokio::spawn({
+            let p = pool.clone();
+            async move { p.checkout().await.map(|_| ()) }
+        });
+        let w2 = tokio::spawn({
+            let p = pool.clone();
+            async move { p.checkout().await.map(|_| ()) }
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        assert_eq!(pool.waiters(), 2, "both blocked tasks must be waiters");
+        pool.close();
+        let _ = w1.await;
+        let _ = w2.await;
+    }
+
+    #[tokio::test]
+    async fn test_owned_reservation_round_trip_through_option() {
+        // Mirrors the pattern used by `handle_binary_frame` in ws.rs:
+        // the reservation is temporarily moved out of an Option into
+        // spawn_blocking and then placed back on success.
+        let pool = std::sync::Arc::new(Pool::new(vec![42u32]));
+        let guard = pool.checkout().await.expect("checkout");
+        let mut reservation: Option<OwnedReservation<u32>> = Some(guard.into_owned());
+
+        let (res_back, val) = tokio::task::spawn_blocking(move || {
+            let mut r = reservation.take().unwrap();
+            *r += 1;
+            (r, *r)
+        })
+        .await
+        .expect("join");
+
+        reservation = Some(res_back);
+        assert_eq!(val, 43);
+        drop(reservation);
+        assert_eq!(pool.available(), 1);
     }
 }

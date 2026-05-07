@@ -31,7 +31,6 @@ pub struct GigasttEngine {
 /// returned to the pool when `gigastt_stream_free` is called.
 pub struct GigasttStream {
     state: StreamingState,
-    triplet: SessionTriplet,
     reservation: OwnedReservation<SessionTriplet>,
     disposed: AtomicBool,
 }
@@ -321,13 +320,12 @@ pub unsafe extern "C" fn gigastt_stream_new(engine: *mut GigasttEngine) -> *mut 
         }
     };
 
-    let (triplet, reservation) = guard.into_owned();
+    let reservation = guard.into_owned();
 
     let state = engine_ref.create_state(false);
 
     let stream = GigasttStream {
         state,
-        triplet,
         reservation,
         disposed: AtomicBool::new(false),
     };
@@ -391,7 +389,7 @@ pub unsafe extern "C" fn gigastt_stream_process_chunk(
     }
 
     let segments = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        engine_ref.process_chunk(&samples_f32, &mut stream_ref.state, &mut stream_ref.triplet)
+        engine_ref.process_chunk(&samples_f32, &mut stream_ref.state, &mut *stream_ref.reservation)
     })) {
         Ok(Ok(segs)) => segs,
         Ok(Err(e)) => {
@@ -461,7 +459,7 @@ pub unsafe extern "C" fn gigastt_stream_free(stream: *mut GigasttStream) {
             return;
         }
         let stream = unsafe { Box::from_raw(stream) };
-        stream.reservation.checkin(stream.triplet);
+        stream.reservation.checkin();
         // `state` is dropped automatically when `stream` goes out of scope.
     }
 }

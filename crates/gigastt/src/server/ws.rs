@@ -147,32 +147,21 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
             checkout_start.elapsed().as_secs_f64(),
         );
     }
-    // Strip the lifetime so the triplet can travel through `handle_ws_inner`,
-    // which currently owns it directly. The reservation handles checkin on
-    // the way back; if the inner loop loses the triplet to a spawn_blocking
-    // panic, the reservation is dropped without sending and the pool
-    // degrades gracefully — matches the pre-rewrite contract.
-    let (triplet, reservation) = guard.into_owned();
+    let reservation = guard.into_owned();
 
     let limits = state.limits.load();
-    let (triplet_opt, result) = handle_ws_inner(
+    let result = handle_ws_inner(
         socket,
         peer,
         &state.engine,
         &limits,
-        triplet,
+        reservation,
         state.shutdown.clone(),
     )
     .await;
     if let Err(e) = result {
         tracing::error!("WebSocket error from {peer}: {e}");
     }
-
-    if let Some(triplet) = triplet_opt {
-        reservation.checkin(triplet);
-    }
-    // If triplet_opt is None, the triplet was lost due to a spawn_blocking panic.
-    // The pool degrades gracefully with fewer available slots.
 }
 
 /// Send a serialized ServerMessage over the WebSocket sink. `?`-friendly so
@@ -183,24 +172,35 @@ async fn send_server_message(sink: &mut WsSink, msg: &ServerMessage) -> Result<(
         .map_err(Into::into)
 }
 
+/// Maximum number of empty binary frames accepted per WebSocket session.
+/// Beyond this the connection is closed to prevent CPU / queue spam.
+const MAX_EMPTY_FRAMES_PER_SESSION: usize = 1_000;
+
 /// Handle a single PCM16 audio frame: resample if needed, run inference in a
 /// `spawn_blocking` guarded by `catch_unwind`, and emit partial/final/error
-/// payloads. Always returns the triplet to `triplet_opt` (or recovers a fresh
-/// state after an inference panic) so the connection can keep serving.
+/// payloads. The reservation is moved into the blocking closure and returned
+/// on success; on spawn failure it is dropped inside the closure and the
+/// triplet is returned to the pool automatically.
 #[allow(clippy::too_many_arguments)]
 async fn handle_binary_frame(
     sink: &mut WsSink,
     engine: &Arc<Engine>,
     state_opt: &mut Option<gigastt_core::inference::StreamingState>,
-    triplet_opt: &mut Option<SessionTriplet>,
+    reservation: &mut Option<gigastt_core::inference::OwnedReservation<SessionTriplet>>,
     audio_received: &mut bool,
+    empty_frame_count: &mut usize,
     client_sample_rate: u32,
     pending_byte: &mut Option<u8>,
     peer: SocketAddr,
     data: axum::body::Bytes,
 ) -> Result<FrameOutcome> {
     if data.is_empty() {
-        tracing::debug!("Empty binary frame from {peer}, skipping");
+        *empty_frame_count += 1;
+        if *empty_frame_count > MAX_EMPTY_FRAMES_PER_SESSION {
+            tracing::warn!("Empty binary frame spam from {peer}, closing connection");
+            return Err(anyhow::anyhow!("Empty frame limit exceeded"));
+        }
+        tracing::debug!("Empty binary frame from {peer}, skipping ({empty_frame_count}/{MAX_EMPTY_FRAMES_PER_SESSION})");
         return Ok(FrameOutcome::Continue);
     }
     *audio_received = true;
@@ -231,29 +231,31 @@ async fn handle_binary_frame(
     let state = state_opt
         .take()
         .ok_or_else(|| anyhow::anyhow!("Streaming state lost"))?;
-    let triplet = triplet_opt.take().ok_or_else(|| {
-        tracing::error!("Triplet unexpectedly missing for {peer}");
-        anyhow::anyhow!("Triplet lost")
+    let reservation_owned = reservation.take().ok_or_else(|| {
+        tracing::error!("Reservation unexpectedly missing for {peer}");
+        anyhow::anyhow!("Reservation lost")
     })?;
 
     let eng = engine.clone();
+    let span = tracing::Span::current();
     let join_result = tokio::task::spawn_blocking(move || {
-        // Move ownership into the closure so state and triplet come back
+        let _enter = span.enter();
+        // Move ownership into the closure so state and reservation come back
         // unconditionally, including after a panic inside `process_chunk`.
         // Mirrors the pattern in src/server/http.rs.
         let mut state = state;
-        let mut triplet = triplet;
+        let mut reservation = reservation_owned;
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            eng.process_chunk(&samples_16k, &mut state, &mut triplet)
+            eng.process_chunk(&samples_16k, &mut state, &mut reservation)
         }));
-        (r, state, triplet)
+        (r, state, reservation)
     })
     .await;
 
     match join_result {
-        Ok((Ok(Ok(segments)), state_back, triplet_back)) => {
+        Ok((Ok(Ok(segments)), state_back, reservation_back)) => {
+            *reservation = Some(reservation_back);
             *state_opt = Some(state_back);
-            *triplet_opt = Some(triplet_back);
             for seg in segments {
                 let msg = if seg.is_final {
                     ServerMessage::Final(seg)
@@ -264,9 +266,9 @@ async fn handle_binary_frame(
             }
             Ok(FrameOutcome::Continue)
         }
-        Ok((Ok(Err(e)), state_back, triplet_back)) => {
+        Ok((Ok(Err(e)), state_back, reservation_back)) => {
+            *reservation = Some(reservation_back);
             *state_opt = Some(state_back);
-            *triplet_opt = Some(triplet_back);
             tracing::error!("Inference error for {peer}: {e:#}");
             send_server_message(
                 sink,
@@ -279,14 +281,14 @@ async fn handle_binary_frame(
             .await?;
             Ok(FrameOutcome::Continue)
         }
-        Ok((Err(_panic), _state_back, triplet_back)) => {
-            // Inference panicked: triplet is recovered, but the streaming
+        Ok((Err(_panic), _state_back, reservation_back)) => {
+            // Inference panicked: reservation is recovered, but the streaming
             // state (LSTM h/c buffers) may be mid-update and unsafe to reuse.
             // Drop it and install a fresh state so the session continues.
             tracing::error!(
                 "Panic in WS inference for {peer} — triplet recovered, streaming state reset"
             );
-            *triplet_opt = Some(triplet_back);
+            *reservation = Some(reservation_back);
             *state_opt = Some(engine.create_state(false));
             send_server_message(
                 sink,
@@ -301,7 +303,8 @@ async fn handle_binary_frame(
         }
         Err(e) => {
             // spawn_blocking itself failed (runtime shutdown or cancellation).
-            // Triplet is truly lost in this branch; bail out.
+            // The reservation was dropped inside the closure and the triplet
+            // was returned to the pool automatically.
             tracing::error!("spawn_blocking join error for {peer}: {e}");
             Err(anyhow::anyhow!("Blocking task join failed"))
         }
@@ -424,17 +427,16 @@ async fn flush_and_final(
     send_server_message(sink, &final_msg).await
 }
 
-/// Runs the WebSocket session loop. Always tries to return the triplet so the
-/// caller can check it back into the pool. Returns `None` only if the triplet
-/// was lost due to a thread panic inside `spawn_blocking`.
+/// Runs the WebSocket session loop. The reservation is consumed and returned
+/// to the pool automatically when the function returns (or on panic unwind).
 async fn handle_ws_inner(
     socket: WebSocket,
     peer: SocketAddr,
     engine: &Arc<Engine>,
     limits: &RuntimeLimits,
-    triplet: SessionTriplet,
+    reservation: gigastt_core::inference::OwnedReservation<SessionTriplet>,
     cancel: tokio_util::sync::CancellationToken,
-) -> (Option<SessionTriplet>, Result<()>) {
+) -> Result<()> {
     let (mut sink, mut source) = socket.split();
     tracing::info!("Client connected: {peer}");
 
@@ -451,14 +453,13 @@ async fn handle_ws_inner(
         diarization: diarization_available,
         min_protocol_version: None,
     };
-    if let Err(e) = send_server_message(&mut sink, &ready).await {
-        return (Some(triplet), Err(e));
-    }
+    send_server_message(&mut sink, &ready).await?;
 
     let mut state_opt = Some(engine.create_state(false));
-    let mut triplet_opt = Some(triplet);
+    let mut reservation = Some(reservation);
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
     let mut audio_received = false;
+    let mut empty_frame_count: usize = 0;
     // V1-25: carries the trailing odd byte across PCM16 frames so clients
     // that split their streams on odd boundaries don't accumulate a
     // 1-sample phase shift in the decoded audio.
@@ -587,8 +588,9 @@ async fn handle_ws_inner(
                             &mut sink,
                             engine,
                             &mut state_opt,
-                            &mut triplet_opt,
+                            &mut reservation,
                             &mut audio_received,
+                            &mut empty_frame_count,
                             client_sample_rate,
                             &mut pending_byte,
                             peer,
@@ -641,7 +643,7 @@ async fn handle_ws_inner(
     };
 
     tracing::info!("Client disconnected: {peer}");
-    (triplet_opt, result)
+    result
 }
 
 #[cfg(test)]

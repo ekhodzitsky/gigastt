@@ -115,6 +115,10 @@ pub async fn run_with_config_listener(
             "gigastt_pool_available",
             "Number of session triplets currently available in the pool",
         );
+        reg.register_gauge(
+            "gigastt_pool_waiters",
+            "Number of tasks currently waiting for a pool checkout",
+        );
         reg.register_histogram(
             "gigastt_pool_checkout_duration_seconds",
             "Time spent waiting for a pool checkout",
