@@ -24,7 +24,7 @@ diarization = ["gigastt-core/diarization"]
 quantize = ["gigastt-core/quantize"]
 
 [dependencies]
-gigastt-core = { version = "2.0.1", path = "../gigastt-core", default-features = false }
+gigastt-core = { version = "2.0.2", path = "../gigastt-core", default-features = false }
 
 axum = { version = "0.8", features = ["ws", "multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"] }
