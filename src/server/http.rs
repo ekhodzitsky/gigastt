@@ -139,6 +139,16 @@ fn api_pool_closed_error() -> ApiError {
         .into_response()
 }
 
+/// Readiness probe response.
+#[derive(Serialize)]
+pub struct ReadinessResponse {
+    pub status: String,
+    pub pool_available: usize,
+    pub pool_total: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 /// GET /health — health check for monitoring and Docker HEALTHCHECK.
 pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
     let _ = &state.engine;
@@ -147,6 +157,42 @@ pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> 
         model: "gigaam-v3-e2e-rnnt".into(),
         version: env!("CARGO_PKG_VERSION").into(),
     })
+}
+
+/// GET /ready — readiness probe for k8s and orchestrators.
+pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
+    if state.shutdown.is_cancelled() {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(ReadinessResponse {
+                status: "not_ready".into(),
+                pool_available: 0,
+                pool_total: state.engine.pool.total(),
+                reason: Some("shutting_down".into()),
+            }),
+        )
+            .into_response();
+    }
+    let available = state.engine.pool.available();
+    if available == 0 {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(ReadinessResponse {
+                status: "not_ready".into(),
+                pool_available: 0,
+                pool_total: state.engine.pool.total(),
+                reason: Some("pool_exhausted".into()),
+            }),
+        )
+            .into_response();
+    }
+    Json(ReadinessResponse {
+        status: "ready".into(),
+        pool_available: available,
+        pool_total: state.engine.pool.total(),
+        reason: None,
+    })
+    .into_response()
 }
 
 /// GET /v1/models — list loaded models and capabilities.
@@ -503,5 +549,33 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["text"], "hello");
         assert_eq!(v["duration"], 1.5);
+    }
+
+    #[test]
+    fn test_readiness_response_ready_serialization() {
+        let resp = ReadinessResponse {
+            status: "ready".into(),
+            pool_available: 3,
+            pool_total: 4,
+            reason: None,
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["status"], "ready");
+        assert_eq!(json["pool_available"], 3);
+        assert_eq!(json["pool_total"], 4);
+        assert!(json.get("reason").is_none() || json["reason"].is_null());
+    }
+
+    #[test]
+    fn test_readiness_response_not_ready_serialization() {
+        let resp = ReadinessResponse {
+            status: "not_ready".into(),
+            pool_available: 0,
+            pool_total: 4,
+            reason: Some("pool_exhausted".into()),
+        };
+        let json = serde_json::to_value(&resp).unwrap();
+        assert_eq!(json["status"], "not_ready");
+        assert_eq!(json["reason"], "pool_exhausted");
     }
 }

@@ -56,9 +56,11 @@ pub(crate) async fn origin_middleware(
     use axum::http::{StatusCode, header};
     use axum::response::IntoResponse;
 
-    // `/health` is a liveness probe for container orchestrators and monitoring
-    // tools that don't send Origin — let it through unconditionally.
-    if req.uri().path() == "/health" {
+    // `/health` and `/ready` are liveness/readiness probes for container
+    // orchestrators and monitoring tools that don't send Origin — let them
+    // through unconditionally.
+    let path = req.uri().path();
+    if path == "/health" || path == "/ready" {
         return next.run(req).await;
     }
 
