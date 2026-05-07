@@ -151,6 +151,10 @@ pub async fn ensure_model(model_dir: &str) -> Result<()> {
         return Ok(());
     }
 
+    // Create the directory before acquiring the lock so the lock file can
+    // be created inside it.
+    std::fs::create_dir_all(dir).context("Failed to create model directory")?;
+
     #[cfg(unix)]
     let _lock = acquire_download_lock(dir)?;
 
@@ -162,7 +166,6 @@ pub async fn ensure_model(model_dir: &str) -> Result<()> {
     }
 
     tracing::info!("Model not found, downloading from HuggingFace...");
-    std::fs::create_dir_all(dir).context("Failed to create model directory")?;
 
     for file in MODEL_FILES {
         download_file(file, dir).await?;

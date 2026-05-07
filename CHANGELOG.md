@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.5] - 2026-05-07
+
+### Fixed
+
+- **Model download lock file** — `ensure_model` now creates the target directory
+  *before* acquiring the advisory `flock`, preventing a "No such file or directory"
+  error when `~/.gigastt/models` does not yet exist (regression in v2.0.4).
+
 ## [2.0.4] - 2026-05-07
 
 ### Security / Reliability
