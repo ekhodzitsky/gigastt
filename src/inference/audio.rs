@@ -400,6 +400,35 @@ pub fn resample_with_cache(
     Ok(out.into_iter().next().unwrap_or_default())
 }
 
+/// Parse PCM16 LE bytes into f32 samples, carrying a trailing odd byte across calls.
+///
+/// WebSocket clients may split their audio stream on arbitrary byte boundaries.
+/// This function maintains a carry byte across frames so that odd-length payloads
+/// don't introduce a 1-sample phase shift in the decoded audio.
+pub(crate) fn parse_pcm16_with_carry(data: &[u8], pending: &mut Option<u8>) -> Vec<f32> {
+    let carry_prev = pending.take();
+    let needs_combine = carry_prev.is_some() || !data.len().is_multiple_of(2);
+
+    if needs_combine {
+        let mut combined = Vec::with_capacity(data.len() + 1);
+        if let Some(prev) = carry_prev {
+            combined.push(prev);
+        }
+        combined.extend_from_slice(data);
+        if !combined.len().is_multiple_of(2) {
+            *pending = combined.pop();
+        }
+        combined
+            .chunks_exact(2)
+            .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
+            .collect()
+    } else {
+        data.chunks_exact(2)
+            .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
+            .collect()
+    }
+}
+
 /// Prepare audio buffer for processing: merge new samples with leftover,
 /// truncate if too long, split into usable samples and new leftover.
 ///
@@ -813,6 +842,39 @@ mod tests {
         }
     }
 
+    // --- parse_pcm16_with_carry tests ---
+
+    #[test]
+    fn test_parse_pcm16_basic() {
+        let data: &[u8] = &[0x00, 0x40, 0x00, 0xC0]; // two i16 samples: 16384, -16384
+        let mut pending: Option<u8> = None;
+        let samples = parse_pcm16_with_carry(data, &mut pending);
+        assert_eq!(samples.len(), 2);
+        assert!(pending.is_none());
+        assert!((samples[0] - 0.5).abs() < 0.001);
+        assert!((samples[1] + 0.5).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_parse_pcm16_odd_length_carry() {
+        let mut pending: Option<u8> = None;
+        let samples = parse_pcm16_with_carry(&[0x00, 0x00, 0xFF], &mut pending);
+        assert_eq!(samples.len(), 1);
+        assert_eq!(pending, Some(0xFF));
+
+        let samples = parse_pcm16_with_carry(&[0x7F], &mut pending);
+        assert_eq!(samples.len(), 1);
+        assert!(pending.is_none());
+    }
+
+    #[test]
+    fn test_parse_pcm16_empty() {
+        let mut pending: Option<u8> = None;
+        let samples = parse_pcm16_with_carry(&[], &mut pending);
+        assert!(samples.is_empty());
+        assert!(pending.is_none());
+    }
+
     #[test]
     fn test_decode_duration_cap_streaming() {
         // 12 minutes of silence at 16kHz (> 10 min cap). The incremental
@@ -834,5 +896,55 @@ mod tests {
             msg.to_lowercase().contains("too long"),
             "error should mention 'too long', got: {msg}"
         );
+    }
+}
+
+#[cfg(test)]
+mod proptests {
+    use super::*;
+    use proptest::prelude::*;
+
+    proptest! {
+        #[test]
+        fn proptest_pcm16_carry_invariant(
+            chunks in proptest::collection::vec(
+                proptest::collection::vec(any::<u8>(), 0..1000),
+                1..20
+            )
+        ) {
+            let mut pending: Option<u8> = None;
+            let mut total_samples = 0usize;
+            let mut total_bytes = 0usize;
+
+            for chunk in &chunks {
+                total_bytes += chunk.len();
+                let samples = parse_pcm16_with_carry(chunk, &mut pending);
+                total_samples += samples.len();
+            }
+
+            let expected = total_bytes / 2;
+            prop_assert_eq!(total_samples, expected,
+                "samples ({}) must equal total_bytes/2 ({})", total_samples, expected);
+
+            if total_bytes % 2 == 1 {
+                prop_assert!(pending.is_some());
+            } else {
+                prop_assert!(pending.is_none());
+            }
+        }
+
+        #[test]
+        fn proptest_resample_no_panic(
+            samples in proptest::collection::vec(-1.0f32..1.0f32, 1..5_000),
+            rate_idx in 0..5usize,
+        ) {
+            let rates = [8000u32, 16000, 24000, 44100, 48000];
+            let from_rate = SampleRate(rates[rate_idx]);
+            if from_rate.0 == 16000 {
+                return Ok(());
+            }
+            let result = resample(&samples, from_rate, SampleRate(16000));
+            prop_assert!(result.is_ok(), "resample failed: {:?}", result.err());
+        }
     }
 }

@@ -57,7 +57,7 @@ pub(super) async fn ws_handler(
         .unwrap_or("unknown")
         .to_string();
 
-    let max_bytes = state.limits.ws_frame_max_bytes;
+    let max_bytes = state.limits.load().ws_frame_max_bytes;
     let state_cloned = state.clone();
     ws.max_message_size(max_bytes)
         .max_frame_size(max_bytes)
@@ -106,7 +106,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
             return;
         }
         res = tokio::time::timeout(
-            std::time::Duration::from_secs(state.limits.pool_checkout_timeout_secs),
+            std::time::Duration::from_secs(state.limits.load().pool_checkout_timeout_secs),
             state.engine.pool.checkout(),
         ) => match res {
             Ok(Ok(guard)) => guard,
@@ -128,10 +128,11 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
                     reg.histogram_record("gigastt_pool_checkout_duration_seconds", vec![], checkout_start.elapsed().as_secs_f64());
                 }
                 let (mut sink, _) = socket.split();
+                let limits = state.limits.load();
                 let err = ServerMessage::Error {
                     message: "Server busy, try again later".into(),
                     code: "timeout".into(),
-                    retry_after_ms: Some(pool_retry_after_ms(&state.limits)),
+                    retry_after_ms: Some(pool_retry_after_ms(&limits)),
                 };
                 let _ = sink.send(WsMessage::Text(json_text(&err).into())).await;
                 return;
@@ -153,11 +154,12 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
     // degrades gracefully — matches the pre-rewrite contract.
     let (triplet, reservation) = guard.into_owned();
 
+    let limits = state.limits.load();
     let (triplet_opt, result) = handle_ws_inner(
         socket,
         peer,
         &state.engine,
-        &state.limits,
+        &limits,
         triplet,
         state.shutdown.clone(),
     )
@@ -203,36 +205,15 @@ async fn handle_binary_frame(
     }
     *audio_received = true;
 
-    // V1-25: PCM16 samples are 2 bytes each. Previously we called
-    // `chunks_exact(2)` directly and silently dropped a trailing odd byte,
-    // which introduced a 1-sample phase shift for every subsequent frame —
-    // subtle on the decode side, hard to diagnose. Carry the odd byte
-    // across frames: prepend the one left over from the previous frame
-    // (if any), then save the new remainder for next time. Observation-only
-    // `warn!` remains so server-side logs still flag misaligned streams.
-    let carry_prev = pending_byte.take();
-    let samples_f32: Vec<f32> = if carry_prev.is_some() || !data.len().is_multiple_of(2) {
-        let mut combined = Vec::with_capacity(data.len() + 1);
-        if let Some(prev) = carry_prev {
-            combined.push(prev);
-        }
-        combined.extend_from_slice(&data);
-        if !combined.len().is_multiple_of(2) {
-            tracing::warn!(
-                "Odd-length PCM stream from {peer}: {} bytes incl. carry, deferring 1 byte",
-                combined.len()
-            );
-            *pending_byte = combined.pop();
-        }
-        combined
-            .chunks_exact(2)
-            .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
-            .collect()
-    } else {
-        data.chunks_exact(2)
-            .map(|chunk| i16::from_le_bytes([chunk[0], chunk[1]]) as f32 / 32768.0)
-            .collect()
-    };
+    // V1-25: delegate carry-byte logic to the extracted pure function so it
+    // can be property-tested independently of the async handler.
+    let samples_f32 = crate::inference::audio::parse_pcm16_with_carry(&data, pending_byte);
+    if pending_byte.is_some() {
+        tracing::warn!(
+            "Odd-length PCM stream from {peer}: {} bytes, deferring 1 byte",
+            data.len()
+        );
+    }
     let samples_16k = if client_sample_rate == 16000 {
         samples_f32
     } else {
