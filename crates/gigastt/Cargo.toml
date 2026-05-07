@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+readme = "../../README.md"
 description = "Local STT server powered by GigaAM v3 e2e_rnnt — on-device Russian speech recognition via ONNX Runtime"
 keywords = ["stt", "speech-recognition", "gigaam", "onnx", "russian"]
 categories = ["multimedia::audio", "command-line-utilities"]
