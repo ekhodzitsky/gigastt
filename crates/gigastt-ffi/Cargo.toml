@@ -24,4 +24,4 @@ serde_json = "1"
 tracing = "0.1"
 
 [build-dependencies]
-cbindgen = "0.28"
+cbindgen = "0.29"
