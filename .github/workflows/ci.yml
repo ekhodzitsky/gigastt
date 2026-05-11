@@ -252,7 +252,7 @@ jobs:
         run: cargo install cargo-tarpaulin --locked
       - name: Run tarpaulin
         run: cargo tarpaulin --workspace --out xml --skip-clean
-      - uses: codecov/codecov-action@v5
+      - uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
