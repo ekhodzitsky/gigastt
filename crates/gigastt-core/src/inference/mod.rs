@@ -8,9 +8,11 @@ mod features;
 mod tokenizer;
 
 #[cfg(feature = "diarization")]
+use polyvoice::streaming::StreamingPipeline;
+#[cfg(feature = "diarization")]
 use polyvoice::{
-    DiarizationConfig as DiaConfig, OfflineDiarizer, OnlineDiarizer, OnnxEmbeddingExtractor,
-    SampleRate,
+    ClusterConfig, DiarizationConfig as DiaConfig, EmbeddingError, EmbeddingExtractor, EnergyVad,
+    OnnxEmbeddingExtractor, Pipeline, VadConfig,
 };
 
 #[cfg(feature = "diarization")]
@@ -19,6 +21,23 @@ const SPEAKER_EMBEDDING_DIM: usize = 256;
 const SPEAKER_SEGMENT_SAMPLES: usize = 24000;
 #[cfg(feature = "diarization")]
 const SPEAKER_POOL_SIZE: usize = 4;
+
+/// Adapter that lets a single shared [`OnnxEmbeddingExtractor`] back the
+/// per-session [`StreamingPipeline`]s, which take ownership of their extractor.
+/// The ONNX session pool inside the extractor is shared across sessions via `Arc`.
+#[cfg(feature = "diarization")]
+pub struct SharedExtractor(std::sync::Arc<OnnxEmbeddingExtractor>);
+
+#[cfg(feature = "diarization")]
+impl EmbeddingExtractor for SharedExtractor {
+    fn extract(&self, samples: &[f32], config: &DiaConfig) -> Result<Vec<f32>, EmbeddingError> {
+        self.0.extract(samples, config)
+    }
+
+    fn embedding_dim(&self) -> usize {
+        self.0.embedding_dim()
+    }
+}
 
 #[cfg(all(feature = "coreml", feature = "cuda"))]
 compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.");
@@ -476,7 +495,7 @@ pub struct StreamingState {
     pub resample_output_buf: Vec<f32>,
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
-    pub diarization_state: Option<OnlineDiarizer>,
+    pub diarization_state: Option<StreamingPipeline<EnergyVad, SharedExtractor>>,
 }
 
 /// Audio feature extraction pipeline.
@@ -610,8 +629,11 @@ pub struct Engine {
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
+    ///
+    /// Wrapped in `Arc` so per-session streaming pipelines can share the
+    /// underlying ONNX session pool without each owning their own copy.
     #[cfg(feature = "diarization")]
-    pub speaker_encoder: Option<OnnxEmbeddingExtractor>,
+    pub speaker_encoder: Option<std::sync::Arc<OnnxEmbeddingExtractor>>,
 }
 
 impl Engine {
@@ -863,7 +885,7 @@ impl Engine {
                 ) {
                     Ok(enc) => {
                         tracing::info!("Speaker encoder loaded (diarization available)");
-                        Some(enc)
+                        Some(std::sync::Arc::new(enc))
                     }
                     Err(e) => {
                         tracing::warn!(
@@ -903,18 +925,27 @@ impl Engine {
     /// contract mismatch is visible in logs).
     pub fn create_state(&self, diarization_enabled: bool) -> StreamingState {
         #[cfg(feature = "diarization")]
-        let diarization_state = if diarization_enabled && self.speaker_encoder.is_some() {
-            Some(OnlineDiarizer::new(DiaConfig {
-                threshold: 0.5,
-                max_speakers: 64,
-                window_secs: 1.5,
-                hop_secs: 0.75,
-                min_speech_secs: 0.25,
-                max_gap_secs: 0.5,
-                sample_rate: SampleRate::new(16000).expect("16kHz is valid"),
-            }))
-        } else {
-            None
+        let diarization_state = match (diarization_enabled, &self.speaker_encoder) {
+            (true, Some(enc)) => {
+                let config = DiaConfig {
+                    cluster: ClusterConfig {
+                        threshold: 0.5,
+                        ..ClusterConfig::default()
+                    },
+                    ..DiaConfig::default()
+                };
+                let vad_config = VadConfig::default();
+                let vad = EnergyVad::new(-40.0, 16000, vad_config.frame_size);
+                let extractor = SharedExtractor(std::sync::Arc::clone(enc));
+                match StreamingPipeline::new(vad, extractor, config, vad_config) {
+                    Ok(pipeline) => Some(pipeline),
+                    Err(e) => {
+                        tracing::warn!("Failed to initialize streaming diarization: {e:#}");
+                        None
+                    }
+                }
+            }
+            _ => None,
         };
 
         #[cfg(not(feature = "diarization"))]
@@ -1007,21 +1038,22 @@ impl Engine {
             .map_err(|e| GigasttError::Inference { source: e.into() })?;
         state.total_frames += num_frames;
 
-        // --- Diarization: feed audio to OnlineDiarizer and assign speakers ---
+        // --- Diarization: feed audio to the streaming pipeline and assign speakers ---
         #[cfg(feature = "diarization")]
-        if let (Some(dia), Some(copy), Some(enc)) = (
-            state.diarization_state.as_mut(),
-            samples_16k_copy.as_ref(),
-            self.speaker_encoder.as_ref(),
-        ) {
-            if let Err(e) = dia.feed(copy, enc).map(|_segs| ()) {
+        if let (Some(dia), Some(copy)) =
+            (state.diarization_state.as_mut(), samples_16k_copy.as_ref())
+        {
+            if let Err(e) = dia.feed(copy) {
                 tracing::warn!("Diarization feed failed: {e:#}");
             }
 
-            // Annotate all words in this chunk with current speaker
-            if let Some(speaker_id) = dia.current_speaker() {
+            // The streaming pipeline finalizes a speaker turn when a speech
+            // region ends; annotate this chunk's words with the most recently
+            // identified speaker.
+            if let Some(turn) = dia.turns().last() {
+                let speaker = turn.speaker.0;
                 for w in &mut new_words {
-                    w.speaker = Some(speaker_id.0);
+                    w.speaker = Some(speaker);
                 }
             }
         }
@@ -1127,8 +1159,10 @@ impl Engine {
         #[cfg(feature = "diarization")]
         if let Some(ref enc) = self.speaker_encoder {
             let config = DiaConfig::default();
-            let diarizer = OfflineDiarizer::new(config);
-            match diarizer.run(float_samples, enc) {
+            let vad_config = VadConfig::default();
+            let pipeline = Pipeline::new(config, vad_config);
+            let mut vad = EnergyVad::new(-40.0, 16000, vad_config.frame_size);
+            match pipeline.run(float_samples, enc.as_ref(), &mut vad) {
                 Ok(dia_result) => {
                     for word in &mut words {
                         let mid = (word.start + word.end) / 2.0;
