@@ -298,7 +298,7 @@ fn decode_audio_inner<'s>(
     Ok(all_samples)
 }
 
-/// High-quality polyphase FIR resampler (rubato SincFixedIn).
+/// High-quality polyphase FIR resampler (rubato Async, sinc interpolation).
 ///
 /// Non-finite samples (NaN, infinity) are replaced with `0.0` before resampling.
 ///
@@ -319,8 +319,9 @@ pub fn resample(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate) -> 
         .map(|&s| if s.is_finite() { s } else { 0.0 })
         .collect();
 
+    use rubato::audioadapter_buffers::direct::SequentialSliceOfVecs;
     use rubato::{
-        Resampler, SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
+        Async, FixedAsync, SincInterpolationParameters, SincInterpolationType, WindowFunction,
     };
 
     let params = SincInterpolationParameters {
@@ -332,20 +333,24 @@ pub fn resample(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate) -> 
     };
 
     let ratio = to_rate.0 as f64 / from_rate.0 as f64;
-    let mut resampler = SincFixedIn::<f32>::new(
-        ratio,
-        2.0,
-        params,
-        samples.len(),
-        1, // mono
-    )
-    .map_err(|e| anyhow::anyhow!("Resampler init failed: {e}"))?;
+    let chunk = samples.len();
+    let mut resampler = Async::<f32>::new_sinc(ratio, 2.0, &params, chunk, 1, FixedAsync::Input)
+        .map_err(|e| anyhow::anyhow!("Resampler init failed: {e}"))?;
 
-    let waves_in = vec![samples];
-    let mut waves_out = resampler
-        .process(&waves_in, None)
-        .map_err(|e| anyhow::anyhow!("Resampling failed: {e}"))?;
-    Ok(waves_out.remove(0))
+    let input_data = [samples];
+    let out_frames = resampler.output_frames_next();
+    let mut output_data = [vec![0.0f32; out_frames]];
+    {
+        let input = SequentialSliceOfVecs::new(&input_data, 1, chunk)
+            .map_err(|e| anyhow::anyhow!("Resampler input adapter failed: {e}"))?;
+        let mut output = SequentialSliceOfVecs::new_mut(&mut output_data, 1, out_frames)
+            .map_err(|e| anyhow::anyhow!("Resampler output adapter failed: {e}"))?;
+        resampler
+            .process_into_buffer(&input, &mut output, None)
+            .map_err(|e| anyhow::anyhow!("Resampling failed: {e}"))?;
+    }
+    let [out_vec] = output_data;
+    Ok(out_vec)
 }
 
 /// Resample audio using an optional cached resampler.
@@ -354,7 +359,7 @@ pub fn resample(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate) -> 
 /// chunk size matches. If the chunk size changes, the cache is recreated.
 ///
 /// { from_rate.0 > 0 && to_rate.0 > 0 }
-/// fn resample_with_cache(samples: Vec<f32>, from_rate: SampleRate, to_rate: SampleRate, cache: &mut Option<rubato::SincFixedIn<f32>>, out_buf: &mut Vec<f32>) -> anyhow::Result<()>
+/// fn resample_with_cache(samples: Vec<f32>, from_rate: SampleRate, to_rate: SampleRate, cache: &mut Option<rubato::Async<f32>>, out_buf: &mut Vec<f32>) -> anyhow::Result<()>
 /// { ret.as_ref().map(|v| !v.is_empty() || samples.is_empty() || from_rate == to_rate).unwrap_or(true) }
 /// Resample audio using an optional cached resampler, writing into a caller-provided buffer.
 ///
@@ -369,9 +374,11 @@ pub fn resample_with_cache(
     mut samples: Vec<f32>,
     from_rate: SampleRate,
     to_rate: SampleRate,
-    cache: &mut Option<rubato::SincFixedIn<f32>>,
+    cache: &mut Option<rubato::Async<f32>>,
     out_buf: &mut Vec<f32>,
 ) -> anyhow::Result<()> {
+    use rubato::Resampler;
+
     if samples.is_empty() || from_rate.0 == 0 || to_rate.0 == 0 {
         out_buf.clear();
         return Ok(());
@@ -389,15 +396,16 @@ pub fn resample_with_cache(
     }
 
     let ratio = to_rate.0 as f64 / from_rate.0 as f64;
+    let chunk = samples.len();
 
     let needs_new = match cache {
-        Some(r) => r.set_chunk_size(samples.len()).is_err(),
+        Some(r) => r.set_chunk_size(chunk).is_err(),
         None => true,
     };
 
     if needs_new {
         use rubato::{
-            SincFixedIn, SincInterpolationParameters, SincInterpolationType, WindowFunction,
+            Async, FixedAsync, SincInterpolationParameters, SincInterpolationType, WindowFunction,
         };
         let params = SincInterpolationParameters {
             sinc_len: 256,
@@ -406,7 +414,7 @@ pub fn resample_with_cache(
             oversampling_factor: 256,
             window: WindowFunction::BlackmanHarris2,
         };
-        let r = SincFixedIn::<f32>::new(ratio, 2.0, params, samples.len(), 1)
+        let r = Async::<f32>::new_sinc(ratio, 2.0, &params, chunk, 1, FixedAsync::Input)
             .map_err(|e| anyhow::anyhow!("Resampler init failed: {e}"))?;
         *cache = Some(r);
     }
@@ -416,9 +424,17 @@ pub fn resample_with_cache(
         None => anyhow::bail!("Resampler cache is None after initialization"),
     };
     let needed = resampler.output_frames_next();
+    out_buf.clear();
     out_buf.resize(needed, 0.0);
+
+    use rubato::audioadapter_buffers::direct::SequentialSliceOfVecs;
+    let input_data = [samples];
+    let input = SequentialSliceOfVecs::new(&input_data, 1, chunk)
+        .map_err(|e| anyhow::anyhow!("Resampler input adapter failed: {e}"))?;
+    let mut output = SequentialSliceOfVecs::new_mut(std::slice::from_mut(out_buf), 1, needed)
+        .map_err(|e| anyhow::anyhow!("Resampler output adapter failed: {e}"))?;
     resampler
-        .process_into_buffer(&[samples], std::slice::from_mut(out_buf), None)
+        .process_into_buffer(&input, &mut output, None)
         .map_err(|e| anyhow::anyhow!("Resampling failed: {e}"))?;
     Ok(())
 }

@@ -465,7 +465,7 @@ pub struct StreamingState {
     /// Total encoder frames processed so far (for absolute timestamp offset).
     pub total_frames: usize,
     /// Optional cached resampler for non-16kHz streams.
-    pub resampler: Option<rubato::SincFixedIn<f32>>,
+    pub resampler: Option<rubato::Async<f32>>,
     /// Reusable FFT buffer for mel spectrogram (avoids per-chunk allocation).
     pub mel_fft_input: Vec<rustfft::num_complex::Complex<f32>>,
     /// Reusable power spectrum buffer for mel spectrogram.
