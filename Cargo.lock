@@ -1557,16 +1557,15 @@ checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
 name = "polyvoice"
-version = "0.6.5"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bddba9bcafacb1e7b968576b8ecc848a1ae6647c5e1364e58fcd9a0a61ab8462"
+checksum = "8530447af32850811ec4d69837c703040b90a1d712b96ff1e2d1ec6a464398ca"
 dependencies = [
  "anyhow",
  "crossbeam-queue",
  "fastrand",
  "hound",
  "ndarray",
- "num-complex",
  "ort",
  "realfft",
  "serde",
