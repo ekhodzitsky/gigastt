@@ -57,7 +57,7 @@ prost-build = "0.14"
 tempfile = "3"
 wiremock = "0.6"
 proptest = "1"
-criterion = "0.5"
+criterion = "0.8"
 
 [[bench]]
 name = "mel"
