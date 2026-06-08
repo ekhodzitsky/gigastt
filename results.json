@@ -8,8 +8,8 @@
       "total_errors": 87,
       "total_ref_words": 515,
       "total_audio_sec": 414.06,
-      "total_proc_sec": 70.74,
-      "rtf": 0.171,
+      "total_proc_sec": 81.1,
+      "rtf": 0.196,
       "details": [
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e632f7d39c15e7edfc665b91e6f2071f.wav",
@@ -19,7 +19,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 4.9,
-          "proc_sec": 1.41
+          "proc_sec": 2.08
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db5df8bb9e3b6660b2a04b34d4a355d.wav",
@@ -29,7 +29,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 3.65,
-          "proc_sec": 0.89
+          "proc_sec": 1.9
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2c471aedc6979109f28cd53c58f8c4fb.wav",
@@ -39,7 +39,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 4.34,
-          "proc_sec": 1.04
+          "proc_sec": 1.66
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/756a137ee9debde4a008adc4a4121dc7.wav",
@@ -49,7 +49,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.9,
-          "proc_sec": 0.73
+          "proc_sec": 1.51
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1ee3b00170123a6723a40e129b2f6bce.wav",
@@ -59,7 +59,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.32,
-          "proc_sec": 0.59
+          "proc_sec": 0.63
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/35e8b07c1109b98209aded328fa6da0e.wav",
@@ -69,7 +69,7 @@
           "errors": 0,
           "ref_words": 10,
           "audio_sec": 4.66,
-          "proc_sec": 0.94
+          "proc_sec": 0.85
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c35deaf94921ca67be23c19580a13397.wav",
@@ -79,7 +79,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 6.56,
-          "proc_sec": 1.77
+          "proc_sec": 1.16
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/769fc2582dd82d1a3d4b7de9154d43b4.wav",
@@ -89,7 +89,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 5.88,
-          "proc_sec": 1.62
+          "proc_sec": 1.08
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6a5c6ed155b43cdc77d2225084f6bd0a.wav",
@@ -99,7 +99,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 5.1,
-          "proc_sec": 0.93
+          "proc_sec": 0.91
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/38bf4f3c89e0507ee921a669fec12e9d.wav",
@@ -109,7 +109,7 @@
           "errors": 6,
           "ref_words": 9,
           "audio_sec": 8.82,
-          "proc_sec": 1.8
+          "proc_sec": 1.55
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8e33d6bcd6f401e324d4d2bc6e0a67bd.wav",
@@ -119,7 +119,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 7.24,
-          "proc_sec": 1.26
+          "proc_sec": 1.28
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7052b37dd7615608045663a08ae031f8.wav",
@@ -129,7 +129,7 @@
           "errors": 3,
           "ref_words": 6,
           "audio_sec": 3.15,
-          "proc_sec": 0.56
+          "proc_sec": 0.62
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a4e51407e138cc48ee0c3b43dc0ed2fc.wav",
@@ -139,7 +139,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.11,
-          "proc_sec": 0.88
+          "proc_sec": 0.77
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/797a917ac0e55cd94add5ffd098b6c7d.wav",
@@ -149,7 +149,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 3.94,
-          "proc_sec": 0.76
+          "proc_sec": 0.75
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0dd42ce864976e9ab17246ad24ccd839.wav",
@@ -159,7 +159,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 3.08,
-          "proc_sec": 0.62
+          "proc_sec": 0.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0211ba73594aa9d1df24320749b29d30.wav",
@@ -169,7 +169,7 @@
           "errors": 0,
           "ref_words": 10,
           "audio_sec": 8.0,
-          "proc_sec": 1.34
+          "proc_sec": 1.39
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/42ac5f558b58c7f5cf40eeccf3e8d494.wav",
@@ -179,7 +179,7 @@
           "errors": 2,
           "ref_words": 5,
           "audio_sec": 2.99,
-          "proc_sec": 0.53
+          "proc_sec": 0.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3d8c1bff38d437ca9439430479db4f21.wav",
@@ -189,7 +189,7 @@
           "errors": 1,
           "ref_words": 5,
           "audio_sec": 4.08,
-          "proc_sec": 0.64
+          "proc_sec": 0.76
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5590a7a48dbdf2b07a022af942dea954.wav",
@@ -199,7 +199,7 @@
           "errors": 0,
           "ref_words": 9,
           "audio_sec": 4.29,
-          "proc_sec": 0.69
+          "proc_sec": 0.8
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/024889aefe46a494428fed7b7ad17e0f.wav",
@@ -209,7 +209,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.49,
-          "proc_sec": 0.62
+          "proc_sec": 0.66
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/813e3e8a3363a1b87b3a94026d417050.wav",
@@ -219,7 +219,7 @@
           "errors": 1,
           "ref_words": 8,
           "audio_sec": 3.98,
-          "proc_sec": 0.7
+          "proc_sec": 0.76
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4093652fa0a9f6a3c2aa84077984b998.wav",
@@ -229,7 +229,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 3.88,
-          "proc_sec": 0.67
+          "proc_sec": 0.73
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/11b34b088b9951f459ef9edd44dad393.wav",
@@ -239,7 +239,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.23,
-          "proc_sec": 0.59
+          "proc_sec": 0.62
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/55a18f832aa5510c50e1cae20974ec36.wav",
@@ -249,7 +249,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 2.66,
-          "proc_sec": 0.47
+          "proc_sec": 0.54
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/72ee28024827bf2ca812d382a5f795f9.wav",
@@ -259,7 +259,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 3.21,
-          "proc_sec": 0.51
+          "proc_sec": 0.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81657853983281eddca19fcda0bf01f8.wav",
@@ -269,7 +269,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 1.48,
-          "proc_sec": 0.29
+          "proc_sec": 0.33
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7880e5f68b28c7753e609ded237f0bca.wav",
@@ -279,7 +279,7 @@
           "errors": 5,
           "ref_words": 10,
           "audio_sec": 7.16,
-          "proc_sec": 1.08
+          "proc_sec": 1.28
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e93a365b34d3e812c9f29e107cc711b6.wav",
@@ -289,7 +289,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 2.14,
-          "proc_sec": 0.38
+          "proc_sec": 0.44
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8cf9ab81132f44985f3b73284b368850.wav",
@@ -299,7 +299,7 @@
           "errors": 0,
           "ref_words": 2,
           "audio_sec": 2.24,
-          "proc_sec": 0.38
+          "proc_sec": 0.44
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/487abe7cc1852249b63c2f4b73209049.wav",
@@ -309,7 +309,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 3.2,
-          "proc_sec": 0.5
+          "proc_sec": 0.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab178a81ce2e23202dad9af2da7e8a61.wav",
@@ -319,7 +319,7 @@
           "errors": 1,
           "ref_words": 4,
           "audio_sec": 2.15,
-          "proc_sec": 0.38
+          "proc_sec": 0.44
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab669e8622c9edd9eadd04352f72830f.wav",
@@ -329,7 +329,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 5.95,
-          "proc_sec": 0.9
+          "proc_sec": 1.06
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/13de1cf4e35043bd9a0f3663a7b83b1f.wav",
@@ -339,7 +339,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 1.56,
-          "proc_sec": 0.3
+          "proc_sec": 0.35
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/82fbc151e6d9b46407bc127275e34f7b.wav",
@@ -349,7 +349,7 @@
           "errors": 4,
           "ref_words": 8,
           "audio_sec": 9.2,
-          "proc_sec": 1.36
+          "proc_sec": 1.62
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5da0a6e5a5872425dfa2d9a46020f215.wav",
@@ -359,7 +359,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 4.55,
-          "proc_sec": 0.69
+          "proc_sec": 0.85
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1996f4ab66ba642032bfc0736e855a27.wav",
@@ -369,7 +369,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 3.18,
-          "proc_sec": 0.5
+          "proc_sec": 0.6
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6542ffad139aa16576ba492a578300f1.wav",
@@ -379,7 +379,7 @@
           "errors": 1,
           "ref_words": 8,
           "audio_sec": 5.27,
-          "proc_sec": 0.79
+          "proc_sec": 0.96
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2858b3c4163d9f42acf007cd21fa2947.wav",
@@ -389,7 +389,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 2.0,
-          "proc_sec": 0.35
+          "proc_sec": 0.41
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/fbbb8ba59af231ba4b226458d7b74229.wav",
@@ -399,7 +399,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 1.94,
-          "proc_sec": 0.34
+          "proc_sec": 0.42
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a0537a39889fe06bf4508cfa4f778c9e.wav",
@@ -409,7 +409,7 @@
           "errors": 4,
           "ref_words": 0,
           "audio_sec": 2.49,
-          "proc_sec": 0.41
+          "proc_sec": 0.49
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e3c7a35e5022d53bdf10deb521f6d7f.wav",
@@ -419,7 +419,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.92,
-          "proc_sec": 0.61
+          "proc_sec": 0.73
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5b90ed11abc4fb58fe8e8d33c530c495.wav",
@@ -429,7 +429,7 @@
           "errors": 2,
           "ref_words": 5,
           "audio_sec": 2.76,
-          "proc_sec": 0.46
+          "proc_sec": 0.54
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e77d8a2634c6f129cdad58e9f8431eb.wav",
@@ -439,7 +439,7 @@
           "errors": 4,
           "ref_words": 14,
           "audio_sec": 9.48,
-          "proc_sec": 1.38
+          "proc_sec": 1.66
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a480b64e866dcf8235c975a8ccb7233d.wav",
@@ -449,7 +449,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 1.8,
-          "proc_sec": 0.33
+          "proc_sec": 0.37
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c46b76ec2519af59b2be0ee9d052f0ae.wav",
@@ -459,7 +459,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 3.14,
-          "proc_sec": 0.51
+          "proc_sec": 0.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b226889bd93b9ae754f73615c18ac2c4.wav",
@@ -469,7 +469,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 2.55,
-          "proc_sec": 0.43
+          "proc_sec": 0.49
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3b35d074406a01569ad00985af8bcf9d.wav",
@@ -479,7 +479,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 2.55,
-          "proc_sec": 0.43
+          "proc_sec": 0.49
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/470a154e3721926865aad642dfafce40.wav",
@@ -489,7 +489,7 @@
           "errors": 0,
           "ref_words": 10,
           "audio_sec": 5.76,
-          "proc_sec": 0.89
+          "proc_sec": 1.02
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/9f8a61d339f591c5a895f5812df348f1.wav",
@@ -499,7 +499,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 3.06,
-          "proc_sec": 0.5
+          "proc_sec": 0.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db2a74f4bd23a464f39f1863bbad650.wav",
@@ -509,7 +509,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.27,
-          "proc_sec": 0.53
+          "proc_sec": 0.63
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ad32636baec28050d44483084d58048e.wav",
@@ -519,7 +519,7 @@
           "errors": 7,
           "ref_words": 10,
           "audio_sec": 5.08,
-          "proc_sec": 0.8
+          "proc_sec": 0.92
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c2c5bd40e6e7afc13873173764fe250e.wav",
@@ -529,7 +529,7 @@
           "errors": 3,
           "ref_words": 6,
           "audio_sec": 3.08,
-          "proc_sec": 0.5
+          "proc_sec": 0.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ee8c9ec47b4f99ad2a9b1bf88a71fbb.wav",
@@ -539,7 +539,7 @@
           "errors": 0,
           "ref_words": 2,
           "audio_sec": 3.06,
-          "proc_sec": 0.51
+          "proc_sec": 0.58
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0aa7317352e4e7a10dce65c340007949.wav",
@@ -549,7 +549,7 @@
           "errors": 0,
           "ref_words": 2,
           "audio_sec": 2.8,
-          "proc_sec": 0.48
+          "proc_sec": 0.55
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f33a150d82bad9c45826c78dfb560bfb.wav",
@@ -559,7 +559,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 3.12,
-          "proc_sec": 0.51
+          "proc_sec": 0.6
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8bb7a6f11eaadc88417a733b9bb610bb.wav",
@@ -569,7 +569,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.6,
-          "proc_sec": 0.58
+          "proc_sec": 0.68
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f934479fa0cc50b4b404cc51798d8016.wav",
@@ -579,7 +579,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.34,
-          "proc_sec": 0.58
+          "proc_sec": 0.63
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8fc37fc43e8f1c961b7d4538dc9cc288.wav",
@@ -589,7 +589,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 2.06,
-          "proc_sec": 0.39
+          "proc_sec": 0.42
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f2049defe2705310dbeb76ae52ff587b.wav",
@@ -599,7 +599,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 6.4,
-          "proc_sec": 0.98
+          "proc_sec": 1.14
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8349fdbd63f8fe36410e167f80c29806.wav",
@@ -609,7 +609,7 @@
           "errors": 1,
           "ref_words": 2,
           "audio_sec": 4.9,
-          "proc_sec": 0.83
+          "proc_sec": 0.91
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dbdf459dbd7bd738eab40deaea44ec4f.wav",
@@ -619,7 +619,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.72,
-          "proc_sec": 0.62
+          "proc_sec": 0.7
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e78e018a51e65189e9c50aac27f17bd2.wav",
@@ -629,7 +629,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.76,
-          "proc_sec": 0.62
+          "proc_sec": 0.72
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/465b46433d305e525a835aa536032078.wav",
@@ -639,7 +639,7 @@
           "errors": 0,
           "ref_words": 14,
           "audio_sec": 7.28,
-          "proc_sec": 1.15
+          "proc_sec": 1.31
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/df4aa6926d49f199619eccfd02782eb2.wav",
@@ -649,7 +649,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.14,
-          "proc_sec": 0.65
+          "proc_sec": 0.78
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/617ef415ce8853e37244fe476466c456.wav",
@@ -659,7 +659,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.58,
-          "proc_sec": 0.57
+          "proc_sec": 0.7
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8848fc1f91ddedc57622e26b14d023fd.wav",
@@ -669,7 +669,7 @@
           "errors": 3,
           "ref_words": 6,
           "audio_sec": 3.62,
-          "proc_sec": 0.56
+          "proc_sec": 0.69
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/46dc97742b1861333b4435097b2bc7c5.wav",
@@ -679,7 +679,7 @@
           "errors": 2,
           "ref_words": 4,
           "audio_sec": 3.26,
-          "proc_sec": 0.52
+          "proc_sec": 0.63
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/25d5ec85b4312408e9326a300de17bb1.wav",
@@ -689,7 +689,7 @@
           "errors": 1,
           "ref_words": 7,
           "audio_sec": 4.88,
-          "proc_sec": 0.74
+          "proc_sec": 0.89
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/073c1298afef8d796a7060f0c874f5a8.wav",
@@ -699,7 +699,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 2.64,
-          "proc_sec": 0.44
+          "proc_sec": 0.52
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1584dc13716c9c295e3338c47210362c.wav",
@@ -709,7 +709,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 3.68,
-          "proc_sec": 0.57
+          "proc_sec": 0.67
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d8ba1875118c9736497c304a355fdf31.wav",
@@ -719,7 +719,7 @@
           "errors": 3,
           "ref_words": 10,
           "audio_sec": 3.34,
-          "proc_sec": 0.52
+          "proc_sec": 0.63
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d51fe30b4a8b3da573664b17b1e2cd68.wav",
@@ -729,7 +729,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 3.78,
-          "proc_sec": 0.59
+          "proc_sec": 0.72
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/58cbe428a01034e00712535a3e39dbc4.wav",
@@ -739,7 +739,7 @@
           "errors": 5,
           "ref_words": 11,
           "audio_sec": 6.8,
-          "proc_sec": 1.01
+          "proc_sec": 1.22
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1e4d445a613bab8d2c76973dda3e731d.wav",
@@ -749,7 +749,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 5.04,
-          "proc_sec": 0.76
+          "proc_sec": 0.91
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b168ce6118b0ae1bb85df481cfcc419c.wav",
@@ -759,7 +759,7 @@
           "errors": 2,
           "ref_words": 7,
           "audio_sec": 3.52,
-          "proc_sec": 0.54
+          "proc_sec": 0.65
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e3e6ef24af12d71edebb522a1d7dc6ff.wav",
@@ -769,7 +769,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 2.82,
-          "proc_sec": 0.47
+          "proc_sec": 0.56
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3393027945febc1fb91877095d22c02d.wav",
@@ -779,7 +779,7 @@
           "errors": 0,
           "ref_words": 8,
           "audio_sec": 4.44,
-          "proc_sec": 0.69
+          "proc_sec": 0.82
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4f7ba4b7b40745f8da445f4f446d73ee.wav",
@@ -789,7 +789,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.39,
-          "proc_sec": 0.66
+          "proc_sec": 0.8
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5449c273e94da3391910dd9b0342316d.wav",
@@ -799,7 +799,7 @@
           "errors": 2,
           "ref_words": 12,
           "audio_sec": 9.57,
-          "proc_sec": 1.42
+          "proc_sec": 1.7
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ab91b1121fcdf08c0c43bfef563475b.wav",
@@ -809,7 +809,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 2.76,
-          "proc_sec": 0.45
+          "proc_sec": 0.55
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/658243c4e602f4216f46a171d1be230f.wav",
@@ -819,7 +819,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 3.24,
-          "proc_sec": 0.53
+          "proc_sec": 0.63
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5899c2a3abc45b9c2e6925c7eef50461.wav",
@@ -829,7 +829,7 @@
           "errors": 9,
           "ref_words": 10,
           "audio_sec": 4.52,
-          "proc_sec": 0.69
+          "proc_sec": 0.84
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/09ab78c2dbfd26d71d6cc07d7ad5394c.wav",
@@ -839,7 +839,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.44,
-          "proc_sec": 0.66
+          "proc_sec": 0.83
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dad811f99c54d2c22fb188e13a53a534.wav",
@@ -849,7 +849,7 @@
           "errors": 1,
           "ref_words": 5,
           "audio_sec": 4.44,
-          "proc_sec": 0.88
+          "proc_sec": 0.82
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d059340ddbf3be9f4643b03a13eefa43.wav",
@@ -859,7 +859,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 2.61,
-          "proc_sec": 0.56
+          "proc_sec": 0.52
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ee1aaef55204c97df20bcc1b52ea3fd0.wav",
@@ -869,7 +869,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 3.58,
-          "proc_sec": 0.65
+          "proc_sec": 0.67
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d6b5171049e249b65d1f9fc25fda0fe4.wav",
@@ -879,7 +879,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 5.04,
-          "proc_sec": 0.84
+          "proc_sec": 0.9
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d837d19f0291c9522d77b0701c47ad1f.wav",
@@ -889,7 +889,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.36,
-          "proc_sec": 0.57
+          "proc_sec": 0.63
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b7b98c3c5bc586f35d2fe7f26161fe60.wav",
@@ -899,7 +899,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.54,
-          "proc_sec": 0.73
+          "proc_sec": 0.83
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4b3d7c6a4898ef544e6305418248ff47.wav",
@@ -909,7 +909,7 @@
           "errors": 2,
           "ref_words": 4,
           "audio_sec": 5.32,
-          "proc_sec": 0.83
+          "proc_sec": 0.97
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/03f52381d8c64a12d1733e13022007d5.wav",
@@ -919,7 +919,7 @@
           "errors": 0,
           "ref_words": 14,
           "audio_sec": 10.28,
-          "proc_sec": 1.54
+          "proc_sec": 1.82
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4dfb680d79447e7da6aacf345048092d.wav",
@@ -929,7 +929,7 @@
           "errors": 5,
           "ref_words": 9,
           "audio_sec": 8.04,
-          "proc_sec": 1.18
+          "proc_sec": 1.41
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/bfa016e84da9d9d88f9225c6ffdc574b.wav",
@@ -939,7 +939,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 3.92,
-          "proc_sec": 0.64
+          "proc_sec": 0.73
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8f4eca8761c838b3af0403ace10fd32e.wav",
@@ -949,7 +949,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 2.14,
-          "proc_sec": 0.38
+          "proc_sec": 0.46
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0cce291da8ab61efc72a7aeefc680592.wav",
@@ -959,7 +959,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 4.06,
-          "proc_sec": 0.63
+          "proc_sec": 0.78
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81892c08011b39a6f6ec16e21afb53dc.wav",
@@ -969,7 +969,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 1.65,
-          "proc_sec": 0.29
+          "proc_sec": 0.36
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/717ffdb8ea18db9e6261bda8f90f13c8.wav",
@@ -979,7 +979,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 4.92,
-          "proc_sec": 0.77
+          "proc_sec": 0.92
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5d02dcc58647322a4a490f4551bea872.wav",
@@ -989,7 +989,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 2.07,
-          "proc_sec": 0.35
+          "proc_sec": 0.43
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7a3de75a372882e99d41d60de1305f22.wav",
@@ -999,7 +999,7 @@
           "errors": 2,
           "ref_words": 5,
           "audio_sec": 3.95,
-          "proc_sec": 0.63
+          "proc_sec": 0.76
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/59b179bc3beb1302679caf4960fc5165.wav",
@@ -1009,7 +1009,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 2.22,
-          "proc_sec": 0.39
+          "proc_sec": 0.44
         }
       ]
     },
@@ -1020,8 +1020,8 @@
       "total_errors": 74,
       "total_ref_words": 515,
       "total_audio_sec": 414.06,
-      "total_proc_sec": 366.81,
-      "rtf": 0.886,
+      "total_proc_sec": 385.88,
+      "rtf": 0.932,
       "details": [
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e632f7d39c15e7edfc665b91e6f2071f.wav",
@@ -1031,7 +1031,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 4.9,
-          "proc_sec": 5.83
+          "proc_sec": 5.26
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db5df8bb9e3b6660b2a04b34d4a355d.wav",
@@ -1041,7 +1041,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 3.65,
-          "proc_sec": 3.79
+          "proc_sec": 3.55
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2c471aedc6979109f28cd53c58f8c4fb.wav",
@@ -1051,7 +1051,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 4.34,
-          "proc_sec": 4.79
+          "proc_sec": 3.94
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/756a137ee9debde4a008adc4a4121dc7.wav",
@@ -1061,7 +1061,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.9,
-          "proc_sec": 4.04
+          "proc_sec": 5.13
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1ee3b00170123a6723a40e129b2f6bce.wav",
@@ -1071,7 +1071,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.32,
-          "proc_sec": 3.78
+          "proc_sec": 3.49
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/35e8b07c1109b98209aded328fa6da0e.wav",
@@ -1081,7 +1081,7 @@
           "errors": 0,
           "ref_words": 10,
           "audio_sec": 4.66,
-          "proc_sec": 4.44
+          "proc_sec": 3.84
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c35deaf94921ca67be23c19580a13397.wav",
@@ -1091,7 +1091,7 @@
           "errors": 1,
           "ref_words": 6,
           "audio_sec": 6.56,
-          "proc_sec": 3.42
+          "proc_sec": 3.45
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/769fc2582dd82d1a3d4b7de9154d43b4.wav",
@@ -1101,7 +1101,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 5.88,
-          "proc_sec": 3.44
+          "proc_sec": 3.81
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6a5c6ed155b43cdc77d2225084f6bd0a.wav",
@@ -1111,7 +1111,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 5.1,
-          "proc_sec": 3.37
+          "proc_sec": 3.73
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/38bf4f3c89e0507ee921a669fec12e9d.wav",
@@ -1121,7 +1121,7 @@
           "errors": 7,
           "ref_words": 9,
           "audio_sec": 8.82,
-          "proc_sec": 3.4
+          "proc_sec": 3.64
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8e33d6bcd6f401e324d4d2bc6e0a67bd.wav",
@@ -1131,7 +1131,7 @@
           "errors": 2,
           "ref_words": 7,
           "audio_sec": 7.24,
-          "proc_sec": 4.01
+          "proc_sec": 4.31
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7052b37dd7615608045663a08ae031f8.wav",
@@ -1141,7 +1141,7 @@
           "errors": 2,
           "ref_words": 6,
           "audio_sec": 3.15,
-          "proc_sec": 3.68
+          "proc_sec": 4.1
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a4e51407e138cc48ee0c3b43dc0ed2fc.wav",
@@ -1151,7 +1151,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.11,
-          "proc_sec": 3.49
+          "proc_sec": 3.65
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/797a917ac0e55cd94add5ffd098b6c7d.wav",
@@ -1161,7 +1161,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 3.94,
-          "proc_sec": 3.51
+          "proc_sec": 3.8
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0dd42ce864976e9ab17246ad24ccd839.wav",
@@ -1171,7 +1171,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 3.08,
-          "proc_sec": 3.65
+          "proc_sec": 4.15
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0211ba73594aa9d1df24320749b29d30.wav",
@@ -1181,7 +1181,7 @@
           "errors": 0,
           "ref_words": 10,
           "audio_sec": 8.0,
-          "proc_sec": 3.78
+          "proc_sec": 4.16
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/42ac5f558b58c7f5cf40eeccf3e8d494.wav",
@@ -1191,7 +1191,7 @@
           "errors": 2,
           "ref_words": 5,
           "audio_sec": 2.99,
-          "proc_sec": 3.69
+          "proc_sec": 3.9
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3d8c1bff38d437ca9439430479db4f21.wav",
@@ -1201,7 +1201,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.08,
-          "proc_sec": 3.6
+          "proc_sec": 4.05
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5590a7a48dbdf2b07a022af942dea954.wav",
@@ -1211,7 +1211,7 @@
           "errors": 0,
           "ref_words": 9,
           "audio_sec": 4.29,
-          "proc_sec": 3.59
+          "proc_sec": 4.65
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/024889aefe46a494428fed7b7ad17e0f.wav",
@@ -1221,7 +1221,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.49,
-          "proc_sec": 3.44
+          "proc_sec": 3.64
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/813e3e8a3363a1b87b3a94026d417050.wav",
@@ -1231,7 +1231,7 @@
           "errors": 0,
           "ref_words": 8,
           "audio_sec": 3.98,
-          "proc_sec": 3.58
+          "proc_sec": 4.23
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4093652fa0a9f6a3c2aa84077984b998.wav",
@@ -1241,7 +1241,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 3.88,
-          "proc_sec": 3.4
+          "proc_sec": 3.6
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/11b34b088b9951f459ef9edd44dad393.wav",
@@ -1251,7 +1251,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.23,
-          "proc_sec": 3.39
+          "proc_sec": 4.18
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/55a18f832aa5510c50e1cae20974ec36.wav",
@@ -1261,7 +1261,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 2.66,
-          "proc_sec": 3.19
+          "proc_sec": 3.83
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/72ee28024827bf2ca812d382a5f795f9.wav",
@@ -1271,7 +1271,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 3.21,
-          "proc_sec": 3.34
+          "proc_sec": 3.64
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81657853983281eddca19fcda0bf01f8.wav",
@@ -1281,7 +1281,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 1.48,
-          "proc_sec": 3.19
+          "proc_sec": 3.91
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7880e5f68b28c7753e609ded237f0bca.wav",
@@ -1291,7 +1291,7 @@
           "errors": 5,
           "ref_words": 10,
           "audio_sec": 7.16,
-          "proc_sec": 3.26
+          "proc_sec": 3.94
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e93a365b34d3e812c9f29e107cc711b6.wav",
@@ -1301,7 +1301,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 2.14,
-          "proc_sec": 3.03
+          "proc_sec": 3.49
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8cf9ab81132f44985f3b73284b368850.wav",
@@ -1311,7 +1311,7 @@
           "errors": 0,
           "ref_words": 2,
           "audio_sec": 2.24,
-          "proc_sec": 3.12
+          "proc_sec": 3.84
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/487abe7cc1852249b63c2f4b73209049.wav",
@@ -1321,7 +1321,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 3.2,
-          "proc_sec": 3.44
+          "proc_sec": 3.66
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab178a81ce2e23202dad9af2da7e8a61.wav",
@@ -1331,7 +1331,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 2.15,
-          "proc_sec": 3.42
+          "proc_sec": 3.8
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab669e8622c9edd9eadd04352f72830f.wav",
@@ -1341,7 +1341,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 5.95,
-          "proc_sec": 3.69
+          "proc_sec": 3.86
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/13de1cf4e35043bd9a0f3663a7b83b1f.wav",
@@ -1351,7 +1351,7 @@
           "errors": 1,
           "ref_words": 1,
           "audio_sec": 1.56,
-          "proc_sec": 3.44
+          "proc_sec": 3.68
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/82fbc151e6d9b46407bc127275e34f7b.wav",
@@ -1361,7 +1361,7 @@
           "errors": 1,
           "ref_words": 8,
           "audio_sec": 9.2,
-          "proc_sec": 3.5
+          "proc_sec": 3.65
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5da0a6e5a5872425dfa2d9a46020f215.wav",
@@ -1371,7 +1371,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 4.55,
-          "proc_sec": 3.61
+          "proc_sec": 3.84
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1996f4ab66ba642032bfc0736e855a27.wav",
@@ -1381,7 +1381,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 3.18,
-          "proc_sec": 3.35
+          "proc_sec": 3.13
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6542ffad139aa16576ba492a578300f1.wav",
@@ -1391,7 +1391,7 @@
           "errors": 0,
           "ref_words": 8,
           "audio_sec": 5.27,
-          "proc_sec": 3.75
+          "proc_sec": 4.18
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2858b3c4163d9f42acf007cd21fa2947.wav",
@@ -1401,7 +1401,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 2.0,
-          "proc_sec": 4.11
+          "proc_sec": 3.78
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/fbbb8ba59af231ba4b226458d7b74229.wav",
@@ -1411,7 +1411,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 1.94,
-          "proc_sec": 3.53
+          "proc_sec": 3.72
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a0537a39889fe06bf4508cfa4f778c9e.wav",
@@ -1421,7 +1421,7 @@
           "errors": 3,
           "ref_words": 0,
           "audio_sec": 2.49,
-          "proc_sec": 3.9
+          "proc_sec": 3.81
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e3c7a35e5022d53bdf10deb521f6d7f.wav",
@@ -1431,7 +1431,7 @@
           "errors": 4,
           "ref_words": 5,
           "audio_sec": 3.92,
-          "proc_sec": 6.32
+          "proc_sec": 3.88
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5b90ed11abc4fb58fe8e8d33c530c495.wav",
@@ -1441,7 +1441,7 @@
           "errors": 2,
           "ref_words": 5,
           "audio_sec": 2.76,
-          "proc_sec": 3.63
+          "proc_sec": 3.77
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e77d8a2634c6f129cdad58e9f8431eb.wav",
@@ -1451,7 +1451,7 @@
           "errors": 3,
           "ref_words": 14,
           "audio_sec": 9.48,
-          "proc_sec": 4.15
+          "proc_sec": 3.83
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a480b64e866dcf8235c975a8ccb7233d.wav",
@@ -1461,7 +1461,7 @@
           "errors": 2,
           "ref_words": 1,
           "audio_sec": 1.8,
-          "proc_sec": 3.35
+          "proc_sec": 3.46
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c46b76ec2519af59b2be0ee9d052f0ae.wav",
@@ -1471,7 +1471,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 3.14,
-          "proc_sec": 3.29
+          "proc_sec": 3.47
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b226889bd93b9ae754f73615c18ac2c4.wav",
@@ -1481,7 +1481,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 2.55,
-          "proc_sec": 3.66
+          "proc_sec": 4.07
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3b35d074406a01569ad00985af8bcf9d.wav",
@@ -1491,7 +1491,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 2.55,
-          "proc_sec": 3.48
+          "proc_sec": 3.81
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/470a154e3721926865aad642dfafce40.wav",
@@ -1501,7 +1501,7 @@
           "errors": 0,
           "ref_words": 10,
           "audio_sec": 5.76,
-          "proc_sec": 3.92
+          "proc_sec": 4.01
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/9f8a61d339f591c5a895f5812df348f1.wav",
@@ -1511,7 +1511,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 3.06,
-          "proc_sec": 3.38
+          "proc_sec": 3.78
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db2a74f4bd23a464f39f1863bbad650.wav",
@@ -1521,7 +1521,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.27,
-          "proc_sec": 3.58
+          "proc_sec": 3.83
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ad32636baec28050d44483084d58048e.wav",
@@ -1531,7 +1531,7 @@
           "errors": 2,
           "ref_words": 10,
           "audio_sec": 5.08,
-          "proc_sec": 3.49
+          "proc_sec": 3.74
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c2c5bd40e6e7afc13873173764fe250e.wav",
@@ -1541,7 +1541,7 @@
           "errors": 1,
           "ref_words": 6,
           "audio_sec": 3.08,
-          "proc_sec": 3.78
+          "proc_sec": 3.87
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ee8c9ec47b4f99ad2a9b1bf88a71fbb.wav",
@@ -1551,7 +1551,7 @@
           "errors": 0,
           "ref_words": 2,
           "audio_sec": 3.06,
-          "proc_sec": 3.91
+          "proc_sec": 3.2
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0aa7317352e4e7a10dce65c340007949.wav",
@@ -1561,7 +1561,7 @@
           "errors": 0,
           "ref_words": 2,
           "audio_sec": 2.8,
-          "proc_sec": 3.34
+          "proc_sec": 3.51
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f33a150d82bad9c45826c78dfb560bfb.wav",
@@ -1571,7 +1571,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.12,
-          "proc_sec": 3.71
+          "proc_sec": 3.88
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8bb7a6f11eaadc88417a733b9bb610bb.wav",
@@ -1581,7 +1581,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.6,
-          "proc_sec": 6.76
+          "proc_sec": 3.54
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f934479fa0cc50b4b404cc51798d8016.wav",
@@ -1591,7 +1591,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.34,
-          "proc_sec": 3.85
+          "proc_sec": 3.72
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8fc37fc43e8f1c961b7d4538dc9cc288.wav",
@@ -1601,7 +1601,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 2.06,
-          "proc_sec": 3.69
+          "proc_sec": 3.62
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f2049defe2705310dbeb76ae52ff587b.wav",
@@ -1611,7 +1611,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 6.4,
-          "proc_sec": 3.39
+          "proc_sec": 3.71
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8349fdbd63f8fe36410e167f80c29806.wav",
@@ -1621,7 +1621,7 @@
           "errors": 1,
           "ref_words": 2,
           "audio_sec": 4.9,
-          "proc_sec": 3.64
+          "proc_sec": 3.61
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dbdf459dbd7bd738eab40deaea44ec4f.wav",
@@ -1631,7 +1631,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.72,
-          "proc_sec": 3.42
+          "proc_sec": 3.75
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e78e018a51e65189e9c50aac27f17bd2.wav",
@@ -1641,7 +1641,7 @@
           "errors": 1,
           "ref_words": 5,
           "audio_sec": 3.76,
-          "proc_sec": 3.59
+          "proc_sec": 3.86
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/465b46433d305e525a835aa536032078.wav",
@@ -1651,7 +1651,7 @@
           "errors": 1,
           "ref_words": 14,
           "audio_sec": 7.28,
-          "proc_sec": 3.7
+          "proc_sec": 4.29
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/df4aa6926d49f199619eccfd02782eb2.wav",
@@ -1661,7 +1661,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.14,
-          "proc_sec": 3.51
+          "proc_sec": 3.42
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/617ef415ce8853e37244fe476466c456.wav",
@@ -1671,7 +1671,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.58,
-          "proc_sec": 3.44
+          "proc_sec": 3.81
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8848fc1f91ddedc57622e26b14d023fd.wav",
@@ -1681,7 +1681,7 @@
           "errors": 2,
           "ref_words": 6,
           "audio_sec": 3.62,
-          "proc_sec": 3.55
+          "proc_sec": 4.17
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/46dc97742b1861333b4435097b2bc7c5.wav",
@@ -1691,7 +1691,7 @@
           "errors": 2,
           "ref_words": 4,
           "audio_sec": 3.26,
-          "proc_sec": 3.46
+          "proc_sec": 3.88
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/25d5ec85b4312408e9326a300de17bb1.wav",
@@ -1701,7 +1701,7 @@
           "errors": 1,
           "ref_words": 7,
           "audio_sec": 4.88,
-          "proc_sec": 3.74
+          "proc_sec": 4.25
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/073c1298afef8d796a7060f0c874f5a8.wav",
@@ -1711,7 +1711,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 2.64,
-          "proc_sec": 3.44
+          "proc_sec": 3.88
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1584dc13716c9c295e3338c47210362c.wav",
@@ -1721,7 +1721,7 @@
           "errors": 2,
           "ref_words": 6,
           "audio_sec": 3.68,
-          "proc_sec": 3.52
+          "proc_sec": 3.79
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d8ba1875118c9736497c304a355fdf31.wav",
@@ -1731,7 +1731,7 @@
           "errors": 3,
           "ref_words": 10,
           "audio_sec": 3.34,
-          "proc_sec": 3.7
+          "proc_sec": 4.22
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d51fe30b4a8b3da573664b17b1e2cd68.wav",
@@ -1741,7 +1741,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 3.78,
-          "proc_sec": 3.64
+          "proc_sec": 3.4
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/58cbe428a01034e00712535a3e39dbc4.wav",
@@ -1751,7 +1751,7 @@
           "errors": 1,
           "ref_words": 11,
           "audio_sec": 6.8,
-          "proc_sec": 3.66
+          "proc_sec": 4.23
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1e4d445a613bab8d2c76973dda3e731d.wav",
@@ -1761,7 +1761,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 5.04,
-          "proc_sec": 3.66
+          "proc_sec": 4.91
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b168ce6118b0ae1bb85df481cfcc419c.wav",
@@ -1771,7 +1771,7 @@
           "errors": 2,
           "ref_words": 7,
           "audio_sec": 3.52,
-          "proc_sec": 3.59
+          "proc_sec": 4.02
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e3e6ef24af12d71edebb522a1d7dc6ff.wav",
@@ -1781,7 +1781,7 @@
           "errors": 0,
           "ref_words": 6,
           "audio_sec": 2.82,
-          "proc_sec": 3.74
+          "proc_sec": 3.51
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3393027945febc1fb91877095d22c02d.wav",
@@ -1791,7 +1791,7 @@
           "errors": 0,
           "ref_words": 8,
           "audio_sec": 4.44,
-          "proc_sec": 3.62
+          "proc_sec": 3.97
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4f7ba4b7b40745f8da445f4f446d73ee.wav",
@@ -1801,7 +1801,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.39,
-          "proc_sec": 3.82
+          "proc_sec": 3.59
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5449c273e94da3391910dd9b0342316d.wav",
@@ -1811,7 +1811,7 @@
           "errors": 1,
           "ref_words": 12,
           "audio_sec": 9.57,
-          "proc_sec": 3.82
+          "proc_sec": 4.09
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ab91b1121fcdf08c0c43bfef563475b.wav",
@@ -1821,7 +1821,7 @@
           "errors": 2,
           "ref_words": 3,
           "audio_sec": 2.76,
-          "proc_sec": 3.41
+          "proc_sec": 3.65
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/658243c4e602f4216f46a171d1be230f.wav",
@@ -1831,7 +1831,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 3.24,
-          "proc_sec": 3.59
+          "proc_sec": 3.45
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5899c2a3abc45b9c2e6925c7eef50461.wav",
@@ -1841,7 +1841,7 @@
           "errors": 2,
           "ref_words": 10,
           "audio_sec": 4.52,
-          "proc_sec": 3.62
+          "proc_sec": 3.8
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/09ab78c2dbfd26d71d6cc07d7ad5394c.wav",
@@ -1851,7 +1851,7 @@
           "errors": 2,
           "ref_words": 5,
           "audio_sec": 4.44,
-          "proc_sec": 3.84
+          "proc_sec": 3.92
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dad811f99c54d2c22fb188e13a53a534.wav",
@@ -1861,7 +1861,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.44,
-          "proc_sec": 3.5
+          "proc_sec": 3.27
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d059340ddbf3be9f4643b03a13eefa43.wav",
@@ -1871,7 +1871,7 @@
           "errors": 3,
           "ref_words": 4,
           "audio_sec": 2.61,
-          "proc_sec": 3.49
+          "proc_sec": 3.69
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ee1aaef55204c97df20bcc1b52ea3fd0.wav",
@@ -1881,7 +1881,7 @@
           "errors": 0,
           "ref_words": 3,
           "audio_sec": 3.58,
-          "proc_sec": 3.58
+          "proc_sec": 3.71
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d6b5171049e249b65d1f9fc25fda0fe4.wav",
@@ -1891,7 +1891,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 5.04,
-          "proc_sec": 4.91
+          "proc_sec": 3.43
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d837d19f0291c9522d77b0701c47ad1f.wav",
@@ -1901,7 +1901,7 @@
           "errors": 1,
           "ref_words": 3,
           "audio_sec": 3.36,
-          "proc_sec": 3.66
+          "proc_sec": 3.92
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b7b98c3c5bc586f35d2fe7f26161fe60.wav",
@@ -1911,7 +1911,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 4.54,
-          "proc_sec": 3.32
+          "proc_sec": 4.54
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4b3d7c6a4898ef544e6305418248ff47.wav",
@@ -1921,7 +1921,7 @@
           "errors": 2,
           "ref_words": 4,
           "audio_sec": 5.32,
-          "proc_sec": 3.43
+          "proc_sec": 3.54
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/03f52381d8c64a12d1733e13022007d5.wav",
@@ -1931,7 +1931,7 @@
           "errors": 0,
           "ref_words": 14,
           "audio_sec": 10.28,
-          "proc_sec": 3.88
+          "proc_sec": 4.27
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4dfb680d79447e7da6aacf345048092d.wav",
@@ -1941,7 +1941,7 @@
           "errors": 2,
           "ref_words": 9,
           "audio_sec": 8.04,
-          "proc_sec": 3.31
+          "proc_sec": 4.47
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/bfa016e84da9d9d88f9225c6ffdc574b.wav",
@@ -1951,7 +1951,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 3.92,
-          "proc_sec": 3.27
+          "proc_sec": 4.62
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8f4eca8761c838b3af0403ace10fd32e.wav",
@@ -1961,7 +1961,7 @@
           "errors": 1,
           "ref_words": 1,
           "audio_sec": 2.14,
-          "proc_sec": 3.32
+          "proc_sec": 3.28
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0cce291da8ab61efc72a7aeefc680592.wav",
@@ -1971,7 +1971,7 @@
           "errors": 0,
           "ref_words": 7,
           "audio_sec": 4.06,
-          "proc_sec": 3.51
+          "proc_sec": 3.93
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81892c08011b39a6f6ec16e21afb53dc.wav",
@@ -1981,7 +1981,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 1.65,
-          "proc_sec": 3.25
+          "proc_sec": 4.26
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/717ffdb8ea18db9e6261bda8f90f13c8.wav",
@@ -1991,7 +1991,7 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 4.92,
-          "proc_sec": 3.38
+          "proc_sec": 3.6
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5d02dcc58647322a4a490f4551bea872.wav",
@@ -2001,7 +2001,7 @@
           "errors": 0,
           "ref_words": 1,
           "audio_sec": 2.07,
-          "proc_sec": 3.09
+          "proc_sec": 3.54
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7a3de75a372882e99d41d60de1305f22.wav",
@@ -2011,7 +2011,7 @@
           "errors": 0,
           "ref_words": 5,
           "audio_sec": 3.95,
-          "proc_sec": 3.25
+          "proc_sec": 3.81
         },
         {
           "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/59b179bc3beb1302679caf4960fc5165.wav",
@@ -2021,7 +2021,2031 @@
           "errors": 0,
           "ref_words": 4,
           "audio_sec": 2.22,
-          "proc_sec": 3.32
+          "proc_sec": 3.79
+        }
+      ]
+    },
+    {
+      "name": "faster-whisper",
+      "samples": 100,
+      "wer": 15.73,
+      "total_errors": 81,
+      "total_ref_words": 515,
+      "total_audio_sec": 414.06,
+      "total_proc_sec": 484.82,
+      "rtf": 1.171,
+      "details": [
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e632f7d39c15e7edfc665b91e6f2071f.wav",
+          "reference": "афина воспроизведи музыку вперемешку",
+          "hypothesis": "Афина, воспроизведи музыку вперемешку.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 4.9,
+          "proc_sec": 4.9
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db5df8bb9e3b6660b2a04b34d4a355d.wav",
+          "reference": "найти сериал григорий р",
+          "hypothesis": "Найти сериал Григорий Р.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 3.65,
+          "proc_sec": 4.42
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2c471aedc6979109f28cd53c58f8c4fb.wav",
+          "reference": "прямой эфир апл манчестер юнайтед тоттенхэм",
+          "hypothesis": "Прямой эфир АПЛ Манчестер Юнайтед Тоттенхэм",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 4.34,
+          "proc_sec": 5.4
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/756a137ee9debde4a008adc4a4121dc7.wav",
+          "reference": "ильвиром ивановичем ворончихиным",
+          "hypothesis": "Ильвиром Ивановичем Ворончихиным",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.9,
+          "proc_sec": 4.84
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1ee3b00170123a6723a40e129b2f6bce.wav",
+          "reference": "можешь показать киношку исходный код",
+          "hypothesis": "Можешь показать киношку исходный код.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.32,
+          "proc_sec": 4.82
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/35e8b07c1109b98209aded328fa6da0e.wav",
+          "reference": "изменился ли курс рубля к американскому доллару со вчерашнего дня",
+          "hypothesis": "Изменился ли курс рубля к американскому доллару со вчерашнего дня?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 4.66,
+          "proc_sec": 5.01
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c35deaf94921ca67be23c19580a13397.wav",
+          "reference": "найти фильм плохие парни первую часть",
+          "hypothesis": "Найти фильм «Плохие парни» первую часть.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 6.56,
+          "proc_sec": 4.59
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/769fc2582dd82d1a3d4b7de9154d43b4.wav",
+          "reference": "эпизод тридцать один сезона тринадцать фильма люди",
+          "hypothesis": "Эпизод 31 сезона 13 фильма «Люди».",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 5.88,
+          "proc_sec": 4.58
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6a5c6ed155b43cdc77d2225084f6bd0a.wav",
+          "reference": "купить моющее средство",
+          "hypothesis": "Купить моющее средство",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 5.1,
+          "proc_sec": 4.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/38bf4f3c89e0507ee921a669fec12e9d.wav",
+          "reference": "ноль триста восемь триста восемнадцать триста четыре шестьдесят девять",
+          "hypothesis": "0, 308, 318, 304, 69",
+          "wer": 77.78,
+          "errors": 7,
+          "ref_words": 9,
+          "audio_sec": 8.82,
+          "proc_sec": 4.42
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8e33d6bcd6f401e324d4d2bc6e0a67bd.wav",
+          "reference": "прямой эфир матча апл норвич против саутгемптона",
+          "hypothesis": "Прямой эфир матча АПЛ Норвич против Саунд Гэмптона.",
+          "wer": 28.57,
+          "errors": 2,
+          "ref_words": 7,
+          "audio_sec": 7.24,
+          "proc_sec": 5.39
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7052b37dd7615608045663a08ae031f8.wav",
+          "reference": "включай шоу бинго бонго муви филм",
+          "hypothesis": "Включай шоу Бинго Бонго Мови Филм.",
+          "wer": 16.67,
+          "errors": 1,
+          "ref_words": 6,
+          "audio_sec": 3.15,
+          "proc_sec": 4.89
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a4e51407e138cc48ee0c3b43dc0ed2fc.wav",
+          "reference": "что отель может предложить молодоженам",
+          "hypothesis": "Что отель может предложить молодоженам?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.11,
+          "proc_sec": 4.46
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/797a917ac0e55cd94add5ffd098b6c7d.wav",
+          "reference": "покажи на тв канал тнт четыре",
+          "hypothesis": "Покажи на ТВ канал ТНТ4",
+          "wer": 33.33,
+          "errors": 2,
+          "ref_words": 6,
+          "audio_sec": 3.94,
+          "proc_sec": 6.29
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0dd42ce864976e9ab17246ad24ccd839.wav",
+          "reference": "фильм братьев руссо где умер железный человек",
+          "hypothesis": "Фильм братьев Руссо, где умер железный человек.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 3.08,
+          "proc_sec": 5.38
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0211ba73594aa9d1df24320749b29d30.wav",
+          "reference": "добрый день подскажите а можно будет заказать цветы в номер",
+          "hypothesis": "добрый день подскажите а можно будет заказать цветы в номер",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 8.0,
+          "proc_sec": 5.3
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/42ac5f558b58c7f5cf40eeccf3e8d494.wav",
+          "reference": "сбер фильмы с джонни деппом",
+          "hypothesis": "Сберфильмы с Женей Деппом.",
+          "wer": 60.0,
+          "errors": 3,
+          "ref_words": 5,
+          "audio_sec": 2.99,
+          "proc_sec": 4.78
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3d8c1bff38d437ca9439430479db4f21.wav",
+          "reference": "пополнить баланс маме двести рублей",
+          "hypothesis": "Пополнить баланс маме 200 рублей.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.08,
+          "proc_sec": 5.48
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5590a7a48dbdf2b07a022af942dea954.wav",
+          "reference": "в твоем каталоге есть фильм в стиле сатирической комедии",
+          "hypothesis": "В твоем каталоге есть фильм в стиле сатирической комедии.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sec": 4.29,
+          "proc_sec": 5.05
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/024889aefe46a494428fed7b7ad17e0f.wav",
+          "reference": "джой подготовьте выписку по счету",
+          "hypothesis": "Джой, подготовьте выписку по счету.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.49,
+          "proc_sec": 4.69
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/813e3e8a3363a1b87b3a94026d417050.wav",
+          "reference": "джой оплата мобильной связи сто рублей переведи пожалуйста",
+          "hypothesis": "Джой, оплата мобильной связи 100 рублей. Переведи, пожалуйста.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 8,
+          "audio_sec": 3.98,
+          "proc_sec": 5.29
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4093652fa0a9f6a3c2aa84077984b998.wav",
+          "reference": "хочу увидеть киношку в стилистике ужасов",
+          "hypothesis": "Хочу увидеть киношку в стилистике ужасов.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 3.88,
+          "proc_sec": 4.98
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/11b34b088b9951f459ef9edd44dad393.wav",
+          "reference": "алиса пополни номер александра сергеевича",
+          "hypothesis": "Алиса, пополни номер Александра Сергеевича.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.23,
+          "proc_sec": 4.64
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/55a18f832aa5510c50e1cae20974ec36.wav",
+          "reference": "лучшие фильмы путешествия",
+          "hypothesis": "Лучшие фильмы путешествия",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 2.66,
+          "proc_sec": 4.3
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/72ee28024827bf2ca812d382a5f795f9.wav",
+          "reference": "посоветуй мне видео шоу",
+          "hypothesis": "Посоветуй мне видео-шоу.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 3.21,
+          "proc_sec": 5.55
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81657853983281eddca19fcda0bf01f8.wav",
+          "reference": "шант на смотрешке",
+          "hypothesis": "Шант на смотрюшке.",
+          "wer": 33.33,
+          "errors": 1,
+          "ref_words": 3,
+          "audio_sec": 1.48,
+          "proc_sec": 4.4
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7880e5f68b28c7753e609ded237f0bca.wav",
+          "reference": "в двадцать один ноль ноль выставь яркость на семьдесят процентов",
+          "hypothesis": "В 21.00 выставь яркость на 70%.",
+          "wer": 50.0,
+          "errors": 5,
+          "ref_words": 10,
+          "audio_sec": 7.16,
+          "proc_sec": 4.52
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e93a365b34d3e812c9f29e107cc711b6.wav",
+          "reference": "морковка",
+          "hypothesis": "Морковка",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 2.14,
+          "proc_sec": 3.97
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8cf9ab81132f44985f3b73284b368850.wav",
+          "reference": "ок ок",
+          "hypothesis": "Ок-ок",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 2,
+          "audio_sec": 2.24,
+          "proc_sec": 3.95
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/487abe7cc1852249b63c2f4b73209049.wav",
+          "reference": "у тебя будет репродукция питера джексона",
+          "hypothesis": "У тебя будет репродукция Питера Джексона?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 3.2,
+          "proc_sec": 4.73
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab178a81ce2e23202dad9af2da7e8a61.wav",
+          "reference": "первый образовательный на смотрешке",
+          "hypothesis": "Первые образовательные насмотрёжки.",
+          "wer": 100.0,
+          "errors": 4,
+          "ref_words": 4,
+          "audio_sec": 2.15,
+          "proc_sec": 4.61
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab669e8622c9edd9eadd04352f72830f.wav",
+          "reference": "кантемир балагов фильм теснота",
+          "hypothesis": "Кантемир Балагов, фильм «Теснота»",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 5.95,
+          "proc_sec": 4.82
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/13de1cf4e35043bd9a0f3663a7b83b1f.wav",
+          "reference": "ясном",
+          "hypothesis": "Ясно.",
+          "wer": 100.0,
+          "errors": 1,
+          "ref_words": 1,
+          "audio_sec": 1.56,
+          "proc_sec": 4.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/82fbc151e6d9b46407bc127275e34f7b.wav",
+          "reference": "восемьсот шестьдесят шесть шестьдесят шесть триста пятнадцать семнадцать",
+          "hypothesis": "866-66-315-17",
+          "wer": 12.5,
+          "errors": 1,
+          "ref_words": 8,
+          "audio_sec": 9.2,
+          "proc_sec": 4.27
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5da0a6e5a5872425dfa2d9a46020f215.wav",
+          "reference": "киноха американские боги",
+          "hypothesis": "Киноха «Американские боги»",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 4.55,
+          "proc_sec": 4.39
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1996f4ab66ba642032bfc0736e855a27.wav",
+          "reference": "истребители",
+          "hypothesis": "Истребители.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 3.18,
+          "proc_sec": 3.96
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6542ffad139aa16576ba492a578300f1.wav",
+          "reference": "серия девять сезон пять сериал наруто ураганные хроники",
+          "hypothesis": "Серия 9, сезон 5, сериал Наруто, ураганные хроники.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 8,
+          "audio_sec": 5.27,
+          "proc_sec": 5.25
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2858b3c4163d9f42acf007cd21fa2947.wav",
+          "reference": "орлов",
+          "hypothesis": "Орлов",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 2.0,
+          "proc_sec": 4.95
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/fbbb8ba59af231ba4b226458d7b74229.wav",
+          "reference": "афина а этот",
+          "hypothesis": "Афина, а этот?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 1.94,
+          "proc_sec": 4.56
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a0537a39889fe06bf4508cfa4f778c9e.wav",
+          "reference": " ",
+          "hypothesis": "Спасибо вам огромное.",
+          "wer": 0.0,
+          "errors": 3,
+          "ref_words": 0,
+          "audio_sec": 2.49,
+          "proc_sec": 4.0
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e3c7a35e5022d53bdf10deb521f6d7f.wav",
+          "reference": "запускай киноработу жанра научная лекция",
+          "hypothesis": "Запускайте на работу жанр «Научная лекция».",
+          "wer": 80.0,
+          "errors": 4,
+          "ref_words": 5,
+          "audio_sec": 3.92,
+          "proc_sec": 4.76
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5b90ed11abc4fb58fe8e8d33c530c495.wav",
+          "reference": "афина когда родился мерелин менсон",
+          "hypothesis": "Афина, когда родился Мэрилин Мэнсин.",
+          "wer": 40.0,
+          "errors": 2,
+          "ref_words": 5,
+          "audio_sec": 2.76,
+          "proc_sec": 4.78
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e77d8a2634c6f129cdad58e9f8431eb.wav",
+          "reference": "в ютьюбе включай зэ смокерс мэгазин о сигарах и табаке о чае и кофе",
+          "hypothesis": "В Ютьюбе включай The Smokers Magazine о сигарах и табаке, о чае и кофе.",
+          "wer": 21.43,
+          "errors": 3,
+          "ref_words": 14,
+          "audio_sec": 9.48,
+          "proc_sec": 5.69
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a480b64e866dcf8235c975a8ccb7233d.wav",
+          "reference": "няруко",
+          "hypothesis": "Не руку.",
+          "wer": 200.0,
+          "errors": 2,
+          "ref_words": 1,
+          "audio_sec": 1.8,
+          "proc_sec": 4.77
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c46b76ec2519af59b2be0ee9d052f0ae.wav",
+          "reference": "сергей гайзуллович степанов",
+          "hypothesis": "Сергей Газулович Степанов",
+          "wer": 33.33,
+          "errors": 1,
+          "ref_words": 3,
+          "audio_sec": 3.14,
+          "proc_sec": 4.81
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b226889bd93b9ae754f73615c18ac2c4.wav",
+          "reference": "включи альбом хочу по любви",
+          "hypothesis": "Включи альбом «Хочу по любви».",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 2.55,
+          "proc_sec": 5.39
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3b35d074406a01569ad00985af8bcf9d.wav",
+          "reference": "звездный десант закачай",
+          "hypothesis": "Звездный десант, закачай!",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 2.55,
+          "proc_sec": 4.74
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/470a154e3721926865aad642dfafce40.wav",
+          "reference": "алиса закажи мне пожалуйста килограмм яблок с доставкой на дом",
+          "hypothesis": "Алиса, закажи мне, пожалуйста, килограмм яблок с доставкой на дом.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 5.76,
+          "proc_sec": 5.36
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/9f8a61d339f591c5a895f5812df348f1.wav",
+          "reference": "громче",
+          "hypothesis": "Громче",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 3.06,
+          "proc_sec": 4.17
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db2a74f4bd23a464f39f1863bbad650.wav",
+          "reference": "афина такое случается",
+          "hypothesis": "Афина, такое случается.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.27,
+          "proc_sec": 4.53
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ad32636baec28050d44483084d58048e.wav",
+          "reference": "четыре четыреста семь семьсот сорок пять девять ноль двадцать шесть",
+          "hypothesis": "4 400 7 745 9 0 26",
+          "wer": 20.0,
+          "errors": 2,
+          "ref_words": 10,
+          "audio_sec": 5.08,
+          "proc_sec": 5.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c2c5bd40e6e7afc13873173764fe250e.wav",
+          "reference": "найди песня катерины рэй в ютьюбе",
+          "hypothesis": "Найди песни Катерины Рей в ютубе.",
+          "wer": 50.0,
+          "errors": 3,
+          "ref_words": 6,
+          "audio_sec": 3.08,
+          "proc_sec": 5.06
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ee8c9ec47b4f99ad2a9b1bf88a71fbb.wav",
+          "reference": "игорь масленников",
+          "hypothesis": "Игорь Масленников",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 2,
+          "audio_sec": 3.06,
+          "proc_sec": 4.41
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0aa7317352e4e7a10dce65c340007949.wav",
+          "reference": "грань будущего",
+          "hypothesis": "Грань будущего",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 2,
+          "audio_sec": 2.8,
+          "proc_sec": 4.27
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f33a150d82bad9c45826c78dfb560bfb.wav",
+          "reference": "анастасия витальевна пантелеева",
+          "hypothesis": "Анастасия Витальевна Пантелеева",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.12,
+          "proc_sec": 5.02
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8bb7a6f11eaadc88417a733b9bb610bb.wav",
+          "reference": "челюсти три покажи",
+          "hypothesis": "Челюсти 3. Покажи.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.6,
+          "proc_sec": 5.04
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f934479fa0cc50b4b404cc51798d8016.wav",
+          "reference": "афина телеканал дорама",
+          "hypothesis": "Афина телеканал Дорама",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.34,
+          "proc_sec": 5.41
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8fc37fc43e8f1c961b7d4538dc9cc288.wav",
+          "reference": "покажи мир сериал",
+          "hypothesis": "Покажи мир сериала.",
+          "wer": 33.33,
+          "errors": 1,
+          "ref_words": 3,
+          "audio_sec": 2.06,
+          "proc_sec": 4.71
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f2049defe2705310dbeb76ae52ff587b.wav",
+          "reference": "стоян",
+          "hypothesis": "Стоян.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 6.4,
+          "proc_sec": 4.37
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8349fdbd63f8fe36410e167f80c29806.wav",
+          "reference": "фильм окко",
+          "hypothesis": "Фильм «Окка».",
+          "wer": 50.0,
+          "errors": 1,
+          "ref_words": 2,
+          "audio_sec": 4.9,
+          "proc_sec": 4.9
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dbdf459dbd7bd738eab40deaea44ec4f.wav",
+          "reference": "медэкспресс плюс маршрут",
+          "hypothesis": "Медэкспресс плюс маршрут.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.72,
+          "proc_sec": 4.7
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e78e018a51e65189e9c50aac27f17bd2.wav",
+          "reference": "четвертый сезон сериала мотель бейтсов",
+          "hypothesis": "Четвертый сезон сериала Мотель Бейцев.",
+          "wer": 20.0,
+          "errors": 1,
+          "ref_words": 5,
+          "audio_sec": 3.76,
+          "proc_sec": 4.84
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/465b46433d305e525a835aa536032078.wav",
+          "reference": "джой найди недорогую эпиляцию в моем районе и запиши в воскресенье после двух дня",
+          "hypothesis": "Джой, найди недорогую эпиляцию в моем районе и запиши воскресенье после двух дня.",
+          "wer": 7.14,
+          "errors": 1,
+          "ref_words": 14,
+          "audio_sec": 7.28,
+          "proc_sec": 6.26
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/df4aa6926d49f199619eccfd02782eb2.wav",
+          "reference": "салют расскажи шутку про турникет",
+          "hypothesis": "Салют, расскажи шутку про турникет.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.14,
+          "proc_sec": 4.94
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/617ef415ce8853e37244fe476466c456.wav",
+          "reference": "мастер и маргарита часть шесть",
+          "hypothesis": "Мастер и Маргарита, часть 6.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.58,
+          "proc_sec": 4.57
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8848fc1f91ddedc57622e26b14d023fd.wav",
+          "reference": "поставь да да да танир темча",
+          "hypothesis": "Поставь да-да-да тонир темче.",
+          "wer": 33.33,
+          "errors": 2,
+          "ref_words": 6,
+          "audio_sec": 3.62,
+          "proc_sec": 4.87
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/46dc97742b1861333b4435097b2bc7c5.wav",
+          "reference": "пришествие дьявола четыре ка",
+          "hypothesis": "Пришествие дьявола 4К",
+          "wer": 50.0,
+          "errors": 2,
+          "ref_words": 4,
+          "audio_sec": 3.26,
+          "proc_sec": 4.54
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/25d5ec85b4312408e9326a300de17bb1.wav",
+          "reference": "покажи варианты фильмов с актером джеймсом макэвой",
+          "hypothesis": "Покажи варианты фильмов с актером Джеймсом МакЭллой.",
+          "wer": 14.29,
+          "errors": 1,
+          "ref_words": 7,
+          "audio_sec": 4.88,
+          "proc_sec": 5.86
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/073c1298afef8d796a7060f0c874f5a8.wav",
+          "reference": "галина валерьевна гусева",
+          "hypothesis": "Галина Валерьевна Гусева",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 2.64,
+          "proc_sec": 5.07
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1584dc13716c9c295e3338c47210362c.wav",
+          "reference": "поставь на смотрешке передачу наше тв",
+          "hypothesis": "Поставь на смотрюшки передачу Наша ТВ.",
+          "wer": 33.33,
+          "errors": 2,
+          "ref_words": 6,
+          "audio_sec": 3.68,
+          "proc_sec": 4.77
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d8ba1875118c9736497c304a355fdf31.wav",
+          "reference": "скажи пожалуйста куда тебе именно перевести тебе точно на телефон",
+          "hypothesis": "Скажи, пожалуйста, куда тебе именно перестать, я точно телефон.",
+          "wer": 30.0,
+          "errors": 3,
+          "ref_words": 10,
+          "audio_sec": 3.34,
+          "proc_sec": 5.25
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d51fe30b4a8b3da573664b17b1e2cd68.wav",
+          "reference": "пополнить номер папе",
+          "hypothesis": "Пополнить номер папы.",
+          "wer": 33.33,
+          "errors": 1,
+          "ref_words": 3,
+          "audio_sec": 3.78,
+          "proc_sec": 5.56
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/58cbe428a01034e00712535a3e39dbc4.wav",
+          "reference": "плюс ноль сто пятьдесят ноль тридцать три сорок восемь пятьдесят семь",
+          "hypothesis": "Плюс 0, 150, 0, 33, 48, 57.",
+          "wer": 9.09,
+          "errors": 1,
+          "ref_words": 11,
+          "audio_sec": 6.8,
+          "proc_sec": 5.51
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1e4d445a613bab8d2c76973dda3e731d.wav",
+          "reference": "сбер почему многие так не любят анимешников",
+          "hypothesis": "Сбер, почему многие так не любят анимешников?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 5.04,
+          "proc_sec": 6.02
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b168ce6118b0ae1bb85df481cfcc419c.wav",
+          "reference": "покажи девушка входит в бар аш д",
+          "hypothesis": "Покажи, девушка входит в бар HD.",
+          "wer": 28.57,
+          "errors": 2,
+          "ref_words": 7,
+          "audio_sec": 3.52,
+          "proc_sec": 5.33
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e3e6ef24af12d71edebb522a1d7dc6ff.wav",
+          "reference": "открой на смотрешке телеканал егэ тв",
+          "hypothesis": "Открой на Смотрёжке телеканал ЕГЭ ТВ.",
+          "wer": 16.67,
+          "errors": 1,
+          "ref_words": 6,
+          "audio_sec": 2.82,
+          "proc_sec": 4.89
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3393027945febc1fb91877095d22c02d.wav",
+          "reference": "ты найдешь у себя копы в глубоком запасе",
+          "hypothesis": "Ты найдешь у себя копы в глубоком запасе.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 8,
+          "audio_sec": 4.44,
+          "proc_sec": 4.79
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4f7ba4b7b40745f8da445f4f446d73ee.wav",
+          "reference": "джой популярные песни джастина тимберлейка",
+          "hypothesis": "Джой, популярные песни Джастина Тимберлейка.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.39,
+          "proc_sec": 4.8
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5449c273e94da3391910dd9b0342316d.wav",
+          "reference": "хочу продать тысячу казахских тенге алиса скажи какая стоимость обмена на боливар",
+          "hypothesis": "Хочу продать тысячу казахских тенге. Алиса, скажи, какая стоимость обмена на боливар?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sec": 9.57,
+          "proc_sec": 6.19
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ab91b1121fcdf08c0c43bfef563475b.wav",
+          "reference": "шоли время работы",
+          "hypothesis": "Шо ли? Время работы.",
+          "wer": 66.67,
+          "errors": 2,
+          "ref_words": 3,
+          "audio_sec": 2.76,
+          "proc_sec": 4.49
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/658243c4e602f4216f46a171d1be230f.wav",
+          "reference": "сериал дальнобойщики третий сезон",
+          "hypothesis": "Сериал Дальнобойщики, 3 сезон.",
+          "wer": 25.0,
+          "errors": 1,
+          "ref_words": 4,
+          "audio_sec": 3.24,
+          "proc_sec": 5.0
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5899c2a3abc45b9c2e6925c7eef50461.wav",
+          "reference": "семь двести пятьдесят три двести четыре тридцать шесть девять два",
+          "hypothesis": "7-200-53-200-4-36-9-2",
+          "wer": 20.0,
+          "errors": 2,
+          "ref_words": 10,
+          "audio_sec": 4.52,
+          "proc_sec": 4.76
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/09ab78c2dbfd26d71d6cc07d7ad5394c.wav",
+          "reference": "салют включить освещение возле туалета",
+          "hypothesis": "Абсолют. Включите освещение возле туалета.",
+          "wer": 40.0,
+          "errors": 2,
+          "ref_words": 5,
+          "audio_sec": 4.44,
+          "proc_sec": 4.7
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dad811f99c54d2c22fb188e13a53a534.wav",
+          "reference": "встреча между лестером и сити",
+          "hypothesis": "Встреча между Лестером и Сити.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.44,
+          "proc_sec": 4.51
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d059340ddbf3be9f4643b03a13eefa43.wav",
+          "reference": "сбер найди фильм джуманджи",
+          "hypothesis": "Сберная Ефим Джуманджи",
+          "wer": 75.0,
+          "errors": 3,
+          "ref_words": 4,
+          "audio_sec": 2.61,
+          "proc_sec": 4.51
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ee1aaef55204c97df20bcc1b52ea3fd0.wav",
+          "reference": "салют поставь флайт",
+          "hypothesis": "Салют, поставь флайт.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.58,
+          "proc_sec": 4.44
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d6b5171049e249b65d1f9fc25fda0fe4.wav",
+          "reference": "попроси консьерж сервис перезвонить",
+          "hypothesis": "Попроси консьерж сервис перезвонить.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 5.04,
+          "proc_sec": 5.21
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d837d19f0291c9522d77b0701c47ad1f.wav",
+          "reference": "ооо прайс ближайший",
+          "hypothesis": "ООО «Прайс Ближайший»",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.36,
+          "proc_sec": 4.7
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b7b98c3c5bc586f35d2fe7f26161fe60.wav",
+          "reference": "алиса открой фильм ирония судьбы",
+          "hypothesis": "Алиса, открой фильм «Ирония судьбы».",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.54,
+          "proc_sec": 4.78
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4b3d7c6a4898ef544e6305418248ff47.wav",
+          "reference": "включи дублеры четыре ка",
+          "hypothesis": "Включи дублёры 4К.",
+          "wer": 50.0,
+          "errors": 2,
+          "ref_words": 4,
+          "audio_sec": 5.32,
+          "proc_sec": 4.39
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/03f52381d8c64a12d1733e13022007d5.wav",
+          "reference": "сбер какая самая удобная поза для работы в офисе как расположить ноги удобнее всего",
+          "hypothesis": "Сбер, какая самая удобная поза для работы в офисе? Как расположить ноги удобнее всего?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sec": 10.28,
+          "proc_sec": 5.89
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4dfb680d79447e7da6aacf345048092d.wav",
+          "reference": "девятьсот сорок ноль девятьсот один восемьдесят девять двести пятнадцать",
+          "hypothesis": "940, 0, 901, 89, 215",
+          "wer": 22.22,
+          "errors": 2,
+          "ref_words": 9,
+          "audio_sec": 8.04,
+          "proc_sec": 4.63
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/bfa016e84da9d9d88f9225c6ffdc574b.wav",
+          "reference": "оберхаузен",
+          "hypothesis": "Оберхаузен",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 3.92,
+          "proc_sec": 4.82
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8f4eca8761c838b3af0403ace10fd32e.wav",
+          "reference": "муравленко",
+          "hypothesis": "Муравленка",
+          "wer": 100.0,
+          "errors": 1,
+          "ref_words": 1,
+          "audio_sec": 2.14,
+          "proc_sec": 4.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0cce291da8ab61efc72a7aeefc680592.wav",
+          "reference": "посоветуй мне на тв телеканал первый канал",
+          "hypothesis": "Посоветуй мне на ТВ телеканал Первый канал",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 4.06,
+          "proc_sec": 4.68
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81892c08011b39a6f6ec16e21afb53dc.wav",
+          "reference": "сколько футов в метре",
+          "hypothesis": "Сколько футов в метре?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 1.65,
+          "proc_sec": 4.25
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/717ffdb8ea18db9e6261bda8f90f13c8.wav",
+          "reference": "включи мне маленькая колдунья",
+          "hypothesis": "Включи мне, маленькая колдунья.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 4.92,
+          "proc_sec": 4.41
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5d02dcc58647322a4a490f4551bea872.wav",
+          "reference": "алексеевкой",
+          "hypothesis": "Алексеевкой.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 2.07,
+          "proc_sec": 3.99
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7a3de75a372882e99d41d60de1305f22.wav",
+          "reference": "сумма покупки триста сингапурских долларов",
+          "hypothesis": "Сумма покупки 300 сингапурских долларов.",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.95,
+          "proc_sec": 4.96
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/59b179bc3beb1302679caf4960fc5165.wav",
+          "reference": "у тебя есть лошарик",
+          "hypothesis": "У тебя есть лошарик?",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 2.22,
+          "proc_sec": 5.45
+        }
+      ]
+    },
+    {
+      "name": "vosk",
+      "samples": 100,
+      "wer": 5.44,
+      "total_errors": 28,
+      "total_ref_words": 515,
+      "total_audio_sec": 414.06,
+      "total_proc_sec": 17.67,
+      "rtf": 0.043,
+      "details": [
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e632f7d39c15e7edfc665b91e6f2071f.wav",
+          "reference": "афина воспроизведи музыку вперемешку",
+          "hypothesis": "афина воспроизведи музыку вперемешку",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 4.9,
+          "proc_sec": 1.01
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db5df8bb9e3b6660b2a04b34d4a355d.wav",
+          "reference": "найти сериал григорий р",
+          "hypothesis": "найти сериал григорий р",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 3.65,
+          "proc_sec": 0.29
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2c471aedc6979109f28cd53c58f8c4fb.wav",
+          "reference": "прямой эфир апл манчестер юнайтед тоттенхэм",
+          "hypothesis": "прямой эфир апл манчестер юнайтед тоттенхэм",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 4.34,
+          "proc_sec": 1.31
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/756a137ee9debde4a008adc4a4121dc7.wav",
+          "reference": "ильвиром ивановичем ворончихиным",
+          "hypothesis": "ильвиром ивановичем ворончихину им",
+          "wer": 66.67,
+          "errors": 2,
+          "ref_words": 3,
+          "audio_sec": 3.9,
+          "proc_sec": 0.98
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1ee3b00170123a6723a40e129b2f6bce.wav",
+          "reference": "можешь показать киношку исходный код",
+          "hypothesis": "можешь показать киношку исходный код",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.32,
+          "proc_sec": 0.17
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/35e8b07c1109b98209aded328fa6da0e.wav",
+          "reference": "изменился ли курс рубля к американскому доллару со вчерашнего дня",
+          "hypothesis": "изменился ли курс рубля к американскому доллару со вчерашнего дня",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 4.66,
+          "proc_sec": 0.24
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c35deaf94921ca67be23c19580a13397.wav",
+          "reference": "найти фильм плохие парни первую часть",
+          "hypothesis": "найти фильм плохие парни первую часть",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 6.56,
+          "proc_sec": 0.3
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/769fc2582dd82d1a3d4b7de9154d43b4.wav",
+          "reference": "эпизод тридцать один сезона тринадцать фильма люди",
+          "hypothesis": "эпизод тридцать один сезона тринадцать фильма люди",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 5.88,
+          "proc_sec": 0.26
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6a5c6ed155b43cdc77d2225084f6bd0a.wav",
+          "reference": "купить моющее средство",
+          "hypothesis": "купить моющее средство",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 5.1,
+          "proc_sec": 0.22
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/38bf4f3c89e0507ee921a669fec12e9d.wav",
+          "reference": "ноль триста восемь триста восемнадцать триста четыре шестьдесят девять",
+          "hypothesis": "ноль триста восемь триста восемнадцать триста четыре шестьдесят девять",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sec": 8.82,
+          "proc_sec": 0.4
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8e33d6bcd6f401e324d4d2bc6e0a67bd.wav",
+          "reference": "прямой эфир матча апл норвич против саутгемптона",
+          "hypothesis": "прямой эфир матча апл норвич против саутгемптона",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 7.24,
+          "proc_sec": 0.33
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7052b37dd7615608045663a08ae031f8.wav",
+          "reference": "включай шоу бинго бонго муви филм",
+          "hypothesis": "включай шоу бинго бонго муви филм",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 3.15,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a4e51407e138cc48ee0c3b43dc0ed2fc.wav",
+          "reference": "что отель может предложить молодоженам",
+          "hypothesis": "что отель может предложить молодожёнам",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.11,
+          "proc_sec": 0.16
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/797a917ac0e55cd94add5ffd098b6c7d.wav",
+          "reference": "покажи на тв канал тнт четыре",
+          "hypothesis": "покажи на тв канал тнт четыре",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 3.94,
+          "proc_sec": 0.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0dd42ce864976e9ab17246ad24ccd839.wav",
+          "reference": "фильм братьев руссо где умер железный человек",
+          "hypothesis": "фильм братьев руссо где умер железный человек",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 3.08,
+          "proc_sec": 0.11
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0211ba73594aa9d1df24320749b29d30.wav",
+          "reference": "добрый день подскажите а можно будет заказать цветы в номер",
+          "hypothesis": "добрый день подскажите а можно будет заказать цветы в номер",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 8.0,
+          "proc_sec": 0.36
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/42ac5f558b58c7f5cf40eeccf3e8d494.wav",
+          "reference": "сбер фильмы с джонни деппом",
+          "hypothesis": "сбер фильмы с джонни деппом",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 2.99,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3d8c1bff38d437ca9439430479db4f21.wav",
+          "reference": "пополнить баланс маме двести рублей",
+          "hypothesis": "пополнить баланс маме двести рублей",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.08,
+          "proc_sec": 0.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5590a7a48dbdf2b07a022af942dea954.wav",
+          "reference": "в твоем каталоге есть фильм в стиле сатирической комедии",
+          "hypothesis": "в твоём каталоге есть фильм в стиле сатирической комедии",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sec": 4.29,
+          "proc_sec": 0.17
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/024889aefe46a494428fed7b7ad17e0f.wav",
+          "reference": "джой подготовьте выписку по счету",
+          "hypothesis": "джой подготовьте выписку по счету",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.49,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/813e3e8a3363a1b87b3a94026d417050.wav",
+          "reference": "джой оплата мобильной связи сто рублей переведи пожалуйста",
+          "hypothesis": "джой оплата мобильной связи сто рублей переведи пожалуйста",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 8,
+          "audio_sec": 3.98,
+          "proc_sec": 0.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4093652fa0a9f6a3c2aa84077984b998.wav",
+          "reference": "хочу увидеть киношку в стилистике ужасов",
+          "hypothesis": "хочу увидеть киношку в стилистике ужасов",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 3.88,
+          "proc_sec": 0.13
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/11b34b088b9951f459ef9edd44dad393.wav",
+          "reference": "алиса пополни номер александра сергеевича",
+          "hypothesis": "алиса пополни номер александра сергеевича",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.23,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/55a18f832aa5510c50e1cae20974ec36.wav",
+          "reference": "лучшие фильмы путешествия",
+          "hypothesis": "лучшие фильмы путешествия",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 2.66,
+          "proc_sec": 0.06
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/72ee28024827bf2ca812d382a5f795f9.wav",
+          "reference": "посоветуй мне видео шоу",
+          "hypothesis": "посоветуй мне видеошоу",
+          "wer": 50.0,
+          "errors": 2,
+          "ref_words": 4,
+          "audio_sec": 3.21,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81657853983281eddca19fcda0bf01f8.wav",
+          "reference": "шант на смотрешке",
+          "hypothesis": "шант на смотрёшке",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 1.48,
+          "proc_sec": 0.0
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7880e5f68b28c7753e609ded237f0bca.wav",
+          "reference": "в двадцать один ноль ноль выставь яркость на семьдесят процентов",
+          "hypothesis": "в двадцать один ноль ноль выставь яркость на семьдесят процентов",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 7.16,
+          "proc_sec": 0.31
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e93a365b34d3e812c9f29e107cc711b6.wav",
+          "reference": "морковка",
+          "hypothesis": "маяковка",
+          "wer": 100.0,
+          "errors": 1,
+          "ref_words": 1,
+          "audio_sec": 2.14,
+          "proc_sec": 0.04
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8cf9ab81132f44985f3b73284b368850.wav",
+          "reference": "ок ок",
+          "hypothesis": "ок ок",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 2,
+          "audio_sec": 2.24,
+          "proc_sec": 0.04
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/487abe7cc1852249b63c2f4b73209049.wav",
+          "reference": "у тебя будет репродукция питера джексона",
+          "hypothesis": "у тебя будет репродукция питера джексона",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 3.2,
+          "proc_sec": 0.1
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab178a81ce2e23202dad9af2da7e8a61.wav",
+          "reference": "первый образовательный на смотрешке",
+          "hypothesis": "первый образовательный на смотрёшке",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 2.15,
+          "proc_sec": 0.04
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ab669e8622c9edd9eadd04352f72830f.wav",
+          "reference": "кантемир балагов фильм теснота",
+          "hypothesis": "кантемир балагов фильм теснота",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 5.95,
+          "proc_sec": 0.24
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/13de1cf4e35043bd9a0f3663a7b83b1f.wav",
+          "reference": "ясном",
+          "hypothesis": "ясно",
+          "wer": 100.0,
+          "errors": 1,
+          "ref_words": 1,
+          "audio_sec": 1.56,
+          "proc_sec": 0.0
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/82fbc151e6d9b46407bc127275e34f7b.wav",
+          "reference": "восемьсот шестьдесят шесть шестьдесят шесть триста пятнадцать семнадцать",
+          "hypothesis": "восемьсот шестьдесят шесть шестьдесят шесть триста пятнадцать семнадцать",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 8,
+          "audio_sec": 9.2,
+          "proc_sec": 0.39
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5da0a6e5a5872425dfa2d9a46020f215.wav",
+          "reference": "киноха американские боги",
+          "hypothesis": "киноха американские боги",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 4.55,
+          "proc_sec": 0.16
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1996f4ab66ba642032bfc0736e855a27.wav",
+          "reference": "истребители",
+          "hypothesis": "истребители",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 3.18,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/6542ffad139aa16576ba492a578300f1.wav",
+          "reference": "серия девять сезон пять сериал наруто ураганные хроники",
+          "hypothesis": "серия девять сезон пять сериал наруто ураганные хроники",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 8,
+          "audio_sec": 5.27,
+          "proc_sec": 0.2
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/2858b3c4163d9f42acf007cd21fa2947.wav",
+          "reference": "орлов",
+          "hypothesis": "орлов",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 2.0,
+          "proc_sec": 0.03
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/fbbb8ba59af231ba4b226458d7b74229.wav",
+          "reference": "афина а этот",
+          "hypothesis": "афина а этот",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 1.94,
+          "proc_sec": 0.03
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a0537a39889fe06bf4508cfa4f778c9e.wav",
+          "reference": " ",
+          "hypothesis": "спасибо владимир",
+          "wer": 0.0,
+          "errors": 2,
+          "ref_words": 0,
+          "audio_sec": 2.49,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e3c7a35e5022d53bdf10deb521f6d7f.wav",
+          "reference": "запускай киноработу жанра научная лекция",
+          "hypothesis": "запускай киноработу жанра научная лекция",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.92,
+          "proc_sec": 0.13
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5b90ed11abc4fb58fe8e8d33c530c495.wav",
+          "reference": "афина когда родился мерелин менсон",
+          "hypothesis": "афина когда родился мэрилин мэнсон",
+          "wer": 40.0,
+          "errors": 2,
+          "ref_words": 5,
+          "audio_sec": 2.76,
+          "proc_sec": 0.07
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e77d8a2634c6f129cdad58e9f8431eb.wav",
+          "reference": "в ютьюбе включай зэ смокерс мэгазин о сигарах и табаке о чае и кофе",
+          "hypothesis": "в ютьюбе включай зэ смокерс мэгазин о сигарах и табаке а чай и кофе",
+          "wer": 14.29,
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sec": 9.48,
+          "proc_sec": 0.41
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/a480b64e866dcf8235c975a8ccb7233d.wav",
+          "reference": "няруко",
+          "hypothesis": "няруко",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 1.8,
+          "proc_sec": 0.0
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c46b76ec2519af59b2be0ee9d052f0ae.wav",
+          "reference": "сергей гайзуллович степанов",
+          "hypothesis": "сергей газу лович степанов",
+          "wer": 66.67,
+          "errors": 2,
+          "ref_words": 3,
+          "audio_sec": 3.14,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b226889bd93b9ae754f73615c18ac2c4.wav",
+          "reference": "включи альбом хочу по любви",
+          "hypothesis": "включи альбом хочу по любви",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 2.55,
+          "proc_sec": 0.06
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3b35d074406a01569ad00985af8bcf9d.wav",
+          "reference": "звездный десант закачай",
+          "hypothesis": "звёздный десант закачай",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 2.55,
+          "proc_sec": 0.07
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/470a154e3721926865aad642dfafce40.wav",
+          "reference": "алиса закажи мне пожалуйста килограмм яблок с доставкой на дом",
+          "hypothesis": "алиса закажи мне пожалуйста килограмм яблок с доставкой на дом",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 5.76,
+          "proc_sec": 0.22
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/9f8a61d339f591c5a895f5812df348f1.wav",
+          "reference": "громче",
+          "hypothesis": "громче",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 3.06,
+          "proc_sec": 0.08
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5db2a74f4bd23a464f39f1863bbad650.wav",
+          "reference": "афина такое случается",
+          "hypothesis": "афина такое случается",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.27,
+          "proc_sec": 0.11
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ad32636baec28050d44483084d58048e.wav",
+          "reference": "четыре четыреста семь семьсот сорок пять девять ноль двадцать шесть",
+          "hypothesis": "четыре четыреста семь семьсот сорок пять девять ноль двадцать шесть",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 5.08,
+          "proc_sec": 0.18
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/c2c5bd40e6e7afc13873173764fe250e.wav",
+          "reference": "найди песня катерины рэй в ютьюбе",
+          "hypothesis": "найди песни катерины рей в ютюбе",
+          "wer": 50.0,
+          "errors": 3,
+          "ref_words": 6,
+          "audio_sec": 3.08,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ee8c9ec47b4f99ad2a9b1bf88a71fbb.wav",
+          "reference": "игорь масленников",
+          "hypothesis": "игорь масленников",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 2,
+          "audio_sec": 3.06,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0aa7317352e4e7a10dce65c340007949.wav",
+          "reference": "грань будущего",
+          "hypothesis": "грань будущего",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 2,
+          "audio_sec": 2.8,
+          "proc_sec": 0.08
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f33a150d82bad9c45826c78dfb560bfb.wav",
+          "reference": "анастасия витальевна пантелеева",
+          "hypothesis": "анастасия витальевна пантелеева",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.12,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8bb7a6f11eaadc88417a733b9bb610bb.wav",
+          "reference": "челюсти три покажи",
+          "hypothesis": "челюсти три покажи",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.6,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f934479fa0cc50b4b404cc51798d8016.wav",
+          "reference": "афина телеканал дорама",
+          "hypothesis": "афина телеканал дорама",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.34,
+          "proc_sec": 0.1
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8fc37fc43e8f1c961b7d4538dc9cc288.wav",
+          "reference": "покажи мир сериал",
+          "hypothesis": "покажи мир сериала",
+          "wer": 33.33,
+          "errors": 1,
+          "ref_words": 3,
+          "audio_sec": 2.06,
+          "proc_sec": 0.03
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/f2049defe2705310dbeb76ae52ff587b.wav",
+          "reference": "стоян",
+          "hypothesis": "стоян",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 6.4,
+          "proc_sec": 0.26
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8349fdbd63f8fe36410e167f80c29806.wav",
+          "reference": "фильм окко",
+          "hypothesis": "фильм окко",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 2,
+          "audio_sec": 4.9,
+          "proc_sec": 0.17
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dbdf459dbd7bd738eab40deaea44ec4f.wav",
+          "reference": "медэкспресс плюс маршрут",
+          "hypothesis": "медэкспресс плюс маршрут",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.72,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e78e018a51e65189e9c50aac27f17bd2.wav",
+          "reference": "четвертый сезон сериала мотель бейтсов",
+          "hypothesis": "четвёртый сезон сериала мотель бейтсов",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.76,
+          "proc_sec": 0.13
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/465b46433d305e525a835aa536032078.wav",
+          "reference": "джой найди недорогую эпиляцию в моем районе и запиши в воскресенье после двух дня",
+          "hypothesis": "джой найди недорогую эпиляцию в моем районе и запиши в воскресенье после двух дня",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sec": 7.28,
+          "proc_sec": 0.3
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/df4aa6926d49f199619eccfd02782eb2.wav",
+          "reference": "салют расскажи шутку про турникет",
+          "hypothesis": "салют расскажи шутку про турникет",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.14,
+          "proc_sec": 0.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/617ef415ce8853e37244fe476466c456.wav",
+          "reference": "мастер и маргарита часть шесть",
+          "hypothesis": "мастер и маргарита пять шесть",
+          "wer": 20.0,
+          "errors": 1,
+          "ref_words": 5,
+          "audio_sec": 3.58,
+          "proc_sec": 0.16
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8848fc1f91ddedc57622e26b14d023fd.wav",
+          "reference": "поставь да да да танир темча",
+          "hypothesis": "поставь да да да танир тиомча",
+          "wer": 16.67,
+          "errors": 1,
+          "ref_words": 6,
+          "audio_sec": 3.62,
+          "proc_sec": 0.11
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/46dc97742b1861333b4435097b2bc7c5.wav",
+          "reference": "пришествие дьявола четыре ка",
+          "hypothesis": "пришествие дьявола четыре ка",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 3.26,
+          "proc_sec": 0.09
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/25d5ec85b4312408e9326a300de17bb1.wav",
+          "reference": "покажи варианты фильмов с актером джеймсом макэвой",
+          "hypothesis": "покажи варианты фильмов с актёром джеймсом макэвой",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 4.88,
+          "proc_sec": 0.17
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/073c1298afef8d796a7060f0c874f5a8.wav",
+          "reference": "галина валерьевна гусева",
+          "hypothesis": "галина валерьевна гусева",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 2.64,
+          "proc_sec": 0.08
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1584dc13716c9c295e3338c47210362c.wav",
+          "reference": "поставь на смотрешке передачу наше тв",
+          "hypothesis": "поставь на смотрёшке передачу наше тв",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 3.68,
+          "proc_sec": 0.11
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d8ba1875118c9736497c304a355fdf31.wav",
+          "reference": "скажи пожалуйста куда тебе именно перевести тебе точно на телефон",
+          "hypothesis": "скажи пожалуйста куати именно пятьдесят точно на телефон",
+          "wer": 40.0,
+          "errors": 4,
+          "ref_words": 10,
+          "audio_sec": 3.34,
+          "proc_sec": 0.13
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d51fe30b4a8b3da573664b17b1e2cd68.wav",
+          "reference": "пополнить номер папе",
+          "hypothesis": "пополнить номер по",
+          "wer": 33.33,
+          "errors": 1,
+          "ref_words": 3,
+          "audio_sec": 3.78,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/58cbe428a01034e00712535a3e39dbc4.wav",
+          "reference": "плюс ноль сто пятьдесят ноль тридцать три сорок восемь пятьдесят семь",
+          "hypothesis": "плюс ноль сто пятьдесят ноль тридцать три сорок восемь пятьдесят семь",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sec": 6.8,
+          "proc_sec": 0.27
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/1e4d445a613bab8d2c76973dda3e731d.wav",
+          "reference": "сбер почему многие так не любят анимешников",
+          "hypothesis": "сбер почему многие так не любят анимешников",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 5.04,
+          "proc_sec": 0.2
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b168ce6118b0ae1bb85df481cfcc419c.wav",
+          "reference": "покажи девушка входит в бар аш д",
+          "hypothesis": "покажи девушка входит в бар аш дэ",
+          "wer": 14.29,
+          "errors": 1,
+          "ref_words": 7,
+          "audio_sec": 3.52,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/e3e6ef24af12d71edebb522a1d7dc6ff.wav",
+          "reference": "открой на смотрешке телеканал егэ тв",
+          "hypothesis": "открой на смотрёшке телеканал егэ тв",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 6,
+          "audio_sec": 2.82,
+          "proc_sec": 0.08
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/3393027945febc1fb91877095d22c02d.wav",
+          "reference": "ты найдешь у себя копы в глубоком запасе",
+          "hypothesis": "ты найдёшь у себя копы в глубоком запасе",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 8,
+          "audio_sec": 4.44,
+          "proc_sec": 0.16
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4f7ba4b7b40745f8da445f4f446d73ee.wav",
+          "reference": "джой популярные песни джастина тимберлейка",
+          "hypothesis": "джой популярные песни джастина тимберлейка",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.39,
+          "proc_sec": 0.16
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5449c273e94da3391910dd9b0342316d.wav",
+          "reference": "хочу продать тысячу казахских тенге алиса скажи какая стоимость обмена на боливар",
+          "hypothesis": "хочу продать тысячу казахских тенге алиса скажи какая стоимость обмена на боливар",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sec": 9.57,
+          "proc_sec": 0.41
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4ab91b1121fcdf08c0c43bfef563475b.wav",
+          "reference": "шоли время работы",
+          "hypothesis": "шули время работы",
+          "wer": 33.33,
+          "errors": 1,
+          "ref_words": 3,
+          "audio_sec": 2.76,
+          "proc_sec": 0.07
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/658243c4e602f4216f46a171d1be230f.wav",
+          "reference": "сериал дальнобойщики третий сезон",
+          "hypothesis": "сериал дальнобойщики третий сезон",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 3.24,
+          "proc_sec": 0.1
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5899c2a3abc45b9c2e6925c7eef50461.wav",
+          "reference": "семь двести пятьдесят три двести четыре тридцать шесть девять два",
+          "hypothesis": "семь двести пятьдесят три двести четыре тридцать шесть девять два",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 10,
+          "audio_sec": 4.52,
+          "proc_sec": 0.17
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/09ab78c2dbfd26d71d6cc07d7ad5394c.wav",
+          "reference": "салют включить освещение возле туалета",
+          "hypothesis": "салют включить освещение возле туалета",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.44,
+          "proc_sec": 0.16
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/dad811f99c54d2c22fb188e13a53a534.wav",
+          "reference": "встреча между лестером и сити",
+          "hypothesis": "встреча между лестером и сити",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.44,
+          "proc_sec": 0.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d059340ddbf3be9f4643b03a13eefa43.wav",
+          "reference": "сбер найди фильм джуманджи",
+          "hypothesis": "сбер найди фильм джуманджи",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 2.61,
+          "proc_sec": 0.07
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/ee1aaef55204c97df20bcc1b52ea3fd0.wav",
+          "reference": "салют поставь флайт",
+          "hypothesis": "салют поставь флайт",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.58,
+          "proc_sec": 0.11
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d6b5171049e249b65d1f9fc25fda0fe4.wav",
+          "reference": "попроси консьерж сервис перезвонить",
+          "hypothesis": "попроси консьерж сервис перезвонить",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 5.04,
+          "proc_sec": 0.2
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/d837d19f0291c9522d77b0701c47ad1f.wav",
+          "reference": "ооо прайс ближайший",
+          "hypothesis": "ооо прайс ближайший",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 3,
+          "audio_sec": 3.36,
+          "proc_sec": 0.1
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/b7b98c3c5bc586f35d2fe7f26161fe60.wav",
+          "reference": "алиса открой фильм ирония судьбы",
+          "hypothesis": "алиса открой фильм ирония судьбы",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 4.54,
+          "proc_sec": 0.16
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4b3d7c6a4898ef544e6305418248ff47.wav",
+          "reference": "включи дублеры четыре ка",
+          "hypothesis": "включи дублёра четыре ка",
+          "wer": 25.0,
+          "errors": 1,
+          "ref_words": 4,
+          "audio_sec": 5.32,
+          "proc_sec": 0.19
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/03f52381d8c64a12d1733e13022007d5.wav",
+          "reference": "сбер какая самая удобная поза для работы в офисе как расположить ноги удобнее всего",
+          "hypothesis": "сбер какая самая удобная поза для работы в офисе как расположить ноги удобнее всего",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sec": 10.28,
+          "proc_sec": 0.44
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/4dfb680d79447e7da6aacf345048092d.wav",
+          "reference": "девятьсот сорок ноль девятьсот один восемьдесят девять двести пятнадцать",
+          "hypothesis": "девятьсот сорок ноль девятьсот один восемьдесят девять двести пятнадцать",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sec": 8.04,
+          "proc_sec": 0.32
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/bfa016e84da9d9d88f9225c6ffdc574b.wav",
+          "reference": "оберхаузен",
+          "hypothesis": "оберхаузен",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 3.92,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/8f4eca8761c838b3af0403ace10fd32e.wav",
+          "reference": "муравленко",
+          "hypothesis": "муравленко",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 2.14,
+          "proc_sec": 0.04
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/0cce291da8ab61efc72a7aeefc680592.wav",
+          "reference": "посоветуй мне на тв телеканал первый канал",
+          "hypothesis": "посоветуй мне на тв телеканал первый канал",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sec": 4.06,
+          "proc_sec": 0.14
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/81892c08011b39a6f6ec16e21afb53dc.wav",
+          "reference": "сколько футов в метре",
+          "hypothesis": "сколько футов в метре",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 1.65,
+          "proc_sec": 0.0
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/717ffdb8ea18db9e6261bda8f90f13c8.wav",
+          "reference": "включи мне маленькая колдунья",
+          "hypothesis": "включи мне маленькая колдунья",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 4.92,
+          "proc_sec": 0.18
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/5d02dcc58647322a4a490f4551bea872.wav",
+          "reference": "алексеевкой",
+          "hypothesis": "алексеевкой",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 1,
+          "audio_sec": 2.07,
+          "proc_sec": 0.04
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/7a3de75a372882e99d41d60de1305f22.wav",
+          "reference": "сумма покупки триста сингапурских долларов",
+          "hypothesis": "сумма покупки триста сингапурских долларов",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 5,
+          "audio_sec": 3.95,
+          "proc_sec": 0.12
+        },
+        {
+          "file": "/Users/ekhodzitsky/.gigastt/benchmarks/golos_wav/59b179bc3beb1302679caf4960fc5165.wav",
+          "reference": "у тебя есть лошарик",
+          "hypothesis": "у тебя есть лошарик",
+          "wer": 0.0,
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sec": 2.22,
+          "proc_sec": 0.04
         }
       ]
     }
