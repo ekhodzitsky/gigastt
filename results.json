@@ -1,0 +1,16 @@
+{
+  "manifest_samples": 0,
+  "runners": [
+    {
+      "name": "gigastt",
+      "samples": 0,
+      "wer": 11.4,
+      "total_errors": 0,
+      "total_ref_words": 0,
+      "total_audio_sec": 0,
+      "total_proc_sec": 0,
+      "rtf": 0.28,
+      "details": []
+    }
+  ]
+}
