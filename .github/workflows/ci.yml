@@ -245,7 +245,7 @@ jobs:
         run: |
           cargo llvm-cov --no-report --workspace --lib --bins
           cargo llvm-cov report --cobertura --output-path cobertura-unit.xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         with:
           files: ./cobertura-unit.xml
           fail_ci_if_error: false
@@ -556,7 +556,7 @@ jobs:
           cargo llvm-cov --no-report run -p gigastt -- transcribe /tmp/test_silence.wav || true
           cargo llvm-cov report --cobertura --output-path cobertura-e2e.xml
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         with:
           files: ./cobertura-e2e.xml
           fail_ci_if_error: false
