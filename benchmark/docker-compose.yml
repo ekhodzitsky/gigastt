@@ -1,0 +1,23 @@
+services:
+  benchmark:
+    build:
+      context: ..
+      dockerfile: benchmark/Dockerfile
+    volumes:
+      # Mount model caches so they persist across runs
+      - ~/.gigastt/models:/root/.gigastt/models:ro
+      - ~/.cache/whisper.cpp:/root/.cache/whisper.cpp
+      - ~/.cache/vosk:/root/.cache/vosk
+      # Mount benchmark dataset
+      - ~/.gigastt/benchmarks:/root/.gigastt/benchmarks:ro
+      # Mount output directory
+      - ./results:/workspace/benchmark/results
+    environment:
+      - GIGASTT_BENCHMARK_MAX_SAMPLES=${GIGASTT_BENCHMARK_MAX_SAMPLES:-100}
+    command:
+      - --max-samples
+      - "${GIGASTT_BENCHMARK_MAX_SAMPLES:-100}"
+      - --runners
+      - "${BENCHMARK_RUNNERS:-all}"
+      - --output
+      - /workspace/benchmark/results/results.json

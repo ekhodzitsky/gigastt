@@ -1,68 +1,85 @@
 #!/bin/bash
-# Sequential benchmark monitor for long-running ASR benchmarks
-# Usage: ./monitor.sh &
+# Monitor all 4 benchmark processes and finalize results when all complete.
 
-LOG="/tmp/bench_sequential.log"
-FASTER_LOG="/tmp/bench_full_faster.log"
-WHISPER_LOG="/tmp/bench_full_whisper.log"
-INTERVAL=600  # 10 minutes
+RESULTS=(
+  "/tmp/results_full_gigastt.json"
+  "/tmp/results_full_whisper.json"
+  "/tmp/results_full_faster.json"
+  "/tmp/results_full_vosk.json"
+)
+LOG="/tmp/bench_monitor.log"
+REPORT="/tmp/bench_final_report.txt"
 
-echo "[$(date -Iseconds)] Monitor started" >> "$LOG"
+echo "[$(date)] Monitor started" >> "$LOG"
 
+# Wait for all result files to exist
 while true; do
-    # Check which engine is currently running
-    FASTER_PID=$(pgrep -f "runners faster-whisper" || true)
-    WHISPER_PID=$(pgrep -f "runners whisper_cpp" || true)
-
-    if [ -n "$FASTER_PID" ]; then
-        PROGRESS=$(tail -1 "$FASTER_LOG" 2>/dev/null | grep -o '\[[0-9]*/9994\]' || echo "[?/9994]")
-        echo "[$(date -Iseconds)] faster-whisper running $PROGRESS" >> "$LOG"
-    elif [ -n "$WHISPER_PID" ]; then
-        PROGRESS=$(tail -1 "$WHISPER_LOG" 2>/dev/null | grep -o '\[[0-9]*/9994\]' || echo "[?/9994]")
-        echo "[$(date -Iseconds)] whisper.cpp running $PROGRESS" >> "$LOG"
-    else
-        # Neither running — check if results exist
-        if [ -f "/tmp/results_full_faster.json" ] && [ -f "/tmp/results_full_whisper.json" ]; then
-            echo "[$(date -Iseconds)] All engines complete!" >> "$LOG"
-            # Merge all results
-            cd "$(dirname "$0")"
-            python3 << 'PYEOF'
-import json, sys
-from datetime import datetime, timezone
-
-files = {
-    'vosk': '/tmp/results_full_vosk.json',
-    'gigastt': '/tmp/results_full_gigastt.json',
-    'faster-whisper': '/tmp/results_full_faster.json',
-    'whisper_cpp': '/tmp/results_full_whisper.json',
-}
-
-runners = []
-for name, path in files.items():
-    try:
-        with open(path) as f:
-            data = json.load(f)
-        runners.extend(data.get('runners', []))
-    except Exception as e:
-        print(f"Skipping {name}: {e}", file=sys.stderr)
-
-merged = {
-    "manifest_samples": 9994,
-    "runners": runners,
-    "merged_at": datetime.now(timezone.utc).isoformat(),
-}
-
-out = '/Users/ekhodzitsky/Documents/personal/gigastt/benchmark/results.json'
-with open(out, 'w') as f:
-    json.dump(merged, f, ensure_ascii=False, indent=2)
-
-print(f"Merged {len(runners)} runners into {out}")
-for r in runners:
-    print(f"  {r['name']}: WER={r['wer']}% RTF={r['rtf']}x")
-PYEOF
-            break
-        fi
+  all_done=true
+  for r in "${RESULTS[@]}"; do
+    if [ ! -f "$r" ]; then
+      all_done=false
+      break
     fi
-
-    sleep $INTERVAL
+  done
+  if $all_done; then
+    echo "[$(date)] All results ready" >> "$LOG"
+    break
+  fi
+  
+  # Log current progress
+  echo "[$(date)] Progress:" >> "$LOG"
+  for f in gigastt whisper faster vosk; do
+    tail -1 "/tmp/bench_full_${f}.log" 2>/dev/null >> "$LOG"
+  done
+  echo "" >> "$LOG"
+  
+  sleep 300
 done
+
+# Build final results
+cd /Users/ekhodzitsky/Documents/personal/gigastt
+python3 << 'PY'
+import json, os
+results = {"manifest_samples": 0, "runners": []}
+files = [
+    ("/tmp/results_full_gigastt.json", "gigastt"),
+    ("/tmp/results_full_whisper.json", "whisper.cpp"),
+    ("/tmp/results_full_faster.json", "faster-whisper"),
+    ("/tmp/results_full_vosk.json", "vosk"),
+]
+for path, name in files:
+    try:
+        d = json.load(open(path))
+        for r in d.get("runners", []):
+            results["runners"].append(r)
+        results["manifest_samples"] = max(results["manifest_samples"], d.get("manifest_samples", 0))
+    except Exception as e:
+        print(f"Skip {name}: {e}")
+
+with open("results.json", "w") as f:
+    json.dump(results, f, ensure_ascii=False, indent=2)
+
+report = []
+report.append("=" * 90)
+report.append(f"{'Engine':<20} {'Samples':>8} {'WER %':>8} {'RTF':>8} {'Errors':>10} {'Words':>10}")
+report.append("-" * 90)
+for r in results["runners"]:
+    report.append(
+        f"{r['name']:<20} {r['samples']:>8} {r['wer']:>8.2f} {r['rtf']:>8.3f} {r['total_errors']:>10} {r['total_ref_words']:>10}"
+    )
+report.append("=" * 90)
+
+with open("/tmp/bench_final_report.txt", "w") as f:
+    f.write("\n".join(report) + "\n")
+
+print("\n".join(report))
+PY
+
+# Commit to benchmark-results branch
+git checkout benchmark-results-local
+git add results.json
+git commit -m "benchmark: full 9994-sample cross-ASR results ($(date +%Y-%m-%d))"
+git checkout main
+
+echo "[$(date)] Finalization complete" >> "$LOG"
+echo "[$(date)] Report saved to $REPORT" >> "$LOG"
