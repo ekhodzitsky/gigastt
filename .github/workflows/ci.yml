@@ -77,6 +77,46 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - run: cargo build --release -p gigastt --features coreml
 
+      # Runtime smoke (main push only — the model is ~850 MB). Issue #42:
+      # CoreML sessions can load fine and still fail at prediction time, so
+      # a plain `cargo build` check is not enough. The smoke also fails when
+      # the engine silently falls back to the CPU EP, because that would
+      # mean the CoreML path regressed even though transcription still works.
+      - name: Cache model
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        id: cache-model
+        uses: actions/cache@v5
+        with:
+          path: ~/.gigastt/models
+          key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/mod.rs') }}
+
+      - name: Download model
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.cache-model.outputs.cache-hit != 'true'
+        run: ./target/release/gigastt download
+
+      - name: CoreML runtime smoke
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        timeout-minutes: 20
+        run: |
+          set -uo pipefail
+          RUST_LOG=warn ./target/release/gigastt transcribe \
+            crates/gigastt/tests/fixtures/golos_00.wav >transcript.txt 2>stderr.log
+          status=$?
+          echo "--- stderr ---"; cat stderr.log
+          echo "--- transcript ---"; cat transcript.txt
+          if [ "$status" -ne 0 ]; then
+            echo "::error::CoreML inference failed (exit $status)"
+            exit 1
+          fi
+          if grep -q "falling back to CPU execution provider" stderr.log; then
+            echo "::error::CoreML EP fell back to CPU at runtime — CoreML path regressed"
+            exit 1
+          fi
+          if ! grep -q "тенге" transcript.txt; then
+            echo "::error::Transcript does not contain the expected reference text"
+            exit 1
+          fi
+
   build-cuda:
     runs-on: ubuntu-latest
     name: Build (CUDA)
