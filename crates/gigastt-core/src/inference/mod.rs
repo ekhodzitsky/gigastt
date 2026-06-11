@@ -611,6 +611,31 @@ impl TranscriptAssembler {
     }
 }
 
+/// Probe a freshly-built state; on failure, rebuild it once and re-probe.
+///
+/// `probe` is a runtime self-check, `rebuild` converts the failed state into
+/// a replacement (receiving the probe error so it can log the cause). A
+/// rebuilt state that still fails the probe is a hard error — there is no
+/// second fallback level.
+///
+/// Extracted from the CoreML runtime-fallback path (issue #42) so the
+/// decision logic stays unit-testable without ONNX sessions.
+#[cfg_attr(not(feature = "coreml"), allow(dead_code))]
+fn probe_or_rebuild<S>(
+    state: S,
+    probe: impl Fn(&S) -> anyhow::Result<()>,
+    rebuild: impl FnOnce(S, anyhow::Error) -> anyhow::Result<S>,
+) -> anyhow::Result<S> {
+    match probe(&state) {
+        Ok(()) => Ok(state),
+        Err(probe_err) => {
+            let rebuilt = rebuild(state, probe_err)?;
+            probe(&rebuilt).context("state failed probe even after rebuild")?;
+            Ok(rebuilt)
+        }
+    }
+}
+
 /// ONNX Runtime inference engine for GigaAM v3 e2e_rnnt.
 ///
 /// Thread-safe: inference sessions live in a [`SessionPool`] so `Engine` can be
@@ -682,144 +707,231 @@ impl Engine {
         })
     }
 
-    /// Load a single set of encoder/decoder/joiner ONNX sessions from disk.
+    /// Path to the preferred encoder model: INT8 quantized if present, FP32 otherwise.
+    fn encoder_model_path(dir: &Path) -> std::path::PathBuf {
+        if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
+            dir.join("v3_e2e_rnnt_encoder_int8.onnx")
+        } else {
+            dir.join("v3_e2e_rnnt_encoder.onnx")
+        }
+    }
+
+    /// Load a single set of encoder/decoder/joiner ONNX sessions from disk,
+    /// using the execution provider selected at compile time.
     fn load_sessions(
         dir: &Path,
         prepacked: &ort::session::builder::PrepackedWeights,
     ) -> anyhow::Result<(Session, Session, Session)> {
-        let encoder_path = if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
-            dir.join("v3_e2e_rnnt_encoder_int8.onnx")
-        } else {
-            dir.join("v3_e2e_rnnt_encoder.onnx")
-        };
-
         #[cfg(feature = "coreml")]
-        let (encoder, decoder, joiner) = {
-            // CoreML has its own cache (`coreml_cache/`) for compiled subgraphs.
-            // We do NOT call `.with_optimized_model_path(...)` here: CoreML EP
-            // replaces part of the graph with compiled nodes that cannot be
-            // re-serialized as ONNX, and ORT errors out with
-            // `Unable to serialize model as it contains compiled nodes`
-            // on macOS 14+. The CoreML cache below is sufficient.
-            let cache_dir = dir.join("coreml_cache");
-            let coreml_ep = ep::CoreML::default()
-                .with_compute_units(ep::coreml::ComputeUnits::CPUAndNeuralEngine)
-                .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
-                .with_model_cache_dir(cache_dir.to_string_lossy())
-                .build();
-
-            let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
-            let eps = [coreml_ep.clone(), cpu_fallback.into()];
-            let encoder = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_execution_providers(&eps)
-                .map_err(ort_err)?
-                .commit_from_file(&encoder_path)
-                .map_err(ort_err)?;
-            let decoder = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_execution_providers(&eps)
-                .map_err(ort_err)?
-                .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
-                .map_err(ort_err)?;
-            let joiner = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_execution_providers(&eps)
-                .map_err(ort_err)?
-                .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
-                .map_err(ort_err)?;
-            (encoder, decoder, joiner)
-        };
-
+        {
+            Self::load_sessions_coreml(dir, prepacked)
+        }
         #[cfg(feature = "cuda")]
-        let (encoder, decoder, joiner) = {
-            // CUDA EP compiles subgraphs that cannot be re-serialized as ONNX,
-            // so we do NOT call `.with_optimized_model_path(...)` here — same
-            // reason as the CoreML block. ORT's CUDA EP keeps its own caches
-            // internally.
-            let cuda_ep = ep::CUDA::default().build();
-
-            let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
-            let eps = [cuda_ep.clone(), cpu_fallback.into()];
-            let encoder = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_execution_providers(&eps)
-                .map_err(ort_err)?
-                .commit_from_file(&encoder_path)
-                .map_err(ort_err)?;
-            let decoder = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_execution_providers(&eps)
-                .map_err(ort_err)?
-                .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
-                .map_err(ort_err)?;
-            let joiner = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_execution_providers(&eps)
-                .map_err(ort_err)?
-                .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
-                .map_err(ort_err)?;
-            (encoder, decoder, joiner)
-        };
-
+        {
+            Self::load_sessions_cuda(dir, prepacked)
+        }
         #[cfg(not(any(feature = "coreml", feature = "cuda")))]
-        let (encoder, decoder, joiner) = {
-            let cache_dir = dir.join("optimized_cache");
-            std::fs::create_dir_all(&cache_dir).with_context(|| {
-                format!("Failed to create ONNX cache dir: {}", cache_dir.display())
-            })?;
-            let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
-            let eps = [cpu_fallback.into()];
-            let encoder = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_intra_threads(1)
-                .map_err(ort_err)?
-                .with_inter_threads(1)
-                .map_err(ort_err)?
-                .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
-                .map_err(ort_err)?
-                .with_execution_providers(&eps)
-                .map_err(ort_err)?
-                .commit_from_file(&encoder_path)
-                .map_err(ort_err)?;
-            let decoder = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_intra_threads(1)
-                .map_err(ort_err)?
-                .with_inter_threads(1)
-                .map_err(ort_err)?
-                .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
-                .map_err(ort_err)?;
-            let joiner = Session::builder()
-                .map_err(ort_err)?
-                .with_prepacked_weights(prepacked)
-                .map_err(ort_err)?
-                .with_intra_threads(1)
-                .map_err(ort_err)?
-                .with_inter_threads(1)
-                .map_err(ort_err)?
-                .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
-                .map_err(ort_err)?;
-            (encoder, decoder, joiner)
-        };
+        {
+            Self::load_sessions_cpu(dir, prepacked)
+        }
+    }
 
+    #[cfg(feature = "coreml")]
+    fn load_sessions_coreml(
+        dir: &Path,
+        prepacked: &ort::session::builder::PrepackedWeights,
+    ) -> anyhow::Result<(Session, Session, Session)> {
+        // CoreML has its own cache (`coreml_cache/`) for compiled subgraphs.
+        // We do NOT call `.with_optimized_model_path(...)` here: CoreML EP
+        // replaces part of the graph with compiled nodes that cannot be
+        // re-serialized as ONNX, and ORT errors out with
+        // `Unable to serialize model as it contains compiled nodes`
+        // on macOS 14+. The CoreML cache below is sufficient.
+        //
+        // `with_static_input_shapes(true)` is load-bearing (issue #42): the
+        // Conformer encoder has a dynamic time axis, and CoreML-compiled
+        // partitions with dynamic shapes fail at prediction time with
+        // `Error executing model: ... (error code: -1)` regardless of model
+        // format or compute units. Restricting CoreML to statically-shaped
+        // subgraphs keeps the heavy conv/matmul blocks accelerated and
+        // leaves the dynamic-shape ops on the CPU EP.
+        let cache_dir = dir.join("coreml_cache");
+        let coreml_ep = ep::CoreML::default()
+            .with_model_format(ep::coreml::ModelFormat::MLProgram)
+            .with_static_input_shapes(true)
+            .with_compute_units(ep::coreml::ComputeUnits::CPUAndNeuralEngine)
+            .with_specialization_strategy(ep::coreml::SpecializationStrategy::FastPrediction)
+            .with_model_cache_dir(cache_dir.to_string_lossy())
+            .build();
+
+        let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
+        let eps = [coreml_ep.clone(), cpu_fallback.into()];
+        let encoder_path = Self::encoder_model_path(dir);
+        let encoder = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_execution_providers(&eps)
+            .map_err(ort_err)?
+            .commit_from_file(&encoder_path)
+            .map_err(ort_err)?;
+        let decoder = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_execution_providers(&eps)
+            .map_err(ort_err)?
+            .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+            .map_err(ort_err)?;
+        let joiner = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_execution_providers(&eps)
+            .map_err(ort_err)?
+            .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+            .map_err(ort_err)?;
         Ok((encoder, decoder, joiner))
+    }
+
+    #[cfg(feature = "cuda")]
+    fn load_sessions_cuda(
+        dir: &Path,
+        prepacked: &ort::session::builder::PrepackedWeights,
+    ) -> anyhow::Result<(Session, Session, Session)> {
+        // CUDA EP compiles subgraphs that cannot be re-serialized as ONNX,
+        // so we do NOT call `.with_optimized_model_path(...)` here — same
+        // reason as the CoreML block. ORT's CUDA EP keeps its own caches
+        // internally.
+        let cuda_ep = ep::CUDA::default().build();
+
+        let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
+        let eps = [cuda_ep.clone(), cpu_fallback.into()];
+        let encoder_path = Self::encoder_model_path(dir);
+        let encoder = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_execution_providers(&eps)
+            .map_err(ort_err)?
+            .commit_from_file(&encoder_path)
+            .map_err(ort_err)?;
+        let decoder = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_execution_providers(&eps)
+            .map_err(ort_err)?
+            .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+            .map_err(ort_err)?;
+        let joiner = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_execution_providers(&eps)
+            .map_err(ort_err)?
+            .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+            .map_err(ort_err)?;
+        Ok((encoder, decoder, joiner))
+    }
+
+    /// Load encoder/decoder/joiner sessions on the plain CPU EP.
+    ///
+    /// This is the default build's loader and the runtime-fallback target
+    /// when the CoreML probe in [`Engine::load`] fails (issue #42). Not
+    /// compiled under `cuda` (mutually exclusive with `coreml`), where it
+    /// would be dead code.
+    #[cfg(not(feature = "cuda"))]
+    fn load_sessions_cpu(
+        dir: &Path,
+        prepacked: &ort::session::builder::PrepackedWeights,
+    ) -> anyhow::Result<(Session, Session, Session)> {
+        let cache_dir = dir.join("optimized_cache");
+        std::fs::create_dir_all(&cache_dir)
+            .with_context(|| format!("Failed to create ONNX cache dir: {}", cache_dir.display()))?;
+        let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
+        let eps = [cpu_fallback.into()];
+        let encoder_path = Self::encoder_model_path(dir);
+        let encoder = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_intra_threads(1)
+            .map_err(ort_err)?
+            .with_inter_threads(1)
+            .map_err(ort_err)?
+            .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
+            .map_err(ort_err)?
+            .with_execution_providers(&eps)
+            .map_err(ort_err)?
+            .commit_from_file(&encoder_path)
+            .map_err(ort_err)?;
+        let decoder = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_intra_threads(1)
+            .map_err(ort_err)?
+            .with_inter_threads(1)
+            .map_err(ort_err)?
+            .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+            .map_err(ort_err)?;
+        let joiner = Session::builder()
+            .map_err(ort_err)?
+            .with_prepacked_weights(prepacked)
+            .map_err(ort_err)?
+            .with_intra_threads(1)
+            .map_err(ort_err)?
+            .with_inter_threads(1)
+            .map_err(ort_err)?
+            .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+            .map_err(ort_err)?;
+        Ok((encoder, decoder, joiner))
+    }
+
+    /// Load `pool_size` session triplets in parallel via the given
+    /// per-triplet loader (`load_sessions` for the compile-time-selected EP,
+    /// `load_sessions_cpu` for the CoreML runtime fallback).
+    fn load_triplets(
+        dir: &Path,
+        pool_size: usize,
+        prepacked: &ort::session::builder::PrepackedWeights,
+        load_one: impl Fn(
+            &Path,
+            &ort::session::builder::PrepackedWeights,
+        ) -> anyhow::Result<(Session, Session, Session)>
+        + Sync,
+    ) -> anyhow::Result<Vec<SessionTriplet>> {
+        std::thread::scope(|s| {
+            let handles: Vec<_> = (0..pool_size)
+                .map(|i| {
+                    let pp = prepacked;
+                    let load_one = &load_one;
+                    s.spawn(move || {
+                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            tracing::info!(
+                                "Loading session triplet {}/{pool_size} (shared weights)",
+                                i + 1
+                            );
+                            let (encoder, decoder, joiner) = load_one(dir, pp)?;
+                            Ok(SessionTriplet {
+                                encoder,
+                                decoder,
+                                joiner,
+                            })
+                        }))
+                        .map_err(|_| anyhow::anyhow!("model loading thread panicked"))?
+                    })
+                })
+                .collect();
+            handles
+                .into_iter()
+                .map(|h| match h.join() {
+                    Ok(r) => r,
+                    Err(_) => Err(anyhow::anyhow!("model loading thread panicked")),
+                })
+                .collect::<anyhow::Result<Vec<_>>>()
+        })
     }
 
     fn load_inner(dir: &Path, model_dir: &str, pool_size: usize) -> anyhow::Result<Self> {
@@ -840,35 +952,24 @@ impl Engine {
         // Shared prepacked weights container (Arc-based, thread-safe)
         let prepacked = ort::session::builder::PrepackedWeights::new();
 
-        let triplets: Vec<SessionTriplet> = std::thread::scope(|s| {
-            let handles: Vec<_> = (0..pool_size)
-                .map(|i| {
-                    let pp = &prepacked;
-                    s.spawn(move || {
-                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            tracing::info!(
-                                "Loading session triplet {}/{pool_size} (shared weights)",
-                                i + 1
-                            );
-                            let (encoder, decoder, joiner) = Self::load_sessions(dir, pp)?;
-                            Ok(SessionTriplet {
-                                encoder,
-                                decoder,
-                                joiner,
-                            })
-                        }))
-                        .map_err(|_| anyhow::anyhow!("model loading thread panicked"))?
-                    })
-                })
-                .collect();
-            handles
-                .into_iter()
-                .map(|h| match h.join() {
-                    Ok(r) => r,
-                    Err(_) => Err(anyhow::anyhow!("model loading thread panicked")),
-                })
-                .collect::<anyhow::Result<Vec<_>>>()
-        })?;
+        // CoreML can reject a model at two distinct stages: session creation
+        // (MLModel compilation) and the first `Run()` (issue #42). This guards
+        // the first stage; the warmup probe below guards the second.
+        #[cfg(feature = "coreml")]
+        let triplets = match Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions) {
+            Ok(triplets) => triplets,
+            Err(load_err) => {
+                tracing::warn!(
+                    "CoreML EP failed to load sessions ({load_err:#}); falling back to CPU execution provider"
+                );
+                // Fresh container: the failed attempt may have pre-packed
+                // weights with CoreML-specific kernel layouts.
+                let prepacked = ort::session::builder::PrepackedWeights::new();
+                Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions_cpu)?
+            }
+        };
+        #[cfg(not(feature = "coreml"))]
+        let triplets = Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions)?;
 
         let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
         let features = FeatureExtractor::new();
@@ -905,14 +1006,74 @@ impl Engine {
             }
         };
 
-        Ok(Self {
+        let engine = Self {
             pool: SessionPool::new(triplets),
             tokenizer,
             features,
             int8: is_int8,
             #[cfg(feature = "diarization")]
             speaker_encoder,
-        })
+        };
+
+        // CoreML compiles its graph partitions lazily, so sessions that
+        // loaded fine can still fail at the first `Run()` (issue #42). Probe
+        // one triplet now; if the probe fails, rebuild the pool on the CPU EP
+        // instead of surfacing the error on every real request.
+        #[cfg(feature = "coreml")]
+        let engine = probe_or_rebuild(
+            engine,
+            |e: &Self| e.warmup_one().map_err(anyhow::Error::from),
+            |mut e, probe_err| {
+                tracing::warn!(
+                    "CoreML EP failed at runtime ({probe_err:#}); falling back to CPU execution provider"
+                );
+                let prepacked = ort::session::builder::PrepackedWeights::new();
+                let triplets =
+                    Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions_cpu)?;
+                e.pool = SessionPool::new(triplets);
+                Ok(e)
+            },
+        )?;
+
+        Ok(engine)
+    }
+
+    /// Run one ~1 s silent inference on a single pooled session triplet.
+    ///
+    /// Exercises the full mel + encoder + RNN-T decode pipeline, forcing
+    /// lazy EP work (CoreML partition compilation, first-run allocations) to
+    /// happen now instead of on the first real request — and doubling as a
+    /// runtime self-check for EPs that can fail at prediction time even
+    /// though their sessions loaded fine (issue #42).
+    fn warmup_one(&self) -> Result<(), GigasttError> {
+        let silence = vec![0.0f32; 16000]; // 1 s at 16 kHz
+        let mut guard = self
+            .pool
+            .checkout_blocking()
+            .map_err(|e| GigasttError::Inference {
+                source: Box::new(e),
+            })?;
+        self.transcribe_samples(&silence, &mut guard)?;
+        Ok(())
+    }
+
+    /// Warm up every pooled session triplet with a ~1 s silent inference
+    /// (V1-46) so the first real request doesn't pay the EP compile /
+    /// first-allocation cost.
+    ///
+    /// Sequential checkouts visit each pooled triplet exactly once because
+    /// check-in returns items to the back of the FIFO queue.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GigasttError::Inference`] if a warmup inference fails — with
+    /// the `coreml` feature this is unexpected, because [`Engine::load`]
+    /// already probed the pool and fell back to the CPU EP if needed.
+    pub fn warmup(&self) -> Result<(), GigasttError> {
+        for _ in 0..self.pool.total() {
+            self.warmup_one()?;
+        }
+        Ok(())
     }
 
     /// Return `true` if a speaker encoder is loaded and diarization is available.
@@ -1825,5 +1986,72 @@ mod tests {
     fn test_now_timestamp_non_negative() {
         let ts = now_timestamp();
         assert!(ts >= 0.0, "timestamp must be non-negative");
+    }
+
+    #[test]
+    fn test_probe_or_rebuild_keeps_state_when_probe_passes() {
+        let rebuilt = std::cell::Cell::new(false);
+        let result = probe_or_rebuild(
+            7u32,
+            |v| {
+                assert_eq!(*v, 7);
+                Ok(())
+            },
+            |_, _| {
+                rebuilt.set(true);
+                Ok(99)
+            },
+        )
+        .expect("healthy state must survive unchanged");
+        assert_eq!(result, 7);
+        assert!(!rebuilt.get(), "rebuild must not run when the probe passes");
+    }
+
+    #[test]
+    fn test_probe_or_rebuild_rebuilds_when_probe_fails() {
+        let result = probe_or_rebuild(
+            1u32,
+            |v| {
+                if *v == 1 {
+                    Err(anyhow::anyhow!("first probe failed"))
+                } else {
+                    Ok(())
+                }
+            },
+            |old, probe_err| {
+                assert_eq!(old, 1, "rebuild receives the failed state");
+                assert!(
+                    probe_err.to_string().contains("first probe failed"),
+                    "rebuild receives the probe error for logging"
+                );
+                Ok(2)
+            },
+        )
+        .expect("rebuilt state passing the probe is OK");
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn test_probe_or_rebuild_propagates_rebuild_error() {
+        let result = probe_or_rebuild(
+            1u32,
+            |_| Err(anyhow::anyhow!("probe failed")),
+            |_, _| Err(anyhow::anyhow!("rebuild failed")),
+        );
+        let err = result.expect_err("rebuild failure must be fatal");
+        assert!(err.to_string().contains("rebuild failed"));
+    }
+
+    #[test]
+    fn test_probe_or_rebuild_fails_when_rebuilt_state_fails_probe() {
+        let result = probe_or_rebuild(
+            1u32,
+            |_| Err(anyhow::anyhow!("always fails")),
+            |_, _| Ok(2u32),
+        );
+        assert!(
+            result.is_err(),
+            "a rebuilt state that still fails the probe must be a hard error"
+        );
     }
 }

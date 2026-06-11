@@ -91,6 +91,26 @@ pub async fn run_with_config_listener(
         tracing::warn!("pool_checkout_timeout_secs=0 would make the pool unusable; clamping to 1");
         config.limits.pool_checkout_timeout_secs = 1;
     }
+
+    // V1-46: warm every pooled session triplet before accepting traffic so
+    // the first real request doesn't pay the EP compile / first-allocation
+    // cost. Inference is blocking work — keep it off the async runtime. A
+    // warmup failure is logged but not fatal: under `coreml` the engine has
+    // already fallen back to the CPU EP inside `Engine::load`.
+    let engine = tokio::task::spawn_blocking(move || {
+        let started = std::time::Instant::now();
+        match engine.warmup() {
+            Ok(()) => tracing::info!(
+                elapsed_ms = started.elapsed().as_millis() as u64,
+                "Engine warmup complete"
+            ),
+            Err(e) => tracing::warn!("Engine warmup failed (serving anyway): {e:#}"),
+        }
+        engine
+    })
+    .await
+    .context("engine warmup task panicked")?;
+
     let addr: SocketAddr = format!("{}:{}", config.host, config.port)
         .parse()
         .context("Invalid host:port")?;
