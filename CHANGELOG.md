@@ -7,8 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **CoreML EP no longer fails at runtime on the GigaAM Conformer encoder
+  (issue #42).** CoreML cannot execute partitions compiled with dynamic
+  shapes — every prediction failed with `error code: -1` regardless of
+  compute units or model format. The EP is now configured with
+  `RequireStaticInputShapes` + `MLProgram`: heavy conv/matmul blocks run on
+  the Neural Engine, dynamic-shape ops stay on CPU. Measured ~3x faster
+  encoder inference on a 4 s WAV and ~5.6x on a 2-minute file vs the
+  pure-CPU build (M1 Pro, INT8, release).
+
 ### Added
 
+- **`Engine::warmup()` + automatic CoreML→CPU runtime fallback (V1-46).**
+  `Engine::load` now probes CoreML with ~1 s of silence and transparently
+  rebuilds all sessions on the CPU EP if the probe fails (covers both
+  session-load and first-`Run()` failures), logging
+  `falling back to CPU execution provider` instead of crashing. The server
+  warms every pooled session triplet before `axum::serve` accepts traffic,
+  removing the first-request cold start.
+- **CoreML runtime smoke in CI** (`build-coreml`, macos-14, main push only):
+  transcribes `golos_00.wav` with the release binary and fails on inference
+  error, missing reference text, or silent CPU fallback.
 - **Full cross-ASR benchmark on 9 994 Golos crowd samples.**
   - Vosk: 4.27% WER / 0.107x RTF (1.3 GB)
   - gigastt: 11.37% WER / 0.335x RTF (230 MB)

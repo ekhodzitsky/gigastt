@@ -103,7 +103,7 @@ historical audit trail; trust this rollup over the table cells for
 | P2.4 | V1-36 | Prometheus `path` label = raw URI (cardinality explosion via scanners) | ⏳ open |
 | P2.5 | V1-37 | No server-side WebSocket ping timer (proxies drop idle connections silently) | ⏳ open |
 | P2.6 | V1-42 | Only 15 Golos fixtures (not statistically significant for WER gating) | ⏳ open |
-| P2.7 | V1-46 | `Engine::warmup()` missing (first-request cold start, CoreML compile) | ⏳ open |
+| P2.7 | V1-46 | `Engine::warmup()` missing (first-request cold start, CoreML compile) | ✅ v2.0.14 (warmup + CoreML runtime probe/fallback, issue #42) |
 | P2.8 | V1-50 | Multi-model support via `manifest.toml` (blocks GigaAM v4 without code change) | ⏳ open |
 | P2.9 | V1-35 | SSE error-code parity with WebSocket (single `inference_error` hides variants) | ⏳ open |
 | P2.10 | V1-48 | VAD endpointing (noise breaks blank-run endpointing today) | ⏳ open |

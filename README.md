@@ -273,6 +273,10 @@ cargo build --release                     # CPU (any platform)
 
 `coreml` and `cuda` are mutually exclusive; `nnapi` can be combined with either.
 
+**How the CoreML path works.** The Conformer encoder has a dynamic time axis, and CoreML cannot reliably execute partitions compiled with dynamic shapes — they fail at prediction time (issue #42). gigastt therefore compiles the model in `MLProgram` format and restricts CoreML to statically-shaped subgraphs: the heavy convolution/matmul blocks run on the Neural Engine, dynamic-shape ops stay on the CPU EP. Measured on an Apple M1 Pro (INT8 encoder, release build, median of 5 runs): **~3× faster encoder inference** on a 4 s WAV (~210 ms vs ~690 ms) and **~5.6× faster** on a 2-minute file (~5.5 s vs ~31 s) vs the pure-CPU build.
+
+**Automatic CPU fallback.** On startup the engine runs a ~1 s silent warmup probe through the full pipeline. If CoreML fails to load or fails the probe, the engine logs a warning (`falling back to CPU execution provider`) and transparently rebuilds its sessions on the CPU EP — a broken CoreML stack degrades performance instead of crashing. CoreML support remains **model-dependent**: a future model revision may shift more (or fewer) ops onto the Neural Engine.
+
 ### INT8 Quantization
 
 Quantized encoder: 4x smaller, ~43% faster, 0% WER degradation (verified on 9 994 Golos samples / 50 394 words). Auto-detected at runtime.
@@ -450,6 +454,7 @@ Remote deployment (TLS + reverse proxy): see [`docs/deployment.md`](docs/deploym
 | `Cannot quantize: FP32 encoder not found` | Partial download | Delete `~/.gigastt/models/` and re-run `gigastt download` |
 | OOM on startup | Pool size too large for available RAM | Lower `--pool-size` (default 4); each session loads the full encoder |
 | CoreML not used on macOS | Built without `--features coreml` | Re-build: `cargo build --release --features coreml` |
+| `falling back to CPU execution provider` in logs | CoreML failed to compile or execute the model on this macOS/model combo | Transcription still works on CPU; clear `~/.gigastt/models/coreml_cache/` and retry, or file an issue with the warning text |
 | CUDA not available on Linux | Built without `--features cuda` or missing CUDA 12+ | Re-build: `cargo build --release --features cuda`; verify `nvidia-smi` |
 | WebSocket closes with 1008 | Session exceeded `--max-session-secs` | Increase `--max-session-secs` or send shorter streams |
 | 429 Too Many Requests | Rate limiter enabled and bucket exhausted | Wait for `Retry-After` interval, or disable with `--rate-limit-per-minute 0` |

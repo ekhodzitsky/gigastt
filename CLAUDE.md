@@ -83,8 +83,11 @@ crates/
 ```
 
 ### Performance optimizations (v0.9)
-- **CoreML execution provider** (`--features coreml`, macOS ARM64): MLProgram format + Neural Engine
-  - Automatically loads quantized encoder if available (~4x smaller, ~43% faster)
+- **CoreML execution provider** (`--features coreml`, macOS ARM64): MLProgram format, static-shape subgraphs only
+  - Dynamic-shape CoreML partitions fail at prediction time (issue #42), so the EP is configured with `RequireStaticInputShapes`: heavy conv/matmul blocks run on the Neural Engine, dynamic-shape ops stay on the CPU EP (~3x faster encoder on a 4 s clip, ~5.6x on a 2-minute file vs pure-CPU build; M1 Pro, INT8, release)
+  - Startup warmup probe (~1 s of silence through the full pipeline) verifies CoreML actually executes; on failure (session load OR first Run) the engine logs `falling back to CPU execution provider` and rebuilds all sessions on the CPU EP — never crashes
+  - `Engine::warmup()` (V1-46) warms every pooled triplet; the server calls it before `axum::serve`
+  - Automatically loads quantized encoder if available (~4x smaller)
   - Caches compiled models in `~/.gigastt/models/coreml_cache/`
 - **CUDA execution provider** (`--features cuda`, Linux x86_64 CUDA 12+): GPU inference via ONNX Runtime CUDA EP
   - Features are compile-time and mutually exclusive; default build uses CPU EP on all platforms
@@ -164,7 +167,7 @@ Three-tier test architecture:
 
 ### CI structure
 - **PR CI** (`.github/workflows/ci.yml`, fast): fmt, clippy, unit tests, feature compile checks (CoreML, CUDA, diarization), `cargo audit`, `cargo deny`
-- **Main push CI**: all PR checks + e2e tests with cached model (~850MB, OS-independent cache key)
+- **Main push CI**: all PR checks + e2e tests with cached model (~850MB, OS-independent cache key) + CoreML runtime smoke on macos-14 (transcribes `golos_00.wav`, fails on inference error or silent CPU fallback)
 - **Nightly soak** (`.github/workflows/soak.yml`): `cargo test --test soak_test` at 03:17 UTC, reuses the main CI model cache
 - **Release** (`.github/workflows/release.yml`, tag-triggered): multi-arch tarballs, per-asset `.sha256` + `SHA256SUMS.txt`, CycloneDX SBOM, SLSA provenance, minisign signatures
 - Load tests are local-only, not in CI
