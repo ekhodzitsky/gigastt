@@ -5,13 +5,17 @@
 # CUDA binary falls back to CPU if no GPU is available at runtime.
 
 # --- Builder stage ---
-FROM nvidia/cuda:12.6.3-devel-ubuntu22.04 AS builder
+# ubuntu24.04 (not 22.04): ort's prebuilt onnxruntime needs gcc >= 13
+# libstdc++ (`__cxa_call_terminate`, CXXABI_1.3.15) — see Dockerfile.
+FROM nvidia/cuda:12.6.3-devel-ubuntu24.04 AS builder
 
-# `protobuf-compiler` feeds prost-build (build.rs); everything else is the
-# baseline toolchain needed to compile the crate + its C deps.
+# `protobuf-compiler` feeds prost-build (build.rs); `pkg-config` + `libssl-dev`
+# feed openssl-sys (reqwest native-tls); the rest is the baseline toolchain.
+# The rustup pin tracks the workspace MSRV (`rust-version` in Cargo.toml);
+# bump both together. `--locked` rationale — see Dockerfile.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl build-essential pkg-config protobuf-compiler && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.85.0 && \
+    apt-get install -y --no-install-recommends curl build-essential pkg-config libssl-dev protobuf-compiler && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.88.0 && \
     rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -35,18 +39,27 @@ RUN mkdir -p crates/gigastt-core/src crates/gigastt-ffi/src crates/gigastt/src/s
     touch crates/gigastt/src/server/mod.rs && \
     echo '' > crates/gigastt-ffi/src/lib.rs && \
     echo 'fn main() {}' > crates/gigastt-ffi/build.rs && \
-    cargo build --release -p gigastt --features cuda && \
+    mkdir -p crates/gigastt-core/benches crates/gigastt/tests && \
+    echo 'fn main() {}' > crates/gigastt-core/benches/mel.rs && \
+    echo 'fn main() {}' > crates/gigastt-core/benches/resample.rs && \
+    echo 'fn main() {}' > crates/gigastt-core/benches/tokenizer.rs && \
+    echo 'fn main() {}' > crates/gigastt/tests/benchmark.rs && \
+    cargo build --release -p gigastt --features cuda --locked && \
     rm -rf crates/*/src target/release/deps/gigastt* target/release/gigastt*
 
 COPY crates/ crates/
 
 # ort's download-binaries feature fetches CUDA-enabled ONNX Runtime.
 # copy-dylibs copies libonnxruntime*.so to target/release/.
-RUN cargo build --release -p gigastt --features cuda && \
+# Touch sources so cargo rebuilds the workspace crates instead of reusing the
+# dummy rlibs (COPY preserves older host mtimes — see Dockerfile).
+RUN find crates -name '*.rs' -exec touch {} + && \
+    cargo build --release -p gigastt --features cuda --locked && \
     strip target/release/gigastt
 
 # --- Model bake stage (runs only when GIGASTT_BAKE_MODEL=1) ---
-FROM debian:bookworm-slim AS model-fetcher
+# trixie-slim: new enough glibc to run the ubuntu24.04-built binary.
+FROM debian:trixie-slim AS model-fetcher
 
 ARG GIGASTT_BAKE_MODEL=0
 
@@ -62,7 +75,7 @@ RUN mkdir -p /models && \
     fi
 
 # --- Runtime stage ---
-FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04
 
 ARG GIGASTT_BAKE_MODEL=0
 

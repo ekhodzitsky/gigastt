@@ -5,6 +5,9 @@ services:
       dockerfile: benchmark/Dockerfile
     volumes:
       # Mount model caches so they persist across runs
+      # TODO: ':ro' breaks first-run auto-quantize — `gigastt serve` (spawned by
+      # runners/gigastt.py) writes encoder_int8.onnx into this directory. Run
+      # `gigastt quantize` on the host once, or set GIGASTT_SKIP_QUANTIZE=1.
       - ~/.gigastt/models:/root/.gigastt/models:ro
       - ~/.cache/whisper.cpp:/root/.cache/whisper.cpp
       - ~/.cache/vosk:/root/.cache/vosk

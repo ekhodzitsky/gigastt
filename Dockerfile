@@ -3,7 +3,14 @@
 # Run:   docker run -p 9876:9876 gigastt
 
 # --- Builder stage ---
-FROM rust:1.85-bookworm AS builder
+# Pinned to the workspace MSRV (`rust-version` in Cargo.toml) so the image
+# build doubles as an MSRV check; bump both together. `--locked` keeps the
+# image on the audited Cargo.lock graph — a fresh resolve could pull deps
+# with a newer MSRV (exactly how ort rc.12 silently raised the floor to 1.88).
+# trixie (not bookworm): ort's prebuilt onnxruntime statics are compiled with
+# gcc >= 13 and reference `__cxa_call_terminate` (CXXABI_1.3.15), which
+# bookworm's libstdc++ 12 lacks — the final link fails there.
+FROM rust:1.88-trixie AS builder
 
 # `prost-build` (via build.rs) requires `protoc` at compile time; without it
 # the build aborts with "prost-build failed to compile proto/onnx.proto".
@@ -23,6 +30,8 @@ COPY crates/gigastt-core/build.rs crates/gigastt-core/
 COPY crates/gigastt-core/proto/ crates/gigastt-core/proto/
 COPY crates/gigastt-ffi/Cargo.toml crates/gigastt-ffi/
 COPY crates/gigastt/Cargo.toml crates/gigastt/
+# Every [[bench]]/[[test]] target declared in the manifests must exist on disk
+# for cargo to parse the workspace, hence the extra stubs below.
 RUN mkdir -p crates/gigastt-core/src crates/gigastt-ffi/src crates/gigastt/src/server && \
     echo 'pub mod error; pub mod inference; pub mod model; pub mod onnx_proto; pub mod protocol; pub mod quantize;' > crates/gigastt-core/src/lib.rs && \
     mkdir -p crates/gigastt-core/src/inference crates/gigastt-core/src/model crates/gigastt-core/src/protocol && \
@@ -33,17 +42,28 @@ RUN mkdir -p crates/gigastt-core/src crates/gigastt-ffi/src crates/gigastt/src/s
     touch crates/gigastt/src/server/mod.rs && \
     echo '' > crates/gigastt-ffi/src/lib.rs && \
     echo 'fn main() {}' > crates/gigastt-ffi/build.rs && \
-    cargo build --release -p gigastt && \
+    mkdir -p crates/gigastt-core/benches crates/gigastt/tests && \
+    echo 'fn main() {}' > crates/gigastt-core/benches/mel.rs && \
+    echo 'fn main() {}' > crates/gigastt-core/benches/resample.rs && \
+    echo 'fn main() {}' > crates/gigastt-core/benches/tokenizer.rs && \
+    echo 'fn main() {}' > crates/gigastt/tests/benchmark.rs && \
+    cargo build --release -p gigastt --locked && \
     rm -rf crates/*/src target/release/deps/gigastt* target/release/gigastt*
 
 # Now bring in the actual source and build the real binary.
 COPY crates/ crates/
 
-RUN cargo build --release -p gigastt && \
+# COPY preserves host mtimes (older than the dummy artifacts above), so cargo
+# would consider the dummy-built workspace rlibs fresh and link the real
+# binary against them. Touch the sources to force a rebuild of the workspace
+# crates; the dependency cache stays valid.
+RUN find crates -name '*.rs' -exec touch {} + && \
+    cargo build --release -p gigastt --locked && \
     strip target/release/gigastt
 
 # --- Model bake stage (runs only when GIGASTT_BAKE_MODEL=1) ---
-FROM debian:bookworm-slim AS model-fetcher
+# trixie-slim to match the builder's glibc/libstdc++ (the stage runs the binary).
+FROM debian:trixie-slim AS model-fetcher
 
 ARG GIGASTT_BAKE_MODEL=0
 
@@ -59,7 +79,7 @@ RUN mkdir -p /models && \
     fi
 
 # --- Runtime stage ---
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 ARG GIGASTT_BAKE_MODEL=0
 

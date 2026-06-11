@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install -y \
     cmake \
     curl \
     git \
+    pkg-config \
+    libssl-dev \
     protobuf-compiler \
     python3.12 \
     python3.12-venv \
@@ -55,8 +57,7 @@ FROM base AS gigastt-builder
 
 COPY Cargo.toml Cargo.lock /workspace/
 COPY crates/ /workspace/crates/
-COPY proto/ /workspace/proto/
-RUN cargo build --release -p gigastt
+RUN cargo build --release -p gigastt --locked
 
 # =============================================================================
 # Final runtime image
@@ -69,6 +70,12 @@ COPY --from=gigastt-builder /workspace/target/release/gigastt /usr/local/bin/gig
 
 # Copy benchmark sources
 COPY benchmark/ /workspace/benchmark/
+
+# TODO: the bundled-fixtures fallback (common.py manifest_path()) does not work
+# in this image: crates/gigastt/tests/fixtures/ is not copied here, and
+# benchmark.py uses manifest "filename" entries verbatim, so bare names resolve
+# against the CWD. Mount the dataset at /root/.gigastt/benchmarks instead
+# (docker-compose.yml does).
 
 WORKDIR /workspace/benchmark
 
