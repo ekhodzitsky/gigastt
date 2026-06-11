@@ -27,7 +27,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install protoc
-        uses: arduino/setup-protoc@v3
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -40,13 +40,13 @@ jobs:
           shared-key: benchmark-release
 
       - name: Cache models
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.gigastt/models
           key: gigastt-models-${{ hashFiles('crates/gigastt-core/src/model/mod.rs') }}
 
       - name: Cache competitor models
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/whisper.cpp
