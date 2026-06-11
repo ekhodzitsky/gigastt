@@ -2054,4 +2054,55 @@ mod tests {
             "a rebuilt state that still fails the probe must be a hard error"
         );
     }
+
+    #[test]
+    fn test_encoder_model_path_prefers_int8_when_present() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("v3_e2e_rnnt_encoder.onnx"), b"fp32").unwrap();
+        std::fs::write(dir.path().join("v3_e2e_rnnt_encoder_int8.onnx"), b"int8").unwrap();
+        let path = Engine::encoder_model_path(dir.path());
+        assert_eq!(
+            path.file_name().unwrap(),
+            "v3_e2e_rnnt_encoder_int8.onnx",
+            "INT8 encoder must win when both files exist"
+        );
+    }
+
+    #[test]
+    fn test_encoder_model_path_falls_back_to_fp32() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("v3_e2e_rnnt_encoder.onnx"), b"fp32").unwrap();
+        let path = Engine::encoder_model_path(dir.path());
+        assert_eq!(path.file_name().unwrap(), "v3_e2e_rnnt_encoder.onnx");
+    }
+
+    #[test]
+    fn test_pool_sequential_checkouts_visit_every_item() {
+        // Engine::warmup relies on this FIFO property: `total()` sequential
+        // checkout/checkin cycles touch every pooled item exactly once.
+        let pool = Pool::new(vec![1u32, 2, 3]);
+        let mut seen = Vec::new();
+        for _ in 0..pool.total() {
+            let guard = pool.checkout_blocking().expect("checkout");
+            seen.push(*guard);
+            // guard drops here — the item returns to the back of the queue
+        }
+        seen.sort_unstable();
+        assert_eq!(seen, vec![1, 2, 3]);
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_warmup_runs_silent_inference_on_every_triplet() {
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 2)
+            .expect("engine should load");
+        engine
+            .warmup()
+            .expect("warmup must succeed on a working engine");
+        assert_eq!(
+            engine.pool.available(),
+            engine.pool.total(),
+            "every triplet must be returned to the pool after warmup"
+        );
+    }
 }
