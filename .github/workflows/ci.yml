@@ -404,11 +404,14 @@ jobs:
 
   msrv:
     runs-on: ubuntu-latest
-    name: MSRV (1.87)
+    name: MSRV (1.88)
     steps:
       - uses: actions/checkout@v4
-      # MSRV floor: edition 2024 needs >=1.85, is_multiple_of needs >=1.87.
-      - uses: dtolnay/rust-toolchain@1.87
+      # MSRV floor: edition 2024 needs >=1.85, is_multiple_of needs >=1.87,
+      # ort 2.0.0-rc.12 declares rust-version 1.88. NB: a warm cargo cache can
+      # mask a too-new dependency MSRV here — the ort 1.88 floor was only
+      # caught by the cold-registry Docker build, while this job stayed green.
+      - uses: dtolnay/rust-toolchain@1.88
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: actions/cache@v5

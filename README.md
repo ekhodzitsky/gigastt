@@ -10,7 +10,7 @@
     <a href="https://github.com/ekhodzitsky/gigastt/blob/main/CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-Keep%20a%20Changelog-orange" alt="Changelog"></a>
     <a href="https://codecov.io/gh/ekhodzitsky/gigastt"><img src="https://codecov.io/gh/ekhodzitsky/gigastt/branch/main/graph/badge.svg" alt="codecov"></a>
     <a href="https://docs.rs/gigastt-core"><img src="https://docs.rs/gigastt-core/badge.svg" alt="docs.rs"></a>
-    <a href="https://github.com/ekhodzitsky/gigastt"><img src="https://img.shields.io/badge/MSRV-1.87-blue.svg" alt="MSRV 1.87"></a>
+    <a href="https://github.com/ekhodzitsky/gigastt"><img src="https://img.shields.io/badge/MSRV-1.88-blue.svg" alt="MSRV 1.88"></a>
     <a href="https://github.com/ekhodzitsky/gigastt/tree/benchmark-results-local"><img src="https://img.shields.io/badge/WER-11.37%25-blue" alt="WER"></a>
     <a href="https://github.com/ekhodzitsky/gigastt/tree/benchmark-results-local"><img src="https://img.shields.io/badge/RTF-0.335x-green" alt="RTF"></a>
     <a href="https://github.com/ekhodzitsky/gigastt/tree/benchmark-results-local"><img src="https://img.shields.io/badge/benchmark-9994%20samples-orange" alt="Benchmark"></a>
@@ -417,7 +417,7 @@ gigastt quantize --force
 | **GPU** | _(integrated, via CoreML)_ | NVIDIA + CUDA 12+ (optional) |
 | **Disk** | ~1.5 GB | ~1.5 GB |
 | **RAM** | ~560 MB | ~560 MB |
-| **Rust** | 1.87+ | 1.87+ |
+| **Rust** | 1.88+ | 1.88+ |
 
 ## Security
 
