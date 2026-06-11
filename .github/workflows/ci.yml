@@ -604,3 +604,93 @@ jobs:
           files: ./cobertura-e2e.xml
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  docker-changes:
+    # Detects whether a PR touches anything the Docker images are built from,
+    # so `docker-build` only spends a runner when packaging could have changed.
+    runs-on: ubuntu-latest
+    name: Docker Paths
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docker:
+              - 'Dockerfile*'
+              - 'benchmark/Dockerfile'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'crates/**/Cargo.toml'
+              - 'crates/**/build.rs'
+              - 'crates/gigastt-core/proto/**'
+              - 'rust-toolchain.toml'
+
+  docker-build:
+    # Dockerfiles rot silently unless CI builds them: an MSRV drift in the
+    # builder pin and a phantom COPY both shipped unnoticed before this job
+    # existed. PRs build the CPU image only when docker-relevant paths change;
+    # every main push rebuilds it unconditionally as the safety net.
+    needs: docker-changes
+    if: github.event_name == 'push' || needs.docker-changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    name: Docker Build (CPU)
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: gigastt:ci
+          cache-from: type=gha,scope=docker-cpu
+          cache-to: type=gha,mode=max,scope=docker-cpu
+      - name: Smoke test (--version)
+        run: |
+          docker run --rm gigastt:ci --version | tee version.out
+          grep -E '^gigastt [0-9]+\.[0-9]+\.[0-9]+' version.out
+
+  docker-build-extras:
+    # Main push only: the CUDA + benchmark images exist to catch packaging
+    # rot, not to gate PRs. No GPU is needed — the CUDA EP is link-time only;
+    # the build just pulls the multi-GB nvidia base image.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    name: Docker Build (${{ matrix.name }})
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: cuda
+            dockerfile: Dockerfile.cuda
+          - name: benchmark
+            dockerfile: benchmark/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        # The nvidia/cuda devel base (~8 GB) plus a release target dir plus
+        # the buildx cache export overflow the ~14 GB free on a stock runner.
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./${{ matrix.dockerfile }}
+          push: false
+          tags: gigastt-${{ matrix.name }}:ci
+          # mode=max also caches the builder stage. The docker scopes plus the
+          # cargo/model caches can exceed the 10 GB repo cache budget; GHA then
+          # evicts LRU entries and builds degrade to cold — they never fail.
+          cache-from: type=gha,scope=docker-${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=docker-${{ matrix.name }}

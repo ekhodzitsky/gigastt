@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **MSRV bumped 1.87 → 1.88.** `ort`/`ort-sys` 2.0.0-rc.12 declare
+  `rust-version = "1.88"`, so any cold-registry build on 1.87 (including the
+  Docker images) fails at resolution. The MSRV CI job had stayed green only
+  thanks to a warm cargo cache.
+
+### Fixed
+
+- **All three Docker images build again.** The rot ran deep: builder pins
+  behind the workspace MSRV, missing stubs for the declared
+  `[[bench]]`/`[[test]]` targets in the dependency-cache layer, the real
+  build silently linking against stale dummy rlibs (COPY preserves host
+  mtimes; sources are now touched before the final build), a phantom `proto/`
+  COPY in the benchmark image, missing `pkg-config`/`libssl-dev` for
+  `openssl-sys` (via reqwest native-tls), and base images too old for ort's
+  prebuilt onnxruntime (`__cxa_call_terminate` needs gcc-13 libstdc++ —
+  Debian bookworm→trixie, CUDA Ubuntu 22.04→24.04). Cargo invocations now
+  run `--locked`.
+
+### Added
+
+- **CI builds the Docker images** (`docker-build` jobs): the CPU image plus a
+  `--version` smoke run on every main push and on PRs touching docker-relevant
+  paths; the CUDA and benchmark images on main push.
+
 ## [2.0.14] - 2026-06-11
 
 ### Fixed
