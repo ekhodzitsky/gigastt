@@ -636,10 +636,10 @@ async fn test_ws_max_session_precheck() {
         let next = tokio::time::timeout(remaining, stream.next()).await;
         match next {
             Ok(Some(Ok(Message::Text(text)))) => {
-                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
-                    if v["code"] == "max_session_duration_exceeded" {
-                        saw_cap_close = true;
-                    }
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text)
+                    && v["code"] == "max_session_duration_exceeded"
+                {
+                    saw_cap_close = true;
                 }
             }
             Ok(Some(Ok(Message::Close(Some(
