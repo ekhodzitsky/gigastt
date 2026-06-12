@@ -641,9 +641,22 @@ jobs:
     runs-on: ubuntu-latest
     name: Docker Build (CPU)
     timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
+      # The layer cache lives in ghcr.io (free for public repos), keeping the
+      # 10 GB Actions cache budget untouched. GITHUB_TOKEN grants packages:read
+      # on PRs (forks included), so warm reads work everywhere; writes happen
+      # on main pushes only. An unreadable cache ref is a soft warning — the
+      # build goes cold, it never fails.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -651,8 +664,8 @@ jobs:
           push: false
           load: true
           tags: gigastt:ci
-          cache-from: type=gha,scope=docker-cpu
-          cache-to: type=gha,mode=max,scope=docker-cpu
+          cache-from: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cpu
+          cache-to: ${{ github.event_name == 'push' && 'type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cpu,mode=max' || '' }}
       - name: Smoke test (--version)
         run: |
           docker run --rm gigastt:ci --version | tee version.out
@@ -666,6 +679,9 @@ jobs:
     runs-on: ubuntu-latest
     name: Docker Build (${{ matrix.name }})
     timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -683,14 +699,18 @@ jobs:
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
           df -h /
       - uses: docker/setup-buildx-action@v3
+      # Layer cache in ghcr.io — rationale in docker-build above. This job is
+      # main-push-only, so the cache is always written back.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: ./${{ matrix.dockerfile }}
           push: false
           tags: gigastt-${{ matrix.name }}:ci
-          # mode=max also caches the builder stage. The docker scopes plus the
-          # cargo/model caches can exceed the 10 GB repo cache budget; GHA then
-          # evicts LRU entries and builds degrade to cold — they never fail.
-          cache-from: type=gha,scope=docker-${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=docker-${{ matrix.name }}
+          cache-from: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:${{ matrix.name }}
+          cache-to: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:${{ matrix.name }},mode=max
