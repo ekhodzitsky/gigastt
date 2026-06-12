@@ -30,13 +30,10 @@ jobs:
           components: clippy
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo clippy --workspace --all-targets -- -D warnings -A dead_code
 
   unit-tests:
@@ -47,13 +44,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace --lib --bins
       - uses: taiki-e/install-action@v2
         with:
@@ -68,13 +62,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: brew install protobuf
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build --release -p gigastt --features coreml
 
       # Runtime smoke (main push only — the model is ~850 MB). Issue #42:
@@ -125,13 +116,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build --release -p gigastt --features cuda
 
   build-diarization:
@@ -142,13 +130,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build --release -p gigastt --features diarization
 
   e2e-tests:
@@ -161,13 +146,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Cache model
         id: cache-model
@@ -194,13 +176,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Cache model
         id: cache-model
@@ -247,13 +226,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
           # coreml+cuda are mutually exclusive; --all-features is impossible.
@@ -270,13 +246,10 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       # Default features only — coreml+cuda is a hard compile_error, so
       # `--all-features` is impossible here (unlike single-crate repos).
       - name: Run unit coverage
@@ -351,13 +324,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Build docs (deny warnings)
         run: cargo doc --no-deps --workspace
         env:
@@ -374,13 +344,10 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       # coreml+cuda is a hard compile_error and nnapi is Android-only, so the
       # platform execution-provider features are excluded from the powerset.
       - run: cargo hack check --feature-powerset --workspace --exclude-features coreml,cuda,nnapi --locked
@@ -393,13 +360,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo publish --dry-run -p gigastt-core --locked
 
   msrv:
@@ -414,13 +378,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.88
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-msrv-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: msrv
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo check --workspace --locked
 
   fuzz:
@@ -434,14 +395,11 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-fuzz
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-            fuzz/target
-          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: fuzz
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cache-directories: fuzz/target
       # rust-toolchain.toml pins stable repo-wide; RUSTUP_TOOLCHAIN overrides it
       # so cargo-fuzz's nightly `-Z sanitizer` flags are accepted. Force the gnu
       # target because the musl-built cargo-fuzz binary otherwise defaults to a
@@ -464,13 +422,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Save baseline from main
         # Branch refs are untrusted input — pass them through env vars rather
@@ -543,13 +498,10 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Cache model
         id: cache-model

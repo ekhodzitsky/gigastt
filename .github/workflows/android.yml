@@ -18,13 +18,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo check -p gigastt-ffi
 
   build-android:
@@ -37,13 +34,10 @@ jobs:
           targets: aarch64-linux-android
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: actions/cache@v5
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-android-${{ hashFiles('**/Cargo.lock') }}
+          shared-key: android
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
