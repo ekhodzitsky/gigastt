@@ -24,6 +24,8 @@ from common import (
 )
 from runners import (
     FasterWhisperRunner,
+    FasterWhisperTurboRunner,
+    GigasttCoreMLRunner,
     GigasttRunner,
     Vosk054Runner,
     VoskRunner,
@@ -151,8 +153,10 @@ def main():
     requested = set(args.runners.split(",")) if args.runners != "all" else {"all"}
     all_runners = [
         GigasttRunner(),
+        GigasttCoreMLRunner(),
         WhisperCppRunner(),
         FasterWhisperRunner(),
+        FasterWhisperTurboRunner(),
         VoskRunner(),
         Vosk054Runner(),
     ]
