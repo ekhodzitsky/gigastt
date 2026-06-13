@@ -25,6 +25,7 @@ from common import (
 from runners import (
     FasterWhisperRunner,
     GigasttRunner,
+    Vosk054Runner,
     VoskRunner,
     WhisperCppRunner,
 )
@@ -153,6 +154,7 @@ def main():
         WhisperCppRunner(),
         FasterWhisperRunner(),
         VoskRunner(),
+        Vosk054Runner(),
     ]
 
     active_runners = []
