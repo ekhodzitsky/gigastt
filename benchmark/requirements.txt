@@ -6,3 +6,5 @@ pyarrow>=15.0.0
 # Common Voice Russian preparation script
 datasets>=2.14.0
 soundfile>=0.12.1
+# Footprint and host metadata
+psutil>=5.9.0
