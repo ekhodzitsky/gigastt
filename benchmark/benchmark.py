@@ -27,6 +27,7 @@ from runners import (
     FasterWhisperTurboRunner,
     GigasttCoreMLRunner,
     GigasttRunner,
+    TOneRunner,
     Vosk054Runner,
     VoskRunner,
     WhisperCppRunner,
@@ -157,6 +158,7 @@ def main():
         WhisperCppRunner(),
         FasterWhisperRunner(),
         FasterWhisperTurboRunner(),
+        TOneRunner(),
         VoskRunner(),
         Vosk054Runner(),
     ]
