@@ -103,3 +103,39 @@ class GigasttRunner:
     def __exit__(self, exc_type, exc, tb):
         self._stop_server()
         return False
+
+
+class GigasttCoreMLRunner(GigasttRunner):
+    name = "gigastt-coreml"
+
+    def __init__(self, model_dir: str | None = None, use_int8: bool = True, port: int = 9878):
+        super().__init__(model_dir=model_dir, use_int8=use_int8, port=port)
+
+    def _find_binary(self) -> bool:
+        """Locate a CoreML-enabled gigastt binary."""
+        import platform
+        if platform.system().lower() != "darwin" or platform.machine().lower() not in ("arm64", "aarch64"):
+            print("[gigastt-coreml] CoreML runner only supported on macOS arm64")
+            return False
+        if self._binary:
+            return True
+        candidates = [
+            str(Path(__file__).parent.parent.parent / "target/release/gigastt-coreml"),
+            "gigastt-coreml",
+        ]
+        for c in candidates:
+            try:
+                subprocess.run([c, "--version"], capture_output=True, check=True)
+                self._binary = c
+                return True
+            except Exception:
+                continue
+        # Fallback: check if the default binary was built with coreml feature.
+        default = str(Path(__file__).parent.parent.parent / "target/release/gigastt")
+        try:
+            subprocess.run([default, "--version"], capture_output=True, check=True)
+            self._binary = default
+            return True
+        except Exception:
+            pass
+        return False
