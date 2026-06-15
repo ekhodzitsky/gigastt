@@ -16,14 +16,11 @@ class Gigastt < Formula
   license "MIT"
 
   on_macos do
+    # Apple Silicon only — GitHub retired the macos-13 Intel runners, so there is
+    # no prebuilt x86_64-apple-darwin tarball. Intel Macs: `cargo install gigastt`.
     if Hardware::CPU.arm?
       url "https://github.com/ekhodzitsky/gigastt/releases/download/v2.0.14/gigastt-2.0.14-aarch64-apple-darwin.tar.gz"
       sha256 "abbbbf46c4faea56afa3d44a3c0b202b8b4f375d9047b1a14ec10844a519f223"
-    elsif Hardware::CPU.intel?
-      # sha256 is a placeholder; .github/workflows/homebrew.yml overwrites it
-      # from SHA256SUMS.txt after the first release carrying this target.
-      url "https://github.com/ekhodzitsky/gigastt/releases/download/v2.0.14/gigastt-2.0.14-x86_64-apple-darwin.tar.gz"
-      sha256 "0000000000000000000000000000000000000000000000000000000000000000"
     end
   end
 
