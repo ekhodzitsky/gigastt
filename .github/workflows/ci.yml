@@ -604,7 +604,7 @@ jobs:
       # on PRs (forks included), so warm reads work everywhere; writes happen
       # on main pushes only. An unreadable cache ref is a soft warning — the
       # build goes cold, it never fails.
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -653,7 +653,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       # Layer cache in ghcr.io — rationale in docker-build above. This job is
       # main-push-only, so the cache is always written back.
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
