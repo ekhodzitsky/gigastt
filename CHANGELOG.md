@@ -19,9 +19,11 @@ benchmark against current Russian-ASR engines, and a reworked README.
   faster-whisper-turbo, and **T-one** (greedy + production beam+LM) on clean read,
   far-field, phone calls and YouTube — with WER + 95% CI, RTF, footprint and an explicit
   training-contamination caveat. See [`docs/benchmarks.md`](docs/benchmarks.md).
-- **Release platform matrix expanded** to `x86_64-pc-windows-msvc`,
-  `x86_64-apple-darwin` (Intel) and `aarch64-unknown-linux-gnu` (cross-compiled), with
-  matching Homebrew coverage.
+- **Release platform matrix expanded** to `x86_64-pc-windows-msvc` and
+  `aarch64-unknown-linux-gnu` (cross-compiled), with matching Homebrew coverage.
+  (Prebuilt `x86_64-apple-darwin` Intel-Mac tarballs were dropped: GitHub's
+  `macos-13` Intel runners are being retired and no longer schedule. Intel-Mac
+  users install via `cargo install gigastt`.)
 - **Benchmark data licensing** — `benchmark/DATA_LICENSE` + root `NOTICE` carve the
   benchmark transcripts (Open STT CC BY-NC 4.0; Golos Sber Public License) out of the
   project's MIT grant.

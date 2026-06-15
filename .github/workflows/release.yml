@@ -47,14 +47,11 @@ jobs:
             # "Install aarch64 cross-linker" step). Relies on a prebuilt
             # aarch64 onnxruntime being fetched by `ort` (download-binaries);
             # fail-fast: false isolates this target if that ever regresses.
-          - name: macos-x86_64-cpu
-            os: macos-13
-            target: x86_64-apple-darwin
-            features: ""
-            asset_suffix: x86_64-apple-darwin
-            cuda: false
-            # macos-13 is the last Intel-based runner. No `coreml` — Intel Macs
-            # have no Neural Engine, so the CPU EP is used.
+          # x86_64-apple-darwin (Intel Mac) is intentionally omitted: GitHub is
+          # retiring the macos-13 Intel runners and they no longer schedule — the
+          # job sat queued 1.5h+ without ever starting, blocking the whole release.
+          # Intel-Mac users install via `cargo install gigastt` (builds from
+          # source). Re-add an Intel entry if hosted Intel runners return.
           - name: windows-x86_64-cpu
             os: windows-latest
             target: x86_64-pc-windows-msvc
