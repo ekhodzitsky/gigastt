@@ -125,6 +125,14 @@ historical audit trail; trust this rollup over the table cells for
   splits triplets off `--pool-size` for REST file transcription
   (`Engine::pool_for_batch`), so a long batch job no longer starves WS / SSE
   streaming, which keep the interactive pool.
+- **SUS-10** ✅ `runbook.md` gained pool-exhaustion / backpressure,
+  model-download-failure, and OOM triage sections (plus the new pool /
+  inference-timeout knobs).
+- **V1-40** ✅ (by design) dependency drift is governed by Dependabot + CI
+  `--locked` + `cargo publish --dry-run --locked`; literal minor-pinning of
+  `tokio`/`serde` in a *published* crate is deliberately avoided — it would
+  over-constrain downstream consumers without adding safety the lockfile
+  doesn't already give.
 
 **Still genuinely open / partial at HEAD:**
 
@@ -132,11 +140,9 @@ historical audit trail; trust this rollup over the table cells for
 |---|-------|-------------|
 | V1-18 | PARTIAL | Encoder borrow + per-frame buffers reused; `run_decoder()` still `to_vec()`s dec/h/c per non-blank call. |
 | V1-26 | PARTIAL | `FeatureExtractor`/`TranscriptAssembler` split out; `tokens_to_words` (→`TokenFormatter`) and `FileTranscriber` still on `Engine`. |
-| V1-40 | PARTIAL | `tokio`/`serde` declared as `"1"` (no minor pin); drift caught by Dependabot + `publish --dry-run --locked`, not `cargo update --dry-run`. |
 | V1-48 | OPEN | No VAD endpointing (L-effort feature). |
 | V1-50 | OPEN | Model filenames hardcoded; no `manifest.toml` for new models (e.g. GigaAM v4). |
 | SUS-07 | OPEN | No Miri / ASAN / TSAN job in CI. |
-| SUS-10 | PARTIAL | `runbook.md` is shutdown-centric; missing pool-exhaustion / model-download / OOM triage. |
 | TODO-18 | OPEN (by design) | `ort_err()` helper stays until `ort` ships a stable Send-able-error release (still pinned `2.0.0-rc.12`). |
 | TODO-19 | OPEN | No hot-reload admin endpoint; INT8/model reload still needs a restart. |
 | TODO-CUDA | OPEN | No CUDA artifact in the `release.yml` matrix (all entries `cuda: false`); CUDA ships only via `Dockerfile.cuda`. |
