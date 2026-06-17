@@ -19,3 +19,22 @@ cobertura*.xml
 
 # Internal planning docs — never commit
 /docs/superpowers/
+/docs/archive/
+
+# Python caches / virtualenvs (benchmark/ + scripts/ helpers)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

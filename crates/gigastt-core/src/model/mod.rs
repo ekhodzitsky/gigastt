@@ -185,7 +185,7 @@ pub async fn ensure_model(model_dir: &str) -> Result<()> {
 /// into `<model_dir>/wespeaker_resnet34.onnx.partial`, verifies its SHA-256 against
 /// `SPEAKER_MODEL_SHA256`, and atomically renames it into place. On checksum mismatch or
 /// crash the final path is never observable, so a subsequent `ensure_speaker_model` call
-/// will re-download from scratch rather than loading a tampered model (V1-02).
+/// will re-download from scratch rather than loading a tampered model.
 #[cfg(feature = "diarization")]
 pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     let dir = Path::new(model_dir);
@@ -403,7 +403,7 @@ mod tests {
         hex::encode(hasher.finalize())
     }
 
-    /// V1-01: Helper to stage a `.partial` file with arbitrary bytes, mimicking
+    /// Helper to stage a `.partial` file with arbitrary bytes, mimicking
     /// the state of a fully streamed download prior to verification.
     fn stage_partial(final_path: &Path, bytes: &[u8]) -> std::path::PathBuf {
         let partial = partial_path(final_path);
@@ -422,7 +422,7 @@ mod tests {
         );
     }
 
-    /// V1-01: on the success path, `.partial` disappears and the final path
+    /// On the success path, `.partial` disappears and the final path
     /// appears in a single atomic step.
     #[test]
     fn test_download_writes_partial_then_renames() {
@@ -449,7 +449,7 @@ mod tests {
         assert_eq!(std::fs::read(&final_path).unwrap(), payload);
     }
 
-    /// V1-01: if the process dies between the network write and the
+    /// If the process dies between the network write and the
     /// SHA verification / rename, `model_files_exist` must NOT see the
     /// file under its final name. We simulate the crash by staging a
     /// `.partial` and never calling `finalize_download`.
@@ -473,7 +473,7 @@ mod tests {
         );
     }
 
-    /// V1-01: SHA mismatch removes the partial and leaves the final path
+    /// SHA mismatch removes the partial and leaves the final path
     /// empty, so a retry starts from a clean slate.
     #[test]
     fn test_download_rejects_sha256_mismatch() {
@@ -497,7 +497,7 @@ mod tests {
         );
     }
 
-    /// V1-01: success path with no checksum available still renames
+    /// Success path with no checksum available still renames
     /// atomically (partial gone, final present, bytes preserved).
     #[test]
     fn test_download_atomic_on_success_without_checksum() {
@@ -515,7 +515,7 @@ mod tests {
         assert_eq!(std::fs::read(&final_path).unwrap(), payload);
     }
 
-    /// V1-01: sha256_file matches the in-memory hash of the same bytes.
+    /// sha256_file matches the in-memory hash of the same bytes.
     #[test]
     fn test_sha256_file_matches_in_memory_hash() {
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -528,7 +528,7 @@ mod tests {
         assert_eq!(got, want);
     }
 
-    /// V1-02: `SPEAKER_MODEL_SHA256` is a 64-char lowercase hex digest
+    /// `SPEAKER_MODEL_SHA256` is a 64-char lowercase hex digest
     /// matching the SHA-256 of the upstream `onnx/model.onnx` blob
     /// (no accidental truncation / placeholder at compile time).
     #[cfg(feature = "diarization")]
@@ -547,7 +547,7 @@ mod tests {
         );
     }
 
-    /// V1-02: mismatching bytes against `SPEAKER_MODEL_SHA256` must delete
+    /// Mismatching bytes against `SPEAKER_MODEL_SHA256` must delete
     /// the partial and refuse to promote it — exercises the full
     /// speaker-model finalize contract without touching the network.
     #[cfg(feature = "diarization")]
@@ -580,7 +580,7 @@ mod tests {
         );
     }
 
-    /// V1-02: when the partial bytes DO hash to `SPEAKER_MODEL_SHA256`, the
+    /// When the partial bytes DO hash to `SPEAKER_MODEL_SHA256`, the
     /// finalize path promotes them atomically. Network-free: we forge a
     /// "matching" partial by precomputing the hash of an arbitrary payload
     /// and passing it as the expected value.

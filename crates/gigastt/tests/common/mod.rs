@@ -86,8 +86,9 @@ pub async fn start_server_with_metrics(model_dir: &str) -> (u16, oneshot::Sender
     (port, shutdown_tx)
 }
 
-/// Start the server with a custom `RuntimeLimits`. Used by V1-03 / V1-04
-/// e2e tests that need a short drain window or session cap.
+/// Start the server with a custom `RuntimeLimits`. Used by the
+/// graceful-shutdown / session-cap e2e tests that need a short drain window or
+/// session cap.
 pub async fn start_server_with_limits(
     model_dir: &str,
     limits: gigastt::server::RuntimeLimits,
@@ -175,8 +176,9 @@ pub fn generate_pcm16_silence(duration_s: f32, sample_rate: u32) -> Vec<u8> {
 }
 
 /// Generate raw PCM16 mono tone bytes. Non-silence payload so the server's
-/// encoder actually runs — used by the V1-03 / V1-04 e2e tests that need to
-/// prove the session deadline fires even when audio is streaming.
+/// encoder actually runs — used by the graceful-shutdown / session-cap e2e
+/// tests that need to prove the session deadline fires even when audio is
+/// streaming.
 pub fn generate_pcm16_tone(duration_s: f32, sample_rate: u32, freq_hz: f32) -> Vec<u8> {
     let num_samples = (sample_rate as f32 * duration_s) as usize;
     let mut bytes = Vec::with_capacity(num_samples * 2);

@@ -12,7 +12,7 @@ on:
 
 permissions:
   contents: write
-  # SUS-05: signed build provenance attestations require the GitHub-issued
+  # Signed build provenance attestations require the GitHub-issued
   # id-token for Sigstore + write access to the `attestations` API.
   id-token: write
   attestations: write
@@ -199,7 +199,7 @@ jobs:
           done
           cat SHA256SUMS.txt
 
-      # SUS-02: CycloneDX SBOM for the published tag. Generated from the
+      # CycloneDX SBOM for the published tag. Generated from the
       # workspace Cargo.lock so consumers can audit exactly which crate
       # versions went into the released binary. Output name matches the
       # release tag so GitHub's asset resolver can find it verbatim.
@@ -221,7 +221,7 @@ jobs:
           cp crates/gigastt/gigastt.cdx.json "dist/gigastt-${VERSION}.cdx.json"
           ls -la "dist/gigastt-${VERSION}.cdx.json"
 
-      # SUS-05: SLSA build provenance attestation. Every artefact in
+      # SLSA build provenance attestation. Every artefact in
       # `dist/` gets a signed in-toto provenance statement anchored to
       # this workflow run. Downstream consumers verify with
       # `gh attestation verify <file> --repo ekhodzitsky/gigastt`.
@@ -233,7 +233,7 @@ jobs:
             dist/SHA256SUMS.txt
             dist/*.cdx.json
 
-      # SUS-03: minisign signatures for tarballs + SHA256SUMS.txt. The
+      # minisign signatures for tarballs + SHA256SUMS.txt. The
       # signing secret is injected via the `MINISIGN_SECRET_KEY` and
       # `MINISIGN_PASSWORD` repository secrets. When the secret is not
       # configured (forks, preview runs), the step degrades to a warning

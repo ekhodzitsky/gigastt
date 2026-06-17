@@ -451,7 +451,7 @@ async fn test_server_list_models() {
     let _ = shutdown.send(());
 }
 
-// The v0.9.0-rc.1 zero-copy REST decode path (V1-05) used to carry a
+// The v0.9.0-rc.1 zero-copy REST decode path used to carry a
 // Linux-only VmRSS budget test here. It asserted that
 // `RSS_after - RSS_before < wav.len() * 3 + 40 MiB` after POSTing a 300 s
 // WAV to `/v1/transcribe`. In practice the full inference pass allocates

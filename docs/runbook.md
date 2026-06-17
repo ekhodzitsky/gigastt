@@ -1,6 +1,6 @@
 # Runbook
 
-Operator-facing guidance for gigastt in production. Focuses on the new v0.9.0 shutdown + session-cap surface (V1-03 / V1-04) and how to roll back cleanly when rollout breaks clients.
+Operator-facing guidance for gigastt in production. Focuses on the v0.9.0 shutdown + session-cap surface and how to roll back cleanly when rollout breaks clients.
 
 ## At a glance
 
@@ -9,10 +9,10 @@ Operator-facing guidance for gigastt in production. Focuses on the new v0.9.0 sh
 | Clients lose `Final` on deploy | Drain window too short: check `shutdown_drain_secs` vs your orchestrator's grace period | Increase `GIGASTT_SHUTDOWN_DRAIN_SECS` OR disable WS tracking via `--shutdown-drain-secs 0` (clamped to 1 s) |
 | Clients receive spurious `max_session_duration_exceeded` | Legitimate long sessions | Raise `GIGASTT_MAX_SESSION_SECS` (default 3600) or set `0` to disable |
 | SIGTERM takes 30+ seconds to exit | In-flight spawn_blocking inferences can't be cancelled mid-chunk | Wait or lower `GIGASTT_SHUTDOWN_DRAIN_SECS`; process will still finish the current chunk |
-| `Close(1008 Policy Violation)` unexpected | V1-04 cap fired | Double check `max_session_secs` is set high enough for your use case |
+| `Close(1008 Policy Violation)` unexpected | session-duration cap fired | Double check `max_session_secs` is set high enough for your use case |
 | `Close(1001 Going Away)` seen by clients | Expected on SIGTERM — not a bug | None — clients should reconnect |
 
-## V1-03 graceful drain
+## Graceful drain (SIGTERM)
 
 When the server receives `SIGTERM` (or the `run_with_shutdown` oneshot fires):
 
@@ -33,11 +33,11 @@ If v0.9.0 rollout breaks WS clients, the runtime supports a tiered rollback:
    ```
    Note: `0` is internally clamped to `1` second. The cancel + Final path still fires, but the process won't wait longer than 1 s before exiting.
 
-2. **Disable the session cap independently** (see V1-04 below).
+2. **Disable the session cap independently** (see the section below).
 
 3. **Git revert** — v0.9.0's WS-lifecycle work lives in one PR and reverts cleanly. Only use if options 1-2 are insufficient; you'll need to re-cut the release.
 
-## V1-04 max session duration
+## Max session duration
 
 `idle_timeout` is reset on every frame, so a silence-streaming client could hold a `SessionTriplet` forever. `max_session_secs` is a *wall-clock* deadline that fires regardless of frame activity.
 
@@ -66,7 +66,7 @@ gigastt serve --max-session-secs 0
 
 `gigastt_http_requests_total{path="/v1/ws",status="503"}` with code `shutting_down` in the body is the signal that upgrades are being rejected because shutdown was already in flight. Usually correlated with `terminationGracePeriodSeconds` being shorter than `shutdown_drain_secs`.
 
-(Counter for cancelled-WS by reason is tracked separately — see `specs/prod-readiness-v1.0.md` V1-30.)
+(Counter for cancelled-WS by reason is tracked separately — see `specs/prod-readiness-v1.0.md`.)
 
 ## On-call triage checklist
 

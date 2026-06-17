@@ -1,4 +1,4 @@
-# Verifying gigastt releases (SUS-03, SUS-05)
+# Verifying gigastt releases
 
 Every tagged release on GitHub ships three kinds of attestation alongside
 the binary tarballs. You don't need all three — pick the one that matches
@@ -17,7 +17,7 @@ gh release download v2.0.3 -R ekhodzitsky/gigastt \
 shasum -a 256 -c SHA256SUMS.txt
 ```
 
-## 2. minisign signatures (SUS-03)
+## 2. minisign signatures
 
 When the maintainer's minisign key is loaded in CI, every tarball +
 `SHA256SUMS.txt` + SBOM gets a detached `.minisig` signature. This
@@ -41,7 +41,7 @@ gh release download v2.0.3 -R ekhodzitsky/gigastt \
 minisign -Vm gigastt-2.0.3-aarch64-apple-darwin.tar.gz -p gigastt.pub
 ```
 
-## 3. SLSA build provenance (SUS-05)
+## 3. SLSA build provenance
 
 Every artefact carries an in-toto attestation signed by Sigstore via
 GitHub's `attest-build-provenance` action. This proves the binary was

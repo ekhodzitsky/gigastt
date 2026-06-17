@@ -88,7 +88,7 @@ crates/
 - **CoreML execution provider** (`--features coreml`, macOS ARM64): MLProgram format, static-shape subgraphs only
   - Dynamic-shape CoreML partitions fail at prediction time (issue #42), so the EP is configured with `RequireStaticInputShapes`: heavy conv/matmul blocks run on the Neural Engine, dynamic-shape ops stay on the CPU EP (~3x faster encoder on a 4 s clip, ~5.6x on a 2-minute file vs pure-CPU build; M1 Pro, INT8, release)
   - Startup warmup probe (~1 s of silence through the full pipeline) verifies CoreML actually executes; on failure (session load OR first Run) the engine logs `falling back to CPU execution provider` and rebuilds all sessions on the CPU EP — never crashes
-  - `Engine::warmup()` (V1-46) warms every pooled triplet; the server calls it before `axum::serve`
+  - `Engine::warmup()` warms every pooled triplet; the server calls it before `axum::serve`
   - Automatically loads quantized encoder if available (~4x smaller)
   - Caches compiled models in `~/.gigastt/models/coreml_cache/`
 - **CUDA execution provider** (`--features cuda`, Linux x86_64 CUDA 12+): GPU inference via ONNX Runtime CUDA EP
@@ -115,7 +115,7 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 - `DecoderState` holds decoder hidden state (h, c, prev_token)
 - Server accepts configurable sample rates (8kHz, 16kHz, 24kHz, 44.1kHz, 48kHz) via `Configure` message
 - Default 48kHz for backward compatibility; resamples to 16kHz via rubato (polyphase FIR)
-- Odd-length PCM16 frames are carried across to the next frame (v0.9.0 V1-25) to avoid single-byte phase drift.
+- Odd-length PCM16 frames are carried across to the next frame (v0.9.0) to avoid single-byte phase drift.
 
 ### Graceful shutdown (v0.9.0)
 - A single `CancellationToken` + `TaskTracker` cascades through every WebSocket / SSE handler.
@@ -181,6 +181,7 @@ Three-tier test architecture:
 - Shared constants in `crates/gigastt-core/src/inference/mod.rs`, referenced by sub-modules
 - `ort` errors wrapped via `ort_err()` helper (Send/Sync workaround)
 - Execution provider selection uses `#[cfg(feature = "coreml")]` / `#[cfg(feature = "cuda")]` blocks in `crates/gigastt-core/src/inference/mod.rs`; default falls through to CPU EP
+- **No internal task-tracker IDs in code/docs.** Never write tracker indices (`V1-NN`, `SUS-NN`, `TODO-NN`, etc.) into source comments, `CHANGELOG.md`, `docs/`, CI files, or any artifact — they are noise to anyone without the tracker. Describe *what* the code does and *why*; if a fix maps to a tracked item, that linkage lives only in `specs/prod-readiness-v1.0.md` (the tracker), not in the code.
 
 ### Audio format support
 - File transcription: WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC (via symphonia)

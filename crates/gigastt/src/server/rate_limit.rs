@@ -4,7 +4,7 @@
 //! `quanta`, `parking_lot`, and `forwarded-header-value`) with a focused
 //! ~150-line implementation tailored to gigastt's single middleware hook.
 //!
-//! Semantics match the V1-06 formula: `refill_per_ms = rpm / 60_000.0`, so
+//! Refill formula: `refill_per_ms = rpm / 60_000.0`, so
 //! `--rate-limit-per-minute 30` allows one token every 2 s with a configurable
 //! burst. When the bucket is empty the caller gets a 429 with `Retry-After: 60`.
 //!
@@ -14,7 +14,7 @@
 //! - `ConnectInfo<SocketAddr>::ip()`.
 //!
 //! The rate-limiter & X-Forwarded-For trust boundary is documented in
-//! `docs/deployment.md` (V1-11) — the reverse proxy must **overwrite** the
+//! `docs/deployment.md` — the reverse proxy must **overwrite** the
 //! header with the real peer address, never append.
 
 use axum::extract::{ConnectInfo, Request};
@@ -172,7 +172,7 @@ pub struct RateLimiter {
 impl RateLimiter {
     /// Construct from the same `(rpm, burst)` pair the CLI exposes.
     ///
-    /// `rpm` is clamped to the [`MAX_RPM`] maximum documented in V1-06 (the
+    /// `rpm` is clamped to the [`MAX_RPM`] maximum (the
     /// interval hits 1 ms precision there; anything higher would truncate to
     /// zero and saturate the bucket). Emits a `warn!` once when clamping.
     ///
@@ -295,7 +295,7 @@ fn unix_ms() -> u64 {
 /// Extract the client IP from `X-Forwarded-For` (first hop), `X-Real-IP`, or
 /// the TCP `ConnectInfo`, in that order. Mirrors `SmartIpKeyExtractor` from
 /// `tower_governor`. The proxy must overwrite (not append) `X-Forwarded-For`
-/// — see `docs/deployment.md` (V1-11).
+/// — see `docs/deployment.md`.
 ///
 /// When `trust_proxy` is `false`, forwarded headers are ignored entirely and
 /// only `ConnectInfo` is used. When `true`, the headers are consulted only

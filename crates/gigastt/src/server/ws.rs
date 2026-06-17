@@ -33,7 +33,7 @@ pub(super) async fn ws_handler(
     // Origin allowlist is enforced by `origin_middleware` before the request
     // reaches this handler; anything that arrives here has already been cleared.
     //
-    // V1-03: if shutdown has already been requested, refuse the upgrade
+    // If shutdown has already been requested, refuse the upgrade
     // instead of handing the client a socket we're about to drain. Returning
     // a plain 503 with the `shutting_down` error code keeps the surface
     // consistent with the pool-saturation 503.
@@ -220,7 +220,7 @@ async fn handle_binary_frame(
     }
     *audio_received = true;
 
-    // V1-25: delegate carry-byte logic to the extracted pure function so it
+    // Delegate carry-byte logic to the extracted pure function so it
     // can be property-tested independently of the async handler.
     gigastt_core::inference::audio::parse_pcm16_with_carry_into(
         &data,
@@ -488,7 +488,7 @@ async fn handle_ws_inner(
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
     let mut audio_received = false;
     let mut empty_frame_count: usize = 0;
-    // V1-25: carries the trailing odd byte across PCM16 frames so clients
+    // Carries the trailing odd byte across PCM16 frames so clients
     // that split their streams on odd boundaries don't accumulate a
     // 1-sample phase shift in the decoded audio.
     let mut pending_byte: Option<u8> = None;
@@ -496,7 +496,7 @@ async fn handle_ws_inner(
 
     let idle_timeout = std::time::Duration::from_secs(limits.idle_timeout_secs);
 
-    // V1-04: wall-clock deadline independent of `idle_timeout`. Setting
+    // Wall-clock deadline independent of `idle_timeout`. Setting
     // `max_session_secs = 0` disables the cap by parking the deadline far in
     // the future (u64::MAX / 2 ≈ 292 billion years) so `sleep_until` never
     // fires — callers who deliberately want unlimited sessions don't pay for

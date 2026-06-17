@@ -48,7 +48,7 @@ async fn test_rest_oversized_body_rejected() {
     //     before the handler runs.
     //   - Our handler's defence-in-depth `body.len() > limit` guard returns
     //     a JSON `{"code":"payload_too_large"}` body.
-    // The V1-22 contract is the 413 status; the JSON body is a bonus when
+    // The contract is the 413 status; the JSON body is a bonus when
     // the handler-layer guard is the one that fires. Either is acceptable.
     let body_text = response
         .text()
@@ -283,7 +283,7 @@ async fn test_ws_idle_timeout() {
             // Connection reset — also acceptable.
         }
         Ok(Some(Ok(Message::Text(text)))) => {
-            // V1-25: server now sends an Error text message before the Close frame.
+            // Server now sends an Error text message before the Close frame.
             let msg: serde_json::Value = serde_json::from_str(&text).expect("valid JSON");
             assert_eq!(
                 msg.get("code").and_then(|v| v.as_str()),

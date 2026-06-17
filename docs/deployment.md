@@ -138,7 +138,7 @@ sudo nginx -t && sudo systemctl reload nginx
 - `X-Forwarded-For $remote_addr` (overwrite, not append) — see warning below for the rate-limiter implications
 - `$connection_upgrade` map prevents connection pooling on HTTP/1.0
 
-## Rate-limiter & X-Forwarded-For (V1-11)
+## Rate-limiter & X-Forwarded-For
 
 When `--rate-limit-per-minute` is enabled, gigastt reads the peer IP from `X-Forwarded-For` (first hop, trimmed), then `X-Real-IP`, then the TCP `ConnectInfo` — see `crates/gigastt/src/server/rate_limit.rs::extract_client_ip` — so each real client gets its own token bucket instead of hashing every request behind the single proxy IP.
 

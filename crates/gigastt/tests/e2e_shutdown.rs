@@ -1,4 +1,4 @@
-//! Graceful shutdown + session-cap tests for the gigastt server (V1-03 / V1-04).
+//! Graceful shutdown + session-cap tests for the gigastt server.
 //!
 //! Verifies that in-flight WebSocket sessions and SSE streams terminate cleanly
 //! when the server receives a shutdown signal, rather than hanging forever, and
@@ -101,7 +101,7 @@ async fn test_shutdown_during_sse_stream() {
 }
 
 // ---------------------------------------------------------------------------
-// 3. V1-03: shutdown emits a Final frame + Close(1001) before socket EOF
+// 3. shutdown emits a Final frame + Close(1001) before socket EOF
 // ---------------------------------------------------------------------------
 
 #[ignore]
@@ -166,7 +166,7 @@ async fn test_shutdown_ws_emits_final_and_close() {
 }
 
 // ---------------------------------------------------------------------------
-// 4. V1-03: SSE stream terminates cleanly within the drain window
+// 4. SSE stream terminates cleanly within the drain window
 // ---------------------------------------------------------------------------
 
 #[ignore]
@@ -222,7 +222,7 @@ async fn test_shutdown_sse_stream_terminates_cleanly() {
 }
 
 // ---------------------------------------------------------------------------
-// 5. V1-04: session duration cap fires even for a silence-streaming client
+// 5. session duration cap fires even for a silence-streaming client
 // ---------------------------------------------------------------------------
 
 #[ignore]
@@ -244,7 +244,7 @@ async fn test_max_session_duration_cap() {
     // Sending at 250 ms is slow enough that the server isn't buried in a
     // backlog of frames and the cap branch of the `select!` can preempt
     // between inferences. Each idle_timeout reset happens on every frame —
-    // so *without* V1-04 the connection would live forever.
+    // so *without* the session-duration cap the connection would live forever.
     let stream_task = tokio::spawn(async move {
         let chunk = common::generate_pcm16_silence(0.02, 48000);
         for _ in 0..60 {
@@ -306,7 +306,7 @@ async fn test_max_session_duration_cap() {
 }
 
 // ---------------------------------------------------------------------------
-// 6. V1-07 + V1-21: shutdown while pool is saturated returns 503, not 500
+// 6. shutdown while pool is saturated returns 503, not 500
 // ---------------------------------------------------------------------------
 
 /// Pool saturation + shutdown: occupy every triplet with a long-running REST

@@ -220,6 +220,7 @@ Downloaded to `~/.gigastt/models/` from `istupakov/gigaam-v3-onnx`:
 - Shared constants live in `inference/mod.rs`, referenced by sub-modules
 - `ort` errors wrapped via `ort_err()` helper (Send/Sync workaround for ort 2.0-rc)
 - Execution provider selection uses `#[cfg(feature = "coreml")]` / `#[cfg(feature = "cuda")]` blocks
+- **No internal task-tracker IDs in code/docs.** Never write tracker indices (`V1-NN`, `SUS-NN`, `TODO-NN`, etc.) into source comments, `CHANGELOG.md`, `docs/`, CI files, or any artifact — they mean nothing to a reader without the tracker. Comments should say *what* and *why*; the link from a fix to a tracked item lives only in `specs/prod-readiness-v1.0.md`, not in the code.
 
 ### TDD workflow
 

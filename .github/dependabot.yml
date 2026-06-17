@@ -1,4 +1,4 @@
-# SUS-04: weekly Dependabot scan. We pin Rust deps in `Cargo.lock` and
+# Weekly Dependabot scan. We pin Rust deps in `Cargo.lock` and
 # several direct deps (`ort = "2.0.0-rc.12"`, `prost = "0.13"`, …) that
 # would otherwise drift silently — Dependabot keeps the supply chain
 # honest by surfacing new RUSTSEC advisories and minor-version bumps as

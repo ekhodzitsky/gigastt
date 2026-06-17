@@ -1,6 +1,6 @@
 name: Nightly Soak
 
-# V1-09 nightly soak + load sanity check. Runs on schedule so pool drift,
+# Nightly soak + load sanity check. Runs on schedule so pool drift,
 # descriptor leaks, and memory growth surface outside the fast-CI envelope.
 # Also triggerable on demand via workflow_dispatch for hotfix verification.
 
