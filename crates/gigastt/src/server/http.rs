@@ -23,7 +23,7 @@ use gigastt_core::inference::Engine;
 /// in-tree `MetricsRegistry` backing the `/metrics` endpoint.
 ///
 /// Also carries a shutdown `CancellationToken` and a `TaskTracker` used to
-/// drain in-flight WebSocket / SSE tasks on SIGTERM (V1-03). `axum::serve`'s
+/// drain in-flight WebSocket / SSE tasks on SIGTERM. `axum::serve`'s
 /// built-in `with_graceful_shutdown` only tracks the HTTP router; upgraded
 /// WebSocket handlers and `spawn_blocking` SSE tasks fall outside that lane
 /// and must be drained explicitly.
@@ -171,9 +171,12 @@ pub struct ReadinessResponse {
     pub reason: Option<String>,
 }
 
-/// GET /health — health check for monitoring and Docker HEALTHCHECK.
-pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
-    let _ = &state.engine;
+/// GET /health — liveness check for monitoring and Docker HEALTHCHECK.
+///
+/// Liveness only: stays 200 while the process is alive. Pool / shutdown
+/// readiness is the separate `/ready` probe (see [`readiness`]), so this
+/// handler intentionally does not touch engine state.
+pub async fn health() -> Json<HealthResponse> {
     Json(HealthResponse {
         status: "ok".into(),
         model: "gigaam-v3-e2e-rnnt".into(),
@@ -481,7 +484,7 @@ pub async fn transcribe_stream(
     >(16);
 
     let engine = state.engine.clone();
-    // V1-03: the axum handler future has already returned by the time the
+    // The axum handler future has already returned by the time the
     // SSE stream starts flowing, so `with_graceful_shutdown` can't observe
     // this task. Clone the shutdown token and check it before every chunk
     // so SIGTERM during a long transcription drops cleanly.

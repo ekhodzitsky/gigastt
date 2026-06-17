@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Benchmark regression gate.** `tests/benchmark.rs` loads a committed
+  `tests/benchmark_baseline.json` and now **fails** (non-zero exit) when WER
+  regresses past `tolerance_pp` — with a printed diff table and a
+  `GIGASTT_BENCHMARK_UPDATE_BASELINE=1` refresh path. The absolute `MAX_WER`
+  ceiling is a hard failure too; previously it only warned and `pass` was
+  hardcoded `true`.
+
 ### Changed
 
 - **polyvoice** 0.6.8 → 0.7.0. Our streaming diarization path (`StreamingPipeline`)
@@ -14,6 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deprecated in favour of the v1.0 `polyvoice::embedder::Embedder` API; the legacy
   usage is annotated `#[allow(deprecated)]` (mirroring polyvoice's own crate-level
   suppression) until upstream wires `Embedder` into the streaming pipeline.
+
+### Fixed
+
+- **INT8 quantization axis.** The quantizer chose `axis=0` for every
+  weight; for `MatMul`/`Gemm` weights the per-output-channel axis is the `N`
+  dimension, so per-channel scales were grouped along the wrong axis — silently
+  inflating INT8 weight error (and WER). The axis is now derived from the
+  consuming op (`Conv`→0, `MatMul`→last dim, `Gemm`→`transB`-dependent) and the
+  weight is quantized along it with a strided gather. Regenerated INT8 verified
+  on the bundled Golos set (1.3% WER, model loads and transcribes cleanly).
+- **Monotonic wire timestamps.** `now_timestamp()` is anchored once to a
+  process-start `Instant`, so segment timestamps stay epoch-aligned but advance
+  monotonically — immune to NTP steps / wall-clock jumps mid-process.
+- **AsyncAPI `WordInfo`** now documents `confidence` (required) and
+  `speaker` (optional), matching the Rust struct.
+- **Minor hardening:** single `tokenizer::WORD_BOUNDARY` const for the U+2581
+  marker; `MelSpectrogram: Default`; `/health` is liveness-only
+  and no longer touches engine state; server shutdown logs a `warn!`
+  instead of silently swallowing a oneshot `RecvError`.
 
 ## [2.1.0] - 2026-06-14
 

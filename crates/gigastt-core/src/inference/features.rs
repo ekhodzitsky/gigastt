@@ -13,6 +13,12 @@ pub struct MelSpectrogram {
     fft: Arc<dyn Fft<f32>>,
 }
 
+impl Default for MelSpectrogram {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MelSpectrogram {
     pub fn new() -> Self {
         let n_fft = super::N_FFT;

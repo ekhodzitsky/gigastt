@@ -92,7 +92,7 @@ pub async fn run_with_config_listener(
         config.limits.pool_checkout_timeout_secs = 1;
     }
 
-    // V1-46: warm every pooled session triplet before accepting traffic so
+    // Warm every pooled session triplet before accepting traffic so
     // the first real request doesn't pay the EP compile / first-allocation
     // cost. Inference is blocking work — keep it off the async runtime. A
     // warmup failure is logged but not fatal: under `coreml` the engine has
@@ -167,7 +167,7 @@ pub async fn run_with_config_listener(
         None
     };
 
-    // V1-04 sanity check: an `idle_timeout` larger than `max_session_secs`
+    // Sanity check: an `idle_timeout` larger than `max_session_secs`
     // is usually a misconfiguration — the cap fires before the idle timeout
     // can ever apply, which is surprising. Warn without rejecting so
     // operators who intentionally want both can keep the behaviour.
@@ -182,7 +182,7 @@ pub async fn run_with_config_listener(
         );
     }
 
-    // Shutdown lane (V1-03): `shutdown_root` is cancelled when the caller's
+    // Shutdown lane: `shutdown_root` is cancelled when the caller's
     // oneshot fires (or Ctrl-C is received). Every WS / SSE handler gets a
     // clone so a SIGTERM propagates without racing `axum::serve`'s own
     // graceful shutdown.
@@ -388,7 +388,12 @@ pub async fn run_with_config_listener(
         async move {
             match shutdown {
                 Some(rx) => {
-                    rx.await.ok();
+                    // A dropped sender also triggers shutdown (the usual
+                    // programmatic path), but a RecvError is worth surfacing
+                    // rather than swallowing silently.
+                    if let Err(e) = rx.await {
+                        tracing::warn!("Shutdown sender dropped before firing: {e}");
+                    }
                 }
                 None => {
                     #[cfg(unix)]
@@ -494,7 +499,7 @@ mod tests {
     #[test]
     fn test_rate_limit_interval_formula() {
         // Mirrors the formula used in `run_with_config` so a regression on the
-        // V1-06 fix (integer-divide `/60` truncates sub-60 rpm to 1 rps) trips
+        // integer-divide `/60` fix (truncates sub-60 rpm to 1 rps) trips
         // a unit test before reaching the e2e path.
         const MAX_RPM: u64 = 60_000;
         fn interval_ms_for(rpm: u32) -> u64 {

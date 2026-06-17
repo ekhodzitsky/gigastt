@@ -81,7 +81,7 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     let mut new_initializers = Vec::new();
     let mut quantized_names: HashSet<String> = HashSet::new();
 
-    for (_node_idx, _input_idx, weight_name, init_idx) in &targets {
+    for (node_idx, _input_idx, weight_name, init_idx) in &targets {
         // Skip already-quantized shared weights (avoid duplicate initializers).
         if !quantized_names.insert(weight_name.clone()) {
             continue;
@@ -95,10 +95,6 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
             continue;
         }
 
-        let channels = dims[0] as usize;
-        if channels == 0 {
-            continue;
-        }
         let expected_elements: usize = dims.iter().map(|&d: &i64| d.max(0) as usize).product();
         if expected_elements != float_data.len() {
             tracing::warn!(
@@ -109,27 +105,23 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
             );
             continue;
         }
-        let channel_size = float_data.len() / channels;
 
-        // Per-channel symmetric quantization.
-        let mut quantized_data = Vec::with_capacity(float_data.len());
-        let mut scales = Vec::with_capacity(channels);
-        let zero_points = vec![0i8; channels];
-
-        for ch in 0..channels {
-            let start = ch * channel_size;
-            let end = start + channel_size;
-            let channel_data = &float_data[start..end];
-
-            let abs_max = channel_data.iter().fold(0.0f32, |m, &v| m.max(v.abs()));
-            let scale = if abs_max == 0.0 { 1.0 } else { abs_max / 127.0 };
-            scales.push(scale);
-
-            for &val in channel_data {
-                let q = (val / scale).round().clamp(-128.0, 127.0) as i8;
-                quantized_data.push(q);
-            }
+        // Pick the per-output-channel axis from the consuming op's semantics.
+        // Quantizing along the wrong axis groups unrelated output channels under
+        // one scale, silently inflating quantization error (and WER): a Conv
+        // weight is `[out_channels, ...]` (axis 0), a MatMul weight is
+        // `[..., K, N]` (output channel = last dim N), and a Gemm weight is
+        // `[K, N]` or — when `transB=1` — `[N, K]`, so N's axis flips with it.
+        let node = &graph.node[*node_idx];
+        let axis = per_channel_axis(node.op_type(), node, dims.len());
+        let channels = dims[axis].max(0) as usize;
+        if channels == 0 {
+            continue;
         }
+
+        // Per-channel symmetric quantization along `axis`.
+        let (quantized_data, scales) = quantize_per_channel(&float_data, dims, axis);
+        let zero_points = vec![0i8; channels];
 
         // Create new initializer names.
         let q_name = format!("{weight_name}_quantized");
@@ -172,8 +164,8 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
             name: Some(format!("dequant_{weight_name}")),
             attribute: vec![AttributeProto {
                 name: Some("axis".into()),
-                i: Some(0),      // per-channel on axis 0
-                r#type: Some(2), // AttributeType::INT
+                i: Some(axis as i64), // per-channel on the op's output-channel axis
+                r#type: Some(2),      // AttributeType::INT
                 ..Default::default()
             }],
             ..Default::default()
@@ -244,6 +236,70 @@ fn extract_float_data(tensor: &TensorProto) -> Result<Vec<f32>> {
         return Ok(data);
     }
     anyhow::bail!("Tensor '{}' has no float data", tensor.name());
+}
+
+/// Per-output-channel axis for a quantizable weight, chosen from the consuming
+/// op's semantics. The scale tensor carries one entry per index along this axis,
+/// so it must line up with the operator's *output* channels to keep
+/// quantization error low:
+/// - `Conv` weight `[out_channels, in/groups, *kernel]` → axis 0.
+/// - `Gemm` weight `[K, N]` (`transB=0`) or `[N, K]` (`transB=1`) → N's axis.
+/// - `MatMul` (and the fallback) weight `[..., K, N]` → the last axis (N).
+fn per_channel_axis(op_type: &str, node: &NodeProto, rank: usize) -> usize {
+    let last = rank.saturating_sub(1);
+    match op_type {
+        "Conv" => 0,
+        "Gemm" => {
+            if attr_int(node, "transB").unwrap_or(0) != 0 {
+                0
+            } else {
+                last.min(1)
+            }
+        }
+        // MatMul and any other matmul-shaped op: output channel is the last dim.
+        _ => last,
+    }
+}
+
+/// Read an integer attribute by name from a node, if present.
+fn attr_int(node: &NodeProto, name: &str) -> Option<i64> {
+    node.attribute
+        .iter()
+        .find(|a| a.name() == name)
+        .and_then(|a| a.i)
+}
+
+/// Symmetric per-channel INT8 quantization of `data` (row-major, shaped `dims`)
+/// along `axis`. Returns the quantized values in the original element order plus
+/// one scale per channel (`dims[axis]` entries). All-zero channels get scale 1.0
+/// to avoid division by zero. Quantizing along an arbitrary axis requires a
+/// strided gather, so this generalises the previous axis-0-only contiguous-block
+/// path.
+fn quantize_per_channel(data: &[f32], dims: &[i64], axis: usize) -> (Vec<i8>, Vec<f32>) {
+    let channels = (dims[axis].max(0) as usize).max(1);
+    // Number of contiguous elements between successive indices along `axis`.
+    let stride: usize = dims[axis + 1..]
+        .iter()
+        .map(|&d| d.max(0) as usize)
+        .product::<usize>()
+        .max(1);
+
+    let mut abs_max = vec![0.0f32; channels];
+    for (f, &v) in data.iter().enumerate() {
+        let ch = (f / stride) % channels;
+        abs_max[ch] = abs_max[ch].max(v.abs());
+    }
+    let scales: Vec<f32> = abs_max
+        .iter()
+        .map(|&m| if m == 0.0 { 1.0 } else { m / 127.0 })
+        .collect();
+
+    let mut quantized = vec![0i8; data.len()];
+    for (f, &v) in data.iter().enumerate() {
+        let ch = (f / stride) % channels;
+        quantized[f] = (v / scales[ch]).round().clamp(-128.0, 127.0) as i8;
+    }
+    (quantized, scales)
 }
 
 #[cfg(test)]
@@ -527,5 +583,133 @@ mod tests {
         assert_eq!(matmul_nodes.len(), 2);
         assert_eq!(matmul_nodes[0].input[1], "shared_weight_dequantized");
         assert_eq!(matmul_nodes[1].input[1], "shared_weight_dequantized");
+    }
+
+    #[test]
+    fn test_per_channel_axis_selection() {
+        // Conv: output channels on axis 0.
+        let conv = NodeProto {
+            op_type: Some("Conv".into()),
+            ..Default::default()
+        };
+        assert_eq!(per_channel_axis("Conv", &conv, 4), 0);
+
+        // MatMul: output channel is the last dim.
+        let matmul = NodeProto {
+            op_type: Some("MatMul".into()),
+            ..Default::default()
+        };
+        assert_eq!(per_channel_axis("MatMul", &matmul, 2), 1);
+        assert_eq!(per_channel_axis("MatMul", &matmul, 3), 2);
+
+        // Gemm transB=1: B is [N, K] → N on axis 0.
+        let gemm_tb = NodeProto {
+            op_type: Some("Gemm".into()),
+            attribute: vec![AttributeProto {
+                name: Some("transB".into()),
+                i: Some(1),
+                r#type: Some(2),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        assert_eq!(per_channel_axis("Gemm", &gemm_tb, 2), 0);
+
+        // Gemm transB=0 (default): B is [K, N] → N on axis 1.
+        let gemm = NodeProto {
+            op_type: Some("Gemm".into()),
+            ..Default::default()
+        };
+        assert_eq!(per_channel_axis("Gemm", &gemm, 2), 1);
+    }
+
+    #[test]
+    fn test_quantize_per_channel_groups_along_axis() {
+        // Row-major [2, 3]; column 0 is large, columns 1/2 are tiny.
+        let data = vec![10.0, 0.1, 0.1, 10.0, 0.1, 0.1];
+        let dims = [2i64, 3];
+
+        // axis 1 (per-column): each column owns its scale, so the tiny columns
+        // keep full int8 resolution.
+        let (q1, s1) = quantize_per_channel(&data, &dims, 1);
+        assert_eq!(s1.len(), 3);
+        assert!((s1[0] - 10.0 / 127.0).abs() < 1e-9);
+        assert!((s1[1] - 0.1 / 127.0).abs() < 1e-9);
+        assert_eq!(
+            q1[1], 127,
+            "0.1 under its own column scale → full-scale 127"
+        );
+
+        // axis 0 (per-row): 0.1 shares a row scale with 10.0 and is crushed.
+        let (q0, s0) = quantize_per_channel(&data, &dims, 0);
+        assert_eq!(s0.len(), 2);
+        assert_eq!(q0[1], 1, "0.1 under the row scale (10/127) collapses to 1");
+    }
+
+    #[test]
+    fn test_quantize_model_matmul_emits_last_axis() {
+        // MatMul weight [32, 32] → per-channel axis must be the last (1), not 0.
+        let float_data: Vec<f32> = (0..1024).map(|i| i as f32 * 0.001).collect();
+        let weight = TensorProto {
+            name: Some("weight".into()),
+            dims: vec![32, 32],
+            data_type: Some(FLOAT),
+            float_data,
+            ..Default::default()
+        };
+        let node = NodeProto {
+            op_type: Some("MatMul".into()),
+            input: vec!["input".into(), "weight".into()],
+            output: vec!["output".into()],
+            ..Default::default()
+        };
+        let graph = crate::onnx_proto::GraphProto {
+            name: Some("test".into()),
+            initializer: vec![weight],
+            node: vec![node],
+            ..Default::default()
+        };
+        let model = ModelProto {
+            ir_version: Some(8),
+            graph: Some(graph),
+            ..Default::default()
+        };
+
+        let tmp_dir = tempfile::tempdir().unwrap();
+        let input_path = tmp_dir.path().join("input.onnx");
+        let output_path = tmp_dir.path().join("output.onnx");
+        let mut bytes = Vec::new();
+        model.encode(&mut bytes).unwrap();
+        std::fs::write(&input_path, &bytes).unwrap();
+
+        quantize_model(&input_path, &output_path).unwrap();
+
+        let out_bytes = std::fs::read(&output_path).unwrap();
+        let out_model = ModelProto::decode(&out_bytes[..]).unwrap();
+        let g = out_model.graph.as_ref().unwrap();
+
+        let dq = g
+            .node
+            .iter()
+            .find(|n| n.op_type() == "DequantizeLinear")
+            .unwrap();
+        let axis = dq
+            .attribute
+            .iter()
+            .find(|a| a.name() == "axis")
+            .and_then(|a| a.i)
+            .unwrap();
+        assert_eq!(
+            axis, 1,
+            "MatMul weight quantized per-channel on the last (N) axis"
+        );
+
+        // Scale length must equal the channel count along that axis.
+        let scale = g
+            .initializer
+            .iter()
+            .find(|t| t.name() == "weight_scale")
+            .unwrap();
+        assert_eq!(scale.dims, vec![32]);
     }
 }

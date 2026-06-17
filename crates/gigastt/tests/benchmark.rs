@@ -351,6 +351,14 @@ fn bootstrap_ci(per_sample: &[(usize, usize)], iterations: usize) -> (f64, f64) 
     (lo, hi)
 }
 
+/// Load the committed WER baseline, or an empty default if it is missing/invalid.
+fn read_baseline(path: &Path) -> serde_json::Value {
+    std::fs::read_to_string(path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .unwrap_or_else(|| serde_json::json!({ "tolerance_pp": 0.5, "sets": {} }))
+}
+
 fn main() {
     // nextest (and cargo test --list) invoke us with --list --format terse.
     let args: Vec<String> = std::env::args().collect();
@@ -368,6 +376,7 @@ fn main() {
         .map(|h| h.join(".gigastt/benchmarks/golos_wav/manifest.json"))
         .filter(|p| p.exists());
 
+    let using_bundled = external_manifest.is_none();
     let (manifest_path, fixture_dir) = if let Some(path) = external_manifest {
         let dir = path.parent().unwrap().to_path_buf();
         eprintln!("Using external benchmark set: {}", dir.display());
@@ -490,15 +499,76 @@ fn main() {
     );
     eprintln!("  95% CI: [{:.1}%, {:.1}%]", ci_lo_r, ci_hi_r);
 
-    if wer >= MAX_WER {
+    // ---- Regression gate ---------------------------------------------------
+    // Two hard checks (non-zero exit so CI actually fails on regression):
+    //   1. relative — WER must not exceed the committed per-set baseline by more
+    //      than `tolerance_pp`. This is the load-bearing gate; populate/refresh
+    //      it with GIGASTT_BENCHMARK_UPDATE_BASELINE=1 on a machine with the
+    //      model. An unpopulated baseline ("wer": null) skips this check.
+    //   2. absolute — WER must stay below the MAX_WER ceiling (coarse backstop).
+    let baseline_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/benchmark_baseline.json");
+    let set_key = if using_bundled { "bundled" } else { "external" };
+
+    if std::env::var_os("GIGASTT_BENCHMARK_UPDATE_BASELINE").is_some() {
+        let mut baseline = read_baseline(&baseline_path);
+        baseline["sets"][set_key] = serde_json::json!({
+            "samples": manifest.len(),
+            "wer": wer_rounded,
+        });
+        std::fs::write(
+            &baseline_path,
+            serde_json::to_string_pretty(&baseline).unwrap() + "\n",
+        )
+        .expect("Failed to write benchmark baseline");
         eprintln!(
-            "\n  WARNING: WER {:.1}% exceeds threshold {:.1}%",
-            wer, MAX_WER
+            "  Baseline updated: set '{}' → WER {:.1}% ({})",
+            set_key,
+            wer_rounded,
+            baseline_path.display()
         );
     }
 
+    let baseline = read_baseline(&baseline_path);
+    let tolerance = baseline["tolerance_pp"].as_f64().unwrap_or(0.5);
+    let baseline_wer = baseline["sets"][set_key]["wer"].as_f64();
+
+    let mut failures: Vec<String> = Vec::new();
+
+    match baseline_wer {
+        Some(base) => {
+            let delta = wer - base;
+            let verdict = if delta > tolerance { "FAIL" } else { "ok" };
+            eprintln!("\n  Regression gate [{set_key}]:");
+            eprintln!("  | set | baseline | current | Δ pp | tol pp | verdict |");
+            eprintln!("  |-----|----------|---------|------|--------|---------|");
+            eprintln!(
+                "  | {set_key} | {base:.1}% | {wer:.1}% | {delta:+.1} | {tolerance:.1} | {verdict} |"
+            );
+            if delta > tolerance {
+                failures.push(format!(
+                    "WER regressed {delta:+.1}pp vs baseline {base:.1}% (current {wer:.1}%, tolerance {tolerance:.1}pp)"
+                ));
+            }
+        }
+        None => {
+            eprintln!(
+                "\n  Regression gate [{set_key}]: no committed baseline — relative gate skipped. \
+                 Run with GIGASTT_BENCHMARK_UPDATE_BASELINE=1 to populate {}.",
+                baseline_path.display()
+            );
+        }
+    }
+
+    if wer >= MAX_WER {
+        failures.push(format!(
+            "WER {wer:.1}% exceeds absolute ceiling {MAX_WER:.1}%"
+        ));
+    }
+
+    let passed = failures.is_empty();
+
     let output = serde_json::json!({
-        "pass": true,
+        "pass": passed,
         "score": score_rounded,
         "wer": wer_rounded,
         "ci_low": ci_lo_r,
@@ -506,8 +576,17 @@ fn main() {
         "total_words": total_ref_words,
         "total_errors": total_errors,
         "samples": manifest.len(),
+        "set": set_key,
+        "baseline_wer": baseline_wer,
         "details": details,
     });
 
     println!("{}", serde_json::to_string(&output).unwrap());
+
+    if !passed {
+        for f in &failures {
+            eprintln!("  GATE FAILED: {f}");
+        }
+        std::process::exit(1);
+    }
 }

@@ -86,13 +86,22 @@ fn ort_err(e: impl std::fmt::Display) -> anyhow::Error {
 }
 
 pub fn now_timestamp() -> f64 {
-    match std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+    use std::sync::OnceLock;
+    use std::time::{Instant, SystemTime, UNIX_EPOCH};
+    // Anchor the wall-clock epoch to a monotonic `Instant` captured once, then
+    // advance from it via `Instant::elapsed()`. Wire-visible timestamps stay
+    // epoch-aligned (unchanged contract) but advance monotonically, immune to
+    // NTP steps / wall-clock jumps mid-process.
+    static ANCHOR: OnceLock<(SystemTime, Instant)> = OnceLock::new();
+    let (epoch, start) = ANCHOR.get_or_init(|| (SystemTime::now(), Instant::now()));
+    let base = match epoch.duration_since(UNIX_EPOCH) {
         Ok(d) => d.as_secs_f64(),
         Err(e) => {
             tracing::warn!("System clock is before Unix epoch: {e}");
             0.0
         }
-    }
+    };
+    base + start.elapsed().as_secs_f64()
 }
 
 /// Encoder time subsampling factor (4 frames → 1 encoder output frame).
@@ -1106,7 +1115,7 @@ impl Engine {
     }
 
     /// Warm up every pooled session triplet with a ~1 s silent inference
-    /// (V1-46) so the first real request doesn't pay the EP compile /
+    /// so the first real request doesn't pay the EP compile /
     /// first-allocation cost.
     ///
     /// Sequential checkouts visit each pooled triplet exactly once because
@@ -1539,7 +1548,7 @@ impl Engine {
 
         for token in tokens {
             let token_text = self.tokenizer.token_text(token.token_id);
-            let is_word_boundary = token_text.starts_with('\u{2581}');
+            let is_word_boundary = token_text.starts_with(tokenizer::WORD_BOUNDARY);
 
             if is_word_boundary && !current_word.is_empty() {
                 // Emit previous word
@@ -1561,7 +1570,7 @@ impl Engine {
                 word_start_frame = None;
             }
 
-            let clean = if let Some(stripped) = token_text.strip_prefix('\u{2581}') {
+            let clean = if let Some(stripped) = token_text.strip_prefix(tokenizer::WORD_BOUNDARY) {
                 stripped
             } else {
                 token_text

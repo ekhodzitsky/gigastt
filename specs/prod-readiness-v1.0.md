@@ -51,6 +51,83 @@ historical audit trail; trust this rollup over the table cells for
   SUS-03 (minisign signatures + public key published), SUS-05 (SLSA
   provenance attestations).
 
+## v2.1.0 reconciliation (2026-06-17) — authoritative
+
+> The 2026-04-20 priority tables and the per-item detail rows below were last
+> reconciled at v0.9.0. By v2.1.0 most of them had shipped across v0.9.6 /
+> v1.0.0 / v2.0.x but were never flipped. **Trust this section over the table
+> cells and `⏳ open` markers below.** Verified against code at HEAD (v2.1.0)
+> by a full sweep on 2026-06-17.
+
+**Closed since the v0.9.0 rollup (doc still said `open`):**
+
+- V1-13 WS protocol negotiation (v1.0.0) · V1-15 rate-limiter eviction on a
+  shutdown-tracked tokio task (v0.9.0) · V1-17 in-tree `MetricsRegistry`, no
+  global recorder / no `--test-threads=1` (v0.9.0) · V1-19 cached streaming
+  resampler (v0.9.6, rubato 3.0 in v2.0.10) · V1-21 `OwnedReservation`/
+  `PoolGuard` Drop returns the slot on panic (v2.0.4) · V1-27 `/ready`
+  readiness probe → 503 on pool-exhausted / shutting-down, `/health`
+  liveness-only (v1.0.0) · V1-28 `--pool-checkout-timeout-secs`, `Retry-After`
+  from the same field (v1.0.0) · V1-29 idle-timeout test at 3 s (v1.0.0) ·
+  V1-30 pool/inference/WS metrics (v1.0.0) · V1-31 `consecutive_blanks` reset
+  (not inflated) on MAX_TOKENS overrun · V1-34 single `SUPPORTED_RATES` const
+  (v0.9.3) · V1-38 `RUSTSEC-2021-0073` ignore removed from both `deny.toml`
+  and `.cargo/audit.toml` (v0.9.0) · V1-39 `scripts/` populated with documented
+  benchmark-prep helpers · V1-42 external 9 994-sample set wired + bundled 15
+  fixtures + `benchmark/DATA_LICENSE` / `NOTICE` provenance (v2.0.8) ·
+  SUS-01 `SECURITY.md` (v1.0.0) · SUS-04 `dependabot.yml` (cargo +
+  github-actions, weekly) · SUS-06 `cargo-fuzz` harness, 4 targets, built in CI
+  + run nightly in soak (no dedicated ONNX-protobuf target) · SUS-09
+  `docs/observability/{alerts.yml,dashboard.json}` (v1.0.0) · SUS-11
+  `terminationGracePeriodSeconds` + drain section in `deployment.md` ·
+  SUS-12 `docs/openapi.yaml` (v0.9.6) · SUS-13 `docs/privacy.md` (v1.0.0) ·
+  SUS-14 `cargo-semver-checks` in CI (v1.0.0).
+
+**Fixed in this audit pass (2026-06-17):**
+
+- **V1-20** ✅ — `quantize.rs` now picks the per-output-channel axis from the
+  op (`Conv`→0, `MatMul`→last dim, `Gemm`→`transB?0:1`) and quantizes along it
+  with a strided gather, instead of hardcoding `axis=0`. The wrong axis grouped
+  unrelated output channels under one scale → silent INT8 WER regression.
+  Regenerated INT8 verified: bundled-set WER **1.3 %** (1/75), model loads and
+  transcribes cleanly.
+- **V1-33** ✅ — AsyncAPI `WordInfo` schema gained `confidence` (required) and
+  `speaker` (optional), matching the Rust struct. (The path / error-enum /
+  rate parts were already aligned in v2.1.0.)
+- **V1-41** ✅ — real benchmark regression gate: committed
+  `tests/benchmark_baseline.json`, a relative gate (`tolerance_pp`, hard
+  non-zero exit) + the absolute `MAX_WER` ceiling now also fails, a diff table,
+  and a `GIGASTT_BENCHMARK_UPDATE_BASELINE=1` refresh path. `pass` reflects the
+  real verdict. Bundled baseline populated (1.3 %); tolerance 1.5 pp absorbs
+  single-word cross-env jitter on the small set (tighten with V1-42).
+- **V1-32** ✅ shared `tokenizer::WORD_BOUNDARY` const · **V1-43** ✅
+  `now_timestamp()` anchored to a monotonic `Instant` (epoch-aligned, NTP-step
+  immune) · **V1-44** ✅ `MelSpectrogram: Default` · **V1-45** ✅ `/health` no
+  longer touches engine state (State extractor dropped) · **V1-49** ✅ shutdown
+  oneshot logs `warn!` on `Err` instead of swallowing it.
+
+**Still genuinely open / partial at HEAD:**
+
+| # | State | What's left |
+|---|-------|-------------|
+| V1-12 | OPEN | `/metrics` on the primary port, under origin allowlist + rate-limiter; add a loopback `--metrics-listen` or exempt + loopback-restrict it. |
+| V1-16 | PARTIAL | Pool load no longer aborts the process (errors propagate), but no degraded partial-load / `--pool-min-size`. |
+| V1-18 | PARTIAL | Encoder borrow + per-frame buffers reused; `run_decoder()` still `to_vec()`s dec/h/c per non-blank call. |
+| V1-24 | OPEN | Single shared `SessionPool`; batch REST can starve WS. No batch/stream split or priority. |
+| V1-26 | PARTIAL | `FeatureExtractor`/`TranscriptAssembler` split out; `tokens_to_words` (→`TokenFormatter`) and `FileTranscriber` still on `Engine`. |
+| V1-35 | OPEN | SSE collapses every error to `inference_error`; map `GigasttError` variants like WS does. |
+| V1-36 | OPEN | Prometheus `path` label is the raw URI; bound it to a known-route set + `"other"`. |
+| V1-37 | OPEN | No server-side WS ping/pong timer; liveness rides only on idle-timeout. |
+| V1-40 | PARTIAL | `tokio`/`serde` declared as `"1"` (no minor pin); drift caught by Dependabot + `publish --dry-run --locked`, not `cargo update --dry-run`. |
+| V1-47 | OPEN | No `tokio::time::timeout` around the `spawn_blocking` ORT Run; a hung Run pins its slot. |
+| V1-48 | OPEN | No VAD endpointing (L-effort feature). |
+| V1-50 | OPEN | Model filenames hardcoded; no `manifest.toml` for new models (e.g. GigaAM v4). |
+| SUS-07 | OPEN | No Miri / ASAN / TSAN job in CI. |
+| SUS-10 | PARTIAL | `runbook.md` is shutdown-centric; missing pool-exhaustion / model-download / OOM triage. |
+| TODO-18 | OPEN (by design) | `ort_err()` helper stays until `ort` ships a stable Send-able-error release (still pinned `2.0.0-rc.12`). |
+| TODO-19 | OPEN | No hot-reload admin endpoint; INT8/model reload still needs a restart. |
+| TODO-CUDA | OPEN | No CUDA artifact in the `release.yml` matrix (all entries `cuda: false`); CUDA ships only via `Dockerfile.cuda`. |
+
 ## Progress snapshot (2026-04-20) — priority-sorted
 
 ### P0 — blockers (ordered most → least critical)

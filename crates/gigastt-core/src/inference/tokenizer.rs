@@ -3,6 +3,11 @@
 use anyhow::{Context, Result, ensure};
 use std::path::Path;
 
+/// BPE word-boundary marker (U+2581 "▁"). Tokens that begin a new word are
+/// prefixed with it; decoding replaces it with a space. Single source of truth
+/// so the encoder/decoder split logic and the decode step agree.
+pub const WORD_BOUNDARY: char = '\u{2581}';
+
 pub struct Tokenizer {
     tokens: Vec<String>,
     blank_id: usize,
@@ -122,8 +127,8 @@ impl Tokenizer {
             }
             text.push_str(token);
         }
-        // Replace ▁ (U+2581) with space, then trim
-        text.replace('▁', " ").trim().to_string()
+        // Replace the word-boundary marker with a space, then trim.
+        text.replace(WORD_BOUNDARY, " ").trim().to_string()
     }
 }
 
