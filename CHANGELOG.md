@@ -54,6 +54,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   monotonically — immune to NTP steps / wall-clock jumps mid-process.
 - **AsyncAPI `WordInfo`** now documents `confidence` (required) and
   `speaker` (optional), matching the Rust struct.
+- **SSE error parity with WebSocket.** The SSE streaming endpoint
+  (`/v1/transcribe/stream`) used to collapse every failure into one generic
+  `inference_error` event and stayed silent on a panic. It now emits a stable
+  per-variant code (`GigasttError::code()` — `inference_error` / `invalid_audio`
+  / …) and a distinct `inference_panic` event when the inference task panics,
+  matching the WebSocket error contract.
 - **Minor hardening:** single `tokenizer::WORD_BOUNDARY` const for the U+2581
   marker; `MelSpectrogram: Default`; `/health` is liveness-only
   and no longer touches engine state; server shutdown logs a `warn!`

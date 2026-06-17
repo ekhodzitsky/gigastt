@@ -114,9 +114,54 @@ pub enum GigasttError {
     Io(#[from] std::io::Error),
 }
 
+impl GigasttError {
+    /// Stable, machine-readable error code for wire payloads (WebSocket /
+    /// SSE `error` events). Lets both streaming surfaces emit the same code
+    /// for the same failure instead of collapsing everything to one generic
+    /// string.
+    pub fn code(&self) -> &'static str {
+        match self {
+            GigasttError::ModelLoad { .. } => "model_load_error",
+            GigasttError::Inference { .. } => "inference_error",
+            GigasttError::InvalidAudio { .. } => "invalid_audio",
+            GigasttError::Io(_) => "io_error",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_error_code_maps_variants() {
+        assert_eq!(
+            GigasttError::Inference {
+                source: "boom".into()
+            }
+            .code(),
+            "inference_error"
+        );
+        assert_eq!(
+            GigasttError::InvalidAudio {
+                reason: "bad".into()
+            }
+            .code(),
+            "invalid_audio"
+        );
+        assert_eq!(
+            GigasttError::ModelLoad {
+                path: "x".into(),
+                source: None
+            }
+            .code(),
+            "model_load_error"
+        );
+        assert_eq!(
+            GigasttError::Io(std::io::Error::other("x")).code(),
+            "io_error"
+        );
+    }
 
     #[test]
     fn test_model_path_rejects_empty() {

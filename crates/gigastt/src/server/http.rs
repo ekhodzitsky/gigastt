@@ -478,9 +478,18 @@ pub async fn transcribe_stream(
     }
     let mut reservation = guard.into_owned();
 
+    // Per-segment error carried over the SSE channel: a stable machine-readable
+    // code plus a sanitized message, mirroring the WebSocket error contract so
+    // SSE clients get the same codes (`inference_error`, `inference_panic`, …)
+    // instead of one generic string.
+    struct StreamError {
+        code: &'static str,
+        message: String,
+    }
+
     // Create mpsc channel for streaming segments from spawn_blocking to SSE
     let (tx, rx) = tokio::sync::mpsc::channel::<
-        Result<gigastt_core::inference::TranscriptSegment, String>,
+        Result<gigastt_core::inference::TranscriptSegment, StreamError>,
     >(16);
 
     let engine = state.engine.clone();
@@ -513,7 +522,10 @@ pub async fn transcribe_stream(
                         }
                     }
                     Err(e) => {
-                        let _ = tx.blocking_send(Err(format!("{e}")));
+                        let _ = tx.blocking_send(Err(StreamError {
+                            code: e.code(),
+                            message: "Transcription failed. Please check audio format.".into(),
+                        }));
                         return;
                     }
                 }
@@ -529,6 +541,12 @@ pub async fn transcribe_stream(
 
         if result.is_err() {
             tracing::error!("Panic in SSE inference task — triplet recovered");
+            // Mirror the WebSocket contract: surface a distinct `inference_panic`
+            // code instead of ending the stream silently.
+            let _ = tx.blocking_send(Err(StreamError {
+                code: "inference_panic",
+                message: "Inference failed unexpectedly.".into(),
+            }));
         }
 
         // reservation dropped here automatically returns the triplet to the pool
@@ -546,8 +564,8 @@ pub async fn transcribe_stream(
                     };
                     Event::default().data(msg.to_string())
                 }
-                Err(_) => {
-                    let msg = serde_json::json!({"type": "error", "message": "Transcription failed.", "code": "inference_error"});
+                Err(err) => {
+                    let msg = serde_json::json!({"type": "error", "message": err.message, "code": err.code});
                     Event::default().data(msg.to_string())
                 }
             };
