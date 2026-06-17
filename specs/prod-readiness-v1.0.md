@@ -105,19 +105,22 @@ historical audit trail; trust this rollup over the table cells for
   immune) · **V1-44** ✅ `MelSpectrogram: Default` · **V1-45** ✅ `/health` no
   longer touches engine state (State extractor dropped) · **V1-49** ✅ shutdown
   oneshot logs `warn!` on `Err` instead of swallowing it.
+- **V1-12** ✅ `/metrics` moved to a separate loopback listener (default
+  `127.0.0.1:9090`, `--metrics-listen` / `GIGASTT_METRICS_LISTEN`), off the CORS
+  allowlist + rate limiter; primary port no longer serves it · **V1-36** ✅
+  Prometheus `path` label bounded to the known route set (`other` for the rest)
+  · **V1-37** ✅ server-side WS ping every 30 s, close after two consecutive
+  unanswered pings (any inbound frame resets the counter).
 
 **Still genuinely open / partial at HEAD:**
 
 | # | State | What's left |
 |---|-------|-------------|
-| V1-12 | OPEN | `/metrics` on the primary port, under origin allowlist + rate-limiter; add a loopback `--metrics-listen` or exempt + loopback-restrict it. |
 | V1-16 | PARTIAL | Pool load no longer aborts the process (errors propagate), but no degraded partial-load / `--pool-min-size`. |
 | V1-18 | PARTIAL | Encoder borrow + per-frame buffers reused; `run_decoder()` still `to_vec()`s dec/h/c per non-blank call. |
 | V1-24 | OPEN | Single shared `SessionPool`; batch REST can starve WS. No batch/stream split or priority. |
 | V1-26 | PARTIAL | `FeatureExtractor`/`TranscriptAssembler` split out; `tokens_to_words` (→`TokenFormatter`) and `FileTranscriber` still on `Engine`. |
 | V1-35 | OPEN | SSE collapses every error to `inference_error`; map `GigasttError` variants like WS does. |
-| V1-36 | OPEN | Prometheus `path` label is the raw URI; bound it to a known-route set + `"other"`. |
-| V1-37 | OPEN | No server-side WS ping/pong timer; liveness rides only on idle-timeout. |
 | V1-40 | PARTIAL | `tokio`/`serde` declared as `"1"` (no minor pin); drift caught by Dependabot + `publish --dry-run --locked`, not `cargo update --dry-run`. |
 | V1-47 | OPEN | No `tokio::time::timeout` around the `spawn_blocking` ORT Run; a hung Run pins its slot. |
 | V1-48 | OPEN | No VAD endpointing (L-effort feature). |
