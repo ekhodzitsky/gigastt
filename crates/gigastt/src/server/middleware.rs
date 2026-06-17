@@ -44,6 +44,9 @@ pub(crate) async fn http_metrics_middleware(
         &[],
         state.engine.pool.available() as i64,
     );
+    // Plus the dedicated batch pool, when one was split off, so its saturation
+    // is visible separately from the interactive pool.
+    http::sample_batch_pool_gauges(&registry, &state.engine);
     let response = next.run(req).await;
     let elapsed = start.elapsed().as_secs_f64();
     let status = response.status().as_u16().to_string();

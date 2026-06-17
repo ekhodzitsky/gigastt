@@ -191,6 +191,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_default_delegates_to_new() {
+        // `Default` forwards to `new()`; assert both produce an equivalent
+        // extractor by checking they yield identical features on silence.
+        let silence = vec![0.0_f32; 3200];
+        let (a, fa) = MelSpectrogram::default().compute(&silence);
+        let (b, fb) = MelSpectrogram::new().compute(&silence);
+        assert_eq!(fa, fb);
+        assert_eq!(a, b);
+    }
+
+    #[test]
     fn test_silence() {
         let mel = MelSpectrogram::new();
         let silence = vec![0.0_f32; 16000]; // 1 second of silence

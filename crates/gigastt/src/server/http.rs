@@ -157,6 +157,56 @@ fn api_pool_closed_error() -> ApiError {
         .into_response()
 }
 
+/// 504 response for a single inference run that exceeded the per-request
+/// inference timeout (`--inference-timeout-secs`). Distinct from the pool
+/// `timeout` (503): the slot was free, the *run* itself was too slow / wedged,
+/// so there is no `Retry-After` — retrying the same payload would time out
+/// again. Extracted (mirroring [`api_timeout_error`]) so the status + code can
+/// be asserted without a model.
+fn api_inference_timeout_error() -> ApiError {
+    api_error(
+        StatusCode::GATEWAY_TIMEOUT,
+        "Inference timed out.",
+        "inference_timeout",
+    )
+}
+
+/// Per-segment error carried over the SSE channel: a stable machine-readable
+/// code plus a sanitized message, mirroring the WebSocket error contract so
+/// SSE clients get the same codes (`inference_error`, `inference_panic`,
+/// `inference_timeout`, …) instead of one generic string.
+struct StreamError {
+    code: &'static str,
+    message: String,
+}
+
+/// Render one SSE segment-or-error result to the JSON payload string sent in
+/// the `data:` field. Pure (no I/O) so the per-variant error `code`, the
+/// `inference_panic` / `inference_timeout` events, and the partial/final
+/// framing can be unit-tested without a model.
+fn sse_data_payload(
+    result: &Result<gigastt_core::inference::TranscriptSegment, StreamError>,
+) -> String {
+    match result {
+        Ok(seg) => {
+            let ty = if seg.is_final { "final" } else { "partial" };
+            serde_json::json!({
+                "type": ty,
+                "text": seg.text,
+                "timestamp": seg.timestamp,
+                "words": seg.words,
+            })
+            .to_string()
+        }
+        Err(err) => serde_json::json!({
+            "type": "error",
+            "message": err.message,
+            "code": err.code,
+        })
+        .to_string(),
+    }
+}
+
 /// Readiness probe response.
 #[derive(Serialize)]
 pub struct ReadinessResponse {
@@ -184,6 +234,22 @@ pub async fn health() -> Json<HealthResponse> {
     })
 }
 
+/// Sample the dedicated batch pool's availability / waiters when one exists
+/// (`--batch-pool-size > 0`). The batch pool has its own FIFO queue, so it can
+/// be saturated while the interactive pool reads healthy; exporting it under
+/// distinct gauges keeps batch-pool exhaustion observable instead of hidden.
+/// No-op when no batch pool was split off.
+pub(crate) fn sample_batch_pool_gauges(reg: &MetricsRegistry, engine: &Engine) {
+    if let Some(ref batch) = engine.batch_pool {
+        reg.gauge_set(
+            "gigastt_batch_pool_available",
+            &[],
+            batch.available() as i64,
+        );
+        reg.gauge_set("gigastt_batch_pool_waiters", &[], batch.waiters() as i64);
+    }
+}
+
 /// GET /ready — readiness probe for k8s and orchestrators.
 pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
     if state.shutdown.is_cancelled() {
@@ -206,6 +272,7 @@ pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
             &[],
             state.engine.pool.waiters() as i64,
         );
+        sample_batch_pool_gauges(reg, &state.engine);
     }
     if available == 0 {
         return (
@@ -242,6 +309,7 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
             engine.pool.available() as i64,
         );
         reg.gauge_set("gigastt_pool_waiters", &[], engine.pool.waiters() as i64);
+        sample_batch_pool_gauges(reg, engine);
     }
     Json(ModelInfo {
         id: "gigaam-v3-e2e-rnnt".into(),
@@ -381,11 +449,7 @@ pub async fn transcribe(
                     reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
                 }
                 tracing::error!("REST inference exceeded {inference_timeout_secs}s — aborting");
-                return Err(api_error(
-                    StatusCode::GATEWAY_TIMEOUT,
-                    "Inference timed out.",
-                    "inference_timeout",
-                ));
+                return Err(api_inference_timeout_error());
             }
         }
     };
@@ -477,12 +541,17 @@ pub async fn transcribe_stream(
         )
     })?;
 
-    // Checkout a session triplet from the pool. Strip the lifetime via
-    // `into_owned` so the triplet can travel through `spawn_blocking`.
+    // Checkout a session triplet from the batch pool — SSE file transcription
+    // decodes and transcribes the *entire* upload (holding the triplet for the
+    // whole file), so it is a batch workload, not interactive streaming. Draw
+    // from the dedicated batch pool when one exists (falling back to the
+    // interactive pool otherwise) so it can't starve real-time WebSocket
+    // streaming, matching `/v1/transcribe`. Strip the lifetime via `into_owned`
+    // so the triplet can travel through `spawn_blocking`.
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
         std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
-        state.engine.pool.checkout(),
+        state.engine.pool_for_batch().checkout(),
     )
     .await
     {
@@ -507,101 +576,153 @@ pub async fn transcribe_stream(
             checkout_start.elapsed().as_secs_f64(),
         );
     }
-    let mut reservation = guard.into_owned();
+    let reservation = guard.into_owned();
 
-    // Per-segment error carried over the SSE channel: a stable machine-readable
-    // code plus a sanitized message, mirroring the WebSocket error contract so
-    // SSE clients get the same codes (`inference_error`, `inference_panic`, …)
-    // instead of one generic string.
-    struct StreamError {
-        code: &'static str,
-        message: String,
-    }
-
-    // Create mpsc channel for streaming segments from spawn_blocking to SSE
+    // Create mpsc channel for streaming segments from the inference task to SSE.
     let (tx, rx) = tokio::sync::mpsc::channel::<
         Result<gigastt_core::inference::TranscriptSegment, StreamError>,
     >(16);
 
     let engine = state.engine.clone();
-    // The axum handler future has already returned by the time the
-    // SSE stream starts flowing, so `with_graceful_shutdown` can't observe
-    // this task. Clone the shutdown token and check it before every chunk
-    // so SIGTERM during a long transcription drops cleanly.
+    // The axum handler future has already returned by the time the SSE stream
+    // starts flowing, so `with_graceful_shutdown` can't observe this task. Clone
+    // the shutdown token and check it before every chunk so SIGTERM during a
+    // long transcription drops cleanly.
     let cancel = state.shutdown.clone();
     let tracker = state.tracker.clone();
-    let span = tracing::Span::current();
-    tracker.spawn_blocking(move || {
-        let _enter = span.enter();
-        // catch_unwind ensures triplet is returned to pool even on panic
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let mut stream_state = engine.create_state(false);
-            let chunk_size = 16000; // 1 second at 16kHz
+    let metrics = state.metrics_registry.clone();
+    // Per-request inference timeout (`0` disables), applied per 1 s chunk so a
+    // wedged ORT Run on the SSE surface is bounded too — matching REST + WS. We
+    // drive the chunk loop from async and run each `process_chunk` in its own
+    // `spawn_blocking` wrapped in a timeout; the streaming state + reservation
+    // move into each blocking call and come back out (mirrors the WS handler).
+    let inference_timeout_secs = limits.inference_timeout_secs;
+    tracker.spawn(async move {
+        let mut stream_state = engine.create_state(false);
+        let mut reservation = reservation;
+        let chunk_size = 16000; // 1 second at 16 kHz
+        let mut chunks = samples.chunks(chunk_size);
+        // Whether the loop ran to completion (so we still flush the remainder)
+        // vs. was cut short by shutdown / error / timeout (so we don't).
+        let mut clean_finish = true;
+        loop {
+            if cancel.is_cancelled() {
+                tracing::info!("SSE transcription cancelled by shutdown");
+                clean_finish = false;
+                break;
+            }
+            let Some(chunk) = chunks.next() else { break };
+            let chunk_vec = chunk.to_vec();
+            let eng = engine.clone();
+            let span = tracing::Span::current();
+            let handle = tokio::task::spawn_blocking(move || {
+                let _enter = span.enter();
+                // Move state + reservation in so they come back unconditionally,
+                // including after a panic inside `process_chunk`.
+                let mut state = stream_state;
+                let mut res = reservation;
+                let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    eng.process_chunk(&chunk_vec, &mut state, &mut res)
+                }));
+                (r, state, res)
+            });
 
-            for chunk in samples.chunks(chunk_size) {
-                if cancel.is_cancelled() {
-                    tracing::info!("SSE transcription cancelled by shutdown");
-                    return;
-                }
-                match engine.process_chunk(chunk, &mut stream_state, &mut reservation) {
-                    Ok(segs) => {
-                        for seg in segs {
-                            if tx.blocking_send(Ok(seg)).is_err() {
-                                // Receiver dropped (client disconnected)
-                                return;
-                            }
+            let joined = if inference_timeout_secs == 0 {
+                handle.await
+            } else {
+                match tokio::time::timeout(
+                    std::time::Duration::from_secs(inference_timeout_secs),
+                    handle,
+                )
+                .await
+                {
+                    Ok(j) => j,
+                    Err(_elapsed) => {
+                        if let Some(ref reg) = metrics {
+                            reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
                         }
-                    }
-                    Err(e) => {
-                        let _ = tx.blocking_send(Err(StreamError {
-                            code: e.code(),
-                            message: "Transcription failed. Please check audio format.".into(),
-                        }));
+                        tracing::error!(
+                            "SSE inference exceeded {inference_timeout_secs}s — aborting stream"
+                        );
+                        let _ = tx
+                            .send(Err(StreamError {
+                                code: "inference_timeout",
+                                message: "Inference timed out.".into(),
+                            }))
+                            .await;
+                        // `spawn_blocking` can't be cancelled: the detached run
+                        // keeps the triplet + streaming state and returns the
+                        // slot to the pool only when it eventually finishes.
                         return;
                     }
                 }
-            }
+            };
 
-            // Final decode of the sub-stride remainder, then flush — best-effort;
-            // always emit so SSE clients receive a clean end-of-stream marker
-            // even during shutdown.
-            if let Some(seg) = engine.finish_stream(&mut stream_state, &mut reservation) {
-                let _ = tx.blocking_send(Ok(seg));
+            match joined {
+                Ok((Ok(Ok(segs)), state_back, res_back)) => {
+                    stream_state = state_back;
+                    reservation = res_back;
+                    for seg in segs {
+                        if tx.send(Ok(seg)).await.is_err() {
+                            // Receiver dropped (client disconnected).
+                            return;
+                        }
+                    }
+                }
+                Ok((Ok(Err(e)), _state_back, res_back)) => {
+                    let _ = tx
+                        .send(Err(StreamError {
+                            code: e.code(),
+                            message: "Transcription failed. Please check audio format.".into(),
+                        }))
+                        .await;
+                    // Return the recovered triplet to the pool; stream ends here.
+                    drop(res_back);
+                    return;
+                }
+                Ok((Err(_panic), _state_back, res_back)) => {
+                    tracing::error!("Panic in SSE inference task — triplet recovered");
+                    let _ = tx
+                        .send(Err(StreamError {
+                            code: "inference_panic",
+                            message: "Inference failed unexpectedly.".into(),
+                        }))
+                        .await;
+                    drop(res_back);
+                    return;
+                }
+                Err(e) => {
+                    tracing::error!("SSE spawn_blocking join error: {e}");
+                    return;
+                }
             }
-        }));
-
-        if result.is_err() {
-            tracing::error!("Panic in SSE inference task — triplet recovered");
-            // Mirror the WebSocket contract: surface a distinct `inference_panic`
-            // code instead of ending the stream silently.
-            let _ = tx.blocking_send(Err(StreamError {
-                code: "inference_panic",
-                message: "Inference failed unexpectedly.".into(),
-            }));
         }
 
+        if clean_finish {
+            // Final decode of the sub-stride remainder. This runs a real (but
+            // single-window, bounded-size) encoder + RNN-T pass — not a free
+            // assembler flush — so it stays in a blocking task. It is the one
+            // ORT Run on the happy path not wrapped by the per-chunk inference
+            // timeout, which is acceptable because it executes only after every
+            // chunk already succeeded and is bounded by the streaming window.
+            // State + reservation come back so the triplet is checked in on drop.
+            let eng = engine.clone();
+            let handle = tokio::task::spawn_blocking(move || {
+                let mut state = stream_state;
+                let mut res = reservation;
+                let seg = eng.finish_stream(&mut state, &mut res);
+                (seg, state, res)
+            });
+            if let Ok((Some(seg), _state, _res)) = handle.await {
+                let _ = tx.send(Ok(seg)).await;
+            }
+        }
         // reservation dropped here automatically returns the triplet to the pool
     });
 
-    // Convert receiver to SSE stream
+    // Convert receiver to SSE stream.
     let stream = tokio_stream::wrappers::ReceiverStream::new(rx)
-        .map(|result| {
-            let event = match result {
-                Ok(seg) => {
-                    let msg = if seg.is_final {
-                        serde_json::json!({"type": "final", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-                    } else {
-                        serde_json::json!({"type": "partial", "text": seg.text, "timestamp": seg.timestamp, "words": seg.words})
-                    };
-                    Event::default().data(msg.to_string())
-                }
-                Err(err) => {
-                    let msg = serde_json::json!({"type": "error", "message": err.message, "code": err.code});
-                    Event::default().data(msg.to_string())
-                }
-            };
-            Ok(event)
-        });
+        .map(|result| Ok(Event::default().data(sse_data_payload(&result))));
 
     // Explicit keep-alive: send a comment (`: \n\n`) every 15 s so nginx / ALB
     // do not close the connection during long transcriptions.
@@ -713,6 +834,54 @@ mod tests {
         let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(v["code"], "pool_closed");
         assert!(v.get("retry_after_ms").is_none());
+    }
+
+    #[tokio::test]
+    async fn test_api_inference_timeout_error_is_504() {
+        let resp = api_inference_timeout_error();
+        let (parts, body) = resp.into_parts();
+        assert_eq!(parts.status, StatusCode::GATEWAY_TIMEOUT);
+        // A wedged run would just time out again, so no Retry-After hint.
+        assert!(parts.headers.get(header::RETRY_AFTER).is_none());
+        let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "inference_timeout");
+    }
+
+    #[test]
+    fn test_sse_data_payload_preserves_error_codes() {
+        // Per-variant code is preserved (not collapsed to a generic string),
+        // including the distinct inference_panic / inference_timeout events.
+        for code in [
+            "invalid_audio",
+            "inference_error",
+            "inference_panic",
+            "inference_timeout",
+        ] {
+            let payload = sse_data_payload(&Err(StreamError {
+                code,
+                message: "sanitized".into(),
+            }));
+            let v: serde_json::Value = serde_json::from_str(&payload).unwrap();
+            assert_eq!(v["type"], "error");
+            assert_eq!(v["code"], code);
+            assert_eq!(v["message"], "sanitized");
+        }
+    }
+
+    #[test]
+    fn test_sse_data_payload_segment_framing() {
+        // A final segment renders as type "final"; a non-final one as "partial".
+        let seg = gigastt_core::inference::TranscriptSegment::empty_final();
+        let final_payload = sse_data_payload(&Ok(seg));
+        let v: serde_json::Value = serde_json::from_str(&final_payload).unwrap();
+        assert_eq!(v["type"], "final");
+
+        let mut partial = gigastt_core::inference::TranscriptSegment::empty_final();
+        partial.is_final = false;
+        let partial_payload = sse_data_payload(&Ok(partial));
+        let v: serde_json::Value = serde_json::from_str(&partial_payload).unwrap();
+        assert_eq!(v["type"], "partial");
     }
 
     #[tokio::test]

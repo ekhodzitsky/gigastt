@@ -989,19 +989,29 @@ impl Engine {
     /// for the interactive pool; `batch_pool_size == 0` (or a pool too small to
     /// split) yields no batch pool.
     fn split_triplets(
-        mut triplets: Vec<SessionTriplet>,
+        triplets: Vec<SessionTriplet>,
         batch_pool_size: usize,
     ) -> (SessionPool, Option<SessionPool>) {
-        let n = triplets.len();
+        Self::split_pool(triplets, batch_pool_size)
+    }
+
+    /// Generic pool split underlying [`Engine::split_triplets`]: partition
+    /// `items` into an interactive pool and an optional batch pool of
+    /// `batch_pool_size` items, always leaving at least one item interactive.
+    /// `batch_pool_size == 0` (or too few items to split) yields no batch pool.
+    /// Generic over the item type so the routing can be unit-tested with a
+    /// synthetic `Pool<u32>` instead of model-backed `SessionTriplet`s.
+    fn split_pool<T: Send>(
+        mut items: Vec<T>,
+        batch_pool_size: usize,
+    ) -> (Pool<T>, Option<Pool<T>>) {
+        let n = items.len();
         let batch = Self::batch_split_count(n, batch_pool_size);
         if batch == 0 {
-            return (SessionPool::new(triplets), None);
+            return (Pool::new(items), None);
         }
-        let batch_triplets = triplets.split_off(n - batch);
-        (
-            SessionPool::new(triplets),
-            Some(SessionPool::new(batch_triplets)),
-        )
+        let batch_items = items.split_off(n - batch);
+        (Pool::new(items), Some(Pool::new(batch_items)))
     }
 
     /// Number of triplets to reserve for the batch pool given `n` loaded and a
@@ -1842,6 +1852,30 @@ mod tests {
     }
 
     #[test]
+    fn test_split_pool_routes_items_to_two_pools() {
+        // Exercises the real split underlying `split_triplets` with a synthetic
+        // `Pool<u32>` (no model). 4 items, batch 1 → interactive 3, batch 1.
+        let (pool, batch) = Engine::split_pool(vec![1u32, 2, 3, 4], 1);
+        assert_eq!(pool.total(), 3);
+        assert_eq!(batch.as_ref().map(|b| b.total()), Some(1));
+
+        // batch_pool_size 0 → split disabled, no batch pool.
+        let (pool, batch) = Engine::split_pool(vec![1u32, 2, 3, 4], 0);
+        assert_eq!(pool.total(), 4);
+        assert!(batch.is_none());
+
+        // Over-request clamps so at least one triplet stays interactive.
+        let (pool, batch) = Engine::split_pool(vec![1u32, 2, 3], 9);
+        assert_eq!(pool.total(), 1);
+        assert_eq!(batch.as_ref().map(|b| b.total()), Some(2));
+
+        // A single item can't be split.
+        let (pool, batch) = Engine::split_pool(vec![1u32], 1);
+        assert_eq!(pool.total(), 1);
+        assert!(batch.is_none());
+    }
+
+    #[test]
     fn test_token_formatter_groups_words() {
         // `▁` (U+2581) marks a new word; continuation tokens have no prefix.
         let tok = Tokenizer::from_tokens(vec![
@@ -2397,6 +2431,25 @@ mod tests {
     fn test_now_timestamp_non_negative() {
         let ts = now_timestamp();
         assert!(ts >= 0.0, "timestamp must be non-negative");
+    }
+
+    #[test]
+    fn test_now_timestamp_monotonic_and_epoch_aligned() {
+        // Locks in the monotonic-anchor contract: two successive reads never go
+        // backwards (immune to NTP steps), and the value stays Unix-epoch
+        // aligned. A regression to a plain wall-clock read could violate either.
+        let a = now_timestamp();
+        let b = now_timestamp();
+        assert!(
+            b >= a,
+            "now_timestamp must be non-decreasing (monotonic anchor)"
+        );
+        // Comfortably after 2023-11-14 and before a far-future sanity bound.
+        assert!(
+            a > 1_700_000_000.0,
+            "timestamp must stay Unix-epoch aligned"
+        );
+        assert!(a < 4_000_000_000.0, "timestamp exceeds a sane upper bound");
     }
 
     #[test]

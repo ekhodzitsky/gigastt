@@ -30,8 +30,19 @@ type WsSink = futures_util::stream::SplitSink<WebSocket, WsMessage>;
 const WS_PING_INTERVAL_SECS: u64 = 30;
 
 /// Close the socket after this many consecutive unanswered pings (no Pong and
-/// no other frame in between) — roughly `WS_PING_INTERVAL_SECS × this` seconds.
+/// no other frame in between). Because the first ping is sent one interval
+/// after connect and the close fires on the tick *after* the counter reaches
+/// this value, detection takes roughly `WS_PING_INTERVAL_SECS × (this + 1)`
+/// seconds (≈ 90 s at the defaults).
 const WS_MAX_MISSED_PONGS: u32 = 2;
+
+/// Whether a ping tick should close the socket: `true` once `unanswered_pings`
+/// has reached [`WS_MAX_MISSED_PONGS`]. Factored out of the session loop so the
+/// close-threshold and counter-reset edges can be unit-tested without driving a
+/// real socket and timers.
+fn keepalive_should_close(unanswered_pings: u32) -> bool {
+    unanswered_pings >= WS_MAX_MISSED_PONGS
+}
 
 pub(super) async fn ws_handler(
     ws: WebSocketUpgrade,
@@ -656,7 +667,7 @@ async fn handle_ws_inner(
             }
 
             _ = ping_interval.tick() => {
-                if unanswered_pings >= WS_MAX_MISSED_PONGS {
+                if keepalive_should_close(unanswered_pings) {
                     tracing::info!(
                         peer = %peer,
                         missed = unanswered_pings,
@@ -783,6 +794,40 @@ async fn handle_ws_inner(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn test_keepalive_close_threshold_and_reset() {
+        use super::{WS_MAX_MISSED_PONGS, keepalive_should_close};
+
+        // Walk the tick sequence for a peer that never answers: each tick that
+        // doesn't close sends a ping and bumps the counter. It must close after
+        // exactly WS_MAX_MISSED_PONGS pings have gone unanswered, within a
+        // bounded number of ticks.
+        let mut unanswered = 0u32;
+        let mut ticks = 0u32;
+        while !keepalive_should_close(unanswered) {
+            unanswered += 1; // ping sent this tick
+            ticks += 1;
+            assert!(
+                ticks <= 16,
+                "keepalive must close within a bounded tick count"
+            );
+        }
+        assert_eq!(
+            unanswered, WS_MAX_MISSED_PONGS,
+            "socket closes exactly once the cap of unanswered pings is reached"
+        );
+
+        // Any inbound frame resets the counter to 0; the next tick must NOT close.
+        assert!(
+            !keepalive_should_close(0),
+            "a reset (inbound frame) keeps the socket open"
+        );
+        assert!(
+            !keepalive_should_close(WS_MAX_MISSED_PONGS - 1),
+            "one below the cap must stay open"
+        );
+    }
+
     #[test]
     fn test_catch_unwind_preserves_ownership_across_panic() {
         // Locks in the ownership contract used by `handle_ws_inner`'s spawn_blocking

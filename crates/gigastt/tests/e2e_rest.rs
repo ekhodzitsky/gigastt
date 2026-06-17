@@ -371,26 +371,34 @@ async fn test_sse_midstream_disconnect() {
 
 #[ignore]
 #[tokio::test]
-async fn test_metrics_disabled_returns_404() {
+async fn test_metrics_not_on_primary_port_when_disabled() {
+    // `/metrics` never rides the primary port — it lives on the separate
+    // loopback listener. With metrics disabled there is no metrics listener at
+    // all, so the primary port returns a bare 404 for `/metrics`.
     let (port, shutdown) = common::start_server(&common::model_dir()).await;
     let resp = reqwest::Client::new()
         .get(format!("http://127.0.0.1:{port}/metrics"))
         .send()
         .await
         .expect("GET /metrics failed");
-    assert_eq!(resp.status(), 404);
-    let text = resp.text().await.unwrap();
-    let body: serde_json::Value = serde_json::from_str(&text).unwrap();
-    assert_eq!(body["code"], "metrics_disabled");
+    assert_eq!(
+        resp.status(),
+        404,
+        "/metrics must not be served on the primary port"
+    );
     let _ = shutdown.send(());
 }
 
 #[ignore]
 #[tokio::test]
-async fn test_metrics_enabled_returns_prometheus() {
-    let (port, shutdown) = common::start_server_with_metrics(&common::model_dir()).await;
-    let resp = reqwest::Client::new()
-        .get(format!("http://127.0.0.1:{port}/metrics"))
+async fn test_metrics_enabled_returns_prometheus_on_separate_port() {
+    let (port, metrics_port, shutdown) =
+        common::start_server_with_metrics(&common::model_dir()).await;
+    let client = reqwest::Client::new();
+
+    // Metrics are served on the dedicated loopback listener, not the primary.
+    let resp = client
+        .get(format!("http://127.0.0.1:{metrics_port}/metrics"))
         .send()
         .await
         .expect("GET /metrics failed");
@@ -398,6 +406,20 @@ async fn test_metrics_enabled_returns_prometheus() {
     let body = resp.text().await.unwrap();
     assert!(body.contains("# HELP gigastt_http_requests_total"));
     assert!(body.contains("# TYPE gigastt_http_requests_total counter"));
+
+    // The primary port must NOT serve /metrics even when metrics are enabled —
+    // locks in the separate-listener contract (telemetry off the CORS allowlist
+    // / rate limiter).
+    let primary = client
+        .get(format!("http://127.0.0.1:{port}/metrics"))
+        .send()
+        .await
+        .expect("GET primary /metrics failed");
+    assert_eq!(
+        primary.status(),
+        404,
+        "/metrics must stay off the primary port"
+    );
     let _ = shutdown.send(());
 }
 

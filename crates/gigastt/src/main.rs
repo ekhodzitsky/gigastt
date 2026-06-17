@@ -127,7 +127,7 @@ enum Commands {
         pool_checkout_timeout_secs: Option<u64>,
 
         /// Per-request inference timeout in seconds. A run exceeding this
-        /// returns `inference_timeout`; `0` disables [default: 60].
+        /// returns `inference_timeout`; `0` disables [default: 600].
         #[arg(long, env = "GIGASTT_INFERENCE_TIMEOUT_SECS")]
         inference_timeout_secs: Option<u64>,
 
@@ -417,6 +417,13 @@ async fn main() -> anyhow::Result<()> {
             )?;
             let metrics_listen =
                 metrics_listen.unwrap_or_else(server::config::default_metrics_listen);
+            // The metrics listener carries no CORS allowlist or rate limiter, so
+            // a non-loopback bind requires the same explicit `--bind-all` opt-in
+            // the primary port does — keeps the loopback-by-default invariant
+            // symmetric instead of letting telemetry leak network-wide silently.
+            if metrics {
+                ensure_bind_allowed(&metrics_listen.ip().to_string(), bind_all)?;
+            }
             let config = build_server_config(
                 port,
                 host,

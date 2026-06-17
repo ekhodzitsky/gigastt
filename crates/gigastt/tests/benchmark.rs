@@ -359,11 +359,86 @@ fn read_baseline(path: &Path) -> serde_json::Value {
         .unwrap_or_else(|| serde_json::json!({ "tolerance_pp": 0.5, "sets": {} }))
 }
 
+/// Pure regression-gate decision: returns the list of failure messages (empty
+/// = pass). Two checks — (1) relative: WER must not exceed the committed
+/// baseline by more than `tolerance` (skipped when no baseline is committed);
+/// (2) absolute: WER must stay below the `max_wer` ceiling. Factored out of
+/// `main` so the comparison (sign, boundary, null-skip) can be self-tested
+/// model-free — the rest of the benchmark needs the ~850 MB model, this does
+/// not.
+fn gate_verdict(wer: f64, baseline_wer: Option<f64>, tolerance: f64, max_wer: f64) -> Vec<String> {
+    let mut failures = Vec::new();
+    if let Some(base) = baseline_wer {
+        let delta = wer - base;
+        if delta > tolerance {
+            failures.push(format!(
+                "WER regressed {delta:+.1}pp vs baseline {base:.1}% (current {wer:.1}%, tolerance {tolerance:.1}pp)"
+            ));
+        }
+    }
+    if wer >= max_wer {
+        failures.push(format!(
+            "WER {wer:.1}% exceeds absolute ceiling {max_wer:.1}%"
+        ));
+    }
+    failures
+}
+
+/// Model-free assertions for `gate_verdict` + `read_baseline`, run via
+/// `cargo test --test benchmark -- --self-test` (see CI). Guards against a
+/// sign error / off-by-tolerance / broken null-skip in the gate shipping
+/// silently, since the full benchmark is model-gated and skipped in PR CI.
+fn run_gate_self_test() {
+    // No baseline → relative gate skipped; only the absolute ceiling applies.
+    assert!(
+        gate_verdict(5.0, None, 1.5, 15.0).is_empty(),
+        "no baseline, under ceiling → pass"
+    );
+    assert_eq!(
+        gate_verdict(20.0, None, 1.5, 15.0).len(),
+        1,
+        "no baseline but over ceiling → fail"
+    );
+    // Relative-gate boundary: delta == tolerance passes; just over fails.
+    assert!(
+        gate_verdict(2.5, Some(1.0), 1.5, 15.0).is_empty(),
+        "delta == tolerance must pass"
+    );
+    assert_eq!(
+        gate_verdict(2.6, Some(1.0), 1.5, 15.0).len(),
+        1,
+        "delta just over tolerance must fail"
+    );
+    // An improvement (negative delta) always passes the relative gate.
+    assert!(
+        gate_verdict(0.5, Some(2.0), 1.5, 15.0).is_empty(),
+        "improvement must pass"
+    );
+    // The absolute ceiling fires regardless of the baseline.
+    assert!(
+        gate_verdict(15.0, Some(14.9), 1.5, 15.0)
+            .iter()
+            .any(|f| f.contains("ceiling")),
+        "wer == MAX_WER must fail on the absolute ceiling"
+    );
+    // read_baseline: a missing file falls back to tolerance 0.5 / empty sets.
+    let missing = read_baseline(Path::new("/nonexistent/benchmark_baseline.json"));
+    assert_eq!(missing["tolerance_pp"].as_f64(), Some(0.5));
+    assert!(missing["sets"]["bundled"]["wer"].as_f64().is_none());
+}
+
 fn main() {
     // nextest (and cargo test --list) invoke us with --list --format terse.
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 && args[1] == "--list" {
         println!("benchmark: test");
+        return;
+    }
+    // Model-free gate self-test (CI runs this on every PR; the full benchmark
+    // is model-gated and skipped). Panics on failure → non-zero exit.
+    if args.iter().any(|a| a == "--self-test") {
+        run_gate_self_test();
+        println!("benchmark gate self-test: ok");
         return;
     }
 
@@ -532,8 +607,8 @@ fn main() {
     let tolerance = baseline["tolerance_pp"].as_f64().unwrap_or(0.5);
     let baseline_wer = baseline["sets"][set_key]["wer"].as_f64();
 
-    let mut failures: Vec<String> = Vec::new();
-
+    // Presentation only: print the comparison table (or a no-baseline note).
+    // The pass/fail decision is the pure `gate_verdict` below (self-tested).
     match baseline_wer {
         Some(base) => {
             let delta = wer - base;
@@ -544,11 +619,6 @@ fn main() {
             eprintln!(
                 "  | {set_key} | {base:.1}% | {wer:.1}% | {delta:+.1} | {tolerance:.1} | {verdict} |"
             );
-            if delta > tolerance {
-                failures.push(format!(
-                    "WER regressed {delta:+.1}pp vs baseline {base:.1}% (current {wer:.1}%, tolerance {tolerance:.1}pp)"
-                ));
-            }
         }
         None => {
             eprintln!(
@@ -559,12 +629,7 @@ fn main() {
         }
     }
 
-    if wer >= MAX_WER {
-        failures.push(format!(
-            "WER {wer:.1}% exceeds absolute ceiling {MAX_WER:.1}%"
-        ));
-    }
-
+    let failures = gate_verdict(wer, baseline_wer, tolerance, MAX_WER);
     let passed = failures.is_empty();
 
     let output = serde_json::json!({

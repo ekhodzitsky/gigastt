@@ -133,7 +133,9 @@ pub struct RuntimeLimits {
     /// Per-request inference timeout (seconds). A `spawn_blocking` ONNX run
     /// exceeding this returns a typed `inference_timeout` to the client so a
     /// hung run can't block it indefinitely. `0` disables the timeout.
-    /// Default: 60.
+    /// Default: 600 — generous enough to transcribe a worst-case in-spec
+    /// 10-minute (600 s audio) file on the CPU EP without tripping, while
+    /// still bounding a genuinely wedged run.
     pub inference_timeout_secs: u64,
 }
 
@@ -148,7 +150,7 @@ impl Default for RuntimeLimits {
             max_session_secs: 3600,
             shutdown_drain_secs: 10,
             pool_checkout_timeout_secs: 30,
-            inference_timeout_secs: 60,
+            inference_timeout_secs: 600,
         }
     }
 }

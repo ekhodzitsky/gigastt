@@ -67,14 +67,24 @@ pub async fn start_server(model_dir: &str) -> (u16, oneshot::Sender<()>) {
     (port, shutdown_tx)
 }
 
-/// Start the server with metrics endpoint enabled.
-pub async fn start_server_with_metrics(model_dir: &str) -> (u16, oneshot::Sender<()>) {
+/// Start the server with the Prometheus metrics listener enabled on its own
+/// random loopback port (production topology: `/metrics` lives on a separate
+/// port, never the primary). Returns `(primary_port, metrics_port, shutdown)`.
+pub async fn start_server_with_metrics(model_dir: &str) -> (u16, u16, oneshot::Sender<()>) {
     let (port, listener) = free_port().await;
+    // Pick a free metrics port, then release it so the server can bind it. A
+    // small TOCTOU window, acceptable in tests — and required so concurrent
+    // test servers don't collide on the hardcoded default 9090.
+    let metrics_port = {
+        let l = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        l.local_addr().unwrap().port()
+    };
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
     let engine = gigastt::inference::Engine::load(model_dir).unwrap();
     let mut config = gigastt::server::ServerConfig::local(port);
     config.metrics_enabled = true;
+    config.metrics_listen = format!("127.0.0.1:{metrics_port}").parse().unwrap();
     tokio::spawn(gigastt::server::run_with_config_listener(
         engine,
         config,
@@ -82,8 +92,11 @@ pub async fn start_server_with_metrics(model_dir: &str) -> (u16, oneshot::Sender
         listener,
     ));
 
+    // `/health` on the primary port only answers after the metrics listener has
+    // already been bound (it is set up earlier in `run_with_config_listener`),
+    // so a ready primary implies the metrics port is live too.
     wait_for_ready(port, Duration::from_secs(30)).await;
-    (port, shutdown_tx)
+    (port, metrics_port, shutdown_tx)
 }
 
 /// Start the server with a custom `RuntimeLimits`. Used by the
