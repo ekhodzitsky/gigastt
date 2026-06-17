@@ -748,8 +748,23 @@ impl Engine {
         Self::load_with_pool_size(model_dir, DEFAULT_POOL_SIZE)
     }
 
-    /// Load ONNX models with a custom pool size.
+    /// Load ONNX models with a custom pool size. Requires the *full* pool to
+    /// load (every triplet); use [`Engine::load_with_pool_size_min`] to boot on
+    /// a partial pool.
     pub fn load_with_pool_size(model_dir: &str, pool_size: usize) -> Result<Self, GigasttError> {
+        Self::load_with_pool_size_min(model_dir, pool_size, pool_size)
+    }
+
+    /// Load ONNX models with a custom pool size, tolerating a partial pool down
+    /// to `min_size` triplets when the rest fail to load. Boots a degraded pool
+    /// with a warning when `min_size <= loaded < pool_size`; errors only when
+    /// fewer than `min_size` triplets load. `min_size` is clamped to
+    /// `1..=pool_size`.
+    pub fn load_with_pool_size_min(
+        model_dir: &str,
+        pool_size: usize,
+        min_size: usize,
+    ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
         if !dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
             return Err(GigasttError::ModelLoad {
@@ -757,7 +772,7 @@ impl Engine {
                 source: None,
             });
         }
-        Self::load_inner(dir, model_dir, pool_size).map_err(|e| GigasttError::ModelLoad {
+        Self::load_inner(dir, model_dir, pool_size, min_size).map_err(|e| GigasttError::ModelLoad {
             path: model_dir.to_string(),
             source: Some(e.into()),
         })
@@ -945,12 +960,56 @@ impl Engine {
         Ok((encoder, decoder, joiner))
     }
 
-    /// Load `pool_size` session triplets in parallel via the given
+    /// Decide the final pool from per-triplet load results: returns the
+    /// successfully loaded triplets when at least `min_size` loaded (warning
+    /// when the pool is degraded below `pool_size`), or an error describing the
+    /// shortfall. `min_size` is clamped to `1..=pool_size`.
+    fn finalize_pool_load<T>(
+        results: Vec<anyhow::Result<T>>,
+        pool_size: usize,
+        min_size: usize,
+    ) -> anyhow::Result<Vec<T>> {
+        let min_size = min_size.clamp(1, pool_size.max(1));
+        let mut loaded = Vec::with_capacity(results.len());
+        let mut first_err: Option<anyhow::Error> = None;
+        for r in results {
+            match r {
+                Ok(t) => loaded.push(t),
+                Err(e) => {
+                    if first_err.is_none() {
+                        first_err = Some(e);
+                    }
+                }
+            }
+        }
+        let n = loaded.len();
+        if n >= min_size {
+            if n < pool_size {
+                let detail = first_err
+                    .map(|e| format!("; first error: {e:#}"))
+                    .unwrap_or_default();
+                tracing::warn!(
+                    "degraded pool: loaded {n}/{pool_size} session triplets ({} failed){detail}",
+                    pool_size - n
+                );
+            }
+            Ok(loaded)
+        } else {
+            let detail = first_err.map(|e| format!(": {e:#}")).unwrap_or_default();
+            Err(anyhow::anyhow!(
+                "loaded only {n}/{pool_size} session triplets, need at least {min_size}{detail}"
+            ))
+        }
+    }
+
+    /// Load up to `pool_size` session triplets in parallel via the given
     /// per-triplet loader (`load_sessions` for the compile-time-selected EP,
-    /// `load_sessions_cpu` for the CoreML runtime fallback).
+    /// `load_sessions_cpu` for the CoreML runtime fallback). Tolerates a
+    /// partial pool down to `min_size` (see [`Engine::finalize_pool_load`]).
     fn load_triplets(
         dir: &Path,
         pool_size: usize,
+        min_size: usize,
         prepacked: &ort::session::builder::PrepackedWeights,
         load_one: impl Fn(
             &Path,
@@ -958,7 +1017,7 @@ impl Engine {
         ) -> anyhow::Result<(Session, Session, Session)>
         + Sync,
     ) -> anyhow::Result<Vec<SessionTriplet>> {
-        std::thread::scope(|s| {
+        let results: Vec<anyhow::Result<SessionTriplet>> = std::thread::scope(|s| {
             let handles: Vec<_> = (0..pool_size)
                 .map(|i| {
                     let pp = prepacked;
@@ -986,11 +1045,17 @@ impl Engine {
                     Ok(r) => r,
                     Err(_) => Err(anyhow::anyhow!("model loading thread panicked")),
                 })
-                .collect::<anyhow::Result<Vec<_>>>()
-        })
+                .collect()
+        });
+        Self::finalize_pool_load(results, pool_size, min_size)
     }
 
-    fn load_inner(dir: &Path, model_dir: &str, pool_size: usize) -> anyhow::Result<Self> {
+    fn load_inner(
+        dir: &Path,
+        model_dir: &str,
+        pool_size: usize,
+        min_size: usize,
+    ) -> anyhow::Result<Self> {
         let is_int8 = dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists();
         if is_int8 {
             tracing::info!("Using INT8 quantized encoder");
@@ -1012,7 +1077,13 @@ impl Engine {
         // (MLModel compilation) and the first `Run()` (issue #42). This guards
         // the first stage; the warmup probe below guards the second.
         #[cfg(feature = "coreml")]
-        let triplets = match Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions) {
+        let triplets = match Self::load_triplets(
+            dir,
+            pool_size,
+            min_size,
+            &prepacked,
+            Self::load_sessions,
+        ) {
             Ok(triplets) => triplets,
             Err(load_err) => {
                 tracing::warn!(
@@ -1021,11 +1092,18 @@ impl Engine {
                 // Fresh container: the failed attempt may have pre-packed
                 // weights with CoreML-specific kernel layouts.
                 let prepacked = ort::session::builder::PrepackedWeights::new();
-                Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions_cpu)?
+                Self::load_triplets(
+                    dir,
+                    pool_size,
+                    min_size,
+                    &prepacked,
+                    Self::load_sessions_cpu,
+                )?
             }
         };
         #[cfg(not(feature = "coreml"))]
-        let triplets = Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions)?;
+        let triplets =
+            Self::load_triplets(dir, pool_size, min_size, &prepacked, Self::load_sessions)?;
 
         let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
         let features = FeatureExtractor::new();
@@ -1085,8 +1163,13 @@ impl Engine {
                     "CoreML EP failed at runtime ({probe_err:#}); falling back to CPU execution provider"
                 );
                 let prepacked = ort::session::builder::PrepackedWeights::new();
-                let triplets =
-                    Self::load_triplets(dir, pool_size, &prepacked, Self::load_sessions_cpu)?;
+                let triplets = Self::load_triplets(
+                    dir,
+                    pool_size,
+                    min_size,
+                    &prepacked,
+                    Self::load_sessions_cpu,
+                )?;
                 e.pool = SessionPool::new(triplets);
                 Ok(e)
             },
@@ -1647,6 +1730,51 @@ impl TranscriptSegment {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_finalize_pool_load_full() {
+        let r: Vec<anyhow::Result<u32>> = vec![Ok(1), Ok(2), Ok(3)];
+        assert_eq!(Engine::finalize_pool_load(r, 3, 3).unwrap(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn test_finalize_pool_load_degraded_boots() {
+        // 2 of 4 loaded with min_size 1 → degraded pool is accepted.
+        let r: Vec<anyhow::Result<u32>> = vec![
+            Ok(1),
+            Err(anyhow::anyhow!("boom")),
+            Ok(3),
+            Err(anyhow::anyhow!("boom2")),
+        ];
+        assert_eq!(Engine::finalize_pool_load(r, 4, 1).unwrap(), vec![1, 3]);
+    }
+
+    #[test]
+    fn test_finalize_pool_load_below_min_errors() {
+        // Only 1 loaded but min_size 2 → error naming the shortfall.
+        let r: Vec<anyhow::Result<u32>> = vec![
+            Ok(1),
+            Err(anyhow::anyhow!("boom")),
+            Err(anyhow::anyhow!("boom2")),
+        ];
+        let err = Engine::finalize_pool_load(r, 3, 2).unwrap_err().to_string();
+        assert!(err.contains("loaded only 1/3"), "got: {err}");
+        assert!(err.contains("need at least 2"), "got: {err}");
+    }
+
+    #[test]
+    fn test_finalize_pool_load_all_fail_errors() {
+        let r: Vec<anyhow::Result<u32>> =
+            vec![Err(anyhow::anyhow!("a")), Err(anyhow::anyhow!("b"))];
+        assert!(Engine::finalize_pool_load(r, 2, 1).is_err());
+    }
+
+    #[test]
+    fn test_finalize_pool_load_min_clamped_to_pool() {
+        // min_size > pool_size is clamped down; a full load still succeeds.
+        let r: Vec<anyhow::Result<u32>> = vec![Ok(1), Ok(2)];
+        assert_eq!(Engine::finalize_pool_load(r, 2, 99).unwrap(), vec![1, 2]);
+    }
 
     #[test]
     fn test_decoder_state_new_zeros() {

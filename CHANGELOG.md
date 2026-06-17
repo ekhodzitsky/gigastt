@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Degraded pool boot (`--pool-min-size`).** When some session triplets fail
+  to load (e.g. low memory) the server can now start on a partial pool instead
+  of failing outright. `--pool-min-size` (env `GIGASTT_POOL_MIN_SIZE`, default
+  1, clamped to `1..=pool_size`) sets the floor: `min <= loaded < pool_size`
+  boots with a `degraded pool` warning; fewer than `min` still errors. New
+  `Engine::load_with_pool_size_min`; `load_with_pool_size` keeps the strict
+  all-or-nothing behavior.
 - **Server-side WebSocket keepalive.** The server now pings each WebSocket
   every 30 s and closes the socket after two consecutive unanswered pings
   (any inbound frame resets the counter). Detects half-open TCP sessions and

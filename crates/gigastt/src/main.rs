@@ -44,6 +44,13 @@ enum Commands {
         #[arg(long, default_value_t = 4)]
         pool_size: usize,
 
+        /// Minimum session triplets that must load for the server to boot. When
+        /// `1 <= min < pool_size` and some triplets fail (e.g. low memory), the
+        /// server starts on a degraded pool with a warning instead of failing.
+        /// Clamped to `1..=pool_size` [default: 1].
+        #[arg(long, env = "GIGASTT_POOL_MIN_SIZE", default_value_t = 1)]
+        pool_min_size: usize,
+
         /// Explicitly acknowledge binding to a non-loopback address.
         /// Can also be enabled via `GIGASTT_ALLOW_BIND_ANY=1`.
         /// Without this flag the server refuses to listen on anything other than
@@ -350,6 +357,7 @@ async fn main() -> anyhow::Result<()> {
             host,
             model_dir,
             pool_size,
+            pool_min_size,
             bind_all,
             allow_origin,
             cors_allow_any,
@@ -370,7 +378,8 @@ async fn main() -> anyhow::Result<()> {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
             ensure_int8_encoder(&model_dir, skip_quantize)?;
-            let engine = inference::Engine::load_with_pool_size(&model_dir, pool_size)?;
+            let engine =
+                inference::Engine::load_with_pool_size_min(&model_dir, pool_size, pool_min_size)?;
             log_rss();
             let limits = build_limits(
                 config.as_deref(),
