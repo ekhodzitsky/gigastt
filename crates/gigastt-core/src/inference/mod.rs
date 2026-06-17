@@ -1698,6 +1698,26 @@ impl Engine {
 
     /// Convert decoded tokens into words with timestamps and confidence.
     fn tokens_to_words(&self, tokens: &[decode::TokenInfo], frame_offset: usize) -> Vec<WordInfo> {
+        TokenFormatter::tokens_to_words(&self.tokenizer, tokens, frame_offset)
+    }
+}
+
+/// Groups RNN-T decoded tokens into words at BPE word boundaries (`▁`).
+///
+/// Split out of `Engine` so the formatting logic is unit-testable without a
+/// loaded model — it depends only on the [`Tokenizer`], not on any ONNX
+/// session.
+pub(crate) struct TokenFormatter;
+
+impl TokenFormatter {
+    /// Group `tokens` into words. `frame_offset` shifts per-token frame indices
+    /// into absolute stream time; word confidence is the mean over the word's
+    /// constituent BPE tokens.
+    pub(crate) fn tokens_to_words(
+        tokenizer: &Tokenizer,
+        tokens: &[decode::TokenInfo],
+        frame_offset: usize,
+    ) -> Vec<WordInfo> {
         if tokens.is_empty() {
             return Vec::new();
         }
@@ -1710,7 +1730,7 @@ impl Engine {
         let mut word_confidences: Vec<f32> = Vec::new();
 
         for token in tokens {
-            let token_text = self.tokenizer.token_text(token.token_id);
+            let token_text = tokenizer.token_text(token.token_id);
             let is_word_boundary = token_text.starts_with(tokenizer::WORD_BOUNDARY);
 
             if is_word_boundary && !current_word.is_empty() {
@@ -1819,6 +1839,70 @@ mod tests {
         assert_eq!(Engine::batch_split_count(1, 1), 0); // can't split a single triplet
         assert_eq!(Engine::batch_split_count(0, 1), 0); // empty pool
         assert_eq!(Engine::batch_split_count(2, 1), 1);
+    }
+
+    #[test]
+    fn test_token_formatter_groups_words() {
+        // `▁` (U+2581) marks a new word; continuation tokens have no prefix.
+        let tok = Tokenizer::from_tokens(vec![
+            "\u{2581}hel".into(), // 0: new word
+            "lo".into(),          // 1: continuation
+            "\u{2581}wor".into(), // 2: new word
+            "ld".into(),          // 3: continuation
+        ]);
+        let tokens = vec![
+            decode::TokenInfo {
+                token_id: 0,
+                frame_index: 0,
+                confidence: 0.9,
+            },
+            decode::TokenInfo {
+                token_id: 1,
+                frame_index: 1,
+                confidence: 0.8,
+            },
+            decode::TokenInfo {
+                token_id: 2,
+                frame_index: 2,
+                confidence: 0.95,
+            },
+            decode::TokenInfo {
+                token_id: 3,
+                frame_index: 3,
+                confidence: 0.85,
+            },
+        ];
+        let words = TokenFormatter::tokens_to_words(&tok, &tokens, 0);
+        assert_eq!(words.len(), 2);
+        assert_eq!(words[0].word, "hello");
+        assert_eq!(words[1].word, "world");
+        // Mean confidence per word.
+        assert!((words[0].confidence - 0.85).abs() < 1e-6);
+        assert!((words[1].confidence - 0.90).abs() < 1e-6);
+        // Frame timing (SECONDS_PER_FRAME = 0.04).
+        assert!((words[0].start - 0.0).abs() < 1e-9);
+        assert!((words[0].end - 0.04).abs() < 1e-9);
+        assert!((words[1].start - 0.08).abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_token_formatter_empty_tokens() {
+        let tok = Tokenizer::from_tokens(vec!["\u{2581}a".into()]);
+        assert!(TokenFormatter::tokens_to_words(&tok, &[], 0).is_empty());
+    }
+
+    #[test]
+    fn test_token_formatter_frame_offset_shifts_time() {
+        let tok = Tokenizer::from_tokens(vec!["\u{2581}x".into()]);
+        let tokens = vec![decode::TokenInfo {
+            token_id: 0,
+            frame_index: 0,
+            confidence: 1.0,
+        }];
+        let words = TokenFormatter::tokens_to_words(&tok, &tokens, 10);
+        assert_eq!(words.len(), 1);
+        // frame_offset 10 → start = 10 * 0.04 = 0.4.
+        assert!((words[0].start - 0.4).abs() < 1e-9);
     }
 
     #[test]

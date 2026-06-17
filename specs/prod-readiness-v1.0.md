@@ -133,13 +133,17 @@ historical audit trail; trust this rollup over the table cells for
   `tokio`/`serde` in a *published* crate is deliberately avoided — it would
   over-constrain downstream consumers without adding safety the lockfile
   doesn't already give.
+- **V1-26** ✅ `TokenFormatter::tokens_to_words(&Tokenizer, …)` extracted from
+  `Engine` (joins `FeatureExtractor` / `TranscriptAssembler`) and unit-tested
+  without a model. `FileTranscriber` was intentionally not split out — unlike
+  word-grouping it adds no testability (`transcribe_file` is model-bound) and
+  the public API stays unchanged.
 
 **Still genuinely open / partial at HEAD:**
 
 | # | State | What's left |
 |---|-------|-------------|
 | V1-18 | PARTIAL | Encoder borrow + per-frame buffers reused; `run_decoder()` still `to_vec()`s dec/h/c per non-blank call. |
-| V1-26 | PARTIAL | `FeatureExtractor`/`TranscriptAssembler` split out; `tokens_to_words` (→`TokenFormatter`) and `FileTranscriber` still on `Engine`. |
 | V1-48 | OPEN | No VAD endpointing (L-effort feature). |
 | V1-50 | OPEN | Model filenames hardcoded; no `manifest.toml` for new models (e.g. GigaAM v4). |
 | SUS-07 | OPEN | No Miri / ASAN / TSAN job in CI. |
