@@ -49,6 +49,10 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace --lib --bins
+      # Model-free self-test of the WER regression-gate decision logic. The full
+      # benchmark is model-gated (skipped in PR CI), so this exercises the
+      # gate's comparison / boundary / null-baseline handling on every PR.
+      - run: cargo test --test benchmark -- --self-test
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest
@@ -234,6 +238,12 @@ jobs:
         with:
           # coreml+cuda are mutually exclusive; --all-features is impossible.
           feature-group: default-features
+          # Check only the published *library* crates' API stability. `gigastt`
+          # is a server binary / `cargo install` target whose Rust library
+          # surface (ServerConfig, RuntimeLimits, http handlers) is an internal
+          # implementation detail, not a semver contract — adding config fields
+          # to it must not force a workspace-wide major bump.
+          exclude: gigastt
 
   coverage:
     runs-on: ubuntu-latest
