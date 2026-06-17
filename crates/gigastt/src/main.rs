@@ -20,6 +20,10 @@ struct Cli {
     command: Commands,
 }
 
+// `Serve` carries many optional CLI flags, so it is much larger than the other
+// variants. The enum is parsed once at startup and never stored in bulk, so
+// boxing the fields would only hurt readability.
+#[allow(clippy::large_enum_variant)]
 #[derive(Subcommand)]
 enum Commands {
     /// Start WebSocket STT server (auto-downloads model if missing)
@@ -80,11 +84,18 @@ enum Commands {
         #[arg(long, env = "GIGASTT_RATE_LIMIT_BURST")]
         rate_limit_burst: Option<u32>,
 
-        /// Expose Prometheus metrics at `GET /metrics`. Off by default —
-        /// keeps the server quiet for single-user installs. The endpoint is
-        /// attached to the protected router so the Origin allowlist applies.
+        /// Expose Prometheus metrics. Off by default — keeps the server quiet
+        /// for single-user installs. When on, `/metrics` is served on a
+        /// separate loopback listener (see `--metrics-listen`), never on the
+        /// primary port, so it is not gated by the CORS allowlist or limiter.
         #[arg(long, env = "GIGASTT_METRICS", default_value_t = false)]
         metrics: bool,
+
+        /// Bind address for the separate Prometheus `/metrics` listener
+        /// [default: 127.0.0.1:9090]. Loopback by default; expose it
+        /// deliberately to a scraper. Only used when `--metrics` is set.
+        #[arg(long, env = "GIGASTT_METRICS_LISTEN")]
+        metrics_listen: Option<std::net::SocketAddr>,
 
         /// Maximum wall-clock duration of a single WebSocket session in seconds.
         /// 0 disables the cap (not recommended) [default: 3600].
@@ -215,6 +226,7 @@ fn build_server_config(
     cors_allow_any: bool,
     limits: RuntimeLimits,
     metrics: bool,
+    metrics_listen: std::net::SocketAddr,
     trust_proxy: bool,
     config: Option<String>,
 ) -> ServerConfig {
@@ -227,6 +239,7 @@ fn build_server_config(
         },
         limits,
         metrics_enabled: metrics,
+        metrics_listen,
         trust_proxy,
         config_path: config.map(std::path::PathBuf::from),
     }
@@ -346,6 +359,7 @@ async fn main() -> anyhow::Result<()> {
             rate_limit_per_minute,
             rate_limit_burst,
             metrics,
+            metrics_listen,
             max_session_secs,
             shutdown_drain_secs,
             pool_checkout_timeout_secs,
@@ -369,6 +383,8 @@ async fn main() -> anyhow::Result<()> {
                 shutdown_drain_secs,
                 pool_checkout_timeout_secs,
             )?;
+            let metrics_listen =
+                metrics_listen.unwrap_or_else(server::config::default_metrics_listen);
             let config = build_server_config(
                 port,
                 host,
@@ -376,6 +392,7 @@ async fn main() -> anyhow::Result<()> {
                 cors_allow_any,
                 limits,
                 metrics,
+                metrics_listen,
                 trust_proxy,
                 config,
             );
@@ -528,9 +545,38 @@ mod tests {
     fn test_cli_serve_with_metrics() {
         let cli = Cli::parse_from(["gigastt", "serve", "--metrics"]);
         match cli.command {
-            Commands::Serve { metrics, .. } => assert!(metrics),
+            Commands::Serve {
+                metrics,
+                metrics_listen,
+                ..
+            } => {
+                assert!(metrics);
+                // Unset → resolved to the loopback default downstream.
+                assert!(metrics_listen.is_none());
+            }
             _ => panic!("expected Serve"),
         }
+    }
+
+    #[test]
+    fn test_cli_serve_metrics_listen_override() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--metrics",
+            "--metrics-listen",
+            "127.0.0.1:9123",
+        ]);
+        match cli.command {
+            Commands::Serve { metrics_listen, .. } => {
+                let addr = metrics_listen.expect("--metrics-listen must parse");
+                assert_eq!(addr.port(), 9123);
+                assert!(addr.ip().is_loopback());
+            }
+            _ => panic!("expected Serve"),
+        }
+        // Default when omitted resolves to 127.0.0.1:9090.
+        assert_eq!(server::config::default_metrics_listen().port(), 9090);
     }
 
     #[test]
@@ -682,10 +728,12 @@ mod tests {
             false,
             limits.clone(),
             true,
+            "127.0.0.1:9099".parse().unwrap(),
             true,
             Some("/tmp/config.toml".into()),
         );
         assert_eq!(cfg.port, 1234);
+        assert_eq!(cfg.metrics_listen.port(), 9099);
         assert_eq!(cfg.host, "127.0.0.1");
         assert_eq!(cfg.origin_policy.allowed_origins.len(), 1);
         assert!(!cfg.origin_policy.allow_any);

@@ -304,6 +304,9 @@ This guarantees that a regression like a broken `cargo test` cannot reach `main`
 - **Internal errors sanitized** — no path or model leakage to clients.
 - **Prometheus `/metrics`** (opt-in via `--metrics`): exposes
   `gigastt_http_requests_total` and `gigastt_http_request_duration_seconds`.
+  Served on a separate loopback listener (default `127.0.0.1:9090`, override
+  via `--metrics-listen` / `GIGASTT_METRICS_LISTEN`) — not the main API port,
+  and therefore off the CORS allowlist and the per-IP rate limiter.
 
 ## Docker
 
@@ -339,6 +342,7 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_SHUTDOWN_DRAIN_SECS` | `--shutdown-drain-secs` | 10 |
 | `GIGASTT_SKIP_QUANTIZE` | `--skip-quantize` | false |
 | `GIGASTT_METRICS` | `--metrics` | false |
+| `GIGASTT_METRICS_LISTEN` | `--metrics-listen` | 127.0.0.1:9090 |
 | `RUST_LOG` | — | `gigastt=info` |
 
 ## Useful Commands for Agents

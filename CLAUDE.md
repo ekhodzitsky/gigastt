@@ -196,7 +196,7 @@ Three-tier test architecture:
 - **Pool saturation backpressure.** REST returns 503 + `Retry-After: 30`; WebSocket error includes `retry_after_ms: 30000`.
 - **SHA-256 verification + atomic rename** on both encoder/decoder/joiner model files and the optional speaker diarization model.
 - **Internal errors sanitized** — no path or model leakage to clients.
-- **Prometheus `/metrics`** (v0.8.0, opt-in via `--metrics`): `gigastt_http_requests_total`, `gigastt_http_request_duration_seconds`.
+- **Prometheus `/metrics`** (v0.8.0, opt-in via `--metrics`): `gigastt_http_requests_total`, `gigastt_http_request_duration_seconds`. Served on a separate loopback listener (default `127.0.0.1:9090`, override via `--metrics-listen` / `GIGASTT_METRICS_LISTEN`), off the CORS allowlist and per-IP rate limiter; the primary port no longer serves `/metrics`.
 
 ## Model
 

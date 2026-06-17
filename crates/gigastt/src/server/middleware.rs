@@ -6,6 +6,22 @@ use axum::extract::State;
 use axum::response::Response;
 use std::sync::Arc;
 
+/// Bound the `path` metric label to the known route set. An unmatched path
+/// (scanners hitting `/wp-login.php`, random probes) collapses to `"other"`
+/// so it cannot explode Prometheus label cardinality.
+fn metric_path_label(path: &str) -> &'static str {
+    match path {
+        "/health" => "/health",
+        "/ready" => "/ready",
+        "/v1/models" => "/v1/models",
+        "/v1/transcribe" => "/v1/transcribe",
+        "/v1/transcribe/stream" => "/v1/transcribe/stream",
+        "/v1/ws" => "/v1/ws",
+        "/metrics" => "/metrics",
+        _ => "other",
+    }
+}
+
 /// Instrumentation middleware: records HTTP request counters and a duration
 /// histogram under the `gigastt_http_*` namespace. Takes the whole
 /// `AppState` so we can reach `metrics_registry` — when the operator did
@@ -20,7 +36,7 @@ pub(crate) async fn http_metrics_middleware(
         return next.run(req).await;
     };
     let method = req.method().clone();
-    let path = req.uri().path().to_string();
+    let path = metric_path_label(req.uri().path());
     let start = std::time::Instant::now();
     // Sample pool availability on every request.
     registry.gauge_set(
@@ -35,14 +51,14 @@ pub(crate) async fn http_metrics_middleware(
         "gigastt_http_requests_total",
         &[
             ("method", method.as_str()),
-            ("path", path.as_str()),
+            ("path", path),
             ("status", status.as_str()),
         ],
         1,
     );
     registry.histogram_record(
         "gigastt_http_request_duration_seconds",
-        &[("method", method.as_str()), ("path", path.as_str())],
+        &[("method", method.as_str()), ("path", path)],
         elapsed,
     );
     response
@@ -147,6 +163,27 @@ pub(crate) async fn origin_middleware(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_metric_path_label_bounds_cardinality() {
+        // Known routes map to themselves.
+        for known in [
+            "/health",
+            "/ready",
+            "/v1/models",
+            "/v1/transcribe",
+            "/v1/transcribe/stream",
+            "/v1/ws",
+            "/metrics",
+        ] {
+            assert_eq!(metric_path_label(known), known);
+        }
+        // Anything else collapses to a single bounded label.
+        assert_eq!(metric_path_label("/wp-login.php"), "other");
+        assert_eq!(metric_path_label("/v1/transcribe/../etc"), "other");
+        assert_eq!(metric_path_label("/"), "other");
+        assert_eq!(metric_path_label("/v1/models/"), "other");
+    }
 
     #[tokio::test]
     async fn test_request_id_middleware_generates_id() {

@@ -33,7 +33,7 @@ are additive only.
 | `/v1/transcribe` | POST | File transcription, full JSON response |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
 | `/v1/ws` | GET | WebSocket upgrade for real-time streaming |
-| `/metrics` | GET | Prometheus metrics (enabled with `--metrics`) |
+| `/metrics` | GET | Prometheus metrics (enabled with `--metrics`). Served on the separate `--metrics-listen` port (default `127.0.0.1:9090`), not the main API port. |
 
 ```sh
 # Full JSON

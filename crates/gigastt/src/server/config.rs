@@ -211,6 +211,14 @@ pub fn load_config_file(path: &std::path::Path) -> anyhow::Result<RuntimeLimits>
     Ok(cfg.into())
 }
 
+/// Default bind address for the Prometheus `/metrics` listener — loopback
+/// only. Metrics live on their own port so they are never behind the primary
+/// CORS allowlist or per-IP rate limiter; operators expose this port
+/// deliberately (e.g. to a Prometheus scraper).
+pub fn default_metrics_listen() -> std::net::SocketAddr {
+    std::net::SocketAddr::from(([127, 0, 0, 1], 9090))
+}
+
 /// Server runtime configuration. `run_with_config` is the canonical entry
 /// point; `run` / `run_with_shutdown` remain as thin wrappers for callers
 /// that only need the pre-0.6 positional parameters.
@@ -224,11 +232,15 @@ pub struct ServerConfig {
     pub origin_policy: OriginPolicy,
     /// Runtime limits (timeouts, body sizes, rate-limiting parameters).
     pub limits: RuntimeLimits,
-    /// Expose Prometheus metrics at `GET /metrics`. Off by default — keeps
-    /// the server quiet for single-user local installs. When on, a
-    /// `PrometheusHandle` is attached to `AppState` and the endpoint is
-    /// added to the protected router so the Origin allowlist still applies.
+    /// Expose Prometheus metrics. Off by default — keeps the server quiet for
+    /// single-user local installs. When on, `/metrics` is served on a
+    /// *separate* listener ([`ServerConfig::metrics_listen`]), never on the
+    /// primary port, so it is not gated by the CORS allowlist or rate limiter.
     pub metrics_enabled: bool,
+    /// Bind address for the Prometheus `/metrics` listener — a separate
+    /// loopback socket (default `127.0.0.1:9090`), not the primary port. Only
+    /// consulted when `metrics_enabled` is true.
+    pub metrics_listen: std::net::SocketAddr,
     /// Trust `X-Forwarded-For` / `X-Real-IP` for rate-limit IP extraction.
     pub trust_proxy: bool,
     /// Path to TOML config file for runtime limits (reloaded on SIGHUP).
@@ -245,6 +257,7 @@ impl ServerConfig {
             origin_policy: OriginPolicy::loopback_only(),
             limits: RuntimeLimits::default(),
             metrics_enabled: false,
+            metrics_listen: default_metrics_listen(),
             trust_proxy: false,
             config_path: None,
         }

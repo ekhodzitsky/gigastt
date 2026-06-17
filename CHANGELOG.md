@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Server-side WebSocket keepalive.** The server now pings each WebSocket
+  every 30 s and closes the socket after two consecutive unanswered pings
+  (any inbound frame resets the counter). Detects half-open TCP sessions and
+  keeps connections alive through idle-dropping proxies — far faster than the
+  300 s idle timeout.
 - **Benchmark regression gate.** `tests/benchmark.rs` loads a committed
   `tests/benchmark_baseline.json` and now **fails** (non-zero exit) when WER
   regresses past `tolerance_pp` — with a printed diff table and a
@@ -17,6 +22,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hardcoded `true`.
 
 ### Changed
+
+- **`/metrics` is now served on a separate loopback listener** (default
+  `127.0.0.1:9090`, configurable via `--metrics-listen` / `GIGASTT_METRICS_LISTEN`)
+  instead of the primary port. Previously it sat behind the primary CORS
+  allowlist and per-IP rate limiter, so any allowlisted browser origin could
+  read request telemetry and a 15 s Prometheus scraper could be throttled.
+  **Breaking for metrics scrapers:** point Prometheus at the new port (loopback
+  by default; expose it deliberately). Requires `--metrics`.
+- **Bounded the Prometheus `path` label** to the known route set (unmatched
+  paths collapse to `other`) so scanners hitting arbitrary URLs can no longer
+  explode metric label cardinality.
 
 - **polyvoice** 0.6.8 → 0.7.0. Our streaming diarization path (`StreamingPipeline`)
   is still bound on polyvoice's legacy `EmbeddingExtractor` trait, which 0.7.0

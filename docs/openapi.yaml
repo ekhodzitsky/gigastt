@@ -12,7 +12,10 @@ info:
     - **Health & discovery**: `GET /health`, `GET /v1/models`
     - **File transcription**: `POST /v1/transcribe` — upload audio, receive full transcript
     - **Streaming transcription**: `POST /v1/transcribe/stream` — upload audio, receive SSE stream of partial/final segments
-    - **Metrics**: `GET /metrics` — Prometheus text format (optional, behind `--metrics` flag)
+
+    Prometheus metrics are optional (behind `--metrics`) and exposed on a
+    separate listener (default `127.0.0.1:9090`, override via `--metrics-listen`),
+    not on this API surface.
 
     ## Audio Formats
 
@@ -53,7 +56,6 @@ info:
     | 429 | `rate_limited` | Per-IP rate limit exceeded |
     | 503 | `timeout` | Pool saturated; retry after `Retry-After` |
     | 503 | `pool_closed` | Server shutting down |
-    | 404 | `metrics_disabled` | `/metrics` called without `--metrics` flag |
   license:
     name: MIT
     url: https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE
@@ -282,27 +284,6 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
-
-  /metrics:
-    get:
-      summary: Prometheus metrics
-      description: |
-        Exposes Prometheus-compatible metrics in text format.
-        Only available when the server was started with `--metrics`.
-      operationId: getMetrics
-      responses:
-        "200":
-          description: Prometheus metrics
-          content:
-            text/plain:
-              schema:
-                type: string
-              example: |
-                # HELP gigastt_http_requests_total Total HTTP requests
-                # TYPE gigastt_http_requests_total counter
-                gigastt_http_requests_total{method="POST",path="/v1/transcribe",status="200"} 42
-        "404":
-          $ref: "#/components/responses/MetricsDisabled"
 
 components:
   schemas:
@@ -551,13 +532,3 @@ components:
             error: "Too many requests"
             code: rate_limited
             retry_after_ms: 30000
-
-    MetricsDisabled:
-      description: Metrics endpoint is disabled
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
-          example:
-            error: "metrics endpoint disabled"
-            code: metrics_disabled

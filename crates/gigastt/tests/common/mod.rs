@@ -103,6 +103,7 @@ pub async fn start_server_with_limits(
         origin_policy: gigastt::server::OriginPolicy::loopback_only(),
         limits,
         metrics_enabled: false,
+        metrics_listen: gigastt::server::config::default_metrics_listen(),
         trust_proxy: false,
         config_path: None,
     };

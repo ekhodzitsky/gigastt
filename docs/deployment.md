@@ -219,6 +219,17 @@ curl http://127.0.0.1:9876/health
 # {"status":"ok"}
 ```
 
+## Metrics scraping
+
+Enable Prometheus metrics with `--metrics`. They are served on a **separate listener** (default `127.0.0.1:9090`, override with `--metrics-listen`), not on the main API port — so `/metrics` is intentionally not behind the CORS allowlist or the per-IP rate limiter.
+
+Keep the metrics listener on loopback and behind your own network controls; expose it deliberately (e.g. to a Prometheus scraper on a trusted network), never to the public internet.
+
+```sh
+gigastt serve --metrics                              # scrape http://127.0.0.1:9090/metrics
+gigastt serve --metrics --metrics-listen 127.0.0.1:9100  # custom port
+```
+
 ## Graceful shutdown & session caps
 
 gigastt drains live WebSocket / SSE sessions on `SIGTERM` so clients receive a `Final` frame + `Close(1001 Going Away)` instead of a TCP reset. Two flags control the behaviour:

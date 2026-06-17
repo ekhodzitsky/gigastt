@@ -39,6 +39,9 @@ gigastt serve [OPTIONS]
                             Env: GIGASTT_RATE_LIMIT_BURST.
   --metrics                 Expose Prometheus metrics at GET /metrics.
                             Off by default. Env: GIGASTT_METRICS.
+  --metrics-listen <ADDR>   Bind address for the separate metrics listener
+                            [default: 127.0.0.1:9090]. Only used with --metrics.
+                            Env: GIGASTT_METRICS_LISTEN.
 
   --max-session-secs <S>        Wall-clock session cap [default: 3600]. 0 = disabled.
                                 Env: GIGASTT_MAX_SESSION_SECS.

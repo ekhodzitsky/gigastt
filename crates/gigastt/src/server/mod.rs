@@ -57,6 +57,7 @@ pub async fn run_with_shutdown(
         origin_policy: OriginPolicy::loopback_only(),
         limits: RuntimeLimits::default(),
         metrics_enabled: false,
+        metrics_listen: config::default_metrics_listen(),
         trust_proxy: false,
         config_path: None,
     };
@@ -281,8 +282,11 @@ pub async fn run_with_config_listener(
         })
     };
 
-    // Protected sub-router: /v1/*, /ws alias, and /metrics — all subject to
+    // Protected sub-router: /v1/* and the /v1/ws WebSocket — all subject to
     // the origin allowlist and (when enabled) the per-IP rate limiter.
+    // `/metrics` is intentionally NOT here: it lives on its own loopback
+    // listener (see below) so telemetry is never exposed to allowlisted
+    // browser origins nor throttled by the per-IP limiter.
     let protected = Router::new()
         .route("/v1/models", get(http::models))
         .route("/v1/models", options(|| async { StatusCode::NO_CONTENT }))
@@ -299,8 +303,6 @@ pub async fn run_with_config_listener(
         // /v1/ws is the canonical WebSocket path (versioned, aligned with REST).
         .route("/v1/ws", get(ws::ws_handler))
         .route("/v1/ws", options(|| async { StatusCode::NO_CONTENT }))
-        .route("/metrics", get(http::metrics))
-        .route("/metrics", options(|| async { StatusCode::NO_CONTENT }))
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             middleware::http_metrics_middleware,
@@ -353,6 +355,10 @@ pub async fn run_with_config_listener(
     // begins draining.
     let shutdown_engine = state.engine.clone();
 
+    // Clone the state for the separate metrics listener before `state` is moved
+    // into the primary router's `with_state`. `None` when metrics are disabled.
+    let metrics_state = config.metrics_enabled.then(|| state.clone());
+
     let request_id_layer = axum::middleware::from_fn(middleware::request_id_middleware);
 
     let app = Router::new()
@@ -380,6 +386,35 @@ pub async fn run_with_config_listener(
             config.origin_policy.allowed_origins
         );
     }
+
+    // Prometheus `/metrics` on its own loopback listener (Prometheus
+    // convention): off the primary CORS allowlist + rate limiter, and exposed
+    // deliberately by the operator. Shuts down with the same cancellation
+    // token as the main server.
+    let metrics_server = if let Some(metrics_state) = metrics_state {
+        let metrics_app = Router::new()
+            .route("/metrics", get(http::metrics))
+            .with_state(metrics_state);
+        let metrics_listener = tokio::net::TcpListener::bind(config.metrics_listen)
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to bind metrics listener on {}",
+                    config.metrics_listen
+                )
+            })?;
+        tracing::info!("  Metrics:   http://{}/metrics", config.metrics_listen);
+        let metrics_cancel = shutdown_root.clone();
+        Some(tokio::spawn(async move {
+            let serve = axum::serve(metrics_listener, metrics_app)
+                .with_graceful_shutdown(async move { metrics_cancel.cancelled().await });
+            if let Err(e) = serve.await {
+                tracing::warn!("metrics listener error: {e}");
+            }
+        }))
+    } else {
+        None
+    };
 
     let shutdown_drain_secs = config.limits.shutdown_drain_secs.max(1);
 
@@ -457,6 +492,12 @@ pub async fn run_with_config_listener(
             pending = tracker.len(),
             "Drain window expired with tracked tasks still running — forcing exit"
         ),
+    }
+
+    // The metrics listener drains on the same cancellation token; wait for it
+    // to finish so the process doesn't exit with the socket still bound.
+    if let Some(handle) = metrics_server {
+        let _ = handle.await;
     }
 
     Ok(())

@@ -24,6 +24,15 @@ enum FrameOutcome {
 
 type WsSink = futures_util::stream::SplitSink<WebSocket, WsMessage>;
 
+/// Interval between server-initiated WebSocket pings. Keeps connections alive
+/// through idle-dropping proxies and detects half-open TCP sessions faster than
+/// the (much larger) idle timeout.
+const WS_PING_INTERVAL_SECS: u64 = 30;
+
+/// Close the socket after this many consecutive unanswered pings (no Pong and
+/// no other frame in between) — roughly `WS_PING_INTERVAL_SECS × this` seconds.
+const WS_MAX_MISSED_PONGS: u32 = 2;
+
 pub(super) async fn ws_handler(
     ws: WebSocketUpgrade,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
@@ -507,6 +516,16 @@ async fn handle_ws_inner(
         tokio::time::Instant::now() + std::time::Duration::from_secs(limits.max_session_secs)
     };
 
+    // Server-initiated keepalive: ping every `WS_PING_INTERVAL_SECS`, close once
+    // `WS_MAX_MISSED_PONGS` consecutive pings go unanswered. Any inbound frame
+    // (Pong, Binary, Text) counts as liveness and resets the counter. The first
+    // tick is one interval out so we don't ping at connect time.
+    let ping_period = std::time::Duration::from_secs(WS_PING_INTERVAL_SECS);
+    let mut ping_interval =
+        tokio::time::interval_at(tokio::time::Instant::now() + ping_period, ping_period);
+    ping_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    let mut unanswered_pings: u32 = 0;
+
     let result: Result<()> = loop {
         // Fast-path deadline / cancel check: if a client streams frames
         // continuously (e.g. 20 ms silence every 100 ms) the `source.next()`
@@ -597,6 +616,28 @@ async fn handle_ws_inner(
                 break Ok(());
             }
 
+            _ = ping_interval.tick() => {
+                if unanswered_pings >= WS_MAX_MISSED_PONGS {
+                    tracing::info!(
+                        peer = %peer,
+                        missed = unanswered_pings,
+                        "WS peer unresponsive to pings — closing"
+                    );
+                    let _ = sink
+                        .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
+                            code: 1001,
+                            reason: "ping timeout".into(),
+                        })))
+                        .await;
+                    break Ok(());
+                }
+                if sink.send(WsMessage::Ping(Vec::new().into())).await.is_err() {
+                    break Ok(());
+                }
+                unanswered_pings += 1;
+                continue;
+            }
+
             maybe_msg = tokio::time::timeout(idle_timeout, source.next()) => {
                 let msg = match maybe_msg {
                     Ok(Some(Ok(msg))) => msg,
@@ -622,6 +663,10 @@ async fn handle_ws_inner(
                         break Ok(());
                     }
                 };
+
+                // Any inbound frame (Pong / Binary / Text) proves the peer is
+                // alive and resets the keepalive counter.
+                unanswered_pings = 0;
 
                 let outcome = match msg {
                     WsMessage::Binary(data) => {
