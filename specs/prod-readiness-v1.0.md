@@ -117,8 +117,8 @@ historical audit trail; trust this rollup over the table cells for
   `load_with_pool_size_min` / `--pool-min-size` (default 1) tolerates a partial
   pool with a warning instead of an all-or-nothing failure.
 - **V1-47** ✅ per-request inference timeout (`--inference-timeout-secs`, default
-  60) wraps the `spawn_blocking` ORT Run on REST + WS: client gets a typed
-  `inference_timeout` (504 / WS close) + `gigastt_inference_timeouts_total`.
+  600) wraps the `spawn_blocking` ORT Run on REST + WS + SSE: client gets a typed
+  `inference_timeout` (504 / WS / SSE close) + `gigastt_inference_timeouts_total`.
   Caveat: `spawn_blocking` is uncancellable, so a hung Run's slot returns to the
   pool only when it finishes — the timeout unblocks the client, not the slot.
 - **V1-24** ✅ dedicated batch pool: `--batch-pool-size` (opt-in, default 0)

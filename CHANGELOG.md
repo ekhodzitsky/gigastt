@@ -9,20 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Dedicated batch pool (`--batch-pool-size`).** REST file transcription
-  (`/v1/transcribe`) can now draw from a pool of triplets split off from
-  `--pool-size` (env `GIGASTT_BATCH_POOL_SIZE`, default `0` = off; clamped to
-  leave at least one interactive triplet), so a long batch job no longer
-  starves real-time WebSocket / SSE streaming, which keep the interactive pool.
-  New `Engine::load_with_pools` / `Engine::pool_for_batch`.
+- **Dedicated batch pool (`--batch-pool-size`).** Both REST file-transcription
+  paths — `/v1/transcribe` and the SSE `/v1/transcribe/stream` (which also
+  transcribes a whole upload, holding its triplet for the file's duration) —
+  can now draw from a pool of triplets split off from `--pool-size` (env
+  `GIGASTT_BATCH_POOL_SIZE`, default `0` = off; clamped to leave at least one
+  interactive triplet), so a long batch job no longer starves real-time
+  WebSocket streaming, which keeps the interactive pool. New
+  `Engine::load_with_pools` / `Engine::pool_for_batch`. When enabled, the batch
+  pool exports its own `gigastt_batch_pool_available` / `gigastt_batch_pool_waiters`
+  gauges so its saturation is observable separately from the interactive pool.
 - **Per-request inference timeout (`--inference-timeout-secs`).** A
   `spawn_blocking` ONNX run that exceeds the timeout (env
-  `GIGASTT_INFERENCE_TIMEOUT_SECS`, default 60, `0` disables) now returns a
-  typed `inference_timeout` to the client (REST: HTTP 504; WebSocket: error +
-  close) instead of hanging the request, with a `gigastt_inference_timeouts_total`
-  counter. Note: `spawn_blocking` can't be cancelled, so a hung run's triplet
-  returns to the pool only when it eventually completes (or at restart) — the
-  timeout unblocks the *client*, not the stuck slot.
+  `GIGASTT_INFERENCE_TIMEOUT_SECS`, default 600, `0` disables) now returns a
+  typed `inference_timeout` to the client (REST: HTTP 504; WebSocket / SSE:
+  error event + close) instead of hanging the request, with a
+  `gigastt_inference_timeouts_total` counter. The default of 600 s comfortably
+  covers a worst-case in-spec 10-minute (600 s audio) file on the CPU EP, so the
+  advertised upload ceiling still works out of the box. The SSE path bounds each
+  1 s chunk individually, matching REST + WebSocket. Note: `spawn_blocking` can't
+  be cancelled, so a hung run's triplet returns to the pool only when it
+  eventually completes (or at restart) — the timeout unblocks the *client*, not
+  the stuck slot.
 - **Degraded pool boot (`--pool-min-size`).** When some session triplets fail
   to load (e.g. low memory) the server can now start on a partial pool instead
   of failing outright. `--pool-min-size` (env `GIGASTT_POOL_MIN_SIZE`, default
@@ -50,7 +58,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   allowlist and per-IP rate limiter, so any allowlisted browser origin could
   read request telemetry and a 15 s Prometheus scraper could be throttled.
   **Breaking for metrics scrapers:** point Prometheus at the new port (loopback
-  by default; expose it deliberately). Requires `--metrics`.
+  by default; expose it deliberately). Requires `--metrics`. A non-loopback
+  `--metrics-listen` now requires the same `--bind-all` (or
+  `GIGASTT_ALLOW_BIND_ANY=1`) opt-in the primary port does, so telemetry can't
+  be exposed network-wide without an explicit, warned acknowledgment.
 - **Bounded the Prometheus `path` label** to the known route set (unmatched
   paths collapse to `other`) so scanners hitting arbitrary URLs can no longer
   explode metric label cardinality.

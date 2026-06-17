@@ -43,6 +43,16 @@ gigastt serve [OPTIONS]
                             [default: 127.0.0.1:9090]. Only used with --metrics.
                             Env: GIGASTT_METRICS_LISTEN.
 
+  --pool-min-size <N>           Minimum session triplets that must load for the server to
+                                boot; degraded-pool boot floor, clamped to 1..=pool_size
+                                [default: 1]. Env: GIGASTT_POOL_MIN_SIZE.
+  --batch-pool-size <N>         Triplets reserved for batch REST file transcription, split
+                                off from --pool-size so a long file job can't starve
+                                WebSocket/SSE streaming. 0 disables the split [default: 0].
+                                Env: GIGASTT_BATCH_POOL_SIZE.
+  --inference-timeout-secs <N>  Per-request inference timeout; a run exceeding it returns
+                                inference_timeout (REST 504 / WS close). 0 disables
+                                [default: 600]. Env: GIGASTT_INFERENCE_TIMEOUT_SECS.
   --max-session-secs <S>        Wall-clock session cap [default: 3600]. 0 = disabled.
                                 Env: GIGASTT_MAX_SESSION_SECS.
   --shutdown-drain-secs <S>     Max wait for in-flight sessions on SIGTERM [default: 10].

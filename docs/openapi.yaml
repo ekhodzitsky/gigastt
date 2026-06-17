@@ -56,6 +56,7 @@ info:
     | 429 | `rate_limited` | Per-IP rate limit exceeded |
     | 503 | `timeout` | Pool saturated; retry after `Retry-After` |
     | 503 | `pool_closed` | Server shutting down |
+    | 504 | `inference_timeout` | A single inference run exceeded `--inference-timeout-secs` |
   license:
     name: MIT
     url: https://github.com/ekhodzitsky/gigastt/blob/main/LICENSE
@@ -224,6 +225,8 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /v1/transcribe/stream:
     post:
@@ -284,6 +287,8 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
 components:
   schemas:
@@ -532,3 +537,13 @@ components:
             error: "Too many requests"
             code: rate_limited
             retry_after_ms: 30000
+
+    GatewayTimeout:
+      description: Inference timed out
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: "Inference timed out."
+            code: inference_timeout

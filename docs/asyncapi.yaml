@@ -314,6 +314,7 @@ components:
           enum:
             - inference_error
             - inference_panic
+            - inference_timeout
             - configure_too_late
             - invalid_sample_rate
             - timeout

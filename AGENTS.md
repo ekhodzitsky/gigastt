@@ -291,6 +291,9 @@ This guarantees that a regression like a broken `cargo test` cannot reach `main`
   - `--ws-frame-max-bytes` (default 512 KiB) — max WS frame size
   - `--body-limit-bytes` (default 50 MiB) — max REST body size
   - `--pool-size` (default 4) — concurrent inference sessions
+  - `--pool-min-size` (default 1) — minimum triplets required to boot (degraded-pool floor)
+  - `--batch-pool-size` (default 0) — triplets reserved for batch REST jobs (0 = shared pool)
+  - `--inference-timeout-secs` (default 600) — per-request inference timeout; 0 disables
   - `--max-session-secs` (default 3600) — wall-clock session cap
   - `--shutdown-drain-secs` (default 10) — graceful shutdown drain window
 - **Per-IP rate limiting** (opt-in, off by default): `--rate-limit-per-minute N`
@@ -338,6 +341,9 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_BODY_LIMIT_BYTES` | `--body-limit-bytes` | 52428800 |
 | `GIGASTT_RATE_LIMIT_PER_MINUTE` | `--rate-limit-per-minute` | 0 |
 | `GIGASTT_RATE_LIMIT_BURST` | `--rate-limit-burst` | 10 |
+| `GIGASTT_POOL_MIN_SIZE` | `--pool-min-size` | 1 |
+| `GIGASTT_BATCH_POOL_SIZE` | `--batch-pool-size` | 0 |
+| `GIGASTT_INFERENCE_TIMEOUT_SECS` | `--inference-timeout-secs` | 600 |
 | `GIGASTT_MAX_SESSION_SECS` | `--max-session-secs` | 3600 |
 | `GIGASTT_SHUTDOWN_DRAIN_SECS` | `--shutdown-drain-secs` | 10 |
 | `GIGASTT_SKIP_QUANTIZE` | `--skip-quantize` | false |
