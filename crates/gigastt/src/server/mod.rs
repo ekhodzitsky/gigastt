@@ -162,6 +162,10 @@ pub async fn run_with_config_listener(
             "gigastt_rate_limit_rejections_total",
             "Total requests rejected by rate limiter",
         );
+        reg.register_counter(
+            "gigastt_inference_timeouts_total",
+            "Total inference runs aborted by the per-request inference timeout",
+        );
         tracing::info!("Prometheus /metrics endpoint enabled");
         Some(reg)
     } else {

@@ -130,6 +130,11 @@ pub struct RuntimeLimits {
     /// long for a free session triplet before returning 503 / `timeout`.
     /// The `Retry-After` hint echoes the same value. Default: 30.
     pub pool_checkout_timeout_secs: u64,
+    /// Per-request inference timeout (seconds). A `spawn_blocking` ONNX run
+    /// exceeding this returns a typed `inference_timeout` to the client so a
+    /// hung run can't block it indefinitely. `0` disables the timeout.
+    /// Default: 60.
+    pub inference_timeout_secs: u64,
 }
 
 impl Default for RuntimeLimits {
@@ -143,6 +148,7 @@ impl Default for RuntimeLimits {
             max_session_secs: 3600,
             shutdown_drain_secs: 10,
             pool_checkout_timeout_secs: 30,
+            inference_timeout_secs: 60,
         }
     }
 }
@@ -169,6 +175,8 @@ pub struct RuntimeLimitsConfig {
     pub shutdown_drain_secs: u64,
     /// Pool checkout timeout in seconds before returning 503.
     pub pool_checkout_timeout_secs: u64,
+    /// Per-request inference timeout in seconds (`0` disables).
+    pub inference_timeout_secs: u64,
 }
 
 impl Default for RuntimeLimitsConfig {
@@ -183,6 +191,7 @@ impl Default for RuntimeLimitsConfig {
             max_session_secs: d.max_session_secs,
             shutdown_drain_secs: d.shutdown_drain_secs,
             pool_checkout_timeout_secs: d.pool_checkout_timeout_secs,
+            inference_timeout_secs: d.inference_timeout_secs,
         }
     }
 }
@@ -198,6 +207,7 @@ impl From<RuntimeLimitsConfig> for RuntimeLimits {
             max_session_secs: cfg.max_session_secs,
             shutdown_drain_secs: cfg.shutdown_drain_secs,
             pool_checkout_timeout_secs: cfg.pool_checkout_timeout_secs,
+            inference_timeout_secs: cfg.inference_timeout_secs,
         }
     }
 }

@@ -166,6 +166,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
         &limits,
         reservation,
         state.shutdown.clone(),
+        state.metrics_registry.clone(),
     )
     .await;
     if let Err(e) = result {
@@ -203,6 +204,8 @@ async fn handle_binary_frame(
     peer: SocketAddr,
     data: axum::body::Bytes,
     pcm_decode_buf: &mut Vec<f32>,
+    inference_timeout_secs: u64,
+    metrics: Option<&Arc<super::metrics::MetricsRegistry>>,
 ) -> Result<FrameOutcome> {
     if data.is_empty() {
         *empty_frame_count += 1;
@@ -268,7 +271,7 @@ async fn handle_binary_frame(
 
     let eng = engine.clone();
     let span = tracing::Span::current();
-    let join_result = tokio::task::spawn_blocking(move || {
+    let handle = tokio::task::spawn_blocking(move || {
         let _enter = span.enter();
         // Move ownership into the closure so state and reservation come back
         // unconditionally, including after a panic inside `process_chunk`.
@@ -279,8 +282,43 @@ async fn handle_binary_frame(
             eng.process_chunk(&samples_16k, &mut state, &mut reservation)
         }));
         (r, state, reservation)
-    })
-    .await;
+    });
+
+    // Guard the blocking ONNX run with the per-request inference timeout
+    // (`0` disables). `spawn_blocking` can't be cancelled, so on timeout the
+    // detached task keeps the triplet + streaming state and returns the slot
+    // to the pool only when the run eventually finishes. The session has lost
+    // them, so we close it with a typed `inference_timeout`.
+    let join_result = if inference_timeout_secs == 0 {
+        handle.await
+    } else {
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(inference_timeout_secs),
+            handle,
+        )
+        .await
+        {
+            Ok(jr) => jr,
+            Err(_elapsed) => {
+                if let Some(reg) = metrics {
+                    reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
+                }
+                tracing::error!(
+                    "WS inference exceeded {inference_timeout_secs}s for {peer} — closing session"
+                );
+                send_server_message(
+                    sink,
+                    &ServerMessage::Error {
+                        message: "Inference timed out.".into(),
+                        code: "inference_timeout".into(),
+                        retry_after_ms: None,
+                    },
+                )
+                .await?;
+                return Ok(FrameOutcome::Break);
+            }
+        }
+    };
 
     match join_result {
         Ok((Ok(Ok(segments)), state_back, reservation_back)) => {
@@ -473,6 +511,7 @@ async fn handle_ws_inner(
     limits: &RuntimeLimits,
     reservation: gigastt_core::inference::OwnedReservation<SessionTriplet>,
     cancel: tokio_util::sync::CancellationToken,
+    metrics: Option<Arc<super::metrics::MetricsRegistry>>,
 ) -> Result<()> {
     let (mut sink, mut source) = socket.split();
     tracing::info!("Client connected: {peer}");
@@ -682,6 +721,8 @@ async fn handle_ws_inner(
                             peer,
                             data,
                             &mut pcm_decode_buf,
+                            limits.inference_timeout_secs,
+                            metrics.as_ref(),
                         )
                         .await
                     }

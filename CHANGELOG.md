@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Per-request inference timeout (`--inference-timeout-secs`).** A
+  `spawn_blocking` ONNX run that exceeds the timeout (env
+  `GIGASTT_INFERENCE_TIMEOUT_SECS`, default 60, `0` disables) now returns a
+  typed `inference_timeout` to the client (REST: HTTP 504; WebSocket: error +
+  close) instead of hanging the request, with a `gigastt_inference_timeouts_total`
+  counter. Note: `spawn_blocking` can't be cancelled, so a hung run's triplet
+  returns to the pool only when it eventually completes (or at restart) — the
+  timeout unblocks the *client*, not the stuck slot.
 - **Degraded pool boot (`--pool-min-size`).** When some session triplets fail
   to load (e.g. low memory) the server can now start on a partial pool instead
   of failing outright. `--pool-min-size` (env `GIGASTT_POOL_MIN_SIZE`, default

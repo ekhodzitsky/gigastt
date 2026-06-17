@@ -119,6 +119,11 @@ enum Commands {
         #[arg(long, env = "GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS")]
         pool_checkout_timeout_secs: Option<u64>,
 
+        /// Per-request inference timeout in seconds. A run exceeding this
+        /// returns `inference_timeout`; `0` disables [default: 60].
+        #[arg(long, env = "GIGASTT_INFERENCE_TIMEOUT_SECS")]
+        inference_timeout_secs: Option<u64>,
+
         /// Skip the automatic INT8 quantization step after download.
         /// Default behaviour is to quantize the encoder (~2 min, one-time)
         /// so the pool loads the 210 MB INT8 encoder instead of the 844 MB
@@ -189,6 +194,7 @@ fn build_limits(
     max_session_secs: Option<u64>,
     shutdown_drain_secs: Option<u64>,
     pool_checkout_timeout_secs: Option<u64>,
+    inference_timeout_secs: Option<u64>,
 ) -> anyhow::Result<RuntimeLimits> {
     let mut limits = if let Some(path) = config_path {
         server::config::load_config_file(std::path::Path::new(path))?
@@ -221,6 +227,9 @@ fn build_limits(
     }
     if let Some(v) = pool_checkout_timeout_secs {
         limits.pool_checkout_timeout_secs = v;
+    }
+    if let Some(v) = inference_timeout_secs {
+        limits.inference_timeout_secs = v;
     }
     Ok(limits)
 }
@@ -371,6 +380,7 @@ async fn main() -> anyhow::Result<()> {
             max_session_secs,
             shutdown_drain_secs,
             pool_checkout_timeout_secs,
+            inference_timeout_secs,
             skip_quantize,
             trust_proxy,
             config,
@@ -391,6 +401,7 @@ async fn main() -> anyhow::Result<()> {
                 max_session_secs,
                 shutdown_drain_secs,
                 pool_checkout_timeout_secs,
+                inference_timeout_secs,
             )?;
             let metrics_listen =
                 metrics_listen.unwrap_or_else(server::config::default_metrics_listen);
@@ -645,7 +656,8 @@ mod tests {
 
     #[test]
     fn test_build_limits_defaults_when_no_config() {
-        let limits = build_limits(None, None, None, None, None, None, None, None, None).unwrap();
+        let limits =
+            build_limits(None, None, None, None, None, None, None, None, None, None).unwrap();
         assert_eq!(limits.idle_timeout_secs, 300);
         assert_eq!(limits.ws_frame_max_bytes, 512 * 1024);
     }
@@ -662,6 +674,7 @@ mod tests {
             Some(1800),
             Some(5),
             Some(15),
+            Some(45),
         )
         .unwrap();
         assert_eq!(limits.idle_timeout_secs, 600);
@@ -672,6 +685,7 @@ mod tests {
         assert_eq!(limits.max_session_secs, 1800);
         assert_eq!(limits.shutdown_drain_secs, 5);
         assert_eq!(limits.pool_checkout_timeout_secs, 15);
+        assert_eq!(limits.inference_timeout_secs, 45);
     }
 
     #[test]
@@ -680,6 +694,7 @@ mod tests {
         std::fs::write(tmp.path(), b"idle_timeout_secs = 123\n").unwrap();
         let limits = build_limits(
             Some(tmp.path().to_str().unwrap()),
+            None,
             None,
             None,
             None,
@@ -707,13 +722,25 @@ mod tests {
             None,
             None,
             None,
+            None,
         );
         assert!(result.is_err());
     }
 
     #[test]
     fn test_build_limits_rejects_zero_burst_with_nonzero_rpm() {
-        let result = build_limits(None, None, None, None, Some(30), Some(0), None, None, None);
+        let result = build_limits(
+            None,
+            None,
+            None,
+            None,
+            Some(30),
+            Some(0),
+            None,
+            None,
+            None,
+            None,
+        );
         assert!(result.is_err());
         let msg = format!("{}", result.unwrap_err());
         assert!(msg.contains("rate-limit-burst"));
@@ -721,8 +748,19 @@ mod tests {
 
     #[test]
     fn test_build_limits_allows_zero_rpm() {
-        let limits =
-            build_limits(None, None, None, None, Some(0), Some(0), None, None, None).unwrap();
+        let limits = build_limits(
+            None,
+            None,
+            None,
+            None,
+            Some(0),
+            Some(0),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(limits.rate_limit_per_minute, 0);
         assert_eq!(limits.rate_limit_burst, 0);
     }

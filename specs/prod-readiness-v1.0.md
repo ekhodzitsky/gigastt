@@ -116,6 +116,11 @@ historical audit trail; trust this rollup over the table cells for
   and a silent end-of-stream on panic) · **V1-16** ✅ degraded pool boot —
   `load_with_pool_size_min` / `--pool-min-size` (default 1) tolerates a partial
   pool with a warning instead of an all-or-nothing failure.
+- **V1-47** ✅ per-request inference timeout (`--inference-timeout-secs`, default
+  60) wraps the `spawn_blocking` ORT Run on REST + WS: client gets a typed
+  `inference_timeout` (504 / WS close) + `gigastt_inference_timeouts_total`.
+  Caveat: `spawn_blocking` is uncancellable, so a hung Run's slot returns to the
+  pool only when it finishes — the timeout unblocks the client, not the slot.
 
 **Still genuinely open / partial at HEAD:**
 
@@ -125,7 +130,6 @@ historical audit trail; trust this rollup over the table cells for
 | V1-24 | OPEN | Single shared `SessionPool`; batch REST can starve WS. No batch/stream split or priority. |
 | V1-26 | PARTIAL | `FeatureExtractor`/`TranscriptAssembler` split out; `tokens_to_words` (→`TokenFormatter`) and `FileTranscriber` still on `Engine`. |
 | V1-40 | PARTIAL | `tokio`/`serde` declared as `"1"` (no minor pin); drift caught by Dependabot + `publish --dry-run --locked`, not `cargo update --dry-run`. |
-| V1-47 | OPEN | No `tokio::time::timeout` around the `spawn_blocking` ORT Run; a hung Run pins its slot. |
 | V1-48 | OPEN | No VAD endpointing (L-effort feature). |
 | V1-50 | OPEN | Model filenames hardcoded; no `manifest.toml` for new models (e.g. GigaAM v4). |
 | SUS-07 | OPEN | No Miri / ASAN / TSAN job in CI. |

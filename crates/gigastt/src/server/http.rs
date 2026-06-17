@@ -337,7 +337,7 @@ pub async fn transcribe(
 
     let inference_start = std::time::Instant::now();
     let span = tracing::Span::current();
-    let result = tokio::task::spawn_blocking(move || {
+    let handle = tokio::task::spawn_blocking(move || {
         let _enter = span.enter();
         // catch_unwind ensures triplet is returned to pool even on panic
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -356,8 +356,36 @@ pub async fn transcribe(
             }
         }
         // reservation dropped here automatically returns the triplet to the pool
-    })
-    .await;
+    });
+
+    // Guard the blocking ONNX run with the per-request inference timeout
+    // (`0` disables). `spawn_blocking` can't be cancelled, so the detached task
+    // keeps the triplet and returns the slot to the pool only when the run
+    // finishes; the client gets a typed `inference_timeout` (504) immediately.
+    let inference_timeout_secs = limits.inference_timeout_secs;
+    let result = if inference_timeout_secs == 0 {
+        handle.await
+    } else {
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(inference_timeout_secs),
+            handle,
+        )
+        .await
+        {
+            Ok(r) => r,
+            Err(_elapsed) => {
+                if let Some(ref reg) = state.metrics_registry {
+                    reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
+                }
+                tracing::error!("REST inference exceeded {inference_timeout_secs}s — aborting");
+                return Err(api_error(
+                    StatusCode::GATEWAY_TIMEOUT,
+                    "Inference timed out.",
+                    "inference_timeout",
+                ));
+            }
+        }
+    };
     if let Some(ref reg) = state.metrics_registry {
         reg.histogram_record(
             "gigastt_inference_duration_seconds",
