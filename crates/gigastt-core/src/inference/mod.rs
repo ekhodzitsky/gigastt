@@ -14,7 +14,16 @@ pub mod tokenizer;
 
 #[cfg(feature = "diarization")]
 use polyvoice::streaming::StreamingPipeline;
+// `EmbeddingError`, `EmbeddingExtractor`, and `OnnxEmbeddingExtractor` were
+// deprecated in polyvoice 0.7.0 in favour of the v1.0 `polyvoice::embedder`
+// `Embedder` trait. We keep them because our per-session diarization path,
+// `StreamingPipeline`, is itself bound on the legacy `EmbeddingExtractor` trait
+// (`impl<V, E> StreamingPipeline<V, E> where E: EmbeddingExtractor`) — polyvoice
+// has not yet wired the new `Embedder` into streaming, and suppresses these same
+// warnings crate-wide for that reason. Mirror it here; migrate once the streaming
+// pipeline accepts `Embedder`.
 #[cfg(feature = "diarization")]
+#[allow(deprecated)]
 use polyvoice::{
     ClusterConfig, DiarizationConfig as DiaConfig, EmbeddingError, EmbeddingExtractor, EnergyVad,
     OnnxEmbeddingExtractor, Pipeline, VadConfig,
@@ -31,9 +40,11 @@ const SPEAKER_POOL_SIZE: usize = 4;
 /// per-session [`StreamingPipeline`]s, which take ownership of their extractor.
 /// The ONNX session pool inside the extractor is shared across sessions via `Arc`.
 #[cfg(feature = "diarization")]
+#[allow(deprecated)] // legacy OnnxEmbeddingExtractor — see import note above
 pub struct SharedExtractor(std::sync::Arc<OnnxEmbeddingExtractor>);
 
 #[cfg(feature = "diarization")]
+#[allow(deprecated)] // legacy EmbeddingExtractor trait — see import note above
 impl EmbeddingExtractor for SharedExtractor {
     fn extract(&self, samples: &[f32], config: &DiaConfig) -> Result<Vec<f32>, EmbeddingError> {
         self.0.extract(samples, config)
@@ -698,6 +709,7 @@ pub struct Engine {
     /// Wrapped in `Arc` so per-session streaming pipelines can share the
     /// underlying ONNX session pool without each owning their own copy.
     #[cfg(feature = "diarization")]
+    #[allow(deprecated)] // legacy OnnxEmbeddingExtractor — see import note above
     pub speaker_encoder: Option<std::sync::Arc<OnnxEmbeddingExtractor>>,
 }
 
@@ -1015,6 +1027,7 @@ impl Engine {
         );
 
         #[cfg(feature = "diarization")]
+        #[allow(deprecated)] // legacy OnnxEmbeddingExtractor::new — see import note above
         let speaker_encoder = {
             let model_path = dir.join("wespeaker_resnet34.onnx");
             if model_path.exists() {

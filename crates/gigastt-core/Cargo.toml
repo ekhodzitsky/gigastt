@@ -46,7 +46,7 @@ rubato = "3.0"
 symphonia = { version = "0.6", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
 bytes = "1"
 prost = "0.14"
-polyvoice = { version = "0.6.8", features = ["onnx"], optional = true }
+polyvoice = { version = "0.7.0", features = ["onnx"], optional = true }
 parking_lot = "0.12"
 libc = "0.2"
 

@@ -1803,9 +1803,9 @@ dependencies = [
 
 [[package]]
 name = "polyvoice"
-version = "0.6.8"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9ebc551099b10b4e47632e72a5a0f74173313d0992b979b7b96db2da83efea9"
+checksum = "294f763f1920586313c775bfaa9fd3449afa62a2465dfcc2547e1537ab5faf71"
 dependencies = [
  "anyhow",
  "crossbeam-queue",

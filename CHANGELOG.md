@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **polyvoice** 0.6.8 → 0.7.0. Our streaming diarization path (`StreamingPipeline`)
+  is still bound on polyvoice's legacy `EmbeddingExtractor` trait, which 0.7.0
+  deprecated in favour of the v1.0 `polyvoice::embedder::Embedder` API; the legacy
+  usage is annotated `#[allow(deprecated)]` (mirroring polyvoice's own crate-level
+  suppression) until upstream wires `Embedder` into the streaming pipeline.
+
 ## [2.1.0] - 2026-06-14
 
 A large correctness + honesty pass (a full project audit), an honest cross-ASR
