@@ -51,6 +51,13 @@ enum Commands {
         #[arg(long, env = "GIGASTT_POOL_MIN_SIZE", default_value_t = 1)]
         pool_min_size: usize,
 
+        /// Triplets reserved for batch REST file transcription, split off from
+        /// `--pool-size` so a long file job can't starve WebSocket / SSE
+        /// streaming. `0` disables the split (REST shares the interactive pool);
+        /// clamped to leave at least one interactive triplet [default: 0].
+        #[arg(long, env = "GIGASTT_BATCH_POOL_SIZE", default_value_t = 0)]
+        batch_pool_size: usize,
+
         /// Explicitly acknowledge binding to a non-loopback address.
         /// Can also be enabled via `GIGASTT_ALLOW_BIND_ANY=1`.
         /// Without this flag the server refuses to listen on anything other than
@@ -367,6 +374,7 @@ async fn main() -> anyhow::Result<()> {
             model_dir,
             pool_size,
             pool_min_size,
+            batch_pool_size,
             bind_all,
             allow_origin,
             cors_allow_any,
@@ -388,8 +396,12 @@ async fn main() -> anyhow::Result<()> {
             ensure_bind_allowed(&host, bind_all)?;
             model::ensure_model(&model_dir).await?;
             ensure_int8_encoder(&model_dir, skip_quantize)?;
-            let engine =
-                inference::Engine::load_with_pool_size_min(&model_dir, pool_size, pool_min_size)?;
+            let engine = inference::Engine::load_with_pools(
+                &model_dir,
+                pool_size,
+                pool_min_size,
+                batch_pool_size,
+            )?;
             log_rss();
             let limits = build_limits(
                 config.as_deref(),

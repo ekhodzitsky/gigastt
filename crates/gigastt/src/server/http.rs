@@ -300,13 +300,16 @@ pub async fn transcribe(
         ));
     }
 
-    // Checkout a session triplet from the pool (blocks if none available).
-    // The guard's lifetime is stripped via `into_owned` so the triplet can
-    // travel through `spawn_blocking`; the reservation handles checkin.
+    // Checkout a session triplet from the batch pool (blocks if none
+    // available) — this is a long file-transcription job, so it draws from the
+    // dedicated batch pool when one exists (falling back to the interactive
+    // pool otherwise) to avoid starving WebSocket / SSE streaming. The guard's
+    // lifetime is stripped via `into_owned` so the triplet can travel through
+    // `spawn_blocking`; the reservation handles checkin.
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
         std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
-        state.engine.pool.checkout(),
+        state.engine.pool_for_batch().checkout(),
     )
     .await
     {

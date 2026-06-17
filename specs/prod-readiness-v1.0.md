@@ -121,13 +121,16 @@ historical audit trail; trust this rollup over the table cells for
   `inference_timeout` (504 / WS close) + `gigastt_inference_timeouts_total`.
   Caveat: `spawn_blocking` is uncancellable, so a hung Run's slot returns to the
   pool only when it finishes — the timeout unblocks the client, not the slot.
+- **V1-24** ✅ dedicated batch pool: `--batch-pool-size` (opt-in, default 0)
+  splits triplets off `--pool-size` for REST file transcription
+  (`Engine::pool_for_batch`), so a long batch job no longer starves WS / SSE
+  streaming, which keep the interactive pool.
 
 **Still genuinely open / partial at HEAD:**
 
 | # | State | What's left |
 |---|-------|-------------|
 | V1-18 | PARTIAL | Encoder borrow + per-frame buffers reused; `run_decoder()` still `to_vec()`s dec/h/c per non-blank call. |
-| V1-24 | OPEN | Single shared `SessionPool`; batch REST can starve WS. No batch/stream split or priority. |
 | V1-26 | PARTIAL | `FeatureExtractor`/`TranscriptAssembler` split out; `tokens_to_words` (→`TokenFormatter`) and `FileTranscriber` still on `Engine`. |
 | V1-40 | PARTIAL | `tokio`/`serde` declared as `"1"` (no minor pin); drift caught by Dependabot + `publish --dry-run --locked`, not `cargo update --dry-run`. |
 | V1-48 | OPEN | No VAD endpointing (L-effort feature). |

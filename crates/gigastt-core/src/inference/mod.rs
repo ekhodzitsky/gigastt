@@ -707,8 +707,13 @@ fn probe_or_rebuild<S>(
 /// For streaming recognition, use [`create_state`](Engine::create_state) +
 /// [`process_chunk`](Engine::process_chunk) + [`flush_state`](Engine::flush_state).
 pub struct Engine {
-    /// Pool of ONNX session triplets for concurrent inference.
+    /// Pool of session triplets for interactive inference (WebSocket + SSE
+    /// streaming). REST file transcription uses [`Engine::batch_pool`] when it
+    /// is set, so a long batch job can't starve real-time streaming.
     pub pool: SessionPool,
+    /// Optional dedicated pool for batch REST file transcription, split off
+    /// from `pool` at load time. `None` means REST shares the interactive pool.
+    pub batch_pool: Option<SessionPool>,
     tokenizer: Tokenizer,
     features: FeatureExtractor,
     /// Whether the INT8 quantized encoder is in use.
@@ -765,6 +770,23 @@ impl Engine {
         pool_size: usize,
         min_size: usize,
     ) -> Result<Self, GigasttError> {
+        // No batch/stream split: the whole pool is interactive.
+        Self::load_with_pools(model_dir, pool_size, min_size, 0)
+    }
+
+    /// Load ONNX models splitting the pool into an interactive pool (WebSocket +
+    /// SSE) and a dedicated batch pool of `batch_pool_size` triplets for REST
+    /// file transcription, so a long batch job can't starve real-time
+    /// streaming. `batch_pool_size == 0` disables the split (REST shares the
+    /// interactive pool); it is clamped to leave at least one interactive
+    /// triplet. Partial-load tolerance follows `min_size` as in
+    /// [`Engine::load_with_pool_size_min`].
+    pub fn load_with_pools(
+        model_dir: &str,
+        pool_size: usize,
+        min_size: usize,
+        batch_pool_size: usize,
+    ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
         if !dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
             return Err(GigasttError::ModelLoad {
@@ -772,9 +794,11 @@ impl Engine {
                 source: None,
             });
         }
-        Self::load_inner(dir, model_dir, pool_size, min_size).map_err(|e| GigasttError::ModelLoad {
-            path: model_dir.to_string(),
-            source: Some(e.into()),
+        Self::load_inner(dir, model_dir, pool_size, min_size, batch_pool_size).map_err(|e| {
+            GigasttError::ModelLoad {
+                path: model_dir.to_string(),
+                source: Some(e.into()),
+            }
         })
     }
 
@@ -960,6 +984,33 @@ impl Engine {
         Ok((encoder, decoder, joiner))
     }
 
+    /// Split loaded triplets into an interactive pool and an optional batch
+    /// pool of `batch_pool_size` triplets. Always leaves at least one triplet
+    /// for the interactive pool; `batch_pool_size == 0` (or a pool too small to
+    /// split) yields no batch pool.
+    fn split_triplets(
+        mut triplets: Vec<SessionTriplet>,
+        batch_pool_size: usize,
+    ) -> (SessionPool, Option<SessionPool>) {
+        let n = triplets.len();
+        let batch = Self::batch_split_count(n, batch_pool_size);
+        if batch == 0 {
+            return (SessionPool::new(triplets), None);
+        }
+        let batch_triplets = triplets.split_off(n - batch);
+        (
+            SessionPool::new(triplets),
+            Some(SessionPool::new(batch_triplets)),
+        )
+    }
+
+    /// Number of triplets to reserve for the batch pool given `n` loaded and a
+    /// requested `batch_pool_size`, always leaving at least one for the
+    /// interactive pool (so `n <= 1` or `batch_pool_size == 0` yields 0).
+    fn batch_split_count(n: usize, batch_pool_size: usize) -> usize {
+        batch_pool_size.min(n.saturating_sub(1))
+    }
+
     /// Decide the final pool from per-triplet load results: returns the
     /// successfully loaded triplets when at least `min_size` loaded (warning
     /// when the pool is degraded below `pool_size`), or an error describing the
@@ -1055,6 +1106,7 @@ impl Engine {
         model_dir: &str,
         pool_size: usize,
         min_size: usize,
+        batch_pool_size: usize,
     ) -> anyhow::Result<Self> {
         let is_int8 = dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists();
         if is_int8 {
@@ -1141,8 +1193,10 @@ impl Engine {
             }
         };
 
+        let (pool, batch_pool) = Self::split_triplets(triplets, batch_pool_size);
         let engine = Self {
-            pool: SessionPool::new(triplets),
+            pool,
+            batch_pool,
             tokenizer,
             features,
             int8: is_int8,
@@ -1170,7 +1224,9 @@ impl Engine {
                     &prepacked,
                     Self::load_sessions_cpu,
                 )?;
-                e.pool = SessionPool::new(triplets);
+                let (pool, batch_pool) = Self::split_triplets(triplets, batch_pool_size);
+                e.pool = pool;
+                e.batch_pool = batch_pool;
                 Ok(e)
             },
         )?;
@@ -1186,9 +1242,13 @@ impl Engine {
     /// runtime self-check for EPs that can fail at prediction time even
     /// though their sessions loaded fine (issue #42).
     fn warmup_one(&self) -> Result<(), GigasttError> {
+        self.warmup_one_on(&self.pool)
+    }
+
+    /// Warm a single triplet from a specific pool with ~1 s of silence.
+    fn warmup_one_on(&self, pool: &SessionPool) -> Result<(), GigasttError> {
         let silence = vec![0.0f32; 16000]; // 1 s at 16 kHz
-        let mut guard = self
-            .pool
+        let mut guard = pool
             .checkout_blocking()
             .map_err(|e| GigasttError::Inference {
                 source: Box::new(e),
@@ -1213,7 +1273,27 @@ impl Engine {
         for _ in 0..self.pool.total() {
             self.warmup_one()?;
         }
+        if let Some(ref batch) = self.batch_pool {
+            for _ in 0..batch.total() {
+                self.warmup_one_on(batch)?;
+            }
+        }
         Ok(())
+    }
+
+    /// The pool REST file transcription should use: the dedicated batch pool
+    /// when one was split off, otherwise the interactive pool.
+    pub fn pool_for_batch(&self) -> &SessionPool {
+        self.batch_pool.as_ref().unwrap_or(&self.pool)
+    }
+
+    /// Close both the interactive and batch pools so every waiter wakes with
+    /// `PoolError::Closed` during graceful shutdown.
+    pub fn close_pools(&self) {
+        self.pool.close();
+        if let Some(ref batch) = self.batch_pool {
+            batch.close();
+        }
     }
 
     /// Return `true` if a speaker encoder is loaded and diarization is available.
@@ -1730,6 +1810,16 @@ impl TranscriptSegment {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_batch_split_count_clamps() {
+        assert_eq!(Engine::batch_split_count(4, 1), 1); // typical: 1 batch, 3 stream
+        assert_eq!(Engine::batch_split_count(4, 0), 0); // split disabled
+        assert_eq!(Engine::batch_split_count(4, 10), 3); // clamped: leave 1 interactive
+        assert_eq!(Engine::batch_split_count(1, 1), 0); // can't split a single triplet
+        assert_eq!(Engine::batch_split_count(0, 1), 0); // empty pool
+        assert_eq!(Engine::batch_split_count(2, 1), 1);
+    }
 
     #[test]
     fn test_finalize_pool_load_full() {

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Dedicated batch pool (`--batch-pool-size`).** REST file transcription
+  (`/v1/transcribe`) can now draw from a pool of triplets split off from
+  `--pool-size` (env `GIGASTT_BATCH_POOL_SIZE`, default `0` = off; clamped to
+  leave at least one interactive triplet), so a long batch job no longer
+  starves real-time WebSocket / SSE streaming, which keep the interactive pool.
+  New `Engine::load_with_pools` / `Engine::pool_for_batch`.
 - **Per-request inference timeout (`--inference-timeout-secs`).** A
   `spawn_blocking` ONNX run that exceeds the timeout (env
   `GIGASTT_INFERENCE_TIMEOUT_SECS`, default 60, `0` disables) now returns a

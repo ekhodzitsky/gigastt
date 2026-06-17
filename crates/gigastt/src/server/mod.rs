@@ -468,7 +468,7 @@ pub async fn run_with_config_listener(
             // PoolError::Closed so they fall through to a 503 / `pool_closed`
             // response instead of being stranded for the full checkout timeout.
             // Idempotent — safe even if the pool was already closed.
-            shutdown_engine.pool.close();
+            shutdown_engine.close_pools();
         }
     };
 
