@@ -669,7 +669,7 @@ def _bucket_value(
     value: float,
     buckets: list[tuple[str, float | None, float | None]],
 ) -> str:
-    """Return the first matching bucket label for a value."""
+    """Return the matching bucket label for a value."""
     for label, low, high in buckets:
         # Degenerate bucket with identical bounds matches that exact value.
         if low is not None and high is not None and low == high:
@@ -677,7 +677,7 @@ def _bucket_value(
                 return label
             continue
         if low is not None and value < low:
-            continue
+            return label
         if high is not None and value >= high:
             continue
         return label

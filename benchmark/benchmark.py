@@ -9,6 +9,7 @@ Environment:
 """
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -33,6 +34,20 @@ from runners import (
     Vosk054Runner,
     WhisperCppRunner,
 )
+
+
+PROFILE_PATH = "benchmark.prof"
+PROGRESS_INTERVAL = 10
+
+ALL_RUNNERS = [
+    GigasttRunner,
+    WhisperCppRunner,
+    FasterWhisperRunner,
+    FasterWhisperTurboRunner,
+    VoskRunner,
+    Vosk054Runner,
+    TOneRunner,
+]
 
 
 def run_benchmark(
@@ -108,7 +123,7 @@ def run_benchmark(
             "cached": source == "cache",
         })
 
-        if (idx + 1) % 10 == 0 or idx + 1 == len(manifest):
+        if (idx + 1) % PROGRESS_INTERVAL == 0 or idx + 1 == len(manifest):
             rtf = proc_time / dur if dur > 0 and success else 0.0
             marker = " [C]" if source == "cache" else ""
             print(
@@ -180,7 +195,7 @@ def print_histograms(results: list[dict]):
                 )
 
 
-def _main():
+def _parse_args(argv=None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Cross-ASR benchmark")
     parser.add_argument("--max-samples", type=int, default=int(os.environ.get("GIGASTT_BENCHMARK_MAX_SAMPLES", "100")),
                         help="Maximum samples to process (0 = unlimited)")
@@ -208,9 +223,14 @@ def _main():
     parser.add_argument(
         "--profile",
         action="store_true",
-        help="Run cProfile and dump stats to benchmark.prof",
+        help=f"Run cProfile and dump stats to {PROFILE_PATH}",
     )
-    args = parser.parse_args()
+    return parser.parse_args(argv)
+
+
+def _main(args: Optional[argparse.Namespace] = None):
+    if args is None:
+        args = _parse_args()
 
     cache = DiskCache(args.cache_dir, enabled=not args.no_cache)
     if args.clear_cache:
@@ -230,18 +250,10 @@ def _main():
         print(f"Cache enabled: {cache.cache_dir}")
 
     requested = set(args.runners.split(",")) if args.runners != "all" else {"all"}
-    all_runners = [
-        GigasttRunner(),
-        WhisperCppRunner(),
-        FasterWhisperRunner(),
-        FasterWhisperTurboRunner(),
-        VoskRunner(),
-        Vosk054Runner(),
-        TOneRunner(),
-    ]
 
     active_runners = []
-    for r in all_runners:
+    for runner_or_cls in ALL_RUNNERS:
+        r = runner_or_cls() if isinstance(runner_or_cls, type) else runner_or_cls
         normalized = r.name.replace(".", "_").replace("-", "_")
         if "all" in requested or normalized in requested or r.name in requested:
             if r.is_available():
@@ -257,11 +269,8 @@ def _main():
 
     results = []
     for runner in active_runners:
-        # Use explicit context manager lifecycle for runners that support it
-        if hasattr(runner, "__enter__"):
-            with runner:
-                result = run_benchmark(runner, manifest, max_samples=None, cache=cache)
-        else:
+        cm = runner if hasattr(runner, "__enter__") else contextlib.nullcontext(runner)
+        with cm:
             result = run_benchmark(runner, manifest, max_samples=None, cache=cache)
         results.append(result)
 
@@ -287,20 +296,20 @@ def _main():
 
 
 def main():
-    if "--profile" in sys.argv:
-        sys.argv.remove("--profile")
+    args = _parse_args()
+    if args.profile:
         import cProfile
         prof = cProfile.Profile()
         prof.enable()
         try:
-            _main()
+            _main(args)
         finally:
             prof.disable()
-            prof.dump_stats("benchmark.prof")
-            print("\nProfile written to benchmark.prof")
-            print("View with: python -m pstats benchmark.prof")
+            prof.dump_stats(PROFILE_PATH)
+            print(f"\nProfile written to {PROFILE_PATH}")
+            print(f"View with: python -m pstats {PROFILE_PATH}")
     else:
-        _main()
+        _main(args)
 
 
 if __name__ == "__main__":

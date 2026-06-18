@@ -4,6 +4,8 @@ import json
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from cache import DiskCache
 
 
@@ -103,6 +105,18 @@ def test_cache_writes_are_atomic():
         files = list(Path(tmp).glob("*"))
         assert len(files) == 1
         assert files[0].name == f"{key}.json"
+
+
+def test_set_cleans_up_temp_on_write_failure(tmp_path):
+    cache = DiskCache(tmp_path)
+    # Make the cache directory read-only so os.replace / mkstemp will fail.
+    cache.cache_dir.chmod(0o555)
+    try:
+        with pytest.raises(Exception):
+            cache.set(_FakeRunner(), str(tmp_path / "clip.wav"), "hyp", 1.0)
+    finally:
+        cache.cache_dir.chmod(0o755)
+    assert list(cache.cache_dir.glob("*.tmp")) == []
 
 
 def test_gigastt_runner_cache_config_is_stable():

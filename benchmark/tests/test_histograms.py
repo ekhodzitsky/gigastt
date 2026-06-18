@@ -93,6 +93,16 @@ def test_histogram_bucket_boundaries():
     assert buckets["30s+"]["samples"] == 1
 
 
+def test_histogram_ref_words_zero_goes_to_first_bucket():
+    # Values below the first bucket's lower bound currently fall into the first
+    # bucket because _bucket_value returns the last bucket label only after all
+    # buckets have been tested.
+    details = [_detail(1.0, 0, 0)]
+    hists = compute_histograms(details)
+    buckets = {b["bucket"]: b for b in hists["ref_words"]}
+    assert buckets["1-5 words"]["samples"] == 1
+
+
 def test_histogram_empty_details():
     hists = compute_histograms([])
     for dim in ("audio_duration", "ref_words", "wer"):

@@ -7,6 +7,11 @@ import urllib.request
 from pathlib import Path
 
 
+# Bumped whenever the runner's transcription behavior changes in a way that
+# invalidates previously cached results (model format, preprocessing, API).
+GIGASTT_CACHE_SCHEMA_VERSION = "v2.2.0"
+
+
 class GigasttRunner:
     name = "gigastt"
 
@@ -25,7 +30,7 @@ class GigasttRunner:
         lazily after ``is_available()`` and would change the key between the
         first (cache-miss) and second (cache-lookup) runs.
         """
-        return f"{self.model_dir}:{self.use_int8}:v2.2.0"
+        return f"{self.model_dir}:{self.use_int8}:{GIGASTT_CACHE_SCHEMA_VERSION}"
 
     def _find_binary(self) -> bool:
         """Locate the gigastt binary and cache the path."""
