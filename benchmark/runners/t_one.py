@@ -37,6 +37,14 @@ class TOneRunner:
         self.device = device
         self._pipeline = None
 
+    @property
+    def cache_config(self) -> str:
+        import os
+
+        decoder = os.environ.get("BENCHMARK_TONE_DECODER", "greedy")
+        kenlm = os.environ.get("BENCHMARK_TONE_KENLM", "")
+        return f"{self.device or 'default'}:{decoder}:{kenlm}"
+
     def is_available(self) -> bool:
         try:
             import tone  # noqa: F401

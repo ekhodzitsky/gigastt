@@ -16,6 +16,10 @@ class FasterWhisperRunner:
         self.compute_type = compute_type
         self._model = None
 
+    @property
+    def cache_config(self) -> str:
+        return f"{self.model_size}:{self.device}:{self.compute_type}"
+
     def is_available(self) -> bool:
         try:
             from faster_whisper import WhisperModel

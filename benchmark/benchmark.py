@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+from cache import DiskCache
 from common import (
     audio_duration,
     bootstrap_ci,
@@ -33,7 +34,12 @@ from runners import (
 )
 
 
-def run_benchmark(runner, manifest: list[dict], max_samples: Optional[int] = None) -> dict:
+def run_benchmark(
+    runner,
+    manifest: list[dict],
+    max_samples: Optional[int] = None,
+    cache: Optional[DiskCache] = None,
+) -> dict:
     """Run a single ASR runner over the manifest."""
     if max_samples:
         manifest = manifest[:max_samples]
@@ -43,6 +49,7 @@ def run_benchmark(runner, manifest: list[dict], max_samples: Optional[int] = Non
     total_audio_sec = 0.0
     total_proc_sec = 0.0
     failures = 0
+    cached_hits = 0
     details = []
     per_sample = []
 
@@ -52,15 +59,30 @@ def run_benchmark(runner, manifest: list[dict], max_samples: Optional[int] = Non
         ref = sample["reference"]
         dur = sample.get("duration") or audio_duration(wav_path)
 
-        try:
-            hyp, proc_time = runner.transcribe(wav_path)
+        cached = None
+        if cache is not None:
+            cached = cache.get(runner, wav_path)
+
+        if cached is not None:
+            hyp = cached["hypothesis"]
+            proc_time = cached["proc_time"]
             success = True
-        except Exception as e:
-            print(f"  [{idx + 1}/{len(manifest)}] ERROR: {e}")
-            hyp = ""
-            proc_time = 0.0
-            success = False
-            failures += 1
+            cached_hits += 1
+            source = "cache"
+        else:
+            try:
+                hyp, proc_time = runner.transcribe(wav_path)
+                success = True
+                if cache is not None:
+                    cache.set(runner, wav_path, hyp, proc_time)
+                source = "transcribe"
+            except Exception as e:
+                print(f"  [{idx + 1}/{len(manifest)}] ERROR: {e}")
+                hyp = ""
+                proc_time = 0.0
+                success = False
+                failures += 1
+                source = "error"
 
         wer, errors, ref_count = compute_wer(ref, hyp)
 
@@ -82,11 +104,16 @@ def run_benchmark(runner, manifest: list[dict], max_samples: Optional[int] = Non
             "audio_sec": round(dur, 2),
             "proc_sec": round(proc_time, 2),
             "failed": not success,
+            "cached": source == "cache",
         })
 
         if (idx + 1) % 10 == 0 or idx + 1 == len(manifest):
             rtf = proc_time / dur if dur > 0 and success else 0.0
-            print(f"  [{idx + 1}/{len(manifest)}] WER={wer:.1f}%  RTF={rtf:.2f}x  {Path(wav_path).name}")
+            marker = " [C]" if source == "cache" else ""
+            print(
+                f"  [{idx + 1}/{len(manifest)}] WER={wer:.1f}%  RTF={rtf:.2f}x  "
+                f"{Path(wav_path).name}{marker}"
+            )
 
     overall_wer = (total_errors / total_ref_words * 100.0) if total_ref_words > 0 else 0.0
     overall_rtf = total_proc_sec / total_audio_sec if total_audio_sec > 0 else 0.0
@@ -96,6 +123,7 @@ def run_benchmark(runner, manifest: list[dict], max_samples: Optional[int] = Non
         "name": runner.name,
         "samples": len(details),
         "failures": failures,
+        "cached_hits": cached_hits,
         "wer": round(overall_wer, 2),
         "ci_low": round(ci_low, 2),
         "ci_high": round(ci_high, 2),
@@ -130,7 +158,7 @@ def print_results_table(results: list[dict]):
     print("=" * 90)
 
 
-def main():
+def _main():
     parser = argparse.ArgumentParser(description="Cross-ASR benchmark")
     parser.add_argument("--max-samples", type=int, default=int(os.environ.get("GIGASTT_BENCHMARK_MAX_SAMPLES", "100")),
                         help="Maximum samples to process (0 = unlimited)")
@@ -139,7 +167,34 @@ def main():
                         help="Comma-separated list: gigastt,whisper_cpp,faster_whisper,vosk (or 'all')")
     parser.add_argument("--dataset", type=str, default=os.environ.get("GIGASTT_BENCHMARK_DATASET", "golos_crowd"),
                         help="Dataset manifest name (e.g. golos_crowd, golos_farfield)")
+    parser.add_argument(
+        "--cache-dir",
+        type=str,
+        default=os.environ.get("GIGASTT_BENCHMARK_CACHE_DIR", "~/.gigastt/benchmark_cache"),
+        help="Directory for cached transcription results",
+    )
+    parser.add_argument(
+        "--no-cache",
+        action="store_true",
+        help="Disable transcription result cache",
+    )
+    parser.add_argument(
+        "--clear-cache",
+        action="store_true",
+        help="Clear the transcription cache and exit",
+    )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Run cProfile and dump stats to benchmark.prof",
+    )
     args = parser.parse_args()
+
+    cache = DiskCache(args.cache_dir, enabled=not args.no_cache)
+    if args.clear_cache:
+        removed = cache.clear()
+        print(f"Cleared {removed} cached entries from {cache.cache_dir}")
+        sys.exit(0)
 
     max_samples = args.max_samples if args.max_samples > 0 else None
     manifest_data = load_manifest(max_samples=max_samples, dataset=args.dataset)
@@ -149,6 +204,8 @@ def main():
         f"Loaded {len(manifest)} samples from dataset '{args.dataset}' "
         f"({skipped_empty_refs} skipped with empty reference)"
     )
+    if cache.enabled:
+        print(f"Cache enabled: {cache.cache_dir}")
 
     requested = set(args.runners.split(",")) if args.runners != "all" else {"all"}
     all_runners = [
@@ -181,12 +238,15 @@ def main():
         # Use explicit context manager lifecycle for runners that support it
         if hasattr(runner, "__enter__"):
             with runner:
-                result = run_benchmark(runner, manifest, max_samples=None)  # already truncated
+                result = run_benchmark(runner, manifest, max_samples=None, cache=cache)
         else:
-            result = run_benchmark(runner, manifest, max_samples=None)
+            result = run_benchmark(runner, manifest, max_samples=None, cache=cache)
         results.append(result)
 
     print_results_table(results)
+    if cache.enabled:
+        total_cached = sum(r.get("cached_hits", 0) for r in results)
+        print(f"Total cache hits: {total_cached}")
 
     # Write JSON
     total_failures = sum(r["failures"] for r in results)
@@ -201,6 +261,23 @@ def main():
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
     print(f"\nResults written to {args.output}")
+
+
+def main():
+    if "--profile" in sys.argv:
+        sys.argv.remove("--profile")
+        import cProfile
+        prof = cProfile.Profile()
+        prof.enable()
+        try:
+            _main()
+        finally:
+            prof.disable()
+            prof.dump_stats("benchmark.prof")
+            print("\nProfile written to benchmark.prof")
+            print("View with: python -m pstats benchmark.prof")
+    else:
+        _main()
 
 
 if __name__ == "__main__":

@@ -19,6 +19,10 @@ class VoskRunner:
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self._model = None
 
+    @property
+    def cache_config(self) -> str:
+        return self.model_name
+
     def _download_model(self) -> Path:
         model_dir = self.download_dir / self.model_name
         if model_dir.exists():

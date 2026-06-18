@@ -32,6 +32,10 @@ class Vosk054Runner:
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self._recognizer = None
 
+    @property
+    def cache_config(self) -> str:
+        return self.model_name
+
     def is_available(self) -> bool:
         try:
             import sherpa_onnx  # noqa: F401

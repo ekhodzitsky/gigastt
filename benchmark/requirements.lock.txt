@@ -160,7 +160,9 @@ urllib3==2.7.0
 vosk==0.3.45
     # via -r requirements.txt
 websockets==16.0
-    # via vosk
+    # via
+    #   -r requirements.txt
+    #   vosk
 xxhash==3.7.0
     # via datasets
 yarl==1.24.2

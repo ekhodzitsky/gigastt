@@ -1,10 +1,18 @@
-"""Runner for gigastt using the REST API (server stays up across samples)."""
+"""Runner for gigastt using WebSocket streaming (server stays up across samples)."""
 
+import asyncio
 import json
 import subprocess
 import time
 import urllib.request
+import wave
 from pathlib import Path
+
+
+try:
+    import websockets
+except ImportError as _e:
+    websockets = None
 
 
 class GigasttRunner:
@@ -16,6 +24,16 @@ class GigasttRunner:
         self.port = port
         self._binary: str | None = None
         self._proc: subprocess.Popen | None = None
+
+    @property
+    def cache_config(self) -> str:
+        """Stable config string for result caching.
+
+        Intentionally excludes the resolved binary path: that path is discovered
+        lazily after ``is_available()`` and would change the key between the
+        first (cache-miss) and second (cache-lookup) runs.
+        """
+        return f"{self.model_dir}:{self.use_int8}:v2.2.0"
 
     def _find_binary(self) -> bool:
         """Locate the gigastt binary and cache the path."""
@@ -36,6 +54,9 @@ class GigasttRunner:
 
     def is_available(self) -> bool:
         if not self._find_binary():
+            return False
+        if websockets is None:
+            print("[gigastt] websockets not installed; run: pip install websockets")
             return False
         self._start_server()
         return True
@@ -76,25 +97,83 @@ class GigasttRunner:
                 self._proc.wait()
             self._proc = None
 
+    async def _stream_transcribe(self, wav_path: str) -> tuple[str, float]:
+        """Stream a WAV file over WebSocket and return the final transcript."""
+        url = f"ws://127.0.0.1:{self.port}/v1/ws"
+
+        with wave.open(wav_path, "rb") as wf:
+            channels = wf.getnchannels()
+            width = wf.getsampwidth()
+            rate = wf.getframerate()
+            if channels != 1 or width != 2:
+                raise ValueError(f"{wav_path}: expected mono 16-bit WAV")
+
+            frames_per_chunk = int(rate * 0.2)  # 200 ms chunks
+            chunk_bytes = frames_per_chunk * width
+            audio_bytes = wf.readframes(wf.getnframes())
+
+        final_text = ""
+        started_at = None
+
+        async with websockets.connect(url) as ws:
+            # Wait for ready and configure stream
+            ready = json.loads(await ws.recv())
+            if ready.get("type") != "ready":
+                raise RuntimeError(f"Unexpected ready message: {ready}")
+            await ws.send(json.dumps({"type": "configure", "sample_rate": rate}))
+
+            # Start reader task to collect partials/final
+            final_future: asyncio.Future[str] = asyncio.get_event_loop().create_future()
+
+            async def _reader():
+                nonlocal final_text
+                async for raw in ws:
+                    msg = json.loads(raw)
+                    kind = msg.get("type")
+                    if kind == "final":
+                        final_text = msg.get("text", "").strip()
+                        if not final_future.done():
+                            final_future.set_result(final_text)
+                        return
+                    elif kind == "error":
+                        if not final_future.done():
+                            final_future.set_exception(RuntimeError(msg.get("message", "WS error")))
+                        return
+
+            reader_task = asyncio.create_task(_reader())
+
+            # Stream audio in real-time paced chunks
+            started_at = time.perf_counter()
+            for i in range(0, len(audio_bytes), chunk_bytes):
+                chunk = audio_bytes[i : i + chunk_bytes]
+                await ws.send(chunk)
+                # Pace at ~real-time to mimic live microphone input
+                await asyncio.sleep(len(chunk) / (rate * width))
+
+            await ws.send(json.dumps({"type": "stop"}))
+
+            try:
+                await asyncio.wait_for(final_future, timeout=30.0)
+            except asyncio.TimeoutError:
+                reader_task.cancel()
+                raise RuntimeError("Timeout waiting for final transcription")
+            finally:
+                if not reader_task.done():
+                    reader_task.cancel()
+                    try:
+                        await reader_task
+                    except asyncio.CancelledError:
+                        pass
+
+        elapsed = time.perf_counter() - started_at
+        return final_text, elapsed
+
     def transcribe(self, wav_path: str) -> tuple[str, float]:
         if not self._binary:
             raise RuntimeError("gigastt not available")
-        with open(wav_path, "rb") as f:
-            data = f.read()
-
-        req = urllib.request.Request(
-            f"http://127.0.0.1:{self.port}/v1/transcribe",
-            data=data,
-            headers={"Content-Type": "application/octet-stream"},
-            method="POST",
-        )
-        start = time.perf_counter()
-        with urllib.request.urlopen(req, timeout=300) as resp:
-            body = resp.read().decode("utf-8")
-        elapsed = time.perf_counter() - start
-        result = json.loads(body)
-        text = result.get("text", "").strip()
-        return text, elapsed
+        if websockets is None:
+            raise RuntimeError("websockets package not installed")
+        return asyncio.run(self._stream_transcribe(wav_path))
 
     def __enter__(self):
         self._start_server()

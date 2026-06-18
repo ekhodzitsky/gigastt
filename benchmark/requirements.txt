@@ -1,6 +1,8 @@
 faster-whisper>=1.1.0
 vosk>=0.3.45
 numpy>=1.24.0
+# WebSocket streaming for the gigastt benchmark runner
+websockets>=12.0
 # Optional: for reading parquet manifests
 pyarrow>=15.0.0
 # Common Voice Russian preparation script

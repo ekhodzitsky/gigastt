@@ -30,6 +30,10 @@ class WhisperCppRunner:
         self._source_dir: Path = self.download_dir / f"whisper.cpp-{source_tag}"
         self._proc: subprocess.Popen | None = None
 
+    @property
+    def cache_config(self) -> str:
+        return f"{self.model_name}:{self.source_tag}"
+
     def _build(self) -> Path:
         """Clone and build whisper-server from source."""
         # Check for pre-existing local build (e.g. /tmp/whisper.cpp)
