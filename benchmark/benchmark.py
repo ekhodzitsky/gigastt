@@ -20,6 +20,7 @@ from common import (
     audio_duration,
     bootstrap_ci,
     collect_repro_metadata,
+    compute_histograms,
     compute_wer,
     load_manifest,
 )
@@ -133,6 +134,7 @@ def run_benchmark(
         "total_proc_sec": round(total_proc_sec, 2),
         "rtf": round(overall_rtf, 3),
         "details": details,
+        "histograms": compute_histograms(details),
     }
 
 
@@ -156,6 +158,26 @@ def print_results_table(results: list[dict]):
             f"{r['total_ref_words']:>10}"
         )
     print("=" * 90)
+
+
+def print_histograms(results: list[dict]):
+    for r in results:
+        hists = r.get("histograms")
+        if not hists:
+            continue
+        print(f"\n--- Histograms: {r['name']} ---")
+        for dim_name, buckets in hists.items():
+            print(f"\n{dim_name}:")
+            print(
+                f"  {'Bucket':<16} {'Samples':>8} {'Words':>8} "
+                f"{'Errors':>8} {'WER %':>8}"
+            )
+            for b in buckets:
+                print(
+                    f"  {b['bucket']:<16} "
+                    f"{b['samples']:>8} {b['ref_words']:>8} "
+                    f"{b['errors']:>8} {b['wer']:>8.2f}"
+                )
 
 
 def _main():
@@ -244,6 +266,7 @@ def _main():
         results.append(result)
 
     print_results_table(results)
+    print_histograms(results)
     if cache.enabled:
         total_cached = sum(r.get("cached_hits", 0) for r in results)
         print(f"Total cache hits: {total_cached}")

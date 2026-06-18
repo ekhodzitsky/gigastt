@@ -367,6 +367,45 @@ No further normalization rules were added specifically to tailor results to giga
 }
 ```
 
+## Histograms
+
+Each runner result includes WER breakdown histograms in `runners[*].histograms`:
+
+| Dimension | Buckets | What it tells you |
+|---|---|---|
+| `audio_duration` | `0-5s`, `5-15s`, `15-30s`, `30s+` | WER by clip length — reveals whether the engine struggles with long-form audio. |
+| `ref_words` | `1-5`, `6-15`, `16-30`, `30+` | WER by utterance complexity — short commands vs. long sentences. |
+| `wer` | `0%`, `1-10%`, `10-20%`, `20-50%`, `50-100%`, `100%+` | Distribution of per-sample WER — shows how many samples are perfect, how many are catastrophic. |
+
+Each bucket contains:
+
+```json
+{
+  "bucket": "5-15s",
+  "samples": 42,
+  "ref_words": 315,
+  "errors": 23,
+  "wer": 7.30,
+  "low_inclusive": 5.0,
+  "high_exclusive": 15.0
+}
+```
+
+Failed samples are counted in the `100%+` bucket because they are treated as 100% WER for that sample.
+
+Example CLI output:
+
+```text
+--- Histograms: gigastt ---
+
+audio_duration:
+  Bucket            Samples    Words   Errors    WER %
+  0-5s                   45      312       12     3.85
+  5-15s                  42      315       23     7.30
+  15-30s                 10       89        9    10.11
+  30s+                    3       28        8    28.57
+```
+
 ## CI / Automation
 
 A GitHub Action runs the benchmark weekly (Sunday at 04:00 UTC) on `ubuntu-latest` and commits `results.json` to the `benchmark-results-local` branch. See `.github/workflows/benchmark.yml`.

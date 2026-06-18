@@ -631,3 +631,116 @@ def collect_repro_metadata(
         "dataset": collect_dataset_metadata(dataset_name, dataset_version),
         "engines": [collect_engine_metadata(r) for r in runners],
     }
+
+
+# --- WER histograms ---------------------------------------------------------
+
+
+HistogramBucket = dict[str, object]
+
+
+_AUDIO_DURATION_BUCKETS: list[tuple[str, float | None, float | None]] = [
+    ("0-5s", 0.0, 5.0),
+    ("5-15s", 5.0, 15.0),
+    ("15-30s", 15.0, 30.0),
+    ("30s+", 30.0, None),
+]
+
+
+_REF_WORD_BUCKETS: list[tuple[str, float | None, float | None]] = [
+    ("1-5 words", 1.0, 6.0),
+    ("6-15 words", 6.0, 16.0),
+    ("16-30 words", 16.0, 31.0),
+    ("30+ words", 31.0, None),
+]
+
+
+_WER_BUCKETS: list[tuple[str, float | None, float | None]] = [
+    ("0%", 0.0, 0.0),
+    ("1-10%", 0.0, 10.0),
+    ("10-20%", 10.0, 20.0),
+    ("20-50%", 20.0, 50.0),
+    ("50-100%", 50.0, 100.0),
+    ("100%+", 100.0, None),
+]
+
+
+def _bucket_value(
+    value: float,
+    buckets: list[tuple[str, float | None, float | None]],
+) -> str:
+    """Return the first matching bucket label for a value."""
+    for label, low, high in buckets:
+        # Degenerate bucket with identical bounds matches that exact value.
+        if low is not None and high is not None and low == high:
+            if value == low:
+                return label
+            continue
+        if low is not None and value < low:
+            continue
+        if high is not None and value >= high:
+            continue
+        return label
+    return buckets[-1][0]
+
+
+def _empty_bucket_counts(
+    buckets: list[tuple[str, float | None, float | None]],
+) -> dict[str, dict[str, int]]:
+    return {
+        label: {"samples": 0, "ref_words": 0, "errors": 0}
+        for label, _, _ in buckets
+    }
+
+
+def _build_histogram(
+    details: list[dict],
+    buckets: list[tuple[str, float | None, float | None]],
+    value_key: str,
+) -> list[HistogramBucket]:
+    """Aggregate per-sample details into a histogram.
+
+    ``value_key`` selects the numeric field used to assign each sample to a
+    bucket (e.g. ``"audio_sec"``, ``"ref_words"``, ``"wer"``).
+    """
+    counts = _empty_bucket_counts(buckets)
+    for d in details:
+        value = d.get(value_key, 0.0)
+        label = _bucket_value(value, buckets)
+        counts[label]["samples"] += 1
+        counts[label]["ref_words"] += d.get("ref_words", 0)
+        counts[label]["errors"] += d.get("errors", 0)
+
+    result: list[HistogramBucket] = []
+    for label, low, high in buckets:
+        c = counts[label]
+        ref_words = c["ref_words"]
+        errors = c["errors"]
+        wer = (errors / ref_words * 100.0) if ref_words > 0 else 0.0
+        entry: HistogramBucket = {
+            "bucket": label,
+            "samples": c["samples"],
+            "ref_words": ref_words,
+            "errors": errors,
+            "wer": round(wer, 2),
+        }
+        if low is not None:
+            entry["low_inclusive"] = low
+        if high is not None:
+            entry["high_exclusive"] = high
+        result.append(entry)
+    return result
+
+
+def compute_histograms(details: list[dict]) -> dict[str, list[HistogramBucket]]:
+    """Compute WER histograms by audio duration, reference length, and WER.
+
+    Each histogram is a list of buckets ordered from easiest to hardest.
+    Samples with ``failed=True`` are included in the WER bucket (they count as
+    100% WER for that sample) so the failure rate is visible.
+    """
+    return {
+        "audio_duration": _build_histogram(details, _AUDIO_DURATION_BUCKETS, "audio_sec"),
+        "ref_words": _build_histogram(details, _REF_WORD_BUCKETS, "ref_words"),
+        "wer": _build_histogram(details, _WER_BUCKETS, "wer"),
+    }
