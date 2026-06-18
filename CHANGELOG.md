@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-06-18
+
+### Added
+
+- **Disk cache for benchmark transcription results.** Repeated benchmark runs now
+  reuse cached hypotheses keyed by runner configuration and audio file SHA-256,
+  dramatically reducing iteration time during benchmark development.
+- **WER histograms in benchmark output.** Results now include per-runner
+  histograms broken down by audio duration, reference word count, and WER bucket.
+- **Benchmark profiling flag.** `python benchmark.py --profile` dumps cProfile
+  stats to `benchmark.prof` for performance investigation.
+
+### Changed
+
+- **Benchmark runner lifecycle and cache config.** Runner selection now uses a
+  module-level class registry to avoid import-time side effects, and the
+  `gigastt` runner cache config uses a documented schema-version constant.
+
 ## [Unreleased]
 
 ### Added
