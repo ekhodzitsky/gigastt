@@ -22,7 +22,7 @@ Reproducible benchmark comparing **gigastt** against popular open-source ASR eng
 
 RTF is measured against a **pre-warmed engine** so that model-load time is not unfairly charged to any runner:
 
-- **gigastt** streams audio over WebSocket (`/v1/ws`) to a `gigastt serve` process that stays up for the whole benchmark. Wall-clock time starts when the first audio chunk is sent and ends when the final transcript arrives.
+- **gigastt** is measured via HTTP POST to a `gigastt serve` process that stays up for the whole benchmark. WebSocket streaming was evaluated but abandoned for WER benchmarking: when inference is slower than real-time, the streaming endpoint finalizes on incomplete audio and returns truncated transcripts.
 - **faster-whisper** and **Vosk** load their models once in `is_available()` and reuse them for every sample.
 - **whisper.cpp** runs in **server mode** (`whisper-server`). The model is loaded once when the server starts; each sample is sent as an HTTP POST to `/inference` and the wall-clock request latency is used as `processing_time`. This replaces the previous per-sample `whisper-cli` invocation that re-loaded the ~3 GB model on every file and produced an artificially high RTF.
 
