@@ -150,10 +150,14 @@ const ENCODER_SUBSAMPLING: usize = 4;
 /// Seconds per encoder frame (HOP_LENGTH * ENCODER_SUBSAMPLING / 16000 = 0.04s).
 const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64 * ENCODER_SUBSAMPLING as f64) / 16000.0;
 
-/// Max streaming encoder window before forcing a finalize (samples @16kHz, 5s).
-/// Re-decoding the whole window each chunk gives the offline Conformer left
-/// context; this cap bounds the per-chunk encoder cost.
-const STREAM_MAX_WINDOW_SAMPLES: usize = 16000 * 5;
+/// Max streaming encoder window before forcing a finalize (samples @16kHz, 2.5s).
+/// Re-decoding the whole window each stride gives the offline Conformer left
+/// context; this cap bounds the per-stride encoder cost. With the 1.5s retained
+/// left context and the 0.8s stride, a 2.5s window keeps the steady-state
+/// re-encode overlap near ~3x (vs ~6.25x at a 5s window) — roughly half the
+/// streaming encoder work — while retaining enough left context that streaming
+/// quality stays on par with batch (covered by the `streaming_quality` tests).
+const STREAM_MAX_WINDOW_SAMPLES: usize = 16000 * 5 / 2;
 /// Left-context audio retained across a streaming finalize/slide (samples @16kHz,
 /// ~1.5s) so the next window keeps acoustic context instead of restarting cold.
 const STREAM_LEFT_CONTEXT_SAMPLES: usize = 16000 * 3 / 2;
