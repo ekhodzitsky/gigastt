@@ -243,9 +243,9 @@ Tips to reduce binary size:
 
 3. **No Java exception translation** — Rust errors are logged and returned as `NULL` / empty string. The Kotlin side should treat `engineNew == 0L` or `transcribeFile == ""` as failure and surface a generic error message.
 
-4. **Model directory layout is fixed** — `Engine::load` expects exactly the filenames from the download (`v3_e2e_rnnt_encoder_int8.onnx` or `v3_e2e_rnnt_encoder.onnx`, `v3_e2e_rnnt_decoder.onnx`, `v3_e2e_rnnt_joint.onnx`, `v3_e2e_rnnt_vocab.txt`). Do not rename them.
+4. **Model directory layout is fixed** — `Engine::load` expects exactly the filenames from the download and auto-detects the head from them: the default `rnnt` head (`v3_rnnt_encoder_int8.onnx` or `v3_rnnt_encoder.onnx`, `v3_rnnt_decoder.onnx`, `v3_rnnt_joint.onnx`, `v3_vocab.txt`), or the `e2e_rnnt` head (`v3_e2e_rnnt_*`). Do not rename them.
 
-5. **Memory footprint** — ~560 MB RSS with default pool size 4. On mobile, use `pool_size = 1` to reduce RAM to ~350 MB.
+5. **Memory footprint** — ~790 MB RSS at the default pool size 2 (INT8). On mobile, use `pool_size = 1` to reduce RAM to ~400 MB.
 
 ---
 

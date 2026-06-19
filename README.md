@@ -29,13 +29,13 @@ $ gigastt transcribe recording.wav
 
 - **Real-time streaming** — incremental partials over WebSocket; REST + SSE for files
 - **Embeddable** — a single static binary, a C-ABI FFI `cdylib` for Android/mobile, or the `gigastt-core` crate
-- **Small & fast** — INT8 model ~225 MB, real-time on CPU; CoreML / CUDA / NNAPI acceleration
+- **Accurate & small** — **2.6% WER** on Golos crowd (rnnt head), INT8 model ~225 MB, real-time on CPU (RTF ~0.11); CoreML / CUDA / NNAPI acceleration
 - **Hardened server** — loopback-only by default, origin allowlist, per-IP rate limiting, graceful drain, Prometheus metrics
 - **MIT-clean** — gigastt (MIT) on GigaAM v3 weights (MIT) — usable in commercial on-device products
 
 ## Where it fits
 
-gigastt is **Russian-only** and built for **embedding**, not for topping a WER leaderboard. On clean read speech [Vosk is more accurate](docs/benchmarks.md); for multilingual use whisper.cpp / sherpa-onnx / NVIDIA Parakeet. gigastt's niche is the **smallest Russian model with no language-model trade-off**, wrapped in an **embeddable single-binary / FFI / streaming** server with **MIT-clean weights**, and competitive on spontaneous and telephony speech. Full honest comparison vs Vosk 0.54, T-one and Whisper → **[Benchmarks](docs/benchmarks.md)**.
+gigastt is **Russian-only** and built for **embedding**. Its `rnnt` head (the v2.3 default) reaches **2.6% WER on Golos crowd** — competitive with the strongest Russian engines on clean read — and that error is genuinely acoustic, not normalization-inflated. For multilingual use see whisper.cpp / sherpa-onnx / NVIDIA Parakeet. gigastt's niche is the **smallest Russian model with no language-model trade-off**, wrapped in an **embeddable single-binary / FFI / streaming** server with **MIT-clean weights**, and competitive on spontaneous and telephony speech. Full honest comparison vs Vosk 0.54, T-one and Whisper → **[Benchmarks](docs/benchmarks.md)**.
 
 ## Documentation
 
@@ -66,7 +66,7 @@ The GigaAM v3 model (~850 MB) auto-downloads on first run and is INT8-quantized 
 
 ## Requirements
 
-Rust **1.88+**, `protoc` on `PATH`. macOS 14+ (Apple Silicon, CoreML) or Linux x86_64 (optional NVIDIA CUDA 12+). ~1.5 GB disk, ~560 MB RAM. The `gigastt-core` crate has no server dependencies — embed it directly: `gigastt-core = "2.0"`.
+Rust **1.88+**, `protoc` on `PATH`. macOS 14+ (Apple Silicon, CoreML) or Linux x86_64 (optional NVIDIA CUDA 12+). ~1.5 GB disk, ~790 MB RAM at the default `--pool-size 2` (~400 MB single-session). The `gigastt-core` crate has no server dependencies — embed it directly: `gigastt-core = "2.0"`.
 
 ## License
 

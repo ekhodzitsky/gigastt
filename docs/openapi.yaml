@@ -4,7 +4,7 @@ info:
   title: gigastt REST API
   version: "1.0"
   description: |
-    Offline and streaming speech-to-text REST API powered by GigaAM v3 e2e_rnnt.
+    Offline and streaming speech-to-text REST API powered by GigaAM v3 (rnnt head by default).
     On-device Russian speech recognition via ONNX Runtime.
 
     ## Endpoints
@@ -88,7 +88,7 @@ paths:
               example:
                 status: ok
                 model: gigaam-v3-e2e-rnnt
-                version: "2.0.14"
+                version: "2.3.0"
 
   /ready:
     get:
@@ -106,8 +106,8 @@ paths:
                 $ref: "#/components/schemas/ReadinessResponse"
               example:
                 status: ready
-                pool_available: 3
-                pool_total: 4
+                pool_available: 2
+                pool_total: 2
         "503":
           description: Engine pool is not ready
           content:
@@ -117,7 +117,7 @@ paths:
               example:
                 status: not_ready
                 pool_available: 0
-                pool_total: 4
+                pool_total: 2
                 reason: pool_exhausted
 
   /v1/models:
@@ -137,12 +137,12 @@ paths:
               example:
                 id: gigaam-v3-e2e-rnnt
                 name: GigaAM v3 RNN-T
-                version: "2.0.14"
+                version: "2.3.0"
                 encoder: int8
-                vocab_size: 1025
+                vocab_size: 34
                 sample_rate: 16000
-                pool_size: 4
-                pool_available: 3
+                pool_size: 2
+                pool_available: 2
                 supported_formats:
                   - wav
                   - mp3
@@ -381,7 +381,7 @@ components:
           description: Loaded model identifier
         version:
           type: string
-          example: "2.0.14"
+          example: "2.3.0"
           description: Server version (semver)
 
     ReadinessResponse:
@@ -398,11 +398,11 @@ components:
           description: Readiness status
         pool_available:
           type: integer
-          example: 3
+          example: 2
           description: Currently available inference sessions
         pool_total:
           type: integer
-          example: 4
+          example: 2
           description: Total inference session pool size
         reason:
           type: string
@@ -435,25 +435,25 @@ components:
           example: GigaAM v3 RNN-T
         version:
           type: string
-          example: "2.0.14"
+          example: "2.3.0"
         encoder:
           type: string
           enum: [fp32, int8]
           description: Encoder quantization type
         vocab_size:
           type: integer
-          example: 1025
+          example: 34
         sample_rate:
           type: integer
           example: 16000
           description: Internal processing sample rate in Hz
         pool_size:
           type: integer
-          example: 4
+          example: 2
           description: Total inference session pool size
         pool_available:
           type: integer
-          example: 3
+          example: 2
           description: Currently available sessions
         supported_formats:
           type: array

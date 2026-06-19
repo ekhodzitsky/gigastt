@@ -19,9 +19,17 @@ in [`benchmark/README.md`](../benchmark/README.md).
 Domains: **Clean read** `golos_crowd_1k` · **Far-field** `golos_farfield` ·
 **Phone** `openstt_calls` · **YouTube** `openstt_youtube`.
 
+> **Default head changed in v2.3.** The cross-engine tables below were measured on
+> the **`e2e_rnnt`** head (the pre-v2.3 default), under one identical pipeline for
+> all engines. v2.3 makes the **`rnnt`** head the default, which scores a much lower
+> **2.6% acoustic WER** on the full Golos crowd set (see *Headline metrics*). A
+> like-for-like cross-engine rerun of the `rnnt` head across all four domains is
+> pending, so the comparison rows below remain the `e2e_rnnt` measurement and should
+> be read as such.
+
 | Engine | Clean read | Far-field | Phone calls | YouTube |
 |---|---|---|---|---|
-| **gigastt** (GigaAM v3 INT8) | 8.60 (7.5–9.7) | **5.90 (5.1–6.8)** | **19.28 (17.9–20.7)** | **11.35 (10.3–12.3)** |
+| **gigastt** (GigaAM v3 `e2e_rnnt`, INT8) | 8.60 (7.5–9.7) | **5.90 (5.1–6.8)** | **19.28 (17.9–20.7)** | **11.35 (10.3–12.3)** |
 | Vosk 0.54 (Zipformer2) | **2.97 (2.4–3.6)** | 6.29 (5.4–7.3) | 22.74 (21.3–24.2) | 17.24 (16.0–18.4) |
 | Vosk 0.42 | 4.82 (4.0–5.6) | 13.93 (12.5–15.5) | 38.57 (36.7–40.6) | 20.65 (19.4–22.0) |
 | T-one (beam+LM) | 6.61 (5.4–7.9) | 14.62 (12.5–17.0) | 21.73 (20.0–23.7) | 23.23 (21.5–25.1) |
@@ -60,11 +68,16 @@ The CTC/transducer engines (Vosk, T-one, gigastt) are all comfortably real-time;
 the Whisper engines are **slower than real-time** on CPU. gigastt is real-time but not
 the fastest — Vosk and T-one are quicker.
 
+The gigastt row above is the `e2e_rnnt` head measured over HTTP (the cross-engine
+methodology). The v2.3 `rnnt` head's INT8 RTF on the full Golos crowd set, measured
+in-process (no HTTP transport overhead), is **0.109** — slightly faster, since the
+encoder is shared and the char-vocab joiner is cheaper than the 1025-token BPE one.
+
 ## Footprint
 
 | Engine | Deployable model on disk | Peak RSS (cold) | Cold-start |
 |---|---|---|---|
-| **gigastt** | **~225 MB** (INT8) | 1502 MB ¹ | **0.94 s** |
+| **gigastt** | **~225 MB** (INT8) | 790 MB ¹ | **0.94 s** |
 | T-one (greedy) | 138 MB | 672 MB | 1.87 s |
 | T-one (beam+LM) | 138 MB + 5.5 GB KenLM | — | — |
 | Vosk 0.54 | 966 MB | **560 MB** | 1.16 s |
@@ -72,8 +85,9 @@ the fastest — Vosk and T-one are quicker.
 | faster-whisper-turbo | 1.6 GB | 2154 MB | 6.8 s |
 | faster-whisper (Large v3) | 2.9 GB | 2619 MB | 8.2 s |
 
-¹ gigastt RSS is at the default `--pool-size 4` (4 model copies); a single session is
-roughly a quarter (~400 MB).
+¹ gigastt RSS is at the v2.3 default `--pool-size 2` (2 model copies, INT8 `rnnt`);
+a single session is roughly half (~400 MB). The pre-v2.3 default was `--pool-size 4`
+(~1502 MB); v2.3 lowered it to 2 plus a RAM-aware auto-cap.
 
 gigastt wins **on-disk size** (4–13× smaller than the Whisper/Vosk engines) and
 **cold-start** (0.94 s; Vosk 0.42 is a dreadful ~30 s). It is honestly **not** the
@@ -95,10 +109,12 @@ are also genuine streaming designs.
 
 | Metric | Value |
 |---|---|
-| WER (flagship, renorm) | 8.60% (golos_crowd_1k, 1000 samples, 95% CI 7.5–9.7%) |
-| WER (raw, full set) | 11.37% (9 994 Golos crowd samples, 50 394 words, no ITN) |
-| INT8 vs FP32 | ~0% WER degradation (11.37% vs 11.46%) |
-| Batch latency (16 s audio, M1) | ~700 ms (encoder 667 ms + decode 31 ms) |
+| **WER — `rnnt` head (v2.3 default)** | **2.6%** (full Golos crowd, 9 994 samples, 50 394 words, 95% CI 2.4–2.8%) |
+| Verbatim/acoustic WER (`rnnt`) | 2.6% — **Δ 0.0** vs normalized: the WER is genuinely acoustic, not normalization-inflated (contrast `e2e`: naive 14.40% / ITN 8.60%, Δ −5.80) |
+| WER — `e2e_rnnt` head (prior default) | 8.60% renorm flagship (golos_crowd_1k) · 11.37% raw full set |
+| RTF (`rnnt` INT8, full pipeline, M-series CPU) | **0.109** (4 401 s of compute for 11.2 h of audio, in-process harness) |
+| Peak RSS (default `--pool-size 2`) | 790 MB (single session ~400 MB) |
+| INT8 encoder | 844 MB → 215 MB (**3.9×**), ~0% WER degradation |
 
 ## Reproduce
 

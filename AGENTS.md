@@ -1,6 +1,6 @@
 # gigastt — Agent Guide
 
-> Local speech-to-text server powered by GigaAM v3 e2e_rnnt. On-device Russian
+> Local speech-to-text server powered by GigaAM v3 (rnnt head by default). On-device Russian
 > speech recognition via ONNX Runtime. No cloud APIs, no API keys, full privacy.
 >
 > Repository: https://github.com/ekhodzitsky/gigastt  
@@ -27,10 +27,10 @@ and auto-invoked on first `serve`/`download` unless `--skip-quantize` is passed.
 
 | Property | Value |
 |---|---|
-| WER (Russian) | **11.4%** (9 994 Golos crowd samples, 50 394 words, 95% CI [10.9%, 11.9%]) |
-| Latency (16s audio, M1) | ~700 ms |
-| Memory (RSS) | ~560 MB |
-| Concurrent sessions | 4 (configurable via `--pool-size`) |
+| WER (Russian) | **2.6%** (rnnt head, 9 994 Golos crowd samples, 50 394 words, 95% CI [2.4%, 2.8%]) |
+| RTF (INT8, M1 CPU) | ~0.11 (full pipeline) |
+| Memory (RSS) | ~790 MB (default `--pool-size 2`; ~400 MB single session) |
+| Concurrent sessions | 2 (configurable via `--pool-size`) |
 
 ## Technology Stack
 
@@ -195,7 +195,7 @@ Defined in `crates/gigastt-core/src/inference/mod.rs`:
 | `N_FFT` | 320 | FFT window size (20ms @ 16kHz) |
 | `HOP_LENGTH` | 160 | Hop length (10ms @ 16kHz) |
 | `PRED_HIDDEN` | 320 | Decoder LSTM hidden dim |
-| `DEFAULT_POOL_SIZE` | 4 | Concurrent inference sessions |
+| `DEFAULT_POOL_SIZE` | 2 | Concurrent inference sessions (RAM-capped at load) |
 
 ## Model Files
 
@@ -203,11 +203,13 @@ Downloaded to `~/.gigastt/models/` from `istupakov/gigaam-v3-onnx`:
 
 | File | Size | Purpose |
 |---|---|---|
-| `v3_e2e_rnnt_encoder.onnx` | 844 MB | Conformer encoder (FP32) |
-| `v3_e2e_rnnt_encoder_int8.onnx` | ~225 MB | Quantized encoder (auto-generated) |
-| `v3_e2e_rnnt_decoder.onnx` | 4.4 MB | LSTM decoder |
-| `v3_e2e_rnnt_joint.onnx` | 2.6 MB | RNN-T joiner |
-| `v3_e2e_rnnt_vocab.txt` | small | BPE vocabulary (1025 tokens) |
+| `v3_rnnt_encoder.onnx` | 844 MB | Conformer encoder (FP32) |
+| `v3_rnnt_encoder_int8.onnx` | ~225 MB | Quantized encoder (auto-generated) |
+| `v3_rnnt_decoder.onnx` | ~3.3 MB | LSTM decoder |
+| `v3_rnnt_joint.onnx` | ~1.4 MB | RNN-T joiner |
+| `v3_vocab.txt` | small | char vocabulary (34 tokens) |
+
+The `e2e_rnnt` head (`--model-variant e2e_rnnt`) uses the parallel `v3_e2e_rnnt_*` filenames with a 1025-token BPE vocab.
 
 ## Development Conventions
 

@@ -28,9 +28,10 @@ Embed inference in any Rust project with `gigastt-core = "2.0"`.
 
 ## Model
 
-[**GigaAM v3 e2e_rnnt**](https://huggingface.co/istupakov/gigaam-v3-onnx) by
+[**GigaAM v3**](https://huggingface.co/istupakov/gigaam-v3-onnx) by
 [SberDevices](https://github.com/salute-developers/GigaAM) — RNN-T (Conformer encoder +
-LSTM decoder + joiner), 16-layer 768-dim encoder (240M params), 1025 BPE tokens, 16 kHz
+LSTM decoder + joiner), 16-layer 768-dim encoder (240M params); the vocab depends on the
+head (`rnnt` 34-token char — the v2.3 default — or `e2e_rnnt` 1025-token BPE), 16 kHz
 mono input, MIT licensed. Download ~850 MB (encoder 844 MB, decoder 4.4 MB, joiner
 2.6 MB); INT8 encoder ~225 MB. Trained on 700K+ hours of Russian speech.
 

@@ -1053,7 +1053,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt"
-version = "2.2.1"
+version = "2.3.0"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -1080,7 +1080,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-core"
-version = "2.2.1"
+version = "2.3.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1111,7 +1111,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-ffi"
-version = "2.2.1"
+version = "2.3.0"
 dependencies = [
  "cbindgen",
  "gigastt-core",

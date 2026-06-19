@@ -4,6 +4,10 @@
     "bundled": {
       "samples": 15,
       "wer": 1.3
+    },
+    "external": {
+      "samples": 9994,
+      "wer": 2.6
     }
   },
   "tolerance_pp": 1.5

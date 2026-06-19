@@ -5,25 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.1] - 2026-06-18
-
-### Added
-
-- **Disk cache for benchmark transcription results.** Repeated benchmark runs now
-  reuse cached hypotheses keyed by runner configuration and audio file SHA-256,
-  dramatically reducing iteration time during benchmark development.
-- **WER histograms in benchmark output.** Results now include per-runner
-  histograms broken down by audio duration, reference word count, and WER bucket.
-- **Benchmark profiling flag.** `python benchmark.py --profile` dumps cProfile
-  stats to `benchmark.prof` for performance investigation.
-
-### Changed
-
-- **Benchmark runner lifecycle and cache config.** Runner selection now uses a
-  module-level class registry to avoid import-time side effects, and the
-  `gigastt` runner cache config uses a documented schema-version constant.
-
 ## [Unreleased]
+
+## [2.3.0] - 2026-06-20
+
+This release makes the lower-WER `rnnt` head the default and lands the INT8
+integer-compute speed fix, voice activity detection, contextual hotword biasing,
+punctuation/ITN restoration for the `rnnt` head, export formats, dual-WER benchmark
+scoring, and a ~2× lower idle footprint. Measured on the full Golos crowd set
+(9 994 samples, M-series CPU, INT8 `rnnt`): **2.6% WER** (95% CI 2.4–2.8%; verbatim
+WER 2.6%, Δ 0.0 — the error is acoustic, not normalization-inflated), **RTF 0.109**,
+**790 MB** RSS at the default `--pool-size 2`. See [`docs/benchmarks.md`](docs/benchmarks.md).
 
 ### Changed
 
@@ -236,6 +228,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   marker; `MelSpectrogram: Default`; `/health` is liveness-only
   and no longer touches engine state; server shutdown logs a `warn!`
   instead of silently swallowing a oneshot `RecvError`.
+
+## [2.2.1] - 2026-06-18
+
+### Added
+
+- **Disk cache for benchmark transcription results.** Repeated benchmark runs now
+  reuse cached hypotheses keyed by runner configuration and audio file SHA-256,
+  dramatically reducing iteration time during benchmark development.
+- **WER histograms in benchmark output.** Results now include per-runner
+  histograms broken down by audio duration, reference word count, and WER bucket.
+- **Benchmark profiling flag.** `python benchmark.py --profile` dumps cProfile
+  stats to `benchmark.prof` for performance investigation.
+
+### Changed
+
+- **Benchmark runner lifecycle and cache config.** Runner selection now uses a
+  module-level class registry to avoid import-time side effects, and the
+  `gigastt` runner cache config uses a documented schema-version constant.
 
 ## [2.1.0] - 2026-06-14
 

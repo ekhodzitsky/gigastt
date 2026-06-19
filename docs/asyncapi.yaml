@@ -4,7 +4,7 @@ info:
   title: gigastt WebSocket API
   version: "1.0"
   description: |
-    Real-time speech-to-text WebSocket API powered by GigaAM v3 e2e_rnnt.
+    Real-time speech-to-text WebSocket API powered by GigaAM v3 (rnnt head by default).
     On-device Russian speech recognition via ONNX Runtime.
 
     ## Connection Flow

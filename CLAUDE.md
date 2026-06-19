@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**gigastt** — local speech-to-text server powered by GigaAM v3 e2e_rnnt. On-device Russian speech recognition via ONNX Runtime. No cloud APIs, no API keys, full privacy.
+**gigastt** — local speech-to-text server powered by GigaAM v3 (default `rnnt` head, optional `e2e_rnnt`). On-device Russian speech recognition via ONNX Runtime. No cloud APIs, no API keys, full privacy.
 
 - **Repository**: https://github.com/ekhodzitsky/gigastt
 - **crates.io**: https://crates.io/crates/gigastt
@@ -102,7 +102,7 @@ crates/
 
 ### Key constants (defined in `crates/gigastt-core/src/inference/mod.rs`)
 - `N_MELS = 64`, `N_FFT = 320`, `HOP_LENGTH = 160`, `PRED_HIDDEN = 320`
-- Encoder dim: 768, Vocab: 1025 tokens, Blank: 1024
+- Encoder dim: 768 (shared across heads). Vocab depends on the head: `rnnt` 34 tokens (char, default) / `e2e_rnnt` 1025 tokens (BPE)
 
 ### Data flow
 ```
@@ -191,7 +191,7 @@ Three-tier test architecture:
 ### Security
 - **Loopback bind by default.** `127.0.0.1` only; `--bind-all` / `GIGASTT_ALLOW_BIND_ANY=1` required for non-loopback.
 - **Origin allowlist.** Cross-origin callers denied by default; loopback origins always allowed. `--allow-origin` (repeatable) for explicit additions; `--cors-allow-any` for wildcard.
-- **Runtime limits configurable via CLI / env** (v0.7.0): `--idle-timeout-secs` (default 300), `--ws-frame-max-bytes` (512 KiB), `--body-limit-bytes` (50 MiB), `--pool-size` (4), `--max-session-secs` (3600), `--shutdown-drain-secs` (10).
+- **Runtime limits configurable via CLI / env** (v0.7.0): `--idle-timeout-secs` (default 300), `--ws-frame-max-bytes` (512 KiB), `--body-limit-bytes` (50 MiB), `--pool-size` (2), `--max-session-secs` (3600), `--shutdown-drain-secs` (10).
 - **Per-IP rate limiting** (v0.8.0, opt-in): `--rate-limit-per-minute N` + `--rate-limit-burst` on `/v1/*` (`/health` exempt); HTTP 429 + `Retry-After` when exhausted.
 - **Pool saturation backpressure.** REST returns 503 + `Retry-After: 30`; WebSocket error includes `retry_after_ms: 30000`.
 - **SHA-256 verification + atomic rename** on both encoder/decoder/joiner model files and the optional speaker diarization model.
@@ -200,9 +200,10 @@ Three-tier test architecture:
 
 ## Model
 
-GigaAM v3 e2e_rnnt from `istupakov/gigaam-v3-onnx` on HuggingFace:
-- Files: `v3_e2e_rnnt_{encoder,decoder,joint}.onnx` + `v3_e2e_rnnt_vocab.txt`
-- Encoder: 844MB (FP32) or 225MB (INT8 quantized), Decoder: 4.4MB, Joiner: 2.6MB
+GigaAM v3 from `istupakov/gigaam-v3-onnx` on HuggingFace. Two selectable heads (`--model-variant`, auto-detected from the files on disk):
+- **`rnnt`** (default since v2.3): `v3_rnnt_{encoder,decoder,joint}.onnx` + `v3_vocab.txt` (34-token char vocab). Lower WER (2.6% on the full Golos crowd set, 95% CI 2.4–2.8% — vs e2e 8.60% renorm); bare lowercase output, so pair with `--punctuation` / `--itn` for readable text.
+- **`e2e_rnnt`**: `v3_e2e_rnnt_{encoder,decoder,joint}.onnx` + `v3_e2e_rnnt_vocab.txt` (1025-token BPE). Punctuation/casing/ITN baked in.
+- Encoder (shared arch): 844MB (FP32) or 225MB (INT8 quantized, 3.9×); decoder/joiner a few MB each.
 - Sample rate: 16kHz, Features: 64 mel bins
 - ONNX tensors: encoder out `[1, 768, T]` (channels-first), decoder state `[1, 1, 320]`
 
