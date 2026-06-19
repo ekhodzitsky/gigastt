@@ -324,9 +324,10 @@ async fn test_shutdown_during_pool_saturation_returns_503_not_500() {
     // moment we fire shutdown.
     let long_wav = common::generate_wav(60, 16000);
 
-    // Saturate: pool has 4 triplets by default (DEFAULT_POOL_SIZE). Send 4
-    // long-running REST jobs that won't return before shutdown. We don't
-    // care about the result — only that they keep the pool busy.
+    // Saturate the default pool (DEFAULT_POOL_SIZE triplets). Send more
+    // long-running REST jobs than there are slots so they fill the pool and
+    // the rest queue; they won't return before shutdown. We don't care about
+    // the result — only that they keep the pool busy.
     let client = reqwest::Client::new();
     let mut occupiers = Vec::new();
     for _ in 0..4 {

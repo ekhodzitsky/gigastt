@@ -93,8 +93,12 @@ enum Commands {
         )]
         itn: ItnMode,
 
-        /// Number of concurrent inference sessions
-        #[arg(long, default_value_t = 4)]
+        /// Number of concurrent inference sessions. Each session deserializes
+        /// its own encoder copy (~0.4 GB resident for the INT8 encoder), so the
+        /// default is 2 to bound the idle footprint; raise it for higher
+        /// concurrency when RAM allows. The server auto-caps this by available
+        /// RAM at load and logs a warning if it has to clamp.
+        #[arg(long, default_value_t = 2)]
         pool_size: usize,
 
         /// Minimum session triplets that must load for the server to boot. When

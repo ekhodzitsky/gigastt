@@ -36,6 +36,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   RTF drops from ~1.3 (slower than real time) to well below 0.1, a ~13–30× single-stream
   speedup, with the transcript unchanged. The `gigastt quantize` CLI and the
   auto-quantize-on-first-run behavior are unchanged.
+- **Lower idle memory footprint: default `--pool-size` is now 2 (was 4), plus an
+  automatic RAM-aware pool cap.** Each pooled session triplet deserializes its
+  own copy of the encoder weights — ORT's shared `PrepackedWeights` container
+  shares prepacked kernel buffers, not the raw initializer tensors, and this ORT
+  version exposes no stable cross-session initializer-sharing path (the
+  in-memory `use_ort_model_bytes_for_initializers` route was measured *worse*,
+  not better, for our self-contained INT8 graph). A pooled INT8 triplet costs
+  ~0.4 GB resident, so the default server footprint drops from ~2.0 GB to
+  ~1.0 GB. The server now also clamps `--pool-size` at load so the pooled
+  encoders stay under half of total system RAM, logging a warning when it has to
+  reduce concurrency — this prevents a large `--pool-size` from OOM-ing a small
+  host. The cap never *raises* the requested size and is a no-op on hosts with
+  ample memory. Raise `--pool-size` for higher concurrency when RAM allows.
 
 ### Added
 

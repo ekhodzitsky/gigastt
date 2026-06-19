@@ -105,6 +105,46 @@ pub fn now_timestamp() -> f64 {
     base + start.elapsed().as_secs_f64()
 }
 
+/// Total physical RAM in bytes, or `0` if it can't be determined (in which case
+/// the pool RAM cap is a no-op). macOS: `sysctl HW_MEMSIZE`; Linux/other unix:
+/// `sysconf(_SC_PHYS_PAGES) * _SC_PAGESIZE`.
+fn total_ram_bytes() -> u64 {
+    #[cfg(target_os = "macos")]
+    {
+        let mut mem: u64 = 0;
+        let mut len = std::mem::size_of::<u64>();
+        let mib = [libc::CTL_HW, libc::HW_MEMSIZE];
+        // SAFETY: `mib`/`mem`/`len` are valid for the duration of the call;
+        // sysctl writes at most `len` bytes into `mem`.
+        let rc = unsafe {
+            libc::sysctl(
+                mib.as_ptr() as *mut libc::c_int,
+                mib.len() as libc::c_uint,
+                &mut mem as *mut u64 as *mut libc::c_void,
+                &mut len,
+                std::ptr::null_mut(),
+                0,
+            )
+        };
+        if rc == 0 { mem } else { 0 }
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        // SAFETY: sysconf has no side effects and returns -1 on error.
+        let pages = unsafe { libc::sysconf(libc::_SC_PHYS_PAGES) };
+        let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+        if pages > 0 && page_size > 0 {
+            (pages as u64).saturating_mul(page_size as u64)
+        } else {
+            0
+        }
+    }
+    #[cfg(not(unix))]
+    {
+        0
+    }
+}
+
 /// Encoder time subsampling factor (4 frames → 1 encoder output frame).
 const ENCODER_SUBSAMPLING: usize = 4;
 /// Seconds per encoder frame (HOP_LENGTH * ENCODER_SUBSAMPLING / 16000 = 0.04s).
@@ -124,10 +164,34 @@ const STREAM_LEFT_CONTEXT_SAMPLES: usize = 16000 * 3 / 2;
 const STREAM_DECODE_STRIDE_SAMPLES: usize = 16000 * 4 / 5;
 
 /// Default number of session triplets in the pool.
+///
+/// Each pooled triplet deserializes its own copy of the encoder weights — ORT's
+/// shared `PrepackedWeights` container shares prepacked kernel buffers, not the
+/// raw initializer tensors, and there is no stable cross-session
+/// initializer-sharing path in this ORT version (see
+/// [`Engine::cap_pool_size_for_ram`]). A pooled INT8 encoder triplet costs
+/// ~0.4 GB resident, so the default is kept at 2 (down from 4) to bound the
+/// idle footprint: two concurrent inference slots cover typical local /
+/// small-container deployments without quadrupling memory. Raise `--pool-size`
+/// when higher concurrency is needed and RAM allows.
 #[cfg(target_os = "android")]
 const DEFAULT_POOL_SIZE: usize = 1;
 #[cfg(not(target_os = "android"))]
-const DEFAULT_POOL_SIZE: usize = 4;
+const DEFAULT_POOL_SIZE: usize = 2;
+
+/// Approximate resident bytes a single pooled encoder triplet costs, as a
+/// multiple of the encoder file size on disk. Measured at ~1.9x the INT8
+/// encoder file (225 MB file → ~0.4 GB resident per extra pooled slot, dynamic
+/// INT8 graph, CPU EP, release). Used by [`Engine::cap_pool_size_for_ram`] to
+/// keep `pool_size * encoder_file_bytes * this` under a fraction of total RAM.
+const ENCODER_RESIDENT_MULTIPLIER: u64 = 2;
+
+/// Fraction (denominator) of total system RAM the pooled encoder sessions are
+/// allowed to occupy before [`Engine::cap_pool_size_for_ram`] clamps the pool.
+/// `2` = at most half of total RAM budgeted to encoder slots, leaving headroom
+/// for the decoder/joiner sessions, audio buffers, inference arenas, and the
+/// rest of the system.
+const POOL_RAM_FRACTION_DENOM: u64 = 2;
 
 /// A set of ONNX sessions for one inference pipeline (encoder + decoder + joiner).
 ///
@@ -865,6 +929,14 @@ impl Engine {
                 source: None,
             });
         };
+        // Bound the idle footprint: each pooled triplet deserializes its own
+        // encoder copy, so a large `--pool-size` on a small host can OOM at
+        // load. Clamp by available RAM (logs when it clamps); a no-op on hosts
+        // with ample memory.
+        let encoder_bytes = std::fs::metadata(Self::encoder_model_path(dir, variant))
+            .map(|m| m.len())
+            .unwrap_or(0);
+        let pool_size = Self::cap_pool_size_for_ram(pool_size, encoder_bytes, total_ram_bytes());
         Self::load_inner(
             dir,
             variant,
@@ -1102,6 +1174,41 @@ impl Engine {
     /// interactive pool (so `n <= 1` or `batch_pool_size == 0` yields 0).
     fn batch_split_count(n: usize, batch_pool_size: usize) -> usize {
         batch_pool_size.min(n.saturating_sub(1))
+    }
+
+    /// Clamp the requested `pool_size` so the pooled encoder sessions can't
+    /// exceed [`POOL_RAM_FRACTION_DENOM`]⁻¹ of total RAM. Each triplet costs
+    /// about `encoder_bytes * ENCODER_RESIDENT_MULTIPLIER` resident (the encoder
+    /// dominates; decoder/joiner are small), so the max safe pool is
+    /// `(total_ram / denom) / per_triplet`, never below 1. Logs a warning when
+    /// it clamps. A no-op (returns `requested`) when RAM or encoder size is
+    /// unknown (`0`) — we never *raise* the requested size, only lower it.
+    ///
+    /// Pure and total so the budgeting math is unit-tested without a model or a
+    /// real `sysctl`/`sysconf` probe.
+    fn cap_pool_size_for_ram(requested: usize, encoder_bytes: u64, total_ram: u64) -> usize {
+        if requested <= 1 || encoder_bytes == 0 || total_ram == 0 {
+            return requested.max(1);
+        }
+        let per_triplet = encoder_bytes.saturating_mul(ENCODER_RESIDENT_MULTIPLIER);
+        let budget = total_ram / POOL_RAM_FRACTION_DENOM;
+        // At least one slot always allowed even if a single triplet exceeds the
+        // budget — the pool can't be empty, and partial-load tolerance
+        // (`min_size`) handles a genuine OOM at load time.
+        let max_slots = (budget / per_triplet.max(1)).max(1) as usize;
+        if max_slots < requested {
+            tracing::warn!(
+                "Capping pool size {requested} -> {max_slots}: \
+                 {requested} encoder slots (~{} MiB each) would exceed half of \
+                 {} MiB total RAM. Concurrency is reduced; add RAM or lower \
+                 --pool-size to silence this.",
+                per_triplet / (1024 * 1024),
+                total_ram / (1024 * 1024),
+            );
+            max_slots
+        } else {
+            requested
+        }
     }
 
     /// Decide the final pool from per-triplet load results: returns the
@@ -1958,6 +2065,42 @@ impl TranscriptSegment {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_cap_pool_size_for_ram_clamps_on_low_memory() {
+        // 225 MiB encoder, 2x resident => ~450 MiB/triplet. Half of 2 GiB =
+        // 1 GiB budget => floor(1024/450) = 2 slots; a request for 4 clamps.
+        let enc = 225 * 1024 * 1024;
+        let two_gib = 2 * 1024 * 1024 * 1024;
+        assert_eq!(Engine::cap_pool_size_for_ram(4, enc, two_gib), 2);
+    }
+
+    #[test]
+    fn test_cap_pool_size_for_ram_no_clamp_with_ample_ram() {
+        // 64 GiB host easily fits a pool of 4 of the same encoder.
+        let enc = 225 * 1024 * 1024;
+        let sixty_four_gib = 64u64 * 1024 * 1024 * 1024;
+        assert_eq!(Engine::cap_pool_size_for_ram(4, enc, sixty_four_gib), 4);
+    }
+
+    #[test]
+    fn test_cap_pool_size_for_ram_never_below_one() {
+        // Even a single triplet larger than the whole budget still yields 1 —
+        // the pool can't be empty; partial-load tolerance handles real OOM.
+        let huge_enc = 8 * 1024 * 1024 * 1024;
+        let small_ram = 1024 * 1024 * 1024;
+        assert_eq!(Engine::cap_pool_size_for_ram(4, huge_enc, small_ram), 1);
+    }
+
+    #[test]
+    fn test_cap_pool_size_for_ram_noop_on_unknown_inputs() {
+        // Unknown RAM or encoder size (0) => never lower the request.
+        assert_eq!(Engine::cap_pool_size_for_ram(4, 0, 8 << 30), 4);
+        assert_eq!(Engine::cap_pool_size_for_ram(4, 200 << 20, 0), 4);
+        // pool_size <= 1 is returned as-is (min 1).
+        assert_eq!(Engine::cap_pool_size_for_ram(1, 200 << 20, 1 << 30), 1);
+        assert_eq!(Engine::cap_pool_size_for_ram(0, 200 << 20, 1 << 30), 1);
+    }
 
     #[test]
     fn test_batch_split_count_clamps() {
