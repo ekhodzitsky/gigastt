@@ -43,6 +43,8 @@ WER is computed after symmetric text normalization so that Russian number words 
 
 Normalization is therefore the single largest lever on the reported WER gap, and it rewards gigastt's output style: much of gigastt's lead over Vosk on clean read speech in the ITN-digit numbers is produced by the normalization itself, not by acoustics. (*naive* = lowercase + `ё`→`е` + strip everything outside `[a-zа-я0-9\s]` + split; *ITN* = the pipeline below.)
 
+**This split is now reported on every run, not just the offline table above.** `benchmark.py` computes both passes per sample and emits, for each engine, the verbatim WER (`naive_wer`, `naive_ci_low`, `naive_ci_high`) alongside the normalized `wer`, plus `naive_delta = wer - naive_wer` (a negative delta means normalization — number style, punctuation, transliteration — closed the gap, not acoustics). The results table prints `naive %` and `Δ pp` columns next to the WER column. Because the verbatim pass applies no words-to-digits ITN or anglicism mapping and strips to the exact same `[a-zа-я0-9\s]` character class in both harnesses, the `naive_wer` numbers are directly comparable across the Python and Rust harnesses even though their ITN passes differ.
+
 The normalization steps are:
 
 1. Lowercase and replace `ё` with `е`.
@@ -76,7 +78,7 @@ WER is reported with a bootstrap 95% confidence interval computed by resampling 
 
 ### CI / Rust harness divergence note
 
-The Rust CI harness in `crates/gigastt/tests/benchmark.rs` uses a simpler digit-to-words normalization. Its WER numbers may therefore diverge from the Python benchmark on samples with digits, dates, or currency; this is tracked separately and is not part of this fix.
+The Rust CI harness in `crates/gigastt/tests/benchmark.rs` uses a simpler digit-to-words normalization. Its normalized WER numbers may therefore diverge from the Python benchmark on samples with digits, dates, or currency; this is tracked separately and is not part of this fix. The Rust harness also emits the verbatim (`naive_wer`, `naive_delta`) split in its JSON output and stderr summary; since the verbatim pass strips to the identical `[a-zа-я0-9\s]` character class in both harnesses, those naive numbers do line up.
 
 ### Dataset contamination
 

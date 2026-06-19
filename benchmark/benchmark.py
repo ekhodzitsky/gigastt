@@ -23,6 +23,7 @@ from common import (
     collect_repro_metadata,
     compute_histograms,
     compute_wer,
+    compute_wer_naive,
     load_manifest,
 )
 from runners import (
@@ -62,12 +63,15 @@ def run_benchmark(
 
     total_ref_words = 0
     total_errors = 0
+    total_naive_errors = 0
+    total_naive_ref_words = 0
     total_audio_sec = 0.0
     total_proc_sec = 0.0
     failures = 0
     cached_hits = 0
     details = []
     per_sample = []
+    naive_per_sample = []
 
     print(f"\n=== {runner.name} ===")
     for idx, sample in enumerate(manifest):
@@ -101,10 +105,14 @@ def run_benchmark(
                 source = "error"
 
         wer, errors, ref_count = compute_wer(ref, hyp)
+        naive_wer, naive_errors, naive_ref_count = compute_wer_naive(ref, hyp)
 
         total_ref_words += ref_count
         total_errors += errors
         per_sample.append((ref_count, errors))
+        total_naive_ref_words += naive_ref_count
+        total_naive_errors += naive_errors
+        naive_per_sample.append((naive_ref_count, naive_errors))
 
         if success:
             total_audio_sec += dur
@@ -117,6 +125,9 @@ def run_benchmark(
             "wer": round(wer, 2),
             "errors": errors,
             "ref_words": ref_count,
+            "naive_wer": round(naive_wer, 2),
+            "naive_errors": naive_errors,
+            "naive_ref_words": naive_ref_count,
             "audio_sec": round(dur, 2),
             "proc_sec": round(proc_time, 2),
             "failed": not success,
@@ -132,8 +143,14 @@ def run_benchmark(
             )
 
     overall_wer = (total_errors / total_ref_words * 100.0) if total_ref_words > 0 else 0.0
+    overall_naive_wer = (
+        (total_naive_errors / total_naive_ref_words * 100.0)
+        if total_naive_ref_words > 0
+        else 0.0
+    )
     overall_rtf = total_proc_sec / total_audio_sec if total_audio_sec > 0 else 0.0
     ci_low, ci_high = bootstrap_ci(per_sample, iterations=1000)
+    naive_ci_low, naive_ci_high = bootstrap_ci(naive_per_sample, iterations=1000)
 
     return {
         "name": runner.name,
@@ -145,6 +162,16 @@ def run_benchmark(
         "ci_high": round(ci_high, 2),
         "total_errors": total_errors,
         "total_ref_words": total_ref_words,
+        # Verbatim ("naive") WER reported alongside the normalized WER. The gap
+        # (naive_delta = wer - naive_wer, usually negative) is the share of the
+        # apparent error that is writing convention — number style, punctuation,
+        # transliteration — rather than acoustic recognition error.
+        "naive_wer": round(overall_naive_wer, 2),
+        "naive_ci_low": round(naive_ci_low, 2),
+        "naive_ci_high": round(naive_ci_high, 2),
+        "naive_total_errors": total_naive_errors,
+        "naive_total_ref_words": total_naive_ref_words,
+        "naive_delta": round(overall_wer - overall_naive_wer, 2),
         "total_audio_sec": round(total_audio_sec, 2),
         "total_proc_sec": round(total_proc_sec, 2),
         "rtf": round(overall_rtf, 3),
@@ -154,12 +181,12 @@ def run_benchmark(
 
 
 def print_results_table(results: list[dict]):
-    print("\n" + "=" * 90)
+    print("\n" + "=" * 104)
     print(
         f"{'Engine':<20} {'Samples':>8} {'Failures':>9} {'WER %':>8} "
-        f"{'95% CI':>16} {'RTF':>8} {'Errors':>10} {'Words':>10}"
+        f"{'95% CI':>16} {'naive %':>8} {'Δ pp':>7} {'RTF':>8} {'Errors':>10}"
     )
-    print("-" * 90)
+    print("-" * 104)
     for r in results:
         ci = f"[{r['ci_low']:.1f}, {r['ci_high']:.1f}]"
         print(
@@ -168,11 +195,16 @@ def print_results_table(results: list[dict]):
             f"{r['failures']:>9} "
             f"{r['wer']:>8.2f} "
             f"{ci:>16} "
+            f"{r.get('naive_wer', 0.0):>8.2f} "
+            f"{r.get('naive_delta', 0.0):>+7.2f} "
             f"{r['rtf']:>8.3f} "
-            f"{r['total_errors']:>10} "
-            f"{r['total_ref_words']:>10}"
+            f"{r['total_errors']:>10}"
         )
-    print("=" * 90)
+    print("=" * 104)
+    print(
+        "  WER % = normalized (ITN) · naive % = verbatim · "
+        "Δ pp = WER − naive (negative ⇒ normalization, not acoustics, closed the gap)"
+    )
 
 
 def print_histograms(results: list[dict]):

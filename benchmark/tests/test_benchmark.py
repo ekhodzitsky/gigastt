@@ -42,6 +42,12 @@ def _fake_result(name: str = "fake") -> dict:
         "ci_high": 0.0,
         "total_errors": 0,
         "total_ref_words": 0,
+        "naive_wer": 0.0,
+        "naive_ci_low": 0.0,
+        "naive_ci_high": 0.0,
+        "naive_total_errors": 0,
+        "naive_total_ref_words": 0,
+        "naive_delta": 0.0,
         "total_audio_sec": 0.0,
         "total_proc_sec": 0.0,
         "rtf": 0.0,
@@ -111,6 +117,30 @@ def test_run_benchmark_uses_cache():
     assert result["cached_hits"] == 1
     assert result["details"][0]["cached"] is True
     assert result["details"][0]["hypothesis"] == "hello"
+
+
+def test_run_benchmark_reports_naive_wer():
+    # gigastt-style hypothesis (digits) vs spoken-number reference: the ITN pass
+    # forgives the digit/word convention difference, the verbatim pass does not.
+    # run_benchmark must surface both, with naive_delta = wer - naive_wer.
+    class _FakeCache:
+        def get(self, runner, wav_path):
+            return {"hypothesis": "5%", "proc_time": 0.1}
+
+        def set(self, *args, **kwargs):
+            pass
+
+    runner = MagicMock()
+    runner.name = "fake"
+    manifest = [{"filename": "a.wav", "reference": "пять процентов"}]
+    result = benchmark.run_benchmark(runner, manifest, cache=_FakeCache())
+
+    assert result["wer"] == 0.0
+    assert result["naive_wer"] > 0.0
+    assert result["naive_delta"] == round(result["wer"] - result["naive_wer"], 2)
+    assert result["naive_total_errors"] >= 1
+    assert result["details"][0]["naive_wer"] > 0.0
+    assert result["details"][0]["naive_errors"] >= 1
 
 
 def test_no_cache_flag_disables_cache(tmp_path):

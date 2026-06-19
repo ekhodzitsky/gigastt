@@ -57,6 +57,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Verbatim ("naive") WER reported alongside normalized WER in the benchmark.**
+  Both the Python (`benchmark.py`) and Rust (`crates/gigastt/tests/benchmark.rs`)
+  harnesses now compute a second WER per sample with verbatim rules only
+  (lowercase + `ё`→`е` + strip non-word characters, but no words-to-digits ITN,
+  digit-group merging, or anglicism mapping) and surface `naive_wer`, its 95% CI,
+  and `naive_delta = wer - naive_wer`. A negative delta means writing convention
+  (number style, punctuation, transliteration) — not acoustics — produced the WER
+  gap, which separates genuine recognition error from formatting. The Python
+  results table gains `naive %` / `Δ pp` columns. The Rust regression gate still
+  decides pass/fail on the normalized WER only; the verbatim numbers are
+  reported, never gated.
 - **Configurable encoder threads (`--encoder-intra-threads`).** The CPU encoder runs
   single-threaded by default; on weak CPUs or long single-file jobs it can now take more
   intra-op threads (env `GIGASTT_ENCODER_INTRA_THREADS`, default 1 — unchanged), clamped so

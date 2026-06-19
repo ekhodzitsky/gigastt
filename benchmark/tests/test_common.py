@@ -1,6 +1,13 @@
 """Unit tests for benchmark/common.py WER normalization and manifest loading."""
 
-from common import compute_wer, load_manifest, normalize_for_wer, word_edit_distance
+from common import (
+    compute_wer,
+    compute_wer_naive,
+    load_manifest,
+    normalize_for_wer,
+    normalize_for_wer_naive,
+    word_edit_distance,
+)
 
 
 def _wer_info(reference: str, hypothesis: str) -> tuple[float, int, int, list[str], list[str]]:
@@ -171,3 +178,75 @@ def test_percent_keeps_adjacent_numbers_separate():
 
 def test_chunked_thousands_merge():
     assert normalize_for_wer("3 000 ₽") == ["3000"]
+
+
+# --- Verbatim ("naive") normalization: lowercase + ё→е + strip non-word
+# characters + split, with NO words-to-digits ITN, digit merging, ordinal
+# resolution, or anglicism mapping. The gap between naive and ITN WER isolates
+# how much of the apparent error is writing convention vs acoustics. ---
+
+
+def test_naive_lowercases_and_strips_punctuation():
+    assert normalize_for_wer_naive("Привет, Мир!") == ["привет", "мир"]
+
+
+def test_naive_folds_yo_to_ye():
+    assert normalize_for_wer_naive("счёт") == ["счет"]
+
+
+def test_naive_keeps_digits_and_words_apart_no_itn():
+    # Naive does NOT convert number words to digits or strip currency/percent
+    # words, so the digit and word forms stay incomparable.
+    assert normalize_for_wer_naive("пять процентов") == ["пять", "процентов"]
+    assert normalize_for_wer_naive("5%") == ["5"]
+
+
+def test_naive_does_not_merge_digit_groups():
+    # ITN merges short groups ("79193358931"); naive leaves them split.
+    assert normalize_for_wer_naive("7 919 335") == ["7", "919", "335"]
+
+
+def test_naive_does_not_map_anglicisms():
+    assert normalize_for_wer_naive("youtube") == ["youtube"]
+
+
+def test_naive_drops_chars_outside_ascii_cyrillic_class():
+    # The strip class is exactly [a-zа-я0-9\s]; accented Latin and non-ASCII
+    # digits are dropped (here "ï" is removed, leaving "nave"). This pins
+    # cross-harness parity with the Rust benchmark's normalize_for_wer_naive,
+    # which uses the same character class.
+    assert normalize_for_wer_naive("naïve") == ["nave"]
+
+
+def test_naive_wer_penalizes_convention_where_itn_forgives():
+    # The ITN pipeline collapses "пять процентов" to the single token ["5"]
+    # (пять→5, "процентов" dropped as an empty token) and "5%" to ["5"], so it
+    # scores them as a perfect match. The verbatim pass keeps both words and the
+    # digit apart, counting the convention difference as error. That gap is
+    # exactly the "writing convention" share of the WER.
+    ref = "пять процентов"
+    hyp = "5%"
+    itn_wer, itn_err, _ = compute_wer(ref, hyp)
+    naive_wer, naive_err, naive_count = compute_wer_naive(ref, hyp)
+
+    assert itn_err == 0
+    assert itn_wer == 0.0
+    assert naive_err > 0
+    assert naive_wer > 0.0
+    assert naive_count == 2
+
+
+def test_naive_wer_equals_itn_on_plain_words():
+    # With no digits, Latin tokens, or punctuation, the two passes agree.
+    ref = hyp = "привет дорогой мир"
+    itn_wer, itn_err, itn_count = compute_wer(ref, hyp)
+    naive_wer, naive_err, naive_count = compute_wer_naive(ref, hyp)
+
+    assert (itn_wer, itn_err, itn_count) == (0.0, 0, 3)
+    assert (naive_wer, naive_err, naive_count) == (0.0, 0, 3)
+
+
+def test_naive_wer_empty_reference_is_zero():
+    wer, errors, ref_count = compute_wer_naive("", "что-то")
+    assert wer == 0.0
+    assert ref_count == 0

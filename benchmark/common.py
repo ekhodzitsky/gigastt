@@ -413,6 +413,29 @@ def normalize_for_wer(text: str) -> list[str]:
     return tokens
 
 
+# Verbatim normalization keeps only word characters: letters (Latin or
+# Cyrillic), digits, and whitespace. Everything else (punctuation, currency,
+# percent, dashes) is removed without acting as a separator, matching the
+# "naive" baseline described in benchmark/README.md.
+_NAIVE_STRIP_RE = re.compile(r"[^a-zа-я0-9\s]", re.UNICODE)
+
+
+def normalize_for_wer_naive(text: str) -> list[str]:
+    """Normalize text to a word list with verbatim ("naive") rules only.
+
+    Applies lowercasing, ``ё``→``е`` folding, removal of every non-word
+    character, and whitespace splitting — but NONE of the words-to-digits ITN,
+    digit-group merging, ordinal resolution, or anglicism mapping that
+    :func:`normalize_for_wer` performs. The difference between the WER computed
+    over this pass and the ITN pass isolates how much of the apparent error is a
+    writing-convention mismatch (number style, punctuation, transliteration)
+    rather than an acoustic recognition error.
+    """
+    text = text.lower().replace("ё", "е")
+    text = _NAIVE_STRIP_RE.sub("", text)
+    return text.split()
+
+
 def word_edit_distance(reference: list[str], hypothesis: list[str]) -> int:
     """Levenshtein distance at word level."""
     m, n = len(reference), len(hypothesis)
@@ -433,6 +456,21 @@ def compute_wer(reference: str, hypothesis: str) -> tuple[float, int, int]:
     """Returns (wer_percent, errors, ref_word_count)."""
     ref_words = normalize_for_wer(reference)
     hyp_words = normalize_for_wer(hypothesis)
+    errors = word_edit_distance(ref_words, hyp_words)
+    ref_count = len(ref_words)
+    wer = (errors / ref_count * 100.0) if ref_count > 0 else 0.0
+    return wer, errors, ref_count
+
+
+def compute_wer_naive(reference: str, hypothesis: str) -> tuple[float, int, int]:
+    """Returns (wer_percent, errors, ref_word_count) under verbatim rules.
+
+    Mirrors :func:`compute_wer` but uses :func:`normalize_for_wer_naive`, so no
+    words-to-digits ITN or anglicism mapping is applied. Reported alongside the
+    normalized WER to expose the writing-convention share of the error.
+    """
+    ref_words = normalize_for_wer_naive(reference)
+    hyp_words = normalize_for_wer_naive(hypothesis)
     errors = word_edit_distance(ref_words, hyp_words)
     ref_count = len(ref_words)
     wer = (errors / ref_count * 100.0) if ref_count > 0 else 0.0

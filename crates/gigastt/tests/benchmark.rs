@@ -299,6 +299,33 @@ fn normalize_for_wer(text: &str) -> Vec<String> {
     translit_anglicisms(&words)
 }
 
+/// Verbatim ("naive") normalization: lowercase, `ё`→`е`, keep only
+/// alphanumeric/whitespace characters, split. Unlike `normalize_for_wer` it does
+/// NOT convert dashes to spaces, merge digit groups, resolve ordinals, convert
+/// cardinals to words, or transliterate anglicisms. Reporting WER over this pass
+/// alongside the normalized WER isolates the writing-convention share of the
+/// error (number style, punctuation, transliteration) from the acoustic share.
+/// The definition mirrors the Python benchmark's `normalize_for_wer_naive`.
+fn normalize_for_wer_naive(text: &str) -> Vec<String> {
+    let text = text.to_lowercase();
+    let text = text.replace('ё', "е");
+    // Keep only the `[a-zа-я0-9]` + whitespace class — character-for-character
+    // identical to the Python benchmark's `_NAIVE_STRIP_RE`. A broader
+    // `is_alphanumeric` filter would keep accented Latin (`café`) and non-ASCII
+    // digits that the Python ASCII-class pass drops, so the two harnesses'
+    // verbatim WER would diverge on such transcripts; this keeps them equal.
+    let text: String = text
+        .chars()
+        .filter(|c| {
+            c.is_ascii_lowercase()
+                || ('а'..='я').contains(c)
+                || c.is_ascii_digit()
+                || c.is_whitespace()
+        })
+        .collect();
+    text.split_whitespace().map(String::from).collect()
+}
+
 /// Word-level edit distance (Levenshtein) between reference and hypothesis.
 fn word_edit_distance(reference: &[String], hypothesis: &[String]) -> usize {
     let m = reference.len();
@@ -425,6 +452,56 @@ fn run_gate_self_test() {
     let missing = read_baseline(Path::new("/nonexistent/benchmark_baseline.json"));
     assert_eq!(missing["tolerance_pp"].as_f64(), Some(0.5));
     assert!(missing["sets"]["bundled"]["wer"].as_f64().is_none());
+
+    // normalize_for_wer_naive: verbatim rules only — lowercase, ё→е, strip
+    // punctuation, NO words-to-digits ITN, digit merging, or anglicism mapping.
+    assert_eq!(
+        normalize_for_wer_naive("Привет, Мир!"),
+        vec!["привет".to_string(), "мир".to_string()],
+        "naive lowercases and strips punctuation"
+    );
+    assert_eq!(
+        normalize_for_wer_naive("счёт"),
+        vec!["счет".to_string()],
+        "naive folds ё→е"
+    );
+    assert_eq!(
+        normalize_for_wer_naive("пять процентов"),
+        vec!["пять".to_string(), "процентов".to_string()],
+        "naive does not strip percent/currency words"
+    );
+    assert_eq!(
+        normalize_for_wer_naive("5%"),
+        vec!["5".to_string()],
+        "naive strips the percent sign but keeps the digit, with no ITN"
+    );
+    assert_eq!(
+        normalize_for_wer_naive("7 919 335"),
+        vec!["7".to_string(), "919".to_string(), "335".to_string()],
+        "naive does not merge digit groups"
+    );
+    assert_eq!(
+        normalize_for_wer_naive("naïve"),
+        vec!["nave".to_string()],
+        "naive drops accented Latin (outside [a-zа-я0-9]), matching the Python pass"
+    );
+    // The verbatim pass counts the digit↔word number convention as an error
+    // where the normalized pass forgives it — that gap is the whole point.
+    // (The Rust harness normalizes digits→words; the Python harness goes the
+    // other way. Both forgive this pair, so the naive numbers stay comparable.)
+    let ref_n = normalize_for_wer_naive("пять");
+    let hyp_n = normalize_for_wer_naive("5");
+    assert!(
+        word_edit_distance(&ref_n, &hyp_n) > 0,
+        "naive must penalize the digit/word difference the ITN pass forgives"
+    );
+    let ref_i = normalize_for_wer("пять");
+    let hyp_i = normalize_for_wer("5");
+    assert_eq!(
+        word_edit_distance(&ref_i, &hyp_i),
+        0,
+        "the normalized (ITN) pass forgives the digit/word number convention"
+    );
 }
 
 fn main() {
@@ -495,8 +572,11 @@ fn main() {
 
     let mut total_ref_words = 0usize;
     let mut total_errors = 0usize;
+    let mut total_naive_ref_words = 0usize;
+    let mut total_naive_errors = 0usize;
     let mut details = Vec::new();
     let mut per_sample: Vec<(usize, usize)> = Vec::with_capacity(manifest.len());
+    let mut naive_per_sample: Vec<(usize, usize)> = Vec::with_capacity(manifest.len());
 
     let start_time = std::time::Instant::now();
 
@@ -521,9 +601,16 @@ fn main() {
             errors as f64 / ref_words.len() as f64 * 100.0
         };
 
+        let ref_words_naive = normalize_for_wer_naive(&sample.reference);
+        let hyp_words_naive = normalize_for_wer_naive(&hypothesis.text);
+        let naive_errors = word_edit_distance(&ref_words_naive, &hyp_words_naive);
+
         total_ref_words += ref_words.len();
         total_errors += errors;
         per_sample.push((ref_words.len(), errors));
+        total_naive_ref_words += ref_words_naive.len();
+        total_naive_errors += naive_errors;
+        naive_per_sample.push((ref_words_naive.len(), naive_errors));
 
         if idx % PROGRESS_EVERY == 0 || idx + 1 == manifest.len() {
             let elapsed = start_time.elapsed().as_secs_f64();
@@ -564,6 +651,21 @@ fn main() {
     let ci_lo_r = (ci_lo * 10.0).round() / 10.0;
     let ci_hi_r = (ci_hi * 10.0).round() / 10.0;
 
+    // Verbatim ("naive") WER: the same metric without words-to-digits ITN or
+    // anglicism mapping. The gap (naive_delta = wer - naive_wer) is the
+    // writing-convention share of the error. Reported for transparency only —
+    // the regression gate below stays on the normalized WER.
+    let naive_wer = if total_naive_ref_words > 0 {
+        total_naive_errors as f64 / total_naive_ref_words as f64 * 100.0
+    } else {
+        0.0
+    };
+    let naive_wer_rounded = (naive_wer * 10.0).round() / 10.0;
+    let (naive_ci_lo, naive_ci_hi) = bootstrap_ci(&naive_per_sample, 1000);
+    let naive_ci_lo_r = (naive_ci_lo * 10.0).round() / 10.0;
+    let naive_ci_hi_r = (naive_ci_hi * 10.0).round() / 10.0;
+    let naive_delta_r = ((wer - naive_wer) * 10.0).round() / 10.0;
+
     eprintln!(
         "\n  WER: {:.1}% ({} errors / {} words)  Score: {:.1}  Samples: {}",
         wer,
@@ -573,6 +675,10 @@ fn main() {
         manifest.len()
     );
     eprintln!("  95% CI: [{:.1}%, {:.1}%]", ci_lo_r, ci_hi_r);
+    eprintln!(
+        "  Verbatim (naive) WER: {:.1}% ({} errors / {} words)  Δ {:+.1}pp vs normalized",
+        naive_wer_rounded, total_naive_errors, total_naive_ref_words, naive_delta_r
+    );
 
     // ---- Regression gate ---------------------------------------------------
     // Two hard checks (non-zero exit so CI actually fails on regression):
@@ -638,6 +744,12 @@ fn main() {
         "wer": wer_rounded,
         "ci_low": ci_lo_r,
         "ci_high": ci_hi_r,
+        "naive_wer": naive_wer_rounded,
+        "naive_ci_low": naive_ci_lo_r,
+        "naive_ci_high": naive_ci_hi_r,
+        "naive_total_errors": total_naive_errors,
+        "naive_total_words": total_naive_ref_words,
+        "naive_delta": naive_delta_r,
         "total_words": total_ref_words,
         "total_errors": total_errors,
         "samples": manifest.len(),

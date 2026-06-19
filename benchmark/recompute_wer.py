@@ -38,33 +38,55 @@ def recompute_file(input_path: Path, output_path: Path) -> list[dict]:
         total_errors = 0
         total_ref_words = 0
         per_sample: list[tuple[int, int]] = []
+        total_naive_errors = 0
+        total_naive_ref_words = 0
+        naive_per_sample: list[tuple[int, int]] = []
 
         for detail in runner.get("details", []):
             ref = detail.get("reference", "")
             hyp = detail.get("hypothesis", "")
 
             wer, errors, ref_count = common.compute_wer(ref, hyp)
+            naive_wer, naive_errors, naive_ref_count = common.compute_wer_naive(ref, hyp)
 
             detail["wer"] = wer
             detail["errors"] = errors
             detail["ref_words"] = ref_count
+            detail["naive_wer"] = naive_wer
+            detail["naive_errors"] = naive_errors
+            detail["naive_ref_words"] = naive_ref_count
 
             total_errors += errors
             total_ref_words += ref_count
             per_sample.append((ref_count, errors))
+            total_naive_errors += naive_errors
+            total_naive_ref_words += naive_ref_count
+            naive_per_sample.append((naive_ref_count, naive_errors))
 
         overall_wer = (
             (total_errors / total_ref_words * 100.0)
             if total_ref_words > 0
             else 0.0
         )
+        overall_naive_wer = (
+            (total_naive_errors / total_naive_ref_words * 100.0)
+            if total_naive_ref_words > 0
+            else 0.0
+        )
         ci_low, ci_high = common.bootstrap_ci(per_sample, iterations=1000)
+        naive_ci_low, naive_ci_high = common.bootstrap_ci(naive_per_sample, iterations=1000)
 
         runner["wer"] = overall_wer
         runner["ci_low"] = ci_low
         runner["ci_high"] = ci_high
         runner["total_errors"] = total_errors
         runner["total_ref_words"] = total_ref_words
+        runner["naive_wer"] = overall_naive_wer
+        runner["naive_ci_low"] = naive_ci_low
+        runner["naive_ci_high"] = naive_ci_high
+        runner["naive_total_errors"] = total_naive_errors
+        runner["naive_total_ref_words"] = total_naive_ref_words
+        runner["naive_delta"] = overall_wer - overall_naive_wer
 
         rows.append(
             {
