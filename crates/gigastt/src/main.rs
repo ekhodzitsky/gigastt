@@ -111,6 +111,30 @@ enum Commands {
         #[arg(long, env = "GIGASTT_HOTWORDS_BOOST")]
         hotwords_boost: Option<f32>,
 
+        /// Voice activity detection: skip silence in file transcription and
+        /// finalize streaming segments on detected trailing silence. Off by
+        /// default; downloads the Silero VAD model (MIT) on first use. Env:
+        /// GIGASTT_VAD.
+        #[arg(long, env = "GIGASTT_VAD", default_value_t = false)]
+        vad: bool,
+
+        /// VAD speech-probability threshold in [0,1] [default: 0.5]. Higher =
+        /// stricter. No effect unless `--vad`. Env: GIGASTT_VAD_THRESHOLD.
+        #[arg(long, env = "GIGASTT_VAD_THRESHOLD")]
+        vad_threshold: Option<f32>,
+
+        /// Minimum trailing silence (ms) to close a speech region / finalize a
+        /// streaming segment [default: 500]. No effect unless `--vad`. Env:
+        /// GIGASTT_VAD_MIN_SILENCE_MS.
+        #[arg(long, env = "GIGASTT_VAD_MIN_SILENCE_MS")]
+        vad_min_silence_ms: Option<u32>,
+
+        /// Directory holding the Silero VAD model (`silero_vad.onnx`). Defaults
+        /// to `~/.gigastt/models/vad/`. Auto-downloaded when `--vad` is set and
+        /// the model is absent. Env: GIGASTT_VAD_MODEL_DIR.
+        #[arg(long, env = "GIGASTT_VAD_MODEL_DIR", default_value_t = model::default_vad_model_dir())]
+        vad_model_dir: String,
+
         /// Number of concurrent inference sessions. Each session deserializes
         /// its own encoder copy (~0.4 GB resident for the INT8 encoder), so the
         /// default is 2 to bound the idle footprint; raise it for higher
@@ -342,6 +366,28 @@ enum Commands {
         /// unless hotwords are configured. Env: GIGASTT_HOTWORDS_BOOST.
         #[arg(long, env = "GIGASTT_HOTWORDS_BOOST")]
         hotwords_boost: Option<f32>,
+
+        /// Voice activity detection: skip silence before decoding. Off by
+        /// default; downloads the Silero VAD model (MIT) on first use. Env:
+        /// GIGASTT_VAD.
+        #[arg(long, env = "GIGASTT_VAD", default_value_t = false)]
+        vad: bool,
+
+        /// VAD speech-probability threshold in [0,1] [default: 0.5]. Higher =
+        /// stricter. No effect unless `--vad`. Env: GIGASTT_VAD_THRESHOLD.
+        #[arg(long, env = "GIGASTT_VAD_THRESHOLD")]
+        vad_threshold: Option<f32>,
+
+        /// Minimum trailing silence (ms) to close a speech region [default: 500].
+        /// No effect unless `--vad`. Env: GIGASTT_VAD_MIN_SILENCE_MS.
+        #[arg(long, env = "GIGASTT_VAD_MIN_SILENCE_MS")]
+        vad_min_silence_ms: Option<u32>,
+
+        /// Directory holding the Silero VAD model (`silero_vad.onnx`). Defaults
+        /// to `~/.gigastt/models/vad/`. Auto-downloaded when `--vad` is set and
+        /// the model is absent. Env: GIGASTT_VAD_MODEL_DIR.
+        #[arg(long, env = "GIGASTT_VAD_MODEL_DIR", default_value_t = model::default_vad_model_dir())]
+        vad_model_dir: String,
 
         /// Intra-op thread count for the encoder session on the CPU build. The
         /// encoder dominates the single-utterance cost, so more threads speed up
@@ -660,6 +706,58 @@ async fn maybe_download_punct_model(
     }
 }
 
+/// Build a [`gigastt_core::vad::VadConfig`] from CLI overrides, falling back to
+/// the library defaults for any option left unset.
+fn build_vad_config(
+    threshold: Option<f32>,
+    min_silence_ms: Option<u32>,
+) -> gigastt_core::vad::VadConfig {
+    let mut cfg = gigastt_core::vad::VadConfig::default();
+    if let Some(t) = threshold {
+        cfg.threshold = t.clamp(0.0, 1.0);
+    }
+    if let Some(ms) = min_silence_ms {
+        cfg.min_silence_ms = ms;
+    }
+    cfg
+}
+
+/// Load the Silero VAD when `--vad` is set. Graceful: a missing or broken model
+/// logs a warning and returns `None`, so transcription proceeds without VAD
+/// (silence is not skipped; endpointing falls back to the decoder heuristic).
+fn maybe_load_vad(enabled: bool, vad_model_dir: &str) -> Option<gigastt_core::vad::SileroVad> {
+    if !enabled {
+        return None;
+    }
+    let path = std::path::Path::new(vad_model_dir).join(gigastt_core::vad::VAD_MODEL_FILE);
+    match gigastt_core::vad::SileroVad::load(&path) {
+        Ok(v) => {
+            tracing::info!("VAD enabled (model dir: {vad_model_dir})");
+            Some(v)
+        }
+        Err(e) => {
+            tracing::warn!(
+                "VAD model unavailable at {vad_model_dir} ({e:#}); continuing without VAD"
+            );
+            None
+        }
+    }
+}
+
+/// When `--vad` is set and the Silero model is absent, auto-download it.
+/// Graceful: a download failure is logged and swallowed — [`maybe_load_vad`]
+/// then falls back to no VAD. VAD never blocks transcription.
+async fn maybe_download_vad_model(enabled: bool, vad_model_dir: &str) {
+    if !enabled {
+        return;
+    }
+    if let Err(e) = model::ensure_vad_model(vad_model_dir).await {
+        tracing::warn!(
+            "VAD model download failed for {vad_model_dir} ({e:#}); continuing without VAD"
+        );
+    }
+}
+
 /// Default additive logit boost for hotword continuation tokens when
 /// `--hotwords-boost` is unset.
 const DEFAULT_HOTWORDS_BOOST: f32 = 5.0;
@@ -759,6 +857,10 @@ async fn main() -> anyhow::Result<()> {
             hotwords_file,
             hotwords_default,
             hotwords_boost,
+            vad,
+            vad_threshold,
+            vad_min_silence_ms,
+            vad_model_dir,
             pool_size,
             pool_min_size,
             batch_pool_size,
@@ -785,6 +887,7 @@ async fn main() -> anyhow::Result<()> {
             let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
             ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
             maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
+            maybe_download_vad_model(vad, &vad_model_dir).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
             let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
             let mut engine = inference::Engine::load_with_pools_threads(
@@ -795,7 +898,11 @@ async fn main() -> anyhow::Result<()> {
                 encoder_intra_threads,
             )?
             .with_punctuator(punctuator)
-            .with_itn(resolve_itn(itn, resolved));
+            .with_itn(resolve_itn(itn, resolved))
+            .with_vad(
+                maybe_load_vad(vad, &vad_model_dir),
+                build_vad_config(vad_threshold, vad_min_silence_ms),
+            );
             if let Some(pairs) = hotwords {
                 engine =
                     engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
@@ -880,6 +987,10 @@ async fn main() -> anyhow::Result<()> {
             hotwords_file,
             hotwords_default,
             hotwords_boost,
+            vad,
+            vad_threshold,
+            vad_min_silence_ms,
+            vad_model_dir,
             encoder_intra_threads,
             format,
             output,
@@ -889,6 +1000,7 @@ async fn main() -> anyhow::Result<()> {
         } => {
             let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
             maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
+            maybe_download_vad_model(vad, &vad_model_dir).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
             let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
             // Single-triplet pool for offline file transcription; thread count
@@ -901,7 +1013,11 @@ async fn main() -> anyhow::Result<()> {
                 encoder_intra_threads,
             )?
             .with_punctuator(punctuator)
-            .with_itn(resolve_itn(itn, resolved));
+            .with_itn(resolve_itn(itn, resolved))
+            .with_vad(
+                maybe_load_vad(vad, &vad_model_dir),
+                build_vad_config(vad_threshold, vad_min_silence_ms),
+            );
             if let Some(pairs) = hotwords {
                 engine =
                     engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));

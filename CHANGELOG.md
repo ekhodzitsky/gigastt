@@ -57,6 +57,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Voice activity detection (`--vad`, opt-in, off by default).** Optional Silero
+  v5 VAD (MIT, ~2 MB ONNX) loaded through the existing `ort` runtime — no extra
+  dependency. Enables two things: file transcription **skips silence** (decodes
+  only detected speech regions, then remaps word timestamps back to the original
+  timeline) for a speedup proportional to the silence fraction; and WebSocket
+  streaming gains **VAD endpointing** (finalizes a segment on detected trailing
+  silence, augmenting the decoder's blank-run heuristic). The model auto-downloads
+  to `--vad-model-dir` (default `~/.gigastt/models/vad/`) with SHA-256
+  verification on first use. Tunables: `--vad-threshold` (default 0.5),
+  `--vad-min-silence-ms` (default 500); env `GIGASTT_VAD`, `GIGASTT_VAD_THRESHOLD`,
+  `GIGASTT_VAD_MIN_SILENCE_MS`, `GIGASTT_VAD_MODEL_DIR`. VAD is strictly
+  non-blocking: a missing model or inference error logs a warning and proceeds
+  without VAD. **Default OFF: with no `--vad`, decoding is byte-for-byte
+  unchanged** (full buffer decoded; streaming endpointing unchanged).
 - **Verbatim ("naive") WER reported alongside normalized WER in the benchmark.**
   Both the Python (`benchmark.py`) and Rust (`crates/gigastt/tests/benchmark.rs`)
   harnesses now compute a second WER per sample with verbatim rules only

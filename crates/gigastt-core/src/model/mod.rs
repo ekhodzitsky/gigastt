@@ -59,6 +59,14 @@ const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 /// HuggingFace repo hosting the optional RUPunct punctuation model (MIT).
 const PUNCT_HF_REPO: &str = "ekhodzitsky/rupunct-small-onnx";
 
+/// Direct URL for the optional Silero v5 VAD model (MIT), pinned to a release
+/// tag. SHA-256 below guards integrity regardless of the host.
+const VAD_MODEL_URL: &str =
+    "https://github.com/snakers4/silero-vad/raw/v5.1.2/src/silero_vad/data/silero_vad.onnx";
+
+/// SHA-256 of the pinned Silero v5.1.2 `silero_vad.onnx` (verified 2026-06-19).
+const VAD_MODEL_SHA256: &str = "2623a2953f6ff3d2c1e61740c6cdb7168133479b267dfef114a4a3cc5bdd788f";
+
 /// The three files the punctuation pass needs, with their pinned SHA-256
 /// checksums. Filenames mirror the `PUNCT_*` constants in [`crate::punctuation`].
 /// Verified against the canonical HuggingFace copies on 2026-06-19.
@@ -296,6 +304,25 @@ pub fn default_punct_model_dir() -> String {
         .unwrap_or_else(|| ".gigastt/models/punct".into())
 }
 
+/// Return the default VAD-model directory (`~/.gigastt/models/vad/`), a sibling
+/// of [`default_model_dir`].
+///
+/// Holds the optional Silero v5 ONNX voice-activity detector used for file
+/// silence skipping and streaming endpointing. The artifact auto-downloads via
+/// [`ensure_vad_model`] when VAD is enabled (see [`crate::vad`]); a download
+/// failure simply disables VAD.
+pub fn default_vad_model_dir() -> String {
+    home_dir()
+        .map(|h| {
+            h.join(".gigastt")
+                .join("models")
+                .join("vad")
+                .to_string_lossy()
+                .into_owned()
+        })
+        .unwrap_or_else(|| ".gigastt/models/vad".into())
+}
+
 /// Acquire an advisory exclusive lock on a file inside `dir` so that only
 /// one process downloads models at a time. The lock is released when the
 /// returned file is dropped.
@@ -489,6 +516,46 @@ pub async fn ensure_punct_model(punct_model_dir: &str) -> Result<()> {
     }
 
     tracing::info!("Punctuation model download complete");
+    Ok(())
+}
+
+/// Ensure the optional Silero VAD model exists in `vad_model_dir`, downloading
+/// it from the pinned Silero release (MIT) if missing.
+///
+/// Uses the same streaming-download + atomic-rename + SHA-256 infra as the main
+/// model download. A file already on disk is left untouched (no re-download).
+///
+/// VAD is strictly optional: callers treat a download error as "VAD
+/// unavailable" and proceed without silence skipping / VAD endpointing.
+pub async fn ensure_vad_model(vad_model_dir: &str) -> Result<()> {
+    let dir = Path::new(vad_model_dir);
+    let final_dest = dir.join(crate::vad::VAD_MODEL_FILE);
+
+    if final_dest.exists() {
+        tracing::info!("VAD model found at {}", final_dest.display());
+        return Ok(());
+    }
+
+    tracing::info!("VAD model not found, downloading from {VAD_MODEL_URL}...");
+    std::fs::create_dir_all(dir).context("Failed to create VAD model directory")?;
+
+    #[cfg(unix)]
+    let _lock = acquire_download_lock(dir)?;
+
+    // Another process may have finished while we waited for the lock.
+    if final_dest.exists() {
+        return Ok(());
+    }
+
+    stream_to_partial_then_finalize(
+        VAD_MODEL_URL,
+        &final_dest,
+        Some(VAD_MODEL_SHA256),
+        crate::vad::VAD_MODEL_FILE,
+    )
+    .await?;
+
+    tracing::info!("VAD model download complete");
     Ok(())
 }
 

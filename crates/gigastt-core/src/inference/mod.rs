@@ -644,6 +644,11 @@ pub struct StreamingState {
     pub mel_output: Vec<f32>,
     /// Reusable resampler output buffer (avoids per-chunk allocation).
     pub resample_output_buf: Vec<f32>,
+    /// Optional VAD endpoint detector (present only when the engine has a VAD).
+    /// Fed every chunk's raw samples to track trailing silence; when it fires,
+    /// `process_chunk` finalizes the current segment. `None` = no VAD, and
+    /// endpointing falls back to the decoder's blank-run heuristic alone.
+    pub vad_endpointer: Option<crate::vad::VadEndpointer>,
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
     pub diarization_state: Option<StreamingPipeline<EnergyVad, SharedExtractor>>,
@@ -837,6 +842,15 @@ pub struct Engine {
     /// path is then byte-for-byte identical to the un-biased engine. Attached
     /// via [`Engine::with_biaser`]. Shared across the session pool by reference.
     biaser: Option<bias::Biaser>,
+    /// Optional Silero VAD. When set, file transcription skips silent regions
+    /// (decoding only detected speech) and streaming finalizes a segment on
+    /// VAD-detected trailing silence. `None` = no VAD: the file path decodes the
+    /// whole buffer and streaming endpointing is byte-for-byte unchanged.
+    /// Attached via [`Engine::with_vad`].
+    vad: Option<crate::vad::SileroVad>,
+    /// Thresholds for the VAD (speech threshold, min silence/speech, padding).
+    /// Ignored when `vad` is `None`.
+    vad_config: crate::vad::VadConfig,
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
@@ -914,6 +928,33 @@ impl Engine {
     /// Whether a hotword biaser is attached (biasing active).
     pub fn has_hotwords(&self) -> bool {
         self.biaser.is_some()
+    }
+
+    /// Attach an optional Silero VAD plus its config, consuming and returning
+    /// `self` (builder style). Pass `None` for no VAD (the default): file
+    /// transcription then decodes the whole buffer and streaming endpointing is
+    /// byte-for-byte unchanged. When set, file transcription skips silence and
+    /// streaming finalizes on VAD-detected trailing silence.
+    pub fn with_vad(
+        mut self,
+        vad: Option<crate::vad::SileroVad>,
+        config: crate::vad::VadConfig,
+    ) -> Self {
+        self.vad = vad;
+        self.vad_config = config;
+        if self.vad.is_some() {
+            tracing::info!(
+                "VAD enabled (threshold {}, min_silence {}ms)",
+                self.vad_config.threshold,
+                self.vad_config.min_silence_ms
+            );
+        }
+        self
+    }
+
+    /// Whether a VAD is attached (silence skipping / VAD endpointing active).
+    pub fn has_vad(&self) -> bool {
+        self.vad.is_some()
     }
 
     /// Size of the BPE vocabulary the loaded tokenizer covers. Exposed so the
@@ -1533,6 +1574,8 @@ impl Engine {
             punctuator: None,
             itn: false,
             biaser: None,
+            vad: None,
+            vad_config: crate::vad::VadConfig::default(),
             int8: is_int8,
             #[cfg(feature = "diarization")]
             speaker_encoder,
@@ -1688,6 +1731,10 @@ impl Engine {
             mel_power: Vec::new(),
             mel_output: Vec::new(),
             resample_output_buf: Vec::new(),
+            vad_endpointer: self
+                .vad
+                .as_ref()
+                .map(|_| crate::vad::VadEndpointer::new(&self.vad_config)),
             #[cfg(feature = "diarization")]
             diarization_state,
         }
@@ -1730,14 +1777,35 @@ impl Engine {
         // we finalize the tail and slide, retaining STREAM_LEFT_CONTEXT_SAMPLES.
         state.audio_buffer.extend_from_slice(samples);
         state.pending_samples += samples.len();
+
+        // Feed the VAD on every chunk so trailing silence is tracked
+        // continuously (independent of the decode stride). A VAD endpoint forces
+        // a decode + finalize this chunk even if the stride gate wouldn't fire.
+        // VAD is non-blocking: an inference error is logged and ignored, leaving
+        // endpointing to the decoder's blank-run heuristic. With no VAD attached
+        // `vad_endpoint` is always false and the path is byte-for-byte unchanged.
+        let mut vad_endpoint = false;
+        if let (Some(vad), Some(ep)) = (self.vad.as_ref(), state.vad_endpointer.as_mut()) {
+            match ep.push(vad, samples) {
+                Ok(fired) => vad_endpoint = fired,
+                Err(e) => tracing::warn!("VAD endpoint detection failed: {e:#}"),
+            }
+        }
+
         let over_cap = state.audio_buffer.len() >= STREAM_MAX_WINDOW_SAMPLES;
         // Stride gate on NEW audio since the last decode (not since the last
         // slide): otherwise a non-finalizing partial would leave the counter
-        // high and decode on every subsequent chunk.
-        if state.pending_samples < STREAM_DECODE_STRIDE_SAMPLES && !over_cap {
+        // high and decode on every subsequent chunk. A VAD endpoint overrides
+        // the gate so the utterance finalizes promptly.
+        if state.pending_samples < STREAM_DECODE_STRIDE_SAMPLES && !over_cap && !vad_endpoint {
             return Ok(vec![]);
         }
-        if state.audio_buffer.len() < N_FFT {
+        // Too little audio to extract a frame. Skip — but never when finalizing:
+        // a fired VAD endpoint (or cap) must still flush the assembler below,
+        // even though `decode_window` will add no new words from a sub-frame
+        // buffer. (In practice a VAD endpoint needs ≥ min_silence_ms of trailing
+        // audio, so the buffer is always ≫ N_FFT here; this guards the edge.)
+        if state.audio_buffer.len() < N_FFT && !vad_endpoint && !over_cap {
             return Ok(vec![]);
         }
 
@@ -1747,7 +1815,7 @@ impl Engine {
         state.pending_samples = 0;
         let ts = now_timestamp();
 
-        if endpoint || over_cap {
+        if endpoint || over_cap || vad_endpoint {
             let seg = state.assembler.finalize(ts);
             // Slide: retain the trailing left-context window for the next decode.
             let keep = STREAM_LEFT_CONTEXT_SAMPLES.min(state.audio_buffer.len());
@@ -1920,20 +1988,21 @@ impl Engine {
     ) -> Result<TranscribeResult, GigasttError> {
         let duration_s = float_samples.len() as f64 / 16000.0;
 
-        // Short inputs take the single-pass path (one encoder Run over the whole
-        // buffer). Long inputs are split into overlapping windows so the encoder
-        // activation memory stays O(chunk), not O(file). The two paths produce
-        // the same `Vec<WordInfo>` shape; everything downstream is identical.
+        // When a VAD is attached, decode only the detected speech regions
+        // (skipping silence) and remap word timestamps back to the original
+        // timeline. VAD is non-blocking: on any VAD error we log and decode the
+        // whole buffer, exactly as if no VAD were attached. With no VAD the path
+        // is byte-for-byte the previous behaviour.
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
-        let mut words = if float_samples.len() <= CHUNK_THRESHOLD_SAMPLES {
-            let (features, num_frames) = self.features.compute(float_samples);
-            tracing::info!("Extracted {} mel frames", num_frames);
-            let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
-            self.run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
-                .map_err(|e| GigasttError::Inference { source: e.into() })?
-                .0
-        } else {
-            self.transcribe_samples_chunked(float_samples, triplet)?
+        let mut words = match &self.vad {
+            Some(vad) => match vad.speech_regions(float_samples, &self.vad_config) {
+                Ok(regions) => self.decode_speech_regions(float_samples, &regions, triplet)?,
+                Err(e) => {
+                    tracing::warn!("VAD failed, decoding full audio: {e:#}");
+                    self.decode_words(float_samples, triplet)?
+                }
+            },
+            None => self.decode_words(float_samples, triplet)?,
         };
 
         #[cfg(feature = "diarization")]
@@ -1991,6 +2060,63 @@ impl Engine {
             words,
             duration_s,
         })
+    }
+
+    /// Decode a 16 kHz f32 buffer to words: single-pass for short inputs (one
+    /// encoder Run over the whole buffer), chunked overlapping windows for long
+    /// inputs so encoder activation memory stays O(chunk), not O(file). Both
+    /// paths produce the same `Vec<WordInfo>` shape. This is the no-VAD path and
+    /// the per-region decode used by [`Engine::decode_speech_regions`].
+    fn decode_words(
+        &self,
+        samples: &[f32],
+        triplet: &mut SessionTriplet,
+    ) -> Result<Vec<WordInfo>, GigasttError> {
+        if samples.len() <= CHUNK_THRESHOLD_SAMPLES {
+            let (features, num_frames) = self.features.compute(samples);
+            tracing::info!("Extracted {} mel frames", num_frames);
+            let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+            Ok(self
+                .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
+                .map_err(|e| GigasttError::Inference { source: e.into() })?
+                .0)
+        } else {
+            self.transcribe_samples_chunked(samples, triplet)
+        }
+    }
+
+    /// Decode only the VAD-detected speech `regions` of `float_samples`: copy the
+    /// speech spans into one silence-free buffer, decode it, then remap each
+    /// word's start/end from the compressed (silence-removed) timeline back to
+    /// the original timeline via [`crate::vad::remap_compressed_seconds`]. Empty
+    /// `regions` (no speech) yields no words.
+    fn decode_speech_regions(
+        &self,
+        float_samples: &[f32],
+        regions: &[(usize, usize)],
+        triplet: &mut SessionTriplet,
+    ) -> Result<Vec<WordInfo>, GigasttError> {
+        if regions.is_empty() {
+            tracing::info!("VAD found no speech; skipping decode");
+            return Ok(Vec::new());
+        }
+        let speech_len: usize = regions.iter().map(|(s, e)| e - s).sum();
+        let mut speech = Vec::with_capacity(speech_len);
+        for &(s, e) in regions {
+            speech.extend_from_slice(&float_samples[s..e]);
+        }
+        tracing::info!(
+            "VAD kept {}/{} samples ({} speech region(s))",
+            speech_len,
+            float_samples.len(),
+            regions.len()
+        );
+        let mut words = self.decode_words(&speech, triplet)?;
+        for w in &mut words {
+            w.start = crate::vad::remap_compressed_seconds(w.start, regions, 16000.0);
+            w.end = crate::vad::remap_compressed_seconds(w.end, regions, 16000.0);
+        }
+        Ok(words)
     }
 
     /// Long-form decode: split `float_samples` into overlapping windows, encode
