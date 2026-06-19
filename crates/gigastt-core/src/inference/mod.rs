@@ -168,6 +168,21 @@ const STREAM_LEFT_CONTEXT_SAMPLES: usize = 16000 * 3 / 2;
 /// the engine real-time; `finish_stream` decodes the sub-stride remainder at EOF.
 const STREAM_DECODE_STRIDE_SAMPLES: usize = 16000 * 4 / 5;
 
+/// File-transcription chunking threshold (samples @16kHz, 30s). Inputs at or
+/// below this length take the single-pass path unchanged; longer inputs are
+/// split into overlapping windows so the encoder's peak activation memory is
+/// bounded by the chunk size, not the file length. The Conformer encoder only
+/// carries ~20–30s of useful context, so chunking above this costs no accuracy
+/// in the common case.
+const CHUNK_THRESHOLD_SAMPLES: usize = 16000 * 30;
+/// Length of each long-form decode window (samples @16kHz, 24s). Bounds the
+/// per-chunk encoder activation footprint.
+const CHUNK_WINDOW_SAMPLES: usize = 16000 * 24;
+/// Overlap retained between consecutive long-form windows (samples @16kHz, 2s),
+/// so a word straddling a seam is decoded fully in at least one chunk. The
+/// stitch step de-dups words in the overlap region (see [`stitch_chunk_words`]).
+const CHUNK_OVERLAP_SAMPLES: usize = 16000 * 2;
+
 /// Default number of session triplets in the pool.
 ///
 /// Each pooled triplet deserializes its own copy of the encoder weights — ORT's
@@ -1840,14 +1855,21 @@ impl Engine {
     ) -> Result<TranscribeResult, GigasttError> {
         let duration_s = float_samples.len() as f64 / 16000.0;
 
-        let (features, num_frames) = self.features.compute(float_samples);
-        tracing::info!("Extracted {} mel frames", num_frames);
-
-        let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+        // Short inputs take the single-pass path (one encoder Run over the whole
+        // buffer). Long inputs are split into overlapping windows so the encoder
+        // activation memory stays O(chunk), not O(file). The two paths produce
+        // the same `Vec<WordInfo>` shape; everything downstream is identical.
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
-        let (mut words, _endpoint) = self
-            .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
-            .map_err(|e| GigasttError::Inference { source: e.into() })?;
+        let mut words = if float_samples.len() <= CHUNK_THRESHOLD_SAMPLES {
+            let (features, num_frames) = self.features.compute(float_samples);
+            tracing::info!("Extracted {} mel frames", num_frames);
+            let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+            self.run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
+                .map_err(|e| GigasttError::Inference { source: e.into() })?
+                .0
+        } else {
+            self.transcribe_samples_chunked(float_samples, triplet)?
+        };
 
         #[cfg(feature = "diarization")]
         if let Some(ref enc) = self.speaker_encoder {
@@ -1904,6 +1926,64 @@ impl Engine {
             words,
             duration_s,
         })
+    }
+
+    /// Long-form decode: split `float_samples` into overlapping windows, encode
+    /// and decode each independently with a fresh [`DecoderState`], offset each
+    /// chunk's word timestamps by the chunk's absolute start, then stitch the
+    /// per-chunk word lists with overlap de-dup via [`stitch_chunk_words`].
+    ///
+    /// Peak encoder activation memory is bounded by [`CHUNK_WINDOW_SAMPLES`]
+    /// rather than the full file length. Chunk starts are aligned to encoder
+    /// frame boundaries (multiples of `HOP_LENGTH * ENCODER_SUBSAMPLING`) so the
+    /// per-chunk frame offset is exact, matching the streaming path's math.
+    fn transcribe_samples_chunked(
+        &self,
+        float_samples: &[f32],
+        triplet: &mut SessionTriplet,
+    ) -> Result<Vec<WordInfo>, GigasttError> {
+        let total = float_samples.len();
+        let stride = CHUNK_WINDOW_SAMPLES - CHUNK_OVERLAP_SAMPLES;
+        // Align stride to an encoder-frame boundary so each chunk's frame offset
+        // is integral; otherwise the offset would drift by a sub-frame each hop.
+        let frame_samples = HOP_LENGTH * ENCODER_SUBSAMPLING;
+        let stride = (stride / frame_samples) * frame_samples;
+        tracing::info!(
+            "Long-form chunked decode: {:.1}s in ~{}s windows ({}s overlap)",
+            total as f64 / 16000.0,
+            CHUNK_WINDOW_SAMPLES / 16000,
+            CHUNK_OVERLAP_SAMPLES / 16000,
+        );
+
+        let mut merged: Vec<WordInfo> = Vec::new();
+        let mut start = 0usize;
+        while start < total {
+            let end = (start + CHUNK_WINDOW_SAMPLES).min(total);
+            let chunk = &float_samples[start..end];
+            let (features, num_frames) = self.features.compute(chunk);
+            let frame_offset = start / frame_samples;
+            let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+            let (chunk_words, _endpoint) = self
+                .run_inference(
+                    triplet,
+                    &features,
+                    num_frames,
+                    &mut decoder_state,
+                    frame_offset,
+                )
+                .map_err(|e| GigasttError::Inference { source: e.into() })?;
+
+            // Seam between the previous chunk's window and this one falls at the
+            // midpoint of their overlap region, in absolute seconds.
+            let overlap_mid_s = (start as f64 + CHUNK_OVERLAP_SAMPLES as f64 / 2.0) / 16000.0;
+            merged = stitch_chunk_words(merged, chunk_words, overlap_mid_s);
+
+            if end == total {
+                break;
+            }
+            start += stride;
+        }
+        Ok(merged)
     }
 
     fn run_inference(
@@ -1975,6 +2055,37 @@ impl Engine {
     fn tokens_to_words(&self, tokens: &[decode::TokenInfo], frame_offset: usize) -> Vec<WordInfo> {
         TokenFormatter::tokens_to_words(&self.tokenizer, tokens, frame_offset)
     }
+}
+
+/// Merge a later chunk's words into the running `merged` list, de-duplicating
+/// the overlap region around `seam_s` (absolute seconds).
+///
+/// Both lists carry absolute timestamps (each chunk's words were already offset
+/// by the chunk start). The heuristic keeps `merged` words whose start is at or
+/// before the seam and `next` words whose start is strictly after the seam, so
+/// the ~2s overlap is attributed to exactly one chunk: the earlier chunk owns
+/// the front half of the overlap, the later chunk owns the back half. A word
+/// straddling the seam is decoded with full context in at least one chunk, so
+/// no unique word is dropped and no overlap word is emitted twice in the common
+/// case. The merged list is monotonic in `start` by construction (the earlier
+/// chunk's kept words all start ≤ seam < the later chunk's kept words).
+///
+/// Pure and free-standing so the stitch policy is unit-testable without a
+/// loaded model.
+pub(crate) fn stitch_chunk_words(
+    mut merged: Vec<WordInfo>,
+    next: Vec<WordInfo>,
+    seam_s: f64,
+) -> Vec<WordInfo> {
+    if merged.is_empty() {
+        return next;
+    }
+    // Drop the earlier chunk's tail that reaches past the seam — those words are
+    // re-decoded by `next` with more right context, so prefer the later chunk
+    // for the back half of the overlap.
+    merged.retain(|w| w.start <= seam_s);
+    merged.extend(next.into_iter().filter(|w| w.start > seam_s));
+    merged
 }
 
 /// Groups RNN-T decoded tokens into words at BPE word boundaries (`▁`).
@@ -2238,6 +2349,92 @@ mod tests {
         assert_eq!(words.len(), 1);
         // frame_offset 10 → start = 10 * 0.04 = 0.4.
         assert!((words[0].start - 0.4).abs() < 1e-9);
+    }
+
+    fn word(text: &str, start: f64, end: f64) -> WordInfo {
+        WordInfo::new(text, start, end, 1.0, None)
+    }
+
+    #[test]
+    fn test_stitch_first_chunk_passes_through() {
+        // An empty `merged` (the very first chunk) is returned verbatim.
+        let next = vec![word("a", 0.0, 0.5), word("b", 0.6, 1.0)];
+        let out = stitch_chunk_words(Vec::new(), next.clone(), 11.0);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0].word, "a");
+        assert_eq!(out[1].word, "b");
+    }
+
+    #[test]
+    fn test_stitch_dedups_overlap_no_drop_no_dup() {
+        // Two 24s windows with a 22s stride: chunk B starts at 22s, overlap
+        // [22s, 24s], seam at 23s. The word "dup" at ~22.5s is decoded by both
+        // chunks; the seam attributes it to exactly one. No unique word lost.
+        let chunk_a = vec![
+            word("first", 1.0, 1.4),    // unique to A
+            word("middle", 21.0, 21.4), // unique to A, before overlap
+            word("dup", 22.4, 22.8),    // in overlap, before seam → kept from A
+        ];
+        // B's words are already offset by its 22s start.
+        let chunk_b = vec![
+            word("dup", 22.5, 22.9),   // same word re-decoded → after-seam copy dropped
+            word("later", 25.0, 25.4), // unique to B
+            word("end", 40.0, 40.4),   // unique to B
+        ];
+        let seam_s = 22.0 + CHUNK_OVERLAP_SAMPLES as f64 / 2.0 / 16000.0; // 23.0
+        assert!((seam_s - 23.0).abs() < 1e-9);
+
+        let out = stitch_chunk_words(chunk_a, chunk_b, seam_s);
+        let texts: Vec<&str> = out.iter().map(|w| w.word.as_str()).collect();
+        // "dup" appears exactly once (A's copy, before the seam); nothing dropped.
+        assert_eq!(texts, vec!["first", "middle", "dup", "later", "end"]);
+        // Monotonic in `start`.
+        for w in out.windows(2) {
+            assert!(w[0].start <= w[1].start, "not monotonic: {:?}", out);
+        }
+    }
+
+    #[test]
+    fn test_stitch_drops_a_tail_past_seam() {
+        // A word decoded by A past the seam is dropped in favour of B's
+        // fuller-context copy; the back half of the overlap belongs to B.
+        let chunk_a = vec![word("keep", 22.0, 22.4), word("a_tail", 23.5, 23.9)];
+        let chunk_b = vec![word("b_seam", 23.2, 23.6), word("b_late", 30.0, 30.4)];
+        let out = stitch_chunk_words(chunk_a, chunk_b, 23.0);
+        let texts: Vec<&str> = out.iter().map(|w| w.word.as_str()).collect();
+        assert_eq!(texts, vec!["keep", "b_seam", "b_late"]);
+    }
+
+    #[test]
+    fn test_stitch_timestamp_offset_math() {
+        // The chunked path offsets a chunk's frame indices by
+        // start_samples / (HOP_LENGTH * ENCODER_SUBSAMPLING). Verify that a word
+        // at frame 0 of a chunk starting `start_samples` in lands at the right
+        // absolute time via `tokens_to_words` (the same offset the engine feeds).
+        let tok = Tokenizer::from_tokens(vec!["\u{2581}w".into()]);
+        let tokens = vec![decode::TokenInfo {
+            token_id: 0,
+            frame_index: 0,
+            confidence: 1.0,
+        }];
+        let start_samples = 16000 * 22; // chunk starts at 22s
+        let frame_offset = start_samples / (HOP_LENGTH * ENCODER_SUBSAMPLING);
+        let words = TokenFormatter::tokens_to_words(&tok, &tokens, frame_offset);
+        assert_eq!(words.len(), 1);
+        // frame 0 + offset → absolute start == 22.0s exactly (aligned stride).
+        assert!(
+            (words[0].start - 22.0).abs() < 1e-9,
+            "got {}",
+            words[0].start
+        );
+    }
+
+    #[test]
+    fn test_chunk_constants_sane() {
+        // Window > overlap (positive stride) and threshold ≥ window so the
+        // single-pass path covers everything up to one full window.
+        assert!(CHUNK_WINDOW_SAMPLES > CHUNK_OVERLAP_SAMPLES);
+        assert!(CHUNK_THRESHOLD_SAMPLES >= CHUNK_WINDOW_SAMPLES);
     }
 
     #[test]

@@ -52,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Chunked long-form file decoding (bounded peak memory).** File transcription now
+  splits long audio into overlapping ~24 s windows, decodes each independently, and
+  stitches the words (overlap de-dup, monotonic timestamps) — peak encoder activation
+  memory is O(chunk) instead of O(file), removing the OOM risk on long inputs. Short
+  files keep the single-pass path unchanged; the hard duration cap is raised accordingly.
 - **Contextual hotword biasing (`--hotwords-file` / `--hotwords-boost`).** Optional
   token-level shallow-fusion biasing inside the existing greedy RNN-T loop (no beam
   search): a trie over hotword phrases — each tokenized to the active vocabulary —
