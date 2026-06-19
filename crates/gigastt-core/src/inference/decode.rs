@@ -67,10 +67,15 @@ pub(crate) fn argmax_with_confidence(logits: &[f32], blank_id: usize) -> (usize,
     (token, confidence)
 }
 
-/// Decoder call result — owned data for caching across frames.
+/// Decoder call result — owned, reusable buffers for caching across frames.
 ///
-/// During blank runs, decoder inputs (prev_token, h, c) are unchanged,
-/// so the output is deterministic and can be reused without re-calling the decoder.
+/// During blank runs, decoder inputs (prev_token, h, c) are unchanged, so the
+/// output is deterministic and the buffers are reused (read-only) without
+/// re-calling the decoder. On a non-blank token the decoder runs again and
+/// overwrites these buffers in place ([`copy_from_slice`]), so steady-state
+/// decoding allocates nothing per token. The buffers are sized once on the
+/// first decode call and stay stable for the rest of the loop.
+#[derive(Default)]
 pub(crate) struct DecoderOutput {
     /// Decoder output vector [PRED_HIDDEN].
     dec_data: Vec<f32>,
@@ -80,11 +85,23 @@ pub(crate) struct DecoderOutput {
     new_c: Vec<f32>,
 }
 
-/// Run decoder ONNX session with current state.
+impl DecoderOutput {
+    /// Overwrite `dst` in place with `src`, resizing only if the length differs
+    /// (first call / shape change). Steady-state calls hit the `copy_from_slice`
+    /// fast path and allocate nothing.
+    fn fill(dst: &mut Vec<f32>, src: &[f32]) {
+        if dst.len() != src.len() {
+            dst.resize(src.len(), 0.0);
+        }
+        dst.copy_from_slice(src);
+    }
+}
+
+/// Run decoder ONNX session with current state, writing into reusable buffers.
 ///
 /// Input: prev_token [1,1] + h [1,1,PRED_HIDDEN] + c [1,1,PRED_HIDDEN]
-/// Output: DecoderOutput with dec_data, new_h, new_c (all owned).
-fn run_decoder(decoder: &mut Session, state: &DecoderState) -> Result<DecoderOutput> {
+/// Output: `out` is overwritten in place with dec_data, new_h, new_c.
+fn run_decoder(decoder: &mut Session, state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
     let target_data = [state.prev_token];
     let target_tensor = TensorRef::from_array_view(([1_usize, 1], target_data.as_slice()))?;
     let h_tensor = TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.h.as_slice()))?;
@@ -104,11 +121,10 @@ fn run_decoder(decoder: &mut Session, state: &DecoderState) -> Result<DecoderOut
         .try_extract_tensor::<f32>()
         .context("Failed to extract decoder c state")?;
 
-    Ok(DecoderOutput {
-        dec_data: dec_data.to_vec(),
-        new_h: new_h_data.to_vec(),
-        new_c: new_c_data.to_vec(),
-    })
+    DecoderOutput::fill(&mut out.dec_data, dec_data);
+    DecoderOutput::fill(&mut out.new_h, new_h_data);
+    DecoderOutput::fill(&mut out.new_c, new_c_data);
+    Ok(())
 }
 
 /// Run joiner ONNX session on a single encoder frame.
@@ -132,8 +148,9 @@ fn run_joiner_single(
         .try_extract_tensor::<f32>()
         .context("Failed to extract joiner output")?;
 
-    logits_buf.clear();
-    logits_buf.extend_from_slice(logits);
+    // Reuse the buffer's capacity: copy in place after a one-time size match,
+    // so steady-state joiner calls allocate nothing.
+    DecoderOutput::fill(logits_buf, logits);
     Ok(())
 }
 
@@ -141,8 +158,9 @@ fn run_joiner_single(
 /// decode logic can be unit-tested with a deterministic stub instead of a real
 /// `ort::Session` (which requires a model file on disk).
 pub(crate) trait DecodeBackend {
-    /// Run the prediction network for the current decoder state.
-    fn decode_step(&mut self, state: &DecoderState) -> Result<DecoderOutput>;
+    /// Run the prediction network for the current decoder state, overwriting
+    /// `out` in place (reused across calls to avoid per-token allocation).
+    fn decode_step(&mut self, state: &DecoderState, out: &mut DecoderOutput) -> Result<()>;
     /// Run the joiner for one encoder frame, writing logits into `logits_buf`.
     fn joiner_step(
         &mut self,
@@ -159,8 +177,8 @@ struct OrtBackend<'a> {
 }
 
 impl DecodeBackend for OrtBackend<'_> {
-    fn decode_step(&mut self, state: &DecoderState) -> Result<DecoderOutput> {
-        run_decoder(self.decoder, state)
+    fn decode_step(&mut self, state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
+        run_decoder(self.decoder, state, out)
     }
     fn joiner_step(
         &mut self,
@@ -220,7 +238,15 @@ fn greedy_decode_impl<B: DecodeBackend>(
 
     // Decoder output caching: during blank runs, decoder inputs (prev_token, h, c)
     // are unchanged, so the decoder output is deterministic and can be reused.
-    let mut cached_decoder_output: Option<DecoderOutput> = None;
+    // `decoder_out` is an owned, reusable buffer overwritten in place on every
+    // non-blank decode call; `cache_valid` guards reuse during a blank run (the
+    // decoder is only ever called when NOT in a blank run, i.e. precisely when
+    // these buffers are about to be overwritten — so a blank run always reads a
+    // valid, stable cache). Future work (out of scope here): precompute the
+    // encoder-projection in the joiner / use ort IoBinding to also avoid the
+    // ONNX-side input/output copies.
+    let mut decoder_out = DecoderOutput::default();
+    let mut cache_valid = false;
     let mut in_blank_run = false;
 
     // Hotword prefix-tracking state, only when biasing is active. `None` keeps
@@ -243,23 +269,19 @@ fn greedy_decode_impl<B: DecodeBackend>(
             // === DECODER CALL (skip if in blank run) ===
             // During a blank run, prev_token/h/c are unchanged (state mutation
             // at the end of this loop is only reached for non-blank tokens).
-            // Therefore run_decoder() with the same inputs produces identical output.
-            let decoder_out = if in_blank_run {
+            // Therefore run_decoder() with the same inputs produces identical
+            // output, so the reusable `decoder_out` buffers are read unchanged.
+            if in_blank_run {
                 skipped_decoder_calls += 1;
-                match cached_decoder_output.as_ref() {
-                    Some(cache) => cache,
-                    None => {
-                        anyhow::bail!("blank run invariant violated: cached_decoder_output is None")
-                    }
+                if !cache_valid {
+                    anyhow::bail!("blank run invariant violated: decoder output cache is stale");
                 }
             } else {
                 decoder_calls += 1;
-                let out = backend.decode_step(state)?;
-                cached_decoder_output = Some(out);
-                cached_decoder_output
-                    .as_ref()
-                    .expect("decoder output just cached")
-            };
+                // Overwrites `decoder_out` in place — no per-token allocation.
+                backend.decode_step(state, &mut decoder_out)?;
+                cache_valid = true;
+            }
 
             // === JOINER CALL ===
             joiner_calls += 1;
@@ -293,7 +315,7 @@ fn greedy_decode_impl<B: DecodeBackend>(
                 // endpoint signal, so reset the blank counter (consistent with the
                 // non-blank branch). The cached decoder output is stale.
                 in_blank_run = false;
-                cached_decoder_output = None;
+                cache_valid = false;
                 state.consecutive_blanks = 0;
                 break;
             }
@@ -436,13 +458,12 @@ mod tests {
     }
 
     impl DecodeBackend for FakeBackend {
-        fn decode_step(&mut self, _state: &DecoderState) -> Result<DecoderOutput> {
+        fn decode_step(&mut self, _state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
             self.decoder_calls += 1;
-            Ok(DecoderOutput {
-                dec_data: vec![0.0; PRED_HIDDEN],
-                new_h: vec![0.0; PRED_HIDDEN],
-                new_c: vec![0.0; PRED_HIDDEN],
-            })
+            DecoderOutput::fill(&mut out.dec_data, &[0.0; PRED_HIDDEN]);
+            DecoderOutput::fill(&mut out.new_h, &[0.0; PRED_HIDDEN]);
+            DecoderOutput::fill(&mut out.new_c, &[0.0; PRED_HIDDEN]);
+            Ok(())
         }
 
         fn joiner_step(
@@ -595,12 +616,11 @@ mod tests {
     }
 
     impl DecodeBackend for LogitBackend {
-        fn decode_step(&mut self, _state: &DecoderState) -> Result<DecoderOutput> {
-            Ok(DecoderOutput {
-                dec_data: vec![0.0; PRED_HIDDEN],
-                new_h: vec![0.0; PRED_HIDDEN],
-                new_c: vec![0.0; PRED_HIDDEN],
-            })
+        fn decode_step(&mut self, _state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
+            DecoderOutput::fill(&mut out.dec_data, &[0.0; PRED_HIDDEN]);
+            DecoderOutput::fill(&mut out.new_h, &[0.0; PRED_HIDDEN]);
+            DecoderOutput::fill(&mut out.new_c, &[0.0; PRED_HIDDEN]);
+            Ok(())
         }
 
         fn joiner_step(

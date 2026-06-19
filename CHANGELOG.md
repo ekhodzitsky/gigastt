@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Greedy decode loop no longer allocates per token.** `run_decoder` / the joiner
+  step now reuse buffers (`copy_from_slice`) instead of allocating fresh `Vec`s per
+  non-blank token, removing millions of per-token heap allocations on long clips. The
+  blank-run decoder-output cache is preserved and decode output is bit-identical. (A
+  joiner encoder-projection precompute and ort IoBinding are possible future work.)
 - **INT8 encoder now uses dynamic integer compute (`MatMulInteger`/`ConvInteger`).**
   `gigastt-core::quantize` previously emitted weight-only `DequantizeLinear`, which ONNX
   Runtime constant-folds back to FP32 at load — so the "INT8" encoder ran as FP32 (no
