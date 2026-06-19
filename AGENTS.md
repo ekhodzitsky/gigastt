@@ -352,6 +352,11 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_MODEL_VARIANT` | `--model-variant` | rnnt (fresh installs) |
 | `GIGASTT_PUNCTUATION` | `--punctuation` | auto |
 | `GIGASTT_PUNCT_MODEL_DIR` | `--punct-model-dir` | `~/.gigastt/models/punct/` |
+| `GIGASTT_FORMAT` | `transcribe --format` | `txt` |
+| `GIGASTT_OUTPUT` | `transcribe --output` | — |
+| `GIGASTT_MAX_CHARS_PER_LINE` | `transcribe --max-chars-per-line` | — |
+| `GIGASTT_MAX_WORDS_PER_LINE` | `transcribe --max-words-per-line` | — |
+| `GIGASTT_WORD_TIMESTAMPS` | `transcribe --word-timestamps` | false |
 | `RUST_LOG` | — | `gigastt=info` |
 
 ## Useful Commands for Agents

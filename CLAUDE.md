@@ -211,7 +211,8 @@ GigaAM v3 e2e_rnnt from `istupakov/gigaam-v3-onnx` on HuggingFace:
 Rust-native quantization via `crates/gigastt-core/src/quantize.rs` (always compiled since v0.9.0):
 ```sh
 cargo run -- quantize --model-dir ~/.gigastt/models
-# Produces: v3_e2e_rnnt_encoder_int8.onnx (~225MB, ~4x smaller, ~43% faster)
+# Produces: v3_e2e_rnnt_encoder_int8.onnx (~225MB, ~3.9x smaller; dynamic INT8 with
+# MatMulInteger/ConvInteger integer compute → RTF well below 1.0 on CPU)
 ```
 
 Engine auto-detects and prefers INT8 if available; falls back to FP32.

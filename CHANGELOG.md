@@ -25,6 +25,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **INT8 encoder now uses dynamic integer compute (`MatMulInteger`/`ConvInteger`).**
+  `gigastt-core::quantize` previously emitted weight-only `DequantizeLinear`, which ONNX
+  Runtime constant-folds back to FP32 at load — so the "INT8" encoder ran as FP32 (no
+  speedup, full FP32 memory). It now emits `DynamicQuantizeLinear` on activations plus
+  `MatMulInteger`/`ConvInteger` integer kernels (matching the upstream pre-quantized
+  format), so the CPU EP runs true INT8 compute. Measured on an M-series CPU: encoder
+  RTF drops from ~1.3 (slower than real time) to well below 0.1, a ~13–30× single-stream
+  speedup, with the transcript unchanged. The `gigastt quantize` CLI and the
+  auto-quantize-on-first-run behavior are unchanged.
+
 ### Added
 
 - **Punctuation + capitalization restoration for the `rnnt` head
@@ -93,6 +105,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GIGASTT_BENCHMARK_UPDATE_BASELINE=1` refresh path. The absolute `MAX_WER`
   ceiling is a hard failure too; previously it only warned and `pass` was
   hardcoded `true`.
+- **Export formats for transcription results.** The REST endpoint
+  `/v1/transcribe` now accepts `?format=txt|json|srt|vtt|md` (JSON remains the
+  default) and optional formatter controls (`max_chars_per_line`,
+  `max_words_per_line`, `word_timestamps`, `download`). The CLI command
+  `gigastt transcribe` gained `--format`/`-f`, `--output`/`-o`,
+  `--max-chars-per-line`, `--max-words-per-line`, and `--word-timestamps`.
+  New `gigastt-core::export` module provides pure formatters; SRT/VTT are
+  speaker-aware and Markdown includes YAML frontmatter with `duration`,
+  `language: ru`, and `speakers`.
 
 ### Changed
 

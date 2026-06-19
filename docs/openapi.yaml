@@ -164,9 +164,51 @@ paths:
         Upload an audio file and receive a complete transcription.
         Supports WAV, MP3, M4A/AAC, OGG/Vorbis, and FLAC.
 
+        The default response is JSON. Alternative export formats are available
+        via the `format` query parameter: `txt`, `srt`, `vtt`, `md`. Use
+        `download` to send `Content-Disposition: attachment`.
+
         The entire file is processed in a single inference session.
         Max audio duration: 10 minutes.
       operationId: transcribeFile
+      parameters:
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [json, txt, srt, vtt, md]
+            default: json
+          description: Export format for the transcription result.
+        - name: download
+          in: query
+          required: false
+          schema:
+            type: string
+          description: |
+            Filename for the `Content-Disposition: attachment` header. If the
+            value is empty, the server uses `transcript.<ext>`.
+        - name: max_chars_per_line
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 80
+          description: Maximum characters per subtitle line (SRT/VTT). 0 = unlimited.
+        - name: max_words_per_line
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 14
+          description: Maximum words per subtitle line (SRT/VTT). 0 = unlimited.
+        - name: word_timestamps
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: Include per-word timestamps in Markdown output.
       requestBody:
         required: true
         content:
@@ -215,6 +257,38 @@ paths:
                     start: 1.1
                     end: 1.4
                 duration: 2.5
+            text/plain:
+              schema:
+                type: string
+              example: "привет как дела"
+            application/x-subrip:
+              schema:
+                type: string
+              example: |
+                1
+                00:00:00,000 --> 00:00:02,500
+                привет как дела
+            text/vtt:
+              schema:
+                type: string
+              example: |
+                WEBVTT
+
+                00:00:00.000 --> 00:00:02.500
+                привет как дела
+            text/markdown:
+              schema:
+                type: string
+              example: |
+                ---
+                duration: 2.5
+                language: ru
+                speakers: 0
+                ---
+
+                # Transcript
+
+                привет как дела
         "400":
           $ref: "#/components/responses/BadRequest"
         "413":

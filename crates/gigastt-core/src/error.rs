@@ -112,6 +112,9 @@ pub enum GigasttError {
     /// Filesystem or I/O error.
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    /// Invalid user-supplied parameter or option (not audio-specific).
+    #[error("invalid input: {message}")]
+    InvalidInput { message: String },
 }
 
 impl GigasttError {
@@ -125,6 +128,7 @@ impl GigasttError {
             GigasttError::Inference { .. } => "inference_error",
             GigasttError::InvalidAudio { .. } => "invalid_audio",
             GigasttError::Io(_) => "io_error",
+            GigasttError::InvalidInput { .. } => "invalid_input",
         }
     }
 }
@@ -161,6 +165,21 @@ mod tests {
             GigasttError::Io(std::io::Error::other("x")).code(),
             "io_error"
         );
+        assert_eq!(
+            GigasttError::InvalidInput {
+                message: "bad format".into()
+            }
+            .code(),
+            "invalid_input"
+        );
+    }
+
+    #[test]
+    fn test_display_invalid_input() {
+        let e = GigasttError::InvalidInput {
+            message: "unsupported format".into(),
+        };
+        assert_eq!(e.to_string(), "invalid input: unsupported format");
     }
 
     #[test]

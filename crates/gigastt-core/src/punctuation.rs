@@ -65,7 +65,7 @@ fn capitalize(token: &str) -> String {
 ///
 /// Verbatim port of the reference `process_token(token, label)` from the
 /// `RUPunct/RUPunct_small` model card. Case transform:
-/// `LOWER_*` keeps the token, `UPPER_*` applies [`capitalize`] (Python
+/// `LOWER_*` keeps the token, `UPPER_*` applies `capitalize` (Python
 /// `str.capitalize`), `UPPER_TOTAL_*` upper-cases the whole token. Punctuation
 /// is appended as a suffix. SPACING QUIRK preserved exactly: `LOWER_TIRE`
 /// appends `"—"` (no leading space) while `UPPER_TIRE` / `UPPER_TOTAL_TIRE`

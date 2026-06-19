@@ -1,6 +1,13 @@
 [advisories]
 version = 2
 yanked = "deny"
+ignore = [
+    # `paste` (RUSTSEC-2024-0436): unmaintained, but pulled in transitively by
+    # the `tokenizers` crate (used by the punctuation-restoration pass). It is a
+    # compile-time-only proc-macro with no runtime surface, so the unmaintained
+    # advisory carries no runtime risk. Revisit if `tokenizers` drops it.
+    "RUSTSEC-2024-0436",
+]
 
 [licenses]
 version = 2

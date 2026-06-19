@@ -58,7 +58,7 @@ const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 
 /// Selectable GigaAM v3 recognition head.
 ///
-/// Both heads ship in the same HuggingFace repo ([`HF_REPO`]) and share the
+/// Both heads ship in the same HuggingFace repo (`HF_REPO`) and share the
 /// inference pipeline; they differ only in their ONNX files and vocabulary.
 ///
 /// - [`ModelVariant::Rnnt`] (default): plain RNN-T head. Lower WER on the
@@ -327,6 +327,15 @@ pub fn resolve_variant(
     }
 }
 
+/// Ensure a model is present in `model_dir`, auto-detecting the installed
+/// variant and downloading the default (`Rnnt`) only when the directory holds
+/// no usable model. Equivalent to `ensure_model_variant(None, model_dir)` with
+/// the resolved variant discarded. Preserves the pre-variant public signature.
+pub async fn ensure_model(model_dir: &str) -> Result<()> {
+    ensure_model_variant(None, model_dir).await?;
+    Ok(())
+}
+
 /// Ensure an appropriate model variant's files exist in `model_dir`,
 /// downloading from HuggingFace if missing.
 ///
@@ -340,7 +349,7 @@ pub fn resolve_variant(
 /// (`Rnnt`).
 ///
 /// Returns the variant that is now ready in `model_dir`.
-pub async fn ensure_model(
+pub async fn ensure_model_variant(
     requested: Option<ModelVariant>,
     model_dir: &str,
 ) -> Result<ModelVariant> {
@@ -1157,10 +1166,10 @@ mod tests {
             std::fs::write(dir.join(f), b"stub").unwrap();
         }
 
-        // ensure_model with None must return E2eRnnt without downloading.
-        let variant = ensure_model(None, dir.to_str().unwrap())
+        // ensure_model_variant with None must return E2eRnnt without downloading.
+        let variant = ensure_model_variant(None, dir.to_str().unwrap())
             .await
-            .expect("ensure_model should succeed");
+            .expect("ensure_model_variant should succeed");
 
         assert_eq!(
             variant,

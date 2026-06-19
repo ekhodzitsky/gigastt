@@ -1,20 +1,22 @@
 //! HTTP handlers for REST API endpoints.
 
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::http::header;
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Json, Response};
 use futures_util::StreamExt;
 use futures_util::stream::Stream;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use std::sync::Arc;
 
 use arc_swap::ArcSwap;
 
 use super::config::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use super::metrics::MetricsRegistry;
+use gigastt_core::export::{ExportFormat, RenderOpts};
 use gigastt_core::inference::Engine;
 
 /// Shared application state for all handlers. Carries runtime limits so the
@@ -108,6 +110,86 @@ pub struct TranscribeResponse {
     pub words: Vec<gigastt_core::inference::WordInfo>,
     /// Duration of the submitted audio in seconds.
     pub duration: f64,
+}
+
+/// Query parameters for `/v1/transcribe` export formatting.
+#[derive(Debug, Default, Deserialize)]
+pub struct ExportParams {
+    /// Export format: `json` (default), `txt`, `srt`, `vtt`, `md`.
+    pub format: Option<String>,
+    /// When set, the response carries `Content-Disposition: attachment` with this
+    /// filename (or `transcript.<ext>` if the value is empty).
+    pub download: Option<String>,
+    /// Maximum characters per subtitle/caption line. `0` = unlimited.
+    #[serde(default)]
+    pub max_chars_per_line: Option<usize>,
+    /// Maximum words per subtitle/caption line. `0` = unlimited.
+    #[serde(default)]
+    pub max_words_per_line: Option<usize>,
+    /// Include per-word timestamps in Markdown output.
+    #[serde(default)]
+    pub word_timestamps: Option<bool>,
+}
+
+/// Render a transcription result into the requested export format.
+///
+/// Returns `None` when the caller explicitly requested the default JSON
+/// response, so the handler can keep serving the existing `TranscribeResponse`
+/// contract unchanged.
+#[allow(clippy::result_large_err)]
+fn render_export_response(
+    result: &gigastt_core::inference::TranscribeResult,
+    params: &ExportParams,
+) -> Result<Option<Response>, ApiError> {
+    let format_str = params.format.as_deref().unwrap_or("json");
+    if format_str.eq_ignore_ascii_case("json") {
+        return Ok(None);
+    }
+
+    let format = ExportFormat::from_str(format_str)
+        .map_err(|e| api_error(StatusCode::BAD_REQUEST, &format!("{e}"), "invalid_format"))?;
+
+    let opts = RenderOpts {
+        max_chars_per_line: params.max_chars_per_line.unwrap_or(80),
+        max_words_per_line: params.max_words_per_line.unwrap_or(14),
+        include_word_timestamps: params.word_timestamps.unwrap_or(false),
+    };
+
+    let body = format.render(result, &opts);
+    let mut builder = Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, format.content_type());
+
+    if let Some(filename) = &params.download {
+        let filename = if filename.is_empty() {
+            format!("transcript.{}", format.extension())
+        } else {
+            filename.clone()
+        };
+        // The filename is user-controlled (query param), so build the header value
+        // defensively: a filename with control characters would be an invalid
+        // header value and otherwise panic when the response is built below. Fall
+        // back to the safe default name when the requested value isn't valid.
+        let disposition =
+            header::HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
+                .unwrap_or_else(|_| {
+                    header::HeaderValue::from_str(&format!(
+                        "attachment; filename=\"transcript.{}\"",
+                        format.extension()
+                    ))
+                    .expect("static content-disposition is always a valid header value")
+                });
+        builder = builder.header(header::CONTENT_DISPOSITION, disposition);
+    }
+
+    let response = builder.body(axum::body::Body::from(body)).map_err(|e| {
+        api_error(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            &format!("failed to build response: {e}"),
+            "internal_error",
+        )
+    })?;
+    Ok(Some(response))
 }
 
 /// Error response produced by the REST handlers. Using `Response` directly
@@ -343,8 +425,9 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
 /// from [`RuntimeLimits::body_limit_bytes`] (default 50 MiB).
 pub async fn transcribe(
     State(state): State<Arc<AppState>>,
+    Query(params): Query<ExportParams>,
     body: Bytes,
-) -> Result<Json<TranscribeResponse>, ApiError> {
+) -> Result<Response, ApiError> {
     if body.is_empty() {
         return Err(api_error(
             StatusCode::BAD_REQUEST,
@@ -462,11 +545,18 @@ pub async fn transcribe(
     }
 
     match result {
-        Ok(Ok(result)) => Ok(Json(TranscribeResponse {
-            text: result.text,
-            words: result.words,
-            duration: result.duration_s,
-        })),
+        Ok(Ok(result)) => {
+            if let Some(rendered) = render_export_response(&result, &params)? {
+                Ok(rendered)
+            } else {
+                Ok(Json(TranscribeResponse {
+                    text: result.text,
+                    words: result.words,
+                    duration: result.duration_s,
+                })
+                .into_response())
+            }
+        }
         Ok(Err(e)) => {
             tracing::error!("Transcription error: {e}");
             Err(api_error(
@@ -866,7 +956,7 @@ mod tests {
             tracker: tokio_util::task::TaskTracker::new(),
         });
         let body = Bytes::from(vec![0u8; 100]);
-        let result = transcribe(State(state), body).await;
+        let result = transcribe(State(state), Query(ExportParams::default()), body).await;
         match result {
             Err(resp) => assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE),
             Ok(_) => panic!("expected payload_too_large error"),
@@ -915,7 +1005,7 @@ mod tests {
             tracker: tokio_util::task::TaskTracker::new(),
         });
         let body = Bytes::from(vec![0u8; 100]);
-        let result = transcribe(State(state), body).await;
+        let result = transcribe(State(state), Query(ExportParams::default()), body).await;
         match result {
             Err(resp) => assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE),
             Ok(_) => panic!("expected pool_closed error"),
@@ -992,7 +1082,7 @@ mod tests {
             tracker: tokio_util::task::TaskTracker::new(),
         });
         let body = short_wav();
-        match transcribe(State(state), body).await {
+        match transcribe(State(state), Query(ExportParams::default()), body).await {
             Ok(_) => {}
             Err(_) => panic!("transcribe with metrics failed"),
         }
@@ -1013,6 +1103,100 @@ mod tests {
             Ok(_) => {}
             Err(_) => panic!("transcribe_stream with metrics failed"),
         }
+    }
+
+    fn sample_export_result() -> gigastt_core::inference::TranscribeResult {
+        use gigastt_core::inference::WordInfo;
+        gigastt_core::inference::TranscribeResult {
+            text: "привет мир".into(),
+            words: vec![
+                WordInfo::new("привет", 0.0, 0.5, 0.98, Some(0)),
+                WordInfo::new("мир", 0.6, 1.0, 0.97, Some(0)),
+            ],
+            duration_s: 1.0,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_render_export_default_returns_none() {
+        let result = sample_export_result();
+        let params = ExportParams::default();
+        assert!(render_export_response(&result, &params).unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_render_export_txt() {
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("txt".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(resp.into_body(), 1024).await.unwrap();
+        assert_eq!(body, "привет мир");
+    }
+
+    #[tokio::test]
+    async fn test_render_export_srt_content_type() {
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("srt".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
+            "application/x-subrip; charset=utf-8"
+        );
+        let body = axum::body::to_bytes(resp.into_body(), 1024).await.unwrap();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(text.contains("[SPEAKER_0] привет мир"));
+    }
+
+    #[tokio::test]
+    async fn test_render_export_vtt_download_header() {
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("vtt".into()),
+            download: Some("recording.vtt".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(
+            resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
+            "attachment; filename=\"recording.vtt\""
+        );
+    }
+
+    #[tokio::test]
+    async fn test_render_export_download_filename_with_control_char_does_not_panic() {
+        // The download filename is user-controlled; a control character must not
+        // produce an invalid header value / panic — it falls back to the default.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("srt".into()),
+            download: Some("evil\r\nInjected: x".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
+            "attachment; filename=\"transcript.srt\""
+        );
+    }
+
+    #[tokio::test]
+    async fn test_render_export_invalid_format() {
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("docx".into()),
+            ..ExportParams::default()
+        };
+        let err = render_export_response(&result, &params).unwrap_err();
+        assert_eq!(err.status(), StatusCode::BAD_REQUEST);
     }
 
     fn test_engine() -> Arc<Engine> {
