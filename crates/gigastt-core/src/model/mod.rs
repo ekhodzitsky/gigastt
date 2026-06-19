@@ -56,6 +56,27 @@ impl DownloadProgress {
 
 const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 
+/// HuggingFace repo hosting the optional RUPunct punctuation model (MIT).
+const PUNCT_HF_REPO: &str = "ekhodzitsky/rupunct-small-onnx";
+
+/// The three files the punctuation pass needs, with their pinned SHA-256
+/// checksums. Filenames mirror the `PUNCT_*` constants in [`crate::punctuation`].
+/// Verified against the canonical HuggingFace copies on 2026-06-19.
+const PUNCT_FILES: &[(&str, &str)] = &[
+    (
+        crate::punctuation::PUNCT_MODEL_FILE,
+        "b105da023474d98aa13ba18953ae67b04b17bd0595034bc06030c17536893933",
+    ),
+    (
+        crate::punctuation::PUNCT_TOKENIZER_FILE,
+        "7ca617388c2092a3a84272025c52bbf3c6db0aee225c0351186295c0b5d3ddc6",
+    ),
+    (
+        crate::punctuation::PUNCT_CONFIG_FILE,
+        "6924a8cf41ec2bd3a3aa73a387ae0ccd0aed253ec7cac4d2f53c7d27440891eb",
+    ),
+];
+
 /// Selectable GigaAM v3 recognition head.
 ///
 /// Both heads ship in the same HuggingFace repo (`HF_REPO`) and share the
@@ -259,9 +280,10 @@ pub fn default_model_dir() -> String {
 /// a sibling of [`default_model_dir`].
 ///
 /// Holds the optional RUPunct ONNX punctuation/casing restorer used to
-/// post-process the plain `rnnt` head's bare lowercase output. The artifact is
-/// not yet published, so this dir is populated manually (see
-/// [`crate::punctuation`]); a missing dir simply disables the punct pass.
+/// post-process the plain `rnnt` head's bare lowercase output. The artifact
+/// auto-downloads from `ekhodzitsky/rupunct-small-onnx` via
+/// [`ensure_punct_model`] when the punct pass is enabled (see
+/// [`crate::punctuation`]); a download failure simply disables the punct pass.
 pub fn default_punct_model_dir() -> String {
     home_dir()
         .map(|h| {
@@ -429,6 +451,45 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
         SPEAKER_MODEL_FILE,
     )
     .await
+}
+
+/// Ensure the optional punctuation model exists in `punct_model_dir`,
+/// downloading any missing files from the `ekhodzitsky/rupunct-small-onnx`
+/// HuggingFace repo (public, MIT).
+///
+/// Downloads the three files the punctuation pass needs
+/// (`rupunct_small_int8.onnx`, `tokenizer.json`, `config.json`) — only those
+/// not already present — using the same streaming-download + atomic-rename +
+/// SHA-256 infra as the main model download. Files already on disk are left
+/// untouched, so a second call is a no-op (no re-download).
+///
+/// The pass is strictly optional: callers treat a download error as
+/// "punctuation unavailable" and proceed with bare text.
+pub async fn ensure_punct_model(punct_model_dir: &str) -> Result<()> {
+    let dir = Path::new(punct_model_dir);
+
+    if PUNCT_FILES.iter().all(|(file, _)| dir.join(file).exists()) {
+        tracing::info!("Punctuation model found at {punct_model_dir}");
+        return Ok(());
+    }
+
+    tracing::info!("Punctuation model not found, downloading from HuggingFace...");
+    std::fs::create_dir_all(dir).context("Failed to create punctuation model directory")?;
+
+    #[cfg(unix)]
+    let _lock = acquire_download_lock(dir)?;
+
+    for (file, sha256) in PUNCT_FILES {
+        let final_dest = dir.join(file);
+        if final_dest.exists() {
+            continue;
+        }
+        let url = format!("https://huggingface.co/{PUNCT_HF_REPO}/resolve/main/{file}");
+        stream_to_partial_then_finalize(&url, &final_dest, Some(sha256), file).await?;
+    }
+
+    tracing::info!("Punctuation model download complete");
+    Ok(())
 }
 
 /// True when every downloaded file for `variant` is present in `dir`.
@@ -919,6 +980,50 @@ mod tests {
             msg.contains("SHA-256 mismatch"),
             "error should mention mismatch: {msg}"
         );
+    }
+
+    #[test]
+    fn test_punct_files_checksums_are_pinned() {
+        // Three files, each with a 64-char lowercase hex digest — no truncation
+        // or placeholder slipping into a release.
+        assert_eq!(PUNCT_FILES.len(), 3);
+        for (file, sum) in PUNCT_FILES {
+            assert_eq!(
+                sum.len(),
+                64,
+                "{file} punct checksum must be 64 hex chars, got: {sum}"
+            );
+            assert!(
+                sum.chars()
+                    .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)),
+                "{file} punct checksum must be lowercase hex, got: {sum}"
+            );
+        }
+    }
+
+    /// `ensure_punct_model` short-circuits (no network, no `.partial`) when all
+    /// three files are already present.
+    #[tokio::test]
+    async fn test_ensure_punct_model_present_no_download() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+        for (file, _) in PUNCT_FILES {
+            std::fs::write(dir.join(file), b"stub").unwrap();
+        }
+
+        ensure_punct_model(dir.to_str().unwrap())
+            .await
+            .expect("present model must short-circuit");
+
+        let partials: Vec<_> = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().contains(".partial"))
+            .collect();
+        assert!(partials.is_empty(), "no .partial files: {partials:?}");
+        for (file, _) in PUNCT_FILES {
+            assert_eq!(std::fs::read(dir.join(file)).unwrap(), b"stub");
+        }
     }
 
     #[test]

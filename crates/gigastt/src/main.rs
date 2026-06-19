@@ -71,13 +71,27 @@ enum Commands {
 
         /// Directory holding the optional punctuation model
         /// (`rupunct_small_int8.onnx`, `tokenizer.json`, `config.json`).
-        /// Defaults to `~/.gigastt/models/punct/`. Env: GIGASTT_PUNCT_MODEL_DIR.
+        /// Defaults to `~/.gigastt/models/punct/`. Auto-downloaded from
+        /// `ekhodzitsky/rupunct-small-onnx` when enabled and absent.
+        /// Env: GIGASTT_PUNCT_MODEL_DIR.
         #[arg(
             long,
             env = "GIGASTT_PUNCT_MODEL_DIR",
             default_value_t = model::default_punct_model_dir()
         )]
         punct_model_dir: String,
+
+        /// Inverse text normalization (Russian number-words → digits):
+        /// `on`, `off`, or `auto`. `auto` (default) enables it for the `rnnt`
+        /// head (spells numbers as words) and disables it for `e2e_rnnt`
+        /// (ITN already baked in). Runs before punctuation. Env: GIGASTT_ITN.
+        #[arg(
+            long,
+            env = "GIGASTT_ITN",
+            default_value = "auto",
+            value_parser = parse_itn_mode
+        )]
+        itn: ItnMode,
 
         /// Number of concurrent inference sessions
         #[arg(long, default_value_t = 4)]
@@ -260,13 +274,26 @@ enum Commands {
         punctuation: PunctuationMode,
 
         /// Directory holding the optional punctuation model. Defaults to
-        /// `~/.gigastt/models/punct/`. Env: GIGASTT_PUNCT_MODEL_DIR.
+        /// `~/.gigastt/models/punct/`. Auto-downloaded from
+        /// `ekhodzitsky/rupunct-small-onnx` when enabled and absent.
+        /// Env: GIGASTT_PUNCT_MODEL_DIR.
         #[arg(
             long,
             env = "GIGASTT_PUNCT_MODEL_DIR",
             default_value_t = model::default_punct_model_dir()
         )]
         punct_model_dir: String,
+
+        /// Inverse text normalization (Russian number-words → digits):
+        /// `on`, `off`, or `auto`. `auto` (default) enables it for `rnnt`,
+        /// disables it for `e2e_rnnt`. Runs before punctuation. Env: GIGASTT_ITN.
+        #[arg(
+            long,
+            env = "GIGASTT_ITN",
+            default_value = "auto",
+            value_parser = parse_itn_mode
+        )]
+        itn: ItnMode,
 
         /// Export format: json, txt, srt, vtt, md [default: txt]
         #[arg(short, long, env = "GIGASTT_FORMAT", default_value = "txt")]
@@ -469,6 +496,49 @@ fn parse_punctuation_mode(s: &str) -> Result<PunctuationMode, String> {
     s.parse()
 }
 
+/// Whether to run the optional inverse text normalization pass
+/// (Russian number-words → digits). Mirrors [`PunctuationMode`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ItnMode {
+    /// Always apply ITN.
+    On,
+    /// Never apply ITN (pass-through number-words).
+    Off,
+    /// Decide from the active model variant: on for `rnnt` (spells numbers as
+    /// words), off for `e2e_rnnt` (ITN already baked into the head).
+    Auto,
+}
+
+impl std::str::FromStr for ItnMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "on" | "true" | "1" | "yes" => Ok(ItnMode::On),
+            "off" | "false" | "0" | "no" => Ok(ItnMode::Off),
+            "auto" => Ok(ItnMode::Auto),
+            other => Err(format!(
+                "unknown ITN mode '{other}' (expected 'on', 'off', or 'auto')"
+            )),
+        }
+    }
+}
+
+/// clap value parser for `--itn`.
+fn parse_itn_mode(s: &str) -> Result<ItnMode, String> {
+    s.parse()
+}
+
+/// Resolve `--itn` against the active model variant: `auto` enables ITN only
+/// for the bare `rnnt` head (the `e2e_rnnt` head already digitizes numbers).
+fn resolve_itn(mode: ItnMode, variant: ModelVariant) -> bool {
+    match mode {
+        ItnMode::On => true,
+        ItnMode::Off => false,
+        ItnMode::Auto => variant == ModelVariant::Rnnt,
+    }
+}
+
 /// Resolve `--punctuation` against the active model variant and, when the pass
 /// should run, load the punctuation restorer from `punct_model_dir`.
 ///
@@ -476,19 +546,24 @@ fn parse_punctuation_mode(s: &str) -> Result<PunctuationMode, String> {
 /// fails to load, a warning is logged once and `None` is returned so
 /// transcription proceeds with bare text — the punct pass is strictly optional
 /// and never blocks recognition.
-fn maybe_load_punctuator(
-    mode: PunctuationMode,
-    punct_model_dir: &str,
-    variant: ModelVariant,
-) -> Option<gigastt_core::punctuation::Punctuator> {
-    let enabled = match mode {
+/// Resolve `--punctuation` against the active model variant: `auto` enables the
+/// pass only for the bare `rnnt` head (`e2e_rnnt` already punctuates).
+fn resolve_punctuation(mode: PunctuationMode, variant: ModelVariant) -> bool {
+    match mode {
         PunctuationMode::On => true,
         PunctuationMode::Off => false,
         // e2e_rnnt already emits punctuation/casing, so only the bare rnnt head
         // benefits from the restoration pass.
         PunctuationMode::Auto => variant == ModelVariant::Rnnt,
-    };
-    if !enabled {
+    }
+}
+
+fn maybe_load_punctuator(
+    mode: PunctuationMode,
+    punct_model_dir: &str,
+    variant: ModelVariant,
+) -> Option<gigastt_core::punctuation::Punctuator> {
+    if !resolve_punctuation(mode, variant) {
         return None;
     }
     match gigastt_core::punctuation::Punctuator::load(std::path::Path::new(punct_model_dir)) {
@@ -503,6 +578,30 @@ fn maybe_load_punctuator(
             );
             None
         }
+    }
+}
+
+/// When the punctuation pass resolves to ENABLED and the punct model files are
+/// absent in `punct_model_dir`, auto-download them from the
+/// `ekhodzitsky/rupunct-small-onnx` HuggingFace repo so the pass works out of
+/// the box.
+///
+/// Graceful: a download failure is logged as a warning and swallowed — the
+/// subsequent [`maybe_load_punctuator`] call then falls back to bare text. The
+/// punct pass never blocks transcription.
+async fn maybe_download_punct_model(
+    mode: PunctuationMode,
+    punct_model_dir: &str,
+    variant: ModelVariant,
+) {
+    if !resolve_punctuation(mode, variant) {
+        return;
+    }
+    if let Err(e) = model::ensure_punct_model(punct_model_dir).await {
+        tracing::warn!(
+            "Punctuation model download failed for {punct_model_dir} ({e:#}); \
+             continuing without punctuation restoration"
+        );
     }
 }
 
@@ -551,6 +650,7 @@ async fn main() -> anyhow::Result<()> {
             model_variant,
             punctuation,
             punct_model_dir,
+            itn,
             pool_size,
             pool_min_size,
             batch_pool_size,
@@ -575,6 +675,7 @@ async fn main() -> anyhow::Result<()> {
             ensure_bind_allowed(&host, bind_all)?;
             let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
             ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
+            maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
             let engine = inference::Engine::load_with_pools(
                 &model_dir,
@@ -582,7 +683,8 @@ async fn main() -> anyhow::Result<()> {
                 pool_min_size,
                 batch_pool_size,
             )?
-            .with_punctuator(punctuator);
+            .with_punctuator(punctuator)
+            .with_itn(resolve_itn(itn, resolved));
             log_rss();
             let limits = build_limits(
                 config.as_deref(),
@@ -659,6 +761,7 @@ async fn main() -> anyhow::Result<()> {
             model_variant,
             punctuation,
             punct_model_dir,
+            itn,
             format,
             output,
             max_chars_per_line,
@@ -666,9 +769,11 @@ async fn main() -> anyhow::Result<()> {
             word_timestamps,
         } => {
             let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
+            maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
-            let engine =
-                inference::Engine::load_with_pool_size(&model_dir, 1)?.with_punctuator(punctuator);
+            let engine = inference::Engine::load_with_pool_size(&model_dir, 1)?
+                .with_punctuator(punctuator)
+                .with_itn(resolve_itn(itn, resolved));
             log_rss();
             let mut guard = engine.pool.checkout().await?;
             let result = engine.transcribe_file(&file, &mut guard);
@@ -976,6 +1081,43 @@ mod tests {
             Commands::Transcribe { punctuation, .. } => {
                 assert_eq!(punctuation, PunctuationMode::Off);
             }
+            _ => panic!("expected Transcribe"),
+        }
+    }
+
+    #[test]
+    fn test_itn_mode_from_str() {
+        use std::str::FromStr;
+        assert_eq!(ItnMode::from_str("on").unwrap(), ItnMode::On);
+        assert_eq!(ItnMode::from_str("OFF").unwrap(), ItnMode::Off);
+        assert_eq!(ItnMode::from_str(" auto ").unwrap(), ItnMode::Auto);
+        assert!(ItnMode::from_str("maybe").is_err());
+    }
+
+    #[test]
+    fn test_resolve_itn_auto_per_variant() {
+        // auto → on for the bare rnnt head, off for the already-ITN e2e head.
+        assert!(resolve_itn(ItnMode::Auto, ModelVariant::Rnnt));
+        assert!(!resolve_itn(ItnMode::Auto, ModelVariant::E2eRnnt));
+        // on/off override the variant.
+        assert!(resolve_itn(ItnMode::On, ModelVariant::E2eRnnt));
+        assert!(!resolve_itn(ItnMode::Off, ModelVariant::Rnnt));
+    }
+
+    #[test]
+    fn test_cli_serve_itn_defaults_auto() {
+        let cli = Cli::parse_from(["gigastt", "serve"]);
+        match cli.command {
+            Commands::Serve { itn, .. } => assert_eq!(itn, ItnMode::Auto),
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_itn_override() {
+        let cli = Cli::parse_from(["gigastt", "transcribe", "a.wav", "--itn", "on"]);
+        match cli.command {
+            Commands::Transcribe { itn, .. } => assert_eq!(itn, ItnMode::On),
             _ => panic!("expected Transcribe"),
         }
     }

@@ -39,6 +39,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Inverse text normalization for the `rnnt` head (`--itn`).** An optional
+  post-processing pass converts spelled-out Russian numbers into digits
+  (e.g. `шестьдесят тысяч` → `60000`, `две тысячи двадцать` → `2020`). It runs
+  **before** the punctuation pass, so the combined pipeline turns
+  `шестьдесят тысяч тенге сколько будет стоить` into
+  `60 000 тенге, сколько будет стоить?`. `--itn <auto|on|off>`
+  (env `GIGASTT_ITN`, default `auto` = on for `rnnt`, off for `e2e_rnnt` which
+  already digitizes numbers). The number-word table and the words→digits state
+  machine are a verbatim port of the WER benchmark normalizer, so online and
+  offline number handling stay symmetric.
+- **Punctuation model auto-download.** The RUPunct ONNX artifact is now published
+  at `ekhodzitsky/rupunct-small-onnx` (public, MIT) and downloads automatically
+  into `--punct-model-dir` (with SHA-256 verification + atomic rename) the first
+  time the punctuation pass is enabled, so `--punctuation on` works out of the
+  box. A download failure is logged and swallowed — transcription is never
+  blocked.
 - **Punctuation + capitalization restoration for the `rnnt` head
   (`--punctuation`).** An optional post-processing pass turns the plain `rnnt`
   head's bare lowercase output into properly cased, punctuated Russian
@@ -50,9 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for `e2e_rnnt` which already punctuates) and `--punct-model-dir`
   (env `GIGASTT_PUNCT_MODEL_DIR`, default `~/.gigastt/models/punct/`). The pass is
   fully optional: if the model is absent it logs once and returns the text
-  unchanged. Inverse text normalization (number-words → digits) is a planned
-  follow-up. (The ONNX artifact must be published to a model host before an
-  auto-download default can be wired; for now place it in the punct model dir.)
+  unchanged.
 - **Selectable recognition head (`--model-variant rnnt|e2e_rnnt`).** gigastt can now
   run either GigaAM v3 head. The plain `rnnt` head is the default for fresh installs:
   it scores markedly lower WER on bare normalized text (measured ~3.3% vs ~9.6% for

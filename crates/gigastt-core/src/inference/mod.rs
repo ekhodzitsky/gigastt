@@ -744,6 +744,10 @@ pub struct Engine {
     /// output. `None` = pass-through (the default, and the only behaviour when
     /// no punct model is installed). Attached via [`Engine::with_punctuator`].
     punctuator: Option<crate::punctuation::Punctuator>,
+    /// Whether to run inverse text normalization (Russian number-words →
+    /// digits) on file-transcription output, *before* the punctuation pass.
+    /// Off by default; toggled via [`Engine::with_itn`].
+    itn: bool,
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
@@ -779,6 +783,20 @@ impl Engine {
     /// Whether a punctuation restorer is attached.
     pub fn has_punctuator(&self) -> bool {
         self.punctuator.is_some()
+    }
+
+    /// Enable or disable inverse text normalization (Russian number-words →
+    /// digits) on file-transcription output, consuming and returning `self`
+    /// (builder style). When enabled, ITN runs *before* the punctuation pass so
+    /// the restorer cases the already-digitized text.
+    pub fn with_itn(mut self, enabled: bool) -> Self {
+        self.itn = enabled;
+        self
+    }
+
+    /// Whether inverse text normalization is enabled.
+    pub fn has_itn(&self) -> bool {
+        self.itn
     }
 
     /// Size of the BPE vocabulary the loaded tokenizer covers. Exposed so the
@@ -1288,6 +1306,7 @@ impl Engine {
             features,
             variant,
             punctuator: None,
+            itn: false,
             int8: is_int8,
             #[cfg(feature = "diarization")]
             speaker_encoder,
@@ -1714,6 +1733,16 @@ impl Engine {
             .map(|w| w.word.as_str())
             .collect::<Vec<_>>()
             .join(" ");
+
+        // Optional inverse text normalization (number-words → digits) for the
+        // plain `rnnt` head. Runs BEFORE punctuation so the restorer cases the
+        // already-digitized text. No-op when disabled; word-level timing is
+        // left untouched — only the joined `text` is rewritten.
+        let text = if self.itn {
+            crate::itn::apply_itn(&text)
+        } else {
+            text
+        };
 
         // Optional punctuation / casing restoration (plain `rnnt` head). When
         // no punctuator is attached this is a no-op; `restore` itself never

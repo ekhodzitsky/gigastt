@@ -29,7 +29,12 @@ gigastt serve [OPTIONS]
                             Optional ONNX pass; absent model → text unchanged.
                             Env: GIGASTT_PUNCTUATION.
   --punct-model-dir <DIR>   Punctuation model directory [default: ~/.gigastt/models/punct].
+                            Auto-downloaded from ekhodzitsky/rupunct-small-onnx when
+                            the pass is enabled and the files are absent.
                             Env: GIGASTT_PUNCT_MODEL_DIR.
+  --itn <MODE>              Inverse text normalization (number-words → digits):
+                            auto | on | off [default: auto = on for rnnt, off for
+                            e2e_rnnt]. Runs before punctuation. Env: GIGASTT_ITN.
   --pool-size <N>           Concurrent inference sessions [default: 4]
   --bind-all                Required to listen on a non-loopback address.
                             Also: GIGASTT_ALLOW_BIND_ANY=1.
@@ -78,6 +83,17 @@ gigastt download [OPTIONS]
 
 gigastt transcribe [OPTIONS] <FILE>
   --model-dir <DIR>           Model directory [default: ~/.gigastt/models]
+  --model-variant <V>         Recognition head: rnnt | e2e_rnnt. Omit to auto-detect.
+                              Env: GIGASTT_MODEL_VARIANT.
+  --punctuation <MODE>        Restore punctuation/casing: auto | on | off
+                              [default: auto = on for rnnt, off for e2e_rnnt].
+                              Env: GIGASTT_PUNCTUATION.
+  --punct-model-dir <DIR>     Punctuation model directory [default: ~/.gigastt/models/punct].
+                              Auto-downloaded from ekhodzitsky/rupunct-small-onnx when
+                              enabled and absent. Env: GIGASTT_PUNCT_MODEL_DIR.
+  --itn <MODE>                Inverse text normalization (number-words → digits):
+                              auto | on | off [default: auto = on for rnnt, off for
+                              e2e_rnnt]. Runs before punctuation. Env: GIGASTT_ITN.
   -f, --format <FORMAT>       Export format: json, txt, srt, vtt, md [default: txt]
   -o, --output <FILE>         Write rendered output to file instead of stdout
   --max-chars-per-line <N>    Max chars per subtitle line (SRT/VTT) [default: 80]

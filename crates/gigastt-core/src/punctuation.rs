@@ -18,11 +18,12 @@
 //! [`Punctuator::load`] returns an error which the caller treats as "punctuation
 //! disabled" (the engine logs a warning once and returns input text unchanged).
 //!
-//! NOTE (distribution): the exported ONNX artifact is not yet published to
-//! HuggingFace. It must be loaded from a local model dir (`--punct-model-dir`,
-//! default `~/.gigastt/models/punct/`). Before an auto-download default can be
-//! wired, publish the artifact (e.g. to an `ekhodzitsky/rupunct-small-onnx` HF
-//! repo). sha256 of the int8 ONNX:
+//! NOTE (distribution): the exported ONNX artifact is published at the
+//! `ekhodzitsky/rupunct-small-onnx` HuggingFace repo (public, MIT) and
+//! auto-downloads into the punct model dir (`--punct-model-dir`, default
+//! `~/.gigastt/models/punct/`) on first use via
+//! [`crate::model::ensure_punct_model`]. A local dir is still honoured if
+//! pre-populated. sha256 of the int8 ONNX:
 //! `b105da023474d98aa13ba18953ae67b04b17bd0595034bc06030c17536893933`.
 
 use std::path::Path;
