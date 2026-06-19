@@ -29,13 +29,13 @@ $ gigastt transcribe recording.wav
 
 - **Стриминг в реальном времени** — инкрементальные partial-результаты по WebSocket; REST + SSE для файлов
 - **Встраиваемость** — один статический бинарник, C-ABI FFI `cdylib` для Android/mobile, или крейт `gigastt-core`
-- **Маленький и быстрый** — INT8-модель ~225 МБ, real-time на CPU; ускорение CoreML / CUDA / NNAPI
+- **Точный и маленький** — **2.6% WER** на Golos crowd (голова rnnt), INT8-модель ~225 МБ, real-time на CPU (RTF ~0.11); ускорение CoreML / CUDA / NNAPI
 - **Защищённый сервер** — loopback по умолчанию, origin-allowlist, rate-limiting по IP, graceful drain, метрики Prometheus
 - **MIT-чистый** — gigastt (MIT) на весах GigaAM v3 (MIT) — пригоден для коммерческих on-device продуктов
 
 ## Где это уместно
 
-gigastt — **только русский** и заточен под **встраивание**, а не под топ WER-лидерборда. На чистой начитке [Vosk точнее](docs/benchmarks.md); для multilingual — whisper.cpp / sherpa-onnx / NVIDIA Parakeet. Ниша gigastt — **самая маленькая русская модель без компромисса по языковой модели**, в обёртке **встраиваемого single-binary / FFI / streaming** сервера с **MIT-чистыми весами**, конкурентная на спонтанной и телефонной речи. Полное честное сравнение vs Vosk 0.54, T-one и Whisper → **[Benchmarks](docs/benchmarks.md)**.
+gigastt — **только русский** и заточен под **встраивание**. Голова rnnt (дефолт с v2.3) даёт **2.6% WER на Golos crowd** — на уровне сильнейших русских движков на чистой начитке — и эта ошибка **чисто акустическая**, не раздутая нормализацией. Для multilingual — whisper.cpp / sherpa-onnx / NVIDIA Parakeet. Ниша gigastt — **самая маленькая русская модель без компромисса по языковой модели**, в обёртке **встраиваемого single-binary / FFI / streaming** сервера с **MIT-чистыми весами**, конкурентная на спонтанной и телефонной речи. Полное честное сравнение vs Vosk 0.54, T-one и Whisper → **[Benchmarks](docs/benchmarks.md)**.
 
 ## Документация
 
@@ -66,7 +66,7 @@ docker build -t gigastt . && docker run -p 9876:9876 gigastt
 
 ## Требования
 
-Rust **1.88+**, `protoc` в `PATH`. macOS 14+ (Apple Silicon, CoreML) или Linux x86_64 (опц. NVIDIA CUDA 12+). ~1.5 ГБ диска, ~560 МБ RAM. Крейт `gigastt-core` без серверных зависимостей: `gigastt-core = "2.0"`.
+Rust **1.88+**, `protoc` в `PATH`. macOS 14+ (Apple Silicon, CoreML) или Linux x86_64 (опц. NVIDIA CUDA 12+). ~1.5 ГБ диска, ~790 МБ RAM при дефолтном `--pool-size 2` (~400 МБ на одну сессию). Крейт `gigastt-core` без серверных зависимостей: `gigastt-core = "2.0"`.
 
 ## Лицензия
 

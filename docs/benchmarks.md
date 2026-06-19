@@ -40,9 +40,9 @@ Domains: **Clean read** `golos_crowd_1k` · **Far-field** `golos_farfield` ·
 
 ¹ turbo clean read is a 300-sample slice (wider CI); the rest are 1000.
 
-**Honest reading:**
+**Honest reading** (of the `e2e_rnnt`-head table above; the v2.3 default `rnnt` head changes the clean-read line — see below):
 
-- **Clean read** → **Vosk 0.54 wins** (2.97%). gigastt (8.60%) and T-one (6.61%) trail it.
+- **Clean read** → on the `e2e` head **Vosk 0.54 wins** (2.97%); gigastt-e2e (8.60%) and T-one (6.61%) trail it. The v2.3 default `rnnt` head reaches **2.6%** on the full Golos crowd set, effectively closing this gap (a like-for-like golos_crowd_1k rerun is pending).
 - **Far-field** → a **tie** between gigastt (5.90) and Vosk 0.54 (6.29) — CIs overlap.
   gigastt's old far-field "lead" was only against the outdated Vosk 0.42 (13.93).
 - **Phone calls** → **gigastt holds** (19.28): it beats Vosk 0.54 (22.74) and ties/leads
@@ -50,9 +50,10 @@ Domains: **Clean read** `golos_crowd_1k` · **Far-field** `golos_farfield` ·
   T-one's *published* telephony strength is on its own call-center set, not this one.
 - **YouTube** → **gigastt's only CI-separated win** (11.35 vs all).
 
-So gigastt is **not** a general WER leader. Its honest accuracy story is *wins YouTube,
-holds noisy phone calls, ties far-field, concedes clean read to Vosk 0.54.* The durable
-advantage is the packaging — see Footprint and the [README](../README.md#where-it-fits).
+On the `e2e` head, gigastt was **not** a general WER leader: *wins YouTube, holds noisy
+phone calls, ties far-field, concedes clean read to Vosk 0.54.* The v2.3 `rnnt` default
+materially improves clean read (2.6% on the full set), and the durable advantage remains
+the packaging — see Footprint and the [README](../README.md#where-it-fits).
 
 ## Speed — RTF (processing ÷ audio; lower = faster; M1 CPU)
 
@@ -60,7 +61,7 @@ advantage is the packaging — see Footprint and the [README](../README.md#where
 |---|---|---|---|---|
 | Vosk 0.42 / 0.54 | ~0.03 | ~0.03 | ~0.03 | ~0.04 |
 | **T-one (beam+LM)** | 0.056 | 0.060 | 0.065 | 0.065 |
-| gigastt | 0.157 | 0.164 | 0.212 | 0.158 |
+| gigastt (`e2e_rnnt`) | 0.157 | 0.164 | 0.212 | 0.158 |
 | whisper.cpp | 0.357 | 0.556 | 0.624 | 0.765 |
 | faster-whisper / turbo | >1.0 (slower than real-time on CPU) | | | |
 
