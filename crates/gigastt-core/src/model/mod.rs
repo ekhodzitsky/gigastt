@@ -255,6 +255,25 @@ pub fn default_model_dir() -> String {
         .unwrap_or_else(|| ".gigastt/models".into())
 }
 
+/// Return the default punctuation-model directory (`~/.gigastt/models/punct/`),
+/// a sibling of [`default_model_dir`].
+///
+/// Holds the optional RUPunct ONNX punctuation/casing restorer used to
+/// post-process the plain `rnnt` head's bare lowercase output. The artifact is
+/// not yet published, so this dir is populated manually (see
+/// [`crate::punctuation`]); a missing dir simply disables the punct pass.
+pub fn default_punct_model_dir() -> String {
+    home_dir()
+        .map(|h| {
+            h.join(".gigastt")
+                .join("models")
+                .join("punct")
+                .to_string_lossy()
+                .into_owned()
+        })
+        .unwrap_or_else(|| ".gigastt/models/punct".into())
+}
+
 /// Acquire an advisory exclusive lock on a file inside `dir` so that only
 /// one process downloads models at a time. The lock is released when the
 /// returned file is dropped.

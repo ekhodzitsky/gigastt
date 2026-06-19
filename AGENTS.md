@@ -350,6 +350,8 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_METRICS` | `--metrics` | false |
 | `GIGASTT_METRICS_LISTEN` | `--metrics-listen` | 127.0.0.1:9090 |
 | `GIGASTT_MODEL_VARIANT` | `--model-variant` | rnnt (fresh installs) |
+| `GIGASTT_PUNCTUATION` | `--punctuation` | auto |
+| `GIGASTT_PUNCT_MODEL_DIR` | `--punct-model-dir` | `~/.gigastt/models/punct/` |
 | `RUST_LOG` | — | `gigastt=info` |
 
 ## Useful Commands for Agents

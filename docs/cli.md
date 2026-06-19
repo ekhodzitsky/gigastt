@@ -24,6 +24,12 @@ gigastt serve [OPTIONS]
                             already installed; fresh installs default to rnnt (lower WER,
                             no punctuation). e2e_rnnt keeps punctuation/casing/ITN.
                             Env: GIGASTT_MODEL_VARIANT.
+  --punctuation <MODE>      Restore punctuation/casing on output: auto | on | off
+                            [default: auto = on for rnnt, off for e2e_rnnt].
+                            Optional ONNX pass; absent model → text unchanged.
+                            Env: GIGASTT_PUNCTUATION.
+  --punct-model-dir <DIR>   Punctuation model directory [default: ~/.gigastt/models/punct].
+                            Env: GIGASTT_PUNCT_MODEL_DIR.
   --pool-size <N>           Concurrent inference sessions [default: 4]
   --bind-all                Required to listen on a non-loopback address.
                             Also: GIGASTT_ALLOW_BIND_ANY=1.

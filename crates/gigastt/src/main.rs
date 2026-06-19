@@ -53,6 +53,29 @@ enum Commands {
         )]
         model_variant: Option<ModelVariant>,
 
+        /// Punctuation + capitalization restoration: `on`, `off`, or `auto`.
+        /// `auto` (default) enables it for the `rnnt` head (bare output) and
+        /// disables it for `e2e_rnnt` (already punctuated). Requires the punct
+        /// model in `--punct-model-dir`; missing model → bare text + a warning.
+        /// Env: GIGASTT_PUNCTUATION.
+        #[arg(
+            long,
+            env = "GIGASTT_PUNCTUATION",
+            default_value = "auto",
+            value_parser = parse_punctuation_mode
+        )]
+        punctuation: PunctuationMode,
+
+        /// Directory holding the optional punctuation model
+        /// (`rupunct_small_int8.onnx`, `tokenizer.json`, `config.json`).
+        /// Defaults to `~/.gigastt/models/punct/`. Env: GIGASTT_PUNCT_MODEL_DIR.
+        #[arg(
+            long,
+            env = "GIGASTT_PUNCT_MODEL_DIR",
+            default_value_t = model::default_punct_model_dir()
+        )]
+        punct_model_dir: String,
+
         /// Number of concurrent inference sessions
         #[arg(long, default_value_t = 4)]
         pool_size: usize,
@@ -221,6 +244,26 @@ enum Commands {
             value_parser = parse_model_variant
         )]
         model_variant: Option<ModelVariant>,
+
+        /// Punctuation + capitalization restoration: `on`, `off`, or `auto`.
+        /// `auto` (default) enables it for `rnnt`, disables it for `e2e_rnnt`.
+        /// Env: GIGASTT_PUNCTUATION.
+        #[arg(
+            long,
+            env = "GIGASTT_PUNCTUATION",
+            default_value = "auto",
+            value_parser = parse_punctuation_mode
+        )]
+        punctuation: PunctuationMode,
+
+        /// Directory holding the optional punctuation model. Defaults to
+        /// `~/.gigastt/models/punct/`. Env: GIGASTT_PUNCT_MODEL_DIR.
+        #[arg(
+            long,
+            env = "GIGASTT_PUNCT_MODEL_DIR",
+            default_value_t = model::default_punct_model_dir()
+        )]
+        punct_model_dir: String,
     },
 }
 
@@ -371,6 +414,75 @@ fn parse_model_variant(s: &str) -> Result<ModelVariant, String> {
     s.parse()
 }
 
+/// Whether to run the optional punctuation / casing restoration pass.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PunctuationMode {
+    /// Always attempt to load + apply the punct model.
+    On,
+    /// Never apply punctuation (pass-through bare output).
+    Off,
+    /// Decide from the active model variant: on for `rnnt` (bare output),
+    /// off for `e2e_rnnt` (punctuation already baked into the head).
+    Auto,
+}
+
+impl std::str::FromStr for PunctuationMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "on" | "true" | "1" | "yes" => Ok(PunctuationMode::On),
+            "off" | "false" | "0" | "no" => Ok(PunctuationMode::Off),
+            "auto" => Ok(PunctuationMode::Auto),
+            other => Err(format!(
+                "unknown punctuation mode '{other}' (expected 'on', 'off', or 'auto')"
+            )),
+        }
+    }
+}
+
+/// clap value parser for `--punctuation`.
+fn parse_punctuation_mode(s: &str) -> Result<PunctuationMode, String> {
+    s.parse()
+}
+
+/// Resolve `--punctuation` against the active model variant and, when the pass
+/// should run, load the punctuation restorer from `punct_model_dir`.
+///
+/// Graceful fallback: when the punct model dir / files are absent or the model
+/// fails to load, a warning is logged once and `None` is returned so
+/// transcription proceeds with bare text — the punct pass is strictly optional
+/// and never blocks recognition.
+fn maybe_load_punctuator(
+    mode: PunctuationMode,
+    punct_model_dir: &str,
+    variant: ModelVariant,
+) -> Option<gigastt_core::punctuation::Punctuator> {
+    let enabled = match mode {
+        PunctuationMode::On => true,
+        PunctuationMode::Off => false,
+        // e2e_rnnt already emits punctuation/casing, so only the bare rnnt head
+        // benefits from the restoration pass.
+        PunctuationMode::Auto => variant == ModelVariant::Rnnt,
+    };
+    if !enabled {
+        return None;
+    }
+    match gigastt_core::punctuation::Punctuator::load(std::path::Path::new(punct_model_dir)) {
+        Ok(p) => {
+            tracing::info!("Punctuation restoration enabled (model dir: {punct_model_dir})");
+            Some(p)
+        }
+        Err(e) => {
+            tracing::warn!(
+                "Punctuation model unavailable at {punct_model_dir} ({e:#}); \
+                 continuing without punctuation restoration"
+            );
+            None
+        }
+    }
+}
+
 /// Ensure the INT8 encoder exists for `variant`, producing it via the native
 /// Rust quantization pipeline if missing. Honoured by `serve` and `download`.
 /// First-time quantization takes ~2 minutes on the FP32 encoder.
@@ -414,6 +526,8 @@ async fn main() -> anyhow::Result<()> {
             host,
             model_dir,
             model_variant,
+            punctuation,
+            punct_model_dir,
             pool_size,
             pool_min_size,
             batch_pool_size,
@@ -438,12 +552,14 @@ async fn main() -> anyhow::Result<()> {
             ensure_bind_allowed(&host, bind_all)?;
             let resolved = model::ensure_model(model_variant, &model_dir).await?;
             ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
+            let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
             let engine = inference::Engine::load_with_pools(
                 &model_dir,
                 pool_size,
                 pool_min_size,
                 batch_pool_size,
-            )?;
+            )?
+            .with_punctuator(punctuator);
             log_rss();
             let limits = build_limits(
                 config.as_deref(),
@@ -518,9 +634,13 @@ async fn main() -> anyhow::Result<()> {
             file,
             model_dir,
             model_variant,
+            punctuation,
+            punct_model_dir,
         } => {
-            model::ensure_model(model_variant, &model_dir).await?;
-            let engine = inference::Engine::load_with_pool_size(&model_dir, 1)?;
+            let resolved = model::ensure_model(model_variant, &model_dir).await?;
+            let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
+            let engine =
+                inference::Engine::load_with_pool_size(&model_dir, 1)?.with_punctuator(punctuator);
             log_rss();
             let mut guard = engine.pool.checkout().await?;
             let result = engine.transcribe_file(&file, &mut guard);
@@ -684,6 +804,108 @@ mod tests {
     fn test_cli_serve_rejects_unknown_model_variant() {
         let res = Cli::try_parse_from(["gigastt", "serve", "--model-variant", "whisper"]);
         assert!(res.is_err(), "unknown variant must be rejected by clap");
+    }
+
+    #[test]
+    fn test_punctuation_mode_from_str() {
+        use std::str::FromStr;
+        assert_eq!(
+            PunctuationMode::from_str("on").unwrap(),
+            PunctuationMode::On
+        );
+        assert_eq!(
+            PunctuationMode::from_str("OFF").unwrap(),
+            PunctuationMode::Off
+        );
+        assert_eq!(
+            PunctuationMode::from_str(" auto ").unwrap(),
+            PunctuationMode::Auto
+        );
+        assert!(PunctuationMode::from_str("maybe").is_err());
+    }
+
+    #[test]
+    fn test_cli_serve_punctuation_defaults_auto() {
+        let cli = Cli::parse_from(["gigastt", "serve"]);
+        match cli.command {
+            Commands::Serve {
+                punctuation,
+                punct_model_dir,
+                ..
+            } => {
+                assert_eq!(punctuation, PunctuationMode::Auto);
+                assert!(punct_model_dir.contains("punct"));
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_punctuation_override() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--punctuation",
+            "on",
+            "--punct-model-dir",
+            "/tmp/punct",
+        ]);
+        match cli.command {
+            Commands::Serve {
+                punctuation,
+                punct_model_dir,
+                ..
+            } => {
+                assert_eq!(punctuation, PunctuationMode::On);
+                assert_eq!(punct_model_dir, "/tmp/punct");
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_punctuation_off() {
+        let cli = Cli::parse_from(["gigastt", "transcribe", "a.wav", "--punctuation", "off"]);
+        match cli.command {
+            Commands::Transcribe { punctuation, .. } => {
+                assert_eq!(punctuation, PunctuationMode::Off);
+            }
+            _ => panic!("expected Transcribe"),
+        }
+    }
+
+    #[test]
+    fn test_maybe_load_punctuator_off_skips_load() {
+        // `off` must never touch the filesystem / model dir.
+        assert!(
+            maybe_load_punctuator(PunctuationMode::Off, "/nonexistent", ModelVariant::Rnnt)
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_maybe_load_punctuator_auto_e2e_skips_load() {
+        // `auto` + e2e_rnnt → punctuation disabled (head already punctuates),
+        // so no load is attempted even if the dir is missing.
+        assert!(
+            maybe_load_punctuator(PunctuationMode::Auto, "/nonexistent", ModelVariant::E2eRnnt)
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_maybe_load_punctuator_missing_model_falls_back_to_none() {
+        // `on` + missing model dir → graceful fallback to None (warn, no panic).
+        let tmp = tempfile::tempdir().unwrap();
+        let missing = tmp.path().join("absent");
+        assert!(
+            maybe_load_punctuator(
+                PunctuationMode::On,
+                missing.to_str().unwrap(),
+                ModelVariant::Rnnt
+            )
+            .is_none()
+        );
     }
 
     #[test]

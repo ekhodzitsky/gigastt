@@ -717,6 +717,14 @@ pub struct Engine {
     pub batch_pool: Option<SessionPool>,
     tokenizer: Tokenizer,
     features: FeatureExtractor,
+    /// Recognition head detected on disk at load time. Drives the default
+    /// punctuation policy (`auto`): on for [`ModelVariant::Rnnt`] (bare output),
+    /// off for [`ModelVariant::E2eRnnt`] (already punctuated).
+    variant: ModelVariant,
+    /// Optional punctuation / casing restorer applied to file-transcription
+    /// output. `None` = pass-through (the default, and the only behaviour when
+    /// no punct model is installed). Attached via [`Engine::with_punctuator`].
+    punctuator: Option<crate::punctuation::Punctuator>,
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
@@ -732,6 +740,26 @@ impl Engine {
     /// Whether the INT8 quantized encoder is loaded.
     pub fn is_int8(&self) -> bool {
         self.int8
+    }
+
+    /// The recognition head ([`ModelVariant`]) detected on disk at load time.
+    /// Lets callers decide the default punctuation policy (`auto`).
+    pub fn variant(&self) -> ModelVariant {
+        self.variant
+    }
+
+    /// Attach an optional punctuation / casing restorer, consuming and
+    /// returning `self` (builder style). Pass `None` for pass-through. When set,
+    /// the restorer post-processes the final text of file transcription
+    /// ([`Engine::transcribe_file`] / [`Engine::transcribe_bytes_shared`]).
+    pub fn with_punctuator(mut self, punctuator: Option<crate::punctuation::Punctuator>) -> Self {
+        self.punctuator = punctuator;
+        self
+    }
+
+    /// Whether a punctuation restorer is attached.
+    pub fn has_punctuator(&self) -> bool {
+        self.punctuator.is_some()
     }
 
     /// Size of the BPE vocabulary the loaded tokenizer covers. Exposed so the
@@ -1239,6 +1267,8 @@ impl Engine {
             batch_pool,
             tokenizer,
             features,
+            variant,
+            punctuator: None,
             int8: is_int8,
             #[cfg(feature = "diarization")]
             speaker_encoder,
@@ -1665,6 +1695,15 @@ impl Engine {
             .map(|w| w.word.as_str())
             .collect::<Vec<_>>()
             .join(" ");
+
+        // Optional punctuation / casing restoration (plain `rnnt` head). When
+        // no punctuator is attached this is a no-op; `restore` itself never
+        // fails (returns the input unchanged on internal error). Word-level
+        // timing is left untouched — only the joined `text` is restored.
+        let text = match &self.punctuator {
+            Some(p) => p.restore(&text),
+            None => text,
+        };
 
         Ok(TranscribeResult {
             text,

@@ -27,6 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Punctuation + capitalization restoration for the `rnnt` head
+  (`--punctuation`).** An optional post-processing pass turns the plain `rnnt`
+  head's bare lowercase output into properly cased, punctuated Russian
+  (e.g. `шестьдесят тысяч тенге сколько будет стоить` →
+  `Шестьдесят тысяч тенге, сколько будет стоить?`). Backed by an INT8 ONNX export
+  of `RUPunct/RUPunct_small` (MIT, ~29 MB) run via ONNX Runtime with the
+  `tokenizers` crate for WordPiece — no Python at runtime. `--punctuation
+  <auto|on|off>` (env `GIGASTT_PUNCTUATION`, default `auto` = on for `rnnt`, off
+  for `e2e_rnnt` which already punctuates) and `--punct-model-dir`
+  (env `GIGASTT_PUNCT_MODEL_DIR`, default `~/.gigastt/models/punct/`). The pass is
+  fully optional: if the model is absent it logs once and returns the text
+  unchanged. Inverse text normalization (number-words → digits) is a planned
+  follow-up. (The ONNX artifact must be published to a model host before an
+  auto-download default can be wired; for now place it in the punct model dir.)
 - **Selectable recognition head (`--model-variant rnnt|e2e_rnnt`).** gigastt can now
   run either GigaAM v3 head. The plain `rnnt` head is the default for fresh installs:
   it scores markedly lower WER on bare normalized text (measured ~3.3% vs ~9.6% for

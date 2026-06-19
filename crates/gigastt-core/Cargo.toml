@@ -44,6 +44,7 @@ hex = "0.4"
 rustfft = "6"
 rubato = "3.0"
 symphonia = { version = "0.6", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"] }
+tokenizers = { version = "0.23", default-features = false, features = ["fancy-regex"] }
 bytes = "1"
 prost = "0.14"
 polyvoice = { version = "0.7.0", features = ["onnx"], optional = true }
