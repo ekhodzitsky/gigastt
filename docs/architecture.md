@@ -57,8 +57,10 @@ crashes.
 
 ## INT8 quantization
 
-Native-Rust quantization (always compiled). The encoder shrinks ~4×, ~43% faster, with
-~0% WER degradation (verified on 9 994 Golos samples). Auto-detected and auto-invoked on
+Native-Rust quantization (always compiled). The encoder shrinks ~3.9× and runs as true
+INT8 integer compute (`DynamicQuantizeLinear` + `MatMulInteger`/`ConvInteger`), so the CPU
+EP executes fast integer kernels instead of dequantizing the weights back to float — RTF
+well below 1.0 on CPU — with negligible WER change. Auto-detected and auto-invoked on
 first `download` / `serve`; opt out with `--skip-quantize` (or `GIGASTT_SKIP_QUANTIZE=1`).
 Re-quantize manually with `gigastt quantize [--force]`.
 
