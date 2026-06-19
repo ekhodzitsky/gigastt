@@ -890,7 +890,7 @@ impl Engine {
 
     /// Attach a contextual hotword biaser built from `(phrase, weight)` pairs
     /// and an additive `boost`, consuming and returning `self` (builder style).
-    /// Each phrase is tokenized with the engine's own [`Tokenizer`], so biasing
+    /// Each phrase is tokenized with the engine's own `Tokenizer`, so biasing
     /// adapts to whichever recognition head is loaded.
     ///
     /// When `phrases` is empty, `boost <= 0`, or no phrase is representable in
@@ -981,7 +981,7 @@ impl Engine {
     /// behaviour. Values `> 1` give the dominant encoder more intra-op
     /// parallelism on weak CPUs / long single-file jobs; the count is clamped
     /// against the logical CPU count so `pool_size * threads` can't oversubscribe
-    /// the machine (see [`Engine::clamp_encoder_intra_threads`]). Ignored by the
+    /// the machine (see `Engine::clamp_encoder_intra_threads`). Ignored by the
     /// CoreML / CUDA builds (the accelerator owns scheduling there).
     pub fn load_with_pools_threads(
         model_dir: &str,
@@ -2516,6 +2516,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)] // intentional compile-time sanity check on the chunk constants
     fn test_chunk_constants_sane() {
         // Window > overlap (positive stride) and threshold ≥ window so the
         // single-pass path covers everything up to one full window.
