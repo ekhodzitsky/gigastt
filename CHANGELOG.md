@@ -52,6 +52,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Configurable encoder threads (`--encoder-intra-threads`).** The CPU encoder runs
+  single-threaded by default; on weak CPUs or long single-file jobs it can now take more
+  intra-op threads (env `GIGASTT_ENCODER_INTRA_THREADS`, default 1 — unchanged), clamped so
+  `pool_size × threads` stays within the logical CPU count. Decoder/joiner and the
+  CoreML/CUDA paths are untouched.
 - **Chunked long-form file decoding (bounded peak memory).** File transcription now
   splits long audio into overlapping ~24 s windows, decodes each independently, and
   stitches the words (overlap de-dup, monotonic timestamps) — peak encoder activation

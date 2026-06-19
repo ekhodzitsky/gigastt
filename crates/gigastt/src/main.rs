@@ -133,6 +133,14 @@ enum Commands {
         #[arg(long, env = "GIGASTT_BATCH_POOL_SIZE", default_value_t = 0)]
         batch_pool_size: usize,
 
+        /// Intra-op thread count for the encoder session on the CPU build. The
+        /// encoder dominates the single-utterance cost, so more threads help on
+        /// weak CPUs / long single-file jobs. Default 1 (no change vs prior
+        /// builds). Auto-clamped so `pool_size * encoder_intra_threads` can't
+        /// exceed the logical CPU count. No effect on CoreML / CUDA builds.
+        #[arg(long, env = "GIGASTT_ENCODER_INTRA_THREADS", default_value_t = 1)]
+        encoder_intra_threads: usize,
+
         /// Explicitly acknowledge binding to a non-loopback address.
         /// Can also be enabled via `GIGASTT_ALLOW_BIND_ANY=1`.
         /// Without this flag the server refuses to listen on anything other than
@@ -334,6 +342,13 @@ enum Commands {
         /// unless hotwords are configured. Env: GIGASTT_HOTWORDS_BOOST.
         #[arg(long, env = "GIGASTT_HOTWORDS_BOOST")]
         hotwords_boost: Option<f32>,
+
+        /// Intra-op thread count for the encoder session on the CPU build. The
+        /// encoder dominates the single-utterance cost, so more threads speed up
+        /// long single-file jobs on weak CPUs. Default 1 (no change vs prior
+        /// builds). No effect on CoreML / CUDA builds.
+        #[arg(long, env = "GIGASTT_ENCODER_INTRA_THREADS", default_value_t = 1)]
+        encoder_intra_threads: usize,
 
         /// Export format: json, txt, srt, vtt, md [default: txt]
         #[arg(short, long, env = "GIGASTT_FORMAT", default_value = "txt")]
@@ -747,6 +762,7 @@ async fn main() -> anyhow::Result<()> {
             pool_size,
             pool_min_size,
             batch_pool_size,
+            encoder_intra_threads,
             bind_all,
             allow_origin,
             cors_allow_any,
@@ -771,11 +787,12 @@ async fn main() -> anyhow::Result<()> {
             maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
             let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
-            let mut engine = inference::Engine::load_with_pools(
+            let mut engine = inference::Engine::load_with_pools_threads(
                 &model_dir,
                 pool_size,
                 pool_min_size,
                 batch_pool_size,
+                encoder_intra_threads,
             )?
             .with_punctuator(punctuator)
             .with_itn(resolve_itn(itn, resolved));
@@ -863,6 +880,7 @@ async fn main() -> anyhow::Result<()> {
             hotwords_file,
             hotwords_default,
             hotwords_boost,
+            encoder_intra_threads,
             format,
             output,
             max_chars_per_line,
@@ -873,9 +891,17 @@ async fn main() -> anyhow::Result<()> {
             maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
             let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
-            let mut engine = inference::Engine::load_with_pool_size(&model_dir, 1)?
-                .with_punctuator(punctuator)
-                .with_itn(resolve_itn(itn, resolved));
+            // Single-triplet pool for offline file transcription; thread count
+            // is opt-in (default 1 ⇒ identical sessions to the prior build).
+            let mut engine = inference::Engine::load_with_pools_threads(
+                &model_dir,
+                1,
+                1,
+                0,
+                encoder_intra_threads,
+            )?
+            .with_punctuator(punctuator)
+            .with_itn(resolve_itn(itn, resolved));
             if let Some(pairs) = hotwords {
                 engine =
                     engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
@@ -976,6 +1002,109 @@ mod tests {
                 assert_eq!(model_variant, None);
             }
             _ => panic!("expected Serve"),
+        }
+    }
+
+    // Restore a captured env value when dropped, so an env-mutating test never
+    // leaks `GIGASTT_ENCODER_INTRA_THREADS` to a sibling test (clap reads the
+    // process environment). Paired with `ENV_LOCK` to serialize these tests.
+    struct EnvRestore(&'static str, Option<String>);
+    impl Drop for EnvRestore {
+        fn drop(&mut self) {
+            match &self.1 {
+                Some(v) => unsafe { std::env::set_var(self.0, v) },
+                None => unsafe { std::env::remove_var(self.0) },
+            }
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_encoder_intra_threads_default() {
+        // Unset → default 1 (no behavior change vs prior builds).
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_ENCODER_INTRA_THREADS",
+            std::env::var("GIGASTT_ENCODER_INTRA_THREADS").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_ENCODER_INTRA_THREADS");
+        }
+        let cli = Cli::parse_from(["gigastt", "serve"]);
+        match cli.command {
+            Commands::Serve {
+                encoder_intra_threads,
+                ..
+            } => assert_eq!(encoder_intra_threads, 1),
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_encoder_intra_threads_flag() {
+        // The explicit flag wins over any inherited env value.
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_ENCODER_INTRA_THREADS",
+            std::env::var("GIGASTT_ENCODER_INTRA_THREADS").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_ENCODER_INTRA_THREADS");
+        }
+        let cli = Cli::parse_from(["gigastt", "serve", "--encoder-intra-threads", "4"]);
+        match cli.command {
+            Commands::Serve {
+                encoder_intra_threads,
+                ..
+            } => assert_eq!(encoder_intra_threads, 4),
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_encoder_intra_threads_env() {
+        // The flag is wired to GIGASTT_ENCODER_INTRA_THREADS; clap reads the
+        // process environment, so serialize against other env-mutating tests.
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_ENCODER_INTRA_THREADS",
+            std::env::var("GIGASTT_ENCODER_INTRA_THREADS").ok(),
+        );
+        unsafe {
+            std::env::set_var("GIGASTT_ENCODER_INTRA_THREADS", "6");
+        }
+        let cli = Cli::parse_from(["gigastt", "serve"]);
+        match cli.command {
+            Commands::Serve {
+                encoder_intra_threads,
+                ..
+            } => assert_eq!(encoder_intra_threads, 6),
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_encoder_intra_threads_flag() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_ENCODER_INTRA_THREADS",
+            std::env::var("GIGASTT_ENCODER_INTRA_THREADS").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_ENCODER_INTRA_THREADS");
+        }
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe",
+            "audio.wav",
+            "--encoder-intra-threads",
+            "3",
+        ]);
+        match cli.command {
+            Commands::Transcribe {
+                encoder_intra_threads,
+                ..
+            } => assert_eq!(encoder_intra_threads, 3),
+            _ => panic!("expected Transcribe"),
         }
     }
 

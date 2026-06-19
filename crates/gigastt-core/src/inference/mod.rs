@@ -972,6 +972,24 @@ impl Engine {
         min_size: usize,
         batch_pool_size: usize,
     ) -> Result<Self, GigasttError> {
+        Self::load_with_pools_threads(model_dir, pool_size, min_size, batch_pool_size, 1)
+    }
+
+    /// Like [`Engine::load_with_pools`], but with a configurable encoder
+    /// intra-op thread count for the CPU EP. `encoder_intra_threads == 1` (the
+    /// default everywhere else) builds sessions identical to the prior
+    /// behaviour. Values `> 1` give the dominant encoder more intra-op
+    /// parallelism on weak CPUs / long single-file jobs; the count is clamped
+    /// against the logical CPU count so `pool_size * threads` can't oversubscribe
+    /// the machine (see [`Engine::clamp_encoder_intra_threads`]). Ignored by the
+    /// CoreML / CUDA builds (the accelerator owns scheduling there).
+    pub fn load_with_pools_threads(
+        model_dir: &str,
+        pool_size: usize,
+        min_size: usize,
+        batch_pool_size: usize,
+        encoder_intra_threads: usize,
+    ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
         // Auto-detect which recognition head is present on disk (rnnt encoder
         // takes precedence, else e2e_rnnt). The on-disk layout fully determines
@@ -990,6 +1008,13 @@ impl Engine {
             .map(|m| m.len())
             .unwrap_or(0);
         let pool_size = Self::cap_pool_size_for_ram(pool_size, encoder_bytes, total_ram_bytes());
+        // Don't let `pool_size * encoder_intra_threads` oversubscribe the CPU
+        // (no-op when the default `1` is requested).
+        let logical_cpus = std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1);
+        let encoder_intra_threads =
+            Self::clamp_encoder_intra_threads(pool_size, encoder_intra_threads, logical_cpus);
         Self::load_inner(
             dir,
             variant,
@@ -997,6 +1022,7 @@ impl Engine {
             pool_size,
             min_size,
             batch_pool_size,
+            encoder_intra_threads,
         )
         .map_err(|e| GigasttError::ModelLoad {
             path: model_dir.to_string(),
@@ -1017,22 +1043,29 @@ impl Engine {
 
     /// Load a single set of encoder/decoder/joiner ONNX sessions from disk for
     /// `variant`, using the execution provider selected at compile time.
+    ///
+    /// `encoder_intra_threads` configures the encoder session's intra-op thread
+    /// count on the CPU EP only; the CoreML / CUDA loaders ignore it (the
+    /// accelerator owns scheduling there).
     fn load_sessions(
         dir: &Path,
         variant: ModelVariant,
         prepacked: &ort::session::builder::PrepackedWeights,
+        encoder_intra_threads: usize,
     ) -> anyhow::Result<(Session, Session, Session)> {
         #[cfg(feature = "coreml")]
         {
+            let _ = encoder_intra_threads;
             Self::load_sessions_coreml(dir, variant, prepacked)
         }
         #[cfg(feature = "cuda")]
         {
+            let _ = encoder_intra_threads;
             Self::load_sessions_cuda(dir, variant, prepacked)
         }
         #[cfg(not(any(feature = "coreml", feature = "cuda")))]
         {
-            Self::load_sessions_cpu(dir, variant, prepacked)
+            Self::load_sessions_cpu(dir, variant, prepacked, encoder_intra_threads)
         }
     }
 
@@ -1148,6 +1181,7 @@ impl Engine {
         dir: &Path,
         variant: ModelVariant,
         prepacked: &ort::session::builder::PrepackedWeights,
+        encoder_intra_threads: usize,
     ) -> anyhow::Result<(Session, Session, Session)> {
         let cache_dir = dir.join("optimized_cache");
         std::fs::create_dir_all(&cache_dir)
@@ -1155,11 +1189,15 @@ impl Engine {
         let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
         let eps = [cpu_fallback.into()];
         let encoder_path = Self::encoder_model_path(dir, variant);
+        // Only the encoder's intra-op count is configurable (it dominates the
+        // single-utterance cost); inter-op stays 1 because the Conformer is a
+        // near-linear chain, and the decoder/joiner stay intra=1 (tiny ops).
+        // Default `encoder_intra_threads == 1` ⇒ identical to the prior build.
         let encoder = Session::builder()
             .map_err(ort_err)?
             .with_prepacked_weights(prepacked)
             .map_err(ort_err)?
-            .with_intra_threads(1)
+            .with_intra_threads(encoder_intra_threads.max(1))
             .map_err(ort_err)?
             .with_inter_threads(1)
             .map_err(ort_err)?
@@ -1264,6 +1302,41 @@ impl Engine {
         }
     }
 
+    /// Clamp the requested encoder intra-op thread count so the pooled encoder
+    /// sessions can't oversubscribe the CPU. Each of `pool_size` triplets can
+    /// run concurrently, so the total intra-op parallelism is
+    /// `pool_size * threads`; capping that at `logical_cpus` keeps the machine
+    /// from thrashing on context switches. The effective per-encoder count is
+    /// therefore `clamp(requested, 1, logical_cpus / pool_size)`, never below 1.
+    /// Logs a warning when it lowers the request. The default `requested == 1`
+    /// always returns `1`, so the built sessions are unchanged.
+    ///
+    /// Pure and total so the budgeting math is unit-tested without spawning ORT
+    /// sessions or probing the real CPU count.
+    fn clamp_encoder_intra_threads(
+        pool_size: usize,
+        requested: usize,
+        logical_cpus: usize,
+    ) -> usize {
+        let requested = requested.max(1);
+        let pool_size = pool_size.max(1);
+        let logical_cpus = logical_cpus.max(1);
+        // Leave at least one thread per encoder even on a machine with fewer
+        // logical CPUs than pooled triplets.
+        let max_per_encoder = (logical_cpus / pool_size).max(1);
+        if requested > max_per_encoder {
+            tracing::warn!(
+                "Capping encoder intra-op threads {requested} -> {max_per_encoder}: \
+                 {pool_size} pooled encoder(s) x {requested} threads would exceed \
+                 the {logical_cpus} logical CPU(s) available. Lower --pool-size or \
+                 --encoder-intra-threads to silence this."
+            );
+            max_per_encoder
+        } else {
+            requested
+        }
+    }
+
     /// Decide the final pool from per-triplet load results: returns the
     /// successfully loaded triplets when at least `min_size` loaded (warning
     /// when the pool is degraded below `pool_size`), or an error describing the
@@ -1363,6 +1436,7 @@ impl Engine {
         pool_size: usize,
         min_size: usize,
         batch_pool_size: usize,
+        encoder_intra_threads: usize,
     ) -> anyhow::Result<Self> {
         tracing::info!("Detected model variant: {variant:?}");
         let is_int8 = dir.join(variant.encoder_int8_file()).exists();
@@ -1392,7 +1466,7 @@ impl Engine {
             pool_size,
             min_size,
             &prepacked,
-            Self::load_sessions,
+            |d, v, pp| Self::load_sessions(d, v, pp, encoder_intra_threads),
         ) {
             Ok(triplets) => triplets,
             Err(load_err) => {
@@ -1402,25 +1476,16 @@ impl Engine {
                 // Fresh container: the failed attempt may have pre-packed
                 // weights with CoreML-specific kernel layouts.
                 let prepacked = ort::session::builder::PrepackedWeights::new();
-                Self::load_triplets(
-                    dir,
-                    variant,
-                    pool_size,
-                    min_size,
-                    &prepacked,
-                    Self::load_sessions_cpu,
-                )?
+                Self::load_triplets(dir, variant, pool_size, min_size, &prepacked, |d, v, pp| {
+                    Self::load_sessions_cpu(d, v, pp, encoder_intra_threads)
+                })?
             }
         };
         #[cfg(not(feature = "coreml"))]
-        let triplets = Self::load_triplets(
-            dir,
-            variant,
-            pool_size,
-            min_size,
-            &prepacked,
-            Self::load_sessions,
-        )?;
+        let triplets =
+            Self::load_triplets(dir, variant, pool_size, min_size, &prepacked, |d, v, pp| {
+                Self::load_sessions(d, v, pp, encoder_intra_threads)
+            })?;
 
         let tokenizer = Tokenizer::load(&dir.join(variant.vocab_file()))?;
         let features = FeatureExtractor::new();
@@ -1492,7 +1557,7 @@ impl Engine {
                     pool_size,
                     min_size,
                     &prepacked,
-                    Self::load_sessions_cpu,
+                    |d, v, pp| Self::load_sessions_cpu(d, v, pp, encoder_intra_threads),
                 )?;
                 let (pool, batch_pool) = Self::split_triplets(triplets, batch_pool_size);
                 e.pool = pool;
@@ -2251,6 +2316,27 @@ mod tests {
         // pool_size <= 1 is returned as-is (min 1).
         assert_eq!(Engine::cap_pool_size_for_ram(1, 200 << 20, 1 << 30), 1);
         assert_eq!(Engine::cap_pool_size_for_ram(0, 200 << 20, 1 << 30), 1);
+    }
+
+    #[test]
+    fn test_clamp_encoder_intra_threads() {
+        // Default request of 1 is always returned unchanged (no behavior change).
+        assert_eq!(Engine::clamp_encoder_intra_threads(2, 1, 10), 1);
+        assert_eq!(Engine::clamp_encoder_intra_threads(4, 1, 4), 1);
+
+        // Fits within budget: pool 2 x 4 threads = 8 <= 16 CPUs -> 4.
+        assert_eq!(Engine::clamp_encoder_intra_threads(2, 4, 16), 4);
+
+        // Over budget: pool 4 x 4 = 16 > 10 CPUs -> floor(10/4) = 2 per encoder.
+        assert_eq!(Engine::clamp_encoder_intra_threads(4, 4, 10), 2);
+
+        // More pooled encoders than CPUs still leaves at least 1 thread each.
+        assert_eq!(Engine::clamp_encoder_intra_threads(8, 4, 4), 1);
+
+        // Zero inputs are floored to 1 (total function, never panics/divides-by-0).
+        assert_eq!(Engine::clamp_encoder_intra_threads(0, 4, 8), 4);
+        assert_eq!(Engine::clamp_encoder_intra_threads(2, 0, 8), 1);
+        assert_eq!(Engine::clamp_encoder_intra_threads(2, 4, 0), 1);
     }
 
     #[test]
