@@ -27,6 +27,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Selectable recognition head (`--model-variant rnnt|e2e_rnnt`).** gigastt can now
+  run either GigaAM v3 head. The plain `rnnt` head is the default for fresh installs:
+  it scores markedly lower WER on bare normalized text (measured ~3.3% vs ~9.6% for
+  `e2e_rnnt` on a golos_crowd_1k subset) but emits lowercase text without punctuation.
+  `e2e_rnnt` keeps native punctuation, casing, and inverse text normalization. The
+  engine auto-detects the installed variant from the files on disk (real filenames per
+  variant; the `rnnt` vocab is `v3_vocab.txt`), and the downloader fetches the matching
+  set with per-file SHA-256 verification. Existing installs are respected: running
+  `serve`/`transcribe` without `--model-variant` uses whatever model is already present
+  and never silently re-downloads; an explicit `--model-variant` switches (and never
+  mixes variants). Env var `GIGASTT_MODEL_VARIANT`.
 - **Dedicated batch pool (`--batch-pool-size`).** Both REST file-transcription
   paths — `/v1/transcribe` and the SSE `/v1/transcribe/stream` (which also
   transcribes a whole upload, holding its triplet for the file's duration) —

@@ -68,6 +68,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
 use crate::error::GigasttError;
+use crate::model::ModelVariant;
 
 use features::MelSpectrogram;
 use tokenizer::Tokenizer;
@@ -743,8 +744,10 @@ impl Engine {
     /// Load ONNX models from the given directory and create an inference engine.
     ///
     /// Creates a pool of `DEFAULT_POOL_SIZE` session triplets for concurrent inference.
-    /// Expects files: `v3_e2e_rnnt_encoder.onnx` (or `_int8.onnx`), `v3_e2e_rnnt_decoder.onnx`,
-    /// `v3_e2e_rnnt_joint.onnx`, and `v3_e2e_rnnt_vocab.txt`.
+    /// The recognition head ([`ModelVariant`]) is auto-detected from the encoder
+    /// file present on disk: `v3_rnnt_encoder.onnx` (or `_int8.onnx`) selects the
+    /// plain rnnt head, else `v3_e2e_rnnt_encoder.onnx` selects e2e_rnnt. The
+    /// matching decoder, joiner, and vocab files must also be present.
     ///
     /// # Errors
     ///
@@ -788,52 +791,65 @@ impl Engine {
         batch_pool_size: usize,
     ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
-        if !dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
+        // Auto-detect which recognition head is present on disk (rnnt encoder
+        // takes precedence, else e2e_rnnt). The on-disk layout fully determines
+        // which head runs — callers select the variant only at download time.
+        let Some(variant) = ModelVariant::detect_in_dir(dir) else {
             return Err(GigasttError::ModelLoad {
                 path: model_dir.to_string(),
                 source: None,
             });
-        }
-        Self::load_inner(dir, model_dir, pool_size, min_size, batch_pool_size).map_err(|e| {
-            GigasttError::ModelLoad {
-                path: model_dir.to_string(),
-                source: Some(e.into()),
-            }
+        };
+        Self::load_inner(
+            dir,
+            variant,
+            model_dir,
+            pool_size,
+            min_size,
+            batch_pool_size,
+        )
+        .map_err(|e| GigasttError::ModelLoad {
+            path: model_dir.to_string(),
+            source: Some(e.into()),
         })
     }
 
-    /// Path to the preferred encoder model: INT8 quantized if present, FP32 otherwise.
-    fn encoder_model_path(dir: &Path) -> std::path::PathBuf {
-        if dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists() {
-            dir.join("v3_e2e_rnnt_encoder_int8.onnx")
+    /// Path to the preferred encoder model for `variant`: INT8 quantized if
+    /// present, FP32 otherwise.
+    fn encoder_model_path(dir: &Path, variant: ModelVariant) -> std::path::PathBuf {
+        let int8 = dir.join(variant.encoder_int8_file());
+        if int8.exists() {
+            int8
         } else {
-            dir.join("v3_e2e_rnnt_encoder.onnx")
+            dir.join(variant.encoder_file())
         }
     }
 
-    /// Load a single set of encoder/decoder/joiner ONNX sessions from disk,
-    /// using the execution provider selected at compile time.
+    /// Load a single set of encoder/decoder/joiner ONNX sessions from disk for
+    /// `variant`, using the execution provider selected at compile time.
     fn load_sessions(
         dir: &Path,
+        variant: ModelVariant,
         prepacked: &ort::session::builder::PrepackedWeights,
     ) -> anyhow::Result<(Session, Session, Session)> {
         #[cfg(feature = "coreml")]
         {
-            Self::load_sessions_coreml(dir, prepacked)
+            Self::load_sessions_coreml(dir, variant, prepacked)
         }
         #[cfg(feature = "cuda")]
         {
-            Self::load_sessions_cuda(dir, prepacked)
+            Self::load_sessions_cuda(dir, variant, prepacked)
         }
         #[cfg(not(any(feature = "coreml", feature = "cuda")))]
         {
-            Self::load_sessions_cpu(dir, prepacked)
+            Self::load_sessions_cpu(dir, variant, prepacked)
         }
     }
 
     #[cfg(feature = "coreml")]
     fn load_sessions_coreml(
         dir: &Path,
+        variant: ModelVariant,
         prepacked: &ort::session::builder::PrepackedWeights,
     ) -> anyhow::Result<(Session, Session, Session)> {
         // CoreML has its own cache (`coreml_cache/`) for compiled subgraphs.
@@ -861,7 +877,7 @@ impl Engine {
 
         let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
         let eps = [coreml_ep.clone(), cpu_fallback.into()];
-        let encoder_path = Self::encoder_model_path(dir);
+        let encoder_path = Self::encoder_model_path(dir, variant);
         let encoder = Session::builder()
             .map_err(ort_err)?
             .with_prepacked_weights(prepacked)
@@ -876,7 +892,7 @@ impl Engine {
             .map_err(ort_err)?
             .with_execution_providers(&eps)
             .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+            .commit_from_file(dir.join(variant.decoder_file()))
             .map_err(ort_err)?;
         let joiner = Session::builder()
             .map_err(ort_err)?
@@ -884,7 +900,7 @@ impl Engine {
             .map_err(ort_err)?
             .with_execution_providers(&eps)
             .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+            .commit_from_file(dir.join(variant.joint_file()))
             .map_err(ort_err)?;
         Ok((encoder, decoder, joiner))
     }
@@ -892,6 +908,7 @@ impl Engine {
     #[cfg(feature = "cuda")]
     fn load_sessions_cuda(
         dir: &Path,
+        variant: ModelVariant,
         prepacked: &ort::session::builder::PrepackedWeights,
     ) -> anyhow::Result<(Session, Session, Session)> {
         // CUDA EP compiles subgraphs that cannot be re-serialized as ONNX,
@@ -902,7 +919,7 @@ impl Engine {
 
         let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
         let eps = [cuda_ep.clone(), cpu_fallback.into()];
-        let encoder_path = Self::encoder_model_path(dir);
+        let encoder_path = Self::encoder_model_path(dir, variant);
         let encoder = Session::builder()
             .map_err(ort_err)?
             .with_prepacked_weights(prepacked)
@@ -917,7 +934,7 @@ impl Engine {
             .map_err(ort_err)?
             .with_execution_providers(&eps)
             .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+            .commit_from_file(dir.join(variant.decoder_file()))
             .map_err(ort_err)?;
         let joiner = Session::builder()
             .map_err(ort_err)?
@@ -925,7 +942,7 @@ impl Engine {
             .map_err(ort_err)?
             .with_execution_providers(&eps)
             .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+            .commit_from_file(dir.join(variant.joint_file()))
             .map_err(ort_err)?;
         Ok((encoder, decoder, joiner))
     }
@@ -939,6 +956,7 @@ impl Engine {
     #[cfg(not(feature = "cuda"))]
     fn load_sessions_cpu(
         dir: &Path,
+        variant: ModelVariant,
         prepacked: &ort::session::builder::PrepackedWeights,
     ) -> anyhow::Result<(Session, Session, Session)> {
         let cache_dir = dir.join("optimized_cache");
@@ -946,7 +964,7 @@ impl Engine {
             .with_context(|| format!("Failed to create ONNX cache dir: {}", cache_dir.display()))?;
         let cpu_fallback = ort::execution_providers::CPUExecutionProvider::default();
         let eps = [cpu_fallback.into()];
-        let encoder_path = Self::encoder_model_path(dir);
+        let encoder_path = Self::encoder_model_path(dir, variant);
         let encoder = Session::builder()
             .map_err(ort_err)?
             .with_prepacked_weights(prepacked)
@@ -969,7 +987,7 @@ impl Engine {
             .map_err(ort_err)?
             .with_inter_threads(1)
             .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_decoder.onnx"))
+            .commit_from_file(dir.join(variant.decoder_file()))
             .map_err(ort_err)?;
         let joiner = Session::builder()
             .map_err(ort_err)?
@@ -979,7 +997,7 @@ impl Engine {
             .map_err(ort_err)?
             .with_inter_threads(1)
             .map_err(ort_err)?
-            .commit_from_file(dir.join("v3_e2e_rnnt_joint.onnx"))
+            .commit_from_file(dir.join(variant.joint_file()))
             .map_err(ort_err)?;
         Ok((encoder, decoder, joiner))
     }
@@ -1069,11 +1087,13 @@ impl Engine {
     /// partial pool down to `min_size` (see [`Engine::finalize_pool_load`]).
     fn load_triplets(
         dir: &Path,
+        variant: ModelVariant,
         pool_size: usize,
         min_size: usize,
         prepacked: &ort::session::builder::PrepackedWeights,
         load_one: impl Fn(
             &Path,
+            ModelVariant,
             &ort::session::builder::PrepackedWeights,
         ) -> anyhow::Result<(Session, Session, Session)>
         + Sync,
@@ -1089,7 +1109,7 @@ impl Engine {
                                 "Loading session triplet {}/{pool_size} (shared weights)",
                                 i + 1
                             );
-                            let (encoder, decoder, joiner) = load_one(dir, pp)?;
+                            let (encoder, decoder, joiner) = load_one(dir, variant, pp)?;
                             Ok(SessionTriplet {
                                 encoder,
                                 decoder,
@@ -1113,12 +1133,14 @@ impl Engine {
 
     fn load_inner(
         dir: &Path,
+        variant: ModelVariant,
         model_dir: &str,
         pool_size: usize,
         min_size: usize,
         batch_pool_size: usize,
     ) -> anyhow::Result<Self> {
-        let is_int8 = dir.join("v3_e2e_rnnt_encoder_int8.onnx").exists();
+        tracing::info!("Detected model variant: {variant:?}");
+        let is_int8 = dir.join(variant.encoder_int8_file()).exists();
         if is_int8 {
             tracing::info!("Using INT8 quantized encoder");
         }
@@ -1141,6 +1163,7 @@ impl Engine {
         #[cfg(feature = "coreml")]
         let triplets = match Self::load_triplets(
             dir,
+            variant,
             pool_size,
             min_size,
             &prepacked,
@@ -1156,6 +1179,7 @@ impl Engine {
                 let prepacked = ort::session::builder::PrepackedWeights::new();
                 Self::load_triplets(
                     dir,
+                    variant,
                     pool_size,
                     min_size,
                     &prepacked,
@@ -1164,10 +1188,16 @@ impl Engine {
             }
         };
         #[cfg(not(feature = "coreml"))]
-        let triplets =
-            Self::load_triplets(dir, pool_size, min_size, &prepacked, Self::load_sessions)?;
+        let triplets = Self::load_triplets(
+            dir,
+            variant,
+            pool_size,
+            min_size,
+            &prepacked,
+            Self::load_sessions,
+        )?;
 
-        let tokenizer = Tokenizer::load(&dir.join("v3_e2e_rnnt_vocab.txt"))?;
+        let tokenizer = Tokenizer::load(&dir.join(variant.vocab_file()))?;
         let features = FeatureExtractor::new();
 
         tracing::info!(
@@ -1229,6 +1259,7 @@ impl Engine {
                 let prepacked = ort::session::builder::PrepackedWeights::new();
                 let triplets = Self::load_triplets(
                     dir,
+                    variant,
                     pool_size,
                     min_size,
                     &prepacked,
@@ -2524,7 +2555,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         std::fs::write(dir.path().join("v3_e2e_rnnt_encoder.onnx"), b"fp32").unwrap();
         std::fs::write(dir.path().join("v3_e2e_rnnt_encoder_int8.onnx"), b"int8").unwrap();
-        let path = Engine::encoder_model_path(dir.path());
+        let path = Engine::encoder_model_path(dir.path(), ModelVariant::E2eRnnt);
         assert_eq!(
             path.file_name().unwrap(),
             "v3_e2e_rnnt_encoder_int8.onnx",
@@ -2536,8 +2567,29 @@ mod tests {
     fn test_encoder_model_path_falls_back_to_fp32() {
         let dir = tempfile::tempdir().expect("tempdir");
         std::fs::write(dir.path().join("v3_e2e_rnnt_encoder.onnx"), b"fp32").unwrap();
-        let path = Engine::encoder_model_path(dir.path());
+        let path = Engine::encoder_model_path(dir.path(), ModelVariant::E2eRnnt);
         assert_eq!(path.file_name().unwrap(), "v3_e2e_rnnt_encoder.onnx");
+    }
+
+    #[test]
+    fn test_encoder_model_path_rnnt_prefers_int8() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("v3_rnnt_encoder.onnx"), b"fp32").unwrap();
+        std::fs::write(dir.path().join("v3_rnnt_encoder_int8.onnx"), b"int8").unwrap();
+        let path = Engine::encoder_model_path(dir.path(), ModelVariant::Rnnt);
+        assert_eq!(
+            path.file_name().unwrap(),
+            "v3_rnnt_encoder_int8.onnx",
+            "INT8 rnnt encoder must win when both files exist"
+        );
+    }
+
+    #[test]
+    fn test_encoder_model_path_rnnt_falls_back_to_fp32() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("v3_rnnt_encoder.onnx"), b"fp32").unwrap();
+        let path = Engine::encoder_model_path(dir.path(), ModelVariant::Rnnt);
+        assert_eq!(path.file_name().unwrap(), "v3_rnnt_encoder.onnx");
     }
 
     #[test]

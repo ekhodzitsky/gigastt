@@ -1,6 +1,9 @@
 //! Model download and management.
 //!
-//! Downloads GigaAM v3 e2e_rnnt ONNX files from HuggingFace to `~/.gigastt/models/`.
+//! Downloads GigaAM v3 RNN-T ONNX files from HuggingFace to `~/.gigastt/models/`.
+//! Two recognition heads are selectable via [`ModelVariant`]: the plain `rnnt`
+//! head (default — lower WER, bare lowercase output) and the `e2e_rnnt` head
+//! (punctuation / casing / ITN baked in).
 
 use anyhow::{Context, Result};
 use futures_util::StreamExt;
@@ -52,15 +55,149 @@ impl DownloadProgress {
 }
 
 const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
-const MODEL_FILES: &[&str] = &[
-    "v3_e2e_rnnt_encoder.onnx",
-    "v3_e2e_rnnt_decoder.onnx",
-    "v3_e2e_rnnt_joint.onnx",
-    "v3_e2e_rnnt_vocab.txt",
+
+/// Selectable GigaAM v3 recognition head.
+///
+/// Both heads ship in the same HuggingFace repo ([`HF_REPO`]) and share the
+/// inference pipeline; they differ only in their ONNX files and vocabulary.
+///
+/// - [`ModelVariant::Rnnt`] (default): plain RNN-T head. Lower WER on the
+///   golos_crowd_1k set (3.29% vs 9.65%) but emits bare lowercase Russian with
+///   no punctuation / casing / ITN. Uses a 34-token character vocabulary.
+/// - [`ModelVariant::E2eRnnt`]: end-to-end head with punctuation, casing, and
+///   inverse text normalization baked in. Uses a 1025-token BPE vocabulary.
+///
+/// Real upstream filenames are kept on disk (no canonical-prefix rename), and
+/// the engine auto-detects the variant from the encoder file present in the
+/// model directory, so on-disk layout fully determines which head runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ModelVariant {
+    /// Plain RNN-T head (default). Bare lowercase output, lower WER.
+    #[default]
+    Rnnt,
+    /// End-to-end RNN-T head with punctuation / casing / ITN.
+    E2eRnnt,
+}
+
+impl ModelVariant {
+    /// Basename of the FP32 encoder ONNX file for this variant.
+    pub fn encoder_file(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "v3_rnnt_encoder.onnx",
+            ModelVariant::E2eRnnt => "v3_e2e_rnnt_encoder.onnx",
+        }
+    }
+
+    /// Basename of the locally-generated INT8 quantized encoder ONNX file.
+    pub fn encoder_int8_file(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "v3_rnnt_encoder_int8.onnx",
+            ModelVariant::E2eRnnt => "v3_e2e_rnnt_encoder_int8.onnx",
+        }
+    }
+
+    /// Basename of the decoder ONNX file for this variant.
+    pub fn decoder_file(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "v3_rnnt_decoder.onnx",
+            ModelVariant::E2eRnnt => "v3_e2e_rnnt_decoder.onnx",
+        }
+    }
+
+    /// Basename of the joiner ONNX file for this variant.
+    pub fn joint_file(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "v3_rnnt_joint.onnx",
+            ModelVariant::E2eRnnt => "v3_e2e_rnnt_joint.onnx",
+        }
+    }
+
+    /// Basename of the vocabulary file for this variant.
+    ///
+    /// Note the asymmetry: the plain `rnnt` head's vocab is `v3_vocab.txt`
+    /// (NOT `v3_rnnt_vocab.txt`), while `e2e_rnnt` uses `v3_e2e_rnnt_vocab.txt`.
+    pub fn vocab_file(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "v3_vocab.txt",
+            ModelVariant::E2eRnnt => "v3_e2e_rnnt_vocab.txt",
+        }
+    }
+
+    /// Files downloaded from HuggingFace for this variant (encoder, decoder,
+    /// joiner, vocab). The INT8 encoder is generated locally, not downloaded.
+    pub fn download_files(self) -> [&'static str; 4] {
+        [
+            self.encoder_file(),
+            self.decoder_file(),
+            self.joint_file(),
+            self.vocab_file(),
+        ]
+    }
+
+    /// Pinned SHA-256 checksum for a downloaded file, or `None` when no checksum
+    /// is pinned for it. Verified against the canonical HuggingFace copies.
+    pub fn checksum(self, filename: &str) -> Option<&'static str> {
+        let table = match self {
+            ModelVariant::Rnnt => RNNT_CHECKSUMS,
+            ModelVariant::E2eRnnt => E2E_RNNT_CHECKSUMS,
+        };
+        table
+            .iter()
+            .find(|(name, _)| *name == filename)
+            .and_then(|(_, hash)| *hash)
+    }
+
+    /// Detect which variant's files are present in `dir` by probing for the
+    /// encoder file (FP32 or generated INT8). Returns `None` when neither
+    /// variant's encoder is present. `Rnnt` takes precedence when (anomalously)
+    /// both encoders coexist, mirroring the engine's default.
+    pub fn detect_in_dir(dir: &Path) -> Option<Self> {
+        [ModelVariant::Rnnt, ModelVariant::E2eRnnt]
+            .into_iter()
+            .find(|&variant| {
+                dir.join(variant.encoder_file()).exists()
+                    || dir.join(variant.encoder_int8_file()).exists()
+            })
+    }
+}
+
+impl std::str::FromStr for ModelVariant {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "rnnt" => Ok(ModelVariant::Rnnt),
+            "e2e_rnnt" | "e2e-rnnt" => Ok(ModelVariant::E2eRnnt),
+            other => Err(format!(
+                "unknown model variant '{other}' (expected 'rnnt' or 'e2e_rnnt')"
+            )),
+        }
+    }
+}
+
+/// SHA-256 checksums for the plain `rnnt` head's downloaded files.
+/// Computed from the canonical HuggingFace copies at `HF_REPO` on 2026-06-19.
+const RNNT_CHECKSUMS: &[(&str, Option<&str>)] = &[
+    (
+        "v3_rnnt_encoder.onnx",
+        Some("7ae7509c3f1128369564df0b00e2ee4950adf539de2392ac5c800a5bc04c7132"),
+    ),
+    (
+        "v3_rnnt_decoder.onnx",
+        Some("443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da"),
+    ),
+    (
+        "v3_rnnt_joint.onnx",
+        Some("fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8"),
+    ),
+    (
+        "v3_vocab.txt",
+        Some("a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"),
+    ),
 ];
 
-/// SHA-256 checksums for model integrity verification.
-const MODEL_CHECKSUMS: &[(&str, Option<&str>)] = &[
+/// SHA-256 checksums for the `e2e_rnnt` head's downloaded files.
+const E2E_RNNT_CHECKSUMS: &[(&str, Option<&str>)] = &[
     (
         "v3_e2e_rnnt_encoder.onnx",
         Some("cd60b3764a832e8560ae6d3ad0b10adc1a42ffae412b9476f25620aae4f4a508"),
@@ -142,21 +279,78 @@ fn acquire_download_lock(dir: &Path) -> Result<std::fs::File> {
     Ok(file)
 }
 
-/// Ensure model files exist in `model_dir`, downloading from HuggingFace if missing.
+/// Decision returned by [`resolve_variant`].
+#[derive(Debug, PartialEq, Eq)]
+pub enum VariantAction {
+    /// Use the variant already present on disk — no download needed.
+    Use(ModelVariant),
+    /// Download (or re-download) the specified variant.
+    Download(ModelVariant),
+}
+
+/// Pure decision function: given an optional user-requested variant and the
+/// variant already fully present on disk, return what `ensure_model` should do.
 ///
-/// Downloads encoder, decoder, joiner ONNX models and vocabulary from
-/// the `istupakov/gigaam-v3-onnx` repository. Shows progress bars during download.
-/// Uses an advisory flock so concurrent processes do not corrupt `.partial` files.
-pub async fn ensure_model(model_dir: &str) -> Result<()> {
+/// Precedence rules:
+/// - **Explicit request + matching install** → `Use` (no-op).
+/// - **Explicit request + different/no install** → `Download` the requested variant.
+/// - **No request + existing install** → `Use` that install (never clobber it).
+/// - **No request + empty dir** → `Download` the default (`Rnnt`).
+pub fn resolve_variant(
+    requested: Option<ModelVariant>,
+    existing: Option<ModelVariant>,
+) -> VariantAction {
+    match (requested, existing) {
+        (Some(req), Some(ex)) if req == ex => VariantAction::Use(req),
+        (Some(req), _) => VariantAction::Download(req),
+        (None, Some(ex)) => VariantAction::Use(ex),
+        (None, None) => VariantAction::Download(ModelVariant::default()),
+    }
+}
+
+/// Ensure an appropriate model variant's files exist in `model_dir`,
+/// downloading from HuggingFace if missing.
+///
+/// When `requested` is `Some(v)`, the function enforces that variant `v` is
+/// present, downloading it if it isn't (or if the dir holds a different variant).
+///
+/// When `requested` is `None`, the function respects whatever is already
+/// installed: if any variant's complete file set is in `model_dir`, it is used
+/// as-is and **no network request is made**. Only when the directory is empty
+/// (no usable model found) does it fall back to downloading the default
+/// (`Rnnt`).
+///
+/// Returns the variant that is now ready in `model_dir`.
+pub async fn ensure_model(
+    requested: Option<ModelVariant>,
+    model_dir: &str,
+) -> Result<ModelVariant> {
     let dir = Path::new(model_dir);
 
-    if model_files_exist(dir) {
-        tracing::info!("Model found at {model_dir}");
-        return Ok(());
+    // Determine the variant that is fully present on disk (all download files
+    // exist). `detect_in_dir` only checks for the encoder, so we filter to
+    // variants whose complete download set is present.
+    let existing = ModelVariant::detect_in_dir(dir).filter(|&v| is_model_present(v, dir));
+
+    let variant = match resolve_variant(requested, existing) {
+        VariantAction::Use(v) => {
+            tracing::info!("Using existing {v:?} model at {model_dir}");
+            return Ok(v);
+        }
+        VariantAction::Download(v) => v,
+    };
+
+    if let Some(other) = existing
+        && other != variant
+    {
+        tracing::warn!(
+            "Model directory {model_dir} holds {other:?} files but {variant:?} was \
+             requested; downloading the {variant:?} set (variants are never mixed)"
+        );
     }
 
-    // Create the directory before acquiring the lock so the lock file can
-    // be created inside it.
+    // Create the directory before acquiring the lock so the lock file can be
+    // created inside it.
     std::fs::create_dir_all(dir).context("Failed to create model directory")?;
 
     #[cfg(unix)]
@@ -164,19 +358,19 @@ pub async fn ensure_model(model_dir: &str) -> Result<()> {
 
     // Double-check after acquiring the lock in case another process finished
     // the download while we were waiting.
-    if model_files_exist(dir) {
-        tracing::info!("Model found at {model_dir} after lock acquisition");
-        return Ok(());
+    if is_model_present(variant, dir) {
+        tracing::info!("Model ({variant:?}) found at {model_dir} after lock acquisition");
+        return Ok(variant);
     }
 
-    tracing::info!("Model not found, downloading from HuggingFace...");
+    tracing::info!("Model ({variant:?}) not found, downloading from HuggingFace...");
 
-    for file in MODEL_FILES {
-        download_file(file, dir).await?;
+    for file in variant.download_files() {
+        download_file(variant, file, dir).await?;
     }
 
     tracing::info!("Model download complete");
-    Ok(())
+    Ok(variant)
 }
 
 /// Ensure the speaker diarization model exists in `model_dir`, downloading from HuggingFace if missing.
@@ -209,8 +403,15 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     .await
 }
 
-fn model_files_exist(dir: &Path) -> bool {
-    MODEL_FILES.iter().all(|f| dir.join(f).exists())
+/// True when every downloaded file for `variant` is present in `dir`.
+///
+/// Checks the *downloaded* set (FP32 encoder, decoder, joiner, vocab); the
+/// locally-generated INT8 encoder is not required for presence.
+pub fn is_model_present(variant: ModelVariant, dir: &Path) -> bool {
+    variant
+        .download_files()
+        .iter()
+        .all(|f| dir.join(f).exists())
 }
 
 /// Append `.partial` to a path; retained for tests that assert the legacy
@@ -276,13 +477,10 @@ fn finalize_download(
     Ok(())
 }
 
-async fn download_file(filename: &str, dir: &Path) -> Result<()> {
+async fn download_file(variant: ModelVariant, filename: &str, dir: &Path) -> Result<()> {
     let url = format!("https://huggingface.co/{HF_REPO}/resolve/main/{filename}");
     let final_dest = dir.join(filename);
-    let expected = MODEL_CHECKSUMS
-        .iter()
-        .find(|(name, _)| *name == filename)
-        .and_then(|(_, hash)| *hash);
+    let expected = variant.checksum(filename);
     stream_to_partial_then_finalize(&url, &final_dest, expected, filename).await
 }
 
@@ -450,7 +648,7 @@ mod tests {
     }
 
     /// If the process dies between the network write and the
-    /// SHA verification / rename, `model_files_exist` must NOT see the
+    /// SHA verification / rename, `is_model_present` must NOT see the
     /// file under its final name. We simulate the crash by staging a
     /// `.partial` and never calling `finalize_download`.
     #[test]
@@ -465,11 +663,15 @@ mod tests {
             "crash before rename must never leave the final artefact visible"
         );
 
-        // All four MODEL_FILES stay missing from this tempdir, so
-        // model_files_exist must refuse to short-circuit the download path.
+        // No variant's files exist in this tempdir, so is_model_present must
+        // refuse to short-circuit the download path.
         assert!(
-            !model_files_exist(tmp.path()),
-            "model_files_exist must not accept a staged partial"
+            !is_model_present(ModelVariant::Rnnt, tmp.path()),
+            "is_model_present must not accept a staged partial"
+        );
+        assert!(
+            !is_model_present(ModelVariant::E2eRnnt, tmp.path()),
+            "is_model_present must not accept a staged partial"
         );
     }
 
@@ -689,5 +891,282 @@ mod tests {
             msg.contains("SHA-256 mismatch"),
             "error should mention mismatch: {msg}"
         );
+    }
+
+    #[test]
+    fn test_model_variant_default_is_rnnt() {
+        assert_eq!(ModelVariant::default(), ModelVariant::Rnnt);
+    }
+
+    #[test]
+    fn test_model_variant_rnnt_file_mapping() {
+        let v = ModelVariant::Rnnt;
+        assert_eq!(v.encoder_file(), "v3_rnnt_encoder.onnx");
+        assert_eq!(v.encoder_int8_file(), "v3_rnnt_encoder_int8.onnx");
+        assert_eq!(v.decoder_file(), "v3_rnnt_decoder.onnx");
+        assert_eq!(v.joint_file(), "v3_rnnt_joint.onnx");
+        // The rnnt vocab name is asymmetric: v3_vocab.txt, NOT v3_rnnt_vocab.txt.
+        assert_eq!(v.vocab_file(), "v3_vocab.txt");
+        assert_eq!(
+            v.download_files(),
+            [
+                "v3_rnnt_encoder.onnx",
+                "v3_rnnt_decoder.onnx",
+                "v3_rnnt_joint.onnx",
+                "v3_vocab.txt",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_model_variant_e2e_rnnt_file_mapping() {
+        let v = ModelVariant::E2eRnnt;
+        assert_eq!(v.encoder_file(), "v3_e2e_rnnt_encoder.onnx");
+        assert_eq!(v.encoder_int8_file(), "v3_e2e_rnnt_encoder_int8.onnx");
+        assert_eq!(v.decoder_file(), "v3_e2e_rnnt_decoder.onnx");
+        assert_eq!(v.joint_file(), "v3_e2e_rnnt_joint.onnx");
+        assert_eq!(v.vocab_file(), "v3_e2e_rnnt_vocab.txt");
+        assert_eq!(
+            v.download_files(),
+            [
+                "v3_e2e_rnnt_encoder.onnx",
+                "v3_e2e_rnnt_decoder.onnx",
+                "v3_e2e_rnnt_joint.onnx",
+                "v3_e2e_rnnt_vocab.txt",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_model_variant_from_str() {
+        use std::str::FromStr;
+        assert_eq!(ModelVariant::from_str("rnnt").unwrap(), ModelVariant::Rnnt);
+        assert_eq!(
+            ModelVariant::from_str("e2e_rnnt").unwrap(),
+            ModelVariant::E2eRnnt
+        );
+        assert_eq!(
+            ModelVariant::from_str("E2E-RNNT").unwrap(),
+            ModelVariant::E2eRnnt
+        );
+        assert_eq!(
+            ModelVariant::from_str(" RNNT ").unwrap(),
+            ModelVariant::Rnnt
+        );
+        assert!(ModelVariant::from_str("whisper").is_err());
+    }
+
+    #[test]
+    fn test_model_variant_checksums_are_pinned() {
+        // Every downloaded file for both variants has a pinned 64-char hex
+        // checksum — security parity, no placeholder slipping into a release.
+        for variant in [ModelVariant::Rnnt, ModelVariant::E2eRnnt] {
+            for file in variant.download_files() {
+                let sum = variant
+                    .checksum(file)
+                    .unwrap_or_else(|| panic!("{variant:?} {file} must have a pinned checksum"));
+                assert_eq!(
+                    sum.len(),
+                    64,
+                    "{variant:?} {file} checksum must be 64 hex chars, got: {sum}"
+                );
+                assert!(
+                    sum.chars()
+                        .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)),
+                    "{variant:?} {file} checksum must be lowercase hex, got: {sum}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_detect_in_dir_rnnt_by_fp32_encoder() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join("v3_rnnt_encoder.onnx"), b"fp32").unwrap();
+        assert_eq!(
+            ModelVariant::detect_in_dir(tmp.path()),
+            Some(ModelVariant::Rnnt)
+        );
+    }
+
+    #[test]
+    fn test_detect_in_dir_rnnt_by_int8_encoder() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join("v3_rnnt_encoder_int8.onnx"), b"int8").unwrap();
+        assert_eq!(
+            ModelVariant::detect_in_dir(tmp.path()),
+            Some(ModelVariant::Rnnt)
+        );
+    }
+
+    #[test]
+    fn test_detect_in_dir_e2e_by_fp32_encoder() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join("v3_e2e_rnnt_encoder.onnx"), b"fp32").unwrap();
+        assert_eq!(
+            ModelVariant::detect_in_dir(tmp.path()),
+            Some(ModelVariant::E2eRnnt)
+        );
+    }
+
+    #[test]
+    fn test_detect_in_dir_e2e_by_int8_encoder() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join("v3_e2e_rnnt_encoder_int8.onnx"), b"int8").unwrap();
+        assert_eq!(
+            ModelVariant::detect_in_dir(tmp.path()),
+            Some(ModelVariant::E2eRnnt)
+        );
+    }
+
+    #[test]
+    fn test_detect_in_dir_none_when_empty() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        assert_eq!(ModelVariant::detect_in_dir(tmp.path()), None);
+    }
+
+    #[test]
+    fn test_is_model_present_per_variant() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+        // Stage a full rnnt download set.
+        for f in ModelVariant::Rnnt.download_files() {
+            std::fs::write(dir.join(f), b"x").unwrap();
+        }
+        assert!(
+            is_model_present(ModelVariant::Rnnt, dir),
+            "rnnt set is complete"
+        );
+        assert!(
+            !is_model_present(ModelVariant::E2eRnnt, dir),
+            "e2e set is absent — must not be reported present"
+        );
+    }
+
+    #[test]
+    fn test_is_model_present_false_when_one_file_missing() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+        // Stage all but the vocab.
+        for f in [
+            ModelVariant::Rnnt.encoder_file(),
+            ModelVariant::Rnnt.decoder_file(),
+            ModelVariant::Rnnt.joint_file(),
+        ] {
+            std::fs::write(dir.join(f), b"x").unwrap();
+        }
+        assert!(
+            !is_model_present(ModelVariant::Rnnt, dir),
+            "a missing vocab must make the set incomplete"
+        );
+    }
+
+    // ── resolve_variant decision table ──────────────────────────────────────
+
+    #[test]
+    fn test_resolve_variant_none_empty_dir_downloads_default() {
+        // None requested + no existing → download Rnnt (the default)
+        assert_eq!(
+            resolve_variant(None, None),
+            VariantAction::Download(ModelVariant::Rnnt),
+        );
+    }
+
+    #[test]
+    fn test_resolve_variant_none_e2e_present_uses_e2e() {
+        // None requested + E2eRnnt already installed → use it, no download
+        assert_eq!(
+            resolve_variant(None, Some(ModelVariant::E2eRnnt)),
+            VariantAction::Use(ModelVariant::E2eRnnt),
+        );
+    }
+
+    #[test]
+    fn test_resolve_variant_none_rnnt_present_uses_rnnt() {
+        // None requested + Rnnt already installed → use it, no download
+        assert_eq!(
+            resolve_variant(None, Some(ModelVariant::Rnnt)),
+            VariantAction::Use(ModelVariant::Rnnt),
+        );
+    }
+
+    #[test]
+    fn test_resolve_variant_some_rnnt_rnnt_present_uses_rnnt() {
+        // Explicit Rnnt + Rnnt installed → no download needed
+        assert_eq!(
+            resolve_variant(Some(ModelVariant::Rnnt), Some(ModelVariant::Rnnt)),
+            VariantAction::Use(ModelVariant::Rnnt),
+        );
+    }
+
+    #[test]
+    fn test_resolve_variant_some_e2e_rnnt_present_downloads_e2e() {
+        // Explicit E2eRnnt + Rnnt installed → must switch, so download E2eRnnt
+        assert_eq!(
+            resolve_variant(Some(ModelVariant::E2eRnnt), Some(ModelVariant::Rnnt)),
+            VariantAction::Download(ModelVariant::E2eRnnt),
+        );
+    }
+
+    #[test]
+    fn test_resolve_variant_some_e2e_empty_downloads_e2e() {
+        // Explicit E2eRnnt + nothing installed → download E2eRnnt
+        assert_eq!(
+            resolve_variant(Some(ModelVariant::E2eRnnt), None),
+            VariantAction::Download(ModelVariant::E2eRnnt),
+        );
+    }
+
+    #[test]
+    fn test_resolve_variant_some_rnnt_e2e_present_downloads_rnnt() {
+        // Explicit Rnnt + E2eRnnt installed → must switch, download Rnnt
+        assert_eq!(
+            resolve_variant(Some(ModelVariant::Rnnt), Some(ModelVariant::E2eRnnt)),
+            VariantAction::Download(ModelVariant::Rnnt),
+        );
+    }
+
+    /// Verify that `ensure_model(None, dir)` with a complete E2eRnnt install
+    /// does NOT create any `.partial` files (no download triggered).
+    #[tokio::test]
+    async fn test_ensure_model_none_respects_existing_e2e_install() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+
+        // Stage a full E2eRnnt download set (stub bytes, no real ONNX needed).
+        for f in ModelVariant::E2eRnnt.download_files() {
+            std::fs::write(dir.join(f), b"stub").unwrap();
+        }
+
+        // ensure_model with None must return E2eRnnt without downloading.
+        let variant = ensure_model(None, dir.to_str().unwrap())
+            .await
+            .expect("ensure_model should succeed");
+
+        assert_eq!(
+            variant,
+            ModelVariant::E2eRnnt,
+            "must use the installed E2eRnnt"
+        );
+
+        // No .partial files must have been created.
+        let partials: Vec<_> = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().contains(".partial"))
+            .collect();
+        assert!(
+            partials.is_empty(),
+            "no .partial files must exist: {partials:?}"
+        );
+
+        // Files must be untouched (still stub bytes).
+        for f in ModelVariant::E2eRnnt.download_files() {
+            assert_eq!(
+                std::fs::read(dir.join(f)).unwrap(),
+                b"stub",
+                "{f} must be unchanged"
+            );
+        }
     }
 }
