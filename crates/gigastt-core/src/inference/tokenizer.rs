@@ -101,6 +101,71 @@ impl Tokenizer {
         self.blank_id
     }
 
+    /// Encode a hotword phrase into the token-id sequence the decoder would
+    /// emit for it, using greedy longest-match over the vocabulary.
+    ///
+    /// Spaces (and a leading position) map to the `▁` word-boundary marker the
+    /// same way [`Tokenizer::decode`] reverses it, so the encoding matches what
+    /// the RNN-T head produces token-for-token. Works for both heads: the plain
+    /// `rnnt` char vocab (single-codepoint tokens) and the `e2e_rnnt` BPE vocab
+    /// (multi-codepoint `▁`-prefixed pieces).
+    ///
+    /// Returns `None` if any codepoint of the phrase can't be matched against
+    /// the vocabulary (so an unrepresentable hotword is dropped rather than
+    /// silently biasing toward a wrong sub-sequence). Special tokens (`<blk>`,
+    /// `<unk>`) are never matched.
+    pub(crate) fn encode_phrase(&self, phrase: &str) -> Option<Vec<usize>> {
+        let phrase = phrase.trim();
+        if phrase.is_empty() {
+            return None;
+        }
+        // Build the marked form: leading word + every space become `▁`, so the
+        // first piece of each word carries the boundary marker the head emits.
+        let mut marked = String::new();
+        marked.push(WORD_BOUNDARY);
+        for ch in phrase.chars() {
+            if ch.is_whitespace() {
+                marked.push(WORD_BOUNDARY);
+            } else {
+                marked.push(ch);
+            }
+        }
+
+        let chars: Vec<char> = marked.chars().collect();
+        let mut ids = Vec::new();
+        let mut i = 0;
+        while i < chars.len() {
+            // Longest vocab token that matches starting at position `i`.
+            let mut best: Option<(usize, usize)> = None; // (token_id, char_len)
+            for (id, tok) in self.tokens.iter().enumerate() {
+                if tok == "<blk>" || tok == "<unk>" || tok.is_empty() {
+                    continue;
+                }
+                let tok_chars = tok.chars().count();
+                if tok_chars == 0 || i + tok_chars > chars.len() {
+                    continue;
+                }
+                if chars[i..i + tok_chars].iter().copied().eq(tok.chars())
+                    && best.is_none_or(|(_, len)| tok_chars > len)
+                {
+                    best = Some((id, tok_chars));
+                }
+            }
+            match best {
+                Some((id, len)) => {
+                    ids.push(id);
+                    i += len;
+                }
+                // A bare `▁` boundary with no vocab token for it: skip it and
+                // keep going (the next word still encodes). Any other unmatched
+                // codepoint makes the phrase unrepresentable.
+                None if chars[i] == WORD_BOUNDARY => i += 1,
+                None => return None,
+            }
+        }
+        if ids.is_empty() { None } else { Some(ids) }
+    }
+
     /// Get raw token text by id (returns empty string for out-of-range or special tokens).
     pub fn token_text(&self, id: usize) -> &str {
         if id >= self.tokens.len() {
@@ -223,6 +288,52 @@ mod tests {
         let tok = Tokenizer::load(f.path()).unwrap();
         assert_eq!(tok.vocab_size(), 3);
         assert_eq!(tok.token_text(0), "a");
+    }
+
+    #[test]
+    fn test_encode_phrase_char_vocab_longest_match() {
+        // Char-style vocab plus a `▁`-prefixed boundary token. "аб" → [▁а? no].
+        // Here "▁а", "б", "в" exist: "▁аб" greedily matches "▁а" then "б".
+        let f = create_test_vocab("▁а\t0\nб\t1\nв\t2\n▁\t3\n<blk>\t4\n");
+        let tok = Tokenizer::load(f.path()).unwrap();
+        let ids = tok.encode_phrase("аб").unwrap();
+        assert_eq!(ids, vec![0, 1]);
+        // Round-trips back to the phrase via decode.
+        assert_eq!(tok.decode(&ids), "аб");
+    }
+
+    #[test]
+    fn test_encode_phrase_bpe_word_boundary() {
+        // BPE-style vocab where whole words are single tokens.
+        let f = create_test_vocab("▁привет\t0\n▁мир\t1\n<blk>\t2\n");
+        let tok = Tokenizer::load(f.path()).unwrap();
+        let ids = tok.encode_phrase("привет мир").unwrap();
+        assert_eq!(ids, vec![0, 1]);
+        assert_eq!(tok.decode(&ids), "привет мир");
+    }
+
+    #[test]
+    fn test_encode_phrase_prefers_longest_token() {
+        // "▁аб" must win over "▁а" + "б" when the longer piece exists.
+        let f = create_test_vocab("▁а\t0\nб\t1\n▁аб\t2\n<blk>\t3\n");
+        let tok = Tokenizer::load(f.path()).unwrap();
+        assert_eq!(tok.encode_phrase("аб").unwrap(), vec![2]);
+    }
+
+    #[test]
+    fn test_encode_phrase_unrepresentable_returns_none() {
+        // 'я' is not in the vocab → the phrase can't be encoded.
+        let f = create_test_vocab("▁а\t0\nб\t1\n<blk>\t2\n");
+        let tok = Tokenizer::load(f.path()).unwrap();
+        assert!(tok.encode_phrase("яб").is_none());
+    }
+
+    #[test]
+    fn test_encode_phrase_empty_returns_none() {
+        let f = create_test_vocab("▁а\t0\n<blk>\t1\n");
+        let tok = Tokenizer::load(f.path()).unwrap();
+        assert!(tok.encode_phrase("   ").is_none());
+        assert!(tok.encode_phrase("").is_none());
     }
 
     #[test]

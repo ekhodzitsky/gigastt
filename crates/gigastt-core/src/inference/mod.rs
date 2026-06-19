@@ -3,6 +3,7 @@
 //! Loads encoder, decoder, and joiner ONNX models and runs the RNN-T streaming decode loop.
 
 pub mod audio;
+mod bias;
 mod decode;
 mod features;
 #[cfg(not(feature = "__internals"))]
@@ -816,6 +817,11 @@ pub struct Engine {
     /// digits) on file-transcription output, *before* the punctuation pass.
     /// Off by default; toggled via [`Engine::with_itn`].
     itn: bool,
+    /// Optional contextual hotword biaser applied inside the greedy RNN-T decode
+    /// loop (shallow fusion). `None` = no biasing (the default), and the decode
+    /// path is then byte-for-byte identical to the un-biased engine. Attached
+    /// via [`Engine::with_biaser`]. Shared across the session pool by reference.
+    biaser: Option<bias::Biaser>,
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
     /// Speaker encoder for diarization (None if model file is absent).
@@ -865,6 +871,34 @@ impl Engine {
     /// Whether inverse text normalization is enabled.
     pub fn has_itn(&self) -> bool {
         self.itn
+    }
+
+    /// Attach a contextual hotword biaser built from `(phrase, weight)` pairs
+    /// and an additive `boost`, consuming and returning `self` (builder style).
+    /// Each phrase is tokenized with the engine's own [`Tokenizer`], so biasing
+    /// adapts to whichever recognition head is loaded.
+    ///
+    /// When `phrases` is empty, `boost <= 0`, or no phrase is representable in
+    /// the active vocab, the biaser resolves to `None` and the decode path stays
+    /// byte-for-byte unchanged. Replaces any previously attached biaser.
+    pub fn with_hotwords(mut self, phrases: &[(String, f32)], boost: f32) -> Self {
+        self.biaser = if phrases.is_empty() {
+            None
+        } else {
+            bias::Biaser::from_phrases(&self.tokenizer, phrases, boost)
+        };
+        if let Some(b) = &self.biaser {
+            tracing::info!(
+                "Hotword biasing enabled ({} phrase(s), boost {boost})",
+                b.phrase_count()
+            );
+        }
+        self
+    }
+
+    /// Whether a hotword biaser is attached (biasing active).
+    pub fn has_hotwords(&self) -> bool {
+        self.biaser.is_some()
     }
 
     /// Size of the BPE vocabulary the loaded tokenizer covers. Exposed so the
@@ -1418,6 +1452,7 @@ impl Engine {
             variant,
             punctuator: None,
             itn: false,
+            biaser: None,
             int8: is_int8,
             #[cfg(feature = "diarization")]
             speaker_encoder,
@@ -1916,6 +1951,7 @@ impl Engine {
             enc_len,
             self.tokenizer.blank_id(),
             decoder_state,
+            self.biaser.as_ref(),
         )?;
         tracing::info!(
             elapsed_ms = dec_start.elapsed().as_millis() as u64,

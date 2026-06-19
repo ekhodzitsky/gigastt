@@ -93,6 +93,24 @@ enum Commands {
         )]
         itn: ItnMode,
 
+        /// Contextual hotword biasing: path to a file of phrases to boost during
+        /// recognition (one phrase per line, optional `\t<weight>` suffix; blank
+        /// lines and `#` comments ignored). Off when unset. Env:
+        /// GIGASTT_HOTWORDS_FILE.
+        #[arg(long, env = "GIGASTT_HOTWORDS_FILE")]
+        hotwords_file: Option<String>,
+
+        /// Also bias the built-in Russian brand/acronym lexicon. Combined with
+        /// any `--hotwords-file` phrases. Env: GIGASTT_HOTWORDS_DEFAULT.
+        #[arg(long, env = "GIGASTT_HOTWORDS_DEFAULT", default_value_t = false)]
+        hotwords_default: bool,
+
+        /// Additive logit boost applied to hotword continuation tokens during
+        /// greedy decode [default: 5.0]. Higher = stronger bias. No effect
+        /// unless hotwords are configured. Env: GIGASTT_HOTWORDS_BOOST.
+        #[arg(long, env = "GIGASTT_HOTWORDS_BOOST")]
+        hotwords_boost: Option<f32>,
+
         /// Number of concurrent inference sessions. Each session deserializes
         /// its own encoder copy (~0.4 GB resident for the INT8 encoder), so the
         /// default is 2 to bound the idle footprint; raise it for higher
@@ -298,6 +316,24 @@ enum Commands {
             value_parser = parse_itn_mode
         )]
         itn: ItnMode,
+
+        /// Contextual hotword biasing: path to a file of phrases to boost during
+        /// recognition (one phrase per line, optional `\t<weight>` suffix; blank
+        /// lines and `#` comments ignored). Off when unset. Env:
+        /// GIGASTT_HOTWORDS_FILE.
+        #[arg(long, env = "GIGASTT_HOTWORDS_FILE")]
+        hotwords_file: Option<String>,
+
+        /// Also bias the built-in Russian brand/acronym lexicon. Combined with
+        /// any `--hotwords-file` phrases. Env: GIGASTT_HOTWORDS_DEFAULT.
+        #[arg(long, env = "GIGASTT_HOTWORDS_DEFAULT", default_value_t = false)]
+        hotwords_default: bool,
+
+        /// Additive logit boost applied to hotword continuation tokens during
+        /// greedy decode [default: 5.0]. Higher = stronger bias. No effect
+        /// unless hotwords are configured. Env: GIGASTT_HOTWORDS_BOOST.
+        #[arg(long, env = "GIGASTT_HOTWORDS_BOOST")]
+        hotwords_boost: Option<f32>,
 
         /// Export format: json, txt, srt, vtt, md [default: txt]
         #[arg(short, long, env = "GIGASTT_FORMAT", default_value = "txt")]
@@ -609,6 +645,56 @@ async fn maybe_download_punct_model(
     }
 }
 
+/// Default additive logit boost for hotword continuation tokens when
+/// `--hotwords-boost` is unset.
+const DEFAULT_HOTWORDS_BOOST: f32 = 5.0;
+
+/// Parse a hotwords file: one phrase per line, optional `\t<weight>` suffix.
+/// Blank lines and `#`-prefixed comment lines are skipped. A malformed weight
+/// falls back to `1.0` (the phrase is still kept). Returns the `(phrase, weight)`
+/// pairs, or an error only when the file can't be read.
+fn parse_hotwords_file(path: &str) -> anyhow::Result<Vec<(String, f32)>> {
+    let content = std::fs::read_to_string(path)
+        .with_context(|| format!("failed to read hotwords file: {path}"))?;
+    let mut pairs = Vec::new();
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let (phrase, weight) = match line.split_once('\t') {
+            Some((p, w)) => (p.trim(), w.trim().parse::<f32>().unwrap_or(1.0)),
+            None => (line, 1.0),
+        };
+        if !phrase.is_empty() {
+            pairs.push((phrase.to_string(), weight));
+        }
+    }
+    Ok(pairs)
+}
+
+/// Resolve the hotword pack from CLI options: phrases from `--hotwords-file`
+/// (if any) plus the built-in lexicon when `--hotwords-default` is set. Returns
+/// `None` when neither source yields any phrase (biasing stays off). A file read
+/// error is logged and treated as "no file phrases" so biasing never blocks
+/// transcription.
+fn resolve_hotwords(
+    hotwords_file: Option<&str>,
+    hotwords_default: bool,
+) -> Option<Vec<(String, f32)>> {
+    let mut pairs = Vec::new();
+    if let Some(path) = hotwords_file {
+        match parse_hotwords_file(path) {
+            Ok(p) => pairs.extend(p),
+            Err(e) => tracing::warn!("{e:#}; continuing without file hotwords"),
+        }
+    }
+    if hotwords_default {
+        pairs.extend(gigastt_core::lexicon::default_hotword_pairs());
+    }
+    if pairs.is_empty() { None } else { Some(pairs) }
+}
+
 /// Ensure the INT8 encoder exists for `variant`, producing it via the native
 /// Rust quantization pipeline if missing. Honoured by `serve` and `download`.
 /// First-time quantization takes ~2 minutes on the FP32 encoder.
@@ -655,6 +741,9 @@ async fn main() -> anyhow::Result<()> {
             punctuation,
             punct_model_dir,
             itn,
+            hotwords_file,
+            hotwords_default,
+            hotwords_boost,
             pool_size,
             pool_min_size,
             batch_pool_size,
@@ -681,7 +770,8 @@ async fn main() -> anyhow::Result<()> {
             ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
             maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
-            let engine = inference::Engine::load_with_pools(
+            let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
+            let mut engine = inference::Engine::load_with_pools(
                 &model_dir,
                 pool_size,
                 pool_min_size,
@@ -689,6 +779,10 @@ async fn main() -> anyhow::Result<()> {
             )?
             .with_punctuator(punctuator)
             .with_itn(resolve_itn(itn, resolved));
+            if let Some(pairs) = hotwords {
+                engine =
+                    engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
+            }
             log_rss();
             let limits = build_limits(
                 config.as_deref(),
@@ -766,6 +860,9 @@ async fn main() -> anyhow::Result<()> {
             punctuation,
             punct_model_dir,
             itn,
+            hotwords_file,
+            hotwords_default,
+            hotwords_boost,
             format,
             output,
             max_chars_per_line,
@@ -775,9 +872,14 @@ async fn main() -> anyhow::Result<()> {
             let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
             maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
-            let engine = inference::Engine::load_with_pool_size(&model_dir, 1)?
+            let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
+            let mut engine = inference::Engine::load_with_pool_size(&model_dir, 1)?
                 .with_punctuator(punctuator)
                 .with_itn(resolve_itn(itn, resolved));
+            if let Some(pairs) = hotwords {
+                engine =
+                    engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
+            }
             log_rss();
             let mut guard = engine.pool.checkout().await?;
             let result = engine.transcribe_file(&file, &mut guard);
@@ -1158,6 +1260,121 @@ mod tests {
             )
             .is_none()
         );
+    }
+
+    #[test]
+    fn test_cli_serve_hotwords_flags() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--hotwords-file",
+            "/tmp/hw.txt",
+            "--hotwords-default",
+            "--hotwords-boost",
+            "8.5",
+        ]);
+        match cli.command {
+            Commands::Serve {
+                hotwords_file,
+                hotwords_default,
+                hotwords_boost,
+                ..
+            } => {
+                assert_eq!(hotwords_file, Some("/tmp/hw.txt".to_string()));
+                assert!(hotwords_default);
+                assert_eq!(hotwords_boost, Some(8.5));
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_hotwords_default_off() {
+        let cli = Cli::parse_from(["gigastt", "serve"]);
+        match cli.command {
+            Commands::Serve {
+                hotwords_file,
+                hotwords_default,
+                hotwords_boost,
+                ..
+            } => {
+                assert_eq!(hotwords_file, None);
+                assert!(!hotwords_default);
+                assert_eq!(hotwords_boost, None);
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_hotwords_flags() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe",
+            "a.wav",
+            "--hotwords-file",
+            "hw.txt",
+        ]);
+        match cli.command {
+            Commands::Transcribe {
+                hotwords_file,
+                hotwords_default,
+                ..
+            } => {
+                assert_eq!(hotwords_file, Some("hw.txt".to_string()));
+                assert!(!hotwords_default);
+            }
+            _ => panic!("expected Transcribe"),
+        }
+    }
+
+    #[test]
+    fn test_parse_hotwords_file_lines_and_weights() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(
+            tmp.path(),
+            b"# comment\n\nsynergy\nyoutube\t2.5\n  spaced  \nbadweight\tnope\n",
+        )
+        .unwrap();
+        let pairs = parse_hotwords_file(tmp.path().to_str().unwrap()).unwrap();
+        assert_eq!(
+            pairs,
+            vec![
+                ("synergy".to_string(), 1.0),
+                ("youtube".to_string(), 2.5),
+                ("spaced".to_string(), 1.0),
+                ("badweight".to_string(), 1.0), // malformed weight → 1.0, phrase kept
+            ]
+        );
+    }
+
+    #[test]
+    fn test_resolve_hotwords_none_when_unset() {
+        assert!(resolve_hotwords(None, false).is_none());
+    }
+
+    #[test]
+    fn test_resolve_hotwords_default_pack_only() {
+        let pairs = resolve_hotwords(None, true).expect("default pack present");
+        assert_eq!(pairs.len(), gigastt_core::lexicon::DEFAULT_HOTWORDS.len());
+    }
+
+    #[test]
+    fn test_resolve_hotwords_file_plus_default() {
+        let tmp = tempfile::NamedTempFile::new().unwrap();
+        std::fs::write(tmp.path(), "мойбренд\n").unwrap();
+        let pairs = resolve_hotwords(tmp.path().to_str().unwrap().into(), true).unwrap();
+        assert_eq!(
+            pairs.len(),
+            1 + gigastt_core::lexicon::DEFAULT_HOTWORDS.len()
+        );
+        assert_eq!(pairs[0].0, "мойбренд");
+    }
+
+    #[test]
+    fn test_resolve_hotwords_missing_file_is_graceful() {
+        // Missing file → warning + treated as no file phrases (None here).
+        assert!(resolve_hotwords(Some("/nonexistent/hw.txt"), false).is_none());
     }
 
     #[test]

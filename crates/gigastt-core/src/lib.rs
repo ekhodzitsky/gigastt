@@ -2,6 +2,7 @@ pub mod error;
 pub mod export;
 pub mod inference;
 pub mod itn;
+pub mod lexicon;
 pub mod model;
 pub mod onnx_proto;
 pub mod protocol;

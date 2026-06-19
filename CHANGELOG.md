@@ -52,6 +52,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Contextual hotword biasing (`--hotwords-file` / `--hotwords-boost`).** Optional
+  token-level shallow-fusion biasing inside the existing greedy RNN-T loop (no beam
+  search): a trie over hotword phrases — each tokenized to the active vocabulary —
+  boosts the joiner logits of tokens that extend an active hotword prefix, so brands,
+  names, and domain terms are recognized more reliably. Works for both heads (char and
+  BPE vocabularies). A curated Russian brand/acronym lexicon ships as the default pack.
+  Default OFF: with no hotwords configured, decoding is byte-for-byte unchanged. Env
+  `GIGASTT_HOTWORDS_FILE` / `GIGASTT_HOTWORDS_BOOST`.
 - **Inverse text normalization for the `rnnt` head (`--itn`).** An optional
   post-processing pass converts spelled-out Russian numbers into digits
   (e.g. `шестьдесят тысяч` → `60000`, `две тысячи двадцать` → `2020`). It runs
