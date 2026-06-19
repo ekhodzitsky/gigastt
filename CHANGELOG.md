@@ -68,6 +68,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GIGASTT_BENCHMARK_UPDATE_BASELINE=1` refresh path. The absolute `MAX_WER`
   ceiling is a hard failure too; previously it only warned and `pass` was
   hardcoded `true`.
+- **Export formats for transcription results.** The REST endpoint
+  `/v1/transcribe` now accepts `?format=txt|json|srt|vtt|md` (JSON remains the
+  default) and optional formatter controls (`max_chars_per_line`,
+  `max_words_per_line`, `word_timestamps`, `download`). The CLI command
+  `gigastt transcribe` gained `--format`/`-f`, `--output`/`-o`,
+  `--max-chars-per-line`, `--max-words-per-line`, and `--word-timestamps`.
+  New `gigastt-core::export` module provides pure formatters; SRT/VTT are
+  speaker-aware and Markdown includes YAML frontmatter with `duration`,
+  `language: ru`, and `speakers`.
 
 ### Changed
 

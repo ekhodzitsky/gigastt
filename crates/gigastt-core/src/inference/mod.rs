@@ -505,6 +505,25 @@ pub struct WordInfo {
     pub speaker: Option<u32>,
 }
 
+impl WordInfo {
+    /// Create a new [`WordInfo`].
+    pub fn new(
+        word: impl Into<String>,
+        start: f64,
+        end: f64,
+        confidence: f32,
+        speaker: Option<u32>,
+    ) -> Self {
+        Self {
+            word: word.into(),
+            start,
+            end,
+            confidence,
+            speaker,
+        }
+    }
+}
+
 /// Per-connection streaming state that persists across audio chunks.
 ///
 /// Created via [`Engine::create_state`]. Holds the decoder LSTM state, an audio

@@ -30,7 +30,7 @@ are additive only.
 | `/health` | GET | Health check (`{"status":"ok"}`) |
 | `/ready` | GET | Readiness probe (200 when the engine pool is ready) |
 | `/v1/models` | GET | Model info (encoder type, pool size, capabilities) |
-| `/v1/transcribe` | POST | File transcription, full JSON response |
+| `/v1/transcribe` | POST | File transcription, full JSON response or export format |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
 | `/v1/ws` | GET | WebSocket upgrade for real-time streaming |
 | `/metrics` | GET | Prometheus metrics (enabled with `--metrics`). Served on the separate `--metrics-listen` port (default `127.0.0.1:9090`), not the main API port. |
@@ -48,11 +48,45 @@ curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
 # data: {"type":"final","text":"Привет, как дела?"}
 ```
 
+### Export formats
+
+`/v1/transcribe` supports alternative output formats via the `format` query
+parameter:
+
+| Format | Query value | Content-Type | Notes |
+|---|---|---|---|
+| JSON (default) | `json` | `application/json` | Same response as before |
+| Plain text | `txt` | `text/plain` | Transcript text only |
+| SubRip | `srt` | `application/x-subrip` | Speaker-aware cues |
+| WebVTT | `vtt` | `text/vtt` | Speaker-aware cues |
+| Markdown | `md` | `text/markdown` | YAML frontmatter + transcript |
+
+```sh
+# SubRip subtitles
+curl -X POST "http://127.0.0.1:9876/v1/transcribe?format=srt" \
+  -H "Content-Type: application/octet-stream" --data-binary @recording.wav
+
+# Markdown with word timings
+curl -X POST "http://127.0.0.1:9876/v1/transcribe?format=md&word_timestamps=true" \
+  -H "Content-Type: application/octet-stream" --data-binary @recording.wav
+
+# Force download as attachment
+curl -X POST "http://127.0.0.1:9876/v1/transcribe?format=vtt&download=recording.vtt" \
+  -H "Content-Type: application/octet-stream" --data-binary @recording.wav
+```
+
+Optional formatter controls:
+
+- `max_chars_per_line` — subtitle line length limit (default 80, 0 = unlimited)
+- `max_words_per_line` — subtitle word count limit (default 14, 0 = unlimited)
+- `word_timestamps` — include per-word table in Markdown (default false)
+
 ### Error responses
 
 | HTTP | Code | When |
 |---|---|---|
 | 400 | `empty_body` | Request body is empty |
+| 400 | `invalid_format` | Unsupported `format` query value |
 | 413 | `payload_too_large` | Body exceeds `--body-limit-bytes` (default 50 MiB) |
 | 422 | `invalid_audio` | Audio could not be decoded (unsupported/corrupt format) |
 | 422 | `transcription_error` | Audio decoded but inference failed |

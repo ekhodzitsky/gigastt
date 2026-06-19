@@ -349,6 +349,11 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_SKIP_QUANTIZE` | `--skip-quantize` | false |
 | `GIGASTT_METRICS` | `--metrics` | false |
 | `GIGASTT_METRICS_LISTEN` | `--metrics-listen` | 127.0.0.1:9090 |
+| `GIGASTT_FORMAT` | `transcribe --format` | `txt` |
+| `GIGASTT_OUTPUT` | `transcribe --output` | — |
+| `GIGASTT_MAX_CHARS_PER_LINE` | `transcribe --max-chars-per-line` | — |
+| `GIGASTT_MAX_WORDS_PER_LINE` | `transcribe --max-words-per-line` | — |
+| `GIGASTT_WORD_TIMESTAMPS` | `transcribe --word-timestamps` | false |
 | `RUST_LOG` | — | `gigastt=info` |
 
 ## Useful Commands for Agents

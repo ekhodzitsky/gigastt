@@ -1,8 +1,11 @@
+use anyhow::Context;
 use clap::{Parser, Subcommand};
 use gigastt::server;
 use gigastt::server::{OriginPolicy, RuntimeLimits, ServerConfig};
+use gigastt_core::export::{ExportFormat, RenderOpts};
 use gigastt_core::{inference, model};
 use std::net::IpAddr;
+use std::str::FromStr;
 use tracing_subscriber::EnvFilter;
 
 #[derive(Parser)]
@@ -181,12 +184,32 @@ enum Commands {
 
     /// Transcribe an audio file (offline)
     Transcribe {
-        /// Path to WAV file (PCM16 mono)
+        /// Path to audio file (WAV, M4A, MP3, OGG, FLAC)
         file: String,
 
         /// Model directory
         #[arg(long, default_value_t = model::default_model_dir())]
         model_dir: String,
+
+        /// Export format: json, txt, srt, vtt, md [default: txt]
+        #[arg(short, long, env = "GIGASTT_FORMAT", default_value = "txt")]
+        format: String,
+
+        /// Output file. When omitted, prints to stdout.
+        #[arg(short, long, env = "GIGASTT_OUTPUT")]
+        output: Option<String>,
+
+        /// Maximum characters per subtitle/caption line (SRT/VTT) [default: 80]
+        #[arg(long, env = "GIGASTT_MAX_CHARS_PER_LINE")]
+        max_chars_per_line: Option<usize>,
+
+        /// Maximum words per subtitle/caption line (SRT/VTT) [default: 14]
+        #[arg(long, env = "GIGASTT_MAX_WORDS_PER_LINE")]
+        max_words_per_line: Option<usize>,
+
+        /// Include per-word timestamps in Markdown output
+        #[arg(long, env = "GIGASTT_WORD_TIMESTAMPS", default_value_t = false)]
+        word_timestamps: bool,
     },
 }
 
@@ -465,14 +488,39 @@ async fn main() -> anyhow::Result<()> {
             gigastt_core::quantize::quantize_model(&input, &output)?;
             tracing::info!("Quantized model saved to {}", output.display());
         }
-        Commands::Transcribe { file, model_dir } => {
+        Commands::Transcribe {
+            file,
+            model_dir,
+            format,
+            output,
+            max_chars_per_line,
+            max_words_per_line,
+            word_timestamps,
+        } => {
             model::ensure_model(&model_dir).await?;
             let engine = inference::Engine::load_with_pool_size(&model_dir, 1)?;
             log_rss();
             let mut guard = engine.pool.checkout().await?;
             let result = engine.transcribe_file(&file, &mut guard);
             drop(guard);
-            println!("{}", result?.text);
+            let result = result?;
+
+            let format = ExportFormat::from_str(&format).map_err(|e| anyhow::anyhow!("{e}"))?;
+            let opts = RenderOpts {
+                max_chars_per_line: max_chars_per_line.unwrap_or(80),
+                max_words_per_line: max_words_per_line.unwrap_or(14),
+                include_word_timestamps: word_timestamps,
+            };
+            let rendered = format.render(&result, &opts);
+
+            match output {
+                Some(path) => {
+                    std::fs::write(&path, rendered)
+                        .with_context(|| format!("failed to write {path}"))?;
+                    tracing::info!("Wrote {} export to {path}", format);
+                }
+                None => println!("{rendered}"),
+            }
         }
     }
 
@@ -573,8 +621,72 @@ mod tests {
     fn test_cli_transcribe_parsing() {
         let cli = Cli::parse_from(["gigastt", "transcribe", "audio.wav"]);
         match cli.command {
-            Commands::Transcribe { file, .. } => {
+            Commands::Transcribe {
+                file,
+                format,
+                output,
+                ..
+            } => {
                 assert_eq!(file, "audio.wav");
+                assert_eq!(format, "txt");
+                assert!(output.is_none());
+            }
+            _ => panic!("expected Transcribe"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_format_and_output() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe",
+            "audio.wav",
+            "--format",
+            "srt",
+            "-o",
+            "out.srt",
+        ]);
+        match cli.command {
+            Commands::Transcribe {
+                file,
+                format,
+                output,
+                ..
+            } => {
+                assert_eq!(file, "audio.wav");
+                assert_eq!(format, "srt");
+                assert_eq!(output, Some("out.srt".to_string()));
+            }
+            _ => panic!("expected Transcribe"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_subtitle_options() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe",
+            "audio.wav",
+            "--format",
+            "vtt",
+            "--max-chars-per-line",
+            "60",
+            "--max-words-per-line",
+            "10",
+            "--word-timestamps",
+        ]);
+        match cli.command {
+            Commands::Transcribe {
+                format,
+                max_chars_per_line,
+                max_words_per_line,
+                word_timestamps,
+                ..
+            } => {
+                assert_eq!(format, "vtt");
+                assert_eq!(max_chars_per_line, Some(60));
+                assert_eq!(max_words_per_line, Some(10));
+                assert!(word_timestamps);
             }
             _ => panic!("expected Transcribe"),
         }

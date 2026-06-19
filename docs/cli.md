@@ -66,8 +66,18 @@ gigastt download [OPTIONS]
   --skip-quantize        Skip auto-quantization after download (FP32 only)
 
 gigastt transcribe [OPTIONS] <FILE>
-  --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
+  --model-dir <DIR>           Model directory [default: ~/.gigastt/models]
+  -f, --format <FORMAT>       Export format: json, txt, srt, vtt, md [default: txt]
+  -o, --output <FILE>         Write rendered output to file instead of stdout
+  --max-chars-per-line <N>    Max chars per subtitle line (SRT/VTT) [default: 80]
+  --max-words-per-line <N>    Max words per subtitle line (SRT/VTT) [default: 14]
+  --word-timestamps           Include per-word timestamps in Markdown output
   Supports: WAV, M4A, MP3, OGG, FLAC (mono or auto-mixed)
+
+  Examples:
+    gigastt transcribe recording.wav
+    gigastt transcribe recording.wav -f srt -o recording.srt
+    gigastt transcribe recording.wav -f md --word-timestamps -o notes.md
 
 gigastt quantize [OPTIONS]          # always available since v0.9.0
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
