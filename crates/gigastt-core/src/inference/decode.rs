@@ -512,7 +512,7 @@ mod tests {
     fn test_greedy_decode_token_cap_does_not_inflate_blanks() {
         // One frame; the joiner returns a non-blank token on every call past the cap.
         // Exactly MAX_TOKENS_PER_STEP tokens are emitted, and the token cap must NOT
-        // bump the blank counter or fire an endpoint (task 23 fix).
+        // bump the blank counter or fire an endpoint.
         let mut backend = FakeBackend::new(vec![1usize; MAX_TOKENS_PER_STEP + 1], 5, 4);
         let mut state = DecoderState::new(4);
         let result = greedy_decode_impl(&mut backend, &fake_enc(1), 1, 4, &mut state).unwrap();

@@ -3,7 +3,7 @@
 //! Model-gated (`#[ignore]`, requires ~850MB GigaAM model at `~/.gigastt/models`).
 //! Run with: `cargo test -p gigastt-core --test streaming_quality -- --ignored --nocapture`.
 //!
-//! Regression guard for the streaming-recognition-quality bug (roadmap task 16):
+//! Regression guard for the streaming-recognition-quality bug:
 //! the streaming path used to feed the offline Conformer encoder isolated per-chunk
 //! windows with no left context, collapsing a full phrase to a single token («И»).
 //! This test streams `golos_00.wav` through `Engine::process_chunk` in 100 ms chunks
@@ -150,11 +150,11 @@ fn streaming_long_audio_slides_window() {
 }
 
 /// Streaming word timestamps must track real elapsed time, not be inflated by
-/// the encoder subsampling factor (roadmap task 11: a mel-vs-encoder frame unit
+/// the encoder subsampling factor (a mel-vs-encoder frame unit
 /// mismatch used to multiply every post-first-chunk `start`/`end` by ~4×). The
 /// inflation only appears once the window slides (a non-zero frame offset), so
-/// this feeds >5 s of audio to force slides, then asserts no word lands far
-/// beyond the audio's real duration. Fixed structurally in task 16 (the offset
+/// this feeds several seconds of audio to force slides, then asserts no word
+/// lands far beyond the audio's real duration. Fixed structurally (the offset
 /// is now derived from slid-off samples); this is the regression guard.
 #[test]
 #[ignore = "requires the GigaAM model (~850MB) at ~/.gigastt/models"]
@@ -209,6 +209,6 @@ fn streaming_word_timestamps_not_inflated() {
     assert!(
         max_end_s <= audio_dur_s * 1.5,
         "word end {max_end_s:.2}s far exceeds audio duration {audio_dur_s:.2}s \
-         — streaming timestamp inflation regressed (task 11)"
+         — streaming timestamp inflation regressed"
     );
 }
