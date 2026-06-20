@@ -383,3 +383,61 @@ async fn test_shutdown_during_pool_saturation_returns_503_not_500() {
         let _ = h.await;
     }
 }
+
+// ---------------------------------------------------------------------------
+// 7. clean shutdown releases the listener (drain path completes)
+// ---------------------------------------------------------------------------
+
+/// An idle server shut down via the oneshot must run the full graceful-drain
+/// path: cancel the token, close the pools, let `axum::serve` return, then
+/// drain the tracker and release the TCP listener. We observe completion
+/// externally by polling `/health` until it stops answering — the socket only
+/// frees once `run_with_config_listener` returns, which is the post-`serve`
+/// drain code at the end of the function.
+#[ignore]
+#[tokio::test]
+async fn test_clean_shutdown_releases_listener() {
+    let model_dir = common::model_dir();
+    // Tiny drain window so an idle server (no in-flight WS/SSE tasks) finishes
+    // the drain promptly.
+    let limits = gigastt::server::RuntimeLimits {
+        shutdown_drain_secs: 1,
+        ..Default::default()
+    };
+    let (port, shutdown) = common::start_server_with_limits(&model_dir, limits).await;
+
+    // Sanity: the server is serving before we signal shutdown.
+    let client = reqwest::Client::new();
+    let pre = client
+        .get(format!("http://127.0.0.1:{port}/health"))
+        .send()
+        .await
+        .expect("GET /health before shutdown failed");
+    assert_eq!(pre.status(), 200);
+
+    let _ = shutdown.send(());
+
+    // Poll until /health stops answering — proves the listener was released
+    // after the drain path ran. Generous deadline to cover the drain window
+    // plus teardown jitter on slow CI.
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(15);
+    let mut listener_released = false;
+    while tokio::time::Instant::now() < deadline {
+        match client
+            .get(format!("http://127.0.0.1:{port}/health"))
+            .timeout(Duration::from_secs(1))
+            .send()
+            .await
+        {
+            Err(_) => {
+                listener_released = true;
+                break;
+            }
+            Ok(_) => tokio::time::sleep(Duration::from_millis(100)).await,
+        }
+    }
+    assert!(
+        listener_released,
+        "clean shutdown must release the listener (drain path must complete)"
+    );
+}

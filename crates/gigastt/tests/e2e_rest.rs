@@ -477,6 +477,180 @@ async fn test_server_list_models() {
     let _ = shutdown.send(());
 }
 
+// ---------------------------------------------------------------------------
+// Routing: OPTIONS preflight on every protected route returns 204
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_options_protected_routes_return_204() {
+    // Exercises the `options(...)` route wiring on the protected sub-router for
+    // /v1/transcribe, /v1/transcribe/stream and /v1/ws (in addition to the
+    // already-covered /v1/models). A loopback Origin keeps the request inside
+    // the allowlist so the preflight reaches the route handler.
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let client = reqwest::Client::new();
+
+    for path in ["/v1/transcribe", "/v1/transcribe/stream", "/v1/ws"] {
+        let resp = client
+            .request(
+                reqwest::Method::OPTIONS,
+                format!("http://127.0.0.1:{port}{path}"),
+            )
+            .header("Origin", "http://localhost:3000")
+            .send()
+            .await
+            .unwrap_or_else(|_| panic!("OPTIONS {path} failed"));
+        assert_eq!(resp.status(), 204, "OPTIONS {path} should return 204");
+    }
+
+    let _ = shutdown.send(());
+}
+
+// ---------------------------------------------------------------------------
+// CORS / origin handling on the wired router
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_cross_origin_request_denied_on_v1() {
+    // The wired router attaches `origin_layer` to /v1/*. A non-loopback Origin
+    // must be denied with 403 + `origin_denied` before reaching the handler.
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let resp = reqwest::Client::new()
+        .get(format!("http://127.0.0.1:{port}/v1/models"))
+        .header("Origin", "https://evil.example.com")
+        .send()
+        .await
+        .expect("GET /v1/models with foreign Origin failed");
+    assert_eq!(resp.status(), 403, "cross-origin /v1/* must be denied");
+    let text = resp.text().await.expect("text body");
+    let body: serde_json::Value = serde_json::from_str(&text).expect("JSON body");
+    assert_eq!(body["code"], "origin_denied");
+    let _ = shutdown.send(());
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_loopback_origin_gets_cors_echo() {
+    // A loopback Origin is allowed and the response echoes it back in
+    // Access-Control-Allow-Origin (no wildcard by default).
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let resp = reqwest::Client::new()
+        .get(format!("http://127.0.0.1:{port}/v1/models"))
+        .header("Origin", "http://localhost:3000")
+        .send()
+        .await
+        .expect("GET /v1/models with loopback Origin failed");
+    assert_eq!(resp.status(), 200, "loopback Origin must be allowed");
+    assert_eq!(
+        resp.headers()
+            .get("access-control-allow-origin")
+            .and_then(|v| v.to_str().ok()),
+        Some("http://localhost:3000"),
+        "CORS echo must mirror the loopback Origin"
+    );
+    let _ = shutdown.send(());
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_health_skips_origin_guard_on_wired_router() {
+    // /health is exempt from the origin guard even on the full router, so a
+    // monitoring probe carrying a foreign Origin still gets 200.
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let resp = reqwest::Client::new()
+        .get(format!("http://127.0.0.1:{port}/health"))
+        .header("Origin", "https://evil.example.com")
+        .send()
+        .await
+        .expect("GET /health with foreign Origin failed");
+    assert_eq!(resp.status(), 200, "/health must skip the origin guard");
+    let _ = shutdown.send(());
+}
+
+// ---------------------------------------------------------------------------
+// Request-id middleware is wired on the full router
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_request_id_header_present_on_wired_router() {
+    // The request_id_layer is attached to the full app, so every response
+    // carries an X-Request-Id. With no client-supplied id the server mints a
+    // UUIDv7.
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let resp = reqwest::Client::new()
+        .get(format!("http://127.0.0.1:{port}/health"))
+        .send()
+        .await
+        .expect("GET /health failed");
+    assert_eq!(resp.status(), 200);
+    let rid = resp
+        .headers()
+        .get("x-request-id")
+        .and_then(|v| v.to_str().ok())
+        .expect("X-Request-Id header must be present");
+    assert!(
+        uuid::Uuid::parse_str(rid).is_ok(),
+        "X-Request-Id should be a UUID, got {rid:?}"
+    );
+    let _ = shutdown.send(());
+}
+
+// ---------------------------------------------------------------------------
+// /ready reports pool_exhausted when every triplet is checked out
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ready_returns_503_when_pool_exhausted() {
+    // Single-triplet pool. Occupy the only slot with a long REST transcribe so
+    // `/ready` observes `available == 0` and returns 503 + `pool_exhausted`.
+    let (port, shutdown) = common::start_server_with_pool(&common::model_dir(), 1).await;
+    let long_wav = common::generate_wav(60, 16000);
+
+    let occupier_url = format!("http://127.0.0.1:{port}/v1/transcribe");
+    let occupier = tokio::spawn(async move {
+        let _ = reqwest::Client::new()
+            .post(&occupier_url)
+            .body(long_wav)
+            .send()
+            .await;
+    });
+
+    // Poll /ready until it flips to 503; the occupier needs a moment to
+    // actually check out the triplet.
+    let client = reqwest::Client::new();
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(20);
+    let mut saw_exhausted = false;
+    while tokio::time::Instant::now() < deadline {
+        let resp = client
+            .get(format!("http://127.0.0.1:{port}/ready"))
+            .send()
+            .await
+            .expect("GET /ready failed");
+        if resp.status() == 503 {
+            let text = resp.text().await.expect("text body");
+            let body: serde_json::Value = serde_json::from_str(&text).expect("JSON body");
+            assert_eq!(body["status"], "not_ready");
+            assert_eq!(body["reason"], "pool_exhausted");
+            assert_eq!(body["pool_total"], 1);
+            saw_exhausted = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert!(
+        saw_exhausted,
+        "/ready must report pool_exhausted while the only triplet is in use"
+    );
+
+    let _ = shutdown.send(());
+    occupier.abort();
+    let _ = occupier.await;
+}
+
 // The v0.9.0-rc.1 zero-copy REST decode path used to carry a
 // Linux-only VmRSS budget test here. It asserted that
 // `RSS_after - RSS_before < wav.len() * 3 + 40 MiB` after POSTing a 300 s

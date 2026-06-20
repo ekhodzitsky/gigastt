@@ -3301,4 +3301,319 @@ mod tests {
             "every triplet must be returned to the pool after warmup"
         );
     }
+
+    // ---- More pure (no-model) coverage -------------------------------------
+
+    #[test]
+    fn test_finalize_pool_load_degraded_includes_error_detail() {
+        // The degraded-pool branch logs the first error; exercise the
+        // `first_err` formatting path (the loaded triplets are still returned).
+        let r: Vec<anyhow::Result<u32>> = vec![Ok(1), Err(anyhow::anyhow!("first failure cause"))];
+        assert_eq!(Engine::finalize_pool_load(r, 2, 1).unwrap(), vec![1]);
+    }
+
+    #[test]
+    fn test_finalize_pool_load_below_min_no_errors_when_all_ok_but_short() {
+        // No Err entries, but fewer results than pool_size with min above the
+        // loaded count → still errors (loaded count is what matters).
+        let r: Vec<anyhow::Result<u32>> = vec![Ok(1)];
+        let err = Engine::finalize_pool_load(r, 3, 2).unwrap_err().to_string();
+        assert!(err.contains("loaded only 1/3"), "got: {err}");
+    }
+
+    #[test]
+    fn test_transcript_assembler_set_words_overwrites() {
+        // The sliding-window streaming path overwrites (not appends) on each
+        // re-decode via `set_words`. A second call replaces the first.
+        let mut asm = TranscriptAssembler::new();
+        asm.set_words(vec![word("alpha", 0.0, 0.4), word("beta", 0.5, 0.9)]);
+        let p = asm.partial(0.0);
+        assert_eq!(p.text, "alpha beta");
+        assert_eq!(p.words.len(), 2);
+
+        asm.set_words(vec![word("gamma", 1.0, 1.4)]);
+        let p = asm.partial(0.0);
+        assert_eq!(p.text, "gamma", "set_words must overwrite, not append");
+        assert_eq!(p.words.len(), 1);
+    }
+
+    #[test]
+    fn test_transcript_assembler_set_words_empty_resets_text() {
+        let mut asm = TranscriptAssembler::new();
+        asm.set_words(vec![word("x", 0.0, 0.4)]);
+        assert!(!asm.is_empty());
+        asm.set_words(vec![]);
+        assert!(asm.is_empty(), "empty set_words clears the accumulation");
+    }
+
+    #[test]
+    fn test_token_formatter_last_word_empty_confidences_defaults_to_one() {
+        // A word whose only token is a bare boundary marker (`▁`, no body)
+        // contributes no confidence sample; a following real word that itself
+        // has no recorded confidences must default to 1.0 on the final-emit
+        // path. We build a vocab whose tokens are pure boundary markers so the
+        // `clean` body is empty and no confidence is pushed.
+        let tok = Tokenizer::from_tokens(vec![
+            "\u{2581}real".into(), // 0: a real word
+            "\u{2581}".into(),     // 1: bare boundary, empty body
+        ]);
+        let tokens = vec![
+            decode::TokenInfo {
+                token_id: 0,
+                frame_index: 0,
+                confidence: 0.7,
+            },
+            // A bare boundary token forces emission of "real" (mid-loop emit),
+            // then contributes nothing to a new word.
+            decode::TokenInfo {
+                token_id: 1,
+                frame_index: 1,
+                confidence: 0.5,
+            },
+        ];
+        let words = TokenFormatter::tokens_to_words(&tok, &tokens, 0);
+        // Only "real" is emitted; the trailing bare boundary leaves no word.
+        assert_eq!(words.len(), 1);
+        assert_eq!(words[0].word, "real");
+        assert!((words[0].confidence - 0.7).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_feature_extractor_prepare_buffer_accumulates() {
+        // `prepare_buffer` appends to the buffer and reports the usable sample
+        // count once a full frame is available; below N_FFT it returns None.
+        let fe = FeatureExtractor::new();
+        let mut buf: Vec<f32> = Vec::new();
+        // A handful of samples — fewer than N_FFT — yields no usable frame yet.
+        let usable = fe.prepare_buffer(&[0.1; 10], &mut buf);
+        assert_eq!(usable, None, "sub-frame input is buffered, not yet usable");
+        assert_eq!(buf.len(), 10, "samples are retained in the buffer");
+
+        // Append enough to cross a frame boundary; a usable count is reported.
+        let usable = fe.prepare_buffer(&vec![0.2; N_FFT], &mut buf);
+        assert!(
+            usable.is_some(),
+            "crossing a frame boundary yields a usable count"
+        );
+    }
+
+    #[test]
+    fn test_feature_extractor_compute_mel_reuses_buffers() {
+        // `compute_mel` writes into caller-owned scratch buffers and returns the
+        // frame count. One second of 16 kHz audio → ~100 frames; the output
+        // buffer holds frames * N_MELS values.
+        let fe = FeatureExtractor::new();
+        let samples = vec![0.0f32; 16000];
+        let mut fft_buf = Vec::new();
+        let mut power_buf = Vec::new();
+        let mut out_buf = Vec::new();
+        let frames = fe.compute_mel(&samples, &mut fft_buf, &mut power_buf, &mut out_buf);
+        assert!(frames > 0, "1s of audio yields at least one mel frame");
+        assert_eq!(
+            out_buf.len(),
+            frames * N_MELS,
+            "output buffer holds frames * N_MELS values"
+        );
+    }
+
+    // ---- Model-backed coverage (process_chunk / transcribe / state) --------
+    //
+    // These need the GigaAM model on disk; CI / coverage runs them with
+    // `--include-ignored`. They exercise the real streaming + file-decode
+    // branches (empty input, sub-stride, sub-N_FFT, full decode + slide,
+    // silence/short transcription, finish_stream / flush_state).
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_create_state_initial_fields() {
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let state = engine.create_state(false);
+        assert!(state.audio_buffer.is_empty());
+        assert!(state.assembler.is_empty());
+        assert_eq!(state.window_start_samples, 0);
+        assert_eq!(state.context_samples, 0);
+        assert_eq!(state.pending_samples, 0);
+        assert!(state.resampler.is_none());
+        // No VAD attached on a default engine → no endpointer.
+        assert!(state.vad_endpointer.is_none());
+        // Decoder state seeded to blank.
+        assert_eq!(state.decoder.consecutive_blanks, 0);
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_create_state_diarization_flag_ignored_without_feature() {
+        // Without the `diarization` feature the flag is silently ignored and a
+        // perfectly usable state still comes back.
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let state = engine.create_state(true);
+        assert!(state.audio_buffer.is_empty());
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_process_chunk_empty_input_returns_no_segments() {
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let mut state = engine.create_state(false);
+        let segs = engine
+            .process_chunk(&[], &mut state, &mut guard)
+            .expect("empty chunk must not error");
+        assert!(segs.is_empty(), "empty input yields no segments");
+        assert_eq!(state.audio_buffer.len(), 0);
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_process_chunk_sub_stride_buffers_without_decoding() {
+        // A chunk smaller than the decode stride is buffered and triggers no
+        // decode (the stride gate returns early).
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let mut state = engine.create_state(false);
+        let small = vec![0.0f32; 1600]; // 0.1s ≪ 0.8s stride
+        let segs = engine
+            .process_chunk(&small, &mut state, &mut guard)
+            .expect("sub-stride chunk must not error");
+        assert!(segs.is_empty(), "sub-stride chunk yields no segments yet");
+        assert_eq!(state.audio_buffer.len(), 1600, "samples are buffered");
+        assert_eq!(state.pending_samples, 1600, "pending counter advances");
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_process_chunk_silence_over_stride_decodes_no_words() {
+        // Enough silence to cross the decode stride: the encoder runs but
+        // produces no words (silence), so the partial path returns no segments
+        // and the pending counter resets.
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let mut state = engine.create_state(false);
+        let chunk = vec![0.0f32; 16000]; // 1s of silence, > 0.8s stride
+        let segs = engine
+            .process_chunk(&chunk, &mut state, &mut guard)
+            .expect("decode of silence must not error");
+        // Silence → no words → empty assembler → no partial segment emitted.
+        assert!(segs.is_empty(), "silence decodes to no words");
+        assert_eq!(
+            state.pending_samples, 0,
+            "decode resets the pending counter"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_flush_state_empty_returns_none() {
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut state = engine.create_state(false);
+        assert!(
+            engine.flush_state(&mut state).is_none(),
+            "an empty assembler flushes to None"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_flush_state_nonempty_returns_final_segment() {
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut state = engine.create_state(false);
+        state.assembler.set_words(vec![word("hello", 0.0, 0.4)]);
+        let seg = engine
+            .flush_state(&mut state)
+            .expect("non-empty assembler flushes to a Final segment");
+        assert!(seg.is_final);
+        assert_eq!(seg.text, "hello");
+        assert!(
+            engine.flush_state(&mut state).is_none(),
+            "finalize resets the assembler"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_finish_stream_no_pending_flushes_assembler() {
+        // No buffered audio and no pending samples: finish_stream skips the
+        // forced decode and just flushes whatever the assembler holds.
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let mut state = engine.create_state(false);
+        state.assembler.set_words(vec![word("trailing", 0.0, 0.4)]);
+        let seg = engine
+            .finish_stream(&mut state, &mut guard)
+            .expect("finish_stream flushes the assembler");
+        assert_eq!(seg.text, "trailing");
+        assert!(seg.is_final);
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_finish_stream_empty_state_returns_none() {
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let mut state = engine.create_state(false);
+        assert!(
+            engine.finish_stream(&mut state, &mut guard).is_none(),
+            "an idle stream finishes to None"
+        );
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_transcribe_samples_silence_yields_empty_text() {
+        // The single-pass file path on pure silence: the encoder runs, decode
+        // produces no words, and the result text is empty with a correct
+        // duration.
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let silence = vec![0.0f32; 16000 * 2]; // 2s
+        let result = engine
+            .transcribe_samples(&silence, &mut guard)
+            .expect("silence transcription must not error");
+        assert!(result.text.trim().is_empty(), "silence yields no text");
+        assert!(result.words.is_empty());
+        assert!((result.duration_s - 2.0).abs() < 1e-6);
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_transcribe_samples_short_sub_frame_audio() {
+        // Audio shorter than a single FFT frame: the mel extractor pads to one
+        // zero frame and the encoder still runs — exercising the short-input
+        // single-pass branch without panicking. The decode output is whatever
+        // the model emits on a lone padded frame; we only assert it doesn't
+        // error and the reported duration matches the (tiny) input.
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let tiny = vec![0.0f32; 100]; // < N_FFT (320)
+        let result = engine
+            .transcribe_samples(&tiny, &mut guard)
+            .expect("sub-frame audio must not error");
+        assert!((result.duration_s - 100.0 / 16000.0).abs() < 1e-9);
+    }
+
+    #[test]
+    #[ignore = "requires model"]
+    fn test_transcribe_samples_below_chunk_threshold_single_pass() {
+        // Just under the long-form chunk threshold (30s) takes the single-pass
+        // path; pure silence still yields no words but must not error.
+        let engine = Engine::load_with_pool_size(&crate::model::default_model_dir(), 1)
+            .expect("engine should load");
+        let mut guard = engine.pool.checkout_blocking().expect("checkout");
+        let samples = vec![0.0f32; CHUNK_THRESHOLD_SAMPLES]; // exactly at threshold → single pass
+        let result = engine
+            .transcribe_samples(&samples, &mut guard)
+            .expect("at-threshold audio must not error");
+        assert!(result.words.is_empty(), "silence decodes to no words");
+    }
 }

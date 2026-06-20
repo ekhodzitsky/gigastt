@@ -1005,6 +1005,231 @@ mod tests {
         assert_eq!(max_decode_samples(192_000), max_decode_samples(48_000));
     }
 
+    // --- SampleRate tests ---
+
+    #[test]
+    fn test_sample_rate_new_zero_errors() {
+        let result = SampleRate::new(0);
+        assert!(result.is_err(), "zero sample rate must error");
+    }
+
+    #[test]
+    fn test_sample_rate_new_positive_ok() {
+        let sr = SampleRate::new(16000).unwrap();
+        assert_eq!(sr.get(), 16000);
+        assert_eq!(sr.0, 16000);
+    }
+
+    // --- stereo WAV helper + multi-channel mixing tests ---
+
+    fn make_stereo_wav_bytes(frames: &[(i16, i16)], sample_rate: u32) -> Vec<u8> {
+        let data_size = (frames.len() * 4) as u32; // 2 channels * 2 bytes
+        let file_size = 36 + data_size;
+        let mut buf = Vec::new();
+        buf.extend_from_slice(b"RIFF");
+        buf.extend_from_slice(&file_size.to_le_bytes());
+        buf.extend_from_slice(b"WAVE");
+        buf.extend_from_slice(b"fmt ");
+        buf.extend_from_slice(&16u32.to_le_bytes()); // chunk size
+        buf.extend_from_slice(&1u16.to_le_bytes()); // PCM
+        buf.extend_from_slice(&2u16.to_le_bytes()); // stereo
+        buf.extend_from_slice(&sample_rate.to_le_bytes());
+        buf.extend_from_slice(&(sample_rate * 4).to_le_bytes()); // byte rate
+        buf.extend_from_slice(&4u16.to_le_bytes()); // block align
+        buf.extend_from_slice(&16u16.to_le_bytes()); // bits per sample
+        buf.extend_from_slice(b"data");
+        buf.extend_from_slice(&data_size.to_le_bytes());
+        for &(l, r) in frames {
+            buf.extend_from_slice(&l.to_le_bytes());
+            buf.extend_from_slice(&r.to_le_bytes());
+        }
+        buf
+    }
+
+    #[test]
+    fn test_decode_stereo_mixes_to_mono() {
+        // Left = +16384 (0.5), Right = -16384 (-0.5) → mono average ≈ 0.0.
+        // Exercises the multi-channel mixing branch in decode_audio_inner.
+        let frames: Vec<(i16, i16)> = vec![(16384, -16384); 16000];
+        let wav = make_stereo_wav_bytes(&frames, 16000);
+        let samples = decode_audio_bytes(&wav).unwrap();
+        assert!(!samples.is_empty());
+        // Output is mono (one sample per frame), not interleaved.
+        assert!((samples.len() as i64 - 16000).unsigned_abs() <= 100);
+        // The L/R cancel: each mono sample is ~0.0.
+        for &s in &samples {
+            assert!(s.abs() < 0.01, "stereo mix should cancel to ~0, got {s}");
+        }
+    }
+
+    #[test]
+    fn test_decode_stereo_constant_preserves_value() {
+        // Both channels carry the same value → mono mix preserves it.
+        let frames: Vec<(i16, i16)> = vec![(8192, 8192); 8000];
+        let wav = make_stereo_wav_bytes(&frames, 16000);
+        let samples = decode_audio_bytes(&wav).unwrap();
+        assert!(!samples.is_empty());
+        for &s in &samples {
+            assert!((s - 0.25).abs() < 0.01, "expected ~0.25, got {s}");
+        }
+    }
+
+    #[test]
+    fn test_decode_wav_resamples_to_16k() {
+        // 48kHz mono WAV exercises the n_frames_hint capacity reservation and
+        // the post-decode resample-to-16kHz branch.
+        let silence: Vec<i16> = vec![0; 48000]; // 1 second at 48kHz
+        let wav = make_wav_bytes(&silence, 48000);
+        let samples = decode_audio_bytes(&wav).unwrap();
+        assert!(!samples.is_empty());
+        // Resampled to 16kHz → ~16000 samples (rubato FIR delay shortens it).
+        assert!(
+            samples.len() > 14000 && samples.len() < 17000,
+            "expected ~16000 after resample, got {}",
+            samples.len()
+        );
+    }
+
+    // --- resample_with_cache tests ---
+
+    #[test]
+    fn test_resample_with_cache_empty_clears_buffer() {
+        let mut cache: Option<rubato::Async<f32>> = None;
+        let mut out = vec![1.0, 2.0, 3.0];
+        resample_with_cache(
+            Vec::new(),
+            SampleRate(48000),
+            SampleRate(16000),
+            &mut cache,
+            &mut out,
+        )
+        .unwrap();
+        assert!(out.is_empty(), "empty input must clear the output buffer");
+        assert!(cache.is_none(), "no resampler created for empty input");
+    }
+
+    #[test]
+    fn test_resample_with_cache_zero_rate_clears_buffer() {
+        let mut cache: Option<rubato::Async<f32>> = None;
+        let mut out = vec![9.0];
+        resample_with_cache(
+            vec![1.0, 2.0],
+            SampleRate(0),
+            SampleRate(16000),
+            &mut cache,
+            &mut out,
+        )
+        .unwrap();
+        assert!(out.is_empty());
+        let mut out2 = vec![9.0];
+        resample_with_cache(
+            vec![1.0, 2.0],
+            SampleRate(16000),
+            SampleRate(0),
+            &mut cache,
+            &mut out2,
+        )
+        .unwrap();
+        assert!(out2.is_empty());
+    }
+
+    #[test]
+    fn test_resample_with_cache_same_rate_passthrough() {
+        let mut cache: Option<rubato::Async<f32>> = None;
+        let input = vec![1.0, 2.0, 3.0, 4.0];
+        let mut out = Vec::new();
+        resample_with_cache(
+            input.clone(),
+            SampleRate(16000),
+            SampleRate(16000),
+            &mut cache,
+            &mut out,
+        )
+        .unwrap();
+        assert_eq!(out, input, "same rate must pass through unchanged");
+        assert!(
+            cache.is_none(),
+            "no resampler created for same-rate passthrough"
+        );
+    }
+
+    #[test]
+    fn test_resample_with_cache_sanitizes_non_finite() {
+        let mut cache: Option<rubato::Async<f32>> = None;
+        let mut input = vec![0.5_f32; 480];
+        input[10] = f32::NAN;
+        input[20] = f32::INFINITY;
+        input[30] = f32::NEG_INFINITY;
+        let mut out = Vec::new();
+        resample_with_cache(
+            input,
+            SampleRate(48000),
+            SampleRate(16000),
+            &mut cache,
+            &mut out,
+        )
+        .unwrap();
+        assert!(!out.is_empty());
+        assert!(
+            cache.is_some(),
+            "resampler should be cached after first use"
+        );
+        for &s in &out {
+            assert!(
+                s.is_finite(),
+                "non-finite values must be sanitized, got {s}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_resample_with_cache_reuses_then_recreates() {
+        let mut cache: Option<rubato::Async<f32>> = None;
+        let mut out = Vec::new();
+        // First call creates the resampler.
+        let input1: Vec<f32> = (0..480).map(|i| (i as f32 * 0.01).sin()).collect();
+        resample_with_cache(
+            input1,
+            SampleRate(48000),
+            SampleRate(16000),
+            &mut cache,
+            &mut out,
+        )
+        .unwrap();
+        assert!(cache.is_some());
+        let len_first = out.len();
+        assert!(len_first > 0);
+
+        // Second call with the SAME chunk size reuses the cached resampler.
+        let input2: Vec<f32> = (0..480).map(|i| (i as f32 * 0.02).cos()).collect();
+        resample_with_cache(
+            input2,
+            SampleRate(48000),
+            SampleRate(16000),
+            &mut cache,
+            &mut out,
+        )
+        .unwrap();
+        assert!(cache.is_some());
+        assert!(!out.is_empty());
+
+        // Third call with a DIFFERENT chunk size forces recreation (or resize).
+        let input3: Vec<f32> = (0..960).map(|i| (i as f32 * 0.01).sin()).collect();
+        resample_with_cache(
+            input3,
+            SampleRate(48000),
+            SampleRate(16000),
+            &mut cache,
+            &mut out,
+        )
+        .unwrap();
+        assert!(cache.is_some());
+        assert!(!out.is_empty());
+        for &s in &out {
+            assert!(s.is_finite());
+        }
+    }
+
     #[test]
     fn test_decode_rejects_adversarial_sample_rate() {
         // A crafted header with an out-of-range sample rate must be rejected

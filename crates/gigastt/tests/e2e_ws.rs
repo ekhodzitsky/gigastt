@@ -666,3 +666,429 @@ async fn test_ws_max_session_precheck() {
         "Must hit max session cap via pre-check or sleep_until"
     );
 }
+
+// ---------------------------------------------------------------------------
+// 16. Every supported sample rate configures cleanly and yields a Final
+// ---------------------------------------------------------------------------
+
+/// Drive one full configure→audio→stop cycle at the given client sample rate
+/// and assert the session ends with a Final (never an Error). Exercises the
+/// resample-vs-passthrough split inside `handle_binary_frame` for each rate.
+async fn run_sample_rate_roundtrip(port: u16, rate: u32) {
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": rate}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    // ~0.3 s of silence at the configured rate.
+    let silence = common::generate_pcm16_silence(0.3, rate);
+    sink.send(Message::Binary(silence.into())).await.unwrap();
+
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(20), stream.next())
+            .await
+            .unwrap_or_else(|_| panic!("timeout waiting for Final at {rate}Hz"))
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => break,
+            other => panic!("Unexpected message type {other} at {rate}Hz (expected final): {text}"),
+        }
+    }
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_8khz_roundtrip() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+    run_sample_rate_roundtrip(port, 8000).await;
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_24khz_roundtrip() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+    run_sample_rate_roundtrip(port, 24000).await;
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_44100hz_roundtrip() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+    run_sample_rate_roundtrip(port, 44100).await;
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_48khz_roundtrip() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+    run_sample_rate_roundtrip(port, 48000).await;
+}
+
+// ---------------------------------------------------------------------------
+// 17. Binary audio sent before any Configure uses the 48kHz default and works
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_audio_before_configure_uses_default_rate() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // No Configure at all — server must fall back to DEFAULT_SAMPLE_RATE (48k)
+    // and resample. 0.3 s of silence at 48kHz.
+    let silence = common::generate_pcm16_silence(0.3, 48000);
+    sink.send(Message::Binary(silence.into())).await.unwrap();
+
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(20), stream.next())
+            .await
+            .expect("timeout waiting for Final")
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => break,
+            other => panic!("Unexpected message type {other} (expected final): {text}"),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 18. Stop, then more audio — Stop ends the session, so the socket closes
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_stop_then_more_audio_session_ends() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // Send a little audio, then Stop — Stop breaks the session loop.
+    let silence = common::generate_pcm16_silence(0.1, 48000);
+    sink.send(Message::Binary(silence.into())).await.unwrap();
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    // Drain Partials until the Final that Stop produced.
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(20), stream.next())
+            .await
+            .expect("timeout waiting for Final")
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => break,
+            other => panic!("Unexpected message type {other} after stop: {text}"),
+        }
+    }
+
+    // The server breaks the loop after Stop, returning the triplet to the pool.
+    // Any further audio we push must NOT produce another Final/Partial — the
+    // stream is being torn down. Sending may itself fail once the close
+    // propagates; either way we must not observe more transcript frames.
+    let more = common::generate_pcm16_silence(0.1, 48000);
+    let _ = sink.send(Message::Binary(more.into())).await;
+
+    let next = tokio::time::timeout(Duration::from_secs(3), stream.next()).await;
+    match next {
+        Ok(None) | Ok(Some(Ok(Message::Close(_)))) | Ok(Some(Err(_))) | Err(_) => {}
+        Ok(Some(Ok(Message::Text(text)))) => {
+            let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+            panic!("Did not expect a transcript frame after Stop, got: {v}");
+        }
+        Ok(Some(Ok(_other))) => {}
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 19. A few empty binary frames (below the spam cap) are skipped, not fatal
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_empty_frames_below_cap_are_skipped() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // A handful of empty binary frames — well under MAX_EMPTY_FRAMES_PER_SESSION.
+    for _ in 0..5 {
+        sink.send(Message::Binary(vec![].into())).await.unwrap();
+    }
+
+    // Real audio still flows afterwards, and Stop produces a Final.
+    let silence = common::generate_pcm16_silence(0.2, 48000);
+    sink.send(Message::Binary(silence.into())).await.unwrap();
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(20), stream.next())
+            .await
+            .expect("timeout waiting for Final after empty frames")
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => break,
+            other => panic!("Unexpected message type {other} after empty frames: {text}"),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 20. Client Ping → session stays usable (server ignores ping/pong frames)
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_client_ping_keeps_session_alive() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // tokio-tungstenite auto-replies to Pings with Pongs at the protocol layer,
+    // so we assert liveness functionally: after a Ping the session is still
+    // usable (server ignores Ping/Pong in its match arm and continues).
+    sink.send(Message::Ping(vec![1, 2, 3].into()))
+        .await
+        .unwrap();
+
+    // Drain any Pong the client surfaces, then prove the session still works.
+    let silence = common::generate_pcm16_silence(0.2, 48000);
+    sink.send(Message::Binary(silence.into())).await.unwrap();
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(20), stream.next())
+            .await
+            .expect("timeout waiting for Final after ping")
+            .expect("stream ended")
+            .expect("ws error");
+        // Pong frames are non-text; skip them.
+        if !msg.is_text() {
+            continue;
+        }
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => break,
+            other => panic!("Unexpected message type {other} after ping: {text}"),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 21. Multiple Configure messages before audio — last one wins, no errors
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_multiple_configure_last_wins() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // First configure 8kHz, then re-configure to 16kHz before any audio.
+    for rate in [8000u32, 16000u32] {
+        sink.send(Message::Text(
+            serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": rate}))
+                .unwrap()
+                .into(),
+        ))
+        .await
+        .unwrap();
+    }
+
+    // Audio at 16kHz (the last-configured rate); 16kHz is the passthrough path.
+    let silence = common::generate_pcm16_silence(0.3, 16000);
+    sink.send(Message::Binary(silence.into())).await.unwrap();
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(20), stream.next())
+            .await
+            .expect("timeout waiting for Final after multiple configure")
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => break,
+            other => panic!("Unexpected message type {other} after configure x2: {text}"),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 22. Configure with a diarization field is accepted (no-op without feature)
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_with_diarization_field() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // diarization=false is a no-op in the default build but must not error and
+    // must leave the session fully usable.
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({
+            "type": "configure",
+            "sample_rate": 16000,
+            "diarization": false,
+        }))
+        .unwrap()
+        .into(),
+    ))
+    .await
+    .unwrap();
+
+    let silence = common::generate_pcm16_silence(0.3, 16000);
+    sink.send(Message::Binary(silence.into())).await.unwrap();
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(20), stream.next())
+            .await
+            .expect("timeout waiting for Final after diarization configure")
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => break,
+            other => panic!("Unexpected message type {other} with diarization field: {text}"),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 23. Non-empty audio produces a Final whose text field is a string
+// ---------------------------------------------------------------------------
+
+#[ignore]
+#[tokio::test]
+async fn test_ws_tone_audio_produces_final_text() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+
+    // A real (non-silent) tone at 16kHz so the encoder genuinely runs.
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    let tone = common::generate_pcm16_tone(0.5, 16000, 220.0);
+    for chunk in tone.chunks(3200) {
+        sink.send(Message::Binary(chunk.to_vec().into()))
+            .await
+            .unwrap();
+    }
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(30), stream.next())
+            .await
+            .expect("timeout waiting for Final")
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => continue,
+            "final" => {
+                assert!(v["text"].is_string(), "Final must carry a text field");
+                break;
+            }
+            other => panic!("Unexpected message type {other}: {text}"),
+        }
+    }
+}
