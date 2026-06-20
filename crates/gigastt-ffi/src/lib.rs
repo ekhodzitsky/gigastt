@@ -263,9 +263,10 @@ pub unsafe extern "C" fn gigastt_engine_free(engine: *mut GigasttEngine) {
 
 /// Quantize the FP32 encoder model to INT8 in-place.
 ///
-/// Looks for `v3_e2e_rnnt_encoder.onnx` inside `model_dir` and produces
-/// `v3_e2e_rnnt_encoder_int8.onnx` in the same directory.
-/// If the INT8 file already exists and `force` is `false`, returns immediately.
+/// Auto-detects the recognition head present in `model_dir` (the `rnnt` default
+/// since v2.3, or `e2e_rnnt`) and quantizes that variant's FP32 encoder, writing
+/// the matching `*_int8.onnx` beside it. If the INT8 file already exists and
+/// `force` is `false`, returns immediately.
 ///
 /// # Safety
 /// `model_dir` must be a valid, null-terminated UTF-8 string.
@@ -294,8 +295,19 @@ pub unsafe extern "C" fn gigastt_quantize_model(
     };
 
     let model_dir = std::path::Path::new(dir_str);
-    let input = model_dir.join("v3_e2e_rnnt_encoder.onnx");
-    let output = model_dir.join("v3_e2e_rnnt_encoder_int8.onnx");
+    // Auto-detect the head from whichever encoder is present so this works for
+    // the default rnnt model as well as e2e_rnnt.
+    let variant = match gigastt_core::model::ModelVariant::detect_in_dir(model_dir) {
+        Some(v) => v,
+        None => {
+            let msg = "no recognition-head encoder found in model_dir";
+            tracing::error!("gigastt_quantize_model: {msg}");
+            eprintln!("gigastt_quantize_model: {msg}");
+            return to_cstring(msg).into_raw();
+        }
+    };
+    let input = model_dir.join(variant.encoder_file());
+    let output = model_dir.join(variant.encoder_int8_file());
 
     if !force && output.exists() {
         return to_cstring("ok").into_raw();
