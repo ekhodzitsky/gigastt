@@ -47,7 +47,16 @@ fn vad_file_skips_silence_keeps_transcript() {
     drop(t);
 
     // VAD: decode only detected speech regions, remapping timestamps back.
+    // The Silero VAD model is an optional separate download; skip gracefully if
+    // it is absent (only the GigaAM model is required to reach this point).
     let vad_path = Path::new(&default_vad_model_dir()).join(VAD_MODEL_FILE);
+    if !vad_path.exists() {
+        eprintln!(
+            "skipping vad_file: Silero VAD model not present at {}",
+            vad_path.display()
+        );
+        return;
+    }
     let vad = SileroVad::load(&vad_path).expect("load silero vad");
     let vad_engine = Engine::load(&model_dir)
         .expect("load vad engine")
