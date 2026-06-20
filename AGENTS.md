@@ -27,8 +27,8 @@ and auto-invoked on first `serve`/`download` unless `--skip-quantize` is passed.
 
 | Property | Value |
 |---|---|
-| WER (Russian) | **2.6%** (rnnt head, 9 994 Golos crowd samples, 50 394 words, 95% CI [2.4%, 2.8%]) |
-| RTF (INT8, M1 CPU) | ~0.11 (full pipeline) |
+| WER (Russian) | **3.55%** clean read (rnnt head, `golos_crowd_1k`); leads far-field/phone/YouTube — see [docs/benchmarks.md](docs/benchmarks.md) |
+| RTF (INT8, M1 CPU) | ~0.10 |
 | Memory (RSS) | ~790 MB (default `--pool-size 2`; ~400 MB single session) |
 | Concurrent sessions | 2 (configurable via `--pool-size`) |
 

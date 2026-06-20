@@ -201,7 +201,7 @@ Three-tier test architecture:
 ## Model
 
 GigaAM v3 from `istupakov/gigaam-v3-onnx` on HuggingFace. Two selectable heads (`--model-variant`, auto-detected from the files on disk):
-- **`rnnt`** (default since v2.3): `v3_rnnt_{encoder,decoder,joint}.onnx` + `v3_vocab.txt` (34-token char vocab). Lower WER (2.6% on the full Golos crowd set, 95% CI 2.4–2.8% — vs e2e 8.60% renorm); bare lowercase output, so pair with `--punctuation` / `--itn` for readable text.
+- **`rnnt`** (default since v2.3): `v3_rnnt_{encoder,decoder,joint}.onnx` + `v3_vocab.txt` (34-token char vocab). Much lower WER than e2e (clean read 3.55% on `golos_crowd_1k` via the cross-engine harness vs e2e 8.60%; leads far-field/phone/YouTube — see `docs/benchmarks.md`); bare lowercase output, so pair with `--punctuation` / `--itn` for readable text.
 - **`e2e_rnnt`**: `v3_e2e_rnnt_{encoder,decoder,joint}.onnx` + `v3_e2e_rnnt_vocab.txt` (1025-token BPE). Punctuation/casing/ITN baked in.
 - Encoder (shared arch): 844MB (FP32) or 225MB (INT8 quantized, 3.9×); decoder/joiner a few MB each.
 - Sample rate: 16kHz, Features: 64 mel bins

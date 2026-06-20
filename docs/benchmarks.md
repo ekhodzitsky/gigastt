@@ -3,9 +3,11 @@
 Honest, reproducible comparison of gigastt against current Russian-ASR engines.
 Measured on an **Apple M1, CPU** execution provider (INT8 / greedy where applicable),
 1000 samples per domain, failures counted as 100% WER, 95% bootstrap confidence
-intervals. Numbers come from the committed artifacts in
-[`benchmark/results_full/`](../benchmark/results_full/); methodology and dataset prep are
-in [`benchmark/README.md`](../benchmark/README.md).
+intervals. Competitor numbers come from the committed artifacts in
+[`benchmark/results_full/`](../benchmark/results_full/); the **gigastt** rows are the
+v2.3 default **`rnnt`** head, re-measured through the *same* Python harness, manifests,
+and normalization as the competitors — so they are like-for-like. Methodology and
+dataset prep are in [`benchmark/README.md`](../benchmark/README.md).
 
 > **Contamination caveat.** GigaAM v3 (gigastt) is a SberDevices model whose training is
 > dominated by Golos, and OpenSTT-style corpora are common in Russian ASR training mixes.
@@ -19,17 +21,9 @@ in [`benchmark/README.md`](../benchmark/README.md).
 Domains: **Clean read** `golos_crowd_1k` · **Far-field** `golos_farfield` ·
 **Phone** `openstt_calls` · **YouTube** `openstt_youtube`.
 
-> **Default head changed in v2.3.** The cross-engine tables below were measured on
-> the **`e2e_rnnt`** head (the pre-v2.3 default), under one identical pipeline for
-> all engines. v2.3 makes the **`rnnt`** head the default, which scores a much lower
-> **2.6% acoustic WER** on the full Golos crowd set (see *Headline metrics*). A
-> like-for-like cross-engine rerun of the `rnnt` head across all four domains is
-> pending, so the comparison rows below remain the `e2e_rnnt` measurement and should
-> be read as such.
-
 | Engine | Clean read | Far-field | Phone calls | YouTube |
 |---|---|---|---|---|
-| **gigastt** (GigaAM v3 `e2e_rnnt`, INT8) | 8.60 (7.5–9.7) | **5.90 (5.1–6.8)** | **19.28 (17.9–20.7)** | **11.35 (10.3–12.3)** |
+| **gigastt** (GigaAM v3 `rnnt`, INT8) | 3.55 (2.9–4.2) | **4.08 (3.4–4.8)** | **18.50 (17.1–19.9)** | **10.91 (9.9–11.8)** |
 | Vosk 0.54 (Zipformer2) | **2.97 (2.4–3.6)** | 6.29 (5.4–7.3) | 22.74 (21.3–24.2) | 17.24 (16.0–18.4) |
 | Vosk 0.42 | 4.82 (4.0–5.6) | 13.93 (12.5–15.5) | 38.57 (36.7–40.6) | 20.65 (19.4–22.0) |
 | T-one (beam+LM) | 6.61 (5.4–7.9) | 14.62 (12.5–17.0) | 21.73 (20.0–23.7) | 23.23 (21.5–25.1) |
@@ -40,20 +34,31 @@ Domains: **Clean read** `golos_crowd_1k` · **Far-field** `golos_farfield` ·
 
 ¹ turbo clean read is a 300-sample slice (wider CI); the rest are 1000.
 
-**Honest reading** (of the `e2e_rnnt`-head table above; the v2.3 default `rnnt` head changes the clean-read line — see below):
+> The pre-v2.3 default was the `e2e_rnnt` head (clean read 8.60%, far-field 5.90,
+> phone 19.28, YouTube 11.35); the `rnnt` head above more than halves clean-read WER
+> and edges the others. Both heads share the encoder — `rnnt` emits bare lowercase
+> text (pair with `--punctuation` / `--itn` for readable output), `e2e_rnnt` bakes in
+> punctuation/casing. WER is identical whether `rnnt` is run with `--itn` or not: the
+> harness normalizes number-words ↔ digits symmetrically on every engine, so word vs
+> digit output is neither rewarded nor penalized.
 
-- **Clean read** → on the `e2e` head **Vosk 0.54 wins** (2.97%); gigastt-e2e (8.60%) and T-one (6.61%) trail it. The v2.3 default `rnnt` head reaches **2.6%** on the full Golos crowd set, effectively closing this gap (a like-for-like golos_crowd_1k rerun is pending).
-- **Far-field** → a **tie** between gigastt (5.90) and Vosk 0.54 (6.29) — CIs overlap.
-  gigastt's old far-field "lead" was only against the outdated Vosk 0.42 (13.93).
-- **Phone calls** → **gigastt holds** (19.28): it beats Vosk 0.54 (22.74) and ties/leads
-  even T-one's production beam+LM (21.73). Note the contamination caveat — and that
-  T-one's *published* telephony strength is on its own call-center set, not this one.
-- **YouTube** → **gigastt's only CI-separated win** (11.35 vs all).
+**Honest reading:**
 
-On the `e2e` head, gigastt was **not** a general WER leader: *wins YouTube, holds noisy
-phone calls, ties far-field, concedes clean read to Vosk 0.54.* The v2.3 `rnnt` default
-materially improves clean read (2.6% on the full set), and the durable advantage remains
-the packaging — see Footprint and the [README](../README.md#where-it-fits).
+- **Clean read** → a **statistical tie**: gigastt-rnnt (3.55%) vs **Vosk 0.54 (2.97%)** —
+  the CIs overlap (2.9–4.2 vs 2.4–3.6) and Vosk's point estimate is slightly ahead.
+  (The old `e2e` head trailed badly here at 8.60%.)
+- **Far-field** → **gigastt wins** (4.08 vs Vosk 0.54 6.29) — CI-separated.
+- **Phone calls** → **gigastt wins** (18.50): beats Vosk 0.54 (22.74) and even T-one's
+  production beam+LM (21.73). Note the contamination caveat — and that T-one's
+  *published* telephony strength is on its own call-center set, not this one.
+- **YouTube** → **gigastt wins** (10.91 vs all; next best faster-whisper 15.45).
+
+So gigastt-rnnt is **the most accurate engine on three of four domains** (far-field,
+phone, YouTube — CI-separated) and **statistically ties the best (Vosk 0.54) on clean
+read**. It is not a runaway leader on clean read — Vosk's point estimate still edges it —
+but the head switch turned the old "concedes clean read" story into a near-tie. The
+durable advantage remains the packaging — see Footprint and the
+[README](../README.md#where-it-fits).
 
 ## Speed — RTF (processing ÷ audio; lower = faster; M1 CPU)
 
@@ -61,18 +66,15 @@ the packaging — see Footprint and the [README](../README.md#where-it-fits).
 |---|---|---|---|---|
 | Vosk 0.42 / 0.54 | ~0.03 | ~0.03 | ~0.03 | ~0.04 |
 | **T-one (beam+LM)** | 0.056 | 0.060 | 0.065 | 0.065 |
-| gigastt (`e2e_rnnt`) | 0.157 | 0.164 | 0.212 | 0.158 |
+| gigastt (`rnnt`, INT8) | 0.103 | 0.095 | 0.096 | 0.097 |
 | whisper.cpp | 0.357 | 0.556 | 0.624 | 0.765 |
 | faster-whisper / turbo | >1.0 (slower than real-time on CPU) | | | |
 
 The CTC/transducer engines (Vosk, T-one, gigastt) are all comfortably real-time;
 the Whisper engines are **slower than real-time** on CPU. gigastt is real-time but not
-the fastest — Vosk and T-one are quicker.
-
-The gigastt row above is the `e2e_rnnt` head measured over HTTP (the cross-engine
-methodology). The v2.3 `rnnt` head's INT8 RTF on the full Golos crowd set, measured
-in-process (no HTTP transport overhead), is **0.109** — slightly faster, since the
-encoder is shared and the char-vocab joiner is cheaper than the 1025-token BPE one.
+the fastest — Vosk and T-one are quicker. (The `rnnt` head's RTF above is slightly
+better than the old `e2e` head's ~0.157, since the char-vocab joiner is cheaper than
+the 1025-token BPE one.)
 
 ## Footprint
 
@@ -108,12 +110,15 @@ are also genuine streaming designs.
 
 ## Headline single-engine metrics
 
+All gigastt numbers are the v2.3 default **`rnnt`** head (INT8), measured through the
+cross-engine Python harness so they line up with the table above.
+
 | Metric | Value |
 |---|---|
-| **WER — `rnnt` head (v2.3 default)** | **2.6%** (full Golos crowd, 9 994 samples, 50 394 words, 95% CI 2.4–2.8%) |
-| Verbatim/acoustic WER (`rnnt`) | 2.6% — **Δ 0.0** vs normalized: the WER is genuinely acoustic, not normalization-inflated (contrast `e2e`: naive 14.40% / ITN 8.60%, Δ −5.80) |
-| WER — `e2e_rnnt` head (prior default) | 8.60% renorm flagship (golos_crowd_1k) · 11.37% raw full set |
-| RTF (`rnnt` INT8, full pipeline, M-series CPU) | **0.109** (4 401 s of compute for 11.2 h of audio, in-process harness) |
+| **WER — clean read** | **3.55%** (`golos_crowd_1k`, 992 samples, 95% CI 2.9–4.2%) |
+| WER — other domains | far-field **4.08%** · phone **18.50%** · YouTube **10.91%** |
+| Verbatim → normalized WER | clean 9.73→3.55 · far-field 4.69→4.08 · phone 19.39→18.50 · YouTube 12.19→10.91. The gap is number/filler formatting, normalized **symmetrically for every engine** (so it neither helps nor hurts gigastt relative to competitors). |
+| RTF (`rnnt` INT8, M1 CPU) | ~0.10 |
 | Peak RSS (default `--pool-size 2`) | 790 MB (single session ~400 MB) |
 | INT8 encoder | 844 MB → 215 MB (**3.9×**), ~0% WER degradation |
 
@@ -122,7 +127,7 @@ are also genuine streaming designs.
 ```sh
 cd benchmark
 pip install -r requirements.lock.txt
-python benchmark.py --max-samples 100 --dataset golos_crowd
+python benchmark.py --runners gigastt --dataset golos_crowd_1k --max-samples 0 --no-cache
 ```
 
 New competitor runners (Vosk 0.54, faster-whisper-turbo, T-one) live under

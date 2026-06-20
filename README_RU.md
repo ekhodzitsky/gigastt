@@ -29,13 +29,13 @@ $ gigastt transcribe recording.wav
 
 - **Стриминг в реальном времени** — инкрементальные partial-результаты по WebSocket; REST + SSE для файлов
 - **Встраиваемость** — один статический бинарник, C-ABI FFI `cdylib` для Android/mobile, или крейт `gigastt-core`
-- **Точный и маленький** — **2.6% WER** на Golos crowd (голова rnnt), INT8-модель ~225 МБ, real-time на CPU (RTF ~0.11); ускорение CoreML / CUDA / NNAPI
+- **Точный и маленький** — самый точный на 3 из 4 русских доменов, ничья с Vosk 0.54 на чистой речи (3.55%); INT8-модель ~225 МБ, real-time на CPU (RTF ~0.10); ускорение CoreML / CUDA / NNAPI
 - **Защищённый сервер** — loopback по умолчанию, origin-allowlist, rate-limiting по IP, graceful drain, метрики Prometheus
 - **MIT-чистый** — gigastt (MIT) на весах GigaAM v3 (MIT) — пригоден для коммерческих on-device продуктов
 
 ## Где это уместно
 
-gigastt — **только русский** и заточен под **встраивание**. Голова rnnt (дефолт с v2.3) даёт **2.6% WER на Golos crowd** — на уровне сильнейших русских движков на чистой начитке — и эта ошибка **чисто акустическая**, не раздутая нормализацией. Для multilingual — whisper.cpp / sherpa-onnx / NVIDIA Parakeet. Ниша gigastt — **самая маленькая русская модель без компромисса по языковой модели**, в обёртке **встраиваемого single-binary / FFI / streaming** сервера с **MIT-чистыми весами**, конкурентная на спонтанной и телефонной речи. Полное честное сравнение vs Vosk 0.54, T-one и Whisper → **[Benchmarks](docs/benchmarks.md)**.
+gigastt — **только русский** и заточен под **встраивание**. Голова rnnt (дефолт с v2.3) — **самый точный движок на 3 из 4 русских доменов** (far-field, телефон, YouTube) и **статистическая ничья с Vosk 0.54 на чистой речи** (3.55% vs 2.97%, доверительные интервалы пересекаются). Для multilingual — whisper.cpp / sherpa-onnx / NVIDIA Parakeet. Ниша gigastt — **самая маленькая русская модель без компромисса по языковой модели**, в обёртке **встраиваемого single-binary / FFI / streaming** сервера с **MIT-чистыми весами**, конкурентная на спонтанной и телефонной речи. Полное честное сравнение vs Vosk 0.54, T-one и Whisper → **[Benchmarks](docs/benchmarks.md)**.
 
 ## Документация
 

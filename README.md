@@ -29,13 +29,13 @@ $ gigastt transcribe recording.wav
 
 - **Real-time streaming** — incremental partials over WebSocket; REST + SSE for files
 - **Embeddable** — a single static binary, a C-ABI FFI `cdylib` for Android/mobile, or the `gigastt-core` crate
-- **Accurate & small** — **2.6% WER** on Golos crowd (rnnt head), INT8 model ~225 MB, real-time on CPU (RTF ~0.11); CoreML / CUDA / NNAPI acceleration
+- **Accurate & small** — most accurate on 3 of 4 Russian domains, ties Vosk 0.54 on clean read (3.55%); INT8 model ~225 MB, real-time on CPU (RTF ~0.10); CoreML / CUDA / NNAPI acceleration
 - **Hardened server** — loopback-only by default, origin allowlist, per-IP rate limiting, graceful drain, Prometheus metrics
 - **MIT-clean** — gigastt (MIT) on GigaAM v3 weights (MIT) — usable in commercial on-device products
 
 ## Where it fits
 
-gigastt is **Russian-only** and built for **embedding**. Its `rnnt` head (the v2.3 default) reaches **2.6% WER on Golos crowd** — competitive with the strongest Russian engines on clean read — and that error is genuinely acoustic, not normalization-inflated. For multilingual use see whisper.cpp / sherpa-onnx / NVIDIA Parakeet. gigastt's niche is the **smallest Russian model with no language-model trade-off**, wrapped in an **embeddable single-binary / FFI / streaming** server with **MIT-clean weights**, and competitive on spontaneous and telephony speech. Full honest comparison vs Vosk 0.54, T-one and Whisper → **[Benchmarks](docs/benchmarks.md)**.
+gigastt is **Russian-only** and built for **embedding**. Its `rnnt` head (the v2.3 default) is the **most accurate engine on 3 of 4 Russian domains** (far-field, phone, YouTube) and **statistically ties Vosk 0.54 on clean read** (3.55% vs 2.97%, CIs overlap). For multilingual use see whisper.cpp / sherpa-onnx / NVIDIA Parakeet. gigastt's niche is the **smallest Russian model with no language-model trade-off**, wrapped in an **embeddable single-binary / FFI / streaming** server with **MIT-clean weights**, and competitive on spontaneous and telephony speech. Full honest comparison vs Vosk 0.54, T-one and Whisper → **[Benchmarks](docs/benchmarks.md)**.
 
 ## Documentation
 

@@ -12,10 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This release makes the lower-WER `rnnt` head the default and lands the INT8
 integer-compute speed fix, voice activity detection, contextual hotword biasing,
 punctuation/ITN restoration for the `rnnt` head, export formats, dual-WER benchmark
-scoring, and a ~2× lower idle footprint. Measured on the full Golos crowd set
-(9 994 samples, M-series CPU, INT8 `rnnt`): **2.6% WER** (95% CI 2.4–2.8%; verbatim
-WER 2.6%, Δ 0.0 — the error is acoustic, not normalization-inflated), **RTF 0.109**,
-**790 MB** RSS at the default `--pool-size 2`. See [`docs/benchmarks.md`](docs/benchmarks.md).
+scoring, and a ~2× lower idle footprint. Re-measured through the cross-engine harness
+(same manifests/normalization as the competitors), the `rnnt` head is **the most
+accurate engine on 3 of 4 Russian domains** — far-field **4.08%**, phone **18.50%**,
+YouTube **10.91%** — and a **statistical tie with Vosk 0.54 on clean read** (**3.55%**
+vs 2.97%, CIs overlap), down from the old `e2e` default's 8.60%. **RTF ~0.10**,
+**790 MB** RSS at the default `--pool-size 2`, INT8 encoder 844 MB → 215 MB (3.9×).
+See [`docs/benchmarks.md`](docs/benchmarks.md).
 
 ### Changed
 
