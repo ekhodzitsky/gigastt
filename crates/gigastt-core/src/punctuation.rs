@@ -431,6 +431,76 @@ mod tests {
         assert_eq!(argmax(&[1.0, 1.0, 3.0]), 2);
     }
 
+    /// `ort_err` flattens any `Display` error into an `anyhow::Error` carrying
+    /// the same message (the Send/Sync workaround used at every `ort` boundary).
+    #[test]
+    fn test_ort_err_preserves_display_message() {
+        let err = ort_err("session build exploded");
+        assert_eq!(err.to_string(), "session build exploded");
+    }
+
+    /// A minimal but valid HuggingFace tokenizer.json (WordLevel model). Used to
+    /// drive `Punctuator::load` past the tokenizer step so the ONNX-session
+    /// failure branch is exercised without the real model.
+    const MINIMAL_TOKENIZER_JSON: &str = r#"{
+        "version": "1.0",
+        "truncation": null,
+        "padding": null,
+        "added_tokens": [],
+        "normalizer": null,
+        "pre_tokenizer": {"type": "Whitespace"},
+        "post_processor": null,
+        "decoder": null,
+        "model": {
+            "type": "WordLevel",
+            "vocab": {"[UNK]": 0, "a": 1, "b": 2},
+            "unk_token": "[UNK]"
+        }
+    }"#;
+
+    /// A valid config.json with an `id2label` map: lets `load` clear the
+    /// id2label step so later failures (tokenizer / model) are reached.
+    const MINIMAL_CONFIG_JSON: &str = r#"{"id2label": {"0": "LOWER_O"}}"#;
+
+    /// `load` must surface the id2label parse failure (missing object) before it
+    /// ever touches the tokenizer or ONNX session.
+    #[test]
+    fn test_load_missing_id2label_errors() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join(PUNCT_CONFIG_FILE), r#"{"foo": 1}"#).unwrap();
+        assert!(Punctuator::load(tmp.path()).is_err());
+    }
+
+    /// config.json parses but tokenizer.json is malformed: `load` must fail at
+    /// the `Tokenizer::from_file` step (graceful "punct unavailable", no panic).
+    #[test]
+    fn test_load_valid_config_invalid_tokenizer_errors() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join(PUNCT_CONFIG_FILE), MINIMAL_CONFIG_JSON).unwrap();
+        std::fs::write(tmp.path().join(PUNCT_TOKENIZER_FILE), "{ not valid json").unwrap();
+        // `Punctuator` is not `Debug`, so match instead of `expect_err`.
+        match Punctuator::load(tmp.path()) {
+            Ok(_) => panic!("malformed tokenizer must error"),
+            Err(e) => assert!(e.to_string().contains("tokenizer")),
+        }
+    }
+
+    /// config + tokenizer both load, but the ONNX model file is absent: `load`
+    /// must fail at `Session::commit_from_file` (the `ort_err` + context branch),
+    /// never panic. This is the last gate the caller turns into "punct disabled".
+    #[test]
+    fn test_load_valid_config_and_tokenizer_missing_model_errors() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        std::fs::write(tmp.path().join(PUNCT_CONFIG_FILE), MINIMAL_CONFIG_JSON).unwrap();
+        std::fs::write(
+            tmp.path().join(PUNCT_TOKENIZER_FILE),
+            MINIMAL_TOKENIZER_JSON,
+        )
+        .unwrap();
+        // No rupunct_small_int8.onnx written → session build must fail.
+        assert!(Punctuator::load(tmp.path()).is_err());
+    }
+
     #[test]
     fn test_load_punctuator_missing_dir_errors() {
         // Graceful fallback contract: loading from an absent dir must error

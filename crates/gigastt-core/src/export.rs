@@ -428,6 +428,160 @@ mod tests {
     }
 
     #[test]
+    fn test_export_format_display_all_variants() {
+        assert_eq!(ExportFormat::Json.to_string(), "json");
+        assert_eq!(ExportFormat::Txt.to_string(), "txt");
+        assert_eq!(ExportFormat::Srt.to_string(), "srt");
+        assert_eq!(ExportFormat::Vtt.to_string(), "vtt");
+        assert_eq!(ExportFormat::Md.to_string(), "md");
+    }
+
+    #[test]
+    fn test_export_format_content_type_all_variants() {
+        assert_eq!(
+            ExportFormat::Json.content_type(),
+            "application/json; charset=utf-8"
+        );
+        assert_eq!(
+            ExportFormat::Txt.content_type(),
+            "text/plain; charset=utf-8"
+        );
+        assert_eq!(
+            ExportFormat::Srt.content_type(),
+            "application/x-subrip; charset=utf-8"
+        );
+        assert_eq!(ExportFormat::Vtt.content_type(), "text/vtt; charset=utf-8");
+        assert_eq!(
+            ExportFormat::Md.content_type(),
+            "text/markdown; charset=utf-8"
+        );
+    }
+
+    #[test]
+    fn test_export_format_extension_all_variants() {
+        assert_eq!(ExportFormat::Json.extension(), "json");
+        assert_eq!(ExportFormat::Txt.extension(), "txt");
+        assert_eq!(ExportFormat::Srt.extension(), "srt");
+        assert_eq!(ExportFormat::Vtt.extension(), "vtt");
+        assert_eq!(ExportFormat::Md.extension(), "md");
+    }
+
+    #[test]
+    fn test_render_dispatches_each_format() {
+        let result = sample_result();
+        let opts = RenderOpts::default();
+
+        let json = ExportFormat::Json.render(&result, &opts);
+        assert_eq!(json, to_json(&result));
+
+        let txt = ExportFormat::Txt.render(&result, &opts);
+        assert_eq!(txt, "привет как дела");
+
+        let srt = ExportFormat::Srt.render(&result, &opts);
+        assert!(srt.starts_with("1\n"));
+
+        let vtt = ExportFormat::Vtt.render(&result, &opts);
+        assert!(vtt.starts_with("WEBVTT\n\n"));
+
+        let md = ExportFormat::Md.render(&result, &opts);
+        assert!(md.starts_with("---\n"));
+        // Default opts disable word timestamps, so no table is emitted.
+        assert!(!md.contains("| Word | Start | End |"));
+    }
+
+    #[test]
+    fn test_render_md_with_word_timestamps_opt_in() {
+        let result = sample_result();
+        let opts = RenderOpts {
+            include_word_timestamps: true,
+            ..RenderOpts::default()
+        };
+        let md = ExportFormat::Md.render(&result, &opts);
+        assert!(md.contains("# Word timings"));
+        assert!(md.contains("| Word | Start | End |"));
+    }
+
+    #[test]
+    fn test_render_opts_default_values() {
+        let opts = RenderOpts::default();
+        assert_eq!(opts.max_chars_per_line, 80);
+        assert_eq!(opts.max_words_per_line, 14);
+        assert!(!opts.include_word_timestamps);
+    }
+
+    #[test]
+    fn test_from_str_all_aliases() {
+        assert_eq!(ExportFormat::from_str("json").unwrap(), ExportFormat::Json);
+        assert_eq!(ExportFormat::from_str("txt").unwrap(), ExportFormat::Txt);
+        assert_eq!(ExportFormat::from_str("text").unwrap(), ExportFormat::Txt);
+        assert_eq!(ExportFormat::from_str("vtt").unwrap(), ExportFormat::Vtt);
+        assert_eq!(ExportFormat::from_str("md").unwrap(), ExportFormat::Md);
+    }
+
+    #[test]
+    fn test_to_md_no_speakers_zero_count() {
+        let result = TranscribeResult {
+            text: "no speaker words".to_string(),
+            words: vec![WordInfo {
+                word: "no".to_string(),
+                start: 0.0,
+                end: 0.3,
+                confidence: 0.9,
+                speaker: None,
+            }],
+            duration_s: 0.3,
+        };
+        let md = to_md(&result, true);
+        assert!(md.contains("speakers: 0"));
+        // Speaker column renders "-" when no speaker is assigned.
+        assert!(md.contains("| - |"));
+    }
+
+    #[test]
+    fn test_to_md_word_timestamps_skipped_when_empty() {
+        let result = TranscribeResult {
+            text: String::new(),
+            words: Vec::new(),
+            duration_s: 0.0,
+        };
+        let md = to_md(&result, true);
+        // Empty word list means the appendix table is omitted entirely.
+        assert!(!md.contains("# Word timings"));
+        assert!(md.contains("speakers: 0"));
+    }
+
+    #[test]
+    fn test_to_md_escapes_pipe_in_word() {
+        let result = TranscribeResult {
+            text: "a|b".to_string(),
+            words: vec![WordInfo {
+                word: "a|b".to_string(),
+                start: 0.0,
+                end: 0.5,
+                confidence: 0.91,
+                speaker: Some(2),
+            }],
+            duration_s: 0.5,
+        };
+        let md = to_md(&result, true);
+        // Pipe in the word must be escaped to avoid breaking the table column.
+        assert!(md.contains("a\\|b"));
+        assert!(md.contains("SPEAKER_2"));
+        assert!(md.contains("speakers: 3"));
+    }
+
+    #[test]
+    fn test_srt_speaker_change_breaks_cue_with_label() {
+        // Two speakers force a cue break; each cue carries its speaker label.
+        let words = sample_words();
+        let cues = build_cues(&words, 80, 14);
+        assert_eq!(cues.len(), 2);
+        assert!(cues[0].text.starts_with("[SPEAKER_0]"));
+        assert!(cues[1].text.starts_with("[SPEAKER_1]"));
+        assert!(cues[1].text.contains("дела"));
+    }
+
+    #[test]
     fn test_line_breaking() {
         let words: Vec<WordInfo> = (0..20)
             .map(|i| WordInfo {

@@ -253,4 +253,118 @@ mod tests {
         b.boost_logits(&state, &mut logits); // no panic
         assert!(logits.iter().all(|&l| l == 0.0));
     }
+
+    use crate::inference::tokenizer::Tokenizer;
+
+    /// A char-vocab tokenizer covering the Cyrillic letters used below plus a
+    /// `▁` word-boundary marker, so `encode_phrase` produces deterministic ids.
+    fn char_tokenizer() -> Tokenizer {
+        let tokens = vec![
+            "а".to_string(),
+            "б".to_string(),
+            "в".to_string(),
+            "г".to_string(),
+            "д".to_string(),
+            "\u{2581}".to_string(), // word-boundary marker
+            "<unk>".to_string(),
+            "<blk>".to_string(),
+        ];
+        Tokenizer::from_tokens(tokens)
+    }
+
+    #[test]
+    fn test_from_phrases_zero_boost_returns_none() {
+        let tok = char_tokenizer();
+        let phrases = vec![("аб".to_string(), 1.0)];
+        assert!(Biaser::from_phrases(&tok, &phrases, 0.0).is_none());
+    }
+
+    #[test]
+    fn test_from_phrases_negative_boost_returns_none() {
+        let tok = char_tokenizer();
+        let phrases = vec![("аб".to_string(), 1.0)];
+        assert!(Biaser::from_phrases(&tok, &phrases, -3.0).is_none());
+    }
+
+    #[test]
+    fn test_from_phrases_empty_slice_returns_none() {
+        let tok = char_tokenizer();
+        assert!(Biaser::from_phrases(&tok, &[], 5.0).is_none());
+    }
+
+    #[test]
+    fn test_from_phrases_all_zero_weight_returns_none() {
+        // Positive boost but every phrase filtered out by weight <= 0 → None.
+        let tok = char_tokenizer();
+        let phrases = vec![("аб".to_string(), 0.0), ("вг".to_string(), -1.0)];
+        assert!(Biaser::from_phrases(&tok, &phrases, 5.0).is_none());
+    }
+
+    #[test]
+    fn test_from_phrases_unrepresentable_only_returns_none() {
+        // A phrase with no codepoints in the vocab is dropped; nothing survives.
+        let tok = char_tokenizer();
+        let phrases = vec![("xyz".to_string(), 1.0)];
+        assert!(Biaser::from_phrases(&tok, &phrases, 5.0).is_none());
+    }
+
+    #[test]
+    fn test_from_phrases_single_token_phrase_boosts_first_token() {
+        // "а" encodes to a leading ▁ (id 5) then char id 0. The first emitted
+        // token of the hotword is the boundary marker, so the root boosts id 5.
+        let tok = char_tokenizer();
+        let phrases = vec![("а".to_string(), 1.0)];
+        let b = Biaser::from_phrases(&tok, &phrases, 7.0).expect("phrase compiles");
+        assert_eq!(b.phrase_count(), 1);
+
+        let ids = tok.encode_phrase("а").expect("representable");
+        let state = b.new_state();
+        let mut logits = vec![0.0; 8];
+        b.boost_logits(&state, &mut logits);
+        // First token of the encoded phrase is boostable at the root.
+        assert_eq!(logits[ids[0]], 7.0, "first token of phrase boosted at root");
+    }
+
+    #[test]
+    fn test_from_phrases_multi_token_phrase_boosts_continuation() {
+        // "аб" → [▁(5), а(0), б(1)]. After advancing through the encoded
+        // prefix, the next continuation token must be boosted.
+        let tok = char_tokenizer();
+        let phrases = vec![("аб".to_string(), 1.0)];
+        let b = Biaser::from_phrases(&tok, &phrases, 4.0).expect("phrase compiles");
+        assert_eq!(b.phrase_count(), 1);
+
+        let ids = tok.encode_phrase("аб").expect("representable");
+        assert_eq!(ids, vec![5, 0, 1]);
+
+        let mut state = b.new_state();
+        b.advance(&mut state, ids[0]); // ▁
+        b.advance(&mut state, ids[1]); // а
+        let mut logits = vec![0.0; 8];
+        b.boost_logits(&state, &mut logits);
+        assert_eq!(
+            logits[ids[2]], 4.0,
+            "third token boosted after two-token prefix"
+        );
+    }
+
+    #[test]
+    fn test_from_phrases_drops_unrepresentable_keeps_representable() {
+        // One good phrase, one with an out-of-vocab codepoint. The good one
+        // survives; the count reflects only the compiled phrase.
+        let tok = char_tokenizer();
+        let phrases = vec![("аб".to_string(), 1.0), ("аz".to_string(), 1.0)];
+        let b = Biaser::from_phrases(&tok, &phrases, 5.0).expect("one phrase compiles");
+        assert_eq!(b.phrase_count(), 1);
+    }
+
+    #[test]
+    fn test_from_phrases_weight_filters_per_phrase() {
+        // Two representable phrases; one has weight 0 and is dropped before
+        // tokenization, leaving a single compiled phrase.
+        let tok = char_tokenizer();
+        let phrases = vec![("аб".to_string(), 1.0), ("вг".to_string(), 0.0)];
+        let b = Biaser::from_phrases(&tok, &phrases, 5.0).expect("one phrase compiles");
+        assert_eq!(b.phrase_count(), 1);
+    }
 }

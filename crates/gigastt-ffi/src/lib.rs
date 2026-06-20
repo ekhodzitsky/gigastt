@@ -787,4 +787,138 @@ mod tests {
     fn test_string_free_null() {
         unsafe { gigastt_string_free(ptr::null_mut()) };
     }
+
+    /// An empty directory holds no encoder, so `Engine::load_*` returns Err and
+    /// the FFI wrapper must surface that as a NULL handle (engine-load error
+    /// branch), without needing the real model on disk.
+    #[test]
+    fn test_engine_new_with_pool_size_missing_model_returns_null() {
+        let tmp = std::env::temp_dir().join(format!("gigastt_ffi_empty_{}", std::process::id()));
+        std::fs::create_dir_all(&tmp).unwrap();
+        let dir = CString::new(tmp.to_str().unwrap()).unwrap();
+        let engine = unsafe { gigastt_engine_new_with_pool_size(dir.as_ptr(), 1) };
+        assert!(engine.is_null());
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// The default-pool wrapper funnels through the same load path, so a
+    /// model-less directory must likewise yield a NULL handle.
+    #[test]
+    fn test_engine_new_missing_model_returns_null() {
+        let tmp =
+            std::env::temp_dir().join(format!("gigastt_ffi_empty_default_{}", std::process::id()));
+        std::fs::create_dir_all(&tmp).unwrap();
+        let dir = CString::new(tmp.to_str().unwrap()).unwrap();
+        let engine = unsafe { gigastt_engine_new(dir.as_ptr()) };
+        assert!(engine.is_null());
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// A directory with no recognition-head encoder makes `detect_in_dir`
+    /// return `None`; quantize must report that as an error string (not "ok"),
+    /// exercising the no-encoder-found branch.
+    #[test]
+    fn test_quantize_model_no_encoder_found() {
+        let tmp =
+            std::env::temp_dir().join(format!("gigastt_ffi_quant_empty_{}", std::process::id()));
+        std::fs::create_dir_all(&tmp).unwrap();
+        let dir = CString::new(tmp.to_str().unwrap()).unwrap();
+        let r = unsafe { gigastt_quantize_model(dir.as_ptr(), false) };
+        assert!(!r.is_null());
+        let s = unsafe { CStr::from_ptr(r) }.to_str().unwrap();
+        assert!(
+            s.contains("no recognition-head encoder"),
+            "unexpected message: {s}"
+        );
+        unsafe { gigastt_string_free(r) };
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// `force = true` on a model-less directory still has nothing to quantize,
+    /// so the no-encoder-found branch fires regardless of the force flag.
+    #[test]
+    fn test_quantize_model_no_encoder_found_forced() {
+        let tmp = std::env::temp_dir().join(format!(
+            "gigastt_ffi_quant_empty_force_{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&tmp).unwrap();
+        let dir = CString::new(tmp.to_str().unwrap()).unwrap();
+        let r = unsafe { gigastt_quantize_model(dir.as_ptr(), true) };
+        assert!(!r.is_null());
+        let s = unsafe { CStr::from_ptr(r) }.to_str().unwrap();
+        assert!(
+            s.contains("no recognition-head encoder"),
+            "unexpected message: {s}"
+        );
+        unsafe { gigastt_string_free(r) };
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    /// Invalid UTF-8 in `model_dir` must yield a NULL engine handle via the
+    /// pool-size wrapper's UTF-8 guard.
+    #[test]
+    fn test_engine_new_with_pool_size_invalid_utf8() {
+        let bad = [0x80u8, 0x81, 0x82, 0];
+        let engine = unsafe { gigastt_engine_new_with_pool_size(bad.as_ptr() as *const c_char, 1) };
+        assert!(engine.is_null());
+    }
+
+    /// Transcribing with a freed engine must be rejected by the early
+    /// `disposed` check, returning NULL. Loading a real engine is required to
+    /// build a disposable handle, so this is model-gated.
+    #[test]
+    #[ignore = "requires model"]
+    fn test_transcribe_file_disposed_engine_returns_null() {
+        let dir = CString::new(gigastt_core::model::default_model_dir()).unwrap();
+        let engine = unsafe { gigastt_engine_new_with_pool_size(dir.as_ptr(), 1) };
+        assert!(!engine.is_null());
+        unsafe { gigastt_engine_free(engine) };
+        let file = CString::new("audio.wav").unwrap();
+        let r = unsafe { gigastt_transcribe_file(engine, file.as_ptr()) };
+        assert!(r.is_null());
+    }
+
+    /// With a live engine, a NULL stream pointer must be rejected by the
+    /// stream-null branch of `process_chunk`. Reaching that branch requires a
+    /// non-null engine, so the test is model-gated.
+    #[test]
+    #[ignore = "requires model"]
+    fn test_stream_process_chunk_null_stream_with_engine() {
+        let engine = shared_test_engine();
+        let pcm16: Vec<u8> = vec![0u8; 16];
+        let r = unsafe {
+            gigastt_stream_process_chunk(
+                engine,
+                ptr::null_mut(),
+                pcm16.as_ptr(),
+                pcm16.len(),
+                16000,
+            )
+        };
+        assert!(r.is_null());
+    }
+
+    /// With a live engine and stream, a NULL PCM buffer must be rejected by the
+    /// pcm16-null branch of `process_chunk`.
+    #[test]
+    #[ignore = "requires model"]
+    fn test_stream_process_chunk_null_pcm_with_engine() {
+        let engine = shared_test_engine();
+        let stream = unsafe { gigastt_stream_new(engine) };
+        assert!(!stream.is_null());
+        let r = unsafe { gigastt_stream_process_chunk(engine, stream, ptr::null(), 0, 16000) };
+        assert!(r.is_null());
+        unsafe { gigastt_stream_free(stream) };
+    }
+
+    /// A flush against a NULL stream (with a live engine) hits the stream-null
+    /// branch and returns NULL.
+    #[test]
+    #[ignore = "requires model"]
+    fn test_stream_flush_null_stream_with_engine() {
+        let engine = shared_test_engine();
+        let r = unsafe { gigastt_stream_flush(engine, ptr::null_mut()) };
+        assert!(r.is_null());
+    }
 }

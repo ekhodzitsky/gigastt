@@ -609,4 +609,69 @@ mod tests {
                 .is_empty()
         );
     }
+
+    fn silero_model_path() -> std::path::PathBuf {
+        let home = std::env::var("HOME").expect("HOME");
+        std::path::PathBuf::from(home).join(".gigastt/models/vad/silero_vad.onnx")
+    }
+
+    /// Model-gated: drives [`VadEndpointer::push`] with sub-frame chunks to
+    /// exercise the leftover-buffer accumulation + drain across `push` calls
+    /// (the model is required because `push` runs every full frame through the
+    /// real Silero session). Verifies the chunk-accumulation mechanics, not
+    /// classification: chunks that individually fall short of one 512-sample
+    /// frame must not error and must not endpoint (no frame processed yet); once
+    /// a full frame's worth of samples accumulates, the frame is consumed and
+    /// the remainder retained for the next push.
+    #[test]
+    #[ignore = "requires the Silero VAD model at ~/.gigastt/models/vad/silero_vad.onnx"]
+    fn test_endpointer_buffers_subframe_chunks_across_pushes() {
+        let path = silero_model_path();
+        if !path.exists() {
+            eprintln!("skipping {}: Silero VAD model not present", path.display());
+            return;
+        }
+        let vad = SileroVad::load(&path).expect("load silero");
+        let c = VadConfig::default();
+        let mut ep = VadEndpointer::new(&c);
+
+        // Two sub-frame silence chunks that together fall short of one frame:
+        // no frame is processed, so no endpoint.
+        let part = vec![0.0f32; 200];
+        assert!(!ep.push(&vad, &part).expect("push part 1"));
+        assert!(!ep.push(&vad, &part).expect("push part 2")); // 400 < 512 buffered
+
+        // A third chunk crosses the frame boundary (600 buffered) → exactly one
+        // full frame is consumed and the remainder retained; still no endpoint
+        // on silence alone.
+        let rest = vec![0.0f32; 200];
+        assert!(!ep.push(&vad, &rest).expect("push part 3")); // 600 buffered, 1 frame
+    }
+
+    /// Model-gated: a single large silence chunk processes many frames in one
+    /// `push` (the inner accumulation loop) and must never endpoint before any
+    /// speech is seen; a following empty push processes no frames and stays
+    /// non-endpointing.
+    #[test]
+    #[ignore = "requires the Silero VAD model at ~/.gigastt/models/vad/silero_vad.onnx"]
+    fn test_endpointer_no_endpoint_on_leading_silence() {
+        let path = silero_model_path();
+        if !path.exists() {
+            eprintln!("skipping {}: Silero VAD model not present", path.display());
+            return;
+        }
+        let vad = SileroVad::load(&path).expect("load silero");
+        let c = VadConfig::default();
+        let mut ep = VadEndpointer::new(&c);
+
+        // 1 s of silence = ~31 frames in a single push; leading silence (no
+        // speech yet) must never report an endpoint.
+        let silence = vec![0.0f32; 16000];
+        assert!(
+            !ep.push(&vad, &silence).expect("push silence"),
+            "leading silence must not endpoint"
+        );
+        // A follow-up empty push processes no frames and stays non-endpointing.
+        assert!(!ep.push(&vad, &[]).expect("push empty"));
+    }
 }

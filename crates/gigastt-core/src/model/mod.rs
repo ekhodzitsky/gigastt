@@ -1369,4 +1369,131 @@ mod tests {
             );
         }
     }
+
+    /// The legacy public `ensure_model(dir)` wrapper delegates to
+    /// `ensure_model_variant(None, dir)`: with a complete install already on
+    /// disk it must succeed without touching the network (no `.partial` files).
+    #[tokio::test]
+    async fn test_ensure_model_wrapper_uses_existing_install() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+
+        // Stage a complete default (Rnnt) download set.
+        for f in ModelVariant::Rnnt.download_files() {
+            std::fs::write(dir.join(f), b"stub").unwrap();
+        }
+
+        ensure_model(dir.to_str().unwrap())
+            .await
+            .expect("ensure_model must succeed against an existing install");
+
+        let partials: Vec<_> = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().contains(".partial"))
+            .collect();
+        assert!(
+            partials.is_empty(),
+            "ensure_model must not download when the set is present: {partials:?}"
+        );
+    }
+
+    /// `ensure_model_variant(Some(Rnnt), dir)` against a matching install is the
+    /// `VariantAction::Use` branch: returns Rnnt with no download.
+    #[tokio::test]
+    async fn test_ensure_model_variant_explicit_match_uses_existing() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+
+        for f in ModelVariant::Rnnt.download_files() {
+            std::fs::write(dir.join(f), b"stub").unwrap();
+        }
+
+        let variant = ensure_model_variant(Some(ModelVariant::Rnnt), dir.to_str().unwrap())
+            .await
+            .expect("explicit matching variant must short-circuit");
+        assert_eq!(variant, ModelVariant::Rnnt);
+
+        let has_partial = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .any(|e| e.file_name().to_string_lossy().contains(".partial"));
+        assert!(!has_partial, "no download for an explicit matching variant");
+    }
+
+    /// `ensure_vad_model` short-circuits (no network, no `.partial`) when the
+    /// Silero ONNX file is already present in the VAD directory.
+    #[tokio::test]
+    async fn test_ensure_vad_model_present_no_download() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+        std::fs::write(dir.join(crate::vad::VAD_MODEL_FILE), b"stub vad").unwrap();
+
+        ensure_vad_model(dir.to_str().unwrap())
+            .await
+            .expect("present VAD model must short-circuit");
+
+        let partials: Vec<_> = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().contains(".partial"))
+            .collect();
+        assert!(partials.is_empty(), "no .partial files: {partials:?}");
+        assert_eq!(
+            std::fs::read(dir.join(crate::vad::VAD_MODEL_FILE)).unwrap(),
+            b"stub vad",
+            "existing VAD model must be left untouched"
+        );
+    }
+
+    /// `default_punct_model_dir` and `default_vad_model_dir` are siblings of the
+    /// main model dir under `.gigastt/models`, with the expected leaf names.
+    #[test]
+    fn test_default_punct_and_vad_dirs_are_model_siblings() {
+        let punct = default_punct_model_dir();
+        let vad = default_vad_model_dir();
+        assert!(
+            punct.contains(".gigastt") && punct.ends_with("punct"),
+            "punct dir should be under .gigastt and end with 'punct', got: {punct}"
+        );
+        assert!(
+            vad.contains(".gigastt") && vad.ends_with("vad"),
+            "vad dir should be under .gigastt and end with 'vad', got: {vad}"
+        );
+    }
+
+    /// `VAD_MODEL_SHA256` is a 64-char lowercase hex digest (no truncation or
+    /// placeholder slipping into a release).
+    #[test]
+    fn test_vad_model_sha256_shape() {
+        assert_eq!(
+            VAD_MODEL_SHA256.len(),
+            64,
+            "VAD_MODEL_SHA256 must be a 64-char hex digest"
+        );
+        assert!(
+            VAD_MODEL_SHA256
+                .chars()
+                .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)),
+            "VAD_MODEL_SHA256 must be lowercase hex; got: {VAD_MODEL_SHA256}"
+        );
+    }
+
+    /// `ensure_model_variant` tolerates a deep, freshly-created model directory:
+    /// a complete Rnnt set pre-staged under a nested path is detected and used
+    /// as-is (early `Use(...)` return) without any network access.
+    #[tokio::test]
+    async fn test_ensure_model_variant_uses_complete_set_in_nested_path() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let nested = tmp.path().join("a").join("b").join("models");
+        std::fs::create_dir_all(&nested).unwrap();
+        for f in ModelVariant::Rnnt.download_files() {
+            std::fs::write(nested.join(f), b"stub").unwrap();
+        }
+
+        let variant = ensure_model_variant(None, nested.to_str().unwrap())
+            .await
+            .expect("nested complete install must be used as-is");
+        assert_eq!(variant, ModelVariant::Rnnt);
+    }
 }

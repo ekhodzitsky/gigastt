@@ -91,9 +91,10 @@ gigastt_ void gigastt_engine_free(struct GigasttGigasttEngine *engine);
 /**
  * Quantize the FP32 encoder model to INT8 in-place.
  *
- * Looks for `v3_e2e_rnnt_encoder.onnx` inside `model_dir` and produces
- * `v3_e2e_rnnt_encoder_int8.onnx` in the same directory.
- * If the INT8 file already exists and `force` is `false`, returns immediately.
+ * Auto-detects the recognition head present in `model_dir` (the `rnnt` default
+ * since v2.3, or `e2e_rnnt`) and quantizes that variant's FP32 encoder, writing
+ * the matching `*_int8.onnx` beside it. If the INT8 file already exists and
+ * `force` is `false`, returns immediately.
  *
  * # Safety
  * `model_dir` must be a valid, null-terminated UTF-8 string.

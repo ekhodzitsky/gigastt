@@ -1865,4 +1865,426 @@ mod tests {
         );
         assert_eq!(cfg.limits.idle_timeout_secs, limits.idle_timeout_secs);
     }
+
+    #[test]
+    fn test_parse_model_variant_valid_and_invalid() {
+        assert_eq!(parse_model_variant("rnnt").unwrap(), ModelVariant::Rnnt);
+        assert_eq!(
+            parse_model_variant("e2e_rnnt").unwrap(),
+            ModelVariant::E2eRnnt
+        );
+        assert!(parse_model_variant("whisper").is_err());
+    }
+
+    #[test]
+    fn test_parse_punctuation_mode_value_parser() {
+        assert_eq!(parse_punctuation_mode("on").unwrap(), PunctuationMode::On);
+        assert_eq!(
+            parse_punctuation_mode("auto").unwrap(),
+            PunctuationMode::Auto
+        );
+        assert!(parse_punctuation_mode("garbage").is_err());
+    }
+
+    #[test]
+    fn test_parse_itn_mode_value_parser() {
+        assert_eq!(parse_itn_mode("off").unwrap(), ItnMode::Off);
+        assert_eq!(parse_itn_mode("auto").unwrap(), ItnMode::Auto);
+        assert!(parse_itn_mode("garbage").is_err());
+    }
+
+    #[test]
+    fn test_resolve_punctuation_per_variant() {
+        // auto → on for bare rnnt, off for the already-punctuated e2e head.
+        assert!(resolve_punctuation(
+            PunctuationMode::Auto,
+            ModelVariant::Rnnt
+        ));
+        assert!(!resolve_punctuation(
+            PunctuationMode::Auto,
+            ModelVariant::E2eRnnt
+        ));
+        // on/off override the variant.
+        assert!(resolve_punctuation(
+            PunctuationMode::On,
+            ModelVariant::E2eRnnt
+        ));
+        assert!(!resolve_punctuation(
+            PunctuationMode::Off,
+            ModelVariant::Rnnt
+        ));
+    }
+
+    #[test]
+    fn test_build_vad_config_defaults_when_unset() {
+        // Both overrides None → library defaults pass through untouched.
+        let cfg = build_vad_config(None, None);
+        let default = gigastt_core::vad::VadConfig::default();
+        assert_eq!(cfg.threshold, default.threshold);
+        assert_eq!(cfg.min_silence_ms, default.min_silence_ms);
+        assert_eq!(cfg.min_speech_ms, default.min_speech_ms);
+        assert_eq!(cfg.speech_pad_ms, default.speech_pad_ms);
+    }
+
+    #[test]
+    fn test_build_vad_config_applies_overrides() {
+        let cfg = build_vad_config(Some(0.75), Some(1200));
+        assert_eq!(cfg.threshold, 0.75);
+        assert_eq!(cfg.min_silence_ms, 1200);
+    }
+
+    #[test]
+    fn test_build_vad_config_clamps_threshold() {
+        // Out-of-range thresholds clamp into [0, 1].
+        assert_eq!(build_vad_config(Some(5.0), None).threshold, 1.0);
+        assert_eq!(build_vad_config(Some(-3.0), None).threshold, 0.0);
+    }
+
+    #[test]
+    fn test_maybe_load_vad_disabled_skips_load() {
+        // Disabled → never touches the filesystem, returns None.
+        assert!(maybe_load_vad(false, "/nonexistent").is_none());
+    }
+
+    #[test]
+    fn test_maybe_load_vad_missing_model_falls_back_to_none() {
+        // Enabled but model absent → graceful warn + None (no panic).
+        let tmp = tempfile::tempdir().unwrap();
+        let dir = tmp.path().join("absent");
+        assert!(maybe_load_vad(true, dir.to_str().unwrap()).is_none());
+    }
+
+    #[test]
+    fn test_cli_serve_vad_flags() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore_vad = EnvRestore("GIGASTT_VAD", std::env::var("GIGASTT_VAD").ok());
+        let _restore_threshold = EnvRestore(
+            "GIGASTT_VAD_THRESHOLD",
+            std::env::var("GIGASTT_VAD_THRESHOLD").ok(),
+        );
+        let _restore_sil = EnvRestore(
+            "GIGASTT_VAD_MIN_SILENCE_MS",
+            std::env::var("GIGASTT_VAD_MIN_SILENCE_MS").ok(),
+        );
+        let _restore_dir = EnvRestore(
+            "GIGASTT_VAD_MODEL_DIR",
+            std::env::var("GIGASTT_VAD_MODEL_DIR").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_VAD");
+            std::env::remove_var("GIGASTT_VAD_THRESHOLD");
+            std::env::remove_var("GIGASTT_VAD_MIN_SILENCE_MS");
+            std::env::remove_var("GIGASTT_VAD_MODEL_DIR");
+        }
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--vad",
+            "--vad-threshold",
+            "0.8",
+            "--vad-min-silence-ms",
+            "700",
+            "--vad-model-dir",
+            "/tmp/vad",
+        ]);
+        match cli.command {
+            Commands::Serve {
+                vad,
+                vad_threshold,
+                vad_min_silence_ms,
+                vad_model_dir,
+                ..
+            } => {
+                assert!(vad);
+                assert_eq!(vad_threshold, Some(0.8));
+                assert_eq!(vad_min_silence_ms, Some(700));
+                assert_eq!(vad_model_dir, "/tmp/vad");
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_vad_defaults_off() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore_vad = EnvRestore("GIGASTT_VAD", std::env::var("GIGASTT_VAD").ok());
+        let _restore_threshold = EnvRestore(
+            "GIGASTT_VAD_THRESHOLD",
+            std::env::var("GIGASTT_VAD_THRESHOLD").ok(),
+        );
+        let _restore_sil = EnvRestore(
+            "GIGASTT_VAD_MIN_SILENCE_MS",
+            std::env::var("GIGASTT_VAD_MIN_SILENCE_MS").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_VAD");
+            std::env::remove_var("GIGASTT_VAD_THRESHOLD");
+            std::env::remove_var("GIGASTT_VAD_MIN_SILENCE_MS");
+        }
+        let cli = Cli::parse_from(["gigastt", "serve"]);
+        match cli.command {
+            Commands::Serve {
+                vad,
+                vad_threshold,
+                vad_min_silence_ms,
+                ..
+            } => {
+                assert!(!vad);
+                assert_eq!(vad_threshold, None);
+                assert_eq!(vad_min_silence_ms, None);
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_pool_and_thread_flags() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore_min = EnvRestore(
+            "GIGASTT_POOL_MIN_SIZE",
+            std::env::var("GIGASTT_POOL_MIN_SIZE").ok(),
+        );
+        let _restore_batch = EnvRestore(
+            "GIGASTT_BATCH_POOL_SIZE",
+            std::env::var("GIGASTT_BATCH_POOL_SIZE").ok(),
+        );
+        let _restore_threads = EnvRestore(
+            "GIGASTT_ENCODER_INTRA_THREADS",
+            std::env::var("GIGASTT_ENCODER_INTRA_THREADS").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_POOL_MIN_SIZE");
+            std::env::remove_var("GIGASTT_BATCH_POOL_SIZE");
+            std::env::remove_var("GIGASTT_ENCODER_INTRA_THREADS");
+        }
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--pool-size",
+            "8",
+            "--pool-min-size",
+            "3",
+            "--batch-pool-size",
+            "2",
+        ]);
+        match cli.command {
+            Commands::Serve {
+                pool_size,
+                pool_min_size,
+                batch_pool_size,
+                ..
+            } => {
+                assert_eq!(pool_size, 8);
+                assert_eq!(pool_min_size, 3);
+                assert_eq!(batch_pool_size, 2);
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_runtime_limit_flags() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        // These flags read env vars; clear them so the explicit args win.
+        let restores: Vec<EnvRestore> = [
+            "GIGASTT_IDLE_TIMEOUT_SECS",
+            "GIGASTT_WS_FRAME_MAX_BYTES",
+            "GIGASTT_BODY_LIMIT_BYTES",
+            "GIGASTT_RATE_LIMIT_PER_MINUTE",
+            "GIGASTT_RATE_LIMIT_BURST",
+            "GIGASTT_MAX_SESSION_SECS",
+            "GIGASTT_SHUTDOWN_DRAIN_SECS",
+            "GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS",
+            "GIGASTT_INFERENCE_TIMEOUT_SECS",
+        ]
+        .iter()
+        .map(|k| {
+            let r = EnvRestore(k, std::env::var(k).ok());
+            unsafe {
+                std::env::remove_var(k);
+            }
+            r
+        })
+        .collect();
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--idle-timeout-secs",
+            "120",
+            "--ws-frame-max-bytes",
+            "4096",
+            "--body-limit-bytes",
+            "8192",
+            "--rate-limit-per-minute",
+            "90",
+            "--rate-limit-burst",
+            "15",
+            "--max-session-secs",
+            "777",
+            "--shutdown-drain-secs",
+            "7",
+            "--pool-checkout-timeout-secs",
+            "11",
+            "--inference-timeout-secs",
+            "300",
+            "--trust-proxy",
+        ]);
+        match cli.command {
+            Commands::Serve {
+                idle_timeout_secs,
+                ws_frame_max_bytes,
+                body_limit_bytes,
+                rate_limit_per_minute,
+                rate_limit_burst,
+                max_session_secs,
+                shutdown_drain_secs,
+                pool_checkout_timeout_secs,
+                inference_timeout_secs,
+                trust_proxy,
+                ..
+            } => {
+                assert_eq!(idle_timeout_secs, Some(120));
+                assert_eq!(ws_frame_max_bytes, Some(4096));
+                assert_eq!(body_limit_bytes, Some(8192));
+                assert_eq!(rate_limit_per_minute, Some(90));
+                assert_eq!(rate_limit_burst, Some(15));
+                assert_eq!(max_session_secs, Some(777));
+                assert_eq!(shutdown_drain_secs, Some(7));
+                assert_eq!(pool_checkout_timeout_secs, Some(11));
+                assert_eq!(inference_timeout_secs, Some(300));
+                assert!(trust_proxy);
+            }
+            _ => panic!("expected Serve"),
+        }
+        drop(restores);
+    }
+
+    #[test]
+    fn test_cli_serve_config_and_skip_quantize_flags() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_SKIP_QUANTIZE",
+            std::env::var("GIGASTT_SKIP_QUANTIZE").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_SKIP_QUANTIZE");
+        }
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--config",
+            "/tmp/limits.toml",
+            "--skip-quantize",
+        ]);
+        match cli.command {
+            Commands::Serve {
+                config,
+                skip_quantize,
+                ..
+            } => {
+                assert_eq!(config, Some("/tmp/limits.toml".to_string()));
+                assert!(skip_quantize);
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_cors_and_origin_flags() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "serve",
+            "--allow-origin",
+            "https://a.example.com",
+            "--allow-origin",
+            "https://b.example.com",
+            "--cors-allow-any",
+        ]);
+        match cli.command {
+            Commands::Serve {
+                allow_origin,
+                cors_allow_any,
+                ..
+            } => {
+                assert_eq!(allow_origin.len(), 2);
+                assert_eq!(allow_origin[0], "https://a.example.com");
+                assert!(cors_allow_any);
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_download_skip_quantize_flag() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_SKIP_QUANTIZE",
+            std::env::var("GIGASTT_SKIP_QUANTIZE").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_SKIP_QUANTIZE");
+        }
+        let cli = Cli::parse_from(["gigastt", "download", "--skip-quantize"]);
+        match cli.command {
+            Commands::Download { skip_quantize, .. } => assert!(skip_quantize),
+            _ => panic!("expected Download"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_vad_and_itn_flags() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let restores: Vec<EnvRestore> = ["GIGASTT_VAD", "GIGASTT_ITN", "GIGASTT_VAD_THRESHOLD"]
+            .iter()
+            .map(|k| {
+                let r = EnvRestore(k, std::env::var(k).ok());
+                unsafe {
+                    std::env::remove_var(k);
+                }
+                r
+            })
+            .collect();
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe",
+            "a.wav",
+            "--vad",
+            "--vad-threshold",
+            "0.6",
+            "--itn",
+            "off",
+        ]);
+        match cli.command {
+            Commands::Transcribe {
+                vad,
+                vad_threshold,
+                itn,
+                ..
+            } => {
+                assert!(vad);
+                assert_eq!(vad_threshold, Some(0.6));
+                assert_eq!(itn, ItnMode::Off);
+            }
+            _ => panic!("expected Transcribe"),
+        }
+        drop(restores);
+    }
+
+    #[test]
+    fn test_cli_rejects_unknown_subcommand() {
+        let res = Cli::try_parse_from(["gigastt", "bogus"]);
+        assert!(res.is_err(), "unknown subcommand must be rejected");
+    }
+
+    #[test]
+    fn test_cli_serve_rejects_bad_punctuation_value() {
+        let res = Cli::try_parse_from(["gigastt", "serve", "--punctuation", "sometimes"]);
+        assert!(res.is_err(), "invalid punctuation mode must be rejected");
+    }
+
+    #[test]
+    fn test_cli_serve_rejects_bad_itn_value() {
+        let res = Cli::try_parse_from(["gigastt", "serve", "--itn", "sometimes"]);
+        assert!(res.is_err(), "invalid itn mode must be rejected");
+    }
 }

@@ -1199,6 +1199,217 @@ mod tests {
         assert_eq!(err.status(), StatusCode::BAD_REQUEST);
     }
 
+    #[tokio::test]
+    async fn test_render_export_invalid_format_body_code() {
+        // The invalid-format error carries the machine-readable `invalid_format`
+        // code so clients can distinguish it from other 400s.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("xml".into()),
+            ..ExportParams::default()
+        };
+        let err = render_export_response(&result, &params).unwrap_err();
+        assert_eq!(err.status(), StatusCode::BAD_REQUEST);
+        let bytes = axum::body::to_bytes(err.into_body(), 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "invalid_format");
+    }
+
+    #[tokio::test]
+    async fn test_render_export_uppercase_json_returns_none() {
+        // Format negotiation is case-insensitive: an explicit (any-case) "json"
+        // means "keep the default TranscribeResponse contract", so the helper
+        // returns None instead of building a Response.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("JSON".into()),
+            ..ExportParams::default()
+        };
+        assert!(render_export_response(&result, &params).unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_render_export_uppercase_format_renders() {
+        // Non-JSON format strings are also case-insensitive (parsed via
+        // ExportFormat::from_str), so "SRT" still renders subtitles.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("SRT".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
+            "application/x-subrip; charset=utf-8"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_render_export_empty_download_uses_default_name() {
+        // An empty `download` value still requests an attachment; the helper
+        // synthesizes the default `transcript.<ext>` filename.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("vtt".into()),
+            download: Some(String::new()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(
+            resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
+            "attachment; filename=\"transcript.vtt\""
+        );
+    }
+
+    #[tokio::test]
+    async fn test_render_export_md_includes_word_timestamps() {
+        // The Markdown path honours `word_timestamps` and renders the per-word
+        // table; the content type is text/markdown.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("md".into()),
+            word_timestamps: Some(true),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
+            "text/markdown; charset=utf-8"
+        );
+        let body = axum::body::to_bytes(resp.into_body(), 4096).await.unwrap();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(text.contains("# Transcript"));
+        assert!(text.contains("| Word | Start | End |"));
+    }
+
+    #[tokio::test]
+    async fn test_render_export_line_break_opts_passed_through() {
+        // Tight per-line caps must be threaded into RenderOpts so the rendered
+        // subtitles actually break — proving the params override the defaults.
+        let result = sample_export_result();
+        let loose = ExportParams {
+            format: Some("srt".into()),
+            ..ExportParams::default()
+        };
+        let tight = ExportParams {
+            format: Some("srt".into()),
+            max_words_per_line: Some(1),
+            ..ExportParams::default()
+        };
+        let loose_resp = render_export_response(&result, &loose).unwrap().unwrap();
+        let tight_resp = render_export_response(&result, &tight).unwrap().unwrap();
+        let loose_body = axum::body::to_bytes(loose_resp.into_body(), 4096)
+            .await
+            .unwrap();
+        let tight_body = axum::body::to_bytes(tight_resp.into_body(), 4096)
+            .await
+            .unwrap();
+        let loose_text = String::from_utf8(loose_body.to_vec()).unwrap();
+        let tight_text = String::from_utf8(tight_body.to_vec()).unwrap();
+        // One word per line yields one cue per word (more "-->" arrows) than the
+        // default 14-words-per-line grouping.
+        let loose_cues = loose_text.matches("-->").count();
+        let tight_cues = tight_text.matches("-->").count();
+        assert!(
+            tight_cues > loose_cues,
+            "tight={tight_cues} should exceed loose={loose_cues}"
+        );
+    }
+
+    #[test]
+    fn test_export_params_deserialize_from_query() {
+        // The query-param shape drives format negotiation; confirm axum's Query
+        // extractor maps every field so the handler sees the caller's choices.
+        let uri: axum::http::Uri = "http://x/?format=srt&download=out.srt&max_chars_per_line=20&max_words_per_line=3&word_timestamps=true"
+            .parse()
+            .unwrap();
+        let Query(params): Query<ExportParams> = Query::try_from_uri(&uri).unwrap();
+        assert_eq!(params.format.as_deref(), Some("srt"));
+        assert_eq!(params.download.as_deref(), Some("out.srt"));
+        assert_eq!(params.max_chars_per_line, Some(20));
+        assert_eq!(params.max_words_per_line, Some(3));
+        assert_eq!(params.word_timestamps, Some(true));
+    }
+
+    #[test]
+    fn test_export_params_default_empty_query() {
+        // No query params -> all None, which the handler maps to JSON defaults.
+        let uri: axum::http::Uri = "http://x/".parse().unwrap();
+        let Query(params): Query<ExportParams> = Query::try_from_uri(&uri).unwrap();
+        assert!(params.format.is_none());
+        assert!(params.download.is_none());
+        assert!(params.max_chars_per_line.is_none());
+    }
+
+    #[test]
+    fn test_model_info_serialization_shape() {
+        // ModelInfo is the /v1/models contract; assert the field names/values
+        // clients depend on are present and correctly typed.
+        let info = ModelInfo {
+            id: "gigaam-v3-e2e-rnnt".into(),
+            name: "GigaAM v3 RNN-T".into(),
+            version: "0.9.0".into(),
+            encoder: "int8".into(),
+            vocab_size: 1025,
+            sample_rate: 16000,
+            pool_size: 4,
+            pool_available: 3,
+            supported_formats: vec!["wav".into(), "mp3".into()],
+            supported_rates: vec![16000, 48000],
+            diarization: false,
+        };
+        let v = serde_json::to_value(&info).unwrap();
+        assert_eq!(v["id"], "gigaam-v3-e2e-rnnt");
+        assert_eq!(v["encoder"], "int8");
+        assert_eq!(v["vocab_size"], 1025);
+        assert_eq!(v["sample_rate"], 16000);
+        assert_eq!(v["diarization"], false);
+        assert_eq!(v["supported_rates"][1], 48000);
+    }
+
+    #[tokio::test]
+    async fn test_api_inference_timeout_error_body_message() {
+        // The 504 inference-timeout body should not leak internals, just the
+        // stable code + a sanitized message.
+        let resp = api_inference_timeout_error();
+        let bytes = axum::body::to_bytes(resp.into_body(), 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "inference_timeout");
+        assert_eq!(v["error"], "Inference timed out.");
+    }
+
+    #[tokio::test]
+    async fn test_api_pool_closed_error_status_and_message() {
+        // pool_closed is a 503 with a sanitized "shutting down" message and no
+        // retry hint (the pool is not coming back).
+        let resp = api_pool_closed_error();
+        let (parts, body) = resp.into_parts();
+        assert_eq!(parts.status, StatusCode::SERVICE_UNAVAILABLE);
+        let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["error"], "Server is shutting down");
+        assert_eq!(v["code"], "pool_closed");
+    }
+
+    #[test]
+    fn test_sse_data_payload_includes_words_and_timestamp() {
+        // A successful segment carries text, timestamp and words through
+        // unchanged so SSE clients can render word-level UI.
+        use gigastt_core::inference::WordInfo;
+        let mut seg = gigastt_core::inference::TranscriptSegment::empty_final();
+        seg.text = "привет".into();
+        seg.timestamp = 1.25;
+        seg.words = vec![WordInfo::new("привет", 0.0, 0.5, 0.99, Some(0))];
+        let payload = sse_data_payload(&Ok(seg));
+        let v: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(v["type"], "final");
+        assert_eq!(v["text"], "привет");
+        assert_eq!(v["timestamp"], 1.25);
+        assert_eq!(v["words"][0]["word"], "привет");
+    }
+
     fn test_engine() -> Arc<Engine> {
         use std::sync::OnceLock;
         static ENGINE: OnceLock<Arc<Engine>> = OnceLock::new();
