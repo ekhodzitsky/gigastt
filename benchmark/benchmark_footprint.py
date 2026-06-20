@@ -47,9 +47,12 @@ def _model_size_mb(runner) -> float | None:
     name = runner.name
     home = Path.home()
     if name.startswith("gigastt"):
-        enc = home / ".gigastt" / "models" / "v3_e2e_rnnt_encoder_int8.onnx"
-        if enc.exists():
-            return round(enc.stat().st_size / (1024 * 1024), 1)
+        # rnnt is the default head since v2.3; fall back to e2e_rnnt.
+        models = home / ".gigastt" / "models"
+        for fn in ("v3_rnnt_encoder_int8.onnx", "v3_e2e_rnnt_encoder_int8.onnx"):
+            enc = models / fn
+            if enc.exists():
+                return round(enc.stat().st_size / (1024 * 1024), 1)
     if name.startswith("vosk"):
         model_dir = getattr(runner, "download_dir", None)
         model_name = getattr(runner, "model_name", None)

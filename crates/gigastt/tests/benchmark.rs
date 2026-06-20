@@ -543,7 +543,17 @@ fn main() {
         .map(|h| h.join(".gigastt").join("models"))
         .expect("HOME not set");
 
-    if !model_dir.join("v3_e2e_rnnt_encoder.onnx").exists() {
+    // Accept either head's encoder (rnnt default since v2.3, or e2e_rnnt; FP32 or
+    // generated INT8). The engine auto-detects which variant to load.
+    let has_model = [
+        "v3_rnnt_encoder.onnx",
+        "v3_rnnt_encoder_int8.onnx",
+        "v3_e2e_rnnt_encoder.onnx",
+        "v3_e2e_rnnt_encoder_int8.onnx",
+    ]
+    .iter()
+    .any(|f| model_dir.join(f).exists());
+    if !has_model {
         println!(
             r#"{{"pass": true, "score": null, "skipped": true, "reason": "model not found"}}"#
         );

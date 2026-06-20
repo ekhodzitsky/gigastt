@@ -29,9 +29,20 @@ pub fn model_dir() -> String {
         .expect("Cannot determine home directory")
         .join(".gigastt")
         .join("models");
+    // Accept either recognition head — the engine auto-detects the variant from
+    // whichever encoder is present (`rnnt` is the default download since v2.3,
+    // `e2e_rnnt` is the alternative; FP32 or generated INT8 both count).
+    let has_model = [
+        "v3_rnnt_encoder.onnx",
+        "v3_rnnt_encoder_int8.onnx",
+        "v3_e2e_rnnt_encoder.onnx",
+        "v3_e2e_rnnt_encoder_int8.onnx",
+    ]
+    .iter()
+    .any(|f| dir.join(f).exists());
     assert!(
-        dir.join("v3_e2e_rnnt_encoder.onnx").exists(),
-        "Model not found at {}. Run `cargo run -- download` first.",
+        has_model,
+        "Model not found at {} (no rnnt or e2e_rnnt encoder). Run `cargo run -- download` first.",
         dir.display()
     );
     dir.to_string_lossy().into_owned()
@@ -55,6 +66,29 @@ pub async fn start_server(model_dir: &str) -> (u16, oneshot::Sender<()>) {
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
     let engine = gigastt::inference::Engine::load(model_dir).unwrap();
+    let config = gigastt::server::ServerConfig::local(port);
+    tokio::spawn(gigastt::server::run_with_config_listener(
+        engine,
+        config,
+        Some(shutdown_rx),
+        listener,
+    ));
+
+    wait_for_ready(port, Duration::from_secs(30)).await;
+    (port, shutdown_tx)
+}
+
+/// Start the server with an explicit session-pool size. Used by the pool
+/// saturation tests so they don't depend on `DEFAULT_POOL_SIZE` (which changed
+/// to 2 in v2.3) or the RAM-aware cap — a small fixed pool is deterministic.
+pub async fn start_server_with_pool(
+    model_dir: &str,
+    pool_size: usize,
+) -> (u16, oneshot::Sender<()>) {
+    let (port, listener) = free_port().await;
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+
+    let engine = gigastt::inference::Engine::load_with_pool_size(model_dir, pool_size).unwrap();
     let config = gigastt::server::ServerConfig::local(port);
     tokio::spawn(gigastt::server::run_with_config_listener(
         engine,

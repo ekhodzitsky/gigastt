@@ -341,7 +341,9 @@ async fn test_ws_client_disconnect_midstream() {
 #[tokio::test]
 async fn test_ws_concurrent_4_clients() {
     let model_dir = common::model_dir();
-    let (port, _shutdown) = common::start_server(&model_dir).await;
+    // Explicit pool of 4 so all 4 concurrent clients get a slot — the default
+    // pool size is 2 since v2.3, which would hang clients 3 and 4.
+    let (port, _shutdown) = common::start_server_with_pool(&model_dir, 4).await;
 
     let url = format!("ws://127.0.0.1:{port}/v1/ws");
 

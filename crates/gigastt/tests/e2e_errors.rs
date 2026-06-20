@@ -135,37 +135,40 @@ async fn test_ws_oversized_frame_rejected() {
 // ─── 3. Fifth WebSocket client is blocked ───────────────────────────────────
 
 /// Saturate the pool with 4 WebSocket clients, then try a 5th.
-/// The 5th client's TCP connection succeeds but pool.checkout() blocks,
-/// so the Ready message never arrives within 3 seconds.
+/// The (pool+1)th client's TCP connection succeeds but pool.checkout() blocks,
+/// so its Ready message never arrives within 3 seconds. Uses an explicit small
+/// pool so the test does not depend on `DEFAULT_POOL_SIZE` (2 since v2.3) or the
+/// RAM-aware cap.
 #[ignore]
 #[tokio::test]
-async fn test_ws_fifth_client_hangs() {
+async fn test_ws_client_hangs_when_pool_saturated() {
+    const POOL: usize = 2;
     let model_dir = common::model_dir();
-    let (port, shutdown) = common::start_server(&model_dir).await;
+    let (port, shutdown) = common::start_server_with_pool(&model_dir, POOL).await;
 
-    // Connect 4 clients and hold them open (saturating the pool).
+    // Connect POOL clients and hold them open (saturating the pool).
     let mut clients = Vec::new();
-    for _ in 0..4 {
+    for _ in 0..POOL {
         let (sink, stream, _ready) = common::ws_connect(port).await;
         clients.push((sink, stream));
     }
 
-    // Attempt to connect a 5th client using raw connect_async (we don't want
-    // ws_connect because that helper expects a Ready message).
-    let (mut fifth_ws, _) =
+    // Attempt one more client using raw connect_async (we don't want ws_connect
+    // because that helper expects a Ready message).
+    let (mut extra_ws, _) =
         tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/v1/ws"))
             .await
-            .expect("TCP connection for 5th client should succeed");
+            .expect("TCP connection for the extra client should succeed");
 
     // The pool is exhausted, so pool.checkout() blocks server-side.
     // The Ready message should NOT arrive within 3 seconds.
-    let result = tokio::time::timeout(Duration::from_secs(3), fifth_ws.next()).await;
+    let result = tokio::time::timeout(Duration::from_secs(3), extra_ws.next()).await;
     assert!(
         result.is_err(),
-        "5th client should NOT receive Ready while pool is saturated, but got: {result:?}"
+        "extra client should NOT receive Ready while pool is saturated, but got: {result:?}"
     );
 
-    // Release all 4 pool slots by sending Stop to each.
+    // Release all pool slots by sending Stop to each.
     let stop_json = serde_json::to_string(&serde_json::json!({"type": "stop"})).unwrap();
     for (mut sink, mut stream) in clients {
         sink.send(Message::Text(stop_json.clone().into()))
@@ -181,19 +184,21 @@ async fn test_ws_fifth_client_hangs() {
 
 // ─── 4. HTTP returns 503 when pool is saturated ─────────────────────────────
 
-/// Hold all 4 pool slots via WebSocket, then POST /v1/transcribe.
+/// Hold all pool slots via WebSocket, then POST /v1/transcribe.
 /// The HTTP handler has a 30-second pool.checkout() timeout and returns 503.
+/// Uses an explicit small pool so the test does not depend on `DEFAULT_POOL_SIZE`.
 ///
 /// This test takes ~30 seconds to complete (the HTTP timeout duration).
 #[ignore]
 #[tokio::test]
 async fn test_rest_saturated_pool_returns_503() {
+    const POOL: usize = 2;
     let model_dir = common::model_dir();
-    let (port, shutdown) = common::start_server(&model_dir).await;
+    let (port, shutdown) = common::start_server_with_pool(&model_dir, POOL).await;
 
     // Saturate the pool.
     let mut clients = Vec::new();
-    for _ in 0..4 {
+    for _ in 0..POOL {
         let (sink, stream, _ready) = common::ws_connect(port).await;
         clients.push((sink, stream));
     }
