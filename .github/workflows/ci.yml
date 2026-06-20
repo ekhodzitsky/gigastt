@@ -533,21 +533,6 @@ jobs:
         if: steps.cache-model.outputs.cache-hit != 'true'
         run: cargo run -p gigastt -- download
 
-      - name: Generate test WAV
-        run: |
-          # Create a minimal 1-second silent WAV for CLI transcribe coverage
-          python3 -c "
-          import struct, wave, io
-          data = io.BytesIO()
-          with wave.open(data, 'wb') as w:
-            w.setnchannels(1)
-            w.setsampwidth(2)
-            w.setframerate(16000)
-            w.writeframes(b'\x00' * 32000)
-          with open('/tmp/test_silence.wav', 'wb') as f:
-            f.write(data.getvalue())
-          "
-
       - name: Run e2e coverage
         # Run each integration test target sequentially with `--no-report` so
         # coverage data accumulates in target/llvm-cov-target, then generate a
@@ -558,16 +543,22 @@ jobs:
         # exercise CLI commands to push coverage toward 90 %.
         run: |
           cargo llvm-cov --no-report --workspace --lib --bins -- --ignored --test-threads=1
-          cargo llvm-cov --no-report -p gigastt --test e2e_rest     -- --ignored --test-threads=1
-          cargo llvm-cov --no-report -p gigastt --test e2e_ws       -- --ignored --test-threads=1
-          cargo llvm-cov --no-report -p gigastt --test e2e_errors   -- --ignored --test-threads=1
-          cargo llvm-cov --no-report -p gigastt --test e2e_shutdown -- --ignored --test-threads=1
+          # gigastt-ffi is a `cdylib`; the `--workspace --lib` pass above does not
+          # run its model-gated (#[ignore]) lib tests, so run them explicitly or
+          # the FFI streaming/transcribe paths read as uncovered.
+          cargo llvm-cov --no-report -p gigastt-ffi --lib -- --ignored --test-threads=1
+          cargo llvm-cov --no-report -p gigastt --test e2e_rest      -- --ignored --test-threads=1
+          cargo llvm-cov --no-report -p gigastt --test e2e_ws        -- --ignored --test-threads=1
+          cargo llvm-cov --no-report -p gigastt --test e2e_errors    -- --ignored --test-threads=1
+          cargo llvm-cov --no-report -p gigastt --test e2e_shutdown  -- --ignored --test-threads=1
           cargo llvm-cov --no-report -p gigastt --test e2e_rate_limit -- --ignored --test-threads=1
-          cargo llvm-cov --no-report run -p gigastt -- --help || true
-          cargo llvm-cov --no-report run -p gigastt -- serve --help || true
+          # CLI subprocess + REST/SSE handler coverage. e2e_cli has non-ignored
+          # tests too, so use --include-ignored to run the whole target.
+          cargo llvm-cov --no-report -p gigastt --test e2e_cli       -- --include-ignored --test-threads=1
+          cargo llvm-cov --no-report -p gigastt --test e2e_http_cov  -- --ignored --test-threads=1
+          # Exercise the download command arm (network path) that the subprocess
+          # tests can't reach offline.
           cargo llvm-cov --no-report run -p gigastt -- download || true
-          cargo llvm-cov --no-report run -p gigastt -- quantize --force || true
-          cargo llvm-cov --no-report run -p gigastt -- transcribe /tmp/test_silence.wav || true
           cargo llvm-cov report --cobertura --output-path cobertura-e2e.xml
 
       - uses: codecov/codecov-action@v7

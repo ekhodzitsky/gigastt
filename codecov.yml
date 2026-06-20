@@ -1,0 +1,49 @@
+# Codecov configuration.
+#
+# Coverage is uploaded from two CI jobs and merged by flag:
+#   * unit — `cargo llvm-cov --workspace --lib --bins` (every PR/push)
+#   * e2e  — model-gated lib/bin + integration + CLI subprocess coverage
+#            (main-push only; needs the ~850 MB model)
+#
+# Measured line coverage of the merged report is ~94% and function coverage
+# ~95.5%. The remaining uncovered lines are dominated by fault-injection-only
+# paths (ONNX-runtime internal failures, network model-download errors, forced
+# panics / inference timeouts, OS-signal handlers) and defensive guards that are
+# unreachable in normal operation — deliberately left untested rather than
+# covered with brittle mocks.
+
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  precision: 2
+  round: down
+  status:
+    project:
+      default:
+        # No-regression gate: the merged coverage must not fall more than
+        # `threshold` below the base commit. This locks in the achieved level
+        # without pinning a brittle absolute number we then have to chase.
+        target: auto
+        threshold: 0.5%
+        informational: false
+    patch:
+      default:
+        # New / changed lines should be well covered.
+        target: 80%
+        threshold: 0%
+        informational: false
+
+flags:
+  unit:
+    carryforward: true
+  e2e:
+    carryforward: true
+
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: false
+
+ignore:
+  - "**/tests/**"
+  - "crates/gigastt-core/src/onnx_proto.rs" # prost-generated ONNX protobuf types
