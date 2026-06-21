@@ -237,7 +237,7 @@ Tips to reduce binary size:
 
 ## Current Limitations
 
-1. **Server code is excluded from FFI** — The FFI build only exposes `gigastt::inference::Engine`. The WebSocket server, REST handlers, rate limiting, and `tokio` runtime with `rt-multi-thread` are compiled out when used as a library. They still exist in the server binary (`cargo build --bin gigastt`).
+1. **Server code is excluded from FFI** — The FFI build only exposes `gigastt::inference::Engine`. The WebSocket server, REST handlers, and rate limiting live only in the server binary (`cargo build --bin gigastt`). The FFI depends on `gigastt-core` with `default-features = false, features = ["file-decode"]`, so the `tokio` runtime, the `reqwest`/HTTP download stack, and the async session pool are compiled out — the FFI uses synchronous `checkout_blocking` and side-loaded models.
 
 2. **Synchronous transcription only** — `gigastt_transcribe_file` blocks the calling thread while inference runs. Call it from a Kotlin coroutine (`withContext(Dispatchers.IO)`) so the UI thread stays responsive.
 

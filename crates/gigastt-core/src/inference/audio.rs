@@ -1,12 +1,19 @@
 //! Audio decoding, resampling, and buffer management utilities.
 
-use anyhow::{Context, Result};
+#[cfg(feature = "file-decode")]
+use anyhow::Context;
+use anyhow::Result;
 use bytes::Bytes;
 use rubato::Resampler;
+#[cfg(feature = "file-decode")]
 use symphonia::core::codecs::audio::AudioDecoderOptions;
+#[cfg(feature = "file-decode")]
 use symphonia::core::formats::probe::Hint;
+#[cfg(feature = "file-decode")]
 use symphonia::core::formats::{FormatOptions, TrackType};
+#[cfg(feature = "file-decode")]
 use symphonia::core::io::{MediaSource, MediaSourceStream};
+#[cfg(feature = "file-decode")]
 use symphonia::core::meta::MetadataOptions;
 
 use super::{HOP_LENGTH, N_FFT};
@@ -17,15 +24,18 @@ const MAX_BUFFER_SAMPLES: usize = 16000 * 5; // 5 seconds at 16kHz
 /// `Engine::transcribe_samples_chunked`), so peak memory is O(chunk) regardless
 /// of file length; this cap now only fences off genuinely absurd / adversarial
 /// uploads rather than the old 10-minute encoder-memory limit. Raised to 2h.
+#[cfg(feature = "file-decode")]
 const MAX_DURATION_S: f64 = 7200.0; // 2 hours
 /// Upper bound on a header-declared sample rate. Legal rates (8k–48k) stay well
 /// below this; anything above is a malformed/adversarial header and is rejected
 /// before it can scale the duration cap or the capacity hint.
+#[cfg(feature = "file-decode")]
 const MAX_SAMPLE_RATE: u32 = 192_000;
 /// Ceiling used to size the duration cap and capacity hint. The header's
 /// `sample_rate` is clamped to this when computing the sample budget, so a
 /// crafted header cannot inflate either beyond `MAX_DURATION_S` × 48 kHz worth
 /// of samples.
+#[cfg(feature = "file-decode")]
 const MAX_DECODE_SAMPLE_RATE: u32 = 48_000;
 
 /// Maximum number of decoded samples allowed for `sample_rate`, the budget used
@@ -33,6 +43,7 @@ const MAX_DECODE_SAMPLE_RATE: u32 = 48_000;
 /// clamped to [`MAX_DECODE_SAMPLE_RATE`] so a crafted header cannot inflate the
 /// budget beyond [`MAX_DURATION_S`] × 48 kHz. Pure so the cap math is testable
 /// without decoding a file.
+#[cfg(feature = "file-decode")]
 fn max_decode_samples(sample_rate: u32) -> usize {
     MAX_DURATION_S as usize * sample_rate.min(MAX_DECODE_SAMPLE_RATE) as usize
 }
@@ -72,11 +83,13 @@ impl SampleRate {
 ///
 /// The type is deliberately small and crate-private: it only needs to satisfy
 /// `Read + Seek + Send + Sync` so symphonia's `MediaSourceStream` can drive it.
+#[allow(dead_code)] // unused when `file-decode` is off (raw-PCM-only lean build)
 pub(crate) struct BytesMediaSource {
     data: Bytes,
     pos: u64,
 }
 
+#[allow(dead_code)] // `new` is only called by the file-decode path
 impl BytesMediaSource {
     pub(crate) fn new(data: Bytes) -> Self {
         Self { data, pos: 0 }
@@ -119,6 +132,7 @@ impl std::io::Seek for BytesMediaSource {
     }
 }
 
+#[cfg(feature = "file-decode")]
 impl MediaSource for BytesMediaSource {
     fn is_seekable(&self) -> bool {
         true
@@ -144,6 +158,7 @@ impl MediaSource for BytesMediaSource {
 /// fn decode_audio_file(path: &str) -> Result<Vec<f32>>
 /// { ret.as_ref().map(|v| !v.is_empty() || path.is_empty()).unwrap_or(true) }
 /// ```
+#[cfg(feature = "file-decode")]
 pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
     let file =
         std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
@@ -183,6 +198,7 @@ pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
 /// fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>>
 /// { ret.as_ref().map(|v| !v.is_empty()).unwrap_or(true) }
 /// ```
+#[cfg(feature = "file-decode")]
 pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
     decode_audio_bytes_shared(Bytes::copy_from_slice(data))
 }
@@ -206,6 +222,7 @@ pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
 /// fn decode_audio_bytes_shared(data: Bytes) -> Result<Vec<f32>>
 /// { ret.as_ref().map(|v| !v.is_empty()).unwrap_or(true) }
 /// ```
+#[cfg(feature = "file-decode")]
 pub fn decode_audio_bytes_shared(data: Bytes) -> Result<Vec<f32>> {
     let source = BytesMediaSource::new(data);
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
@@ -214,6 +231,7 @@ pub fn decode_audio_bytes_shared(data: Bytes) -> Result<Vec<f32>> {
 }
 
 /// Shared decode logic: probe → format → decode → mono mix → duration check → resample.
+#[cfg(feature = "file-decode")]
 fn decode_audio_inner<'s>(
     mss: MediaSourceStream<'s>,
     hint: Hint,

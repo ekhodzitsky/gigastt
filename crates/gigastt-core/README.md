@@ -6,7 +6,7 @@ Core inference engine for [gigastt](https://github.com/ekhodzitsky/gigastt) — 
 
 ```toml
 [dependencies]
-gigastt-core = "2.0"
+gigastt-core = "2.3"
 ```
 
 ```rust,ignore
@@ -50,14 +50,22 @@ let final_segments = engine.flush_state(&mut guard, &mut state)?;
 
 ## Features
 
-| Feature | Description |
-|---|---|
-| `diarization` | Speaker identification via polyvoice (default: enabled) |
-| `coreml` | CoreML + Neural Engine on macOS ARM64 |
-| `cuda` | CUDA 12+ on Linux x86_64 |
-| `nnapi` | Android NNAPI for NPU/DSP acceleration |
+Defaults (`diarization`, `net`, `async-pool`, `file-decode`) make the engine work out of the box. For a lean embedded build that side-loads models and feeds raw PCM, disable defaults:
 
-Features are compile-time and mutually exclusive (`coreml` / `cuda`).
+```toml
+gigastt-core = { version = "2.3", default-features = false }
+```
+
+That drops `tokio`, `reqwest`/HTTP, and `symphonia` from the dependency graph. Opt features back in as needed.
+
+| Feature | Default | Description |
+|---|---|---|
+| `net` | on | HTTP model download (`reqwest` + async fs); off → side-loaded models only |
+| `async-pool` | on | async `Pool::checkout`; off → synchronous `checkout_blocking` only (no tokio runtime) |
+| `file-decode` | on | file transcription via `symphonia` (WAV/MP3/M4A/OGG/FLAC); off → raw-PCM streaming only |
+| `diarization` | on | speaker identification via polyvoice |
+| `ort-load-dynamic` | off | link a system/vendored onnxruntime instead of the build-time download |
+| `coreml` / `cuda` / `nnapi` | off | hardware acceleration (`coreml` / `cuda` are mutually exclusive) |
 
 ## What's included
 

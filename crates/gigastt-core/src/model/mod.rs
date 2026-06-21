@@ -5,22 +5,30 @@
 //! head (default — lower WER, bare lowercase output) and the `e2e_rnnt` head
 //! (punctuation / casing / ITN baked in).
 
-use anyhow::{Context, Result};
+#[cfg(feature = "net")]
+use anyhow::Context;
+use anyhow::Result;
+#[cfg(feature = "net")]
 use futures_util::StreamExt;
+#[cfg(feature = "net")]
 use sha2::{Digest, Sha256};
 use std::path::Path;
+#[cfg(feature = "net")]
 use tokio::io::AsyncWriteExt;
 
 #[cfg(unix)]
+#[cfg(feature = "net")]
 use std::os::fd::AsRawFd;
 
 /// Simple download progress reporter (no external deps).
+#[cfg(feature = "net")]
 struct DownloadProgress {
     total: u64,
     current: u64,
     last_percent: u8,
 }
 
+#[cfg(feature = "net")]
 impl DownloadProgress {
     fn new(total: u64) -> Self {
         Self {
@@ -54,22 +62,27 @@ impl DownloadProgress {
     }
 }
 
+#[cfg(feature = "net")]
 const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 
 /// HuggingFace repo hosting the optional RUPunct punctuation model (MIT).
+#[cfg(feature = "net")]
 const PUNCT_HF_REPO: &str = "ekhodzitsky/rupunct-small-onnx";
 
 /// Direct URL for the optional Silero v5 VAD model (MIT), pinned to a release
 /// tag. SHA-256 below guards integrity regardless of the host.
+#[cfg(feature = "net")]
 const VAD_MODEL_URL: &str =
     "https://github.com/snakers4/silero-vad/raw/v5.1.2/src/silero_vad/data/silero_vad.onnx";
 
 /// SHA-256 of the pinned Silero v5.1.2 `silero_vad.onnx` (verified 2026-06-19).
+#[cfg(feature = "net")]
 const VAD_MODEL_SHA256: &str = "2623a2953f6ff3d2c1e61740c6cdb7168133479b267dfef114a4a3cc5bdd788f";
 
 /// The three files the punctuation pass needs, with their pinned SHA-256
 /// checksums. Filenames mirror the `PUNCT_*` constants in [`crate::punctuation`].
 /// Verified against the canonical HuggingFace copies on 2026-06-19.
+#[cfg(feature = "net")]
 const PUNCT_FILES: &[(&str, &str)] = &[
     (
         crate::punctuation::PUNCT_MODEL_FILE,
@@ -354,6 +367,7 @@ pub fn default_vad_model_dir() -> String {
 /// one process downloads models at a time. The lock is released when the
 /// returned file is dropped.
 #[cfg(unix)]
+#[cfg(feature = "net")]
 fn acquire_download_lock(dir: &Path) -> Result<std::fs::File> {
     let lock_path = dir.join(".download.lock");
     let file = std::fs::OpenOptions::new()
@@ -407,6 +421,7 @@ pub fn resolve_variant(
 /// variant and downloading the default (`Rnnt`) only when the directory holds
 /// no usable model. Equivalent to `ensure_model_variant(None, model_dir)` with
 /// the resolved variant discarded. Preserves the pre-variant public signature.
+#[cfg(feature = "net")]
 pub async fn ensure_model(model_dir: &str) -> Result<()> {
     ensure_model_variant(None, model_dir).await?;
     Ok(())
@@ -425,6 +440,7 @@ pub async fn ensure_model(model_dir: &str) -> Result<()> {
 /// (`Rnnt`).
 ///
 /// Returns the variant that is now ready in `model_dir`.
+#[cfg(feature = "net")]
 pub async fn ensure_model_variant(
     requested: Option<ModelVariant>,
     model_dir: &str,
@@ -485,6 +501,7 @@ pub async fn ensure_model_variant(
 /// crash the final path is never observable, so a subsequent `ensure_speaker_model` call
 /// will re-download from scratch rather than loading a tampered model.
 #[cfg(feature = "diarization")]
+#[cfg(feature = "net")]
 pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
     let dir = Path::new(model_dir);
     let final_dest = dir.join(SPEAKER_MODEL_FILE);
@@ -519,6 +536,7 @@ pub async fn ensure_speaker_model(model_dir: &str) -> Result<()> {
 ///
 /// The pass is strictly optional: callers treat a download error as
 /// "punctuation unavailable" and proceed with bare text.
+#[cfg(feature = "net")]
 pub async fn ensure_punct_model(punct_model_dir: &str) -> Result<()> {
     let dir = Path::new(punct_model_dir);
 
@@ -554,6 +572,7 @@ pub async fn ensure_punct_model(punct_model_dir: &str) -> Result<()> {
 ///
 /// VAD is strictly optional: callers treat a download error as "VAD
 /// unavailable" and proceed without silence skipping / VAD endpointing.
+#[cfg(feature = "net")]
 pub async fn ensure_vad_model(vad_model_dir: &str) -> Result<()> {
     let dir = Path::new(vad_model_dir);
     let final_dest = dir.join(crate::vad::VAD_MODEL_FILE);
@@ -608,6 +627,7 @@ fn partial_path(final_path: &Path) -> std::path::PathBuf {
 
 /// Generate a unique `.partial` path so concurrent processes never write
 /// to the same staging file. Uses PID and nanosecond timestamp.
+#[cfg(feature = "net")]
 fn partial_path_unique(final_path: &Path) -> std::path::PathBuf {
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -619,6 +639,7 @@ fn partial_path_unique(final_path: &Path) -> std::path::PathBuf {
 }
 
 /// Compute SHA-256 for a file synchronously, returning the lowercase hex digest.
+#[cfg(feature = "net")]
 fn sha256_file(path: &Path) -> Result<String> {
     let data = std::fs::read(path)
         .with_context(|| format!("Failed to read file for verification: {}", path.display()))?;
@@ -633,6 +654,7 @@ fn sha256_file(path: &Path) -> Result<String> {
 /// restart. On success the partial no longer exists and `final_path` is the
 /// only visible artefact. Separated from the network path so the filesystem
 /// contract can be unit-tested without a mock HTTP server.
+#[cfg(feature = "net")]
 fn finalize_download(
     partial_path: &Path,
     final_path: &Path,
@@ -660,6 +682,7 @@ fn finalize_download(
     Ok(())
 }
 
+#[cfg(feature = "net")]
 async fn download_file(variant: ModelVariant, filename: &str, dir: &Path) -> Result<()> {
     let url = format!("https://huggingface.co/{HF_REPO}/resolve/main/{filename}");
     let final_dest = dir.join(filename);
@@ -677,6 +700,7 @@ async fn download_file(variant: ModelVariant, filename: &str, dir: &Path) -> Res
 /// Shared by [`ensure_model`] (per-file download loop) and
 /// [`ensure_speaker_model`] (single-file diarization download) so the
 /// TOCTOU + progress + retry semantics match bit-for-bit.
+#[cfg(feature = "net")]
 async fn stream_to_partial_then_finalize(
     url: &str,
     final_dest: &Path,

@@ -24,7 +24,7 @@ gigastt is a 3-crate Cargo workspace:
 | [`gigastt-ffi`](../crates/gigastt-ffi) | lib (cdylib) | C-ABI FFI for Android / mobile embedding |
 | [`gigastt`](../crates/gigastt) | bin | Server (axum HTTP/WS/SSE) + CLI |
 
-Embed inference in any Rust project with `gigastt-core = "2.3"`.
+Embed inference in any Rust project with `gigastt-core = "2.3"`. For a lean embedded build, disable defaults (`default-features = false`) to drop `tokio` / `reqwest` / `symphonia`; opt capabilities back in via the `net`, `async-pool`, and `file-decode` features.
 
 ## Model
 

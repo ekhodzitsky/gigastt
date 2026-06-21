@@ -49,6 +49,10 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace --lib --bins
+      - name: Lean embedded build (no tokio/reqwest/symphonia)
+        run: |
+          cargo build -p gigastt-core --no-default-features
+          cargo test -p gigastt-core --test lean_build
       # Model-free self-test of the WER regression-gate decision logic. The full
       # benchmark is model-gated (skipped in PR CI), so this exercises the
       # gate's comparison / boundary / null-baseline handling on every PR.

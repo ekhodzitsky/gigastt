@@ -264,6 +264,7 @@ struct PoolInner<T> {
 }
 
 enum Waiter<T> {
+    #[cfg(feature = "async-pool")]
     Async(tokio::sync::oneshot::Sender<T>),
     Blocking(std::sync::mpsc::Sender<T>),
 }
@@ -289,6 +290,7 @@ impl<T: Send> Pool<T> {
     ///
     /// Returns [`PoolError::Closed`] if the pool was shut down via
     /// [`close`](Self::close) before an item became available.
+    #[cfg(feature = "async-pool")]
     pub async fn checkout(&self) -> Result<PoolGuard<T>, PoolError> {
         // Fast path
         {
@@ -408,6 +410,7 @@ impl<T> PoolInner<T> {
             if let Some(waiter) = waiters.pop_front() {
                 drop(waiters);
                 match waiter {
+                    #[cfg(feature = "async-pool")]
                     Waiter::Async(tx) => {
                         if let Err(returned_item) = tx.send(item) {
                             item = returned_item;
@@ -1933,6 +1936,7 @@ impl Engine {
     ///
     /// Returns [`GigasttError::InvalidAudio`] if the file cannot be decoded, or
     /// [`GigasttError::Inference`] if the ONNX runtime fails.
+    #[cfg(feature = "file-decode")]
     pub fn transcribe_file(
         &self,
         path: &str,
@@ -1950,6 +1954,7 @@ impl Engine {
     /// Backwards-compatible shim: clones `data` into a [`bytes::Bytes`] and
     /// delegates to [`Engine::transcribe_bytes_shared`]. Prefer the shared
     /// variant on hot paths (REST/SSE) to avoid the extra copy.
+    #[cfg(feature = "file-decode")]
     pub fn transcribe_bytes(
         &self,
         data: &[u8],
@@ -1966,6 +1971,7 @@ impl Engine {
     /// This is the zero-copy entry point used by the REST upload handler so a
     /// 50 MiB `axum::body::Bytes` body stays as a single in-memory buffer
     /// instead of being cloned into a `Vec<u8>` before decode.
+    #[cfg(feature = "file-decode")]
     pub fn transcribe_bytes_shared(
         &self,
         data: bytes::Bytes,
