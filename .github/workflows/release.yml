@@ -16,6 +16,9 @@ permissions:
   # id-token for Sigstore + write access to the `attestations` API.
   id-token: write
   attestations: write
+  # GHCR push (docker-publish job) authenticates with GITHUB_TOKEN, which
+  # needs `packages: write` to push image tags to the registry.
+  packages: write
 
 jobs:
   build:
@@ -292,3 +295,87 @@ jobs:
             dist/SHA256SUMS.txt
             dist/*.cdx.json
             dist/*.minisig
+
+  # Publishes container images to GHCR so consumers can `docker pull
+  # ghcr.io/ekhodzitsky/gigastt:<version>` instead of building from source.
+  # Intentionally NOT a dependency of `publish` (and vice-versa): a registry
+  # hiccup must never block the binary GitHub release, and a binary failure
+  # must never block the image push — the two release channels stand alone.
+  docker-publish:
+    name: Publish container images (GHCR)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      # QEMU registers binfmt handlers so the linux/arm64 CPU image can be
+      # cross-built on the x86_64 runner. Not needed for the amd64-only CUDA
+      # image below, but harmless to set up once here.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # CPU image: multi-arch (amd64 + arm64) so it runs on both x86_64 servers
+      # and arm64 hosts (Apple Silicon, Graviton). `ekhodzitsky/gigastt` is
+      # already lowercase, which GHCR requires. Layer cache shares the same
+      # ghcr.io buildcache ref the CI docker-build job warms on every main push.
+      # Baking the model into the image is available via
+      # `--build-arg GIGASTT_BAKE_MODEL=1` for users who want zero cold-start;
+      # we don't publish a baked tag here because it would balloon the image by
+      # ~850 MB.
+      - name: Build + push CPU image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/ekhodzitsky/gigastt:${{ steps.version.outputs.version }}
+            ghcr.io/ekhodzitsky/gigastt:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/ekhodzitsky/gigastt
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cpu
+          cache-to: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cpu,mode=max
+
+      # CUDA image: amd64 only — the nvidia/cuda base images and the CUDA EP
+      # are x86_64-only, so an arm64 variant cannot be built.
+      - name: Build + push CUDA image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.cuda
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ghcr.io/ekhodzitsky/gigastt:${{ steps.version.outputs.version }}-cuda
+            ghcr.io/ekhodzitsky/gigastt:cuda
+          labels: |
+            org.opencontainers.image.source=https://github.com/ekhodzitsky/gigastt
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cuda
+          cache-to: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cuda,mode=max

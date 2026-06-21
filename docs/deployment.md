@@ -171,6 +171,24 @@ gigastt serve \
 
 ## Docker
 
+### Prebuilt images (GHCR)
+
+Each tagged release publishes multi-arch images to GitHub Container Registry, so
+you can `docker pull` instead of building from source (`cargo install`):
+
+```sh
+docker pull ghcr.io/ekhodzitsky/gigastt:2.3.0        # CPU, linux/amd64 + linux/arm64
+docker pull ghcr.io/ekhodzitsky/gigastt:2.3.0-cuda   # CUDA, linux/amd64
+docker run -p 127.0.0.1:9876:9876 ghcr.io/ekhodzitsky/gigastt:2.3.0
+```
+
+Pin a concrete version (`:2.3.0`) for reproducible deploys; `:latest` / `:cuda`
+track the newest release. Want zero cold-start? Build a model-baked image
+locally with `docker build --build-arg GIGASTT_BAKE_MODEL=1 -t gigastt:baked .`
+(adds ~850 MB).
+
+### Build from source
+
 The Dockerfile defaults to `--host 0.0.0.0 --bind-all` (allows the Docker bridge). Keep the server port on loopback when binding to the host:
 
 ```sh
@@ -216,8 +234,15 @@ Both proxies can target `http://127.0.0.1:9876/health` for health checks. The `/
 
 ```sh
 curl http://127.0.0.1:9876/health
-# {"status":"ok"}
+# {"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.3.0","punctuation":true,"itn":true}
 ```
+
+**Non-blocking first run.** The port binds immediately, before the ~850 MB model
+download and INT8 quantization. During that window `/health` returns `200` with
+`model:"loading"` and `/ready` returns `503 {"reason":"initializing"}` — so a
+Docker `HEALTHCHECK` / load-balancer probe on `/health` does not flap, and an
+orchestrator can gate traffic on `/ready`. The `model`/`variant` fields report
+the head actually loaded, so a client can confirm an upgrade switched heads.
 
 ## Metrics scraping
 
@@ -278,6 +303,42 @@ services:
 ```
 
 If you observe clients hanging past the cap or not receiving `Final` on deploy, see `docs/runbook.md` for the rollback escape hatches.
+
+## Upgrading from 2.0.x / 2.1.x
+
+**The default recognition head changed.** Fresh installs from 2.2.0+ default to
+the lower-WER `rnnt` head (bare lowercase from the acoustic model, then casing +
+punctuation restored by a **separate** RUPunct model, and digits by an ITN pass —
+both `auto`-on for `rnnt`). Older releases shipped only the `e2e_rnnt` head,
+which bakes punctuation/casing/ITN into the acoustic model.
+
+What this means when you bump the image / `cargo install` version:
+
+- **Existing model volume** (e.g. a mounted `~/.gigastt`/`./data/gigastt` that
+  already holds `e2e_rnnt` files): the engine auto-detects the on-disk head and
+  keeps using `e2e_rnnt` — **no silent re-download, no transcript-style change.**
+- **Fresh install / empty volume:** you get the `rnnt` head. Output is still
+  cased and punctuated, but via the auto-downloaded RUPunct model (~29 MB) as a
+  post-processing pass that **fails open** — if that model can't be fetched you
+  get bare lowercase plus a warning, not an error.
+
+To pin behavior explicitly regardless of what's on disk:
+
+```sh
+# Keep the old end-to-end head:
+GIGASTT_MODEL_VARIANT=e2e_rnnt
+# …or take the rnnt head but force the restoration passes on:
+GIGASTT_PUNCTUATION=on
+GIGASTT_ITN=on
+```
+
+Confirm which head is live without opening a WebSocket — `GET /health` (and
+`/v1/models`) now report `model` / `variant` / `punctuation` / `itn`.
+
+**Metrics moved off the main port.** Since 2.3.0 `/metrics` is served on a
+separate listener (default `127.0.0.1:9090`), not the API port. If you pass
+`--metrics`, publish/scrape `:9090` (or set `--metrics-listen`); a scraper still
+pointed at `:9876/metrics` will get a 404.
 
 ## Hardening checklist
 

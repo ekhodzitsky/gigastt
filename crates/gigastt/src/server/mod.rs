@@ -2,6 +2,7 @@
 //!
 //! Single port serves both REST API (health, transcribe, SSE) and WebSocket.
 
+mod bootstrap;
 pub mod config;
 pub mod http;
 pub mod metrics;
@@ -77,6 +78,146 @@ pub async fn run_with_config(
         .context("Invalid host:port")?;
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     run_with_config_listener(engine, config, shutdown, listener).await
+}
+
+/// Await the external shutdown source during the loading phase: the caller's
+/// oneshot when present, otherwise Ctrl-C / SIGTERM. Mirrors the signal handling
+/// in [`run_with_config_listener`] so a stuck first-run model download can still
+/// be interrupted before the engine is ready.
+async fn wait_for_shutdown(shutdown: Option<tokio::sync::oneshot::Receiver<()>>) {
+    match shutdown {
+        Some(rx) => {
+            let _ = rx.await;
+        }
+        None => {
+            #[cfg(unix)]
+            {
+                use tokio::signal::unix::{SignalKind, signal};
+                match signal(SignalKind::terminate()) {
+                    Ok(mut sigterm) => {
+                        tokio::select! {
+                            _ = tokio::signal::ctrl_c() => {}
+                            _ = sigterm.recv() => {}
+                        }
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to register SIGTERM handler during boot: {e}");
+                        let _ = tokio::signal::ctrl_c().await;
+                    }
+                }
+            }
+            #[cfg(not(unix))]
+            {
+                let _ = tokio::signal::ctrl_c().await;
+            }
+        }
+    }
+}
+
+/// Start the server with non-blocking first-run boot.
+///
+/// Binds the listener immediately and serves a minimal bootstrap responder
+/// (`/health` → 200 with `model: "loading"`, `/ready` → 503 `initializing`)
+/// while `load` builds the engine in the background — so health probes and
+/// Docker `HEALTHCHECK` never see connection-refused during the first-run model
+/// download + INT8 quantization (which can take minutes). Once the engine is
+/// ready the *same* bound socket is handed to [`run_with_config_listener`] with
+/// no rebind / no gap. A shutdown signal that arrives before the engine finishes
+/// loading aborts cleanly without ever serving real traffic.
+///
+/// The `load` future is expected to wrap its heavy synchronous work (quantize,
+/// ONNX session load) in `spawn_blocking` so the bootstrap responder stays
+/// responsive while it runs.
+pub async fn run_with_config_loading<Fut>(
+    config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+    load: Fut,
+) -> Result<()>
+where
+    Fut: std::future::Future<Output = Result<gigastt_core::inference::Engine>> + Send + 'static,
+{
+    let addr: SocketAddr = format!("{}:{}", config.host, config.port)
+        .parse()
+        .context("Invalid host:port")?;
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    tracing::info!("gigastt bootstrapping on http://{addr} — loading model, /health is up");
+
+    // Normalize the external shutdown source into a cancellation token (observed
+    // during boot) plus a fresh oneshot forwarded to the real server, so a
+    // signal works in both phases without registering the OS handler twice.
+    let shutdown_token = tokio_util::sync::CancellationToken::new();
+    let (real_tx, real_rx) = tokio::sync::oneshot::channel();
+    {
+        let token = shutdown_token.clone();
+        tokio::spawn(async move {
+            wait_for_shutdown(shutdown).await;
+            token.cancel();
+            let _ = real_tx.send(());
+        });
+    }
+
+    // Load the engine concurrently with the bootstrap responder.
+    let mut load_task = tokio::spawn(load);
+
+    // The bootstrap accept loop owns the listener and returns it on cancellation,
+    // so the real server can reuse the same bound socket without a rebind window.
+    let boot_cancel = tokio_util::sync::CancellationToken::new();
+    let boot_task = {
+        let boot_cancel = boot_cancel.clone();
+        tokio::spawn(async move {
+            let version = env!("CARGO_PKG_VERSION");
+            loop {
+                tokio::select! {
+                    biased;
+                    _ = boot_cancel.cancelled() => break,
+                    accepted = listener.accept() => match accepted {
+                        Ok((stream, _peer)) => {
+                            tokio::spawn(bootstrap::handle_bootstrap_conn(stream, version));
+                        }
+                        Err(e) => tracing::warn!("bootstrap accept error: {e}"),
+                    },
+                }
+            }
+            listener
+        })
+    };
+
+    enum Outcome {
+        Shutdown,
+        // Boxed: the `Engine` payload is large, so keeping it inline would make
+        // the `Shutdown` variant pay for it too (clippy::large_enum_variant).
+        Loaded(
+            Box<
+                std::result::Result<
+                    Result<gigastt_core::inference::Engine>,
+                    tokio::task::JoinError,
+                >,
+            >,
+        ),
+    }
+
+    let outcome = tokio::select! {
+        biased;
+        _ = shutdown_token.cancelled() => Outcome::Shutdown,
+        res = &mut load_task => Outcome::Loaded(Box::new(res)),
+    };
+
+    // Stop accepting bootstrap connections and reclaim the bound listener.
+    boot_cancel.cancel();
+    let listener = boot_task.await.context("bootstrap task panicked")?;
+
+    match outcome {
+        Outcome::Shutdown => {
+            load_task.abort();
+            tracing::info!("Shutdown requested during model load — exiting before serving");
+            Ok(())
+        }
+        Outcome::Loaded(res) => {
+            let engine = (*res).context("engine load task panicked")??;
+            tracing::info!("Model ready — starting full server");
+            run_with_config_listener(engine, config, Some(real_rx), listener).await
+        }
+    }
 }
 
 /// Start server with a full [`ServerConfig`], an optional shutdown signal,
@@ -645,5 +786,56 @@ mod tests {
         let _ = shutdown_tx.send(());
         let result = handle.await.expect("join");
         assert!(result.is_ok(), "server should stop gracefully");
+    }
+
+    /// Exercises the non-blocking-boot orchestration end-to-end *without* a
+    /// model: a `load` future that never resolves keeps the server in the
+    /// bootstrap phase, so we can assert (a) `/health` answers `200` with
+    /// `model:"loading"` over a real socket while "loading", and (b) a shutdown
+    /// during loading returns `Ok` without ever standing up the full server.
+    #[tokio::test]
+    async fn test_run_with_config_loading_bootstrap_then_shutdown() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        // Reserve an ephemeral port, then release it for the server to rebind.
+        let probe = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = probe.local_addr().unwrap().port();
+        drop(probe);
+
+        let config = ServerConfig::local(port);
+        let (shutdown_tx, shutdown_rx) = tokio::sync::oneshot::channel();
+        let load = std::future::pending::<Result<gigastt_core::inference::Engine>>();
+        let handle =
+            tokio::spawn(
+                async move { run_with_config_loading(config, Some(shutdown_rx), load).await },
+            );
+
+        // Give it a beat to bind and start the bootstrap accept loop.
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        // /health is up during loading and reports the bootstrap placeholder.
+        let mut stream = tokio::net::TcpStream::connect(("127.0.0.1", port))
+            .await
+            .expect("bootstrap listener should accept connections during load");
+        stream
+            .write_all(b"GET /health HTTP/1.1\r\nHost: x\r\n\r\n")
+            .await
+            .unwrap();
+        let mut buf = Vec::new();
+        stream.read_to_end(&mut buf).await.unwrap();
+        let resp = String::from_utf8_lossy(&buf);
+        assert!(resp.starts_with("HTTP/1.1 200 OK"), "got: {resp}");
+        assert!(resp.contains("\"model\":\"loading\""), "got: {resp}");
+
+        // A shutdown signal during loading must unwind cleanly.
+        let _ = shutdown_tx.send(());
+        let result = tokio::time::timeout(std::time::Duration::from_secs(5), handle)
+            .await
+            .expect("loading server did not stop within the timeout")
+            .expect("join");
+        assert!(
+            result.is_ok(),
+            "loading server should stop gracefully: {result:?}"
+        );
     }
 }

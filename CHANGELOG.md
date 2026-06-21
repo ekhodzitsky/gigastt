@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Prebuilt Docker images on GitHub Container Registry.** Each tagged release
+  now publishes `ghcr.io/ekhodzitsky/gigastt:{X.Y.Z,latest}` (CPU, multi-arch
+  linux/amd64 + linux/arm64) and `:{X.Y.Z-cuda,cuda}` (CUDA, linux/amd64), so
+  consumers can `docker pull` a versioned image instead of building from
+  `cargo install` in their own Dockerfile. The publish job is independent of the
+  binary GitHub release (a registry hiccup never blocks the tarballs and vice
+  versa). See [`docs/deployment.md`](docs/deployment.md).
+- **Non-blocking first-run boot.** The TCP listener now binds *before* the
+  first-run model download + INT8 quantization (which can take minutes). During
+  that window a minimal bootstrap responder answers `GET /health` with `200`
+  (`model: "loading"`) and `GET /ready` with `503 {"reason":"initializing"}`,
+  then the *same* bound socket is handed to the full server with no rebind — so
+  `curl --fail /health` and Docker `HEALTHCHECK` no longer see connection-refused
+  (indistinguishable from a crash) while the model loads. A shutdown signal
+  during loading exits cleanly without serving. The heavy load work runs on a
+  blocking thread so the bootstrap responder stays responsive.
+
+### Changed
+
+- **`/health`, `/v1/models`, and the WebSocket `Ready` frame now report the head
+  actually loaded.** They previously hardcoded `model: "gigaam-v3-e2e-rnnt"`
+  regardless of which head was running, so a default `rnnt` server misreported
+  itself as `e2e_rnnt`. `model`/`id` are now derived from the loaded variant
+  (`gigaam-v3-rnnt` vs `gigaam-v3-e2e-rnnt`), and `/health` + `/v1/models` gain
+  additive `variant` (`rnnt`/`e2e_rnnt`), `punctuation`, and `itn` fields so a
+  client can confirm the effective output style from a single probe. New fields
+  are additive (existing clients unaffected); OpenAPI updated to match.
+
 ## [2.3.0] - 2026-06-20
 
 This release makes the lower-WER `rnnt` head the default and lands the INT8

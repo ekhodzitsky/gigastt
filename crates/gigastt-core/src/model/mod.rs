@@ -188,6 +188,33 @@ impl ModelVariant {
                     || dir.join(variant.encoder_int8_file()).exists()
             })
     }
+
+    /// Stable model identifier surfaced by the REST API (`/health`,
+    /// `/v1/models`). Distinguishes the two heads so a client can tell which
+    /// one is actually loaded instead of always seeing the e2e id.
+    pub fn model_id(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "gigaam-v3-rnnt",
+            ModelVariant::E2eRnnt => "gigaam-v3-e2e-rnnt",
+        }
+    }
+
+    /// Short variant token (`rnnt` / `e2e_rnnt`) — the value accepted by
+    /// `--model-variant` and echoed in the REST `variant` field.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "rnnt",
+            ModelVariant::E2eRnnt => "e2e_rnnt",
+        }
+    }
+
+    /// Human-readable model name for `/v1/models`.
+    pub fn display_name(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => "GigaAM v3 RNN-T",
+            ModelVariant::E2eRnnt => "GigaAM v3 E2E RNN-T",
+        }
+    }
 }
 
 impl std::str::FromStr for ModelVariant {

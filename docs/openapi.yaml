@@ -75,8 +75,13 @@ paths:
     get:
       summary: Health check
       description: |
-        Returns service health status. Suitable for load balancer health checks
-        and Docker `HEALTHCHECK`.
+        Liveness check: returns 200 while the process is alive, along with the
+        head actually loaded and the effective punctuation / ITN policy.
+        Suitable for load balancer health checks and Docker `HEALTHCHECK`.
+
+        During the first-run model download + INT8 quantization the listener is
+        already bound and answers here with `model: "loading"` (so probes never
+        see connection-refused); gate *readiness* on `GET /ready` instead.
       operationId: healthCheck
       responses:
         "200":
@@ -87,8 +92,11 @@ paths:
                 $ref: "#/components/schemas/HealthResponse"
               example:
                 status: ok
-                model: gigaam-v3-e2e-rnnt
+                model: gigaam-v3-rnnt
+                variant: rnnt
                 version: "2.3.0"
+                punctuation: true
+                itn: true
 
   /ready:
     get:
@@ -135,14 +143,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/ModelInfo"
               example:
-                id: gigaam-v3-e2e-rnnt
+                id: gigaam-v3-rnnt
                 name: GigaAM v3 RNN-T
+                variant: rnnt
                 version: "2.3.0"
                 encoder: int8
                 vocab_size: 34
                 sample_rate: 16000
                 pool_size: 2
                 pool_available: 2
+                punctuation: true
+                itn: true
                 supported_formats:
                   - wav
                   - mp3
@@ -369,7 +380,10 @@ components:
       required:
         - status
         - model
+        - variant
         - version
+        - punctuation
+        - itn
       properties:
         status:
           type: string
@@ -377,12 +391,28 @@ components:
           description: Service status
         model:
           type: string
-          example: gigaam-v3-e2e-rnnt
-          description: Loaded model identifier
+          example: gigaam-v3-rnnt
+          description: >-
+            Stable identifier of the head actually loaded
+            (`gigaam-v3-rnnt` or `gigaam-v3-e2e-rnnt`). During first-run model
+            download / quantization the bootstrap responder reports `loading`.
+        variant:
+          type: string
+          enum: [rnnt, e2e_rnnt]
+          example: rnnt
+          description: Recognition head in use
         version:
           type: string
           example: "2.3.0"
           description: Server version (semver)
+        punctuation:
+          type: boolean
+          example: true
+          description: Whether the punctuation / casing restoration pass is active
+        itn:
+          type: boolean
+          example: true
+          description: Whether inverse text normalization (numbers → digits) is active
 
     ReadinessResponse:
       type: object
@@ -417,6 +447,7 @@ components:
       required:
         - id
         - name
+        - variant
         - version
         - encoder
         - vocab_size
@@ -425,14 +456,24 @@ components:
         - pool_available
         - supported_formats
         - supported_rates
+        - punctuation
+        - itn
         - diarization
       properties:
         id:
           type: string
-          example: gigaam-v3-e2e-rnnt
+          example: gigaam-v3-rnnt
+          description: >-
+            Stable identifier of the head actually loaded
+            (`gigaam-v3-rnnt` or `gigaam-v3-e2e-rnnt`).
         name:
           type: string
           example: GigaAM v3 RNN-T
+        variant:
+          type: string
+          enum: [rnnt, e2e_rnnt]
+          example: rnnt
+          description: Recognition head in use
         version:
           type: string
           example: "2.3.0"
@@ -467,6 +508,14 @@ components:
             type: integer
           example: [8000, 16000, 24000, 44100, 48000]
           description: Supported input sample rates for WebSocket streaming
+        punctuation:
+          type: boolean
+          example: true
+          description: Whether the punctuation / casing restoration pass is active
+        itn:
+          type: boolean
+          example: true
+          description: Whether inverse text normalization (numbers → digits) is active
         diarization:
           type: boolean
           example: false

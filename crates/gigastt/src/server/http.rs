@@ -66,19 +66,33 @@ pub async fn metrics(State(state): State<Arc<AppState>>) -> Response {
 pub struct HealthResponse {
     /// Always `"ok"` when the server is running.
     pub status: String,
-    /// Model identifier string (e.g. `"gigaam-v3-e2e-rnnt"`).
+    /// Stable model identifier for the head actually loaded
+    /// (`"gigaam-v3-rnnt"` or `"gigaam-v3-e2e-rnnt"`).
     pub model: String,
+    /// Recognition head in use: `"rnnt"` or `"e2e_rnnt"`. Added so a client can
+    /// tell from a single `/health` call which head (and therefore which output
+    /// style) is producing transcripts.
+    pub variant: String,
     /// Server version from `CARGO_PKG_VERSION`.
     pub version: String,
+    /// Whether the punctuation / casing restoration pass is active for this
+    /// server (the effective `--punctuation` policy).
+    pub punctuation: bool,
+    /// Whether inverse text normalization (numbers → digits) is active for this
+    /// server (the effective `--itn` policy).
+    pub itn: bool,
 }
 
 /// Model info response.
 #[derive(Serialize)]
 pub struct ModelInfo {
-    /// Stable model identifier (e.g. `"gigaam-v3-e2e-rnnt"`).
+    /// Stable model identifier for the head actually loaded
+    /// (`"gigaam-v3-rnnt"` or `"gigaam-v3-e2e-rnnt"`).
     pub id: String,
     /// Human-readable model name.
     pub name: String,
+    /// Recognition head in use: `"rnnt"` or `"e2e_rnnt"`.
+    pub variant: String,
     /// Server version from `CARGO_PKG_VERSION`.
     pub version: String,
     /// Encoder precision in use: `"int8"` or `"fp32"`.
@@ -95,6 +109,12 @@ pub struct ModelInfo {
     pub supported_formats: Vec<String>,
     /// PCM sample rates accepted by the WebSocket endpoint.
     pub supported_rates: Vec<u32>,
+    /// Whether the punctuation / casing restoration pass is active (effective
+    /// `--punctuation` policy for the loaded head).
+    pub punctuation: bool,
+    /// Whether inverse text normalization (numbers → digits) is active
+    /// (effective `--itn` policy for the loaded head).
+    pub itn: bool,
     /// Whether speaker diarization is available (feature-gated build + model loaded).
     /// Added in v0.7.0 so clients can probe capabilities via REST instead of
     /// opening a WebSocket just to read the `Ready` frame.
@@ -305,14 +325,25 @@ pub struct ReadinessResponse {
 
 /// GET /health — liveness check for monitoring and Docker HEALTHCHECK.
 ///
-/// Liveness only: stays 200 while the process is alive. Pool / shutdown
-/// readiness is the separate `/ready` probe (see [`readiness`]), so this
-/// handler intentionally does not touch engine state.
-pub async fn health() -> Json<HealthResponse> {
+/// Liveness: stays 200 while the process is alive. It reads only the engine's
+/// static identity (loaded head + effective punctuation/ITN policy) — a cheap,
+/// infallible field read, no pool checkout or I/O — so a client can confirm
+/// *which* model is serving from the same probe it already makes. Pool /
+/// shutdown readiness remains the separate `/ready` probe (see [`readiness`]).
+///
+/// During first-run model download / quantization the listener is served by a
+/// minimal bootstrap responder (see [`super::run_with_config_loading`]) that
+/// reports `model: "loading"`; this handler only runs once the engine is ready.
+pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
+    let engine = &state.engine;
+    let variant = engine.variant();
     Json(HealthResponse {
         status: "ok".into(),
-        model: "gigaam-v3-e2e-rnnt".into(),
+        model: variant.model_id().into(),
+        variant: variant.as_str().into(),
         version: env!("CARGO_PKG_VERSION").into(),
+        punctuation: engine.has_punctuator(),
+        itn: engine.has_itn(),
     })
 }
 
@@ -393,9 +424,11 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
         reg.gauge_set("gigastt_pool_waiters", &[], engine.pool.waiters() as i64);
         sample_batch_pool_gauges(reg, engine);
     }
+    let variant = engine.variant();
     Json(ModelInfo {
-        id: "gigaam-v3-e2e-rnnt".into(),
-        name: "GigaAM v3 RNN-T".into(),
+        id: variant.model_id().into(),
+        name: variant.display_name().into(),
+        variant: variant.as_str().into(),
         version: env!("CARGO_PKG_VERSION").into(),
         encoder: if engine.is_int8() {
             "int8".into()
@@ -414,6 +447,8 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
             "flac".into(),
         ],
         supported_rates: super::config::SUPPORTED_RATES.to_vec(),
+        punctuation: engine.has_punctuator(),
+        itn: engine.has_itn(),
         diarization,
     })
 }
@@ -758,13 +793,19 @@ mod tests {
     fn test_health_response_serialization() {
         let resp = HealthResponse {
             status: "ok".into(),
-            model: "test".into(),
+            model: "gigaam-v3-rnnt".into(),
+            variant: "rnnt".into(),
             version: "0.3.0".into(),
+            punctuation: true,
+            itn: true,
         };
         let json = serde_json::to_string(&resp).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["status"], "ok");
-        assert_eq!(v["model"], "test");
+        assert_eq!(v["model"], "gigaam-v3-rnnt");
+        assert_eq!(v["variant"], "rnnt");
+        assert_eq!(v["punctuation"], true);
+        assert_eq!(v["itn"], true);
     }
 
     #[test]
@@ -975,7 +1016,21 @@ mod tests {
         });
         let resp = models(State(state)).await;
         let json = serde_json::to_value(&*resp).unwrap();
-        assert_eq!(json["id"], "gigaam-v3-e2e-rnnt");
+        // The id reflects the head actually loaded on disk (rnnt or e2e_rnnt),
+        // not a hardcoded literal, so assert the stable shape instead.
+        let id = json["id"].as_str().unwrap();
+        assert!(
+            id == "gigaam-v3-rnnt" || id == "gigaam-v3-e2e-rnnt",
+            "unexpected model id: {id}"
+        );
+        assert_eq!(
+            json["variant"],
+            if id.contains("e2e") {
+                "e2e_rnnt"
+            } else {
+                "rnnt"
+            }
+        );
     }
 
     #[tokio::test]
@@ -1348,23 +1403,29 @@ mod tests {
         // ModelInfo is the /v1/models contract; assert the field names/values
         // clients depend on are present and correctly typed.
         let info = ModelInfo {
-            id: "gigaam-v3-e2e-rnnt".into(),
+            id: "gigaam-v3-rnnt".into(),
             name: "GigaAM v3 RNN-T".into(),
+            variant: "rnnt".into(),
             version: "0.9.0".into(),
             encoder: "int8".into(),
-            vocab_size: 1025,
+            vocab_size: 34,
             sample_rate: 16000,
             pool_size: 4,
             pool_available: 3,
             supported_formats: vec!["wav".into(), "mp3".into()],
             supported_rates: vec![16000, 48000],
+            punctuation: true,
+            itn: true,
             diarization: false,
         };
         let v = serde_json::to_value(&info).unwrap();
-        assert_eq!(v["id"], "gigaam-v3-e2e-rnnt");
+        assert_eq!(v["id"], "gigaam-v3-rnnt");
+        assert_eq!(v["variant"], "rnnt");
         assert_eq!(v["encoder"], "int8");
-        assert_eq!(v["vocab_size"], 1025);
+        assert_eq!(v["vocab_size"], 34);
         assert_eq!(v["sample_rate"], 16000);
+        assert_eq!(v["punctuation"], true);
+        assert_eq!(v["itn"], true);
         assert_eq!(v["diarization"], false);
         assert_eq!(v["supported_rates"][1], 48000);
     }

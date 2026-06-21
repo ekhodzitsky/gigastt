@@ -533,7 +533,7 @@ async fn handle_ws_inner(
     let diarization_available = false;
 
     let ready = ServerMessage::Ready {
-        model: "gigaam-v3-e2e-rnnt".into(),
+        model: engine.variant().model_id().into(),
         sample_rate: DEFAULT_SAMPLE_RATE,
         version: gigastt_core::protocol::PROTOCOL_VERSION.into(),
         supported_rates: SUPPORTED_RATES.to_vec(),

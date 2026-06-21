@@ -884,30 +884,6 @@ async fn main() -> anyhow::Result<()> {
             config,
         } => {
             ensure_bind_allowed(&host, bind_all)?;
-            let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
-            ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
-            maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
-            maybe_download_vad_model(vad, &vad_model_dir).await;
-            let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
-            let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
-            let mut engine = inference::Engine::load_with_pools_threads(
-                &model_dir,
-                pool_size,
-                pool_min_size,
-                batch_pool_size,
-                encoder_intra_threads,
-            )?
-            .with_punctuator(punctuator)
-            .with_itn(resolve_itn(itn, resolved))
-            .with_vad(
-                maybe_load_vad(vad, &vad_model_dir),
-                build_vad_config(vad_threshold, vad_min_silence_ms),
-            );
-            if let Some(pairs) = hotwords {
-                engine =
-                    engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
-            }
-            log_rss();
             let limits = build_limits(
                 config.as_deref(),
                 idle_timeout_secs,
@@ -929,7 +905,7 @@ async fn main() -> anyhow::Result<()> {
             if metrics {
                 ensure_bind_allowed(&metrics_listen.ip().to_string(), bind_all)?;
             }
-            let config = build_server_config(
+            let server_config = build_server_config(
                 port,
                 host,
                 allow_origin,
@@ -940,7 +916,47 @@ async fn main() -> anyhow::Result<()> {
                 trust_proxy,
                 config,
             );
-            server::run_with_config(engine, config, None).await?;
+
+            // Build the engine in the background while a minimal bootstrap
+            // responder serves /health (200) and /ready (503 initializing) on the
+            // port, so probes / Docker HEALTHCHECK don't see connection-refused
+            // during the first-run model download + INT8 quantization. The heavy
+            // synchronous work (quantize, ONNX session load, post-processor loads)
+            // runs on a blocking thread so the bootstrap responder stays snappy.
+            let load = async move {
+                let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
+                maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
+                maybe_download_vad_model(vad, &vad_model_dir).await;
+                tokio::task::spawn_blocking(move || -> anyhow::Result<inference::Engine> {
+                    ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
+                    let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
+                    let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
+                    let mut engine = inference::Engine::load_with_pools_threads(
+                        &model_dir,
+                        pool_size,
+                        pool_min_size,
+                        batch_pool_size,
+                        encoder_intra_threads,
+                    )?
+                    .with_punctuator(punctuator)
+                    .with_itn(resolve_itn(itn, resolved))
+                    .with_vad(
+                        maybe_load_vad(vad, &vad_model_dir),
+                        build_vad_config(vad_threshold, vad_min_silence_ms),
+                    );
+                    if let Some(pairs) = hotwords {
+                        engine = engine.with_hotwords(
+                            &pairs,
+                            hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST),
+                        );
+                    }
+                    log_rss();
+                    Ok(engine)
+                })
+                .await
+                .context("engine load task panicked")?
+            };
+            server::run_with_config_loading(server_config, None, load).await?;
         }
         Commands::Download {
             model_dir,

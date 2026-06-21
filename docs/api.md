@@ -27,8 +27,8 @@ are additive only.
 
 | Endpoint | Method | Description |
 |---|---|---|
-| `/health` | GET | Health check (`{"status":"ok"}`) |
-| `/ready` | GET | Readiness probe (200 when the engine pool is ready) |
+| `/health` | GET | Liveness check. Reports the loaded head + effective punctuation/ITN policy (`{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","punctuation":true,"itn":true,...}`). During first-run model download it stays up with `model:"loading"`. |
+| `/ready` | GET | Readiness probe (200 when the engine pool is ready; 503 `initializing` while the model loads, `pool_exhausted` when saturated) |
 | `/v1/models` | GET | Model info (encoder type, pool size, capabilities) |
 | `/v1/transcribe` | POST | File transcription, full JSON response or export format |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
@@ -84,6 +84,29 @@ Optional formatter controls:
 - `max_chars_per_line` — subtitle line length limit (default 80, 0 = unlimited)
 - `max_words_per_line` — subtitle word count limit (default 14, 0 = unlimited)
 - `word_timestamps` — include per-word table in Markdown (default false)
+
+### Long recordings — send the whole file
+
+gigastt chunks long audio **internally** (overlapping windows, de-duplicated and
+stitched with monotonic timestamps), so you do **not** need to pre-segment with
+ffmpeg. POST the whole recording and let the server return real, media-relative
+timestamps — every `word` in the JSON response carries `start`/`end` in seconds,
+and the `srt`/`vtt`/`md` exports key off those, so there's no need to fabricate
+per-chunk offsets client-side.
+
+```sh
+# One long recording → Markdown transcript with real per-word timings
+curl -X POST "http://127.0.0.1:9876/v1/transcribe?format=md&word_timestamps=true" \
+  --data-binary @meeting.m4a -o meeting.md
+```
+
+Content-Type is ignored — the container format (WAV/MP3/M4A/OGG/FLAC) is sniffed
+from the bytes, so `--data-binary @file` is enough; multipart form uploads are
+not accepted. The practical ceiling is the body limit (`--body-limit-bytes`,
+default 50 MiB ≈ 26 min of 16 kHz mono WAV) and the per-request inference cap
+(`--inference-timeout-secs`, default 600 s); raise **both** together for longer
+single files. A batch worker should gate on `GET /ready` (not just `/health`) so
+it backs off on `503` pool saturation instead of failing mid-job.
 
 ### Error responses
 
