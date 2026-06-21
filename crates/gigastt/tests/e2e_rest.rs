@@ -468,12 +468,30 @@ async fn test_server_list_models() {
     assert_eq!(resp.status(), 200);
     let text = resp.text().await.unwrap();
     let body: serde_json::Value = serde_json::from_str(&text).unwrap();
-    assert_eq!(body["id"], "gigaam-v3-e2e-rnnt");
-    assert_eq!(body["name"], "GigaAM v3 RNN-T");
+    // id/name/variant reflect the head actually loaded on disk (rnnt or
+    // e2e_rnnt), not a fixed literal — assert the consistent pair instead.
+    let id = body["id"].as_str().unwrap();
+    let variant = body["variant"].as_str().unwrap();
+    assert!(
+        (id == "gigaam-v3-rnnt" && variant == "rnnt")
+            || (id == "gigaam-v3-e2e-rnnt" && variant == "e2e_rnnt"),
+        "unexpected id/variant pair: {id} / {variant}"
+    );
+    assert_eq!(
+        body["name"],
+        if variant == "e2e_rnnt" {
+            "GigaAM v3 E2E RNN-T"
+        } else {
+            "GigaAM v3 RNN-T"
+        }
+    );
     assert_eq!(body["sample_rate"], 16000);
     let enc = body["encoder"].as_str().unwrap();
     assert!(enc == "int8" || enc == "fp32");
     assert!(body["vocab_size"].as_u64().unwrap() > 0);
+    // New capability fields are present and boolean.
+    assert!(body["punctuation"].is_boolean());
+    assert!(body["itn"].is_boolean());
     let _ = shutdown.send(());
 }
 
