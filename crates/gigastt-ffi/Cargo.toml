@@ -10,7 +10,9 @@ keywords = ["stt", "speech-recognition", "ffi", "gigaam", "russian"]
 categories = ["multimedia::audio", "api-bindings"]
 
 [lib]
-crate-type = ["cdylib"]
+# cdylib for JNI / dynamic loading (Android, dlopen); staticlib (.a) for iOS /
+# static linking into a host binary (consumed by the SwiftPM xcframework).
+crate-type = ["staticlib", "cdylib"]
 
 [features]
 default = []
