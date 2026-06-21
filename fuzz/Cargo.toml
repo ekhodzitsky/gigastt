@@ -23,7 +23,7 @@ path = "../crates/gigastt-core"
 # so targets can exercise them without the 850 MB model on disk. Disable
 # default features (no diarization needed for fuzzing the pure-CPU paths).
 default-features = false
-features = ["__internals"]
+features = ["__internals", "file-decode"]
 
 [[bin]]
 name = "audio_decode"
