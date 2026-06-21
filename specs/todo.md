@@ -234,6 +234,71 @@ All new findings from the 2026-04-18 review are catalogued in
 
 ---
 
+## Downstream-consumer follow-ups (2026-06-21)
+
+From an analysis of `voodoo2serg/recognition` — a self-hosted Docker
+consumer that pins an old gigastt, pre-chunks audio with ffmpeg, and
+fakes per-chunk timestamps. The first four items of that review
+shipped in #89 / #91 (GHCR publish job, variant-aware
+`/health` + `/v1/models` + WS `Ready`, non-blocking first-run boot,
+long-file + upgrade docs). Deferred:
+
+### 21. GHCR publish job is unverified (P1)
+- `docker-publish` in `release.yml` is tag-triggered and has never
+  run; CI only builds with `push: false`.
+- Risk: the CPU image's `linux/arm64` leg builds under QEMU emulation
+  (full Rust + onnxruntime compile) — may be very slow or OOM/fail on
+  the first real tag.
+- Fix: cut `v2.4.0`, watch the first `docker-publish` run; if arm64
+  emulation is unviable, drop to amd64-only or add a native arm64
+  runner.
+
+### 22. REST has no segment-level timestamps; md export has no time headers (P1)
+- `/v1/transcribe` returns per-`word` start/end but no segment
+  grouping, and `format=md` emits one flat blob — so a consumer that
+  wants `### mm:ss` sections still fabricates offsets.
+- Fix: add `?segments=true` → `{segments:[{start,end,text,words}]}`
+  (collect the streaming `TranscriptSegment`s), plus a segment-grouped
+  md mode (`### [mm:ss]`) reusing `export::build_cues`.
+
+### 23. CPU encoder is single-threaded by default (P1)
+- `--encoder-intra-threads` defaults to 1; a serial consumer on an
+  N-core box decodes on one core while the rest (and unused pool
+  triplets) idle.
+- Fix: default the CPU EP to `available_parallelism()` clamped by
+  `pool_size`, or at least set it in the Docker `CMD` and document
+  `GIGASTT_ENCODER_INTRA_THREADS`.
+
+### 24. Recognition knobs are process-global serve flags (P2)
+- punctuation / itn / vad / hotwords / model_variant are baked in at
+  boot, so one instance can't vary them per request.
+- Fix: optional per-request query params on `/v1/transcribe` that
+  override the server default (honoured only when the resource is
+  loaded; `409 variant_not_loaded` otherwise). Defaults unchanged.
+
+### 25. No per-request RTF signal; silent FP32 fallback (P2)
+- `transcribe` logs nothing about timing, and a missing INT8 encoder
+  silently serves FP32 (RTF ~1.3) — operators can't tell why it's slow.
+- Fix: one `info!` per request with `audio_secs / wall_secs / rtf /
+  encoder`, and a loud `warn!` (not info) when loading FP32 because no
+  `_int8.onnx` is present, naming the one-line fix.
+
+### 26. No async batch path for long files (P2)
+- A long file holds one HTTP connection + a pool triplet for the whole
+  job; consumers set a huge `curl --max-time` and run strictly serial.
+- Fix: opt-in `POST /v1/jobs` → `202 {job_id}` + `GET /v1/jobs/{id}`
+  poll, backed by the batch pool + a TTL job map. Off unless
+  `--enable-jobs`.
+
+### 27. Downstream consumer not notified (P2)
+- `voodoo2serg/recognition` hand-rolls ffmpeg segmentation + faked
+  `### mm:ss` timestamps that current gigastt obsoletes.
+- Fix: open an issue/PR there — bump to the GHCR image, drop the chunk
+  loop in favour of `POST ?format=md&word_timestamps=true`, gate on
+  `/ready`.
+
+---
+
 ## Trace of what IS resolved (for completeness)
 
 - **Native Rust INT8 quantization** — `src/quantize.rs`, CLI
