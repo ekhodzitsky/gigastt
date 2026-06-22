@@ -99,13 +99,11 @@ pub struct OrtSession {
 }
 
 impl RuntimeSession for OrtSession {
-    fn run(&self, inputs: Vec<Tensor>) -> Result<Vec<Tensor>, RuntimeError> {
-        let ort_inputs: Vec<ort::value::Value> = inputs
-            .into_iter()
-            .map(Tensor::into_ort_value)
+    fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
+        let session_inputs: Vec<ort::session::SessionInputValue<'_>> = inputs
+            .iter()
+            .map(Tensor::as_ort_input)
             .collect::<Result<_, _>>()?;
-        let session_inputs: Vec<ort::session::SessionInputValue<'_>> =
-            ort_inputs.into_iter().map(Into::into).collect();
 
         let mut session = self
             .session

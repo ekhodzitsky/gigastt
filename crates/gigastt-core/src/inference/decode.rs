@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 
 use crate::runtime::{
     session::RuntimeSession,
-    tensor::{Shape, Tensor, TensorData},
+    tensor::{Shape, Tensor, TensorData, TensorView},
 };
 
 use super::bias::Biaser;
@@ -100,6 +100,46 @@ impl DecoderOutput {
     }
 }
 
+/// Reusable input tensors for the decoder and joiner sessions.
+///
+/// These tensors are allocated once per decode and mutated in place, replacing
+/// the previous per-step `Vec::clone`/`to_vec` allocations.
+#[derive(Debug)]
+pub(crate) struct DecodeBuffers {
+    /// Decoder inputs: `[prev_token [1,1], h [1,1,PRED_HIDDEN], c [1,1,PRED_HIDDEN]]`.
+    decoder_inputs: Vec<Tensor>,
+    /// Joiner inputs: `[enc_frame [1,ENC_DIM,1], dec_data [1,PRED_HIDDEN,1]]`.
+    joiner_inputs: Vec<Tensor>,
+}
+
+impl DecodeBuffers {
+    fn new() -> Self {
+        Self {
+            decoder_inputs: vec![
+                Tensor::new(Shape::new(vec![1, 1]), TensorData::I64(vec![0])),
+                Tensor::new(
+                    Shape::new(vec![1, 1, PRED_HIDDEN]),
+                    TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                ),
+                Tensor::new(
+                    Shape::new(vec![1, 1, PRED_HIDDEN]),
+                    TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                ),
+            ],
+            joiner_inputs: vec![
+                Tensor::new(
+                    Shape::new(vec![1, ENC_DIM, 1]),
+                    TensorData::F32(vec![0.0; ENC_DIM]),
+                ),
+                Tensor::new(
+                    Shape::new(vec![1, PRED_HIDDEN, 1]),
+                    TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                ),
+            ],
+        }
+    }
+}
+
 /// Run decoder ONNX session with current state, writing into reusable buffers.
 ///
 /// Input: prev_token [1,1] + h [1,1,PRED_HIDDEN] + c [1,1,PRED_HIDDEN]
@@ -108,23 +148,23 @@ fn run_decoder(
     decoder: &dyn RuntimeSession,
     state: &DecoderState,
     out: &mut DecoderOutput,
+    bufs: &mut DecodeBuffers,
 ) -> Result<()> {
-    let inputs = vec![
-        Tensor::new(
-            Shape::new(vec![1, 1]),
-            TensorData::I64(vec![state.prev_token]),
-        ),
-        Tensor::new(
-            Shape::new(vec![1, 1, PRED_HIDDEN]),
-            TensorData::F32(state.h.clone()),
-        ),
-        Tensor::new(
-            Shape::new(vec![1, 1, PRED_HIDDEN]),
-            TensorData::F32(state.c.clone()),
-        ),
-    ];
+    bufs.decoder_inputs[0]
+        .as_i64_mut()
+        .context("decoder prev_token tensor is not i64")?[0] = state.prev_token;
+    bufs.decoder_inputs[1]
+        .as_f32_mut()
+        .context("decoder h tensor is not f32")?
+        .copy_from_slice(&state.h);
+    bufs.decoder_inputs[2]
+        .as_f32_mut()
+        .context("decoder c tensor is not f32")?
+        .copy_from_slice(&state.c);
 
-    let decoder_outputs = decoder.run(inputs).context("Decoder inference failed")?;
+    let decoder_outputs = decoder
+        .run(&bufs.decoder_inputs)
+        .context("Decoder inference failed")?;
 
     let dec_data = decoder_outputs[0]
         .view()
@@ -157,19 +197,20 @@ fn run_joiner_single(
     enc_frame: &[f32],
     dec_data: &[f32],
     logits_buf: &mut Vec<f32>,
+    bufs: &mut DecodeBuffers,
 ) -> Result<()> {
-    let inputs = vec![
-        Tensor::new(
-            Shape::new(vec![1, ENC_DIM, 1]),
-            TensorData::F32(enc_frame.to_vec()),
-        ),
-        Tensor::new(
-            Shape::new(vec![1, PRED_HIDDEN, 1]),
-            TensorData::F32(dec_data.to_vec()),
-        ),
-    ];
+    bufs.joiner_inputs[0]
+        .as_f32_mut()
+        .context("joiner enc_frame tensor is not f32")?
+        .copy_from_slice(enc_frame);
+    bufs.joiner_inputs[1]
+        .as_f32_mut()
+        .context("joiner dec_data tensor is not f32")?
+        .copy_from_slice(dec_data);
 
-    let joiner_outputs = joiner.run(inputs).context("Joiner inference failed")?;
+    let joiner_outputs = joiner
+        .run(&bufs.joiner_inputs)
+        .context("Joiner inference failed")?;
 
     let logits = joiner_outputs[0]
         .view()
@@ -189,13 +230,19 @@ fn run_joiner_single(
 pub(crate) trait DecodeBackend {
     /// Run the prediction network for the current decoder state, overwriting
     /// `out` in place (reused across calls to avoid per-token allocation).
-    fn decode_step(&mut self, state: &DecoderState, out: &mut DecoderOutput) -> Result<()>;
+    fn decode_step(
+        &mut self,
+        state: &DecoderState,
+        out: &mut DecoderOutput,
+        bufs: &mut DecodeBuffers,
+    ) -> Result<()>;
     /// Run the joiner for one encoder frame, writing logits into `logits_buf`.
     fn joiner_step(
         &mut self,
         enc_frame: &[f32],
         dec_data: &[f32],
         logits_buf: &mut Vec<f32>,
+        bufs: &mut DecodeBuffers,
     ) -> Result<()>;
 }
 
@@ -206,16 +253,22 @@ struct OrtBackend<'a> {
 }
 
 impl DecodeBackend for OrtBackend<'_> {
-    fn decode_step(&mut self, state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
-        run_decoder(self.decoder, state, out)
+    fn decode_step(
+        &mut self,
+        state: &DecoderState,
+        out: &mut DecoderOutput,
+        bufs: &mut DecodeBuffers,
+    ) -> Result<()> {
+        run_decoder(self.decoder, state, out, bufs)
     }
     fn joiner_step(
         &mut self,
         enc_frame: &[f32],
         dec_data: &[f32],
         logits_buf: &mut Vec<f32>,
+        bufs: &mut DecodeBuffers,
     ) -> Result<()> {
-        run_joiner_single(self.joiner, enc_frame, dec_data, logits_buf)
+        run_joiner_single(self.joiner, enc_frame, dec_data, logits_buf, bufs)
     }
 }
 
@@ -234,7 +287,7 @@ impl DecodeBackend for OrtBackend<'_> {
 pub fn greedy_decode(
     decoder: &dyn RuntimeSession,
     joiner: &dyn RuntimeSession,
-    encoded: &[f32], // [1, 768, enc_len] — channels-first
+    encoded: &TensorView<'_>, // [1, 768, enc_len] — channels-first
     encoded_len: usize,
     blank_id: usize,
     state: &mut DecoderState,
@@ -248,16 +301,25 @@ pub fn greedy_decode(
 /// path; extracted so unit tests can drive it with a stub [`DecodeBackend`].
 fn greedy_decode_impl<B: DecodeBackend>(
     backend: &mut B,
-    encoded: &[f32], // [1, 768, enc_len] — channels-first
+    encoded: &TensorView<'_>, // [1, 768, enc_len] — channels-first
     encoded_len: usize,
     blank_id: usize,
     state: &mut DecoderState,
     biaser: Option<&Biaser>,
 ) -> Result<DecodeResult> {
+    let encoded = encoded
+        .data()
+        .as_f32()
+        .context("encoder output must be f32")?;
+
     let mut tokens = Vec::new();
     let mut endpoint_detected = false;
 
-    // Pre-allocate buffer for extracting a single encoder frame [768, 1]
+    // Reusable input tensors for decoder/joiner and a reusable logits buffer.
+    let mut bufs = DecodeBuffers::new();
+    // Pre-allocate buffer for extracting a single encoder frame [768, 1].
+    // The data is copied into the reusable joiner input tensor inside
+    // `joiner_step`, avoiding a per-step `to_vec` allocation.
     let mut enc_frame = vec![0.0_f32; ENC_DIM];
     // Reusable joiner logits buffer to avoid per-call allocation.
     let mut logits_buf = Vec::new();
@@ -308,13 +370,18 @@ fn greedy_decode_impl<B: DecodeBackend>(
             } else {
                 decoder_calls += 1;
                 // Overwrites `decoder_out` in place — no per-token allocation.
-                backend.decode_step(state, &mut decoder_out)?;
+                backend.decode_step(state, &mut decoder_out, &mut bufs)?;
                 cache_valid = true;
             }
 
             // === JOINER CALL ===
             joiner_calls += 1;
-            backend.joiner_step(&enc_frame, &decoder_out.dec_data, &mut logits_buf)?;
+            backend.joiner_step(
+                &enc_frame,
+                &decoder_out.dec_data,
+                &mut logits_buf,
+                &mut bufs,
+            )?;
 
             // === CONTEXTUAL HOTWORD BIASING (shallow fusion) ===
             // Add the boost to continuation tokens of any active hotword prefix
@@ -487,7 +554,12 @@ mod tests {
     }
 
     impl DecodeBackend for FakeBackend {
-        fn decode_step(&mut self, _state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
+        fn decode_step(
+            &mut self,
+            _state: &DecoderState,
+            out: &mut DecoderOutput,
+            _bufs: &mut DecodeBuffers,
+        ) -> Result<()> {
             self.decoder_calls += 1;
             DecoderOutput::fill(&mut out.dec_data, &[0.0; PRED_HIDDEN]);
             DecoderOutput::fill(&mut out.new_h, &[0.0; PRED_HIDDEN]);
@@ -500,6 +572,7 @@ mod tests {
             _enc_frame: &[f32],
             _dec_data: &[f32],
             logits_buf: &mut Vec<f32>,
+            _bufs: &mut DecodeBuffers,
         ) -> Result<()> {
             self.joiner_calls += 1;
             // Once the script runs out, return blank so the loop terminates.
@@ -516,13 +589,21 @@ mod tests {
         vec![0.0_f32; ENC_DIM * frames]
     }
 
+    /// Wrapped encoder tensor for tests driving `greedy_decode_impl`.
+    fn fake_enc_tensor(frames: usize) -> Tensor {
+        Tensor::new(
+            Shape::new(vec![1, ENC_DIM, frames]),
+            TensorData::F32(fake_enc(frames)),
+        )
+    }
+
     #[test]
     fn test_greedy_decode_happy_path() {
         // vocab=5, blank=4. Frame 0 emits token 1 then blank; frame 1 emits token 2.
         let mut backend = FakeBackend::new(vec![1, 4, 2, 4], 5, 4);
         let mut state = DecoderState::new(4);
-        let result =
-            greedy_decode_impl(&mut backend, &fake_enc(2), 2, 4, &mut state, None).unwrap();
+        let enc = fake_enc_tensor(2);
+        let result = greedy_decode_impl(&mut backend, &enc.view(), 2, 4, &mut state, None).unwrap();
 
         assert_eq!(result.tokens.len(), 2);
         assert_eq!(result.tokens[0].token_id, 1);
@@ -541,8 +622,8 @@ mod tests {
         // The decoder must NOT be called again during the blank run (cache reuse).
         let mut backend = FakeBackend::new(vec![1, 4, 4, 4, 4], 5, 4);
         let mut state = DecoderState::new(4);
-        let result =
-            greedy_decode_impl(&mut backend, &fake_enc(4), 4, 4, &mut state, None).unwrap();
+        let enc = fake_enc_tensor(4);
+        let result = greedy_decode_impl(&mut backend, &enc.view(), 4, 4, &mut state, None).unwrap();
 
         assert_eq!(result.tokens.len(), 1);
         assert_eq!(
@@ -560,9 +641,9 @@ mod tests {
         let frames = ENDPOINT_BLANK_THRESHOLD + 2;
         let mut backend = FakeBackend::new(script, 5, 4);
         let mut state = DecoderState::new(4);
+        let enc = fake_enc_tensor(frames);
         let result =
-            greedy_decode_impl(&mut backend, &fake_enc(frames), frames, 4, &mut state, None)
-                .unwrap();
+            greedy_decode_impl(&mut backend, &enc.view(), frames, 4, &mut state, None).unwrap();
 
         assert!(
             result.endpoint_detected,
@@ -576,9 +657,9 @@ mod tests {
         let frames = ENDPOINT_BLANK_THRESHOLD + 5;
         let mut backend = FakeBackend::new(vec![4usize; frames], 5, 4);
         let mut state = DecoderState::new(4);
+        let enc = fake_enc_tensor(frames);
         let result =
-            greedy_decode_impl(&mut backend, &fake_enc(frames), frames, 4, &mut state, None)
-                .unwrap();
+            greedy_decode_impl(&mut backend, &enc.view(), frames, 4, &mut state, None).unwrap();
 
         assert!(result.tokens.is_empty());
         assert!(
@@ -594,8 +675,8 @@ mod tests {
         // bump the blank counter or fire an endpoint.
         let mut backend = FakeBackend::new(vec![1usize; MAX_TOKENS_PER_STEP + 1], 5, 4);
         let mut state = DecoderState::new(4);
-        let result =
-            greedy_decode_impl(&mut backend, &fake_enc(1), 1, 4, &mut state, None).unwrap();
+        let enc = fake_enc_tensor(1);
+        let result = greedy_decode_impl(&mut backend, &enc.view(), 1, 4, &mut state, None).unwrap();
 
         assert_eq!(result.tokens.len(), MAX_TOKENS_PER_STEP);
         assert_eq!(
@@ -645,7 +726,12 @@ mod tests {
     }
 
     impl DecodeBackend for LogitBackend {
-        fn decode_step(&mut self, _state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
+        fn decode_step(
+            &mut self,
+            _state: &DecoderState,
+            out: &mut DecoderOutput,
+            _bufs: &mut DecodeBuffers,
+        ) -> Result<()> {
             DecoderOutput::fill(&mut out.dec_data, &[0.0; PRED_HIDDEN]);
             DecoderOutput::fill(&mut out.new_h, &[0.0; PRED_HIDDEN]);
             DecoderOutput::fill(&mut out.new_c, &[0.0; PRED_HIDDEN]);
@@ -657,6 +743,7 @@ mod tests {
             _enc_frame: &[f32],
             _dec_data: &[f32],
             logits_buf: &mut Vec<f32>,
+            _bufs: &mut DecodeBuffers,
         ) -> Result<()> {
             logits_buf.clear();
             match self.script.pop_front() {
@@ -690,8 +777,9 @@ mod tests {
         // Baseline (no bias): emits token 1.
         let mut backend = LogitBackend::new(ab_script(), 4, 3);
         let mut state = DecoderState::new(3);
+        let enc = fake_enc_tensor(2);
         let unbiased =
-            greedy_decode_impl(&mut backend, &fake_enc(2), 2, 3, &mut state, None).unwrap();
+            greedy_decode_impl(&mut backend, &enc.view(), 2, 3, &mut state, None).unwrap();
         assert_eq!(unbiased.tokens.len(), 1);
         assert_eq!(unbiased.tokens[0].token_id, 1, "no bias → model picks A");
 
@@ -699,9 +787,9 @@ mod tests {
         let biaser = Biaser::from_sequences(vec![vec![2]], 5.0).unwrap();
         let mut backend = LogitBackend::new(ab_script(), 4, 3);
         let mut state = DecoderState::new(3);
+        let enc = fake_enc_tensor(2);
         let biased =
-            greedy_decode_impl(&mut backend, &fake_enc(2), 2, 3, &mut state, Some(&biaser))
-                .unwrap();
+            greedy_decode_impl(&mut backend, &enc.view(), 2, 3, &mut state, Some(&biaser)).unwrap();
         assert_eq!(biased.tokens.len(), 1);
         assert_eq!(
             biased.tokens[0].token_id, 2,
@@ -732,9 +820,9 @@ mod tests {
         let biaser = Biaser::from_sequences(vec![vec![5, 2]], 5.0).unwrap();
         let mut backend = LogitBackend::new(script, 6, 3);
         let mut state = DecoderState::new(3);
+        let enc = fake_enc_tensor(2);
         let result =
-            greedy_decode_impl(&mut backend, &fake_enc(2), 2, 3, &mut state, Some(&biaser))
-                .unwrap();
+            greedy_decode_impl(&mut backend, &enc.view(), 2, 3, &mut state, Some(&biaser)).unwrap();
         assert_eq!(
             result.tokens.iter().map(|t| t.token_id).collect::<Vec<_>>(),
             vec![5, 2],
@@ -758,15 +846,25 @@ mod tests {
         };
         let mut b_none = LogitBackend::new(base_script(), 4, 3);
         let mut s_none = DecoderState::new(3);
-        let none = greedy_decode_impl(&mut b_none, &fake_enc(2), 2, 3, &mut s_none, None).unwrap();
+        let enc_none = fake_enc_tensor(2);
+        let none =
+            greedy_decode_impl(&mut b_none, &enc_none.view(), 2, 3, &mut s_none, None).unwrap();
 
         // A biaser for token id 0, which has a -inf-equivalent (0.0) logit and is
         // dominated on every frame, so it can never change the argmax.
         let biaser = Biaser::from_sequences(vec![vec![0]], 0.5).unwrap();
         let mut b_some = LogitBackend::new(base_script(), 4, 3);
         let mut s_some = DecoderState::new(3);
-        let some = greedy_decode_impl(&mut b_some, &fake_enc(2), 2, 3, &mut s_some, Some(&biaser))
-            .unwrap();
+        let enc_some = fake_enc_tensor(2);
+        let some = greedy_decode_impl(
+            &mut b_some,
+            &enc_some.view(),
+            2,
+            3,
+            &mut s_some,
+            Some(&biaser),
+        )
+        .unwrap();
 
         assert_eq!(
             none.tokens.iter().map(|t| t.token_id).collect::<Vec<_>>(),

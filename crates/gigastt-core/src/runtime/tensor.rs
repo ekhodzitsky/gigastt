@@ -107,6 +107,44 @@ impl Tensor {
     pub fn into_data(self) -> TensorData {
         self.data
     }
+
+    /// Return a mutable view of the underlying f32 buffer, if this tensor is f32.
+    pub fn as_f32_mut(&mut self) -> Option<&mut [f32]> {
+        match &mut self.data {
+            TensorData::F32(v) => Some(v.as_mut_slice()),
+            _ => None,
+        }
+    }
+
+    /// Return a mutable view of the underlying i32 buffer, if this tensor is i32.
+    pub fn as_i32_mut(&mut self) -> Option<&mut [i32]> {
+        match &mut self.data {
+            TensorData::I32(v) => Some(v.as_mut_slice()),
+            _ => None,
+        }
+    }
+
+    /// Return a mutable view of the underlying i64 buffer, if this tensor is i64.
+    pub fn as_i64_mut(&mut self) -> Option<&mut [i64]> {
+        match &mut self.data {
+            TensorData::I64(v) => Some(v.as_mut_slice()),
+            _ => None,
+        }
+    }
+
+    /// Resize the tensor to a new shape, reusing the existing storage.
+    ///
+    /// The buffer is resized to the new element count and zero-padded if it
+    /// grows. The caller must update the data before use.
+    pub fn resize_to(&mut self, shape: Shape) {
+        let new_len = shape.elements();
+        match &mut self.data {
+            TensorData::F32(v) => v.resize(new_len, 0.0),
+            TensorData::I32(v) => v.resize(new_len, 0),
+            TensorData::I64(v) => v.resize(new_len, 0),
+        }
+        self.shape = shape;
+    }
 }
 
 #[allow(dead_code)]

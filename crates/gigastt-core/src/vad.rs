@@ -88,6 +88,9 @@ impl VadConfig {
 /// streams.
 pub struct SileroVad {
     session: Mutex<Box<dyn RuntimeSession>>,
+    /// Reusable input tensors: `[frame [1,512], state [2,1,128], sample_rate [1]]`.
+    /// Mutated in place in `run_frame` to avoid per-frame allocations.
+    input_tensors: Mutex<Vec<Tensor>>,
 }
 
 impl SileroVad {
@@ -111,6 +114,17 @@ impl SileroVad {
         tracing::info!("VAD model loaded from {}", model_path.display());
         Ok(Self {
             session: Mutex::new(session),
+            input_tensors: Mutex::new(vec![
+                Tensor::new(
+                    Shape::new(vec![1, VAD_FRAME_SAMPLES]),
+                    TensorData::F32(vec![0.0; VAD_FRAME_SAMPLES]),
+                ),
+                Tensor::new(
+                    Shape::new(vec![2, 1, 128]),
+                    TensorData::F32(vec![0.0; VAD_STATE_LEN]),
+                ),
+                Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![VAD_SAMPLE_RATE])),
+            ]),
         })
     }
 
@@ -125,36 +139,37 @@ impl SileroVad {
         let n = frame.len().min(VAD_FRAME_SAMPLES);
         input[..n].copy_from_slice(&frame[..n]);
 
-        let inputs = vec![
-            Tensor::new(
-                Shape::new(vec![1, VAD_FRAME_SAMPLES]),
-                TensorData::F32(input.to_vec()),
-            ),
-            Tensor::new(Shape::new(vec![2, 1, 128]), TensorData::F32(state.to_vec())),
-            Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![VAD_SAMPLE_RATE])),
-        ];
+        let outputs = {
+            let mut inputs = self.input_tensors.lock();
+            inputs[0]
+                .as_f32_mut()
+                .context("VAD frame tensor is not f32")?
+                .copy_from_slice(&input);
+            inputs[1]
+                .as_f32_mut()
+                .context("VAD state tensor is not f32")?
+                .copy_from_slice(state);
+            // inputs[2] (sample rate) is constant and was set at construction.
 
-        let prob = {
             let session = self.session.lock();
-            let outputs = session.run(inputs).context("VAD model inference failed")?;
+            session.run(&inputs).context("VAD model inference failed")?
+        };
 
-            // Identify the state and probability outputs by shape so the code
-            // does not depend on the exact output order of the Silero model.
-            let mut prob = 0.0f32;
-            let mut new_state = [0.0f32; VAD_STATE_LEN];
-            for output in outputs {
-                let view = output.view();
-                if let Some(data) = view.data().as_f32() {
-                    if data.len() == VAD_STATE_LEN {
-                        new_state.copy_from_slice(data);
-                    } else if data.len() == 1 {
-                        prob = data[0];
-                    }
+        // Identify the state and probability outputs by shape so the code
+        // does not depend on the exact output order of the Silero model.
+        let mut prob = 0.0f32;
+        let mut new_state = [0.0f32; VAD_STATE_LEN];
+        for output in outputs {
+            let view = output.view();
+            if let Some(data) = view.data().as_f32() {
+                if data.len() == VAD_STATE_LEN {
+                    new_state.copy_from_slice(data);
+                } else if data.len() == 1 {
+                    prob = data[0];
                 }
             }
-            state.copy_from_slice(&new_state);
-            prob
-        };
+        }
+        state.copy_from_slice(&new_state);
         Ok(prob)
     }
 

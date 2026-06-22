@@ -270,7 +270,7 @@ impl Punctuator {
         let argmax_per_token: Vec<usize> = {
             let session = self.session.lock();
             let outputs = session
-                .run(vec![input_ids, attention_mask, token_type])
+                .run(&[input_ids, attention_mask, token_type])
                 .context("punct model inference failed")?;
 
             let logits_view = outputs[0].view();

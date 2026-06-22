@@ -221,6 +221,9 @@ pub struct SessionTriplet {
     pub(crate) encoder: Box<dyn RuntimeSession>,
     pub(crate) decoder: Box<dyn RuntimeSession>,
     pub(crate) joiner: Box<dyn RuntimeSession>,
+    /// Reusable encoder input tensors: `[audio_signal [1, N_MELS, num_frames], length [1]]`.
+    /// Resized and overwritten in `run_inference` to avoid per-call allocations.
+    pub(crate) encoder_inputs: Vec<Tensor>,
 }
 
 /// Errors returned by [`Pool::checkout`].
@@ -1413,6 +1416,13 @@ impl Engine {
                                 encoder,
                                 decoder,
                                 joiner,
+                                encoder_inputs: vec![
+                                    Tensor::new(
+                                        Shape::new(vec![1, N_MELS, 1]),
+                                        TensorData::F32(vec![0.0; N_MELS]),
+                                    ),
+                                    Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![0])),
+                                ],
                             })
                         }))
                         .map_err(|_| anyhow::anyhow!("model loading thread panicked"))?
@@ -2006,31 +2016,27 @@ impl Engine {
         decoder_state: &mut DecoderState,
         frame_offset: usize,
     ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
-        // Encoder input: audio_signal [1, 64, num_frames], length [1]
-        let signal_tensor = Tensor::new(
-            Shape::new(vec![1, N_MELS, num_frames]),
-            TensorData::F32(features.to_vec()),
-        );
-        let length_tensor = Tensor::new(
-            Shape::new(vec![1]),
-            TensorData::I64(vec![num_frames as i64]),
-        );
+        // Reuse the encoder input tensors: resize the signal tensor to the
+        // current frame count and overwrite both buffers in place.
+        triplet.encoder_inputs[0].resize_to(Shape::new(vec![1, N_MELS, num_frames]));
+        triplet.encoder_inputs[0]
+            .as_f32_mut()
+            .context("encoder signal tensor is not f32")?
+            .copy_from_slice(features);
+        triplet.encoder_inputs[1]
+            .as_i64_mut()
+            .context("encoder length tensor is not i64")?[0] = num_frames as i64;
 
         let enc_start = std::time::Instant::now();
         let encoder_outputs = triplet
             .encoder
-            .run(vec![signal_tensor, length_tensor])
+            .run(&triplet.encoder_inputs)
             .context("Encoder inference failed")?;
         tracing::info!(
             elapsed_ms = enc_start.elapsed().as_millis() as u64,
             "encoder_inference"
         );
 
-        let enc_data = encoder_outputs[0]
-            .view()
-            .data()
-            .as_f32()
-            .context("Failed to extract encoder output")?;
         let enc_len = match encoder_outputs[1].view().data() {
             TensorDataView::I32(v) => usize::try_from(v[0]).context("Negative encoder length")?,
             TensorDataView::I64(v) => usize::try_from(v[0]).context("Negative encoder length")?,
@@ -2044,7 +2050,7 @@ impl Engine {
         let result = decode::greedy_decode(
             &*triplet.decoder,
             &*triplet.joiner,
-            enc_data,
+            &encoder_outputs[0].view(),
             enc_len,
             self.tokenizer.blank_id(),
             decoder_state,

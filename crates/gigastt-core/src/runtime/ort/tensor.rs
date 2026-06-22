@@ -1,12 +1,14 @@
+use ort::session::SessionInputValue;
 use ort::value::{TensorElementType, Value};
 
 use crate::runtime::{
     error::RuntimeError,
-    tensor::{ElementType, Shape, Tensor, TensorData},
+    tensor::{ElementType, Shape, Tensor, TensorData, TensorDataView},
 };
 
 impl Tensor {
     /// Converts this owned tensor into an `ort` value.
+    #[allow(dead_code)]
     pub fn into_ort_value(self) -> Result<Value, RuntimeError> {
         let shape: Vec<i64> = self.shape().dims().iter().map(|&d| d as i64).collect();
         match self.into_data() {
@@ -19,6 +21,34 @@ impl Tensor {
             TensorData::I64(data) => ort::value::Tensor::from_array((shape, data))
                 .map(|t| t.into_dyn())
                 .map_err(|e| RuntimeError::InferenceFailed(e.to_string())),
+        }
+    }
+
+    /// Returns a borrowed `ort` input value backed by this tensor's data.
+    ///
+    /// The returned `SessionInputValue` borrows from `self`; the caller must
+    /// keep this tensor alive for the duration of the `run` call.
+    pub fn as_ort_input(&self) -> Result<SessionInputValue<'_>, RuntimeError> {
+        let shape: Vec<i64> = self.shape().dims().iter().map(|&d| d as i64).collect();
+        match self.view().data() {
+            TensorDataView::F32(data) => {
+                let tensor_ref: ort::value::TensorRef<'_, f32> =
+                    ort::value::TensorRef::from_array_view((shape, *data))
+                        .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
+                Ok(tensor_ref.into_dyn().into())
+            }
+            TensorDataView::I32(data) => {
+                let tensor_ref: ort::value::TensorRef<'_, i32> =
+                    ort::value::TensorRef::from_array_view((shape, *data))
+                        .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
+                Ok(tensor_ref.into_dyn().into())
+            }
+            TensorDataView::I64(data) => {
+                let tensor_ref: ort::value::TensorRef<'_, i64> =
+                    ort::value::TensorRef::from_array_view((shape, *data))
+                        .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
+                Ok(tensor_ref.into_dyn().into())
+            }
         }
     }
 }
