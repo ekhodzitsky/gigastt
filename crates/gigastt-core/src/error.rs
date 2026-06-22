@@ -133,6 +133,20 @@ impl GigasttError {
     }
 }
 
+impl From<crate::runtime::RuntimeError> for GigasttError {
+    fn from(err: crate::runtime::RuntimeError) -> Self {
+        match err {
+            crate::runtime::RuntimeError::LoadFailed { path, message } => GigasttError::ModelLoad {
+                path: path.to_string_lossy().into_owned(),
+                source: Some(Box::new(std::io::Error::other(message))),
+            },
+            other => GigasttError::Inference {
+                source: Box::new(other),
+            },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
