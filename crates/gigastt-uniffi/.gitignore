@@ -1,2 +1,6 @@
 # Generated UniFFI bindings are build artifacts (regenerate via uniffi-bindgen).
 /bindings/
+# maturin / Python wheel build outputs.
+/dist/
+*.whl
+__pycache__/

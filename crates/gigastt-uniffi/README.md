@@ -32,8 +32,13 @@ Generated bindings are build artifacts (`bindings/` is git-ignored). Packaging t
 
 ## Python (quickstart, verified)
 
+Install the prebuilt wheel — `pip install gigastt` — no compiler, no `protoc`, no
+onnxruntime download (it is statically linked; the wheel is `py3-none-<platform>`,
+one per platform across all Python 3.x). The ~215 MB model is side-loaded at
+runtime. Wheels are built + published by `.github/workflows/python-wheels.yml`.
+
 ```python
-import sys; sys.path.insert(0, "bindings/python")   # + libgigastt_uniffi.dylib on the path
+# pip install gigastt
 import gigastt_uniffi as g
 
 engine = g.Engine("/path/to/gigastt/models")        # side-loaded model dir

@@ -1,0 +1,46 @@
+# Python packaging for the gigastt UniFFI bindings (maturin, uniffi mode).
+#
+# Builds a self-contained wheel: maturin compiles the cdylib (onnxruntime is
+# statically linked via ort's default), runs this crate's pinned uniffi-bindgen
+# in library mode to generate the ctypes Python module, and packages both.
+# UniFFI Python is ctypes-based, so wheels are `py3-none-<platform>` — one wheel
+# per platform across all Python 3.x (broader than abi3).
+#
+#   pip install gigastt            # the published distribution
+#   import gigastt_uniffi as g     # the generated module (UniFFI namespace)
+#
+# Build locally:  maturin build --release   (run in this directory)
+[build-system]
+requires = ["maturin>=1.7,<2"]
+build-backend = "maturin"
+
+[project]
+name = "gigastt"
+description = "On-device Russian speech-to-text (GigaAM v3) — Python bindings (no cloud, no API keys)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+keywords = ["stt", "speech-recognition", "gigaam", "russian", "asr"]
+authors = [{ name = "ekhodzitsky" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/ekhodzitsky/gigastt"
+Homepage = "https://github.com/ekhodzitsky/gigastt"
+
+[tool.maturin]
+# UniFFI bindings: maturin invokes this crate's [[bin]] uniffi-bindgen in
+# library mode (proc-macro / setup_scaffolding, no .udl).
+bindings = "uniffi"
+# Pull the version from the crate's Cargo metadata (workspace = 2.3.0).
