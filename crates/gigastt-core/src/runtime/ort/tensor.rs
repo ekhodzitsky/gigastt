@@ -55,21 +55,13 @@ impl Tensor {
 
 /// Attempts to map an `ort` tensor element type to our normalized `ElementType`.
 ///
-/// Returns `None` for types that have no equivalent in our abstraction (e.g. strings
-/// or exotic float formats).
+/// Returns `None` for types that have no equivalent in our abstraction (e.g. strings,
+/// exotic float formats, or unsupported numeric widths).
 fn element_type_from_ort(ort_type: TensorElementType) -> Option<ElementType> {
     match ort_type {
         TensorElementType::Float32 => Some(ElementType::F32),
         TensorElementType::Int32 => Some(ElementType::I32),
         TensorElementType::Int64 => Some(ElementType::I64),
-        TensorElementType::Float64 => Some(ElementType::F64),
-        TensorElementType::Int8 => Some(ElementType::I8),
-        TensorElementType::Uint8 => Some(ElementType::U8),
-        TensorElementType::Int16 => Some(ElementType::I16),
-        TensorElementType::Uint16 => Some(ElementType::U16),
-        TensorElementType::Uint32 => Some(ElementType::U32),
-        TensorElementType::Uint64 => Some(ElementType::U64),
-        TensorElementType::Bool => Some(ElementType::Bool),
         _ => None,
     }
 }
@@ -81,28 +73,28 @@ pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
             let (shape, data) = value
                 .try_extract_tensor::<f32>()
                 .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
-            Ok(Tensor::new(
+            Tensor::new(
                 Shape::new(shape.iter().map(|&d| d as usize).collect()),
                 TensorData::F32(data.to_vec()),
-            ))
+            )
         }
         TensorElementType::Int32 => {
             let (shape, data) = value
                 .try_extract_tensor::<i32>()
                 .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
-            Ok(Tensor::new(
+            Tensor::new(
                 Shape::new(shape.iter().map(|&d| d as usize).collect()),
                 TensorData::I32(data.to_vec()),
-            ))
+            )
         }
         TensorElementType::Int64 => {
             let (shape, data) = value
                 .try_extract_tensor::<i64>()
                 .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
-            Ok(Tensor::new(
+            Tensor::new(
                 Shape::new(shape.iter().map(|&d| d as usize).collect()),
                 TensorData::I64(data.to_vec()),
-            ))
+            )
         }
         other => match element_type_from_ort(other) {
             Some(element_type) => Err(RuntimeError::UnsupportedElementType(element_type)),
@@ -122,7 +114,8 @@ mod tests {
         let tensor = Tensor::new(
             Shape::new(vec![2, 3]),
             TensorData::F32(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
-        );
+        )
+        .unwrap();
         let value = tensor.clone().into_ort_value().unwrap();
         let recovered = value_to_tensor(value).unwrap();
         assert_eq!(tensor, recovered);
@@ -130,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_tensor_ort_roundtrip_i32() {
-        let tensor = Tensor::new(Shape::new(vec![3]), TensorData::I32(vec![1, 2, 3]));
+        let tensor = Tensor::new(Shape::new(vec![3]), TensorData::I32(vec![1, 2, 3])).unwrap();
         let value = tensor.clone().into_ort_value().unwrap();
         let recovered = value_to_tensor(value).unwrap();
         assert_eq!(tensor, recovered);
@@ -138,7 +131,8 @@ mod tests {
 
     #[test]
     fn test_tensor_ort_roundtrip_i64() {
-        let tensor = Tensor::new(Shape::new(vec![2, 2]), TensorData::I64(vec![1, 2, 3, 4]));
+        let tensor =
+            Tensor::new(Shape::new(vec![2, 2]), TensorData::I64(vec![1, 2, 3, 4])).unwrap();
         let value = tensor.clone().into_ort_value().unwrap();
         let recovered = value_to_tensor(value).unwrap();
         assert_eq!(tensor, recovered);

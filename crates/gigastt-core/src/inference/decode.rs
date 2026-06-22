@@ -116,22 +116,22 @@ impl DecodeBuffers {
     fn new() -> Self {
         Self {
             decoder_inputs: vec![
-                Tensor::new(Shape::new(vec![1, 1]), TensorData::I64(vec![0])),
-                Tensor::new(
+                Tensor::new_checked(Shape::new(vec![1, 1]), TensorData::I64(vec![0])),
+                Tensor::new_checked(
                     Shape::new(vec![1, 1, PRED_HIDDEN]),
                     TensorData::F32(vec![0.0; PRED_HIDDEN]),
                 ),
-                Tensor::new(
+                Tensor::new_checked(
                     Shape::new(vec![1, 1, PRED_HIDDEN]),
                     TensorData::F32(vec![0.0; PRED_HIDDEN]),
                 ),
             ],
             joiner_inputs: vec![
-                Tensor::new(
+                Tensor::new_checked(
                     Shape::new(vec![1, ENC_DIM, 1]),
                     TensorData::F32(vec![0.0; ENC_DIM]),
                 ),
-                Tensor::new(
+                Tensor::new_checked(
                     Shape::new(vec![1, PRED_HIDDEN, 1]),
                     TensorData::F32(vec![0.0; PRED_HIDDEN]),
                 ),
@@ -595,6 +595,7 @@ mod tests {
             Shape::new(vec![1, ENC_DIM, frames]),
             TensorData::F32(fake_enc(frames)),
         )
+        .unwrap()
     }
 
     #[test]

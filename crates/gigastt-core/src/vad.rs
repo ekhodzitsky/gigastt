@@ -115,15 +115,15 @@ impl SileroVad {
         Ok(Self {
             session: Mutex::new(session),
             input_tensors: Mutex::new(vec![
-                Tensor::new(
+                Tensor::new_checked(
                     Shape::new(vec![1, VAD_FRAME_SAMPLES]),
                     TensorData::F32(vec![0.0; VAD_FRAME_SAMPLES]),
                 ),
-                Tensor::new(
+                Tensor::new_checked(
                     Shape::new(vec![2, 1, 128]),
                     TensorData::F32(vec![0.0; VAD_STATE_LEN]),
                 ),
-                Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![VAD_SAMPLE_RATE])),
+                Tensor::new_checked(Shape::new(vec![1]), TensorData::I64(vec![VAD_SAMPLE_RATE])),
             ]),
         })
     }

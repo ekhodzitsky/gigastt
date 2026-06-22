@@ -8,7 +8,7 @@ use super::tensor::{ElementType, Shape};
 #[derive(Debug, Error)]
 #[allow(dead_code)]
 pub enum RuntimeError {
-    #[error("failed to load model {path}: {message}")]
+    #[error("failed to load model: {message}")]
     LoadFailed { path: PathBuf, message: String },
 
     #[error("inference failed: {0}")]
@@ -22,6 +22,9 @@ pub enum RuntimeError {
 
     #[error("invalid input count: expected {expected}, got {got}")]
     InvalidInputCount { expected: usize, got: usize },
+
+    #[error("tensor data length mismatch: expected {expected}, got {got}")]
+    DataLengthMismatch { expected: usize, got: usize },
 }
 
 #[cfg(test)]
@@ -36,10 +39,11 @@ mod tests {
             path: PathBuf::from("encoder.onnx"),
             message: "not found".into(),
         };
-        assert_eq!(
-            e.to_string(),
-            "failed to load model encoder.onnx: not found"
+        assert!(
+            !e.to_string().contains("encoder.onnx"),
+            "display must not leak the model path"
         );
+        assert_eq!(e.to_string(), "failed to load model: not found");
     }
 
     #[test]

@@ -1424,8 +1424,8 @@ impl Engine {
                                     Tensor::new(
                                         Shape::new(vec![1, N_MELS, 1]),
                                         TensorData::F32(vec![0.0; N_MELS]),
-                                    ),
-                                    Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![0])),
+                                    )?,
+                                    Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![0]))?,
                                 ],
                             })
                         }))
@@ -3479,8 +3479,9 @@ mod tests {
                         Tensor::new(
                             Shape::new(vec![1, ENC_DIM, 1]),
                             TensorData::F32(vec![0.0; ENC_DIM]),
-                        ),
-                        Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![1])),
+                        )
+                        .unwrap(),
+                        Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![1])).unwrap(),
                     ],
                 )),
             );
@@ -3496,15 +3497,18 @@ mod tests {
                         Tensor::new(
                             Shape::new(vec![1, 1, PRED_HIDDEN]),
                             TensorData::F32(vec![0.0; PRED_HIDDEN]),
-                        ),
+                        )
+                        .unwrap(),
                         Tensor::new(
                             Shape::new(vec![1, 1, PRED_HIDDEN]),
                             TensorData::F32(vec![0.0; PRED_HIDDEN]),
-                        ),
+                        )
+                        .unwrap(),
                         Tensor::new(
                             Shape::new(vec![1, 1, PRED_HIDDEN]),
                             TensorData::F32(vec![0.0; PRED_HIDDEN]),
-                        ),
+                        )
+                        .unwrap(),
                     ],
                 )),
             );
@@ -3515,10 +3519,10 @@ mod tests {
                         Shape::new(vec![1, ENC_DIM, 1]),
                         Shape::new(vec![1, PRED_HIDDEN, 1]),
                     ],
-                    vec![Tensor::new(
-                        Shape::new(vec![1, 1, 2]),
-                        TensorData::F32(vec![0.0; 2]),
-                    )],
+                    vec![
+                        Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(vec![0.0; 2]))
+                            .unwrap(),
+                    ],
                 )),
             );
 

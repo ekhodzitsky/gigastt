@@ -260,9 +260,9 @@ impl Punctuator {
         let seq = ids.len();
         let token_type_ids = vec![0i64; seq];
 
-        let input_ids = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(ids));
-        let attention_mask = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(mask));
-        let token_type = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(token_type_ids));
+        let input_ids = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(ids))?;
+        let attention_mask = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(mask))?;
+        let token_type = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(token_type_ids))?;
 
         // Run the session and reduce the borrowed logits to an owned
         // per-token argmax inside this scope.

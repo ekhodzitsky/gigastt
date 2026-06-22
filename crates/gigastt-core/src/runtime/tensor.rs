@@ -53,32 +53,38 @@ pub struct Shape {
     dims: Vec<usize>,
 }
 
-/// Known tensor element types. Not all are supported by every runtime backend.
+/// Known tensor element types supported by the runtime abstraction.
+///
+/// Only types that have a corresponding [`TensorData`] variant are listed here;
+/// back-ends that produce other ONNX types must convert or reject them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ElementType {
     F32,
     I32,
     I64,
-    F64,
-    I8,
-    U8,
-    I16,
-    U16,
-    U32,
-    U64,
-    Bool,
 }
 
 #[allow(dead_code)]
 impl Tensor {
-    pub fn new(shape: Shape, data: TensorData) -> Self {
+    /// Creates a tensor, validating that `data` length matches `shape`.
+    pub fn new(shape: Shape, data: TensorData) -> Result<Self, crate::runtime::RuntimeError> {
         let expected = shape.elements();
         let actual = data.len();
-        assert_eq!(
-            expected, actual,
-            "tensor data length mismatch: expected {expected}, got {actual}"
-        );
-        Self { shape, data }
+        if expected != actual {
+            return Err(crate::runtime::RuntimeError::DataLengthMismatch {
+                expected,
+                got: actual,
+            });
+        }
+        Ok(Self { shape, data })
+    }
+
+    /// Convenience constructor that panics on shape/data mismatch.
+    ///
+    /// Use only when dimensions are statically known; prefer [`Self::new`] for
+    /// runtime-sized tensors.
+    pub fn new_checked(shape: Shape, data: TensorData) -> Self {
+        Self::new(shape, data).expect("tensor data length mismatch")
     }
 
     pub fn shape(&self) -> &Shape {
@@ -200,15 +206,21 @@ mod tests {
 
     #[test]
     fn test_tensor_shape_and_data_match() {
-        let t = Tensor::new(Shape::new(vec![2, 3]), TensorData::F32(vec![0.0; 6]));
+        let t = Tensor::new(Shape::new(vec![2, 3]), TensorData::F32(vec![0.0; 6])).unwrap();
         assert_eq!(t.shape().dims(), &[2, 3]);
         assert_eq!(t.element_type(), ElementType::F32);
     }
 
     #[test]
-    #[should_panic(expected = "tensor data length mismatch")]
     fn test_tensor_rejects_mismatched_data() {
-        Tensor::new(Shape::new(vec![2, 3]), TensorData::F32(vec![0.0; 5]));
+        let err = Tensor::new(Shape::new(vec![2, 3]), TensorData::F32(vec![0.0; 5])).unwrap_err();
+        assert!(matches!(
+            err,
+            crate::runtime::RuntimeError::DataLengthMismatch {
+                expected: 6,
+                got: 5
+            }
+        ));
     }
 
     #[test]
@@ -222,7 +234,8 @@ mod tests {
         let t = Tensor::new(
             Shape::new(vec![2, 2]),
             TensorData::F32(vec![1.0, 2.0, 3.0, 4.0]),
-        );
+        )
+        .unwrap();
         let v = t.view();
         assert_eq!(v.shape().dims(), &[2, 2]);
         assert_eq!(v.data().as_f32(), Some(&[1.0, 2.0, 3.0, 4.0][..]));
@@ -230,7 +243,7 @@ mod tests {
 
     #[test]
     fn test_tensor_view_non_f32_returns_none() {
-        let t = Tensor::new(Shape::new(vec![2]), TensorData::I32(vec![1, 2]));
+        let t = Tensor::new(Shape::new(vec![2]), TensorData::I32(vec![1, 2])).unwrap();
         let v = t.view();
         assert_eq!(v.data().as_f32(), None);
     }

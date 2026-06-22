@@ -63,9 +63,6 @@ impl OrtExecutionProvider {
     /// Whether this provider is the plain CPU execution provider.
     pub(crate) fn is_cpu(self) -> bool {
         matches!(self, Self::Cpu)
-            || (!cfg!(feature = "coreml") && matches!(self, Self::CoreML))
-            || (!cfg!(feature = "cuda") && matches!(self, Self::Cuda))
-            || (!cfg!(feature = "nnapi") && matches!(self, Self::Nnapi))
     }
 }
 

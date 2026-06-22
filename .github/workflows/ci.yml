@@ -56,7 +56,7 @@ jobs:
         with:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - run: cargo clippy --workspace --all-targets -- -D warnings -A dead_code
+      - run: cargo clippy --workspace --all-targets -- -D warnings
 
   unit-tests:
     runs-on: ubuntu-latest

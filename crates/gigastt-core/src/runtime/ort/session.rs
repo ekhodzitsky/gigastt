@@ -78,8 +78,12 @@ impl Runtime for OrtRuntime {
 
             if is_encoder && let Some(cache_dir) = &self.optimized_cache_dir {
                 std::fs::create_dir_all(cache_dir).map_err(|e| load_failed(model_path, e))?;
+                let stem = model_path
+                    .file_stem()
+                    .map(|s| s.to_string_lossy().into_owned())
+                    .unwrap_or_else(|| "encoder".into());
                 builder = builder
-                    .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
+                    .with_optimized_model_path(cache_dir.join(format!("{stem}_optimized.onnx")))
                     .map_err(|e| load_failed(model_path, e))?;
             }
         }

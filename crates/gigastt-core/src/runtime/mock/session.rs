@@ -128,12 +128,9 @@ mod tests {
     fn test_mock_session_returns_recorded_outputs() {
         let session = MockSession::new(
             vec![Shape::new(vec![1, 2])],
-            vec![Tensor::new(
-                Shape::new(vec![1]),
-                TensorData::F32(vec![42.0]),
-            )],
+            vec![Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![42.0])).unwrap()],
         );
-        let input = Tensor::new(Shape::new(vec![1, 2]), TensorData::F32(vec![0.0, 0.0]));
+        let input = Tensor::new(Shape::new(vec![1, 2]), TensorData::F32(vec![0.0, 0.0])).unwrap();
         let outputs = session.run(&[input]).unwrap();
         assert_eq!(outputs.len(), 1);
         assert_eq!(session.call_count(), 1);
@@ -143,12 +140,9 @@ mod tests {
     fn test_mock_session_rejects_mismatched_shape() {
         let session = MockSession::new(
             vec![Shape::new(vec![1, 2])],
-            vec![Tensor::new(
-                Shape::new(vec![1]),
-                TensorData::F32(vec![42.0]),
-            )],
+            vec![Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![42.0])).unwrap()],
         );
-        let input = Tensor::new(Shape::new(vec![1, 3]), TensorData::F32(vec![0.0; 3]));
+        let input = Tensor::new(Shape::new(vec![1, 3]), TensorData::F32(vec![0.0; 3])).unwrap();
         let err = session.run(&[input]).unwrap_err();
         match err {
             RuntimeError::InvalidShape { expected, got } => {
@@ -163,12 +157,9 @@ mod tests {
     fn test_mock_session_rejects_wrong_input_count() {
         let session = MockSession::new(
             vec![Shape::new(vec![1]), Shape::new(vec![1])],
-            vec![Tensor::new(
-                Shape::new(vec![1]),
-                TensorData::F32(vec![42.0]),
-            )],
+            vec![Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![42.0])).unwrap()],
         );
-        let input = Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![0.0]));
+        let input = Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![0.0])).unwrap();
         let err = session.run(&[input]).unwrap_err();
         match err {
             RuntimeError::InvalidInputCount { expected, got } => {
@@ -186,14 +177,14 @@ mod tests {
             "encoder".into(),
             Arc::new(MockSession::new(
                 vec![Shape::new(vec![1])],
-                vec![Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![1.0]))],
+                vec![Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![1.0])).unwrap()],
             )),
         );
         let runtime = MockRuntime { sessions };
         let session = runtime
             .load_session(Path::new("/models/encoder.onnx"))
             .expect("load by stem");
-        let input = Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![0.0]));
+        let input = Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![0.0])).unwrap();
         let outputs = session.run(&[input]).unwrap();
         assert_eq!(outputs.len(), 1);
     }
