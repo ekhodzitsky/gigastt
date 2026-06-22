@@ -103,7 +103,12 @@ jobs:
           pattern: bindings-*
           merge-multiple: true
       - name: Move prebuilts into per-platform npm dirs
-        run: npm run artifacts
+        # create-npm-dirs first: `napi artifacts` writes each .node into
+        # npm/<platform>/ but does NOT create those dirs (they are git-ignored),
+        # so without this it fails with ENOENT on the first platform dir.
+        run: |
+          npx napi create-npm-dirs
+          npm run artifacts
       - name: Warn on missing npm token
         if: env.HAS_NPM_TOKEN != 'true'
         run: echo "::warning ::NPM_TOKEN not configured — skipping npm publish."
