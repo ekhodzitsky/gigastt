@@ -58,7 +58,7 @@ fn vad_file_skips_silence_keeps_transcript() {
         return;
     }
     let factory = gigastt_core::cpu_factory();
-    let vad = SileroVad::load(&vad_path, &*factory).expect("load silero vad");
+    let vad = SileroVad::load_with_factory(&vad_path, &*factory).expect("load silero vad");
     let vad_engine = Engine::load(&model_dir)
         .expect("load vad engine")
         .with_vad(Some(vad), VadConfig::default());

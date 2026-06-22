@@ -100,7 +100,15 @@ impl SileroVad {
     /// Returns an error if the file is missing or `ort` fails to build the
     /// session. The caller treats an error as "VAD unavailable" and proceeds
     /// without it — VAD is strictly optional.
-    pub fn load(model_path: &Path, factory: &dyn RuntimeFactory) -> Result<Self> {
+    pub fn load(model_path: &Path) -> Result<Self> {
+        let factory = crate::runtime::cpu_factory();
+        Self::load_with_factory(model_path, factory.as_ref())
+    }
+
+    /// Like [`SileroVad::load`], but loads the ONNX session through a
+    /// caller-supplied [`RuntimeFactory`] (e.g. a non-`ort` backend or a test
+    /// mock) instead of the default CPU `ort` runtime.
+    pub fn load_with_factory(model_path: &Path, factory: &dyn RuntimeFactory) -> Result<Self> {
         tracing::debug!("Loading VAD model from {}", model_path.display());
         let runtime = factory
             .cpu_fallback()
@@ -406,7 +414,6 @@ impl Hangover {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::runtime::ort::OrtFactory;
 
     fn cfg(
         threshold: f32,
@@ -592,7 +599,7 @@ mod tests {
             eprintln!("skipping {}: Silero VAD model not present", path.display());
             return;
         }
-        let vad = SileroVad::load(&path, &OrtFactory::cpu()).expect("load silero");
+        let vad = SileroVad::load(&path).expect("load silero");
 
         // 1 s of pure silence → several frames, all low probability.
         let silence = vec![0.0f32; 16000];
@@ -646,7 +653,7 @@ mod tests {
             eprintln!("skipping {}: Silero VAD model not present", path.display());
             return;
         }
-        let vad = SileroVad::load(&path, &OrtFactory::cpu()).expect("load silero");
+        let vad = SileroVad::load(&path).expect("load silero");
         let c = VadConfig::default();
         let mut ep = VadEndpointer::new(&c);
 
@@ -675,7 +682,7 @@ mod tests {
             eprintln!("skipping {}: Silero VAD model not present", path.display());
             return;
         }
-        let vad = SileroVad::load(&path, &OrtFactory::cpu()).expect("load silero");
+        let vad = SileroVad::load(&path).expect("load silero");
         let c = VadConfig::default();
         let mut ep = VadEndpointer::new(&c);
 

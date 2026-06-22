@@ -179,7 +179,15 @@ impl Punctuator {
     /// Returns an error if any file is missing or fails to parse / load. The
     /// caller treats an error as "punctuation unavailable" and proceeds without
     /// it — restoration is optional post-processing.
-    pub fn load(model_dir: &Path, factory: &dyn RuntimeFactory) -> Result<Self> {
+    pub fn load(model_dir: &Path) -> Result<Self> {
+        let factory = crate::runtime::cpu_factory();
+        Self::load_with_factory(model_dir, factory.as_ref())
+    }
+
+    /// Like [`Punctuator::load`], but loads the ONNX session through a
+    /// caller-supplied [`RuntimeFactory`] (e.g. a non-`ort` backend or a test
+    /// mock) instead of the default CPU `ort` runtime.
+    pub fn load_with_factory(model_dir: &Path, factory: &dyn RuntimeFactory) -> Result<Self> {
         let model_path = model_dir.join(PUNCT_MODEL_FILE);
         let tokenizer_path = model_dir.join(PUNCT_TOKENIZER_FILE);
         let config_path = model_dir.join(PUNCT_CONFIG_FILE);
@@ -350,7 +358,6 @@ fn load_id2label(config_path: &Path) -> Result<Vec<String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::runtime::ort::OrtFactory;
 
     #[test]
     fn test_capitalize_python_semantics() {
@@ -463,7 +470,7 @@ mod tests {
     fn test_load_missing_id2label_errors() {
         let tmp = tempfile::tempdir().expect("tempdir");
         std::fs::write(tmp.path().join(PUNCT_CONFIG_FILE), r#"{"foo": 1}"#).unwrap();
-        assert!(Punctuator::load(tmp.path(), &OrtFactory::cpu()).is_err());
+        assert!(Punctuator::load(tmp.path()).is_err());
     }
 
     /// config.json parses but tokenizer.json is malformed: `load` must fail at
@@ -474,7 +481,7 @@ mod tests {
         std::fs::write(tmp.path().join(PUNCT_CONFIG_FILE), MINIMAL_CONFIG_JSON).unwrap();
         std::fs::write(tmp.path().join(PUNCT_TOKENIZER_FILE), "{ not valid json").unwrap();
         // `Punctuator` is not `Debug`, so match instead of `expect_err`.
-        match Punctuator::load(tmp.path(), &OrtFactory::cpu()) {
+        match Punctuator::load(tmp.path()) {
             Ok(_) => panic!("malformed tokenizer must error"),
             Err(e) => assert!(e.to_string().contains("tokenizer")),
         }
@@ -493,7 +500,7 @@ mod tests {
         )
         .unwrap();
         // No rupunct_small_int8.onnx written → session build must fail.
-        assert!(Punctuator::load(tmp.path(), &OrtFactory::cpu()).is_err());
+        assert!(Punctuator::load(tmp.path()).is_err());
     }
 
     #[test]
@@ -502,7 +509,7 @@ mod tests {
         // (the caller turns this into "punctuation disabled"), never panic.
         let tmp = tempfile::tempdir().expect("tempdir");
         let missing = tmp.path().join("does-not-exist");
-        assert!(Punctuator::load(&missing, &OrtFactory::cpu()).is_err());
+        assert!(Punctuator::load(&missing).is_err());
     }
 
     #[test]
@@ -537,8 +544,7 @@ mod tests {
     #[ignore = "requires punct model at ~/.gigastt/models/punct"]
     fn test_restore_reference_string() {
         let dir = default_punct_model_dir();
-        let punct =
-            Punctuator::load(Path::new(&dir), &OrtFactory::cpu()).expect("load punct model");
+        let punct = Punctuator::load(Path::new(&dir)).expect("load punct model");
         let out =
             punct.restore("привет меня зовут анна сколько будет стоить шестьдесят тысяч тенге");
         assert_eq!(
