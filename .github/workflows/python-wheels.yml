@@ -71,6 +71,13 @@ jobs:
           # has no protobuf-compiler package). Runs before each Linux build.
           before-script-linux: |
             set -eu
+            # manylinux_2_28 (AlmaLinux 8) is a minimal image. ort-sys's
+            # build-time onnxruntime downloader (ureq -> native-tls) links
+            # openssl on Linux, so it needs openssl-devel + pkgconfig; unzip is
+            # for protoc. These are BUILD-only deps — the runtime wheel/.so does
+            # not link openssl (verified: openssl-sys is a build-dependency of
+            # ort-sys only). Ubuntu/macOS runners ship these, manylinux does not.
+            (dnf install -y openssl-devel pkgconfig unzip || yum install -y openssl-devel pkgconfig unzip)
             PV=25.1
             case "$(uname -m)" in
               x86_64) PA=x86_64 ;;
@@ -79,7 +86,6 @@ jobs:
             esac
             curl -fsSL -o /tmp/protoc.zip \
               "https://github.com/protocolbuffers/protobuf/releases/download/v${PV}/protoc-${PV}-linux-${PA}.zip"
-            (command -v unzip || (yum install -y unzip || dnf install -y unzip)) >/dev/null 2>&1 || true
             unzip -o /tmp/protoc.zip -d /usr/local
             protoc --version
 
