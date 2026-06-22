@@ -1,0 +1,118 @@
+# Cross-platform prebuilt npm packages for the gigastt-node addon (napi-rs).
+#
+# Manual (`workflow_dispatch`). Builds the `.node` addon on a NATIVE runner per
+# target (avoids ort's fragile cross-compile of the onnxruntime native lib), then
+# optionally publishes per-platform npm packages via napi-rs's optional-dependency
+# model so `npm install gigastt-node` needs no compiler / node-gyp.
+#
+# onnxruntime is statically linked into each `.node` (ort default), so no native
+# dylib is bundled — the addon is self-contained. The ~215 MB INT8 model is NOT
+# bundled; it is side-loaded at runtime (see `gigastt download --prequantized`).
+name: Node Prebuilds
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish per-platform packages to npm (requires NPM_TOKEN)'
+        type: boolean
+        default: false
+
+defaults:
+  run:
+    working-directory: crates/gigastt-node
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-14
+            target: aarch64-apple-darwin
+          - host: macos-13
+            target: x86_64-apple-darwin
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - host: windows-latest
+            target: x86_64-pc-windows-msvc
+    name: Build ${{ matrix.settings.target }}
+    runs-on: ${{ matrix.settings.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.settings.target }}
+
+      # gigastt-core's build.rs shells out to protoc (prost-build).
+      - name: Install protoc (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends protobuf-compiler
+      - name: Install protoc (macOS)
+        if: runner.os == 'macOS'
+        run: brew install protobuf
+      - name: Install protoc (Windows)
+        if: runner.os == 'Windows'
+        run: choco install protoc -y
+
+      - name: Install deps (@napi-rs/cli)
+        run: npm install
+
+      - name: Build addon
+        run: npx napi build --platform --release --target ${{ matrix.settings.target }}
+
+      # Sanity: the addon dlopen-loads (links + onnxruntime static-init OK).
+      # No model needed — Engine loads the model lazily, not on require().
+      - name: Load check
+        run: node -e "require('./index.js'); console.log('addon loaded OK')"
+
+      - name: Upload prebuilt
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: crates/gigastt-node/*.node
+          if-no-files-found: error
+
+  publish:
+    name: Publish to npm
+    needs: build
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    env:
+      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+      - name: Install deps (@napi-rs/cli)
+        run: npm install
+      - name: Download all prebuilts
+        uses: actions/download-artifact@v4
+        with:
+          path: crates/gigastt-node/artifacts
+          pattern: bindings-*
+          merge-multiple: true
+      - name: Move prebuilts into per-platform npm dirs
+        run: npm run artifacts
+      - name: Warn on missing npm token
+        if: env.HAS_NPM_TOKEN != 'true'
+        run: echo "::warning ::NPM_TOKEN not configured — skipping npm publish."
+      - name: Publish
+        if: env.HAS_NPM_TOKEN == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm config set provenance true
+          # prepublishOnly (napi prepublish -t npm) publishes the per-platform
+          # sub-packages and injects optionalDependencies, then the root publishes.
+          npm publish --access public

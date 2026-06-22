@@ -50,7 +50,11 @@ Inference runs on libuv's worker threadpool (default 4 threads, shared with Node
 
 ## Packaging
 
-Per-platform prebuilt npm packages (optional-dependency model, `npm install` with no compiler) are produced by the release pipeline (prebuilt-artifacts task), not by this crate's local build.
+Per-platform prebuilt npm packages follow napi-rs's optional-dependency model: a JS-only root package (`gigastt-node`) plus one binary sub-package per platform (`gigastt-node-darwin-arm64`, `gigastt-node-linux-x64-gnu`, …) listed under `optionalDependencies`, so `npm install gigastt-node` pulls exactly the matching binary — no compiler, no node-gyp, no postinstall download. onnxruntime is statically linked into each `.node`, so there is no native dylib to locate (and no `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH` setup).
+
+The prebuilts are produced and published by the **Node Prebuilds** workflow (`.github/workflows/node-prebuilds.yml`, manual `workflow_dispatch`): it builds the addon on a native runner per target — `darwin-arm64`, `darwin-x64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc` — and, when `publish` is set and `NPM_TOKEN` is configured, publishes all packages via `napi prepublish`.
+
+The ~215 MB INT8 model is **not** bundled in the npm package; side-load it at runtime (e.g. `gigastt download --prequantized`).
 
 ## License
 
