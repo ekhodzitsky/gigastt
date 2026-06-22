@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Format
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Clippy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Unit Tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -66,7 +66,7 @@ jobs:
     runs-on: macos-14
     name: Build (CoreML)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: brew install protobuf
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build (CUDA)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -134,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build (Diarization)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -150,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     name: E2E Tests
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -180,7 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     name: WER Benchmark
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -230,7 +230,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Semver Checks
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -253,7 +253,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Coverage
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -288,7 +288,7 @@ jobs:
       contents: read
       checks: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # `rustsec/audit-check` ships a prebuilt cargo-audit, saving the ~90 s
       # `cargo install --locked` rebuild on every PR run.
       - uses: rustsec/audit-check@v2
@@ -302,7 +302,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Cargo Deny
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           # Default `check` covers licenses + advisories + bans + sources.
@@ -315,7 +315,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Typos
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: crate-ci/typos@v1
 
   dependency-review:
@@ -328,7 +328,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: actions/dependency-review-action@v5
@@ -343,7 +343,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Doc Build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -360,7 +360,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Feature Powerset
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -379,7 +379,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Publish Dry Run
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -393,7 +393,7 @@ jobs:
     runs-on: ubuntu-latest
     name: MSRV (1.88)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # MSRV floor: edition 2024 needs >=1.85, is_multiple_of needs >=1.87,
       # ort 2.0.0-rc.12 declares rust-version 1.88. NB: a warm cargo cache can
       # mask a too-new dependency MSRV here — the ort 1.88 floor was only
@@ -411,7 +411,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Fuzz Build
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@nightly
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -439,7 +439,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Benchmarks (regression gate)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
@@ -514,7 +514,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Coverage (E2E)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -582,7 +582,7 @@ jobs:
     outputs:
       docker: ${{ steps.filter.outputs.docker }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
         with:
@@ -611,7 +611,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       # The layer cache lives in ghcr.io (free for public repos), keeping the
       # 10 GB Actions cache budget untouched. GITHUB_TOKEN grants packages:read
@@ -657,7 +657,7 @@ jobs:
           - name: benchmark
             dockerfile: benchmark/Dockerfile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Free disk space
         # The nvidia/cuda devel base (~8 GB) plus a release target dir plus
         # the buildx cache export overflow the ~14 GB free on a stock runner.
