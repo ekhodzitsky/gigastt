@@ -61,7 +61,9 @@ jobs:
         run: choco install protoc -y
 
       - name: Install deps (@napi-rs/cli)
-        run: npm install
+        # --ignore-scripts: skip our postinstall (install.js) — the binary is
+        # built below by napi, not downloaded.
+        run: npm install --ignore-scripts
 
       - name: Build addon
         run: npx napi build --platform --release --target ${{ matrix.settings.target }}
@@ -69,7 +71,7 @@ jobs:
       # Sanity: the addon dlopen-loads (links + onnxruntime static-init OK).
       # No model needed — Engine loads the model lazily, not on require().
       - name: Load check
-        run: node -e "require('./index.js'); console.log('addon loaded OK')"
+        run: node -e "require('./loader.js'); console.log('addon loaded OK')"
 
       - name: Upload prebuilt
         uses: actions/upload-artifact@v4
@@ -84,7 +86,7 @@ jobs:
     if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # create the node-v<version> release that hosts the .node binaries
       id-token: write # npm provenance
     env:
       HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' && 'true' || 'false' }}
@@ -94,30 +96,44 @@ jobs:
         with:
           node-version: 20
           registry-url: 'https://registry.npmjs.org'
-      - name: Install deps (@napi-rs/cli)
-        run: npm install
-      - name: Download all prebuilts
+
+      - name: Download all prebuilt .node binaries
         uses: actions/download-artifact@v4
         with:
           path: crates/gigastt-node/artifacts
           pattern: bindings-*
           merge-multiple: true
-      - name: Move prebuilts into per-platform npm dirs
-        # create-npm-dirs first: `napi artifacts` writes each .node into
-        # npm/<platform>/ but does NOT create those dirs (they are git-ignored),
-        # so without this it fails with ENOENT on the first platform dir.
-        run: |
-          npx napi create-npm-dirs
-          npm run artifacts
+      - name: List prebuilts
+        run: ls -la artifacts
+
+      - name: Read package version
+        id: ver
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # Host the per-platform native binaries on a dedicated release; the npm
+      # package's postinstall (install.js) downloads exactly one of these.
+      - name: Publish native binaries to node-v* release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: node-v${{ steps.ver.outputs.version }}
+          name: gigastt Node native binaries (v${{ steps.ver.outputs.version }})
+          body: |
+            Per-platform native addons for the `gigastt` npm package. The package
+            is a single JS-only package; its postinstall downloads exactly one of
+            these `.node` files (the one matching the install platform).
+          files: crates/gigastt-node/artifacts/*.node
+
       - name: Warn on missing npm token
         if: env.HAS_NPM_TOKEN != 'true'
         run: echo "::warning ::NPM_TOKEN not configured — skipping npm publish."
-      - name: Publish
+
+      # Single package: only loader.js + install.js + gigastt.d.ts are published
+      # (no bundled binaries, no per-platform sub-packages). `files` in
+      # package.json enforces that; `npm publish` here ships just `gigastt`.
+      - name: Publish gigastt to npm
         if: env.HAS_NPM_TOKEN == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           npm config set provenance true
-          # prepublishOnly (napi prepublish -t npm) publishes the per-platform
-          # sub-packages and injects optionalDependencies, then the root publishes.
           npm publish --access public

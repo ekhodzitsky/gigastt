@@ -42,7 +42,7 @@ npm run build               # napi build --release -> index.js + index.d.ts + *.
 GIGASTT_MODEL_DIR=~/.gigastt/models npm run smoke   # transcribes the golos_00.wav fixture
 ```
 
-`npm run build` auto-generates the JS loader (`index.js`), the TypeScript types (`index.d.ts`), and the native `.node` addon; all are git-ignored build artifacts.
+`npm run build` produces the native `gigastt.<platform>.node` addon (git-ignored); `loader.js`, `install.js`, and `gigastt.d.ts` are the committed, published package files.
 
 ## Performance note
 
@@ -50,11 +50,11 @@ Inference runs on libuv's worker threadpool (default 4 threads, shared with Node
 
 ## Packaging
 
-Per-platform prebuilt npm packages follow napi-rs's optional-dependency model: a JS-only root package (`gigastt`) plus one binary sub-package per platform (`gigastt-darwin-arm64`, `gigastt-linux-x64-gnu`, …) listed under `optionalDependencies`, so `npm install gigastt` pulls exactly the matching binary — no compiler, no node-gyp, no postinstall download. onnxruntime is statically linked into each `.node`, so there is no native dylib to locate (and no `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH` setup).
+**Single npm package.** `gigastt` is one JS-only package (`loader.js` + `install.js` + `gigastt.d.ts`) — no per-platform sub-packages. On `npm install gigastt`, the postinstall (`install.js`) downloads exactly **one** native binary — the `gigastt.<platform>.node` matching the install platform — from the `node-v<version>` GitHub release, so only ~47 MB is fetched (not all platforms). `loader.js` then loads it. onnxruntime is statically linked into each `.node`, so there is no native dylib to locate (no `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH`).
 
-The prebuilts are produced and published by the **Node Prebuilds** workflow (`.github/workflows/node-prebuilds.yml`, manual `workflow_dispatch`): it builds the addon on a native runner per target — `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc` — and, when `publish` is set and `NPM_TOKEN` is configured, publishes all packages via `napi prepublish`. (Intel macOS is omitted: ort ships no prebuilt onnxruntime for it.)
+Supported prebuilt platforms: `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc` (Intel macOS omitted — ort ships no onnxruntime for it). The binaries are built per native runner and attached to the `node-v<version>` release by the **Node Prebuilds** workflow (`.github/workflows/node-prebuilds.yml`, `workflow_dispatch`); the single `gigastt` package is then published.
 
-The ~215 MB INT8 model is **not** bundled in the npm package; side-load it at runtime (e.g. `gigastt download --prequantized`).
+Caveat: `npm install --ignore-scripts` skips the postinstall, so the binary is not fetched — `require('gigastt')` then errors with instructions to run `node install.js`. The ~215 MB INT8 model is **not** bundled either; side-load it at runtime (e.g. `gigastt download --prequantized`).
 
 ## License
 

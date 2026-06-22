@@ -4,7 +4,7 @@
 // word timings, and that a missing model throws a typed JS error.
 const os = require('os');
 const path = require('path');
-const { Engine, Stream } = require('../index.js');
+const { Engine, Stream } = require('../loader.js');
 
 const modelDir =
   process.env.GIGASTT_MODEL_DIR || path.join(os.homedir(), '.gigastt', 'models');
