@@ -185,7 +185,7 @@ impl Punctuator {
     }
 
     /// Like [`Punctuator::load`], but loads the ONNX session through a
-    /// caller-supplied [`RuntimeFactory`] (e.g. a non-`ort` backend or a test
+    /// caller-supplied `RuntimeFactory` (e.g. a non-`ort` backend or a test
     /// mock) instead of the default CPU `ort` runtime.
     pub fn load_with_factory(model_dir: &Path, factory: &dyn RuntimeFactory) -> Result<Self> {
         let model_path = model_dir.join(PUNCT_MODEL_FILE);

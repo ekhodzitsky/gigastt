@@ -106,7 +106,7 @@ impl SileroVad {
     }
 
     /// Like [`SileroVad::load`], but loads the ONNX session through a
-    /// caller-supplied [`RuntimeFactory`] (e.g. a non-`ort` backend or a test
+    /// caller-supplied `RuntimeFactory` (e.g. a non-`ort` backend or a test
     /// mock) instead of the default CPU `ort` runtime.
     pub fn load_with_factory(model_path: &Path, factory: &dyn RuntimeFactory) -> Result<Self> {
         tracing::debug!("Loading VAD model from {}", model_path.display());
