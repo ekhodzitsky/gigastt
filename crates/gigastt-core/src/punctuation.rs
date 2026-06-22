@@ -29,10 +29,15 @@
 use std::path::Path;
 
 use anyhow::{Context, Result};
-use ort::session::Session;
-use ort::value::TensorRef;
 use parking_lot::Mutex;
 use tokenizers::Tokenizer;
+
+use crate::runtime::{
+    factory::RuntimeFactory,
+    ort::OrtFactory,
+    session::RuntimeSession,
+    tensor::{Shape, Tensor, TensorData},
+};
 
 /// Basename of the INT8 ONNX punctuation model inside the punct model dir.
 pub const PUNCT_MODEL_FILE: &str = "rupunct_small_int8.onnx";
@@ -40,10 +45,6 @@ pub const PUNCT_MODEL_FILE: &str = "rupunct_small_int8.onnx";
 pub const PUNCT_TOKENIZER_FILE: &str = "tokenizer.json";
 /// Basename of the model config JSON (carries `id2label`) inside the punct model dir.
 pub const PUNCT_CONFIG_FILE: &str = "config.json";
-
-fn ort_err(e: impl std::fmt::Display) -> anyhow::Error {
-    anyhow::anyhow!("{e}")
-}
 
 /// Apply Python `str.capitalize()` semantics to a token: first character
 /// uppercased, every following character lowercased. Operates over Unicode
@@ -162,7 +163,7 @@ fn argmax(row: &[f32]) -> usize {
 /// is the public entry point and never panics: on any internal failure it logs
 /// and returns the input text unchanged.
 pub struct Punctuator {
-    session: Mutex<Session>,
+    session: Mutex<Box<dyn RuntimeSession>>,
     tokenizer: Tokenizer,
     /// `id2label[i]` is the label name for logit index `i`.
     id2label: Vec<String>,
@@ -191,10 +192,14 @@ impl Punctuator {
             anyhow::anyhow!("Failed to load tokenizer {}: {e}", tokenizer_path.display())
         })?;
 
-        let session = Session::builder()
-            .map_err(ort_err)?
-            .commit_from_file(&model_path)
-            .map_err(ort_err)
+        let factory = OrtFactory::cpu();
+        let runtime = factory
+            .create(1)
+            .map_err(|e| anyhow::anyhow!(e))
+            .with_context(|| format!("Failed to create runtime for {}", model_path.display()))?;
+        let session = runtime
+            .load_session(&model_path)
+            .map_err(|e| anyhow::anyhow!(e))
             .with_context(|| format!("Failed to load punct model {}", model_path.display()))?;
 
         tracing::info!(
@@ -255,31 +260,28 @@ impl Punctuator {
         let seq = ids.len();
         let token_type_ids = vec![0i64; seq];
 
-        let input_ids = TensorRef::from_array_view(([1_usize, seq], ids.as_slice()))?;
-        let attention_mask = TensorRef::from_array_view(([1_usize, seq], mask.as_slice()))?;
-        let token_type = TensorRef::from_array_view(([1_usize, seq], token_type_ids.as_slice()))?;
+        let input_ids = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(ids));
+        let attention_mask = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(mask));
+        let token_type = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(token_type_ids));
 
         // Run the session and reduce the borrowed logits to an owned
-        // per-token argmax inside this scope, so the `outputs` borrow (which
-        // ties the lifetime to the session guard) is released before the
-        // session guard is dropped at end of scope.
+        // per-token argmax inside this scope.
         let num_labels = self.id2label.len();
         let argmax_per_token: Vec<usize> = {
-            let mut session = self.session.lock();
+            let session = self.session.lock();
             let outputs = session
-                .run(ort::inputs![
-                    "input_ids" => input_ids,
-                    "attention_mask" => attention_mask,
-                    "token_type_ids" => token_type,
-                ])
+                .run(vec![input_ids, attention_mask, token_type])
                 .context("punct model inference failed")?;
 
-            let (shape, logits) = outputs["logits"]
-                .try_extract_tensor::<f32>()
+            let logits_view = outputs[0].view();
+            let logits = logits_view
+                .data()
+                .as_f32()
                 .context("failed to extract punct logits")?;
 
             // Expect [1, seq, num_labels].
-            if shape.len() != 3 || shape[2] as usize != num_labels {
+            let shape = logits_view.shape().dims();
+            if shape != [1, seq, num_labels] {
                 anyhow::bail!(
                     "unexpected punct logits shape {shape:?} (expected [1, {seq}, {num_labels}])"
                 );
@@ -429,14 +431,6 @@ mod tests {
         assert_eq!(argmax(&[0.1, 0.9, 0.3]), 1);
         assert_eq!(argmax(&[5.0, 1.0, 2.0]), 0);
         assert_eq!(argmax(&[1.0, 1.0, 3.0]), 2);
-    }
-
-    /// `ort_err` flattens any `Display` error into an `anyhow::Error` carrying
-    /// the same message (the Send/Sync workaround used at every `ort` boundary).
-    #[test]
-    fn test_ort_err_preserves_display_message() {
-        let err = ort_err("session build exploded");
-        assert_eq!(err.to_string(), "session build exploded");
     }
 
     /// A minimal but valid HuggingFace tokenizer.json (WordLevel model). Used to
