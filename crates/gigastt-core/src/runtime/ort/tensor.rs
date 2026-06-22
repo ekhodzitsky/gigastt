@@ -8,7 +8,6 @@ use crate::runtime::{
 
 impl Tensor {
     /// Converts this owned tensor into an `ort` value.
-    #[allow(dead_code)]
     pub fn into_ort_value(self) -> Result<Value, RuntimeError> {
         let shape: Vec<i64> = self.shape().dims().iter().map(|&d| d as i64).collect();
         match self.into_data() {

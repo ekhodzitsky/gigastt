@@ -7,7 +7,6 @@ pub struct Tensor {
 
 /// Owned tensor storage for the supported element types.
 #[derive(Clone, Debug, PartialEq)]
-#[allow(dead_code)]
 pub enum TensorData {
     F32(Vec<f32>),
     I32(Vec<i32>),
@@ -16,14 +15,12 @@ pub enum TensorData {
 
 /// Zero-copy borrow of tensor storage.
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[allow(dead_code)]
 pub enum TensorDataView<'a> {
     F32(&'a [f32]),
     I32(&'a [i32]),
     I64(&'a [i64]),
 }
 
-#[allow(dead_code)]
 impl<'a> TensorDataView<'a> {
     pub fn as_f32(&self) -> Option<&'a [f32]> {
         match self {
@@ -64,7 +61,6 @@ pub enum ElementType {
     I64,
 }
 
-#[allow(dead_code)]
 impl Tensor {
     /// Creates a tensor, validating that `data` length matches `shape`.
     pub fn new(shape: Shape, data: TensorData) -> Result<Self, crate::runtime::RuntimeError> {
@@ -153,7 +149,6 @@ impl Tensor {
     }
 }
 
-#[allow(dead_code)]
 impl TensorData {
     pub fn len(&self) -> usize {
         match self {
@@ -175,7 +170,6 @@ pub struct TensorView<'a> {
     data: TensorDataView<'a>,
 }
 
-#[allow(dead_code)]
 impl<'a> TensorView<'a> {
     pub fn shape(&self) -> &Shape {
         self.shape
@@ -186,7 +180,6 @@ impl<'a> TensorView<'a> {
     }
 }
 
-#[allow(dead_code)]
 impl Shape {
     pub fn new(dims: Vec<usize>) -> Self {
         Self { dims }

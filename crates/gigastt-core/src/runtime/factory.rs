@@ -1,7 +1,6 @@
 use super::{error::RuntimeError, session::RuntimeSession};
 
 /// Creates a `Runtime` configured for a specific execution provider.
-#[allow(dead_code)]
 pub trait RuntimeFactory: Send + Sync + 'static {
     fn create(&self, intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError>;
 
@@ -10,7 +9,6 @@ pub trait RuntimeFactory: Send + Sync + 'static {
 }
 
 /// Owns loaded sessions. One runtime per `Engine`.
-#[allow(dead_code)]
 pub trait Runtime: Send + Sync + 'static {
     fn load_session(
         &self,
