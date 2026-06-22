@@ -1,0 +1,34 @@
+[package]
+name = "gigastt-uniffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "UniFFI bindings for gigastt — idiomatic Swift / Kotlin / Python from one source"
+keywords = ["stt", "speech-recognition", "uniffi", "gigaam", "russian"]
+categories = ["multimedia::audio", "api-bindings"]
+
+[lib]
+# cdylib for the foreign bindings to load; lib (rlib) for the uniffi-bindgen bin
+# + tests to reach the Rust API.
+crate-type = ["cdylib", "lib"]
+name = "gigastt_uniffi"
+
+[features]
+default = []
+coreml = ["gigastt-core/coreml"]
+cuda = ["gigastt-core/cuda"]
+nnapi = ["gigastt-core/nnapi"]
+
+[dependencies]
+# Lean core: file decoding only — no HTTP download, no async runtime (the
+# bindings side-load models and use the synchronous checkout_blocking path).
+gigastt-core = { version = "2.3.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
+uniffi = { version = "0.28", features = ["cli"] }
+thiserror = "2"
+
+# Pin the bindgen generator to this crate's uniffi version.
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"

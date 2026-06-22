@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/gigastt-core", "crates/gigastt-ffi", "crates/gigastt"]
+members = ["crates/gigastt-core", "crates/gigastt-ffi", "crates/gigastt-uniffi", "crates/gigastt"]
 default-members = ["crates/gigastt"]
 resolver = "3"
 
