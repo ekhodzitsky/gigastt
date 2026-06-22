@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use ort::session::Session;
 
@@ -13,48 +13,89 @@ use super::{factory::OrtExecutionProvider, tensor::value_to_tensor};
 pub struct OrtRuntime {
     intra_threads: usize,
     provider: OrtExecutionProvider,
+    prepacked: Option<Arc<ort::session::builder::PrepackedWeights>>,
+    optimized_cache_dir: Option<std::path::PathBuf>,
 }
 
 impl OrtRuntime {
-    pub(crate) fn new(intra_threads: usize, provider: OrtExecutionProvider) -> Self {
+    pub(crate) fn new(
+        intra_threads: usize,
+        provider: OrtExecutionProvider,
+        prepacked: Option<Arc<ort::session::builder::PrepackedWeights>>,
+        optimized_cache_dir: Option<std::path::PathBuf>,
+    ) -> Self {
         Self {
             intra_threads,
             provider,
+            prepacked,
+            optimized_cache_dir,
         }
+    }
+}
+
+fn load_failed(path: &Path, e: impl std::fmt::Display) -> RuntimeError {
+    RuntimeError::LoadFailed {
+        path: path.into(),
+        message: e.to_string(),
+    }
+}
+
+impl Runtime for OrtRuntime {
+    fn load_session(&self, model_path: &Path) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
+        let is_encoder = model_path
+            .file_stem()
+            .map(|s| {
+                let s = s.to_string_lossy().to_lowercase();
+                s.contains("encoder")
+            })
+            .unwrap_or(false);
+
+        let mut builder = Session::builder().map_err(|e| load_failed(model_path, e))?;
+
+        if let Some(prepacked) = self.prepacked.as_ref() {
+            builder = builder
+                .with_prepacked_weights(prepacked)
+                .map_err(|e| load_failed(model_path, e))?;
+        }
+
+        let eps = self.provider.execution_providers(model_path);
+        builder = builder
+            .with_execution_providers(&eps)
+            .map_err(|e| load_failed(model_path, e))?;
+
+        if self.provider.is_cpu() {
+            let intra_threads = if is_encoder {
+                self.intra_threads.max(1)
+            } else {
+                1
+            };
+            builder = builder
+                .with_intra_threads(intra_threads)
+                .map_err(|e| load_failed(model_path, e))?;
+            builder = builder
+                .with_inter_threads(1)
+                .map_err(|e| load_failed(model_path, e))?;
+
+            if is_encoder && let Some(cache_dir) = &self.optimized_cache_dir {
+                std::fs::create_dir_all(cache_dir).map_err(|e| load_failed(model_path, e))?;
+                builder = builder
+                    .with_optimized_model_path(cache_dir.join("encoder_optimized.onnx"))
+                    .map_err(|e| load_failed(model_path, e))?;
+            }
+        }
+
+        let session = builder
+            .commit_from_file(model_path)
+            .map_err(|e| load_failed(model_path, e))?;
+        Ok(Box::new(OrtSession {
+            session: Mutex::new(session),
+        }))
     }
 }
 
 /// `ort`-backed session wrapping a loaded ONNX model.
 pub struct OrtSession {
     session: Mutex<Session>,
-}
-
-impl Runtime for OrtRuntime {
-    fn load_session(&self, model_path: &Path) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
-        let session = Session::builder()
-            .map_err(|e| RuntimeError::LoadFailed {
-                path: model_path.into(),
-                message: e.to_string(),
-            })?
-            .with_execution_providers([self.provider.to_ort()])
-            .map_err(|e| RuntimeError::LoadFailed {
-                path: model_path.into(),
-                message: e.to_string(),
-            })?
-            .with_intra_threads(self.intra_threads)
-            .map_err(|e| RuntimeError::LoadFailed {
-                path: model_path.into(),
-                message: e.to_string(),
-            })?
-            .commit_from_file(model_path)
-            .map_err(|e| RuntimeError::LoadFailed {
-                path: model_path.into(),
-                message: e.to_string(),
-            })?;
-        Ok(Box::new(OrtSession {
-            session: Mutex::new(session),
-        }))
-    }
 }
 
 impl RuntimeSession for OrtSession {
