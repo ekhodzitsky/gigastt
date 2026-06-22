@@ -19,7 +19,7 @@ Errors are thrown JS `Error`s whose message is prefixed with a stable code — `
 ## Quickstart
 
 ```js
-const { Engine } = require('gigastt-node');
+const { Engine } = require('gigastt');
 
 const engine = new Engine('/path/to/gigastt/models'); // side-loaded model dir
 const t = await engine.transcribeFile('recording.wav');
@@ -27,7 +27,7 @@ console.log(t.text);
 for (const w of t.words) console.log(w.text, w.startS, w.endS, w.confidence);
 
 // streaming
-const { Stream } = require('gigastt-node');
+const { Stream } = require('gigastt');
 const s = new Stream(engine);
 for (const seg of await s.processChunk(pcm16, 16000)) console.log(seg.text);
 console.log((await s.flush()).map((seg) => seg.text));
@@ -50,9 +50,9 @@ Inference runs on libuv's worker threadpool (default 4 threads, shared with Node
 
 ## Packaging
 
-Per-platform prebuilt npm packages follow napi-rs's optional-dependency model: a JS-only root package (`gigastt-node`) plus one binary sub-package per platform (`gigastt-node-darwin-arm64`, `gigastt-node-linux-x64-gnu`, …) listed under `optionalDependencies`, so `npm install gigastt-node` pulls exactly the matching binary — no compiler, no node-gyp, no postinstall download. onnxruntime is statically linked into each `.node`, so there is no native dylib to locate (and no `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH` setup).
+Per-platform prebuilt npm packages follow napi-rs's optional-dependency model: a JS-only root package (`gigastt`) plus one binary sub-package per platform (`gigastt-darwin-arm64`, `gigastt-linux-x64-gnu`, …) listed under `optionalDependencies`, so `npm install gigastt` pulls exactly the matching binary — no compiler, no node-gyp, no postinstall download. onnxruntime is statically linked into each `.node`, so there is no native dylib to locate (and no `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH` setup).
 
-The prebuilts are produced and published by the **Node Prebuilds** workflow (`.github/workflows/node-prebuilds.yml`, manual `workflow_dispatch`): it builds the addon on a native runner per target — `darwin-arm64`, `darwin-x64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc` — and, when `publish` is set and `NPM_TOKEN` is configured, publishes all packages via `napi prepublish`.
+The prebuilts are produced and published by the **Node Prebuilds** workflow (`.github/workflows/node-prebuilds.yml`, manual `workflow_dispatch`): it builds the addon on a native runner per target — `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc` — and, when `publish` is set and `NPM_TOKEN` is configured, publishes all packages via `napi prepublish`. (Intel macOS is omitted: ort ships no prebuilt onnxruntime for it.)
 
 The ~215 MB INT8 model is **not** bundled in the npm package; side-load it at runtime (e.g. `gigastt download --prequantized`).
 

@@ -1,5 +1,5 @@
 {
-  "name": "gigastt-node",
+  "name": "gigastt",
   "version": "2.3.0",
   "description": "napi-rs Node.js binding for gigastt — on-device Russian speech-to-text (GigaAM v3)",
   "license": "MIT",
@@ -14,7 +14,7 @@
     "node": ">=18"
   },
   "napi": {
-    "binaryName": "gigastt-node",
+    "binaryName": "gigastt",
     "targets": [
       "aarch64-apple-darwin",
       "x86_64-unknown-linux-gnu",

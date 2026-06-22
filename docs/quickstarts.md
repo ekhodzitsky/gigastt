@@ -42,10 +42,10 @@ except g.GigasttError.ModelNotFound:
     ...
 ```
 
-## Node — `npm install gigastt-node`
+## Node — `npm install gigastt`
 
 ```js
-const { Engine, Stream } = require('gigastt-node');
+const { Engine, Stream } = require('gigastt');
 
 const engine = new Engine('/path/to/models');     // new Engine(modelDir, poolSize?)
 const t = await engine.transcribeFile('recording.wav');
@@ -107,8 +107,8 @@ in Python, `transcribeFile`/`startS` in Node/Swift/Kotlin.)
 
 | Binding | Package | Status |
 |---|---|---|
-| Python | `gigastt` (PyPI) | bindings + wheel build ready; publish on a tagged release |
-| Node | `gigastt-node` (npm) | bindings + prebuild CI ready; publish on a tagged release |
+| Python | `gigastt` (PyPI) | published — `pip install gigastt` |
+| Node | `gigastt` (npm) | published — `npm install gigastt` |
 | Swift | SwiftPM (xcframework) | packaging in progress |
 | Kotlin | Maven (AAR) | packaging in progress |
 
