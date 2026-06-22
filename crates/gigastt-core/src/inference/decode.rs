@@ -1,8 +1,11 @@
 //! RNN-T greedy decoding for GigaAM v3 e2e_rnnt.
 
 use anyhow::{Context, Result};
-use ort::session::Session;
-use ort::value::TensorRef;
+
+use crate::runtime::{
+    session::RuntimeSession,
+    tensor::{Shape, Tensor, TensorData},
+};
 
 use super::bias::Biaser;
 use super::{DecoderState, PRED_HIDDEN};
@@ -101,24 +104,42 @@ impl DecoderOutput {
 ///
 /// Input: prev_token [1,1] + h [1,1,PRED_HIDDEN] + c [1,1,PRED_HIDDEN]
 /// Output: `out` is overwritten in place with dec_data, new_h, new_c.
-fn run_decoder(decoder: &mut Session, state: &DecoderState, out: &mut DecoderOutput) -> Result<()> {
-    let target_data = [state.prev_token];
-    let target_tensor = TensorRef::from_array_view(([1_usize, 1], target_data.as_slice()))?;
-    let h_tensor = TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.h.as_slice()))?;
-    let c_tensor = TensorRef::from_array_view(([1_usize, 1, PRED_HIDDEN], state.c.as_slice()))?;
+fn run_decoder(
+    decoder: &dyn RuntimeSession,
+    state: &DecoderState,
+    out: &mut DecoderOutput,
+) -> Result<()> {
+    let inputs = vec![
+        Tensor::new(
+            Shape::new(vec![1, 1]),
+            TensorData::I64(vec![state.prev_token]),
+        ),
+        Tensor::new(
+            Shape::new(vec![1, 1, PRED_HIDDEN]),
+            TensorData::F32(state.h.clone()),
+        ),
+        Tensor::new(
+            Shape::new(vec![1, 1, PRED_HIDDEN]),
+            TensorData::F32(state.c.clone()),
+        ),
+    ];
 
-    let decoder_outputs = decoder
-        .run(ort::inputs![target_tensor, h_tensor, c_tensor])
-        .context("Decoder inference failed")?;
+    let decoder_outputs = decoder.run(inputs).context("Decoder inference failed")?;
 
-    let (_dec_shape, dec_data) = decoder_outputs[0]
-        .try_extract_tensor::<f32>()
+    let dec_data = decoder_outputs[0]
+        .view()
+        .data()
+        .as_f32()
         .context("Failed to extract decoder output")?;
-    let (_h_shape, new_h_data) = decoder_outputs[1]
-        .try_extract_tensor::<f32>()
+    let new_h_data = decoder_outputs[1]
+        .view()
+        .data()
+        .as_f32()
         .context("Failed to extract decoder h state")?;
-    let (_c_shape, new_c_data) = decoder_outputs[2]
-        .try_extract_tensor::<f32>()
+    let new_c_data = decoder_outputs[2]
+        .view()
+        .data()
+        .as_f32()
         .context("Failed to extract decoder c state")?;
 
     DecoderOutput::fill(&mut out.dec_data, dec_data);
@@ -132,20 +153,28 @@ fn run_decoder(decoder: &mut Session, state: &DecoderState, out: &mut DecoderOut
 /// Input: enc [1, ENC_DIM, 1] + dec [1, PRED_HIDDEN, 1]
 /// Output: logits [VOCAB_SIZE] (flattened from [1, 1, 1, VOCAB_SIZE]).
 fn run_joiner_single(
-    joiner: &mut Session,
+    joiner: &dyn RuntimeSession,
     enc_frame: &[f32],
     dec_data: &[f32],
     logits_buf: &mut Vec<f32>,
 ) -> Result<()> {
-    let enc_tensor = TensorRef::from_array_view(([1_usize, ENC_DIM, 1], enc_frame))?;
-    let dec_tensor = TensorRef::from_array_view(([1_usize, PRED_HIDDEN, 1], dec_data))?;
+    let inputs = vec![
+        Tensor::new(
+            Shape::new(vec![1, ENC_DIM, 1]),
+            TensorData::F32(enc_frame.to_vec()),
+        ),
+        Tensor::new(
+            Shape::new(vec![1, PRED_HIDDEN, 1]),
+            TensorData::F32(dec_data.to_vec()),
+        ),
+    ];
 
-    let joiner_outputs = joiner
-        .run(ort::inputs![enc_tensor, dec_tensor])
-        .context("Joiner inference failed")?;
+    let joiner_outputs = joiner.run(inputs).context("Joiner inference failed")?;
 
-    let (_joint_shape, logits) = joiner_outputs[0]
-        .try_extract_tensor::<f32>()
+    let logits = joiner_outputs[0]
+        .view()
+        .data()
+        .as_f32()
         .context("Failed to extract joiner output")?;
 
     // Reuse the buffer's capacity: copy in place after a one-time size match,
@@ -156,7 +185,7 @@ fn run_joiner_single(
 
 /// Abstraction over the two ONNX session calls in the RNN-T inner loop, so the
 /// decode logic can be unit-tested with a deterministic stub instead of a real
-/// `ort::Session` (which requires a model file on disk).
+/// runtime session (which requires a model file on disk).
 pub(crate) trait DecodeBackend {
     /// Run the prediction network for the current decoder state, overwriting
     /// `out` in place (reused across calls to avoid per-token allocation).
@@ -170,10 +199,10 @@ pub(crate) trait DecodeBackend {
     ) -> Result<()>;
 }
 
-/// Production backend over the real encoder/joiner ONNX sessions.
+/// Production backend over the real encoder/joiner runtime sessions.
 struct OrtBackend<'a> {
-    decoder: &'a mut Session,
-    joiner: &'a mut Session,
+    decoder: &'a dyn RuntimeSession,
+    joiner: &'a dyn RuntimeSession,
 }
 
 impl DecodeBackend for OrtBackend<'_> {
@@ -203,8 +232,8 @@ impl DecodeBackend for OrtBackend<'_> {
 /// prefix, before the argmax. `None` ⇒ the decode is byte-for-byte identical to
 /// the un-biased path (zero regression risk when no hotwords are configured).
 pub fn greedy_decode(
-    decoder: &mut Session,
-    joiner: &mut Session,
+    decoder: &dyn RuntimeSession,
+    joiner: &dyn RuntimeSession,
     encoded: &[f32], // [1, 768, enc_len] — channels-first
     encoded_len: usize,
     blank_id: usize,
