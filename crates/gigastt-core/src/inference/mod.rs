@@ -1043,7 +1043,7 @@ impl Engine {
         // which head runs — callers select the variant only at download time.
         let Some(variant) = ModelVariant::detect_in_dir(dir) else {
             return Err(GigasttError::ModelLoad {
-                path: model_dir.to_string(),
+                path: dir.display().to_string(),
                 source: None,
             });
         };
@@ -1065,7 +1065,7 @@ impl Engine {
 
         let factory = production_factory(dir);
         Self::load_with_factory(
-            model_dir,
+            dir,
             pool_size,
             min_size,
             batch_pool_size,
@@ -1077,17 +1077,16 @@ impl Engine {
     /// Package-private factory-based loader. Used by production code paths and
     /// by tests that inject a [`crate::runtime::factory::RuntimeFactory`].
     pub(crate) fn load_with_factory(
-        model_dir: &str,
+        model_dir: &Path,
         pool_size: usize,
         min_size: usize,
         batch_pool_size: usize,
         factory: Box<dyn crate::runtime::factory::RuntimeFactory>,
         encoder_intra_threads: usize,
     ) -> Result<Self, GigasttError> {
-        let dir = Path::new(model_dir);
-        let Some(variant) = ModelVariant::detect_in_dir(dir) else {
+        let Some(variant) = ModelVariant::detect_in_dir(model_dir) else {
             return Err(GigasttError::ModelLoad {
-                path: model_dir.to_string(),
+                path: model_dir.display().to_string(),
                 source: None,
             });
         };
@@ -1096,17 +1095,20 @@ impl Engine {
 
         let runtime = factory.create(encoder_intra_threads)?;
         let model_load = |e: anyhow::Error| GigasttError::ModelLoad {
-            path: model_dir.to_string(),
+            path: model_dir.display().to_string(),
             source: Some(e.into()),
         };
 
         tracing::info!("Detected model variant: {variant:?}");
-        let is_int8 = dir.join(variant.encoder_int8_file()).exists();
+        let is_int8 = model_dir.join(variant.encoder_int8_file()).exists();
         if is_int8 {
             tracing::info!("Using INT8 quantized encoder");
         }
 
-        tracing::info!("Loading ONNX models from {model_dir} (pool_size={pool_size})...");
+        tracing::info!(
+            "Loading ONNX models from {} (pool_size={pool_size})...",
+            model_dir.display()
+        );
 
         #[cfg(feature = "coreml")]
         tracing::info!("Using CoreML execution provider (Neural Engine + CPU)");
@@ -1118,7 +1120,7 @@ impl Engine {
         // CoreML can reject a model at load time; fall back to CPU if that happens.
         #[cfg(feature = "coreml")]
         let triplets = match Self::load_triplets_runtime(
-            &*runtime, dir, variant, pool_size, min_size,
+            &*runtime, model_dir, variant, pool_size, min_size,
         )
         .map_err(model_load)
         {
@@ -1129,15 +1131,17 @@ impl Engine {
                 );
                 let cpu_factory = OrtFactory::cpu();
                 let runtime = cpu_factory.create(encoder_intra_threads)?;
-                Self::load_triplets_runtime(&*runtime, dir, variant, pool_size, min_size)
+                Self::load_triplets_runtime(&*runtime, model_dir, variant, pool_size, min_size)
                     .map_err(model_load)?
             }
         };
         #[cfg(not(feature = "coreml"))]
-        let triplets = Self::load_triplets_runtime(&*runtime, dir, variant, pool_size, min_size)
-            .map_err(model_load)?;
+        let triplets =
+            Self::load_triplets_runtime(&*runtime, model_dir, variant, pool_size, min_size)
+                .map_err(model_load)?;
 
-        let tokenizer = Tokenizer::load(&dir.join(variant.vocab_file())).map_err(model_load)?;
+        let tokenizer =
+            Tokenizer::load(&model_dir.join(variant.vocab_file())).map_err(model_load)?;
         let features = FeatureExtractor::new();
 
         tracing::info!(
@@ -1148,7 +1152,7 @@ impl Engine {
         #[cfg(feature = "diarization")]
         #[allow(deprecated)] // legacy OnnxEmbeddingExtractor::new — see import note above
         let speaker_encoder = {
-            let model_path = dir.join("wespeaker_resnet34.onnx");
+            let model_path = model_dir.join("wespeaker_resnet34.onnx");
             if model_path.exists() {
                 match OnnxEmbeddingExtractor::new(
                     &model_path,
@@ -1206,7 +1210,7 @@ impl Engine {
                     .create(encoder_intra_threads)
                     .map_err(|e| anyhow::anyhow!(e))?;
                 let triplets =
-                    Self::load_triplets_runtime(&*runtime, dir, variant, pool_size, min_size)?;
+                    Self::load_triplets_runtime(&*runtime, model_dir, variant, pool_size, min_size)?;
                 let (pool, batch_pool) = Self::split_triplets(triplets, batch_pool_size);
                 e.pool = pool;
                 e.batch_pool = batch_pool;
@@ -3447,12 +3451,11 @@ mod tests {
         use std::collections::HashMap;
         use std::sync::Arc;
 
-        use crate::inference::Engine;
+        use crate::inference::{Engine, PRED_HIDDEN};
         use crate::runtime::mock::{MockFactory, MockSession};
         use crate::runtime::tensor::{Shape, Tensor, TensorData};
 
         const ENC_DIM: usize = 768;
-        const PRED_HIDDEN: usize = 320;
 
         fn tiny_mock_engine() -> (Engine, tempfile::TempDir) {
             let tmp = tempfile::tempdir().expect("tempdir");
@@ -3520,7 +3523,7 @@ mod tests {
             );
 
             let factory = Box::new(MockFactory::new(sessions));
-            let engine = Engine::load_with_factory(&dir.to_string_lossy(), 1, 1, 0, factory, 1)
+            let engine = Engine::load_with_factory(dir, 1, 1, 0, factory, 1)
                 .expect("engine should load with mock runtime");
             (engine, tmp)
         }
