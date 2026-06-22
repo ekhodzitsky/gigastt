@@ -40,7 +40,7 @@ jobs:
           - host: macos-14
             platform: macos-arm64
             target: aarch64-apple-darwin
-          - host: macos-13
+          - host: macos-15-intel
             platform: macos-x86_64
             target: x86_64-apple-darwin
           - host: windows-latest
