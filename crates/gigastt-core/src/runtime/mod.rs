@@ -1,5 +1,6 @@
 pub mod error;
 pub mod factory;
+pub mod ort;
 pub mod session;
 pub mod tensor;
 
