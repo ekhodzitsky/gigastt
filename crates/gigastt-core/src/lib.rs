@@ -8,4 +8,5 @@ pub mod onnx_proto;
 pub mod protocol;
 pub mod punctuation;
 pub mod quantize;
+pub(crate) mod runtime;
 pub mod vad;
