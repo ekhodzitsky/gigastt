@@ -8,6 +8,10 @@ repository.workspace = true
 description = "UniFFI bindings for gigastt — idiomatic Swift / Kotlin / Python from one source"
 keywords = ["stt", "speech-recognition", "uniffi", "gigaam", "russian"]
 categories = ["multimedia::audio", "api-bindings"]
+# Not a crates.io library: this is a cdylib binding-generator consumed as
+# prebuilt artifacts (xcframework / AAR / wheel), not as a Rust dependency.
+# `publish = false` also makes cargo-semver-checks skip it (no registry baseline).
+publish = false
 
 [lib]
 # cdylib for the foreign bindings to load; lib (rlib) for the uniffi-bindgen bin

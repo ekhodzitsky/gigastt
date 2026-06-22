@@ -30,9 +30,12 @@ COPY crates/gigastt-core/build.rs crates/gigastt-core/
 COPY crates/gigastt-core/proto/ crates/gigastt-core/proto/
 COPY crates/gigastt-ffi/Cargo.toml crates/gigastt-ffi/
 COPY crates/gigastt/Cargo.toml crates/gigastt/
-# Every [[bench]]/[[test]] target declared in the manifests must exist on disk
-# for cargo to parse the workspace, hence the extra stubs below.
-RUN mkdir -p crates/gigastt-core/src crates/gigastt-ffi/src crates/gigastt/src/server && \
+COPY crates/gigastt-uniffi/Cargo.toml crates/gigastt-uniffi/
+# Every [[bench]]/[[test]]/[[bin]] target declared in the manifests must exist
+# on disk for cargo to parse the workspace, hence the extra stubs below.
+# (gigastt-uniffi is a workspace member but not a dependency of `gigastt`, so it
+# is never compiled here — its stubs only satisfy manifest parsing.)
+RUN mkdir -p crates/gigastt-core/src crates/gigastt-ffi/src crates/gigastt/src/server crates/gigastt-uniffi/src/bin && \
     echo 'pub mod error; pub mod inference; pub mod model; pub mod onnx_proto; pub mod protocol; pub mod quantize;' > crates/gigastt-core/src/lib.rs && \
     mkdir -p crates/gigastt-core/src/inference crates/gigastt-core/src/model crates/gigastt-core/src/protocol && \
     touch crates/gigastt-core/src/error.rs crates/gigastt-core/src/onnx_proto.rs crates/gigastt-core/src/quantize.rs && \
@@ -42,6 +45,8 @@ RUN mkdir -p crates/gigastt-core/src crates/gigastt-ffi/src crates/gigastt/src/s
     touch crates/gigastt/src/server/mod.rs && \
     echo '' > crates/gigastt-ffi/src/lib.rs && \
     echo 'fn main() {}' > crates/gigastt-ffi/build.rs && \
+    echo '' > crates/gigastt-uniffi/src/lib.rs && \
+    echo 'fn main() {}' > crates/gigastt-uniffi/src/bin/uniffi-bindgen.rs && \
     mkdir -p crates/gigastt-core/benches crates/gigastt/tests && \
     echo 'fn main() {}' > crates/gigastt-core/benches/mel.rs && \
     echo 'fn main() {}' > crates/gigastt-core/benches/resample.rs && \
