@@ -1,0 +1,160 @@
+name: iOS xcframework
+
+# Builds GigasttFFI.xcframework (device arm64 + simulator arm64/x86_64),
+# attaches the zip to a GitHub release, and prints the SwiftPM binaryTarget
+# url + checksum for packaging/swift/Package.swift.
+#
+# The release tag passed as input must already exist (create the tag/release
+# first, then dispatch this workflow against it).
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to attach GigasttFFI.xcframework to (e.g. v0.9.0)"
+        required: true
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build-xcframework:
+    name: Build GigasttFFI.xcframework
+    runs-on: macos-14
+    env:
+      # GitHub Actions forbids referencing `secrets.*` in `if:` conditions
+      # directly; expose presence as a boolean env var at job scope instead.
+      HAS_MINISIGN_KEY: ${{ secrets.MINISIGN_SECRET_KEY != '' && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
+
+      - name: Install protoc
+        run: brew install protobuf
+
+      - name: Install cbindgen
+        run: cargo install --locked --version 0.29.4 cbindgen
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ios
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # Each iOS target produces a self-contained static archive: ONNX Runtime
+      # is statically linked by `ort`, so no vendored native library is needed.
+      - name: Build staticlib (device arm64)
+        run: cargo build --release -p gigastt-ffi --target aarch64-apple-ios
+
+      - name: Build staticlib (simulator arm64)
+        run: cargo build --release -p gigastt-ffi --target aarch64-apple-ios-sim
+
+      - name: Build staticlib (simulator x86_64)
+        run: cargo build --release -p gigastt-ffi --target x86_64-apple-ios
+
+      # Regenerate the C header from the FFI crate, then stage a Headers/ dir
+      # (gigastt.h + module.modulemap) shared by every xcframework slice.
+      - name: Generate header + stage Headers/
+        run: |
+          set -euo pipefail
+          mkdir -p build/Headers
+          cbindgen \
+            --config crates/gigastt-ffi/cbindgen.toml \
+            --crate gigastt-ffi \
+            --output build/Headers/gigastt.h \
+            crates/gigastt-ffi
+          cp packaging/swift/module/module.modulemap build/Headers/module.modulemap
+          cat build/Headers/gigastt.h
+
+      # Fuse the two simulator slices (arm64 + x86_64) into a single fat
+      # simulator archive; xcframework requires one library per platform.
+      - name: Create fat simulator library
+        run: |
+          set -euo pipefail
+          mkdir -p build/sim
+          lipo -create \
+            target/aarch64-apple-ios-sim/release/libgigastt_ffi.a \
+            target/x86_64-apple-ios/release/libgigastt_ffi.a \
+            -output build/sim/libgigastt_ffi.a
+          lipo -info build/sim/libgigastt_ffi.a
+
+      - name: Create xcframework
+        run: |
+          set -euo pipefail
+          rm -rf GigasttFFI.xcframework
+          xcodebuild -create-xcframework \
+            -library target/aarch64-apple-ios/release/libgigastt_ffi.a \
+            -headers build/Headers \
+            -library build/sim/libgigastt_ffi.a \
+            -headers build/Headers \
+            -output GigasttFFI.xcframework
+          plutil -p GigasttFFI.xcframework/Info.plist
+
+      - name: Zip xcframework
+        run: |
+          set -euo pipefail
+          ditto -c -k --keepParent GigasttFFI.xcframework GigasttFFI.xcframework.zip
+          ls -la GigasttFFI.xcframework.zip
+
+      - name: Compute SwiftPM checksum
+        id: checksum
+        run: |
+          set -euo pipefail
+          CHECKSUM="$(swift package --package-path packaging/swift compute-checksum GigasttFFI.xcframework.zip)"
+          echo "checksum=${CHECKSUM}" >> "$GITHUB_OUTPUT"
+          echo "Checksum: ${CHECKSUM}"
+
+      # Optional minisign signature for the zip. Degrades to a warning when the
+      # signing secret is absent (forks, preview runs) so the build never fails.
+      - name: Sign zip with minisign
+        if: env.HAS_MINISIGN_KEY == 'true'
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          brew install minisign
+          printf '%s\n' "$MINISIGN_SECRET_KEY" > minisign.key
+          chmod 600 minisign.key
+          printf '%s\n' "$MINISIGN_PASSWORD" | \
+            minisign -Sm GigasttFFI.xcframework.zip -s minisign.key \
+              -c "gigastt ios xcframework ${{ inputs.tag }}" \
+              -t "gigastt GigasttFFI.xcframework.zip ${{ inputs.tag }}"
+          rm -f minisign.key
+          ls -la GigasttFFI.xcframework.zip.minisig
+
+      - name: Warn on missing minisign secret
+        if: env.HAS_MINISIGN_KEY != 'true'
+        run: |
+          echo "::warning ::MINISIGN_SECRET_KEY not configured — GigasttFFI.xcframework.zip will not carry a minisign signature."
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.tag }}
+          fail_on_unmatched_files: true
+          files: |
+            GigasttFFI.xcframework.zip
+            GigasttFFI.xcframework.zip.minisig
+
+      # Print the exact url/checksum to paste into packaging/swift/Package.swift.
+      - name: Job summary
+        run: |
+          set -euo pipefail
+          URL="https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/GigasttFFI.xcframework.zip"
+          {
+            echo "## GigasttFFI.xcframework published"
+            echo ""
+            echo "Paste into \`packaging/swift/Package.swift\`:"
+            echo ""
+            echo '```swift'
+            echo ".binaryTarget("
+            echo "    name: \"GigasttFFI\","
+            echo "    url: \"${URL}\","
+            echo "    checksum: \"${{ steps.checksum.outputs.checksum }}\""
+            echo ")"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,4 @@
+module GigasttFFI {
+    header "gigastt.h"
+    export *
+}
