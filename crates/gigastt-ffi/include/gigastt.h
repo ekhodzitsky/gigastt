@@ -13,7 +13,7 @@
  *
  * The Kotlin side sees this as a `Long` (pointer-sized integer).
  */
-typedef struct GigasttGigasttEngine GigasttGigasttEngine;
+typedef struct GigasttEngine GigasttEngine;
 
 /**
  * Opaque handle to a streaming transcription session.
@@ -21,7 +21,7 @@ typedef struct GigasttGigasttEngine GigasttGigasttEngine;
  * Holds a checked-out `SessionTriplet` and a `StreamingState`. The triplet is
  * returned to the pool when `gigastt_stream_free` is called.
  */
-typedef struct GigasttGigasttStream GigasttGigasttStream;
+typedef struct GigasttStream GigasttStream;
 
 /**
  * Load the ONNX models from `model_dir` and create an inference engine.
@@ -33,7 +33,7 @@ typedef struct GigasttGigasttStream GigasttGigasttStream;
  * `model_dir` must be a valid, null-terminated UTF-8 string.
  * Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
  */
-gigastt_ struct GigasttGigasttEngine *gigastt_engine_new(const char *model_dir);
+struct GigasttEngine *gigastt_engine_new(const char *model_dir);
 
 /**
  * Load the ONNX models with a custom session pool size.
@@ -47,9 +47,7 @@ gigastt_ struct GigasttGigasttEngine *gigastt_engine_new(const char *model_dir);
  * `model_dir` must be a valid, null-terminated UTF-8 string.
  * Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
  */
-gigastt_
-struct GigasttGigasttEngine *gigastt_engine_new_with_pool_size(const char *model_dir,
-                                                               uintptr_t pool_size);
+struct GigasttEngine *gigastt_engine_new_with_pool_size(const char *model_dir, uintptr_t pool_size);
 
 /**
  * Transcribe an audio file and return the recognized text as a newly allocated C string.
@@ -65,7 +63,7 @@ struct GigasttGigasttEngine *gigastt_engine_new_with_pool_size(const char *model
  * Returns a pointer to a NUL-terminated UTF-8 string on success, or `NULL` on failure.
  * The caller **must** free the returned string with `gigastt_string_free`.
  */
-gigastt_ char *gigastt_transcribe_file(struct GigasttGigasttEngine *engine, const char *wav_path);
+char *gigastt_transcribe_file(struct GigasttEngine *engine, const char *wav_path);
 
 /**
  * Free a C string previously returned by `gigastt_transcribe_file` or the
@@ -75,7 +73,7 @@ gigastt_ char *gigastt_transcribe_file(struct GigasttGigasttEngine *engine, cons
  * `s` must be a pointer returned by one of the transcription functions and not
  * yet freed, or `NULL` (in which case this is a no-op).
  */
-gigastt_ void gigastt_string_free(char *s);
+void gigastt_string_free(char *s);
 
 /**
  * Free an inference engine previously created by `gigastt_engine_new`.
@@ -86,7 +84,7 @@ gigastt_ void gigastt_string_free(char *s);
  * (single-threaded-per-handle): the caller must ensure no other call using this
  * pointer runs concurrently with this free.
  */
-gigastt_ void gigastt_engine_free(struct GigasttGigasttEngine *engine);
+void gigastt_engine_free(struct GigasttEngine *engine);
 
 /**
  * Quantize the FP32 encoder model to INT8 in-place.
@@ -102,7 +100,7 @@ gigastt_ void gigastt_engine_free(struct GigasttGigasttEngine *engine);
  * Returns a newly allocated C string on both success and error.
  * The caller **must** free the returned string with `gigastt_string_free`.
  */
-gigastt_ char *gigastt_quantize_model(const char *model_dir, bool force);
+char *gigastt_quantize_model(const char *model_dir, bool force);
 
 /**
  * Create a new streaming session.
@@ -115,7 +113,7 @@ gigastt_ char *gigastt_quantize_model(const char *model_dir, bool force);
  * `engine` must be a valid pointer returned by `gigastt_engine_new`.
  * Returns a pointer to a `GigasttStream` on success, or `NULL` on failure.
  */
-gigastt_ struct GigasttGigasttStream *gigastt_stream_new(struct GigasttGigasttEngine *engine);
+struct GigasttStream *gigastt_stream_new(struct GigasttEngine *engine);
 
 /**
  * Process a chunk of PCM16 audio and return any partial/final segments.
@@ -131,9 +129,8 @@ gigastt_ struct GigasttGigasttStream *gigastt_stream_new(struct GigasttGigasttEn
  * Returns a newly allocated JSON array string on success, or `NULL` on failure.
  * The caller **must** free the returned string with `gigastt_string_free`.
  */
-gigastt_
-char *gigastt_stream_process_chunk(struct GigasttGigasttEngine *engine,
-                                   struct GigasttGigasttStream *stream,
+char *gigastt_stream_process_chunk(struct GigasttEngine *engine,
+                                   struct GigasttStream *stream,
                                    const uint8_t *pcm16_bytes,
                                    uintptr_t len,
                                    uint32_t sample_rate);
@@ -151,9 +148,7 @@ char *gigastt_stream_process_chunk(struct GigasttGigasttEngine *engine,
  * or `NULL` on failure. The caller **must** free the returned string with
  * `gigastt_string_free`.
  */
-gigastt_
-char *gigastt_stream_flush(struct GigasttGigasttEngine *engine,
-                           struct GigasttGigasttStream *stream);
+char *gigastt_stream_flush(struct GigasttEngine *engine, struct GigasttStream *stream);
 
 /**
  * Free a streaming session and return its triplet to the pool.
@@ -164,6 +159,6 @@ char *gigastt_stream_flush(struct GigasttGigasttEngine *engine,
  * (single-threaded-per-handle): the caller must ensure no other call using this
  * pointer runs concurrently with this free.
  */
-gigastt_ void gigastt_stream_free(struct GigasttGigasttStream *stream);
+void gigastt_stream_free(struct GigasttStream *stream);
 
 #endif  /* GIGASTT_H */

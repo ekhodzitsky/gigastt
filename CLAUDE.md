@@ -27,7 +27,7 @@ cargo clippy             # Lint (no expected warnings)
 
 Note: `cargo build` requires `protoc` in `PATH` for the in-tree ONNX quantization pipeline (see `build.rs`). Install via `brew install protobuf` (macOS) or `apt install protobuf-compiler` (Debian/Ubuntu).
 
-Note (build-time network fetch): `ort`'s default `download-binaries` feature makes `ort-sys` download a prebuilt onnxruntime native library over the network at build time, outside `Cargo.lock` (the download is verified by an embedded checksum). The "no cloud / full privacy" guarantee covers **runtime** inference, not the build process. For air-gapped/offline builds, use `ort` with `default-features = false` + the `load-dynamic` feature (or a vendored onnxruntime) and pin the native library via `ORT_*` env vars / `.cargo/config.toml`.
+Note (build-time network fetch): `ort`'s default `download-binaries` feature makes `ort-sys` download a prebuilt onnxruntime native library over the network at build time, outside `Cargo.lock` (the download is verified by an embedded checksum). The "no cloud / full privacy" guarantee covers **runtime** inference, not the build process. For air-gapped/offline builds, use `ort` with `default-features = false` + the `load-dynamic` feature (or a vendored onnxruntime) and pin the native library via `ORT_*` env vars / `.cargo/config.toml`. See `docs/embedding-packaging.md` (static-default vs `ort-load-dynamic`) and `docs/quickstarts.md` (in-process Python/Node/Swift/Kotlin examples).
 
 Model download (required for E2E testing and file transcription, ~850MB):
 ```sh
