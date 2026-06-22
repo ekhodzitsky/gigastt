@@ -33,6 +33,7 @@ Model download (required for E2E testing and file transcription, ~850MB):
 ```sh
 cargo run -- download                    # Downloads to ~/.gigastt/models/ and auto-generates INT8 encoder
 cargo run -- download --skip-quantize    # Skip auto-quantization (FP32 only)
+cargo run -- download --prequantized     # Lean path: fetch pre-quantized INT8 bundle from Releases (no FP32 download, no protoc, no on-device quantize)
 cargo run -- quantize                    # Regenerate INT8 encoder manually (~215MB)
 ```
 

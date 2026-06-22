@@ -283,6 +283,14 @@ enum Commands {
         /// Opt out when you need the FP32 encoder for debugging.
         #[arg(long, env = "GIGASTT_SKIP_QUANTIZE", default_value_t = false)]
         skip_quantize: bool,
+
+        /// Fetch the pre-quantized INT8 bundle from the pinned GitHub Release
+        /// instead of the FP32 set + on-device quantization. The lean path:
+        /// no ~844 MB FP32 download, no ~2-minute quantize, no `protoc`.
+        /// Mutually exclusive with `--skip-quantize` (which only applies to the
+        /// FP32 download path).
+        #[arg(long, default_value_t = false)]
+        prequantized: bool,
     },
 
     /// Quantize encoder model to INT8 (replaces scripts/quantize.py)
@@ -964,18 +972,25 @@ async fn main() -> anyhow::Result<()> {
             #[cfg(feature = "diarization")]
             skip_diarization,
             skip_quantize,
+            prequantized,
         } => {
-            // `download` is an explicit action: None here maps to the default
-            // (Rnnt) so a bare `gigastt download` fetches something useful.
-            let requested = Some(model_variant);
-            let resolved = model::ensure_model_variant(requested, &model_dir).await?;
+            // `download` is an explicit action: the requested variant maps to
+            // the default (Rnnt) so a bare `gigastt download` fetches something
+            // useful.
+            if prequantized {
+                // Lean path: fetch the INT8 bundle from the pinned Release — no
+                // FP32 download, no on-device quantization, no protoc.
+                model::ensure_prequantized_model_variant(Some(model_variant), &model_dir).await?;
+            } else {
+                let resolved = model::ensure_model_variant(Some(model_variant), &model_dir).await?;
+                ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
+            }
             #[cfg(feature = "diarization")]
             {
                 if !skip_diarization {
                     model::ensure_speaker_model(&model_dir).await?;
                 }
             }
-            ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
             tracing::info!("Model ready at {model_dir}");
         }
         Commands::Quantize { model_dir, force } => {

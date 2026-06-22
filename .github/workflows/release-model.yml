@@ -1,0 +1,120 @@
+# Publish the pre-quantized INT8 model bundle to a GitHub Release.
+#
+# Manual (`workflow_dispatch`) — run once per blessed model revision. Produces,
+# for both recognition heads, the lean bundle integrators download instead of
+# the FP32 set: INT8 encoder + decoder + joiner + vocab. Consumers fetch these
+# via `gigastt download --prequantized` (or `ensure_prequantized_model_variant`)
+# and so skip the ~844 MB FP32 download, the ~2-minute on-device quantization,
+# and the `protoc` build dependency.
+#
+# The download path verifies each file against the SHA-256 pinned in
+# `crates/gigastt-core/src/model/mod.rs` (`encoder_int8_checksum` +
+# `RNNT_CHECKSUMS`/`E2E_RNNT_CHECKSUMS`). The quantizer is deterministic, so a CI
+# re-quantization reproduces the pinned encoder bytes; if it ever diverges, the
+# pinned constants AND the release `tag` must be bumped together (the printed
+# checksums below are the reconciliation point).
+name: Release Model
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Model release tag (must match PREQUANT_RELEASE_BASE in model/mod.rs)'
+        required: true
+        default: 'models-v3-2026-06-22'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-model:
+    runs-on: ubuntu-latest
+    env:
+      # GitHub Actions forbids referencing `secrets.*` directly in `if:`, so
+      # hoist the presence check into an env var (mirrors release.yml).
+      HAS_MINISIGN_KEY: ${{ secrets.MINISIGN_SECRET_KEY != '' && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # `build.rs` invokes `prost-build`, which shells out to `protoc`.
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends protobuf-compiler
+
+      # Download the FP32 set and quantize the encoder for each head. Both heads'
+      # files coexist in MODEL_DIR (variants are never mixed at runtime).
+      - name: Build + quantize both heads
+        env:
+          MODEL_DIR: ${{ runner.temp }}/models
+        run: |
+          set -euo pipefail
+          cargo build --release -p gigastt --locked
+          BIN=target/release/gigastt
+          "$BIN" download --model-dir "$MODEL_DIR" --model-variant rnnt
+          "$BIN" download --model-dir "$MODEL_DIR" --model-variant e2e_rnnt
+
+      # Assemble the lean per-variant bundle (INT8 encoder + decoder + joiner +
+      # vocab). FP32 encoders are intentionally excluded.
+      - name: Assemble bundle
+        env:
+          MODEL_DIR: ${{ runner.temp }}/models
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for f in \
+            v3_rnnt_encoder_int8.onnx v3_rnnt_decoder.onnx v3_rnnt_joint.onnx v3_vocab.txt \
+            v3_e2e_rnnt_encoder_int8.onnx v3_e2e_rnnt_decoder.onnx v3_e2e_rnnt_joint.onnx v3_e2e_rnnt_vocab.txt; do
+            cp "$MODEL_DIR/$f" "dist/$f"
+          done
+          ls -la dist
+
+      - name: Aggregate SHA256SUMS.txt
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          : > SHA256SUMS.txt
+          for f in *; do
+            [ "$f" = "SHA256SUMS.txt" ] && continue
+            (sha256sum "$f" 2>/dev/null || shasum -a 256 "$f") >> SHA256SUMS.txt
+          done
+          echo "::notice ::Reconcile the INT8 encoder hashes below with the pinned constants in model/mod.rs:"
+          cat SHA256SUMS.txt
+
+      # minisign signatures over every asset + the checksum file. The signing
+      # secret is injected via repo secrets; when absent the step is skipped so
+      # the pipeline still publishes (mirrors release.yml).
+      - name: Sign bundle with minisign
+        if: env.HAS_MINISIGN_KEY == 'true'
+        working-directory: dist
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y --no-install-recommends minisign
+          printf '%s\n' "$MINISIGN_SECRET_KEY" > minisign.key
+          chmod 600 minisign.key
+          for f in *.onnx *.txt SHA256SUMS.txt; do
+            [ -f "$f" ] || continue
+            printf '%s\n' "$MINISIGN_PASSWORD" | minisign -Sm "$f" -s minisign.key
+          done
+          shred -u minisign.key 2>/dev/null || rm -f minisign.key
+
+      - name: Warn on missing minisign secret
+        if: env.HAS_MINISIGN_KEY != 'true'
+        run: echo "::warning ::MINISIGN_SECRET_KEY not configured — model artefacts will not carry minisign signatures."
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: GigaAM v3 pre-quantized INT8 model (${{ github.event.inputs.tag }})
+          body: |
+            Pre-quantized INT8 model bundle for `gigastt download --prequantized`.
+            Per head: INT8 encoder + decoder + joiner + vocab (no FP32, no on-device quantization).
+            Verify with `SHA256SUMS.txt` (and the pinned checksums in `gigastt-core`).
+          files: |
+            dist/*.onnx
+            dist/*.txt
+            dist/*.minisig

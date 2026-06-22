@@ -65,6 +65,15 @@ impl DownloadProgress {
 #[cfg(feature = "net")]
 const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 
+/// Base URL of the pinned GitHub Release hosting the **pre-quantized** INT8
+/// model bundle (INT8 encoder + decoder + joiner + vocab, per variant). Lets
+/// integrators skip the ~844 MB FP32 encoder download AND the ~2-minute
+/// on-device quantization (and need no `protoc`). The release tag pins the
+/// revision; bump it together with the INT8 checksums when re-quantizing.
+#[cfg(feature = "net")]
+const PREQUANT_RELEASE_BASE: &str =
+    "https://github.com/ekhodzitsky/gigastt/releases/download/models-v3-2026-06-22";
+
 /// HuggingFace repo hosting the optional RUPunct punctuation model (MIT).
 #[cfg(feature = "net")]
 const PUNCT_HF_REPO: &str = "ekhodzitsky/rupunct-small-onnx";
@@ -187,6 +196,46 @@ impl ModelVariant {
             .iter()
             .find(|(name, _)| *name == filename)
             .and_then(|(_, hash)| *hash)
+    }
+
+    /// SHA-256 of the pre-quantized INT8 encoder for this variant, as published
+    /// in the pinned GitHub Release (`PREQUANT_RELEASE_BASE`). Produced by
+    /// gigastt's deterministic quantizer; bump this together with the release
+    /// tag if the model is ever re-quantized.
+    pub fn encoder_int8_checksum(self) -> &'static str {
+        match self {
+            ModelVariant::Rnnt => {
+                "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f"
+            }
+            ModelVariant::E2eRnnt => {
+                "cf51b300af47cea099e17c806f8fecce2c46e9e8deb4709ec203f8970a067389"
+            }
+        }
+    }
+
+    /// Files in the pre-quantized bundle published on GitHub Releases: the INT8
+    /// encoder (no FP32 download, no on-device quantization) plus the decoder,
+    /// joiner, and vocab. The engine runs from these alone — it prefers the INT8
+    /// encoder when present.
+    pub fn prequantized_files(self) -> [&'static str; 4] {
+        [
+            self.encoder_int8_file(),
+            self.decoder_file(),
+            self.joint_file(),
+            self.vocab_file(),
+        ]
+    }
+
+    /// Pinned SHA-256 for a pre-quantized bundle file. The INT8 encoder uses
+    /// [`ModelVariant::encoder_int8_checksum`]; the decoder/joiner/vocab are
+    /// byte-identical to the FP32 download set, so they reuse
+    /// [`ModelVariant::checksum`].
+    pub fn prequantized_checksum(self, filename: &str) -> Option<&'static str> {
+        if filename == self.encoder_int8_file() {
+            Some(self.encoder_int8_checksum())
+        } else {
+            self.checksum(filename)
+        }
     }
 
     /// Detect which variant's files are present in `dir` by probing for the
@@ -493,6 +542,60 @@ pub async fn ensure_model_variant(
     Ok(variant)
 }
 
+/// Ensure the **pre-quantized** INT8 model bundle for `requested` (or the
+/// variant already on disk, else the default `Rnnt`) exists in `model_dir`,
+/// downloading it from the pinned GitHub Release if missing.
+///
+/// This is the lean integration path: it fetches the INT8 encoder + decoder +
+/// joiner + vocab directly, so integrators skip the ~844 MB FP32 encoder
+/// download AND the ~2-minute on-device quantization (and need no `protoc`).
+/// Each file is SHA-256-verified and atomically renamed, reusing the same
+/// download primitive as [`ensure_model_variant`].
+///
+/// If a usable model (pre-quantized OR FP32 set) is already present, it is used
+/// as-is and no network request is made. Returns the ready variant.
+#[cfg(feature = "net")]
+pub async fn ensure_prequantized_model_variant(
+    requested: Option<ModelVariant>,
+    model_dir: &str,
+) -> Result<ModelVariant> {
+    let dir = Path::new(model_dir);
+    let variant = requested
+        .or_else(|| ModelVariant::detect_in_dir(dir))
+        .unwrap_or_default();
+
+    if is_prequantized_present(variant, dir) || is_model_present(variant, dir) {
+        tracing::info!("Using existing {variant:?} model at {model_dir}");
+        return Ok(variant);
+    }
+
+    std::fs::create_dir_all(dir).context("Failed to create model directory")?;
+
+    #[cfg(unix)]
+    let _lock = acquire_download_lock(dir)?;
+
+    // Re-check after acquiring the lock in case another process finished.
+    if is_prequantized_present(variant, dir) {
+        tracing::info!("Pre-quantized {variant:?} model found at {model_dir} after lock");
+        return Ok(variant);
+    }
+
+    tracing::info!("Downloading pre-quantized {variant:?} model from {PREQUANT_RELEASE_BASE}...");
+
+    for file in variant.prequantized_files() {
+        let final_dest = dir.join(file);
+        if final_dest.exists() {
+            continue;
+        }
+        let url = format!("{PREQUANT_RELEASE_BASE}/{file}");
+        let expected = variant.prequantized_checksum(file);
+        stream_to_partial_then_finalize(&url, &final_dest, expected, file).await?;
+    }
+
+    tracing::info!("Pre-quantized model download complete");
+    Ok(variant)
+}
+
 /// Ensure the speaker diarization model exists in `model_dir`, downloading from HuggingFace if missing.
 ///
 /// Downloads `wespeaker_resnet34.onnx` from `onnx-community/wespeaker-voxceleb-resnet34-LM`
@@ -612,6 +715,16 @@ pub async fn ensure_vad_model(vad_model_dir: &str) -> Result<()> {
 pub fn is_model_present(variant: ModelVariant, dir: &Path) -> bool {
     variant
         .download_files()
+        .iter()
+        .all(|f| dir.join(f).exists())
+}
+
+/// True when every file in `variant`'s pre-quantized bundle (INT8 encoder,
+/// decoder, joiner, vocab) is present in `dir`. The engine runs from this set
+/// alone — no FP32 encoder required.
+pub fn is_prequantized_present(variant: ModelVariant, dir: &Path) -> bool {
+    variant
+        .prequantized_files()
         .iter()
         .all(|f| dir.join(f).exists())
 }
@@ -1546,5 +1659,100 @@ mod tests {
             .await
             .expect("nested complete install must be used as-is");
         assert_eq!(variant, ModelVariant::Rnnt);
+    }
+
+    // ── pre-quantized bundle ────────────────────────────────────────────────
+
+    #[test]
+    fn test_prequantized_files_mapping() {
+        assert_eq!(
+            ModelVariant::Rnnt.prequantized_files(),
+            [
+                "v3_rnnt_encoder_int8.onnx",
+                "v3_rnnt_decoder.onnx",
+                "v3_rnnt_joint.onnx",
+                "v3_vocab.txt",
+            ]
+        );
+        assert_eq!(
+            ModelVariant::E2eRnnt.prequantized_files(),
+            [
+                "v3_e2e_rnnt_encoder_int8.onnx",
+                "v3_e2e_rnnt_decoder.onnx",
+                "v3_e2e_rnnt_joint.onnx",
+                "v3_e2e_rnnt_vocab.txt",
+            ]
+        );
+    }
+
+    #[test]
+    fn test_encoder_int8_checksums_are_pinned() {
+        for variant in [ModelVariant::Rnnt, ModelVariant::E2eRnnt] {
+            let sum = variant.encoder_int8_checksum();
+            assert_eq!(
+                sum.len(),
+                64,
+                "{variant:?} INT8 checksum must be 64 hex chars, got: {sum}"
+            );
+            assert!(
+                sum.chars()
+                    .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)),
+                "{variant:?} INT8 checksum must be lowercase hex, got: {sum}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_prequantized_checksum_int8_encoder_and_reuses_fp32_for_rest() {
+        let v = ModelVariant::Rnnt;
+        // Encoder → the INT8-specific checksum.
+        assert_eq!(
+            v.prequantized_checksum(v.encoder_int8_file()),
+            Some(v.encoder_int8_checksum())
+        );
+        // Decoder/joiner/vocab → the same pins as the FP32 download set.
+        for f in [v.decoder_file(), v.joint_file(), v.vocab_file()] {
+            assert_eq!(v.prequantized_checksum(f), v.checksum(f));
+            assert!(v.prequantized_checksum(f).is_some(), "{f} must be pinned");
+        }
+    }
+
+    #[test]
+    fn test_is_prequantized_present() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+        assert!(!is_prequantized_present(ModelVariant::Rnnt, dir));
+        for f in ModelVariant::Rnnt.prequantized_files() {
+            std::fs::write(dir.join(f), b"x").unwrap();
+        }
+        assert!(is_prequantized_present(ModelVariant::Rnnt, dir));
+        // The FP32 set is absent (no FP32 encoder), yet the prequantized set is
+        // complete — the two presence checks are independent.
+        assert!(!is_model_present(ModelVariant::Rnnt, dir));
+    }
+
+    /// `ensure_prequantized_model_variant` short-circuits (no network, no
+    /// `.partial`) when the pre-quantized set is already present.
+    #[tokio::test]
+    async fn test_ensure_prequantized_present_no_download() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+        for f in ModelVariant::Rnnt.prequantized_files() {
+            std::fs::write(dir.join(f), b"stub").unwrap();
+        }
+
+        let variant = ensure_prequantized_model_variant(None, dir.to_str().unwrap())
+            .await
+            .expect("present prequantized set must short-circuit");
+        assert_eq!(variant, ModelVariant::Rnnt);
+
+        let has_partial = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .any(|e| e.file_name().to_string_lossy().contains(".partial"));
+        assert!(
+            !has_partial,
+            "no download when the prequantized set is present"
+        );
     }
 }
