@@ -53,13 +53,20 @@ pub struct Shape {
     dims: Vec<usize>,
 }
 
-/// Supported tensor element types.
+/// Known tensor element types. Not all are supported by every runtime backend.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[allow(dead_code)]
 pub enum ElementType {
     F32,
     I32,
     I64,
+    F64,
+    I8,
+    U8,
+    I16,
+    U16,
+    U32,
+    U64,
+    Bool,
 }
 
 #[allow(dead_code)]

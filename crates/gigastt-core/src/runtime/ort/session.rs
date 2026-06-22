@@ -7,17 +7,16 @@ use crate::runtime::{
     error::RuntimeError, factory::Runtime, session::RuntimeSession, tensor::Tensor,
 };
 
-use super::tensor::value_to_tensor;
+use super::{factory::OrtExecutionProvider, tensor::value_to_tensor};
 
 /// `ort`-backed runtime that loads sessions for a specific execution provider.
-#[allow(dead_code)]
 pub struct OrtRuntime {
     intra_threads: usize,
-    provider: ort::ep::ExecutionProviderDispatch,
+    provider: OrtExecutionProvider,
 }
 
 impl OrtRuntime {
-    pub(crate) fn new(intra_threads: usize, provider: ort::ep::ExecutionProviderDispatch) -> Self {
+    pub(crate) fn new(intra_threads: usize, provider: OrtExecutionProvider) -> Self {
         Self {
             intra_threads,
             provider,
@@ -26,7 +25,6 @@ impl OrtRuntime {
 }
 
 /// `ort`-backed session wrapping a loaded ONNX model.
-#[allow(dead_code)]
 pub struct OrtSession {
     session: Mutex<Session>,
 }
@@ -38,12 +36,12 @@ impl Runtime for OrtRuntime {
                 path: model_path.into(),
                 message: e.to_string(),
             })?
-            .with_intra_threads(self.intra_threads)
+            .with_execution_providers([self.provider.to_ort()])
             .map_err(|e| RuntimeError::LoadFailed {
                 path: model_path.into(),
                 message: e.to_string(),
             })?
-            .with_execution_providers([self.provider.clone()])
+            .with_intra_threads(self.intra_threads)
             .map_err(|e| RuntimeError::LoadFailed {
                 path: model_path.into(),
                 message: e.to_string(),
@@ -68,7 +66,10 @@ impl RuntimeSession for OrtSession {
         let session_inputs: Vec<ort::session::SessionInputValue<'_>> =
             ort_inputs.into_iter().map(Into::into).collect();
 
-        let mut session = self.session.lock().expect("ort session mutex poisoned");
+        let mut session = self
+            .session
+            .lock()
+            .map_err(|_| RuntimeError::InferenceFailed("ort session mutex poisoned".into()))?;
         let outputs = session
             .run(&session_inputs[..])
             .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;

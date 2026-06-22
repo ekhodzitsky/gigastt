@@ -1,8 +1,8 @@
-use ort::value::Value;
+use ort::value::{TensorElementType, Value};
 
 use crate::runtime::{
     error::RuntimeError,
-    tensor::{Shape, Tensor, TensorData},
+    tensor::{ElementType, Shape, Tensor, TensorData},
 };
 
 impl Tensor {
@@ -23,10 +23,31 @@ impl Tensor {
     }
 }
 
+/// Attempts to map an `ort` tensor element type to our normalized `ElementType`.
+///
+/// Returns `None` for types that have no equivalent in our abstraction (e.g. strings
+/// or exotic float formats).
+fn element_type_from_ort(ort_type: TensorElementType) -> Option<ElementType> {
+    match ort_type {
+        TensorElementType::Float32 => Some(ElementType::F32),
+        TensorElementType::Int32 => Some(ElementType::I32),
+        TensorElementType::Int64 => Some(ElementType::I64),
+        TensorElementType::Float64 => Some(ElementType::F64),
+        TensorElementType::Int8 => Some(ElementType::I8),
+        TensorElementType::Uint8 => Some(ElementType::U8),
+        TensorElementType::Int16 => Some(ElementType::I16),
+        TensorElementType::Uint16 => Some(ElementType::U16),
+        TensorElementType::Uint32 => Some(ElementType::U32),
+        TensorElementType::Uint64 => Some(ElementType::U64),
+        TensorElementType::Bool => Some(ElementType::Bool),
+        _ => None,
+    }
+}
+
 /// Converts an `ort` tensor value into our owned tensor type.
 pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
-    match value.data_type() {
-        ort::value::TensorElementType::Float32 => {
+    match *value.data_type() {
+        TensorElementType::Float32 => {
             let (shape, data) = value
                 .try_extract_tensor::<f32>()
                 .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
@@ -35,7 +56,7 @@ pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
                 TensorData::F32(data.to_vec()),
             ))
         }
-        ort::value::TensorElementType::Int32 => {
+        TensorElementType::Int32 => {
             let (shape, data) = value
                 .try_extract_tensor::<i32>()
                 .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
@@ -44,7 +65,7 @@ pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
                 TensorData::I32(data.to_vec()),
             ))
         }
-        ort::value::TensorElementType::Int64 => {
+        TensorElementType::Int64 => {
             let (shape, data) = value
                 .try_extract_tensor::<i64>()
                 .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
@@ -53,9 +74,12 @@ pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
                 TensorData::I64(data.to_vec()),
             ))
         }
-        other => Err(RuntimeError::InferenceFailed(format!(
-            "unsupported element type: {other}"
-        ))),
+        other => match element_type_from_ort(other) {
+            Some(element_type) => Err(RuntimeError::UnsupportedElementType(element_type)),
+            None => Err(RuntimeError::InferenceFailed(format!(
+                "unsupported element type: {other:?}"
+            ))),
+        },
     }
 }
 
