@@ -30,8 +30,8 @@ jobs:
         settings:
           - host: macos-14
             target: aarch64-apple-darwin
-          - host: macos-15-intel
-            target: x86_64-apple-darwin
+          # x86_64-apple-darwin (Intel Mac) omitted: ort provides no prebuilt
+          # onnxruntime for that target (build-from-source only).
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
           - host: ubuntu-24.04-arm

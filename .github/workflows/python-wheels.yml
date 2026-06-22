@@ -40,9 +40,9 @@ jobs:
           - host: macos-14
             platform: macos-arm64
             target: aarch64-apple-darwin
-          - host: macos-15-intel
-            platform: macos-x86_64
-            target: x86_64-apple-darwin
+          # x86_64-apple-darwin (Intel Mac) omitted: ort provides no prebuilt
+          # onnxruntime for that target (build-from-source only). Matches the
+          # release.yml stance — Intel-Mac users `pip install` from sdist/source.
           - host: windows-latest
             platform: windows-x64
             target: x86_64-pc-windows-msvc
