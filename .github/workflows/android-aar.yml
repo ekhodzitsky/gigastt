@@ -1,0 +1,97 @@
+# Build + publish the gigastt Android library (AAR) via UniFFI Kotlin.
+#
+# EXPERIMENTAL — this pipeline has NOT been validated end-to-end on a real
+# Android toolchain (no NDK/Gradle in the authoring environment). The Rust side
+# is proven (the `Android FFI Build` CI already cross-builds gigastt-ffi via
+# cargo-ndk, and gigastt-uniffi is the same kind of cdylib); the Gradle/Maven
+# assembly + publish steps below follow the canonical UniFFI-Android pattern but
+# should be verified by a maintainer with an Android environment before relying
+# on a published AAR. Manual (`workflow_dispatch`).
+#
+# Packages, per ABI, libgigastt_uniffi.so (onnxruntime statically linked, so
+# self-contained) + the UniFFI-generated Kotlin into an AAR. The ~215 MB model
+# is side-loaded at runtime, not bundled.
+name: Android AAR
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish the AAR to Maven (requires Maven/Sonatype secrets)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  aar:
+    runs-on: ubuntu-latest
+    env:
+      HAS_MAVEN_CREDS: ${{ secrets.MAVEN_CENTRAL_USERNAME != '' && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
+
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends protobuf-compiler
+
+      - name: Install cargo-ndk
+        run: cargo install --locked --version 4.1.2 cargo-ndk
+
+      # The GitHub-hosted ubuntu image ships an Android SDK + NDK; expose the NDK
+      # to cargo-ndk.
+      - name: Locate Android NDK
+        run: echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+
+      # Native libraries: one libgigastt_uniffi.so per ABI, placed where the
+      # Gradle module expects them (src/main/jniLibs/<abi>/).
+      - name: Build native libs (3 ABIs)
+        run: |
+          cargo ndk \
+            -t arm64-v8a -t armeabi-v7a -t x86_64 \
+            -o packaging/android/gigastt/src/main/jniLibs \
+            build --release -p gigastt-uniffi
+
+      # UniFFI Kotlin bindings: read the metadata from a HOST build of the
+      # cdylib (arch-independent) and generate into the Gradle module's source.
+      - name: Generate Kotlin bindings
+        run: |
+          cargo build --release -p gigastt-uniffi
+          HOST_LIB=$(ls target/release/libgigastt_uniffi.so target/release/libgigastt_uniffi.dylib 2>/dev/null | head -1)
+          cargo run --release -p gigastt-uniffi --bin uniffi-bindgen -- \
+            generate --library "$HOST_LIB" --language kotlin \
+            --out-dir packaging/android/gigastt/src/main/kotlin
+
+      - name: Assemble AAR
+        working-directory: packaging/android
+        run: |
+          chmod +x ./gradlew 2>/dev/null || true
+          gradle :gigastt:assembleRelease --no-daemon
+
+      - name: Upload AAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: gigastt-aar
+          path: packaging/android/gigastt/build/outputs/aar/*.aar
+          if-no-files-found: error
+
+      - name: Warn on missing Maven credentials
+        if: ${{ inputs.publish && env.HAS_MAVEN_CREDS != 'true' }}
+        run: echo "::warning ::Maven credentials not configured — skipping AAR publish."
+
+      - name: Publish to Maven
+        if: ${{ inputs.publish && env.HAS_MAVEN_CREDS == 'true' }}
+        working-directory: packaging/android
+        env:
+          MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        run: gradle :gigastt:publish --no-daemon
