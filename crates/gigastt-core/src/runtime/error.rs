@@ -2,10 +2,11 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-use super::tensor::Shape;
+use super::tensor::{ElementType, Shape};
 
 /// Errors produced by the runtime abstraction layer.
 #[derive(Debug, Error)]
+#[allow(dead_code)]
 pub enum RuntimeError {
     #[error("failed to load model {path}: {message}")]
     LoadFailed { path: PathBuf, message: String },
@@ -16,8 +17,8 @@ pub enum RuntimeError {
     #[error("invalid tensor shape: expected {expected:?}, got {got:?}")]
     InvalidShape { expected: Shape, got: Shape },
 
-    #[error("unsupported element type")]
-    UnsupportedElementType,
+    #[error("unsupported element type: {0:?}")]
+    UnsupportedElementType(ElementType),
 
     #[error("invalid input count: expected {expected}, got {got}")]
     InvalidInputCount { expected: usize, got: usize },
@@ -71,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_unsupported_element_type_display() {
-        let e = RuntimeError::UnsupportedElementType;
-        assert_eq!(e.to_string(), "unsupported element type");
+        let e = RuntimeError::UnsupportedElementType(ElementType::I64);
+        assert_eq!(e.to_string(), "unsupported element type: I64");
     }
 }

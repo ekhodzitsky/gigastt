@@ -7,6 +7,7 @@ pub struct Tensor {
 
 /// Owned tensor storage for the supported element types.
 #[derive(Clone, Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum TensorData {
     F32(Vec<f32>),
     I32(Vec<i32>),
@@ -15,16 +16,32 @@ pub enum TensorData {
 
 /// Zero-copy borrow of tensor storage.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[allow(dead_code)]
 pub enum TensorDataView<'a> {
     F32(&'a [f32]),
     I32(&'a [i32]),
     I64(&'a [i64]),
 }
 
+#[allow(dead_code)]
 impl<'a> TensorDataView<'a> {
     pub fn as_f32(&self) -> Option<&'a [f32]> {
         match self {
             TensorDataView::F32(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_i32(&self) -> Option<&'a [i32]> {
+        match self {
+            TensorDataView::I32(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_i64(&self) -> Option<&'a [i64]> {
+        match self {
+            TensorDataView::I64(v) => Some(v),
             _ => None,
         }
     }
@@ -38,12 +55,14 @@ pub struct Shape {
 
 /// Supported tensor element types.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum ElementType {
     F32,
     I32,
     I64,
 }
 
+#[allow(dead_code)]
 impl Tensor {
     pub fn new(shape: Shape, data: TensorData) -> Self {
         let expected = shape.elements();
@@ -83,6 +102,7 @@ impl Tensor {
     }
 }
 
+#[allow(dead_code)]
 impl TensorData {
     pub fn len(&self) -> usize {
         match self {
@@ -103,6 +123,7 @@ pub struct TensorView<'a> {
     data: TensorDataView<'a>,
 }
 
+#[allow(dead_code)]
 impl<'a> TensorView<'a> {
     pub fn shape(&self) -> &Shape {
         &self.shape
@@ -113,13 +134,14 @@ impl<'a> TensorView<'a> {
     }
 }
 
+#[allow(dead_code)]
 impl Shape {
     pub fn new(dims: Vec<usize>) -> Self {
         Self { dims }
     }
 
     pub fn elements(&self) -> usize {
-        self.dims.iter().product::<usize>().max(1)
+        self.dims.iter().product()
     }
 
     pub fn dims(&self) -> &[usize] {
@@ -166,5 +188,11 @@ mod tests {
         let t = Tensor::new(Shape::new(vec![2]), TensorData::I32(vec![1, 2]));
         let v = t.view();
         assert_eq!(v.data().as_f32(), None);
+    }
+
+    #[test]
+    fn test_shape_elements_zero_dimension() {
+        assert_eq!(Shape::new(vec![0]).elements(), 0);
+        assert_eq!(Shape::new(vec![2, 0]).elements(), 0);
     }
 }
