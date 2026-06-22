@@ -3442,4 +3442,106 @@ mod tests {
             .expect("at-threshold audio must not error");
         assert!(result.words.is_empty(), "silence decodes to no words");
     }
+
+    mod mock_runtime_tests {
+        use std::collections::HashMap;
+        use std::sync::Arc;
+
+        use crate::inference::Engine;
+        use crate::runtime::mock::{MockFactory, MockSession};
+        use crate::runtime::tensor::{Shape, Tensor, TensorData};
+
+        const ENC_DIM: usize = 768;
+        const PRED_HIDDEN: usize = 320;
+
+        fn tiny_mock_engine() -> (Engine, tempfile::TempDir) {
+            let tmp = tempfile::tempdir().expect("tempdir");
+            let dir = tmp.path();
+
+            // Empty model files are enough for variant detection; the mock
+            // runtime intercepts all session loading before the filesystem is
+            // read for ONNX data.
+            std::fs::write(dir.join("v3_rnnt_encoder.onnx"), b"").unwrap();
+            std::fs::write(dir.join("v3_rnnt_decoder.onnx"), b"").unwrap();
+            std::fs::write(dir.join("v3_rnnt_joint.onnx"), b"").unwrap();
+            // vocab: index 0 = "▁hi", index 1 = "<blk>" (blank wins on ties).
+            std::fs::write(dir.join("v3_vocab.txt"), "\u{2581}hi\n<blk>\n").unwrap();
+
+            let mut sessions: HashMap<String, Arc<MockSession>> = HashMap::new();
+            sessions.insert(
+                "v3_rnnt_encoder".into(),
+                Arc::new(MockSession::new(
+                    vec![Shape::new(vec![1, 64, 1]), Shape::new(vec![1])],
+                    vec![
+                        Tensor::new(
+                            Shape::new(vec![1, ENC_DIM, 1]),
+                            TensorData::F32(vec![0.0; ENC_DIM]),
+                        ),
+                        Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![1])),
+                    ],
+                )),
+            );
+            sessions.insert(
+                "v3_rnnt_decoder".into(),
+                Arc::new(MockSession::new(
+                    vec![
+                        Shape::new(vec![1, 1]),
+                        Shape::new(vec![1, 1, PRED_HIDDEN]),
+                        Shape::new(vec![1, 1, PRED_HIDDEN]),
+                    ],
+                    vec![
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        ),
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        ),
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        ),
+                    ],
+                )),
+            );
+            sessions.insert(
+                "v3_rnnt_joint".into(),
+                Arc::new(MockSession::new(
+                    vec![
+                        Shape::new(vec![1, ENC_DIM, 1]),
+                        Shape::new(vec![1, PRED_HIDDEN, 1]),
+                    ],
+                    vec![Tensor::new(
+                        Shape::new(vec![1, 1, 2]),
+                        TensorData::F32(vec![0.0; 2]),
+                    )],
+                )),
+            );
+
+            let factory = Box::new(MockFactory::new(sessions));
+            let engine = Engine::load_with_factory(&dir.to_string_lossy(), 1, 1, 0, factory, 1)
+                .expect("engine should load with mock runtime");
+            (engine, tmp)
+        }
+
+        #[test]
+        fn test_engine_loads_with_mock_runtime() {
+            let _ = tiny_mock_engine();
+        }
+
+        #[test]
+        fn test_engine_mock_runtime_decodes_silence() {
+            let (engine, _tmp) = tiny_mock_engine();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let samples = vec![0.0f32; 100]; // < N_FFT → one padded mel frame
+            let result = engine
+                .transcribe_samples(&samples, &mut guard)
+                .expect("mock decode must not error");
+
+            assert!(result.text.is_empty(), "blank-only decode yields no text");
+            assert!(result.words.is_empty());
+            assert!((result.duration_s - 100.0 / 16000.0).abs() < 1e-9);
+        }
+    }
 }
