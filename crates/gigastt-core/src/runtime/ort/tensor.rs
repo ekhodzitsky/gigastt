@@ -3,7 +3,7 @@ use ort::value::{TensorElementType, Value};
 
 use crate::runtime::{
     error::RuntimeError,
-    tensor::{ElementType, Shape, Tensor, TensorData, TensorDataView},
+    tensor::{Shape, Tensor, TensorData, TensorDataView},
 };
 
 impl Tensor {
@@ -53,19 +53,6 @@ impl Tensor {
     }
 }
 
-/// Attempts to map an `ort` tensor element type to our normalized `ElementType`.
-///
-/// Returns `None` for types that have no equivalent in our abstraction (e.g. strings,
-/// exotic float formats, or unsupported numeric widths).
-fn element_type_from_ort(ort_type: TensorElementType) -> Option<ElementType> {
-    match ort_type {
-        TensorElementType::Float32 => Some(ElementType::F32),
-        TensorElementType::Int32 => Some(ElementType::I32),
-        TensorElementType::Int64 => Some(ElementType::I64),
-        _ => None,
-    }
-}
-
 /// Converts an `ort` tensor value into our owned tensor type.
 pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
     match *value.data_type() {
@@ -96,12 +83,9 @@ pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
                 TensorData::I64(data.to_vec()),
             )
         }
-        other => match element_type_from_ort(other) {
-            Some(element_type) => Err(RuntimeError::UnsupportedElementType(element_type)),
-            None => Err(RuntimeError::InferenceFailed(format!(
-                "unsupported element type: {other:?}"
-            ))),
-        },
+        other => Err(RuntimeError::InferenceFailed(format!(
+            "unsupported element type: {other:?}"
+        ))),
     }
 }
 

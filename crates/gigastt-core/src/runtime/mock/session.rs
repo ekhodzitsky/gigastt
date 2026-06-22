@@ -32,6 +32,12 @@ impl RuntimeFactory for MockFactory {
             sessions: self.sessions.clone(),
         }))
     }
+
+    fn cpu_fallback(&self) -> Box<dyn RuntimeFactory> {
+        Box::new(MockFactory {
+            sessions: self.sessions.clone(),
+        })
+    }
 }
 
 /// Mock runtime that hands out pre-configured [`MockSession`]s by path stem.
@@ -41,7 +47,11 @@ pub struct MockRuntime {
 }
 
 impl Runtime for MockRuntime {
-    fn load_session(&self, model_path: &Path) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
+    fn load_session(
+        &self,
+        model_path: &Path,
+        _is_encoder: bool,
+    ) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
         let key = model_path
             .file_stem()
             .ok_or_else(|| RuntimeError::LoadFailed {
@@ -182,7 +192,7 @@ mod tests {
         );
         let runtime = MockRuntime { sessions };
         let session = runtime
-            .load_session(Path::new("/models/encoder.onnx"))
+            .load_session(Path::new("/models/encoder.onnx"), true)
             .expect("load by stem");
         let input = Tensor::new(Shape::new(vec![1]), TensorData::F32(vec![0.0])).unwrap();
         let outputs = session.run(&[input]).unwrap();
@@ -194,7 +204,7 @@ mod tests {
         let runtime = MockRuntime {
             sessions: HashMap::new(),
         };
-        let result = runtime.load_session(Path::new("/models/missing.onnx"));
+        let result = runtime.load_session(Path::new("/models/missing.onnx"), false);
         let err = match result {
             Ok(_) => panic!("expected load to fail"),
             Err(e) => e,

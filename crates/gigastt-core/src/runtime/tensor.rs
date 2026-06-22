@@ -101,7 +101,7 @@ impl Tensor {
 
     pub fn view(&self) -> TensorView<'_> {
         TensorView {
-            shape: self.shape.clone(),
+            shape: &self.shape,
             data: match &self.data {
                 TensorData::F32(v) => TensorDataView::F32(v.as_slice()),
                 TensorData::I32(v) => TensorDataView::I32(v.as_slice()),
@@ -169,15 +169,16 @@ impl TensorData {
 }
 
 /// Borrowed view of a tensor.
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TensorView<'a> {
-    shape: Shape,
+    shape: &'a Shape,
     data: TensorDataView<'a>,
 }
 
 #[allow(dead_code)]
 impl<'a> TensorView<'a> {
     pub fn shape(&self) -> &Shape {
-        &self.shape
+        self.shape
     }
 
     pub fn data(&self) -> &TensorDataView<'a> {

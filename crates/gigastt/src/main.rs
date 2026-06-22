@@ -675,7 +675,11 @@ fn maybe_load_punctuator(
     if !resolve_punctuation(mode, variant) {
         return None;
     }
-    match gigastt_core::punctuation::Punctuator::load(std::path::Path::new(punct_model_dir)) {
+    let factory = gigastt_core::cpu_factory();
+    match gigastt_core::punctuation::Punctuator::load(
+        std::path::Path::new(punct_model_dir),
+        &*factory,
+    ) {
         Ok(p) => {
             tracing::info!("Punctuation restoration enabled (model dir: {punct_model_dir})");
             Some(p)
@@ -738,7 +742,8 @@ fn maybe_load_vad(enabled: bool, vad_model_dir: &str) -> Option<gigastt_core::va
         return None;
     }
     let path = std::path::Path::new(vad_model_dir).join(gigastt_core::vad::VAD_MODEL_FILE);
-    match gigastt_core::vad::SileroVad::load(&path) {
+    let factory = gigastt_core::cpu_factory();
+    match gigastt_core::vad::SileroVad::load(&path, &*factory) {
         Ok(v) => {
             tracing::info!("VAD enabled (model dir: {vad_model_dir})");
             Some(v)

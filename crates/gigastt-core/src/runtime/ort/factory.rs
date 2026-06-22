@@ -133,10 +133,14 @@ impl RuntimeFactory for OrtFactory {
             self.optimized_cache_dir.clone(),
         )))
     }
+
+    fn cpu_fallback(&self) -> Box<dyn RuntimeFactory> {
+        Box::new(OrtFactory::cpu())
+    }
 }
 
 /// Returns the default `ort` factory for the active compile-time feature flags.
-pub fn default_factory(_intra_threads: usize) -> Box<dyn RuntimeFactory> {
+pub fn default_factory() -> Box<dyn RuntimeFactory> {
     if cfg!(feature = "coreml") {
         Box::new(OrtFactory::coreml())
     } else if cfg!(feature = "cuda") {
@@ -146,6 +150,11 @@ pub fn default_factory(_intra_threads: usize) -> Box<dyn RuntimeFactory> {
     } else {
         Box::new(OrtFactory::cpu())
     }
+}
+
+/// Returns a CPU-only `ort` factory for auxiliary models.
+pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
+    Box::new(OrtFactory::cpu())
 }
 
 /// Returns a production `ort` factory that preserves the provider selection and

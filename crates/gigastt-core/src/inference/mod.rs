@@ -69,9 +69,7 @@ use crate::model::ModelVariant;
 use crate::runtime::factory::Runtime;
 #[allow(unused_imports)]
 use crate::runtime::factory::RuntimeFactory;
-#[cfg(feature = "coreml")]
-use crate::runtime::ort::OrtFactory;
-use crate::runtime::ort::production_factory;
+use crate::runtime::production_factory;
 use crate::runtime::session::RuntimeSession;
 use crate::runtime::tensor::{Shape, Tensor, TensorData, TensorDataView};
 
@@ -1129,7 +1127,7 @@ impl Engine {
                 tracing::warn!(
                     "CoreML EP failed to load sessions ({load_err:#}); falling back to CPU execution provider"
                 );
-                let cpu_factory = OrtFactory::cpu();
+                let cpu_factory = factory.cpu_fallback();
                 let runtime = cpu_factory.create(encoder_intra_threads)?;
                 Self::load_triplets_runtime(&*runtime, model_dir, variant, pool_size, min_size)
                     .map_err(model_load)?
@@ -1205,7 +1203,7 @@ impl Engine {
                 tracing::warn!(
                     "CoreML EP failed at runtime ({probe_err:#}); falling back to CPU execution provider"
                 );
-                let cpu_factory = OrtFactory::cpu();
+                let cpu_factory = factory.cpu_fallback();
                 let runtime = cpu_factory
                     .create(encoder_intra_threads)
                     .map_err(|e| anyhow::anyhow!(e))?;
@@ -1408,13 +1406,13 @@ impl Engine {
                                 i + 1
                             );
                             let encoder = runtime
-                                .load_session(encoder_path)
+                                .load_session(encoder_path, true)
                                 .map_err(|e| anyhow::anyhow!(e))?;
                             let decoder = runtime
-                                .load_session(decoder_path)
+                                .load_session(decoder_path, false)
                                 .map_err(|e| anyhow::anyhow!(e))?;
                             let joiner = runtime
-                                .load_session(joiner_path)
+                                .load_session(joiner_path, false)
                                 .map_err(|e| anyhow::anyhow!(e))?;
                             Ok(SessionTriplet {
                                 encoder,

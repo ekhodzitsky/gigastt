@@ -28,19 +28,79 @@ jobs:
       - name: Check ort is isolated to runtime/ort
         run: |
           set -e
-          violations=$(rg "^use ort::" crates/gigastt-core/src --type rust | grep -v "runtime/ort" || true)
-          if [ -n "$violations" ]; then
-            echo "ERROR: direct use ort:: import outside runtime/ort"
-            echo "$violations"
-            exit 1
-          fi
-          violations=$(rg "^extern crate ort" crates/gigastt-core/src --type rust | grep -v "runtime/ort" || true)
-          if [ -n "$violations" ]; then
-            echo "ERROR: extern crate ort outside runtime/ort"
-            echo "$violations"
-            exit 1
-          fi
-          echo "OK: ort is isolated"
+          python3 - <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          # ort types must not leak outside the runtime/ort implementation.
+          # Test code (dedicated test files and #[cfg(test)] mod tests blocks)
+          # is allowed to import concrete ort helpers.
+          PATTERNS = [
+              r"^use ort::",
+              r"^extern crate ort",
+              r"runtime::ort",
+              r"\bOrtFactory\b",
+              r"\bOrtRuntime\b",
+              r"\bOrtSession\b",
+              r"\bOrtExecutionProvider\b",
+          ]
+          COMBINED_RE = re.compile("|".join(f"(?:{p})" for p in PATTERNS))
+          CFG_TEST_RE = re.compile(r"^#\s*\[\s*cfg\s*\(\s*test\s*\)\s*\]\s*$")
+          MOD_TESTS_RE = re.compile(r"^mod tests\b")
+
+          def count_braces(line):
+              """Net brace delta on a line, ignoring // comments."""
+              if "//" in line:
+                  line = line.split("//", 1)[0]
+              return line.count("{") - line.count("}")
+
+          def test_line_indices(lines):
+              """Return 1-based line numbers inside #[cfg(test)] mod tests { ... }."""
+              indices = set()
+              i = 0
+              while i < len(lines):
+                  if CFG_TEST_RE.match(lines[i].strip()):
+                      j = i + 1
+                      while j < len(lines) and not lines[j].strip():
+                          j += 1
+                      if j < len(lines) and MOD_TESTS_RE.match(lines[j].strip()):
+                          depth = count_braces(lines[j])
+                          for k in range(i, j + 1):
+                              indices.add(k + 1)
+                          k = j + 1
+                          while k < len(lines) and depth > 0:
+                              indices.add(k + 1)
+                              depth += count_braces(lines[k])
+                              k += 1
+                          i = k
+                          continue
+                  i += 1
+              return indices
+
+          violations = []
+          for path in Path("crates").rglob("*.rs"):
+              if any(a == "runtime" and b == "ort"
+                     for a, b in zip(path.parts, path.parts[1:])):
+                  continue
+              if "tests" in path.parts:
+                  continue
+
+              lines = path.read_text(encoding="utf-8").splitlines()
+              test_indices = test_line_indices(lines)
+              for lineno, line in enumerate(lines, start=1):
+                  if lineno in test_indices:
+                      continue
+                  if COMBINED_RE.search(line):
+                      violations.append(f"{path}:{lineno}:{line}")
+
+          if violations:
+              print("ERROR: ort runtime leaks detected outside runtime/ort:")
+              for v in violations:
+                  print(v)
+              sys.exit(1)
+          print("OK: ort is isolated")
+          PY
 
   clippy:
     runs-on: ubuntu-latest

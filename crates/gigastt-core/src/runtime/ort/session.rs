@@ -41,15 +41,11 @@ fn load_failed(path: &Path, e: impl std::fmt::Display) -> RuntimeError {
 }
 
 impl Runtime for OrtRuntime {
-    fn load_session(&self, model_path: &Path) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
-        let is_encoder = model_path
-            .file_stem()
-            .map(|s| {
-                let s = s.to_string_lossy().to_lowercase();
-                s.contains("encoder")
-            })
-            .unwrap_or(false);
-
+    fn load_session(
+        &self,
+        model_path: &Path,
+        is_encoder: bool,
+    ) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
         let mut builder = Session::builder().map_err(|e| load_failed(model_path, e))?;
 
         if let Some(prepacked) = self.prepacked.as_ref() {
