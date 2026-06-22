@@ -1,0 +1,35 @@
+[package]
+name = "gigastt-node"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "napi-rs Node.js binding for gigastt — embed Russian speech recognition in Node"
+keywords = ["stt", "speech-recognition", "napi", "gigaam", "russian"]
+categories = ["multimedia::audio", "api-bindings"]
+# Not a crates.io library: this is a cdylib Node addon distributed as prebuilt
+# per-platform npm packages, not a Rust dependency. `publish = false` also makes
+# cargo-semver-checks skip it (no registry baseline for a binding crate).
+publish = false
+
+[lib]
+# cdylib is the required output for a Node-API addon (the .node file).
+crate-type = ["cdylib"]
+
+[features]
+default = []
+coreml = ["gigastt-core/coreml"]
+cuda = ["gigastt-core/cuda"]
+nnapi = ["gigastt-core/nnapi"]
+
+[dependencies]
+# Lean core: file decoding only — no HTTP download, no async runtime (the binding
+# side-loads models and uses the synchronous checkout_blocking path on a libuv
+# worker thread). onnxruntime is statically linked via ort's default download-binaries.
+gigastt-core = { version = "2.3.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
+napi = { version = "3", default-features = false, features = ["napi4"] }
+napi-derive = "3"
+
+[build-dependencies]
+napi-build = "2"

@@ -1,0 +1,31 @@
+{
+  "name": "gigastt-node",
+  "version": "2.3.0",
+  "description": "napi-rs Node.js binding for gigastt — on-device Russian speech-to-text (GigaAM v3)",
+  "license": "MIT",
+  "repository": "https://github.com/ekhodzitsky/gigastt",
+  "private": true,
+  "main": "index.js",
+  "types": "index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
+  "napi": {
+    "binaryName": "gigastt-node",
+    "targets": [
+      "aarch64-apple-darwin",
+      "x86_64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc"
+    ]
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.7.2"
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform",
+    "smoke": "node __test__/smoke.cjs"
+  }
+}
