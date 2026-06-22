@@ -3,8 +3,10 @@ gigastt
 
 The gigastt source code is licensed under the MIT License (see `LICENSE`).
 
-Benchmark datasets under `benchmark/` are NOT MIT-licensed and retain their
-upstream non-commercial licenses (see `benchmark/DATA_LICENSE`):
+Benchmark data under `benchmark/` — the manifest reference transcripts and the
+`reference` / `hypothesis` fields in `benchmark/results_full/` — is NOT
+MIT-licensed and retains its upstream non-commercial licenses (see
+`benchmark/DATA_LICENSE`):
 
 - Open STT — by snakers4 — CC BY-NC 4.0
   https://github.com/snakers4/open_stt

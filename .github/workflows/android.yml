@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Check FFI (lean build)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build Android (arm64)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android

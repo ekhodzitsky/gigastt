@@ -69,7 +69,7 @@ jobs:
           # path is stabilized (Jimver/cuda-toolkit breaks on ubuntu-latest for
           # 12.4.x package names). Tracked in specs/todo.md.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve tag
         id: tag
@@ -224,7 +224,7 @@ jobs:
       # directly; expose presence as a boolean env var at job scope instead.
       HAS_MINISIGN_KEY: ${{ secrets.MINISIGN_SECRET_KEY != '' && 'true' || 'false' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve tag
         id: tag
@@ -354,7 +354,7 @@ jobs:
     name: Publish container images (GHCR)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Resolve tag
         id: tag
@@ -377,8 +377,8 @@ jobs:
       # QEMU registers binfmt handlers so the linux/arm64 CPU image can be
       # cross-built on the x86_64 runner. Not needed for the amd64-only CUDA
       # image below, but harmless to set up once here.
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io

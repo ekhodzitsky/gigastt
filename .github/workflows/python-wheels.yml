@@ -47,7 +47,7 @@ jobs:
             platform: windows-x64
             target: x86_64-pc-windows-msvc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # protoc for non-Linux hosts (Linux gets it inside the manylinux container
       # via before-script-linux below).
@@ -104,7 +104,7 @@ jobs:
     env:
       HAS_PYPI_TOKEN: ${{ secrets.MATURIN_PYPI_TOKEN != '' && 'true' || 'false' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           path: wheels

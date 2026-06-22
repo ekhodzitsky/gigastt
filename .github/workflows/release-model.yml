@@ -34,7 +34,7 @@ jobs:
       # hoist the presence check into an env var (mirrors release.yml).
       HAS_MINISIGN_KEY: ${{ secrets.MINISIGN_SECRET_KEY != '' && 'true' || 'false' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
 

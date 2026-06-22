@@ -19,11 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-The MIT license above applies to the gigastt source code. Benchmark datasets
-under `benchmark/` (manifest reference transcripts and the `reference` /
-`hypothesis` fields in `benchmark/results_full/`) are NOT covered by this license
-and retain their upstream non-commercial licenses — see `NOTICE` and
-`benchmark/DATA_LICENSE`.
