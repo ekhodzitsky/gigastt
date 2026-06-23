@@ -122,6 +122,33 @@ jobs:
                   print(v)
               sys.exit(1)
           print("OK: candle is isolated")
+
+          OBJC2_PATTERNS = [
+              r"\bobjc2_core_ml\b",
+              r"\bobjc2-core-ml\b",
+          ]
+          OBJC2_RE = re.compile("|".join(f"(?:{p})" for p in OBJC2_PATTERNS))
+
+          objc2_violations = []
+          for path in Path("crates").rglob("*.rs"):
+              is_coreml = any(a == "runtime" and b == "coreml"
+                              for a, b in zip(path.parts, path.parts[1:]))
+              if is_coreml:
+                  continue
+              lines = path.read_text(encoding="utf-8").splitlines()
+              test_indices = test_line_indices(lines)
+              for lineno, line in enumerate(lines, start=1):
+                  if lineno in test_indices:
+                      continue
+                  if OBJC2_RE.search(line):
+                      objc2_violations.append(f"{path}:{lineno}:{line}")
+
+          if objc2_violations:
+              print("ERROR: objc2_core_ml used outside runtime/coreml/:")
+              for v in objc2_violations:
+                  print(v)
+              sys.exit(1)
+          print("OK: objc2_core_ml is isolated")
           PY
 
   clippy:
@@ -263,6 +290,21 @@ jobs:
       - run: cargo build -p gigastt-core --features candle
       - run: cargo clippy -p gigastt-core --features candle -- -D warnings
       - run: cargo test -p gigastt-core --features candle --lib
+
+  build-ane:
+    runs-on: macos-14
+    name: Build (ANE)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install protoc
+        run: brew install protobuf
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo build -p gigastt-core --features ane
+      - run: cargo clippy -p gigastt-core --features ane -- -D warnings
 
   e2e-tests:
     # Only run on main push — PRs get fast feedback from unit tests + clippy

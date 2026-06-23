@@ -30,6 +30,7 @@ file-decode = ["dep:symphonia"]                         # file transcription; ra
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = []
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
+ane = []
 # Private/unstable: exposes internal items (tokenizer module + synthetic
 # constructors) so the out-of-workspace `fuzz/` crate and criterion benches can
 # reach them without a model on disk. Double underscore = not a public API

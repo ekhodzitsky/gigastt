@@ -22,6 +22,7 @@ default = ["diarization"]
 coreml = ["gigastt-core/coreml"]
 cuda = ["gigastt-core/cuda"]
 candle = ["gigastt-core/candle"]
+ane = ["gigastt-core/ane"]
 diarization = ["gigastt-core/diarization"]
 quantize = ["gigastt-core/quantize"]
 

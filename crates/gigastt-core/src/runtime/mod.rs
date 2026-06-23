@@ -8,10 +8,19 @@ pub mod tensor;
 #[cfg(feature = "candle")]
 pub mod candle;
 
+#[cfg(feature = "ane")]
+pub mod coreml;
+
 /// Returns a Candle factory (Metal on Apple Silicon, CPU otherwise).
 #[cfg(feature = "candle")]
 pub fn candle_factory() -> Box<dyn RuntimeFactory> {
     Box::new(candle::factory::CandleFactory::new())
+}
+
+/// Returns an ANE factory stub (Phase 0: not yet implemented).
+#[cfg(feature = "ane")]
+pub fn ane_factory() -> Box<dyn RuntimeFactory> {
+    Box::new(coreml::factory::AneFactory::new())
 }
 
 #[allow(unused_imports)]
