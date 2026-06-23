@@ -171,12 +171,20 @@ pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
 /// Returns a production `ort` factory that preserves the provider selection and
 /// disk-cache layout used by the engine before the runtime abstraction.
 pub fn production_factory(model_dir: &Path) -> Box<dyn RuntimeFactory> {
-    let factory = if cfg!(feature = "coreml") {
-        OrtFactory::coreml()
-    } else if cfg!(feature = "cuda") {
-        OrtFactory::cuda()
-    } else {
-        OrtFactory::cpu().with_optimized_cache_dir(model_dir.join("optimized_cache"))
-    };
-    Box::new(factory)
+    #[cfg(feature = "candle")]
+    {
+        let _ = model_dir;
+        Box::new(crate::runtime::candle::factory::CandleFactory::new())
+    }
+    #[cfg(not(feature = "candle"))]
+    {
+        let factory = if cfg!(feature = "coreml") {
+            OrtFactory::coreml()
+        } else if cfg!(feature = "cuda") {
+            OrtFactory::cuda()
+        } else {
+            OrtFactory::cpu().with_optimized_cache_dir(model_dir.join("optimized_cache"))
+        };
+        Box::new(factory)
+    }
 }

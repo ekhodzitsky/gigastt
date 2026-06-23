@@ -3445,6 +3445,81 @@ mod tests {
         assert!(result.words.is_empty(), "silence decodes to no words");
     }
 
+    /// End-to-end proof that the Candle backend transcribes IDENTICALLY to the
+    /// ort backend through the full engine pipeline (mel + encoder + RNN-T
+    /// decode), not just per-stage tensors.
+    ///
+    /// Two engines are built on the SAME model dir — one forced onto the ort CPU
+    /// backend, one forced onto the Candle backend (which reads the sibling
+    /// `candle/*.safetensors`) — and the same fixture wav is transcribed by both.
+    /// Per-stage parity is bit-exact, so the decoded text MUST be byte-identical.
+    ///
+    /// Run with:
+    /// `cargo test -p gigastt-core --features candle --lib -- --ignored --nocapture candle_ort_transcription_parity`
+    #[cfg(feature = "candle")]
+    #[test]
+    #[ignore = "requires v3_rnnt model + candle/*.safetensors"]
+    fn candle_ort_transcription_parity() {
+        let model_dir = crate::model::default_model_dir();
+        let model_path = Path::new(&model_dir);
+
+        let ort_engine = Engine::load_with_factory(
+            model_path,
+            1,
+            1,
+            0,
+            Box::new(crate::runtime::ort::factory::OrtFactory::cpu()),
+            1,
+        )
+        .expect("ort engine should load");
+        let candle_engine = Engine::load_with_factory(
+            model_path,
+            1,
+            1,
+            0,
+            Box::new(crate::runtime::candle::factory::CandleFactory::new()),
+            1,
+        )
+        .expect("candle engine should load");
+
+        let fixtures = [
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../gigastt/tests/fixtures/golos_00.wav"
+            ),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../gigastt/tests/fixtures/golos_01.wav"
+            ),
+        ];
+
+        for fixture in fixtures {
+            let mut ort_guard = ort_engine.pool.checkout_blocking().expect("ort checkout");
+            let ort_text = ort_engine
+                .transcribe_file(fixture, &mut ort_guard)
+                .expect("ort transcription")
+                .text;
+
+            let mut candle_guard = candle_engine
+                .pool
+                .checkout_blocking()
+                .expect("candle checkout");
+            let candle_text = candle_engine
+                .transcribe_file(fixture, &mut candle_guard)
+                .expect("candle transcription")
+                .text;
+
+            eprintln!("fixture = {fixture}");
+            eprintln!("ort    = {ort_text:?}");
+            eprintln!("candle = {candle_text:?}");
+
+            assert_eq!(
+                ort_text, candle_text,
+                "candle transcript diverges from ort for {fixture}:\n  ort    = {ort_text:?}\n  candle = {candle_text:?}"
+            );
+        }
+    }
+
     mod mock_runtime_tests {
         use std::collections::HashMap;
         use std::sync::Arc;

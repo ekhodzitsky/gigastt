@@ -35,9 +35,12 @@ impl EncoderSession {
 }
 
 impl RuntimeSession for EncoderSession {
-    /// Encoder contract: `inputs[0] = audio_signal [1, 64, T] F32`,
-    /// `inputs[1] = length [1]` (ignored; batch is always 1 here).
-    /// Returns `[1, 768, T/4] F32` (channels-first), matching the ort backend.
+    /// Encoder contract (mirrors the ort ONNX encoder, which emits two outputs):
+    /// `inputs[0] = audio_signal [1, 64, T] F32`, `inputs[1] = length [1]`
+    /// (ignored; batch is always 1 here). Returns
+    /// `[encoded [1, 768, T/4] F32, encoded_len [1] I64]` (channels-first), so
+    /// the engine's decode loop can read `encoder_outputs[1]` for the output
+    /// frame count exactly as it does for the ort backend.
     fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
         if inputs.is_empty() {
             return Err(RuntimeError::InvalidInputCount {
@@ -50,7 +53,18 @@ impl RuntimeSession for EncoderSession {
             .enc
             .forward(&mel)
             .map_err(|e| RuntimeError::InferenceFailed(e.to_string()))?;
-        Ok(vec![super::tensor::from_candle(&out)?])
+        // Output time dimension (channels-first `[1, 768, T']`) is the encoded
+        // frame count the RNN-T decode loop iterates over.
+        let enc_len = out.dims().get(2).copied().ok_or_else(|| {
+            RuntimeError::InferenceFailed(format!(
+                "encoder output has unexpected rank {}",
+                out.rank()
+            ))
+        })?;
+        Ok(vec![
+            super::tensor::from_candle(&out)?,
+            Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![enc_len as i64]))?,
+        ])
     }
 }
 

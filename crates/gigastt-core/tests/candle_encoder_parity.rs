@@ -20,7 +20,7 @@ use gigastt_core::inference::N_MELS;
 use gigastt_core::inference::audio::decode_audio_file;
 use gigastt_core::model::default_model_dir;
 use gigastt_core::runtime_api::{
-    Shape, Tensor, TensorData, TensorDataView, candle_factory, production_factory,
+    Shape, Tensor, TensorData, TensorDataView, candle_factory, cpu_factory,
 };
 
 #[test]
@@ -74,10 +74,10 @@ fn candle_encoder_matches_ort() {
     )
     .expect("build length tensor");
 
-    // ort encoder session.
-    let ort_runtime = production_factory(model_dir)
-        .create(1)
-        .expect("ort runtime");
+    // ort encoder session. Use the ort CPU factory explicitly: under
+    // `--features candle`, `production_factory` now returns the candle backend,
+    // so the cross-backend parity check must pin the reference side to ort.
+    let ort_runtime = cpu_factory().create(1).expect("ort runtime");
     let ort_sess = ort_runtime
         .load_session(&enc_onnx, true)
         .expect("ort load encoder");
