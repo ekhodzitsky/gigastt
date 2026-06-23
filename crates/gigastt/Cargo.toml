@@ -21,6 +21,7 @@ harness = false
 default = ["diarization"]
 coreml = ["gigastt-core/coreml"]
 cuda = ["gigastt-core/cuda"]
+candle = ["gigastt-core/candle"]
 diarization = ["gigastt-core/diarization"]
 quantize = ["gigastt-core/quantize"]
 
