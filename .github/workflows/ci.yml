@@ -78,7 +78,18 @@ jobs:
                   i += 1
               return indices
 
+          CANDLE_PATTERNS = [
+              r"^use candle_core::",
+              r"^use candle_nn::",
+              r"^extern crate candle_core",
+              r"^extern crate candle_nn",
+              r"\bcandle_core\b",
+              r"\bcandle_nn\b",
+          ]
+          CANDLE_RE = re.compile("|".join(f"(?:{p})" for p in CANDLE_PATTERNS))
+
           violations = []
+          candle_violations = []
           for path in Path("crates").rglob("*.rs"):
               if any(a == "runtime" and b == "ort"
                      for a, b in zip(path.parts, path.parts[1:])):
@@ -86,6 +97,8 @@ jobs:
               if "tests" in path.parts:
                   continue
 
+              is_candle = any(a == "runtime" and b == "candle"
+                              for a, b in zip(path.parts, path.parts[1:]))
               lines = path.read_text(encoding="utf-8").splitlines()
               test_indices = test_line_indices(lines)
               for lineno, line in enumerate(lines, start=1):
@@ -93,6 +106,8 @@ jobs:
                       continue
                   if COMBINED_RE.search(line):
                       violations.append(f"{path}:{lineno}:{line}")
+                  if not is_candle and CANDLE_RE.search(line):
+                      candle_violations.append(f"{path}:{lineno}:{line}")
 
           if violations:
               print("ERROR: ort runtime leaks detected outside runtime/ort:")
@@ -100,6 +115,13 @@ jobs:
                   print(v)
               sys.exit(1)
           print("OK: ort is isolated")
+
+          if candle_violations:
+              print("ERROR: candle_core/candle_nn used outside runtime/candle/:")
+              for v in candle_violations:
+                  print(v)
+              sys.exit(1)
+          print("OK: candle is isolated")
           PY
 
   clippy:
@@ -225,6 +247,21 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build --release -p gigastt --features diarization
+
+  build-candle:
+    runs-on: macos-14
+    name: Build (Candle/Metal)
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install protoc
+        run: brew install protobuf
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ci
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo build -p gigastt-core --features candle
+      - run: cargo clippy -p gigastt-core --features candle -- -D warnings
 
   e2e-tests:
     # Only run on main push — PRs get fast feedback from unit tests + clippy
