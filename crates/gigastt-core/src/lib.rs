@@ -1,3 +1,6 @@
+#[cfg(all(feature = "candle", any(feature = "coreml", feature = "cuda")))]
+compile_error!("feature `candle` is mutually exclusive with `coreml`/`cuda`");
+
 pub mod error;
 pub mod export;
 pub mod inference;
