@@ -59,6 +59,30 @@ VOCAB = 34  # rnnt char vocab (incl. blank)
 ENC_DIM = 768  # encoder output dim
 
 
+def _assert_onnx_float(init: onnx.TensorProto, name: str) -> None:
+    """Fail loudly if an initializer is not ONNX FLOAT (fp32).
+
+    A quantized (INT8) or FP16 source would be silently corrupted by the
+    subsequent ``.astype(np.float32)`` cast, so reject it up front.
+    """
+    if init.data_type != onnx.TensorProto.FLOAT:
+        dtype_name = onnx.TensorProto.DataType.Name(init.data_type)
+        raise SystemExit(
+            f"FAIL: initializer {name!r} has dtype {dtype_name}, expected FLOAT "
+            f"(fp32); a non-FLOAT source cannot be cast to float32 without "
+            f"corruption"
+        )
+
+
+def _float_initializers(graph: onnx.GraphProto) -> dict[str, np.ndarray]:
+    """Load every initializer as float32, asserting each source is ONNX FLOAT."""
+    out: dict[str, np.ndarray] = {}
+    for i in graph.initializer:
+        _assert_onnx_float(i, i.name)
+        out[i.name] = numpy_helper.to_array(i).astype(np.float32)
+    return out
+
+
 def build_expected_shapes() -> dict[str, tuple[int, ...]]:
     """The full set of keys + shapes the candle encoder VarBuilder expects."""
     exp: dict[str, tuple[int, ...]] = {
@@ -140,21 +164,25 @@ def convert_encoder() -> int:
     tensors: dict[str, np.ndarray] = {}
 
     # 1. Recover Linear weights via Add -> MatMul -> onnx::MatMul tracing.
-    #    Track which biases got paired so the rest can be copied directly.
-    paired_bias: set[str] = set()
+    #    Track which anon weights got consumed so we can assert none are orphaned.
+    consumed_anon: set[str] = set()
     n_linear = 0
     for node in graph.node:
         if node.op_type != "Add":
             continue
-        bias_in = None
-        other_in = None
-        for inp in node.input:
-            if inp in bias_names:
-                bias_in = inp
-            else:
-                other_in = inp
-        if bias_in is None or other_in is None:
+        bias_inputs = [inp for inp in node.input if inp in bias_names]
+        other_inputs = [inp for inp in node.input if inp not in bias_names]
+        # Only consider Adds that pair exactly one bias with exactly one other
+        # input (the MatMul output). Anything else is not a Linear bias add.
+        if len(bias_inputs) != 1 or len(other_inputs) != 1:
             continue
+        bias_in = bias_inputs[0]
+        other_in = other_inputs[0]
+        if len(node.input) != 2:
+            raise SystemExit(
+                f"FAIL: Linear-bias Add {node.name!r} must have exactly 2 inputs, "
+                f"got {len(node.input)}: {list(node.input)}"
+            )
         prod = producer.get(other_in)
         if prod is None or prod.op_type != "MatMul":
             continue
@@ -162,13 +190,34 @@ def convert_encoder() -> int:
         if weight_init is None:
             continue
 
-        w = numpy_helper.to_array(inits[weight_init]).astype(np.float32)
+        src = inits[weight_init]
+        _assert_onnx_float(src, weight_init)
+        w = numpy_helper.to_array(src).astype(np.float32)
         # ONNX MatMul weight is [in, out] (x @ W); candle_nn::linear wants [out, in].
         w_t = np.ascontiguousarray(w.T)
         key = bias_in[: -len(".bias")] + ".weight"
+        if key in tensors:
+            raise SystemExit(
+                f"FAIL: duplicate Linear weight key {key!r} (two Add->bias "
+                f"resolutions wrote the same output)"
+            )
         tensors[key] = w_t
-        paired_bias.add(bias_in)
+        consumed_anon.add(weight_init)
         n_linear += 1
+
+    # Every anonymous onnx::MatMul initializer must be consumed exactly once; an
+    # orphan means the Add->MatMul tracing missed a Linear weight.
+    orphan_anon = sorted(anon_names - consumed_anon)
+    if orphan_anon:
+        raise SystemExit(
+            f"FAIL: {len(orphan_anon)} unconsumed onnx::MatMul initializer(s): "
+            f"{orphan_anon}"
+        )
+    if len(consumed_anon) != n_linear:
+        raise SystemExit(
+            f"FAIL: recovered {n_linear} Linear weights but consumed "
+            f"{len(consumed_anon)} anon initializers (must be equal)"
+        )
 
     print(f"  recovered {n_linear} Linear weights (transposed [in,out]->[out,in])")
 
@@ -180,7 +229,10 @@ def convert_encoder() -> int:
     for name, init in inits.items():
         if name in anon_names:
             continue
+        _assert_onnx_float(init, name)
         arr = numpy_helper.to_array(init).astype(np.float32)
+        if name in tensors:
+            raise SystemExit(f"FAIL: duplicate output key {name!r} (already written)")
         tensors[name] = np.ascontiguousarray(arr)
         n_copied += 1
     print(f"  copied {n_copied} named conv/LayerNorm/bias initializers verbatim")
@@ -249,7 +301,7 @@ def convert_decoder() -> int:
 
     print(f"Loading ONNX: {DECODER_ONNX_PATH}")
     model = onnx.load(str(DECODER_ONNX_PATH))
-    inits = {i.name: numpy_helper.to_array(i).astype(np.float32) for i in model.graph.initializer}
+    inits = _float_initializers(model.graph)
 
     def need(name: str) -> np.ndarray:
         if name not in inits:
@@ -320,7 +372,7 @@ def convert_joiner() -> int:
 
     print(f"Loading ONNX: {JOINER_ONNX_PATH}")
     model = onnx.load(str(JOINER_ONNX_PATH))
-    inits = {i.name: numpy_helper.to_array(i).astype(np.float32) for i in model.graph.initializer}
+    inits = _float_initializers(model.graph)
 
     def need(name: str) -> np.ndarray:
         if name not in inits:

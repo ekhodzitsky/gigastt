@@ -262,6 +262,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build -p gigastt-core --features candle
       - run: cargo clippy -p gigastt-core --features candle -- -D warnings
+      - run: cargo test -p gigastt-core --features candle --lib
 
   e2e-tests:
     # Only run on main push — PRs get fast feedback from unit tests + clippy

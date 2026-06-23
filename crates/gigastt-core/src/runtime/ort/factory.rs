@@ -144,6 +144,13 @@ impl RuntimeFactory for OrtFactory {
 /// When `feature = "candle"` is enabled, returns a `CandleFactory` (Metal on
 /// Apple Silicon, CPU otherwise). Otherwise returns an `OrtFactory` selected
 /// by the active execution-provider feature.
+///
+/// NOTE: the Candle backend is rnnt-only (34-token char vocab,
+/// `EncoderConfig::v3_rnnt()`); it cannot serve an `e2e_rnnt` model. This entry
+/// point has no model directory to detect the variant from, so it always returns
+/// `CandleFactory` under the feature — callers that know the directory should use
+/// [`production_factory`], which falls back to the ort factory for non-rnnt
+/// models.
 pub fn default_factory() -> Box<dyn RuntimeFactory> {
     #[cfg(feature = "candle")]
     {
@@ -171,20 +178,26 @@ pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
 /// Returns a production `ort` factory that preserves the provider selection and
 /// disk-cache layout used by the engine before the runtime abstraction.
 pub fn production_factory(model_dir: &Path) -> Box<dyn RuntimeFactory> {
+    // The Candle backend is rnnt-only (34-token char vocab,
+    // `EncoderConfig::v3_rnnt()`); for an `e2e_rnnt` model it would produce wrong
+    // output / fail to load. Use it only when the detected variant is `Rnnt`,
+    // otherwise fall back to the ort factory below.
     #[cfg(feature = "candle")]
     {
-        let _ = model_dir;
-        Box::new(crate::runtime::candle::factory::CandleFactory::new())
+        if matches!(
+            crate::model::ModelVariant::detect_in_dir(model_dir),
+            Some(crate::model::ModelVariant::Rnnt)
+        ) {
+            return Box::new(crate::runtime::candle::factory::CandleFactory::new());
+        }
     }
-    #[cfg(not(feature = "candle"))]
-    {
-        let factory = if cfg!(feature = "coreml") {
-            OrtFactory::coreml()
-        } else if cfg!(feature = "cuda") {
-            OrtFactory::cuda()
-        } else {
-            OrtFactory::cpu().with_optimized_cache_dir(model_dir.join("optimized_cache"))
-        };
-        Box::new(factory)
-    }
+
+    let factory = if cfg!(feature = "coreml") {
+        OrtFactory::coreml()
+    } else if cfg!(feature = "cuda") {
+        OrtFactory::cuda()
+    } else {
+        OrtFactory::cpu().with_optimized_cache_dir(model_dir.join("optimized_cache"))
+    };
+    Box::new(factory)
 }

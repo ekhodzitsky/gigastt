@@ -55,12 +55,26 @@ impl Runtime for CandleRuntime {
             .to_ascii_lowercase();
 
         if name.contains("decoder") {
-            let vb = self.var_builder(&dir.join("candle/decoder.safetensors"))?;
-            return Ok(Box::new(DecoderSession::load(vb, self.device.clone())?));
+            let st_path = dir.join("candle/decoder.safetensors");
+            let vb = self.var_builder(&st_path)?;
+            let session = DecoderSession::load(vb, self.device.clone()).map_err(|e| {
+                RuntimeError::LoadFailed {
+                    path: st_path,
+                    message: e.to_string(),
+                }
+            })?;
+            return Ok(Box::new(session));
         }
         if name.contains("joint") || name.contains("joiner") {
-            let vb = self.var_builder(&dir.join("candle/joiner.safetensors"))?;
-            return Ok(Box::new(JoinerSession::load(vb, self.device.clone())?));
+            let st_path = dir.join("candle/joiner.safetensors");
+            let vb = self.var_builder(&st_path)?;
+            let session = JoinerSession::load(vb, self.device.clone()).map_err(|e| {
+                RuntimeError::LoadFailed {
+                    path: st_path,
+                    message: e.to_string(),
+                }
+            })?;
+            return Ok(Box::new(session));
         }
 
         Err(RuntimeError::InferenceFailed(format!(
@@ -85,6 +99,12 @@ impl CandleRuntime {
                 ),
             });
         }
+        // SAFETY: `from_mmaped_safetensors` memory-maps `st` and requires the
+        // file to stay valid and unchanged for the VarBuilder's lifetime. `st`
+        // lives under `~/.gigastt/models/candle/`, is produced by gigastt's own
+        // converter, and is not mutated or truncated by gigastt while loaded. The
+        // preceding `exists()` check is advisory only; the mmap call itself is the
+        // authoritative error path (a missing/corrupt file returns `Err` here).
         unsafe {
             candle_nn::VarBuilder::from_mmaped_safetensors(
                 std::slice::from_ref(&st.to_path_buf()),
@@ -95,6 +115,51 @@ impl CandleRuntime {
                 path: st.to_path_buf(),
                 message: e.to_string(),
             })
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::runtime::factory::Runtime;
+
+    fn cpu_runtime() -> CandleRuntime {
+        CandleRuntime::new(CandleDevice::Cpu).expect("CPU device always available")
+    }
+
+    #[test]
+    fn test_load_session_missing_candle_dir_is_load_failed() {
+        let tmp = tempfile::tempdir().unwrap();
+        // No `candle/` subdir exists; the encoder weights resolution must fail
+        // with LoadFailed (not InferenceFailed) so it's classified consistently
+        // with the ort encoder load path. (`Box<dyn RuntimeSession>` is not Debug,
+        // so match on the Result rather than using expect_err.)
+        let model_path = tmp.path().join("v3_rnnt_encoder.onnx");
+        match cpu_runtime().load_session(&model_path, true) {
+            Ok(_) => panic!("missing weights must fail"),
+            Err(RuntimeError::LoadFailed { .. }) => {}
+            Err(other) => panic!("expected LoadFailed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_load_session_bogus_filename_is_classification_error() {
+        let tmp = tempfile::tempdir().unwrap();
+        // A non-encoder file whose name is neither decoder nor joint/joiner must
+        // hit the classification error branch.
+        let model_path = tmp.path().join("something_else.onnx");
+        match cpu_runtime().load_session(&model_path, false) {
+            Ok(_) => panic!("unclassifiable file must fail"),
+            Err(RuntimeError::InferenceFailed(msg)) => {
+                assert!(
+                    msg.contains("cannot classify"),
+                    "expected classification error, got: {msg}"
+                );
+            }
+            Err(other) => {
+                panic!("expected InferenceFailed classification error, got {other:?}")
+            }
         }
     }
 }

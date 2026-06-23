@@ -1098,21 +1098,33 @@ impl Engine {
         };
 
         tracing::info!("Detected model variant: {variant:?}");
-        let is_int8 = model_dir.join(variant.encoder_int8_file()).exists();
-        if is_int8 {
-            tracing::info!("Using INT8 quantized encoder");
+        // The candle backend loads FP32 `candle/*.safetensors` and ignores the
+        // INT8 ONNX encoder, so report no INT8 there and gate out the INT8 / ONNX
+        // / CPU-EP logs below (which are wrong for candle), emitting an accurate
+        // candle line instead. The default (ort) logging is unchanged.
+        let is_int8 =
+            !cfg!(feature = "candle") && model_dir.join(variant.encoder_int8_file()).exists();
+        if !cfg!(feature = "candle") {
+            if is_int8 {
+                tracing::info!("Using INT8 quantized encoder");
+            }
+
+            tracing::info!(
+                "Loading ONNX models from {} (pool_size={pool_size})...",
+                model_dir.display()
+            );
         }
 
+        #[cfg(feature = "candle")]
         tracing::info!(
-            "Loading ONNX models from {} (pool_size={pool_size})...",
+            "Loading Candle models from {} (pool_size={pool_size})...",
             model_dir.display()
         );
-
         #[cfg(feature = "coreml")]
         tracing::info!("Using CoreML execution provider (Neural Engine + CPU)");
         #[cfg(feature = "cuda")]
         tracing::info!("Using CUDA execution provider (falls back to CPU if unavailable)");
-        #[cfg(not(any(feature = "coreml", feature = "cuda")))]
+        #[cfg(not(any(feature = "coreml", feature = "cuda", feature = "candle")))]
         tracing::info!("Using CPU execution provider");
 
         // CoreML can reject a model at load time; fall back to CPU if that happens.

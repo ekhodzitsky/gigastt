@@ -38,18 +38,27 @@ pub(crate) fn to_candle(t: &Tensor, dev: &Device) -> Result<CandleTensor, Runtim
 
 /// Convert a `candle_core::Tensor` back into a runtime [`Tensor`].
 ///
-/// The candle tensor is cast to F32 (the encoder output is f32) and flattened
-/// to a contiguous `Vec<f32>`; its dims become the runtime [`Shape`].
+/// Branches on the candle dtype to preserve element type (mirrors `to_candle`'s
+/// dtype switch): F32 -> [`TensorData::F32`], I64 -> [`TensorData::I64`]. I32 is
+/// not produced here because `to_candle` widens I32 inputs to I64, so they
+/// round-trip as I64. Any other candle dtype (U8/U32/F16/BF16/F64) is never
+/// produced by this backend and returns an error rather than silently casting.
 pub(crate) fn from_candle(c: &CandleTensor) -> Result<Tensor, RuntimeError> {
     let dims = c.dims().to_vec();
-    let data = c
-        .to_dtype(DType::F32)
-        .map_err(backend_err)?
-        .flatten_all()
-        .map_err(backend_err)?
-        .to_vec1::<f32>()
-        .map_err(backend_err)?;
-    Tensor::new(Shape::new(dims), TensorData::F32(data))
+    let flat = c.flatten_all().map_err(backend_err)?;
+    match c.dtype() {
+        DType::F32 => {
+            let data = flat.to_vec1::<f32>().map_err(backend_err)?;
+            Tensor::new(Shape::new(dims), TensorData::F32(data))
+        }
+        DType::I64 => {
+            let data = flat.to_vec1::<i64>().map_err(backend_err)?;
+            Tensor::new(Shape::new(dims), TensorData::I64(data))
+        }
+        other => Err(RuntimeError::InferenceFailed(format!(
+            "from_candle: unsupported candle dtype {other:?}"
+        ))),
+    }
 }
 
 #[cfg(test)]
@@ -85,5 +94,17 @@ mod tests {
             c.flatten_all().unwrap().to_vec1::<i64>().unwrap(),
             vec![123]
         );
+    }
+
+    #[test]
+    fn test_i64_roundtrip_preserves_dtype_and_data() {
+        let original = Tensor::new(Shape::new(vec![1, 3]), TensorData::I64(vec![1, 2, 3])).unwrap();
+
+        let c = to_candle(&original, &Device::Cpu).unwrap();
+        assert_eq!(c.dtype(), DType::I64);
+
+        let recovered = from_candle(&c).unwrap();
+        assert_eq!(recovered.shape().dims(), &[1, 3]);
+        assert_eq!(recovered.view().data().as_i64(), Some(&[1, 2, 3][..]));
     }
 }
