@@ -12,6 +12,7 @@
 //! tight (max abs diff < 1e-4): the point of this test is to PROVE the pure-Rust
 //! decoder/joiner reproduce the ONNX graphs bit-for-bit (within f32 op ordering),
 //! not to rubber-stamp them.
+#![cfg(feature = "candle")]
 
 use std::path::Path;
 

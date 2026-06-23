@@ -12,6 +12,7 @@
 //! the encoder outputs are compared element-wise. The tolerance is intentionally
 //! tight (max abs diff < 1e-2): the point of this test is to PROVE the
 //! pure-Rust encoder reproduces the ONNX encoder, not to rubber-stamp it.
+#![cfg(feature = "candle")]
 
 use std::path::Path;
 
