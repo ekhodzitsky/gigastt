@@ -3520,6 +3520,117 @@ mod tests {
         }
     }
 
+    /// End-to-end proof that the Candle backend produces IDENTICAL output to ort
+    /// through the STREAMING path (sliding-window `process_chunk` + `finish_stream`),
+    /// not just through the whole-file `transcribe_file` path.
+    ///
+    /// Both engines receive the SAME 8 000-sample (0.5 s) chunks fed in order;
+    /// all returned segment texts are concatenated and compared byte-for-byte.
+    /// Per-stage tensor parity is bit-exact, so the streamed transcripts must match.
+    ///
+    /// Run with:
+    /// `cargo test -p gigastt-core --features candle --lib -- --ignored --nocapture candle_ort_streaming_parity`
+    #[cfg(feature = "candle")]
+    #[test]
+    #[ignore = "requires v3_rnnt model + candle/*.safetensors"]
+    fn candle_ort_streaming_parity() {
+        const CHUNK_SAMPLES: usize = 8_000; // 0.5 s at 16 kHz
+
+        let model_dir = crate::model::default_model_dir();
+        let model_path = Path::new(&model_dir);
+
+        let ort_engine = Engine::load_with_factory(
+            model_path,
+            1,
+            1,
+            0,
+            Box::new(crate::runtime::ort::factory::OrtFactory::cpu()),
+            1,
+        )
+        .expect("ort engine should load");
+        let candle_engine = Engine::load_with_factory(
+            model_path,
+            1,
+            1,
+            0,
+            Box::new(crate::runtime::candle::factory::CandleFactory::new()),
+            1,
+        )
+        .expect("candle engine should load");
+
+        let fixtures = [
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../gigastt/tests/fixtures/golos_00.wav"
+            ),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../gigastt/tests/fixtures/golos_01.wav"
+            ),
+        ];
+
+        for fixture in fixtures {
+            let samples = audio::decode_audio_file(fixture)
+                .unwrap_or_else(|e| panic!("failed to decode {fixture}: {e:#}"));
+
+            // --- ort streaming ---
+            let mut ort_guard = ort_engine.pool.checkout_blocking().expect("ort checkout");
+            let mut ort_state = ort_engine.create_state(false);
+            let mut ort_text = String::new();
+            for chunk in samples.chunks(CHUNK_SAMPLES) {
+                let segs = ort_engine
+                    .process_chunk(chunk, &mut ort_state, &mut ort_guard)
+                    .expect("ort process_chunk must not error");
+                for seg in segs {
+                    if !ort_text.is_empty() {
+                        ort_text.push(' ');
+                    }
+                    ort_text.push_str(seg.text.trim());
+                }
+            }
+            if let Some(seg) = ort_engine.finish_stream(&mut ort_state, &mut ort_guard) {
+                if !ort_text.is_empty() {
+                    ort_text.push(' ');
+                }
+                ort_text.push_str(seg.text.trim());
+            }
+
+            // --- candle streaming ---
+            let mut candle_guard = candle_engine
+                .pool
+                .checkout_blocking()
+                .expect("candle checkout");
+            let mut candle_state = candle_engine.create_state(false);
+            let mut candle_text = String::new();
+            for chunk in samples.chunks(CHUNK_SAMPLES) {
+                let segs = candle_engine
+                    .process_chunk(chunk, &mut candle_state, &mut candle_guard)
+                    .expect("candle process_chunk must not error");
+                for seg in segs {
+                    if !candle_text.is_empty() {
+                        candle_text.push(' ');
+                    }
+                    candle_text.push_str(seg.text.trim());
+                }
+            }
+            if let Some(seg) = candle_engine.finish_stream(&mut candle_state, &mut candle_guard) {
+                if !candle_text.is_empty() {
+                    candle_text.push(' ');
+                }
+                candle_text.push_str(seg.text.trim());
+            }
+
+            eprintln!("fixture = {fixture}");
+            eprintln!("ort    (streamed) = {ort_text:?}");
+            eprintln!("candle (streamed) = {candle_text:?}");
+
+            assert_eq!(
+                ort_text, candle_text,
+                "candle streamed transcript diverges from ort for {fixture}:\n  ort    = {ort_text:?}\n  candle = {candle_text:?}"
+            );
+        }
+    }
+
     mod mock_runtime_tests {
         use std::collections::HashMap;
         use std::sync::Arc;
