@@ -139,16 +139,27 @@ impl RuntimeFactory for OrtFactory {
     }
 }
 
-/// Returns the default `ort` factory for the active compile-time feature flags.
+/// Returns the default factory for the active compile-time feature flags.
+///
+/// When `feature = "candle"` is enabled, returns a `CandleFactory` (Metal on
+/// Apple Silicon, CPU otherwise). Otherwise returns an `OrtFactory` selected
+/// by the active execution-provider feature.
 pub fn default_factory() -> Box<dyn RuntimeFactory> {
-    if cfg!(feature = "coreml") {
-        Box::new(OrtFactory::coreml())
-    } else if cfg!(feature = "cuda") {
-        Box::new(OrtFactory::cuda())
-    } else if cfg!(feature = "nnapi") {
-        Box::new(OrtFactory::nnapi())
-    } else {
-        Box::new(OrtFactory::cpu())
+    #[cfg(feature = "candle")]
+    {
+        Box::new(crate::runtime::candle::factory::CandleFactory::new())
+    }
+    #[cfg(not(feature = "candle"))]
+    {
+        if cfg!(feature = "coreml") {
+            Box::new(OrtFactory::coreml())
+        } else if cfg!(feature = "cuda") {
+            Box::new(OrtFactory::cuda())
+        } else if cfg!(feature = "nnapi") {
+            Box::new(OrtFactory::nnapi())
+        } else {
+            Box::new(OrtFactory::cpu())
+        }
     }
 }
 

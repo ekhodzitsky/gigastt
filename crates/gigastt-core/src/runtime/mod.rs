@@ -5,6 +5,9 @@ pub mod ort;
 pub mod session;
 pub mod tensor;
 
+#[cfg(feature = "candle")]
+pub mod candle;
+
 #[allow(unused_imports)]
 pub use error::RuntimeError;
 #[allow(unused_imports)]
