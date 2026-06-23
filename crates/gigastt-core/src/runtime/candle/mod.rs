@@ -7,3 +7,5 @@ pub mod config;
 pub mod conformer;
 pub mod factory;
 pub mod runtime;
+pub mod session;
+pub mod tensor;

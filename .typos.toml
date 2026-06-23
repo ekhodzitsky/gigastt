@@ -16,3 +16,5 @@ eazy = "eazy"
 [default.extend-identifiers]
 # "hel\0lo" — intentional test string with embedded NUL byte.
 hel = "hel"
+# "from_mmaped_safetensors" — candle_nn API name (memory-mapped safetensors loader).
+from_mmaped_safetensors = "from_mmaped_safetensors"

@@ -27,7 +27,10 @@ use super::config::EncoderConfig;
 ///
 /// Возвращает два тензора (cos, sin) формы (max_len, 1, 1, dim).
 fn create_rope_table(dim: usize, max_len: usize, device: &Device) -> Result<(Tensor, Tensor)> {
-    let base = 10_000f32;
+    // GigaAM v3 uses a RoPE base of 5000 (not the common 10000); verified by
+    // matching the encoder's baked cos/sin table to 5.96e-6 over the first 100
+    // positions. Using 10000 silently corrupts attention from the first layer.
+    let base = 5_000f32;
     // inv_freq = 1 / (base^(2i/dim)) для i = 0, 2, 4, ..., dim-2
     let half_dim = dim / 2;
     let inv_freq: Vec<f32> = (0..half_dim)
