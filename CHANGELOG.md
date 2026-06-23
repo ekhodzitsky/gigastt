@@ -7,8 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-06-23
+
 ### Added
 
+- **Optional Candle / Metal inference backend (`--features candle`, experimental).**
+  A pure-Rust alternative to the default ONNX Runtime path that runs the GigaAM v3
+  `rnnt` encoder, decoder (LSTM prediction network), and joiner on the Apple Silicon
+  **Metal GPU** (Candle's CPU backend elsewhere). Strictly opt-in and additive — the
+  default `ort` build is unchanged and remains the default. Transcription is
+  **byte-for-byte identical to the `ort` backend** on the benchmark fixtures
+  (per-stage numeric parity ~1e-6; whole-file and streaming transcripts identical).
+  Weights convert from the local ONNX models via `scripts/convert_gigaam_candle.py`
+  (no PyTorch or extra download). Mutually exclusive with `coreml`/`cuda`/`nnapi`;
+  `rnnt` head only (e2e_rnnt falls back to `ort`). See
+  [`docs/candle-backend.md`](docs/candle-backend.md).
 - **Prebuilt Docker images on GitHub Container Registry.** Each tagged release
   now publishes `ghcr.io/ekhodzitsky/gigastt:{X.Y.Z,latest}` (CPU, multi-arch
   linux/amd64 + linux/arm64) and `:{X.Y.Z-cuda,cuda}` (CUDA, linux/amd64), so

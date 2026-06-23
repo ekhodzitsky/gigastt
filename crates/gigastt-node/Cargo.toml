@@ -27,7 +27,7 @@ nnapi = ["gigastt-core/nnapi"]
 # Lean core: file decoding only — no HTTP download, no async runtime (the binding
 # side-loads models and uses the synchronous checkout_blocking path on a libuv
 # worker thread). onnxruntime is statically linked via ort's default download-binaries.
-gigastt-core = { version = "2.3.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
+gigastt-core = { version = "2.4.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
 napi = { version = "3", default-features = false, features = ["napi4"] }
 napi-derive = "3"
 

@@ -28,7 +28,7 @@ nnapi = ["gigastt-core/nnapi"]
 [dependencies]
 # Lean core: file decoding only — no HTTP download, no async runtime (the
 # bindings side-load models and use the synchronous checkout_blocking path).
-gigastt-core = { version = "2.3.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
+gigastt-core = { version = "2.4.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
 uniffi = { version = "0.28", features = ["cli"] }
 thiserror = "2"
 

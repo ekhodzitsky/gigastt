@@ -22,7 +22,7 @@ cuda = ["gigastt-core/cuda"]
 diarization = ["gigastt-core/diarization"]
 
 [dependencies]
-gigastt-core = { version = "2.3.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
+gigastt-core = { version = "2.4.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
 serde_json = "1"
 tracing = "0.1"
 
