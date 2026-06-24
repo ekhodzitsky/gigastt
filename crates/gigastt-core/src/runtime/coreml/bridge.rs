@@ -1,10 +1,15 @@
-//! Minimal Rust <-> Core ML bridge over `objc2-core-ml` (Phase 2a SPIKE).
+//! Minimal Rust <-> Core ML bridge over `objc2-core-ml`.
 //!
-//! Goal: prove a Rust `objc2` bridge can compile + load a per-bucket
-//! `.mlpackage`, run it on the Apple Neural Engine (`CPU_AND_NE`), and produce
-//! numerically-correct output vs a Python `coremltools` reference on the SAME
-//! package + input. This is the only file in the crate allowed to touch
-//! `objc2_core_ml` / `objc2_foundation` (the module enforces the isolation).
+//! Production status: this bridge is the Core ML entry point for the composite
+//! ANE runtime — [`super::encoder_session::AneEncoderSession`] (one per pooled
+//! production session) calls [`predict_f32`] on every ANE-path encoder run, and
+//! [`super::runtime::AneRuntime`] calls [`compile_and_load`] once per bucket at
+//! load time. It compiles + loads a per-bucket `.mlpackage`, runs it on the
+//! Apple Neural Engine (`CPU_AND_NE`), and produces output that matches a Python
+//! `coremltools` reference on the SAME package + input (verified by the
+//! `#[ignore]` GO/NO-GO smoke test below). This is the only file in the crate
+//! allowed to touch `objc2_core_ml` / `objc2_foundation` (the module enforces
+//! the isolation).
 //!
 //! ISOLATION: all `objc2_*` usage stays inside `runtime/coreml/`.
 //! Gated `#[cfg(all(feature = "ane", target_os = "macos"))]`.

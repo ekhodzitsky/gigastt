@@ -34,6 +34,12 @@ const N_MELS: usize = 64;
 /// padded ANE output stays at cosine >= 0.94 vs the ort baseline and WER tracks
 /// the baseline; below 50% the raw output diverges and the transcript is no
 /// longer trustworthy.
+///
+/// The cos >= 0.94 @ >= 50%-fill calibration was measured against the REAL FP16
+/// `.mlpackage` (Float16 mel input, see [`super::bridge::predict_f32`]), so the
+/// floor already absorbs the Float16 quantization of the mel input — not just the
+/// zero-pad effect. A future reader must NOT "fix" this floor assuming the
+/// encoder sees f32 input; the f16 round-trip is baked into the threshold.
 const FILL_FLOOR: f64 = 0.5;
 
 /// `Retained<MLModel>` is not auto-`Send`/`Sync` (it wraps an Objective-C
@@ -259,6 +265,13 @@ mod tests {
         assert_eq!(select_bucket(4000, &buckets, 0.5), None);
         // Exact fit.
         assert_eq!(select_bucket(768, &buckets, 0.5), Some(768));
+    }
+
+    #[test]
+    fn test_select_bucket_fill_equal_to_floor_is_selected() {
+        // 384/768 = exactly 0.5 == floor -> the `>=` comparison must include the
+        // boundary, so the bucket is selected (not rejected to the ort fallback).
+        assert_eq!(select_bucket(384, &[768], 0.5), Some(768));
     }
 
     #[test]

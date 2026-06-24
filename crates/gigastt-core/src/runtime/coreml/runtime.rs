@@ -52,6 +52,10 @@ impl AneRuntime {
             return Ok(Arc::clone(model));
         }
         let pkg = ane_dir.join(ane_package_dir_name(bucket));
+        // Emit BEFORE the compile: `compile_and_load` does a synchronous Core ML
+        // compile that can take several seconds on a cold cache, all while this
+        // method holds the cache lock — without this line it looks like a hang.
+        tracing::info!(bucket, package = %pkg.display(), "compiling ANE encoder bucket (cold-start, may take several seconds)");
         let model = bridge::compile_and_load(&pkg, true)?;
         let shared = Arc::new(SharedModel(model));
         cache.insert(bucket, Arc::clone(&shared));
