@@ -314,4 +314,71 @@ mod tests {
         let back = trim_time(&padded, 2, 5, 3);
         assert_eq!(back, mel);
     }
+
+    /// Streaming smoke (no model / no ANE hardware): an `AneEncoderSession` with
+    /// the production bucket ladder but NO compiled bucket models routes a
+    /// streaming-sized window through the ort fallback rather than the ANE path.
+    ///
+    /// The streaming path (`Engine::decode_window`) caps its window at
+    /// `STREAM_MAX_WINDOW_SAMPLES` = 2.5 s ⇒ ≤ 250 mel frames, which is below the
+    /// 50%-fill floor of the smallest shipped bucket (768 ⇒ floor 384). So
+    /// `select_bucket` returns `None` for every streaming window and `run`
+    /// delegates to the ort fallback session: streaming works on CPU with no
+    /// crash and no ANE benefit (the intended "ANE = file-mode" behavior). This
+    /// pins that routing without needing a real `.mlpackage` or the Neural Engine
+    /// by using a mock fallback session and asserting it was invoked.
+    #[test]
+    fn test_streaming_window_routes_to_ort_fallback() {
+        use crate::runtime::mock::MockSession;
+
+        // Production buckets; none has a compiled model loaded here.
+        const SHIPPED_BUCKETS: &[usize] = &[768, 1536, 3000];
+        // A streaming-sized window: 250 mel frames (the 2.5 s window cap), well
+        // below the 384-frame fill floor of the 768 bucket.
+        const T: usize = 250;
+
+        // Sanity: confirm no shipped bucket accepts this window at the floor, so
+        // `run` MUST take the fallback branch.
+        assert_eq!(
+            select_bucket(T, SHIPPED_BUCKETS, FILL_FLOOR),
+            None,
+            "a 250-frame streaming window must not select any shipped bucket"
+        );
+
+        // Mock ort encoder fallback: accepts the [1,64,T] mel + [1] length pair
+        // and returns the encoder's two-output contract ([encoded], [encoded_len]).
+        let t_prime = calc_output_length(T);
+        let fallback = MockSession::new(
+            vec![Shape::new(vec![1, N_MELS, T]), Shape::new(vec![1])],
+            vec![
+                Tensor::new(
+                    Shape::new(vec![1, ENC_DIM, t_prime]),
+                    TensorData::F32(vec![0.0; ENC_DIM * t_prime]),
+                )
+                .unwrap(),
+                Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![t_prime as i64])).unwrap(),
+            ],
+        );
+
+        // No bucket models -> every window falls back.
+        let session = AneEncoderSession::new(Vec::new(), Box::new(fallback));
+
+        let mel = Tensor::new(
+            Shape::new(vec![1, N_MELS, T]),
+            TensorData::F32(vec![0.0; N_MELS * T]),
+        )
+        .unwrap();
+        let len = Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![T as i64])).unwrap();
+        let out = session.run(&[mel, len]).expect("fallback run succeeds");
+
+        // The fallback's recorded contract flows straight through.
+        assert_eq!(out.len(), 2, "encoder emits [encoded, encoded_len]");
+        assert_eq!(out[0].shape().dims(), &[1, ENC_DIM, t_prime]);
+        match out[1].view().data() {
+            crate::runtime::tensor::TensorDataView::I64(v) => {
+                assert_eq!(v[0], t_prime as i64, "fallback encoded_len passes through")
+            }
+            other => panic!("expected I64 encoded_len, got {other:?}"),
+        }
+    }
 }

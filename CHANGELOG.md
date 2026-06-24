@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Optional native ANE (Core ML) encoder backend (`--features ane`, macOS ARM64).**
+  Runs the GigaAM v3 `rnnt` **encoder** on the Apple **Neural Engine** via per-bucket
+  fixed-shape Core ML `.mlpackage`s; the decoder/joiner stay on the `ort` CPU path.
+  Strictly opt-in and additive — the default `ort` build is unchanged. File-mode:
+  each encoder window is padded up to the nearest fixed bucket (ladder `768/1536/3000`
+  mel frames), run FP16 on the ANE, and trimmed back; windows below the 50% fill
+  floor — including every streaming window — transparently fall back to the `ort`
+  encoder (no crash, no ANE benefit). End-to-end ≈ 3.7× over the CPU build (decode-bound;
+  the RNN-T greedy loop, not the encoder, is the bottleneck), WER vs `ort` ≈ 1.11%
+  (one borderline FP16-pad-up token flip on a 15-clip Golos set, else byte-identical).
+  Distinct from `--features coreml` (the ort CoreML EP); mutually exclusive with
+  `coreml`/`cuda`/`nnapi`/`candle`; `rnnt` head only (`e2e_rnnt` falls back to `ort`).
+  Bucket packages convert locally via `scripts/convert_gigaam_ane.py` (and, once an
+  ANE release is published, `gigastt download --ane`). See
+  [`docs/ane-backend.md`](docs/ane-backend.md).
+
 ## [2.4.0] - 2026-06-23
 
 ### Added

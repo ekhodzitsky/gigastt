@@ -303,8 +303,11 @@ jobs:
         with:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - run: cargo build -p gigastt-core --features ane
-      - run: cargo clippy -p gigastt-core --features ane -- -D warnings
+      - run: cargo build -p gigastt --features ane
+      - run: cargo clippy -p gigastt --features ane --all-targets -- -D warnings
+      - run: cargo test -p gigastt-core --lib --features ane
+      # Warning-free with the lean core (no default features) + ane only.
+      - run: cargo check -p gigastt-core --no-default-features --features ane
 
   e2e-tests:
     # Only run on main push — PRs get fast feedback from unit tests + clippy

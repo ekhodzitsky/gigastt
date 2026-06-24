@@ -856,6 +856,32 @@ fn ensure_int8_encoder(variant: ModelVariant, model_dir: &str, skip: bool) -> an
     Ok(())
 }
 
+/// Log a concise summary of the active ANE (Core ML / Apple Neural Engine)
+/// encoder backend at startup. No-op outside `--features ane`.
+///
+/// ANE is rnnt-only and macOS-only: it engages only when the resolved head is
+/// `rnnt` (mirroring [`gigastt_core::production_factory`]'s variant gate); an
+/// `e2e_rnnt` model transparently stays on the ort encoder. When engaged it
+/// serves file-mode transcription by padding the mel window up to a fixed
+/// bucket; streaming / short windows below the fill floor fall back to the
+/// CPU/ort encoder (no ANE benefit, no crash).
+#[cfg(feature = "ane")]
+fn log_ane_backend(resolved: ModelVariant) {
+    if resolved == ModelVariant::Rnnt {
+        tracing::info!(
+            "ANE encoder backend active (Core ML / Apple Neural Engine, macOS ARM64): \
+             file-mode transcription pads up to fixed buckets; streaming / short windows \
+             below the fill floor fall back to the CPU/ort encoder"
+        );
+    } else {
+        tracing::info!(
+            "ANE encoder backend requested but the loaded head is {}; ANE is rnnt-only, \
+             so this model runs on the ort encoder",
+            resolved.as_str()
+        );
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -970,6 +996,8 @@ async fn main() -> anyhow::Result<()> {
                             hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST),
                         );
                     }
+                    #[cfg(feature = "ane")]
+                    log_ane_backend(resolved);
                     log_rss();
                     Ok(engine)
                 })
