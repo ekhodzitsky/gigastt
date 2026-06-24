@@ -61,6 +61,13 @@ use crate::runtime::error::RuntimeError;
 ///
 /// When `cpu_and_ne` is set the model is configured with
 /// `MLComputeUnits::CPUAndNeuralEngine` so the Apple Neural Engine is engaged.
+///
+/// `cpu_and_ne` is intentionally NOT part of the cache key: the compiled
+/// `.mlmodelc` is compute-unit-independent. The `CPUAndNeuralEngine` vs
+/// `CPUOnly` choice is applied at LOAD time via `setComputeUnits` on the
+/// `MLModelConfiguration` (see below), not baked into the compile, so a single
+/// cached artifact is valid for both configs. Folding `cpu_and_ne` into the key
+/// would only store two byte-identical copies.
 // `compileModelAtURL_error` is the synchronous compile API; objc2 marks it
 // deprecated in favor of the async completion-handler variant, but a synchronous
 // compile is exactly what this blocking, once-per-bucket path wants.
@@ -296,6 +303,11 @@ fn dir_size_and_newest_mtime(root: &Path) -> std::io::Result<(u64, u128)> {
 /// Build the cache validity key for `package`: source size + newest mtime + OS
 /// version. Anything that changes recompiles. Factored out (and `os_version`
 /// injectable) so the key build + match logic is unit-testable without Core ML.
+///
+/// The compute-unit choice (`cpu_and_ne`) is deliberately absent: the compiled
+/// `.mlmodelc` is compute-unit-independent — that config is applied at load time
+/// via `setComputeUnits`, not at compile time — so one cached artifact serves
+/// both `CPUAndNeuralEngine` and `CPUOnly`.
 fn build_source_key(package: &Path, os_version: &str) -> Result<String, RuntimeError> {
     let (size, mtime) =
         dir_size_and_newest_mtime(package).map_err(|e| RuntimeError::LoadFailed {
@@ -339,22 +351,36 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
 
 /// Copy the freshly-compiled temp `.mlmodelc` (`temp_dir`) into the disk cache:
 /// recursively copy into a unique staging dir under `compiled_cache/`, then
-/// atomically rename it into the final cache path (clearing any stale one), and
-/// write the sidecar validity key.
+/// atomically rename it into the final cache path (renaming any stale one aside
+/// first), and write the sidecar validity key.
 ///
 /// Mirrors `model::extract_ane_tar_atomic`'s staging + atomic-rename +
 /// cleanup-on-error discipline: the final cache path only ever appears
 /// fully-formed, and a torn copy leaves only the staging dir (removed on every
 /// error path). Concurrent compilers are last-writer-wins on identical content.
+///
+/// Multi-process reader safety: rather than `remove_dir_all(final_dir)` (which
+/// would unlink files out from under another process mid-`modelWithContentsOfURL`
+/// on the old cache — one process recompiling on a stale key while another loads
+/// it), a stale `final_dir` is first `rename`d aside to a unique `.trash.*` dir
+/// (an atomic dir-entry swap), THEN the staging dir is renamed into `final_dir`,
+/// THEN the trash is removed (best-effort). A concurrent reader keeps reading the
+/// now-unlinked-but-still-open inode it already opened, so its load stays valid.
+/// A leftover `.trash.*`/`.staging.*` dir (e.g. on crash) is harmless and swept
+/// on the next entry.
 fn populate_cache(package: &Path, temp_dir: &Path) -> std::io::Result<()> {
     let cache_dir = compiled_cache_dir(package);
     std::fs::create_dir_all(&cache_dir)?;
+
+    // Best-effort sweep of leftover staging/trash dirs from a prior crash.
+    sweep_stale_temp_dirs(&cache_dir);
 
     let stamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos();
-    let staging = cache_dir.join(format!(".staging.{}.{}", std::process::id(), stamp));
+    let pid = std::process::id();
+    let staging = cache_dir.join(format!(".staging.{pid}.{stamp}"));
 
     let cleanup = || {
         let _ = std::fs::remove_dir_all(&staging);
@@ -366,17 +392,29 @@ fn populate_cache(package: &Path, temp_dir: &Path) -> std::io::Result<()> {
     }
 
     let final_dir = cached_model_path(package);
-    // Clear any stale cached model before rename, or `rename` fails with
-    // "directory not empty".
-    if final_dir.exists()
-        && let Err(e) = std::fs::remove_dir_all(&final_dir)
-    {
-        cleanup();
-        return Err(e);
+    // Rename any stale cached model ASIDE (not `remove_dir_all`) so a concurrent
+    // OTHER-PROCESS reader mid-load keeps its open inode valid; `rename` also
+    // requires the destination be absent (or it fails "directory not empty").
+    let mut trash: Option<PathBuf> = None;
+    if final_dir.exists() {
+        let aside = cache_dir.join(format!(".trash.{pid}.{stamp}"));
+        if let Err(e) = std::fs::rename(&final_dir, &aside) {
+            cleanup();
+            return Err(e);
+        }
+        trash = Some(aside);
     }
     if let Err(e) = std::fs::rename(&staging, &final_dir) {
         cleanup();
+        if let Some(aside) = trash {
+            let _ = std::fs::remove_dir_all(&aside);
+        }
         return Err(e);
+    }
+    // Drop the old cache now that the new one is in place (best-effort; a
+    // leftover trash dir is harmless and swept on the next entry).
+    if let Some(aside) = trash {
+        let _ = std::fs::remove_dir_all(&aside);
     }
 
     // Write the sidecar key LAST so a hit requires both a present model and a
@@ -385,6 +423,21 @@ fn populate_cache(package: &Path, temp_dir: &Path) -> std::io::Result<()> {
     let key = current_source_key(package).map_err(std::io::Error::other)?;
     std::fs::write(cached_meta_path(package), key)?;
     Ok(())
+}
+
+/// Best-effort removal of leftover `.staging.*` / `.trash.*` dirs in `cache_dir`
+/// from a prior crashed/torn `populate_cache` run. Never fails the caller.
+fn sweep_stale_temp_dirs(cache_dir: &Path) {
+    let Ok(entries) = std::fs::read_dir(cache_dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with(".staging.") || name.starts_with(".trash.") {
+            let _ = std::fs::remove_dir_all(entry.path());
+        }
+    }
 }
 
 /// Convert a `file://` `NSURL` to a local filesystem path, or `None` if it is
@@ -894,26 +947,47 @@ mod tests {
         println!("median_ms={median_ms:.3}  audio_secs={audio_secs:.3}  RTFx={rtfx:.1}");
     }
 
-    /// Cold-start cache GO/NO-GO. Clears the disk cache, then loads the SAME
-    /// package twice in one process: the FIRST load compiles (~20 s) and
-    /// populates the cache; the SECOND load is a cache hit (no compile). Asserts
-    /// the 2nd load is dramatically faster AND produces byte-identical output
-    /// (caching must not change results). Touches the filesystem + ANE, so
-    /// `#[ignore]`d; run manually:
+    /// Cold-start cache GO/NO-GO. Loads the SAME package twice in one process:
+    /// the FIRST load compiles (~20 s) and populates the cache; the SECOND load
+    /// is a cache hit (no compile). Asserts the 2nd load is dramatically faster
+    /// AND produces byte-identical output (caching must not change results).
+    /// Touches the filesystem + ANE, so `#[ignore]`d; run manually:
     ///   cargo test -p gigastt-core --features ane bridge_disk_cache -- --ignored --nocapture
+    ///
+    /// Hermetic: rather than wipe the developer's real warm cache, this
+    /// symlinks the real `.mlpackage` into a fresh tempdir and compiles from
+    /// there, so the cache derives to `<tmp>/compiled_cache/` (the cache path is
+    /// `package.parent()/compiled_cache`). The real cache is never touched; the
+    /// tempdir is removed on `TempDir` drop.
     #[test]
     #[ignore = "requires the 768 bucket .mlpackage; compiles on ANE (~20s first load)"]
     fn bridge_disk_cache_skips_recompile_and_preserves_output() {
-        let pkg = package_path();
-        if !pkg.exists() {
-            eprintln!("SKIP: missing package {pkg:?} (run convert_gigaam_ane.py --buckets 768)");
+        let real_pkg = package_path();
+        if !real_pkg.exists() {
+            eprintln!(
+                "SKIP: missing package {real_pkg:?} (run convert_gigaam_ane.py --buckets 768)"
+            );
             return;
         }
 
-        // Start from a clean cache so the first load is a guaranteed cold compile.
+        // Hermetic workspace: symlink the real package into a fresh tempdir so
+        // the cache derives to <tmp>/compiled_cache/, leaving the real
+        // ~/.gigastt/models/ane/compiled_cache/ untouched (TempDir cleans up).
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let pkg = tmp.path().join("gigaam_v3_encoder_768.mlpackage");
+        std::os::unix::fs::symlink(&real_pkg, &pkg).expect("symlink package into tempdir");
+
+        let real_cache = compiled_cache_dir(&real_pkg);
+        let real_cache_existed = real_cache.exists();
+
+        // The cache must start empty inside the hermetic tempdir.
         let cache_dir = compiled_cache_dir(&pkg);
-        let _ = fs::remove_dir_all(&cache_dir);
         assert!(!cached_model_path(&pkg).exists(), "cache must start empty");
+        assert_eq!(
+            cache_dir,
+            tmp.path().join("compiled_cache"),
+            "cache must derive inside the tempdir, not the real cache"
+        );
 
         // Fixed input: a deterministic ramp over the 768 bucket's mel shape.
         let in_shape = vec![1usize, 64, 768];
@@ -971,6 +1045,15 @@ mod tests {
             out1.iter().map(|f| f.to_bits()).collect::<Vec<_>>(),
             out2.iter().map(|f| f.to_bits()).collect::<Vec<_>>(),
             "cache hit must produce byte-identical output"
+        );
+
+        // Hermetic guarantee: caching happened in the tempdir, so the real
+        // cache must be in the exact state we found it (this test never created
+        // or wiped the developer's warm ~/.gigastt cache).
+        assert_eq!(
+            real_cache.exists(),
+            real_cache_existed,
+            "the real cache dir must be untouched by this test"
         );
     }
 }
