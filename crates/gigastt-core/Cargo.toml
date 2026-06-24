@@ -30,7 +30,7 @@ file-decode = ["dep:symphonia"]                         # file transcription; ra
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = []
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
-ane = ["dep:tar"]
+ane = ["dep:tar", "dep:objc2", "dep:objc2-core-ml", "dep:objc2-foundation", "dep:half"]
 # Private/unstable: exposes internal items (tokenizer module + synthetic
 # constructors) so the out-of-workspace `fuzz/` crate and criterion benches can
 # reach them without a model on disk. Double underscore = not a public API
@@ -62,10 +62,39 @@ polyvoice = { version = "0.7.0", features = ["onnx"], optional = true }
 parking_lot = "0.12"
 libc = "0.2"
 tar = { version = "0.4", optional = true }
+# half is cross-platform; the ANE bridge fills/reads Float16 MLMultiArray buffers.
+half = { version = "2", optional = true }
+# objc2 runtime is platform-agnostic at the crate level; the Apple-framework
+# bindings below are gated to macOS so a non-macOS `--features ane` build still
+# links (the bridge module is `#[cfg(target_os = "macos")]`).
+objc2 = { version = "0.6", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 candle-core = { version = "0.9", optional = true, features = ["metal"] }
 candle-nn = { version = "0.9", optional = true, features = ["metal"] }
+# Core ML / Apple Neural Engine bindings for the ANE encoder bridge. Each
+# Objective-C class is gated behind its own cargo feature in objc2-core-ml /
+# objc2-foundation, so we enumerate exactly the classes the bridge touches.
+# MLModel_MLModelCompilation provides `compileModelAtURL_error`. NSNumber has no
+# feature of its own — it is defined behind objc2-foundation's `NSValue` feature.
+objc2-core-ml = { version = "0.3", optional = true, default-features = false, features = [
+    "MLModel",
+    "MLModel_MLModelCompilation",
+    "MLModelConfiguration",
+    "MLMultiArray",
+    "MLFeatureValue",
+    "MLFeatureProvider",
+    "MLDictionaryFeatureProvider",
+    "MLPredictionOptions",
+] }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = [
+    "NSArray",
+    "NSString",
+    "NSDictionary",
+    "NSError",
+    "NSURL",
+    "NSValue",
+] }
 
 [build-dependencies]
 prost-build = "0.14"

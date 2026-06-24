@@ -1665,8 +1665,12 @@ dependencies = [
  "candle-nn",
  "criterion",
  "futures-util",
+ "half",
  "hex",
  "libc",
+ "objc2",
+ "objc2-core-ml",
+ "objc2-foundation",
  "ort",
  "parking_lot",
  "polyvoice",
@@ -2662,6 +2666,16 @@ dependencies = [
  "bitflags 2.11.1",
  "dispatch2",
  "objc2",
+]
+
+[[package]]
+name = "objc2-core-ml"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "201b055e6acfa0f9f15568255d3f03ce2b54bc86d1814442dc69138e36813e18"
+dependencies = [
+ "objc2",
+ "objc2-foundation",
 ]
 
 [[package]]
