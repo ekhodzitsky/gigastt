@@ -1,0 +1,140 @@
+# Publish the per-bucket, palettized ANE (Core ML) encoder packages to a GitHub
+# Release.
+#
+# Manual (`workflow_dispatch`) — run once per blessed model revision. Produces the
+# ladder of fixed-window encoders the macOS ANE backend downloads: for each mel
+# bucket a FP16 mlprogram, palettized 6-bit (per_grouped_channel, group_size 32),
+# saved as `gigaam_v3_encoder_<N>.mlpackage`. Per-bucket FIXED windows keep
+# ~99.8 % of ops resident on the Neural Engine (a single EnumeratedShapes package
+# evicts dynamic partitions to the CPU), so the Rust side pads each clip's mel up
+# to the smallest bucket >= its length, runs the matching package, then trims.
+#
+# Each `.mlpackage` is zipped and attached to the release alongside a
+# `SHA256SUMS.txt`. The printed SHA-256 (a deterministic tar of the package, see
+# scripts/convert_gigaam_ane.py) is the value to pin on the Rust side; if a
+# re-conversion ever diverges, the pinned constants AND the release `tag` must be
+# bumped together (the printed checksums below are the reconciliation point).
+#
+# Conversion needs Apple's Core ML tooling, so this runs on macOS. No release is
+# created unless `publish` is true; otherwise the artifacts are only uploaded to
+# the workflow run for inspection.
+name: Release ANE
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'ANE model release tag'
+        required: true
+        default: 'ane-v3-2026-06-24'
+      publish:
+        description: 'Create/attach the GitHub release (false = build + upload run artifacts only)'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish-ane:
+    runs-on: macos-14
+    env:
+      # GitHub Actions forbids referencing `secrets.*` directly in `if:`, so
+      # hoist the presence check into an env var (mirrors release-model.yml).
+      HAS_MINISIGN_KEY: ${{ secrets.MINISIGN_SECRET_KEY != '' && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      # Build the per-bucket palettized encoders. uv pins Python 3.12 and pulls
+      # the conversion deps (torch + coremltools + gigaam) on the fly. The GigaAM
+      # source tree ships in the package, so GIGAAM_REPO is unset and the script
+      # imports the installed `gigaam` package directly.
+      - name: Convert + palettize per-bucket ANE encoders
+        env:
+          OUT_DIR: ${{ runner.temp }}/ane
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUT_DIR"
+          uv run --python 3.12 \
+            --with torch --with coremltools --with gigaam \
+            --with soundfile --with scikit-learn --with "numpy<2" \
+            python scripts/convert_gigaam_ane.py \
+              --buckets 768,1536,3000 --nbits 6 --out-dir "$OUT_DIR"
+
+      # Zip each .mlpackage (a directory) so it travels as a single asset.
+      - name: Package artifacts
+        env:
+          OUT_DIR: ${{ runner.temp }}/ane
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          for pkg in "$OUT_DIR"/gigaam_v3_encoder_*.mlpackage; do
+            name="$(basename "$pkg")"
+            (cd "$OUT_DIR" && ditto -c -k --sequesterRsrc --keepParent "$name" "$GITHUB_WORKSPACE/dist/${name}.zip")
+          done
+          ls -la dist
+
+      - name: Aggregate SHA256SUMS.txt
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          : > SHA256SUMS.txt
+          for f in *; do
+            [ "$f" = "SHA256SUMS.txt" ] && continue
+            (sha256sum "$f" 2>/dev/null || shasum -a 256 "$f") >> SHA256SUMS.txt
+          done
+          echo "::notice ::Reconcile the ANE encoder hashes below with the pinned constants on the Rust side:"
+          cat SHA256SUMS.txt
+
+      # minisign signatures over every asset + the checksum file. The signing
+      # secret is injected via repo secrets; when absent the step is skipped so
+      # the pipeline still publishes (mirrors release-model.yml).
+      - name: Sign bundle with minisign
+        if: env.HAS_MINISIGN_KEY == 'true'
+        working-directory: dist
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+          MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          brew install minisign
+          printf '%s\n' "$MINISIGN_SECRET_KEY" > minisign.key
+          chmod 600 minisign.key
+          for f in *.zip SHA256SUMS.txt; do
+            [ -f "$f" ] || continue
+            printf '%s\n' "$MINISIGN_PASSWORD" | minisign -Sm "$f" -s minisign.key
+          done
+          rm -f minisign.key
+
+      - name: Warn on missing minisign secret
+        if: env.HAS_MINISIGN_KEY != 'true'
+        run: echo "::warning ::MINISIGN_SECRET_KEY not configured — ANE artefacts will not carry minisign signatures."
+
+      # Always upload the build to the workflow run so a dry-run (publish=false)
+      # still yields inspectable artifacts.
+      - name: Upload run artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ane-encoders-${{ github.event.inputs.tag }}
+          path: dist/*
+          if-no-files-found: error
+
+      - name: Publish release
+        if: ${{ github.event.inputs.publish == 'true' }}
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: GigaAM v3 ANE encoder packages (${{ github.event.inputs.tag }})
+          body: |
+            Per-bucket palettized Core ML encoder packages for the macOS ANE backend.
+            One `gigaam_v3_encoder_<N>.mlpackage` per mel bucket (768 / 1536 / 3000),
+            FP16 mlprogram + 6-bit palettization (per_grouped_channel, group_size 32).
+            Verify with `SHA256SUMS.txt` (and the pinned checksums on the Rust side).
+          files: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+            dist/*.minisig
