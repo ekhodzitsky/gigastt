@@ -18,7 +18,7 @@
 //! kept tight and each carries a SAFETY note. Failures map to `RuntimeError`
 //! variants — never `unwrap` on an objc2 result.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use half::f16;
 use objc2::AnyThread;
@@ -32,15 +32,35 @@ use objc2_foundation::{NSArray, NSDictionary, NSNumber, NSString, NSURL};
 
 use crate::runtime::error::RuntimeError;
 
-/// Compile a `.mlpackage` to a `.mlmodelc` and load it as an `MLModel`.
+/// Compile a `.mlpackage` to a `.mlmodelc` and load it as an `MLModel`, caching
+/// the compiled `.mlmodelc` on disk so every restart after the first is ~instant.
 ///
-/// A `.mlpackage` must be compiled before loading, so this re-runs the Core ML
-/// compile on every call. That is acceptable because the caller
-/// ([`super::runtime::AneRuntime`]) invokes it only once per bucket and caches
-/// the resulting loaded `MLModel` in `AneRuntime::bucket_cache` — the compiled
-/// URL itself is not cached here. When `cpu_and_ne` is set the model is
-/// configured with `MLComputeUnits::CPUAndNeuralEngine` so the Apple Neural
-/// Engine is engaged.
+/// A `.mlpackage` must be compiled before loading, and the Core ML compile is the
+/// expensive part (~20 s per bucket on first load). `compileModelAtURL_error`
+/// returns a compiled `.mlmodelc` in a TEMP directory that Core ML deletes later,
+/// so without persistence every process restart re-pays the full compile.
+///
+/// To eliminate that cold-start this fn keeps a disk cache next to the source
+/// package: `<package.parent>/compiled_cache/<package.stem>.mlmodelc`, validated
+/// by a sidecar `<stem>.mlmodelc.meta` recording the source package's identity
+/// (recursive total byte size + newest mtime) plus the macOS product version.
+///
+/// - **Cache hit** (cached `.mlmodelc` exists AND sidecar key matches): load it
+///   directly, SKIPPING the compile (fast path).
+/// - **Cache miss / stale**: compile, copy the temp `.mlmodelc` into a staging
+///   dir under `compiled_cache/`, atomically rename it into the final cache path
+///   (clearing any stale one first), write the sidecar, then load from the cache.
+/// - **Any cache I/O failure**: fall back to loading directly from the temp
+///   `.mlmodelc` (logged), so caching can never break loading.
+///
+/// The OS version is part of the key because Apple may make compiled models
+/// incompatible across OS updates — bumping macOS recompiles automatically.
+/// Concurrent compilers (two processes, same bucket) are safe: the staging +
+/// atomic-rename is last-writer-wins on byte-identical content (mirrors
+/// `model::extract_ane_tar_atomic`).
+///
+/// When `cpu_and_ne` is set the model is configured with
+/// `MLComputeUnits::CPUAndNeuralEngine` so the Apple Neural Engine is engaged.
 // `compileModelAtURL_error` is the synchronous compile API; objc2 marks it
 // deprecated in favor of the async completion-handler variant, but a synchronous
 // compile is exactly what this blocking, once-per-bucket path wants.
@@ -49,6 +69,95 @@ pub fn compile_and_load(
     package: &Path,
     cpu_and_ne: bool,
 ) -> Result<Retained<MLModel>, RuntimeError> {
+    // SAFETY: `MLModelConfiguration::new` allocates+initializes a fresh config;
+    // `setComputeUnits` is a plain setter on that owned object.
+    let config: Retained<MLModelConfiguration> = unsafe { MLModelConfiguration::new() };
+    let units = if cpu_and_ne {
+        MLComputeUnits::CPUAndNeuralEngine
+    } else {
+        MLComputeUnits::CPUOnly
+    };
+    // SAFETY: `config` is a live, uniquely-owned MLModelConfiguration.
+    unsafe { config.setComputeUnits(units) };
+
+    // Fast path: a valid cached `.mlmodelc` lets us skip the ~20 s compile.
+    let cached = cached_model_path(package);
+    if cached.is_dir() {
+        match current_source_key(package) {
+            Ok(key) if meta_matches(&cached_meta_path(package), &key) => {
+                match load_model_from_dir(&cached, &config) {
+                    Ok(model) => {
+                        tracing::info!(
+                            cache = %cached.display(),
+                            "loaded compiled ANE model from cache"
+                        );
+                        return Ok(model);
+                    }
+                    Err(e) => {
+                        // Cache is structurally bad — recompile rather than fail.
+                        tracing::warn!(
+                            cache = %cached.display(),
+                            error = %e,
+                            "cached ANE model failed to load; recompiling"
+                        );
+                    }
+                }
+            }
+            Ok(_) => {
+                tracing::info!(
+                    cache = %cached.display(),
+                    "ANE compiled-model cache stale (source or OS changed); recompiling"
+                );
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "could not compute ANE cache key; recompiling");
+            }
+        }
+    }
+
+    // Miss / stale: compile (the expensive step) and load from the temp result.
+    tracing::info!(
+        package = %package.display(),
+        cache = %cached.display(),
+        "compiling ANE model (cold-start ~20s), caching for fast restarts"
+    );
+    let compiled_url = compile_package(package)?;
+
+    // Populate the disk cache from the temp `.mlmodelc`. Best-effort: on any I/O
+    // failure we log and load directly from the temp dir so caching never breaks
+    // loading.
+    if let Some(temp_dir) = url_to_path(&compiled_url) {
+        match populate_cache(package, &temp_dir) {
+            Ok(()) => {
+                // Prefer loading from the cache so the load matches what future
+                // restarts will load (and so the temp dir can be reclaimed).
+                match load_model_from_dir(&cached, &config) {
+                    Ok(model) => return Ok(model),
+                    Err(e) => tracing::warn!(
+                        cache = %cached.display(),
+                        error = %e,
+                        "freshly cached ANE model failed to load; loading from temp"
+                    ),
+                }
+            }
+            Err(e) => tracing::warn!(
+                cache = %cached.display(),
+                error = %e,
+                "failed to populate ANE compiled-model cache; loading from temp"
+            ),
+        }
+    } else {
+        tracing::warn!("compiled ANE model URL is not a local path; cache skipped");
+    }
+
+    // Fallback: load directly from the temp `.mlmodelc` Core ML produced.
+    load_model_from_url(package, &compiled_url, &config)
+}
+
+/// Run the synchronous Core ML compile, returning the temp `.mlmodelc` URL.
+// See `compile_and_load` for why the deprecated synchronous API is used.
+#[allow(deprecated)]
+fn compile_package(package: &Path) -> Result<Retained<NSURL>, RuntimeError> {
     let path_str = package.to_str().ok_or_else(|| RuntimeError::LoadFailed {
         path: package.to_path_buf(),
         message: "package path is not valid UTF-8".to_string(),
@@ -62,34 +171,229 @@ pub fn compile_and_load(
     // SAFETY: `compileModelAtURL_error` is a Core ML class method that takes the
     // source-model URL by reference and returns either a Retained<NSURL>
     // pointing at the compiled `.mlmodelc` (which we own) or a Retained<NSError>.
-    let compiled_url: Retained<NSURL> = unsafe { MLModel::compileModelAtURL_error(&pkg_url) }
-        .map_err(|err| RuntimeError::LoadFailed {
-            path: package.to_path_buf(),
-            message: format!("compileModelAtURL failed: {}", ns_error_message(&err)),
+    unsafe { MLModel::compileModelAtURL_error(&pkg_url) }.map_err(|err| RuntimeError::LoadFailed {
+        path: package.to_path_buf(),
+        message: format!("compileModelAtURL failed: {}", ns_error_message(&err)),
+    })
+}
+
+/// Load a compiled `.mlmodelc` from a local directory path with `config`.
+fn load_model_from_dir(
+    compiled_dir: &Path,
+    config: &MLModelConfiguration,
+) -> Result<Retained<MLModel>, RuntimeError> {
+    let path_str = compiled_dir
+        .to_str()
+        .ok_or_else(|| RuntimeError::LoadFailed {
+            path: compiled_dir.to_path_buf(),
+            message: "compiled model path is not valid UTF-8".to_string(),
         })?;
+    // SAFETY: `from_str` returns a valid retained NSString; `fileURLWithPath`
+    // takes it by reference and is a safe class constructor.
+    let ns_path = NSString::from_str(path_str);
+    let url: Retained<NSURL> = NSURL::fileURLWithPath(&ns_path);
+    load_model_from_url(compiled_dir, &url, config)
+}
 
-    // SAFETY: `MLModelConfiguration::new` allocates+initializes a fresh config;
-    // `setComputeUnits` is a plain setter on that owned object.
-    let config: Retained<MLModelConfiguration> = unsafe { MLModelConfiguration::new() };
-    let units = if cpu_and_ne {
-        MLComputeUnits::CPUAndNeuralEngine
-    } else {
-        MLComputeUnits::CPUOnly
-    };
-    // SAFETY: `config` is a live, uniquely-owned MLModelConfiguration.
-    unsafe { config.setComputeUnits(units) };
-
+/// Load a compiled `.mlmodelc` from a URL with `config`. `package` is only used
+/// for the error path's reported path.
+fn load_model_from_url(
+    package: &Path,
+    compiled_url: &NSURL,
+    config: &MLModelConfiguration,
+) -> Result<Retained<MLModel>, RuntimeError> {
     // SAFETY: `modelWithContentsOfURL_configuration_error` loads a compiled
-    // model from the URL we just produced, using our config; both args are
-    // borrowed and the call returns an owned MLModel or an NSError.
-    let model: Retained<MLModel> =
-        unsafe { MLModel::modelWithContentsOfURL_configuration_error(&compiled_url, &config) }
-            .map_err(|err| RuntimeError::LoadFailed {
-                path: package.to_path_buf(),
-                message: format!("modelWithContentsOfURL failed: {}", ns_error_message(&err)),
-            })?;
+    // model from the URL, using our config; both args are borrowed and the call
+    // returns an owned MLModel or an NSError.
+    unsafe { MLModel::modelWithContentsOfURL_configuration_error(compiled_url, config) }.map_err(
+        |err| RuntimeError::LoadFailed {
+            path: package.to_path_buf(),
+            message: format!("modelWithContentsOfURL failed: {}", ns_error_message(&err)),
+        },
+    )
+}
 
-    Ok(model)
+// ---- compiled-model disk cache -------------------------------------------
+
+/// Name of the cache subdirectory holding compiled `.mlmodelc` bundles, a
+/// sibling of the source `.mlpackage` files (mirrors ort's `coreml_cache/`).
+const COMPILED_CACHE_DIR: &str = "compiled_cache";
+
+/// Directory holding the compiled-model cache for `package`
+/// (`<package.parent>/compiled_cache`).
+fn compiled_cache_dir(package: &Path) -> PathBuf {
+    package
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(COMPILED_CACHE_DIR)
+}
+
+/// Cached compiled-model path for `package`
+/// (`<package.parent>/compiled_cache/<stem>.mlmodelc`).
+fn cached_model_path(package: &Path) -> PathBuf {
+    let stem = package
+        .file_stem()
+        .map(|s| s.to_os_string())
+        .unwrap_or_else(|| std::ffi::OsString::from("model"));
+    let mut name = stem;
+    name.push(".mlmodelc");
+    compiled_cache_dir(package).join(name)
+}
+
+/// Sidecar validity-key path for `package`'s cached model
+/// (`<...>/<stem>.mlmodelc.meta`).
+fn cached_meta_path(package: &Path) -> PathBuf {
+    let mut p = cached_model_path(package).into_os_string();
+    p.push(".meta");
+    PathBuf::from(p)
+}
+
+/// macOS product version (e.g. `26.1`), part of the cache key so a Core ML OS
+/// update invalidates compiled models. Reads `sw_vers -productVersion`.
+fn macos_product_version() -> Result<String, RuntimeError> {
+    let out = std::process::Command::new("sw_vers")
+        .arg("-productVersion")
+        .output()
+        .map_err(|e| RuntimeError::LoadFailed {
+            path: PathBuf::from("sw_vers"),
+            message: format!("failed to run sw_vers: {e}"),
+        })?;
+    if !out.status.success() {
+        return Err(RuntimeError::LoadFailed {
+            path: PathBuf::from("sw_vers"),
+            message: format!("sw_vers exited with {}", out.status),
+        });
+    }
+    Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+}
+
+/// Recursively sum the total byte size and find the newest mtime (as nanoseconds
+/// since the UNIX epoch) of every regular file under `root`.
+fn dir_size_and_newest_mtime(root: &Path) -> std::io::Result<(u64, u128)> {
+    let mut total: u64 = 0;
+    let mut newest: u128 = 0;
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir)? {
+            let entry = entry?;
+            let ft = entry.file_type()?;
+            if ft.is_dir() {
+                stack.push(entry.path());
+            } else if ft.is_file() {
+                let meta = entry.metadata()?;
+                total = total.saturating_add(meta.len());
+                if let Ok(mtime) = meta.modified()
+                    && let Ok(dur) = mtime.duration_since(std::time::UNIX_EPOCH)
+                {
+                    newest = newest.max(dur.as_nanos());
+                }
+            }
+        }
+    }
+    Ok((total, newest))
+}
+
+/// Build the cache validity key for `package`: source size + newest mtime + OS
+/// version. Anything that changes recompiles. Factored out (and `os_version`
+/// injectable) so the key build + match logic is unit-testable without Core ML.
+fn build_source_key(package: &Path, os_version: &str) -> Result<String, RuntimeError> {
+    let (size, mtime) =
+        dir_size_and_newest_mtime(package).map_err(|e| RuntimeError::LoadFailed {
+            path: package.to_path_buf(),
+            message: format!("failed to stat package for cache key: {e}"),
+        })?;
+    Ok(format!("size={size} mtime_ns={mtime} os={os_version}"))
+}
+
+/// Current validity key for `package` using the live macOS version.
+fn current_source_key(package: &Path) -> Result<String, RuntimeError> {
+    build_source_key(package, &macos_product_version()?)
+}
+
+/// True when the sidecar at `meta_path` exists and its content equals `key`
+/// (trimmed). A missing / unreadable / differing sidecar is a miss.
+fn meta_matches(meta_path: &Path, key: &str) -> bool {
+    match std::fs::read_to_string(meta_path) {
+        Ok(content) => content.trim() == key.trim(),
+        Err(_) => false,
+    }
+}
+
+/// Recursively copy directory `src` into `dst` (creating `dst`). Used to copy
+/// the temp `.mlmodelc` into the cache staging dir.
+fn copy_dir_recursive(src: &Path, dst: &Path) -> std::io::Result<()> {
+    std::fs::create_dir_all(dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let ft = entry.file_type()?;
+        let from = entry.path();
+        let to = dst.join(entry.file_name());
+        if ft.is_dir() {
+            copy_dir_recursive(&from, &to)?;
+        } else {
+            std::fs::copy(&from, &to)?;
+        }
+    }
+    Ok(())
+}
+
+/// Copy the freshly-compiled temp `.mlmodelc` (`temp_dir`) into the disk cache:
+/// recursively copy into a unique staging dir under `compiled_cache/`, then
+/// atomically rename it into the final cache path (clearing any stale one), and
+/// write the sidecar validity key.
+///
+/// Mirrors `model::extract_ane_tar_atomic`'s staging + atomic-rename +
+/// cleanup-on-error discipline: the final cache path only ever appears
+/// fully-formed, and a torn copy leaves only the staging dir (removed on every
+/// error path). Concurrent compilers are last-writer-wins on identical content.
+fn populate_cache(package: &Path, temp_dir: &Path) -> std::io::Result<()> {
+    let cache_dir = compiled_cache_dir(package);
+    std::fs::create_dir_all(&cache_dir)?;
+
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let staging = cache_dir.join(format!(".staging.{}.{}", std::process::id(), stamp));
+
+    let cleanup = || {
+        let _ = std::fs::remove_dir_all(&staging);
+    };
+
+    if let Err(e) = copy_dir_recursive(temp_dir, &staging) {
+        cleanup();
+        return Err(e);
+    }
+
+    let final_dir = cached_model_path(package);
+    // Clear any stale cached model before rename, or `rename` fails with
+    // "directory not empty".
+    if final_dir.exists()
+        && let Err(e) = std::fs::remove_dir_all(&final_dir)
+    {
+        cleanup();
+        return Err(e);
+    }
+    if let Err(e) = std::fs::rename(&staging, &final_dir) {
+        cleanup();
+        return Err(e);
+    }
+
+    // Write the sidecar key LAST so a hit requires both a present model and a
+    // matching key (a torn run that renamed the model but died before the
+    // sidecar simply recompiles next time).
+    let key = current_source_key(package).map_err(std::io::Error::other)?;
+    std::fs::write(cached_meta_path(package), key)?;
+    Ok(())
+}
+
+/// Convert a `file://` `NSURL` to a local filesystem path, or `None` if it is
+/// not a file URL with a usable path.
+fn url_to_path(url: &NSURL) -> Option<PathBuf> {
+    // `path` is a safe getter in this objc2-foundation version; it returns an
+    // optional owned NSString (the file-system path of a `file://` URL).
+    let ns = url.path()?;
+    Some(PathBuf::from(ns.to_string()))
 }
 
 /// Run a single prediction: feed an f32 `mel` (logical shape `shape`) as a
@@ -357,6 +661,126 @@ mod tests {
         PathBuf::from(home).join(".gigastt/models/ane/gigaam_v3_encoder_768.mlpackage")
     }
 
+    // ---- pure cache-logic tests (no Core ML / hardware) ------------------
+
+    #[test]
+    fn cache_paths_are_sibling_compiled_cache_dir() {
+        let pkg = Path::new("/models/ane/gigaam_v3_encoder_768.mlpackage");
+        assert_eq!(
+            compiled_cache_dir(pkg),
+            PathBuf::from("/models/ane/compiled_cache")
+        );
+        assert_eq!(
+            cached_model_path(pkg),
+            PathBuf::from("/models/ane/compiled_cache/gigaam_v3_encoder_768.mlmodelc")
+        );
+        assert_eq!(
+            cached_meta_path(pkg),
+            PathBuf::from("/models/ane/compiled_cache/gigaam_v3_encoder_768.mlmodelc.meta")
+        );
+    }
+
+    #[test]
+    fn build_source_key_changes_with_size_and_os() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let pkg = tmp.path().join("pkg.mlpackage");
+        fs::create_dir_all(pkg.join("Data")).unwrap();
+        fs::write(pkg.join("Data").join("weight.bin"), b"abc").unwrap();
+
+        let key_a = build_source_key(&pkg, "26.1").expect("key a");
+
+        // Same source + OS -> identical key (hit).
+        let key_a2 = build_source_key(&pkg, "26.1").expect("key a2");
+        assert_eq!(key_a, key_a2, "same source+OS must produce the same key");
+
+        // Different OS version -> different key (miss after OS update).
+        let key_os = build_source_key(&pkg, "27.0").expect("key os");
+        assert_ne!(key_a, key_os, "OS version must be part of the key");
+
+        // Larger source (changed byte size) -> different key (miss).
+        fs::write(pkg.join("Data").join("weight.bin"), b"abcdef").unwrap();
+        let key_size = build_source_key(&pkg, "26.1").expect("key size");
+        assert_ne!(key_a, key_size, "changed source size must change the key");
+    }
+
+    #[test]
+    fn meta_matches_only_on_exact_key() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let meta = tmp.path().join("model.mlmodelc.meta");
+
+        // Missing sidecar -> miss.
+        assert!(!meta_matches(&meta, "size=10 mtime_ns=5 os=26.1"));
+
+        fs::write(&meta, "size=10 mtime_ns=5 os=26.1\n").unwrap();
+        // Trailing newline is tolerated (trimmed) -> hit.
+        assert!(meta_matches(&meta, "size=10 mtime_ns=5 os=26.1"));
+        // Any difference -> miss.
+        assert!(!meta_matches(&meta, "size=11 mtime_ns=5 os=26.1"));
+        assert!(!meta_matches(&meta, "size=10 mtime_ns=5 os=27.0"));
+    }
+
+    #[test]
+    fn copy_dir_recursive_reproduces_tree() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let src = tmp.path().join("src");
+        let dst = tmp.path().join("dst");
+        fs::create_dir_all(src.join("nested")).unwrap();
+        fs::write(src.join("top.bin"), b"top").unwrap();
+        fs::write(src.join("nested").join("inner.bin"), b"inner").unwrap();
+
+        copy_dir_recursive(&src, &dst).expect("copy");
+
+        assert_eq!(fs::read(dst.join("top.bin")).unwrap(), b"top");
+        assert_eq!(
+            fs::read(dst.join("nested").join("inner.bin")).unwrap(),
+            b"inner"
+        );
+    }
+
+    #[test]
+    fn populate_cache_atomically_places_model_and_sidecar() {
+        // No Core ML: stage a fake "compiled" dir + a fake source package, then
+        // assert populate_cache mirrors it into compiled_cache/ with a sidecar
+        // whose key matches the current source key (so a subsequent hit works).
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let pkg = tmp.path().join("gigaam_v3_encoder_768.mlpackage");
+        fs::create_dir_all(&pkg).unwrap();
+        fs::write(pkg.join("Manifest.json"), b"{}").unwrap();
+
+        let temp_compiled = tmp.path().join("temp.mlmodelc");
+        fs::create_dir_all(temp_compiled.join("model")).unwrap();
+        fs::write(temp_compiled.join("coremldata.bin"), b"compiled").unwrap();
+        fs::write(temp_compiled.join("model").join("net.bin"), b"net").unwrap();
+
+        populate_cache(&pkg, &temp_compiled).expect("populate");
+
+        let cached = cached_model_path(&pkg);
+        assert!(cached.is_dir(), "cached model dir must exist");
+        assert_eq!(
+            fs::read(cached.join("coremldata.bin")).unwrap(),
+            b"compiled"
+        );
+        assert_eq!(
+            fs::read(cached.join("model").join("net.bin")).unwrap(),
+            b"net"
+        );
+
+        // The sidecar must match the current source key -> meta_matches hit.
+        let key = current_source_key(&pkg).expect("source key");
+        assert!(
+            meta_matches(&cached_meta_path(&pkg), &key),
+            "sidecar key must match the current source key after populate_cache"
+        );
+
+        // No staging dirs left behind.
+        let leftover: Vec<_> = fs::read_dir(compiled_cache_dir(&pkg))
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().starts_with(".staging"))
+            .collect();
+        assert!(leftover.is_empty(), "no .staging dirs must remain");
+    }
+
     fn ref_dir() -> PathBuf {
         PathBuf::from("/tmp/gigaam-ane-spike/bridge_ref")
     }
@@ -468,5 +892,85 @@ mod tests {
         let audio_secs = in_shape[2] as f64 / 100.0;
         let rtfx = audio_secs / (median_ms / 1000.0);
         println!("median_ms={median_ms:.3}  audio_secs={audio_secs:.3}  RTFx={rtfx:.1}");
+    }
+
+    /// Cold-start cache GO/NO-GO. Clears the disk cache, then loads the SAME
+    /// package twice in one process: the FIRST load compiles (~20 s) and
+    /// populates the cache; the SECOND load is a cache hit (no compile). Asserts
+    /// the 2nd load is dramatically faster AND produces byte-identical output
+    /// (caching must not change results). Touches the filesystem + ANE, so
+    /// `#[ignore]`d; run manually:
+    ///   cargo test -p gigastt-core --features ane bridge_disk_cache -- --ignored --nocapture
+    #[test]
+    #[ignore = "requires the 768 bucket .mlpackage; compiles on ANE (~20s first load)"]
+    fn bridge_disk_cache_skips_recompile_and_preserves_output() {
+        let pkg = package_path();
+        if !pkg.exists() {
+            eprintln!("SKIP: missing package {pkg:?} (run convert_gigaam_ane.py --buckets 768)");
+            return;
+        }
+
+        // Start from a clean cache so the first load is a guaranteed cold compile.
+        let cache_dir = compiled_cache_dir(&pkg);
+        let _ = fs::remove_dir_all(&cache_dir);
+        assert!(!cached_model_path(&pkg).exists(), "cache must start empty");
+
+        // Fixed input: a deterministic ramp over the 768 bucket's mel shape.
+        let in_shape = vec![1usize, 64, 768];
+        let n: usize = in_shape.iter().product();
+        let mel: Vec<f32> = (0..n).map(|i| (i as f32 % 17.0) * 0.01).collect();
+
+        // First load: cold compile + cache populate.
+        let t0 = Instant::now();
+        let model1 = compile_and_load(&pkg, true).expect("first compile_and_load");
+        let first_ms = t0.elapsed().as_secs_f64() * 1000.0;
+        let (out1, shape1) =
+            predict_f32(&model1, "mel", &mel, &in_shape, "encoded").expect("predict 1");
+
+        assert!(
+            cached_model_path(&pkg).exists(),
+            "first load must populate the disk cache"
+        );
+        let key = current_source_key(&pkg).expect("source key");
+        assert!(
+            meta_matches(&cached_meta_path(&pkg), &key),
+            "sidecar must match the current source key after first load"
+        );
+
+        // Second load: cache hit, no compile.
+        let t1 = Instant::now();
+        let model2 = compile_and_load(&pkg, true).expect("second compile_and_load");
+        let second_ms = t1.elapsed().as_secs_f64() * 1000.0;
+        let (out2, shape2) =
+            predict_f32(&model2, "mel", &mel, &in_shape, "encoded").expect("predict 2");
+
+        println!("cold_start_first_ms={first_ms:.1}  cache_hit_second_ms={second_ms:.1}");
+
+        // The cache hit must be dramatically faster than the cold compile.
+        assert!(
+            first_ms > 5_000.0,
+            "expected cold compile > 5s, got {first_ms:.1} ms"
+        );
+        assert!(
+            second_ms < 2_000.0,
+            "expected cache-hit load < 2s, got {second_ms:.1} ms"
+        );
+        assert!(
+            second_ms < first_ms / 2.0,
+            "cache hit ({second_ms:.1} ms) must be much faster than cold ({first_ms:.1} ms)"
+        );
+
+        // Caching must not change results: byte-identical output both times.
+        assert_eq!(shape1, shape2, "output shape changed across cache hit");
+        assert_eq!(
+            out1.len(),
+            out2.len(),
+            "output length changed across cache hit"
+        );
+        assert_eq!(
+            out1.iter().map(|f| f.to_bits()).collect::<Vec<_>>(),
+            out2.iter().map(|f| f.to_bits()).collect::<Vec<_>>(),
+            "cache hit must produce byte-identical output"
+        );
     }
 }
