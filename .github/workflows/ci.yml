@@ -124,8 +124,11 @@ jobs:
           print("OK: candle is isolated")
 
           OBJC2_PATTERNS = [
-              r"\bobjc2_core_ml\b",
-              r"\bobjc2-core-ml\b",
+              # Whole objc2 family, underscore form (Rust paths/imports):
+              # objc2, objc2_core_ml, objc2_foundation, objc2_app_kit, ...
+              r"\bobjc2(_\w+)?\b",
+              # Dash form (Cargo manifest / doc references): objc2-core-ml, ...
+              r"\bobjc2-[\w-]+\b",
           ]
           OBJC2_RE = re.compile("|".join(f"(?:{p})" for p in OBJC2_PATTERNS))
 
@@ -144,11 +147,11 @@ jobs:
                       objc2_violations.append(f"{path}:{lineno}:{line}")
 
           if objc2_violations:
-              print("ERROR: objc2_core_ml used outside runtime/coreml/:")
+              print("ERROR: objc2 (objc2/objc2_foundation/objc2_core_ml/...) used outside runtime/coreml/:")
               for v in objc2_violations:
                   print(v)
               sys.exit(1)
-          print("OK: objc2_core_ml is isolated")
+          print("OK: objc2 is isolated")
           PY
 
   clippy:

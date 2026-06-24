@@ -3934,9 +3934,10 @@ mod tests {
     /// measures FULL-PIPELINE wall time (audio decode -> mel -> encoder -> RNN-T
     /// greedy decode -> text) through the ANE engine and the ort baseline, warm
     /// (first run discarded), median of >= 5. Reports RTFx (audio_secs / median_s)
-    /// for each engine and the speedup ratio ANE/ort. This quantifies how much of
-    /// the ~230x ANE encoder speedup survives the CPU-bound RNN-T decode loop at
-    /// the full-pipeline level.
+    /// for each engine and the speedup ratio ANE/ort. This quantifies how little
+    /// of the encoder-only ~230x ANE speedup survives the CPU-bound RNN-T decode
+    /// loop: the encoder is nearly free on the ANE, but end-to-end the pipeline is
+    /// decode-bound, so the realized full-pipeline speedup is only ~3.7x.
     ///
     /// Run with:
     /// `cargo test -p gigastt-core --features ane --lib -- --ignored --nocapture ane_e2e_rtfx`

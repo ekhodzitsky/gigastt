@@ -34,13 +34,16 @@ use crate::runtime::error::RuntimeError;
 
 /// Compile a `.mlpackage` to a `.mlmodelc` and load it as an `MLModel`.
 ///
-/// A `.mlpackage` must be compiled before loading; for the spike we compile on
-/// every call (the production path will cache the compiled URL). When
-/// `cpu_and_ne` is set the model is configured with
-/// `MLComputeUnits::CPUAndNeuralEngine` so the Apple Neural Engine is engaged.
+/// A `.mlpackage` must be compiled before loading, so this re-runs the Core ML
+/// compile on every call. That is acceptable because the caller
+/// ([`super::runtime::AneRuntime`]) invokes it only once per bucket and caches
+/// the resulting loaded `MLModel` in `AneRuntime::bucket_cache` — the compiled
+/// URL itself is not cached here. When `cpu_and_ne` is set the model is
+/// configured with `MLComputeUnits::CPUAndNeuralEngine` so the Apple Neural
+/// Engine is engaged.
 // `compileModelAtURL_error` is the synchronous compile API; objc2 marks it
 // deprecated in favor of the async completion-handler variant, but a synchronous
-// compile is exactly what this spike (and the future blocking session) wants.
+// compile is exactly what this blocking, once-per-bucket path wants.
 #[allow(deprecated)]
 pub fn compile_and_load(
     package: &Path,
@@ -97,9 +100,10 @@ pub fn compile_and_load(
 /// Both directions honor the array's reported `strides()` rather than assuming
 /// C-contiguity.
 // `MLMultiArray::dataPointer` is deprecated in favor of the closure-scoped
-// `getBytesWithHandler` / `getMutableBytesWithHandler`, but for a fixed-shape,
-// single-threaded spike the raw pointer (read under tight SAFETY notes below) is
-// the simplest correct path; a Phase-2b session can switch to the handler API.
+// `getBytesWithHandler` / `getMutableBytesWithHandler`, but for a fixed-shape
+// array owned exclusively by this call the raw pointer (read under tight SAFETY
+// notes below) is the simplest correct path; a later revision could switch to
+// the handler API.
 #[allow(deprecated)]
 pub fn predict_f32(
     model: &MLModel,
