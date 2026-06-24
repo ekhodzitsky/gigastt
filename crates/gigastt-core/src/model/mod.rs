@@ -623,7 +623,7 @@ pub async fn ensure_prequantized_model_variant(
 
 /// Directory name of the unpacked `.mlpackage` for a given mel bucket.
 #[cfg(feature = "ane")]
-fn ane_package_dir_name(bucket: usize) -> String {
+pub fn ane_package_dir_name(bucket: usize) -> String {
     format!("gigaam_v3_encoder_{bucket}.mlpackage")
 }
 
@@ -673,7 +673,7 @@ pub fn default_ane_model_dir() -> String {
 ///   `Data/com.apple.CoreML/model.mlmodel`
 ///   `Data/com.apple.CoreML/weights/weight.bin`
 #[cfg(feature = "ane")]
-fn ane_package_complete(pkg_dir: &Path) -> bool {
+pub fn ane_package_complete(pkg_dir: &Path) -> bool {
     pkg_dir.is_dir()
         && pkg_dir.join("Manifest.json").is_file()
         && pkg_dir

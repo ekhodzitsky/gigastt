@@ -3,11 +3,14 @@
 use crate::runtime::{
     error::RuntimeError,
     factory::{Runtime, RuntimeFactory},
+    ort::factory::OrtFactory,
 };
 
 use super::runtime::AneRuntime;
 
-/// Factory that creates an `AneRuntime` (stub in Phase 0).
+/// Factory that creates a composite [`AneRuntime`]: the encoder runs on the
+/// Apple Neural Engine (per-bucket `.mlpackage`), while the decoder/joiner and
+/// the encoder fallback delegate to an inner ort CPU runtime.
 pub struct AneFactory;
 
 impl AneFactory {
@@ -17,8 +20,11 @@ impl AneFactory {
 }
 
 impl RuntimeFactory for AneFactory {
-    fn create(&self, _intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError> {
-        Ok(Box::new(AneRuntime::new()))
+    fn create(&self, intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError> {
+        // Inner ort CPU runtime: serves decoder/joiner (always) and the
+        // variable-length encoder fallback for clips outside the fill-floor.
+        let ort = OrtFactory::cpu().create(intra_threads)?;
+        Ok(Box::new(AneRuntime::new(ort)))
     }
 
     fn cpu_fallback(&self) -> Box<dyn RuntimeFactory> {

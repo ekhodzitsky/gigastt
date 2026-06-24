@@ -17,8 +17,10 @@ pub fn candle_factory() -> Box<dyn RuntimeFactory> {
     Box::new(candle::factory::CandleFactory::new())
 }
 
-/// Returns an ANE factory stub (Phase 0: not yet implemented).
-#[cfg(feature = "ane")]
+/// Returns the composite ANE factory (encoder on the Neural Engine, decoder /
+/// joiner on ort). macOS-only; off macOS the `ane` feature degrades to the ort
+/// path, so this helper is not provided there.
+#[cfg(all(feature = "ane", target_os = "macos"))]
 pub fn ane_factory() -> Box<dyn RuntimeFactory> {
     Box::new(coreml::factory::AneFactory::new())
 }

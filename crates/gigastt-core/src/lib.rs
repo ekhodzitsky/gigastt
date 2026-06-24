@@ -33,7 +33,7 @@ pub use runtime::cpu_factory;
 /// Runtime abstraction surface needed to drive backends directly (e.g. parity
 /// tests that construct and compare the ort and candle encoder sessions).
 pub mod runtime_api {
-    #[cfg(feature = "ane")]
+    #[cfg(all(feature = "ane", target_os = "macos"))]
     pub use crate::runtime::ane_factory;
     #[cfg(feature = "candle")]
     pub use crate::runtime::candle_factory;

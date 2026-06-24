@@ -13,10 +13,6 @@
 //! kept tight and each carries a SAFETY note. Failures map to `RuntimeError`
 //! variants — never `unwrap` on an objc2 result.
 
-// The public bridge fns are exercised by the `#[ignore]`d smoke test and will be
-// wired into a session/factory in Phase 2b; silence dead-code in non-test builds.
-#![allow(dead_code)]
-
 use std::path::Path;
 
 use half::f16;

@@ -3643,6 +3643,129 @@ mod tests {
         }
     }
 
+    /// Word-level edit distance / WER between a reference and a hypothesis
+    /// transcript (Levenshtein over whitespace tokens, normalized by reference
+    /// word count). Used only by the ANE parity test below.
+    #[cfg(all(feature = "ane", target_os = "macos"))]
+    fn word_error_rate(reference: &str, hypothesis: &str) -> f64 {
+        let r: Vec<&str> = reference.split_whitespace().collect();
+        let h: Vec<&str> = hypothesis.split_whitespace().collect();
+        if r.is_empty() {
+            return if h.is_empty() { 0.0 } else { 1.0 };
+        }
+        let mut prev: Vec<usize> = (0..=h.len()).collect();
+        let mut cur = vec![0usize; h.len() + 1];
+        for (i, rw) in r.iter().enumerate() {
+            cur[0] = i + 1;
+            for (j, hw) in h.iter().enumerate() {
+                let cost = if rw == hw { 0 } else { 1 };
+                cur[j + 1] = (prev[j] + cost).min(prev[j + 1] + 1).min(cur[j] + 1);
+            }
+            std::mem::swap(&mut prev, &mut cur);
+        }
+        prev[h.len()] as f64 / r.len() as f64
+    }
+
+    /// End-to-end proof that the composite ANE backend (encoder on the Apple
+    /// Neural Engine via a bucketed pad-up `.mlpackage`, decoder/joiner on ort)
+    /// transcribes a Golos clip to PARITY with the pure-ort baseline through the
+    /// full engine pipeline.
+    ///
+    /// Unlike the candle parity test, ANE parity is SOFT: the mask-free pad-up is
+    /// not byte-exact (the pad-parity experiment shows cosine >= 0.94 at >= 50%
+    /// fill, WER tracking the baseline but a borderline token can flip), so this
+    /// asserts WER(ANE vs ort) <= a small threshold rather than byte equality.
+    ///
+    /// Requires: the local bucket `.mlpackage`s in `~/.gigastt/models/ane/`, the
+    /// rnnt model files, and ANE hardware. Skips-with-message otherwise. Fixtures
+    /// are chosen to land at >= 50% fill in a bucket (>= 384 mel frames) so the
+    /// ANE path is exercised, not the ort fallback.
+    ///
+    /// Run with:
+    /// `cargo test -p gigastt-core --features ane --lib -- --ignored --nocapture ane_ort_transcription_parity`
+    #[cfg(all(feature = "ane", target_os = "macos"))]
+    #[test]
+    #[ignore = "requires v3_rnnt model + ~/.gigastt/models/ane/*.mlpackage + ANE hardware"]
+    fn ane_ort_transcription_parity() {
+        let model_dir = crate::model::default_model_dir();
+        let model_path = Path::new(&model_dir);
+
+        // Skip cleanly when the bucket-768 package (the one the golos clips land
+        // in) isn't present locally. The runtime accepts any subset of buckets,
+        // so 768 alone is enough to exercise the ANE path here.
+        let ane_dir = model_path.join("ane");
+        let bucket_768 = ane_dir.join(crate::model::ane_package_dir_name(768));
+        if !crate::model::ane_package_complete(&bucket_768) {
+            eprintln!(
+                "SKIP: ANE bucket-768 package missing in {} (run `gigastt download --ane` or convert locally)",
+                ane_dir.display()
+            );
+            return;
+        }
+
+        let ort_engine = Engine::load_with_factory(
+            model_path,
+            1,
+            1,
+            0,
+            Box::new(crate::runtime::ort::factory::OrtFactory::cpu()),
+            1,
+        )
+        .expect("ort engine should load");
+        let ane_engine = Engine::load_with_factory(
+            model_path,
+            1,
+            1,
+            0,
+            Box::new(crate::runtime::coreml::factory::AneFactory::new()),
+            1,
+        )
+        .expect("ANE engine should load");
+
+        // golos_00 is ~4 s (399 mel frames -> 52% fill), so it pads up into the
+        // 768 bucket and exercises the ANE path. golos_01 is ~3.4 s (342 frames
+        // -> 44.5% fill, below FILL_FLOOR) and intentionally drives the ort
+        // fallback — together they cover both branches at parity.
+        let fixtures = [
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../gigastt/tests/fixtures/golos_00.wav"
+            ),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../gigastt/tests/fixtures/golos_01.wav"
+            ),
+        ];
+
+        // Allow at most the one known borderline token flip per clip.
+        const MAX_WER: f64 = 0.10;
+
+        for fixture in fixtures {
+            let mut ort_guard = ort_engine.pool.checkout_blocking().expect("ort checkout");
+            let ort_text = ort_engine
+                .transcribe_file(fixture, &mut ort_guard)
+                .expect("ort transcription")
+                .text;
+
+            let mut ane_guard = ane_engine.pool.checkout_blocking().expect("ANE checkout");
+            let ane_text = ane_engine
+                .transcribe_file(fixture, &mut ane_guard)
+                .expect("ANE transcription")
+                .text;
+
+            let wer = word_error_rate(&ort_text, &ane_text);
+            eprintln!("fixture = {fixture}");
+            eprintln!("ort = {ort_text:?}");
+            eprintln!("ane = {ane_text:?}");
+            eprintln!("WER(ANE vs ort) = {wer:.4}");
+
+            assert!(
+                wer <= MAX_WER,
+                "ANE transcript WER {wer:.4} > {MAX_WER} vs ort for {fixture}:\n  ort = {ort_text:?}\n  ane = {ane_text:?}"
+            );
+        }
+    }
+
     mod mock_runtime_tests {
         use std::collections::HashMap;
         use std::sync::Arc;
