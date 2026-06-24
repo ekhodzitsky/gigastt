@@ -30,7 +30,7 @@ file-decode = ["dep:symphonia"]                         # file transcription; ra
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = []
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
-ane = []
+ane = ["dep:tar"]
 # Private/unstable: exposes internal items (tokenizer module + synthetic
 # constructors) so the out-of-workspace `fuzz/` crate and criterion benches can
 # reach them without a model on disk. Double underscore = not a public API
@@ -61,6 +61,7 @@ prost = "0.14"
 polyvoice = { version = "0.7.0", features = ["onnx"], optional = true }
 parking_lot = "0.12"
 libc = "0.2"
+tar = { version = "0.4", optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 candle-core = { version = "0.9", optional = true, features = ["metal"] }

@@ -291,6 +291,13 @@ enum Commands {
         /// FP32 download path).
         #[arg(long, default_value_t = false)]
         prequantized: bool,
+
+        /// Also fetch the per-bucket palettized ANE (Core ML) encoder packages
+        /// into `~/.gigastt/models/ane/` for the macOS Neural Engine backend.
+        /// Requires a published ANE release.
+        #[cfg(feature = "ane")]
+        #[arg(long, default_value_t = false)]
+        ane: bool,
     },
 
     /// Quantize encoder model to INT8 (replaces scripts/quantize.py)
@@ -978,6 +985,8 @@ async fn main() -> anyhow::Result<()> {
             skip_diarization,
             skip_quantize,
             prequantized,
+            #[cfg(feature = "ane")]
+            ane,
         } => {
             // `download` is an explicit action: the requested variant maps to
             // the default (Rnnt) so a bare `gigastt download` fetches something
@@ -995,6 +1004,12 @@ async fn main() -> anyhow::Result<()> {
                 if !skip_diarization {
                     model::ensure_speaker_model(&model_dir).await?;
                 }
+            }
+            #[cfg(feature = "ane")]
+            if ane {
+                let ane_dir = model::default_ane_model_dir();
+                model::ensure_ane_packages(&ane_dir).await?;
+                tracing::info!("ANE encoder packages ready at {ane_dir}");
             }
             tracing::info!("Model ready at {model_dir}");
         }
@@ -2263,6 +2278,22 @@ mod tests {
         let cli = Cli::parse_from(["gigastt", "download", "--skip-quantize"]);
         match cli.command {
             Commands::Download { skip_quantize, .. } => assert!(skip_quantize),
+            _ => panic!("expected Download"),
+        }
+    }
+
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_cli_download_ane_flag() {
+        let cli = Cli::parse_from(["gigastt", "download", "--ane"]);
+        match cli.command {
+            Commands::Download { ane, .. } => assert!(ane),
+            _ => panic!("expected Download"),
+        }
+        // Absent by default.
+        let cli = Cli::parse_from(["gigastt", "download"]);
+        match cli.command {
+            Commands::Download { ane, .. } => assert!(!ane),
             _ => panic!("expected Download"),
         }
     }

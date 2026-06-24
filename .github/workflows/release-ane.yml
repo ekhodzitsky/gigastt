@@ -9,9 +9,11 @@
 # evicts dynamic partitions to the CPU), so the Rust side pads each clip's mel up
 # to the smallest bucket >= its length, runs the matching package, then trims.
 #
-# Each `.mlpackage` is zipped and attached to the release alongside a
-# `SHA256SUMS.txt`. The printed SHA-256 (a deterministic tar of the package, see
-# scripts/convert_gigaam_ane.py) is the value to pin on the Rust side; if a
+# Each `.mlpackage` is written by the convert script as a deterministic
+# uncompressed `.tar` (`gigaam_v3_encoder_<N>.mlpackage.tar`) and attached to the
+# release alongside a `SHA256SUMS.txt`. That `.tar` IS the published + downloaded
+# artifact, so its SHA-256 is simultaneously the content-identity fingerprint AND
+# the value the Rust downloader pins (one artifact, one digest — no zip). If a
 # re-conversion ever diverges, the pinned constants AND the release `tag` must be
 # bumped together (the printed checksums below are the reconciliation point).
 #
@@ -46,13 +48,24 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Validate the dispatch tag early. The input is passed via env (never
+      # interpolated into the script body) so a hostile tag can't inject shell.
+      - name: Validate tag format
+        env:
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          set -euo pipefail
+          [[ "$TAG" =~ ^ane-v3- ]] || { echo "::error ::tag must match ane-v3-*"; exit 1; }
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
       # Build the per-bucket palettized encoders. uv pins Python 3.12 and pulls
       # the conversion deps (torch + coremltools + gigaam) on the fly. The GigaAM
       # source tree ships in the package, so GIGAAM_REPO is unset and the script
-      # imports the installed `gigaam` package directly.
+      # imports the installed `gigaam` package directly. The script writes both
+      # the unpacked `.mlpackage` and the deterministic `.mlpackage.tar` (the
+      # published asset) per bucket into OUT_DIR and prints each .tar's SHA-256.
       - name: Convert + palettize per-bucket ANE encoders
         env:
           OUT_DIR: ${{ runner.temp }}/ane
@@ -65,17 +78,16 @@ jobs:
             python scripts/convert_gigaam_ane.py \
               --buckets 768,1536,3000 --nbits 6 --out-dir "$OUT_DIR"
 
-      # Zip each .mlpackage (a directory) so it travels as a single asset.
+      # The convert script already wrote one deterministic `.tar` per bucket
+      # (the single published asset that reconstructs the .mlpackage dir on the
+      # Rust side); just stage them into dist/.
       - name: Package artifacts
         env:
           OUT_DIR: ${{ runner.temp }}/ane
         run: |
           set -euo pipefail
           mkdir -p dist
-          for pkg in "$OUT_DIR"/gigaam_v3_encoder_*.mlpackage; do
-            name="$(basename "$pkg")"
-            (cd "$OUT_DIR" && ditto -c -k --sequesterRsrc --keepParent "$name" "$GITHUB_WORKSPACE/dist/${name}.zip")
-          done
+          cp "$OUT_DIR"/gigaam_v3_encoder_*.mlpackage.tar dist/
           ls -la dist
 
       - name: Aggregate SHA256SUMS.txt
@@ -83,11 +95,10 @@ jobs:
         run: |
           set -euo pipefail
           : > SHA256SUMS.txt
-          for f in *; do
-            [ "$f" = "SHA256SUMS.txt" ] && continue
+          for f in *.tar; do
             (sha256sum "$f" 2>/dev/null || shasum -a 256 "$f") >> SHA256SUMS.txt
           done
-          echo "::notice ::Reconcile the ANE encoder hashes below with the pinned constants on the Rust side:"
+          echo "::notice ::Pin these per-bucket .tar SHA-256 digests in ANE_TAR_CHECKSUMS on the Rust side (one digest per bucket = content identity = download pin):"
           cat SHA256SUMS.txt
 
       # minisign signatures over every asset + the checksum file. The signing
@@ -101,14 +112,16 @@ jobs:
           MINISIGN_PASSWORD: ${{ secrets.MINISIGN_PASSWORD }}
         run: |
           set -euo pipefail
+          # Keep the secret key OUT of dist/ (never uploaded) and shred it on any
+          # exit path, success or failure.
+          trap 'rm -f "$RUNNER_TEMP/minisign.key"' EXIT
           brew install minisign
-          printf '%s\n' "$MINISIGN_SECRET_KEY" > minisign.key
-          chmod 600 minisign.key
-          for f in *.zip SHA256SUMS.txt; do
+          printf '%s\n' "$MINISIGN_SECRET_KEY" > "$RUNNER_TEMP/minisign.key"
+          chmod 600 "$RUNNER_TEMP/minisign.key"
+          for f in *.tar SHA256SUMS.txt; do
             [ -f "$f" ] || continue
-            printf '%s\n' "$MINISIGN_PASSWORD" | minisign -Sm "$f" -s minisign.key
+            printf '%s\n' "$MINISIGN_PASSWORD" | minisign -Sm "$f" -s "$RUNNER_TEMP/minisign.key"
           done
-          rm -f minisign.key
 
       - name: Warn on missing minisign secret
         if: env.HAS_MINISIGN_KEY != 'true'
@@ -120,7 +133,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ane-encoders-${{ github.event.inputs.tag }}
-          path: dist/*
+          path: |
+            dist/*.tar
+            dist/SHA256SUMS.txt
+            dist/*.minisig
           if-no-files-found: error
 
       - name: Publish release
@@ -131,10 +147,12 @@ jobs:
           name: GigaAM v3 ANE encoder packages (${{ github.event.inputs.tag }})
           body: |
             Per-bucket palettized Core ML encoder packages for the macOS ANE backend.
-            One `gigaam_v3_encoder_<N>.mlpackage` per mel bucket (768 / 1536 / 3000),
-            FP16 mlprogram + 6-bit palettization (per_grouped_channel, group_size 32).
-            Verify with `SHA256SUMS.txt` (and the pinned checksums on the Rust side).
+            One deterministic uncompressed `gigaam_v3_encoder_<N>.mlpackage.tar` per
+            mel bucket (768 / 1536 / 3000); the Rust side downloads the `.tar` and
+            unpacks it to reconstruct the `.mlpackage` directory. FP16 mlprogram +
+            6-bit palettization (per_grouped_channel, group_size 32). Verify with
+            `SHA256SUMS.txt` — each `.tar` digest is the value pinned on the Rust side.
           files: |
-            dist/*.zip
+            dist/*.tar
             dist/SHA256SUMS.txt
             dist/*.minisig

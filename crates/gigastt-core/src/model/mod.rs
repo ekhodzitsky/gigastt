@@ -74,6 +74,31 @@ const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 const PREQUANT_RELEASE_BASE: &str =
     "https://github.com/ekhodzitsky/gigastt/releases/download/models-v3-2026-06-22";
 
+/// Base URL of the pinned GitHub Release hosting the per-bucket palettized
+/// **ANE** (Core ML) encoder packages, one deterministic `.tar` per mel bucket.
+/// The release tag must match the `release-ane.yml` workflow's default tag; bump
+/// it together with [`ANE_TAR_CHECKSUMS`] when re-converting.
+#[cfg(all(feature = "net", feature = "ane"))]
+const ANE_RELEASE_BASE: &str =
+    "https://github.com/ekhodzitsky/gigastt/releases/download/ane-v3-2026-06-24";
+
+/// Mel-frame bucket ladder for the ANE encoder packages. MUST equal the convert
+/// script's `--buckets` default (`scripts/convert_gigaam_ane.py`): the Rust side
+/// pads each clip's mel up to the smallest bucket >= its length and runs the
+/// matching fixed-window package.
+#[cfg(feature = "ane")]
+pub const ANE_BUCKETS: &[usize] = &[768, 1536, 3000];
+
+/// Per-bucket SHA-256 of the deterministic `.mlpackage.tar` published by
+/// `release-ane.yml`. Each digest is simultaneously the content-identity
+/// fingerprint and the download pin for that bucket's `.tar`.
+///
+/// Empty-string sentinels mean **no ANE release is published yet**: after
+/// running the Release ANE workflow, fill each entry from the printed
+/// `SHA256SUMS.txt` and bump [`ANE_RELEASE_BASE`]'s tag in the same change.
+#[cfg(feature = "ane")]
+const ANE_TAR_CHECKSUMS: &[(usize, &str)] = &[(768, ""), (1536, ""), (3000, "")];
+
 /// HuggingFace repo hosting the optional RUPunct punctuation model (MIT).
 #[cfg(feature = "net")]
 const PUNCT_HF_REPO: &str = "ekhodzitsky/rupunct-small-onnx";
@@ -594,6 +619,133 @@ pub async fn ensure_prequantized_model_variant(
 
     tracing::info!("Pre-quantized model download complete");
     Ok(variant)
+}
+
+/// Directory name of the unpacked `.mlpackage` for a given mel bucket.
+#[cfg(feature = "ane")]
+fn ane_package_dir_name(bucket: usize) -> String {
+    format!("gigaam_v3_encoder_{bucket}.mlpackage")
+}
+
+/// Filename of the published `.tar` artifact for a given mel bucket.
+#[cfg(feature = "ane")]
+fn ane_tar_name(bucket: usize) -> String {
+    format!("{}.tar", ane_package_dir_name(bucket))
+}
+
+/// Pinned `.tar` SHA-256 for `bucket`, or `None` when unreleased (the empty
+/// sentinel in [`ANE_TAR_CHECKSUMS`]).
+#[cfg(feature = "ane")]
+fn ane_tar_checksum(bucket: usize) -> Option<&'static str> {
+    ANE_TAR_CHECKSUMS
+        .iter()
+        .find(|(b, _)| *b == bucket)
+        .and_then(|(_, sum)| if sum.is_empty() { None } else { Some(*sum) })
+}
+
+/// Return the default ANE-model directory (`~/.gigastt/models/ane/`), a sibling
+/// of [`default_model_dir`].
+///
+/// Holds the per-bucket palettized Core ML encoder packages the macOS ANE
+/// backend runs. The packages auto-download via [`ensure_ane_packages`] when the
+/// ANE path is requested (`gigastt download --ane`).
+#[cfg(feature = "ane")]
+pub fn default_ane_model_dir() -> String {
+    home_dir()
+        .map(|h| {
+            h.join(".gigastt")
+                .join("models")
+                .join("ane")
+                .to_string_lossy()
+                .into_owned()
+        })
+        .unwrap_or_else(|| ".gigastt/models/ane".into())
+}
+
+/// True when every bucket's unpacked `.mlpackage` is present in `dir`. An
+/// `.mlpackage` is a directory; we treat it as present when it contains the
+/// `Manifest.json` marker Core ML writes at the package root.
+#[cfg(feature = "ane")]
+pub fn is_ane_present(dir: &Path) -> bool {
+    ANE_BUCKETS.iter().all(|&b| {
+        let pkg = dir.join(ane_package_dir_name(b));
+        pkg.is_dir() && pkg.join("Manifest.json").is_file()
+    })
+}
+
+/// Ensure the per-bucket ANE Core ML encoder packages exist in `model_dir`,
+/// downloading each bucket's deterministic `.tar` from the pinned GitHub Release
+/// and unpacking it to reconstruct the `.mlpackage` directory.
+///
+/// Each `.tar` is SHA-256-verified against [`ANE_TAR_CHECKSUMS`] (one digest =
+/// content identity = download pin) before being unpacked with the `tar` crate's
+/// default path-traversal guard, then the `.tar` is removed. Buckets whose
+/// `.mlpackage` is already present are skipped. Reuses the same streaming
+/// download + atomic-rename + lock infra as [`ensure_prequantized_model_variant`].
+///
+/// Bails with a clear message when the release is not yet published (sentinel
+/// checksums).
+#[cfg(all(feature = "net", feature = "ane"))]
+pub async fn ensure_ane_packages(model_dir: &str) -> Result<()> {
+    let dir = Path::new(model_dir);
+
+    if is_ane_present(dir) {
+        tracing::info!("ANE encoder packages found at {model_dir}");
+        return Ok(());
+    }
+
+    std::fs::create_dir_all(dir).context("Failed to create ANE model directory")?;
+
+    #[cfg(unix)]
+    let _lock = acquire_download_lock(dir)?;
+
+    // Re-check after acquiring the lock in case another process finished.
+    if is_ane_present(dir) {
+        tracing::info!("ANE encoder packages found at {model_dir} after lock");
+        return Ok(());
+    }
+
+    tracing::info!("Downloading ANE encoder packages from {ANE_RELEASE_BASE}...");
+
+    for &bucket in ANE_BUCKETS {
+        let pkg = dir.join(ane_package_dir_name(bucket));
+        if pkg.is_dir() && pkg.join("Manifest.json").is_file() {
+            continue;
+        }
+        let checksum = require_ane_tar_checksum(bucket)?;
+        let tar_name = ane_tar_name(bucket);
+        let tar_dest = dir.join(&tar_name);
+        let url = format!("{ANE_RELEASE_BASE}/{tar_name}");
+        stream_to_partial_then_finalize(&url, &tar_dest, Some(checksum), &tar_name).await?;
+
+        tracing::info!("Unpacking {tar_name} into {model_dir}");
+        // `tar::Archive::unpack` applies the crate's default path-traversal
+        // guard (entries escaping `dir` are rejected).
+        let tar_file = std::fs::File::open(&tar_dest)
+            .with_context(|| format!("Failed to open {}", tar_dest.display()))?;
+        tar::Archive::new(tar_file)
+            .unpack(dir)
+            .with_context(|| format!("Failed to unpack {tar_name}"))?;
+        std::fs::remove_file(&tar_dest)
+            .with_context(|| format!("Failed to remove {}", tar_dest.display()))?;
+    }
+
+    tracing::info!("ANE encoder packages download complete");
+    Ok(())
+}
+
+/// Resolve the pinned `.tar` checksum for `bucket`, bailing with the
+/// not-yet-published message when it is a sentinel. Factored out so the
+/// sentinel-bail branch is unit-testable without the network / async path.
+#[cfg(feature = "ane")]
+fn require_ane_tar_checksum(bucket: usize) -> Result<&'static str> {
+    ane_tar_checksum(bucket).ok_or_else(|| {
+        anyhow::anyhow!(
+            "ANE encoder release not yet published; run the Release ANE workflow \
+             (release-ane.yml), then pin the per-bucket .tar SHA-256 from \
+             SHA256SUMS.txt in ANE_TAR_CHECKSUMS"
+        )
+    })
 }
 
 /// Ensure the speaker diarization model exists in `model_dir`, downloading from HuggingFace if missing.
@@ -1753,6 +1905,125 @@ mod tests {
         assert!(
             !has_partial,
             "no download when the prequantized set is present"
+        );
+    }
+
+    // ── ANE packages ────────────────────────────────────────────────────────
+
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_ane_buckets_ladder_pinned() {
+        // Must match the convert script's --buckets default.
+        assert_eq!(ANE_BUCKETS, &[768, 1536, 3000]);
+    }
+
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_ane_tar_checksums_shape() {
+        // Exactly one entry per bucket; each entry is either the empty
+        // (unreleased) sentinel or a valid 64-char lowercase-hex digest.
+        assert_eq!(ANE_TAR_CHECKSUMS.len(), ANE_BUCKETS.len());
+        for &b in ANE_BUCKETS {
+            let entries: Vec<_> = ANE_TAR_CHECKSUMS
+                .iter()
+                .filter(|(bucket, _)| *bucket == b)
+                .collect();
+            assert_eq!(entries.len(), 1, "exactly one ANE checksum entry for {b}");
+            let sum = entries[0].1;
+            if sum.is_empty() {
+                continue; // genuine unreleased state
+            }
+            assert_eq!(
+                sum.len(),
+                64,
+                "ANE {b} checksum must be 64 hex chars: {sum}"
+            );
+            assert!(
+                sum.chars()
+                    .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c)),
+                "ANE {b} checksum must be lowercase hex: {sum}"
+            );
+        }
+    }
+
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_ane_filename_helpers() {
+        assert_eq!(ane_package_dir_name(768), "gigaam_v3_encoder_768.mlpackage");
+        assert_eq!(ane_tar_name(768), "gigaam_v3_encoder_768.mlpackage.tar");
+    }
+
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_default_ane_model_dir_is_model_sibling() {
+        let ane = default_ane_model_dir();
+        assert!(
+            ane.contains(".gigastt") && ane.ends_with("ane"),
+            "ane dir should be under .gigastt and end with 'ane', got: {ane}"
+        );
+    }
+
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_is_ane_present_false_on_empty_then_true_when_staged() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let dir = tmp.path();
+        assert!(!is_ane_present(dir), "empty dir has no ANE packages");
+
+        for &b in ANE_BUCKETS {
+            let pkg = dir.join(ane_package_dir_name(b));
+            std::fs::create_dir_all(&pkg).unwrap();
+            std::fs::write(pkg.join("Manifest.json"), b"{}").unwrap();
+        }
+        assert!(is_ane_present(dir), "all buckets staged → present");
+    }
+
+    /// Building a deterministic tar (a `gigaam_v3_encoder_768.mlpackage/` dir
+    /// with a `Manifest.json`) and unpacking it with `tar::Archive` reconstructs
+    /// the directory + file — proves the extract step end-to-end, no network.
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_ane_tar_roundtrip_extract() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let src = tmp.path().join("src");
+        let pkg = src.join("gigaam_v3_encoder_768.mlpackage");
+        std::fs::create_dir_all(&pkg).unwrap();
+        std::fs::write(pkg.join("Manifest.json"), b"{}").unwrap();
+
+        // Build a tar whose arcnames start with the .mlpackage dir.
+        let tar_path = tmp.path().join("pkg.tar");
+        {
+            let file = std::fs::File::create(&tar_path).unwrap();
+            let mut builder = tar::Builder::new(file);
+            builder
+                .append_dir_all("gigaam_v3_encoder_768.mlpackage", &pkg)
+                .unwrap();
+            builder.finish().unwrap();
+        }
+
+        let out = tmp.path().join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        let file = std::fs::File::open(&tar_path).unwrap();
+        tar::Archive::new(file).unpack(&out).unwrap();
+
+        let extracted = out.join("gigaam_v3_encoder_768.mlpackage");
+        assert!(extracted.is_dir(), "extracted .mlpackage dir must exist");
+        assert!(
+            extracted.join("Manifest.json").is_file(),
+            "extracted Manifest.json must exist"
+        );
+    }
+
+    /// The sentinel checksums (no release yet) must surface the actionable
+    /// "not yet published" bail rather than attempting a download.
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_require_ane_tar_checksum_bails_on_sentinel() {
+        // Default table is all sentinels until a release is published.
+        let err = require_ane_tar_checksum(768).expect_err("sentinel must bail");
+        assert!(
+            format!("{err}").contains("not yet published"),
+            "unexpected error: {err}"
         );
     }
 }

@@ -28,13 +28,15 @@ identical -- verified against the stock forward per bucket at convert time).
 
 SHA-256 scheme
 --------------
-The printed digest is computed over a *deterministic tar* of the whole
-``.mlpackage`` directory: entries are emitted in sorted path order with mtime,
-owner/group and permissions normalised to fixed values, so the digest depends
-only on the file contents and layout (the model spec + the palettized
-``weight.bin``), not on filesystem metadata. This is the value to record in
-``SHA256SUMS.txt`` and to pin on the Rust side; it is reproducible across runs
-and machines for a given coremltools build.
+Each ``.mlpackage`` (a directory) is also written to disk as a *deterministic
+tar* (``gigaam_v3_encoder_<N>.mlpackage.tar``): entries are emitted in sorted
+path order with mtime, owner/group and permissions normalised to fixed values,
+so the bytes depend only on the file contents and layout (the model spec + the
+palettized ``weight.bin``), not on filesystem metadata. That ``.tar`` IS the
+published + downloaded artifact, so its SHA-256 is simultaneously the
+content-identity fingerprint AND the value the Rust downloader pins — one
+artifact, one digest (no zip, no separate ``SHA256SUMS`` digest). It is
+reproducible across runs and machines for a given coremltools build.
 
 Run from the spike directory (which has the GigaAM clone + downloaded model):
 
@@ -44,7 +46,6 @@ Run from the spike directory (which has the GigaAM clone + downloaded model):
 """
 import argparse
 import hashlib
-import io
 import os
 import shutil
 import sys
@@ -111,6 +112,13 @@ class FixedEncoderWrapper(nn.Module):
     At batch=1 with ``length == N`` the stock forward computes ``att_mask=None``
     and an all-False ``pad_mask``, so a mask-free forward is numerically
     identical (verified per bucket at convert time).
+
+    Note: the conv-stage ``_mask_time`` and the all-False ``pad_mask`` are no-ops
+    ONLY at ``length == mel_frames`` (a full bucket). The pad-up-then-trim
+    equivalence for short clips (pad the mel up to the bucket, run, trim the
+    encoded output back to the real subsampled length) is a Phase-1b *runtime*
+    invariant this script does not and cannot prove; a padded-input parity test
+    belongs in the Rust runtime, not here.
     """
 
     def __init__(self, encoder):
@@ -134,44 +142,42 @@ class FixedEncoderWrapper(nn.Module):
         return x.transpose(1, 2)            # [1, 768, T']
 
 
-def pkg_size_mb(path: str) -> float:
-    return sum(
-        os.path.getsize(os.path.join(root, f))
-        for root, _, files in os.walk(path)
-        for f in files
-    ) / 1e6
+def write_deterministic_tar(pkg_path: str, tar_path: str) -> str:
+    """Write the whole ``.mlpackage`` to ``tar_path`` as a deterministic tar and
+    return the SHA-256 hex digest of the on-disk tar.
 
-
-def pkg_sha256(path: str) -> str:
-    """SHA-256 over a deterministic tar of the whole ``.mlpackage``.
-
-    Entries are sorted by path; mtime, uid/gid, names and mode are normalised so
-    the digest reflects only file contents + layout (reproducible across runs).
+    Members are emitted in sorted-path order with mtime, uid/gid, owner/group
+    names and mode normalised, so the tar bytes reflect only file contents +
+    layout (reproducible across runs and machines). Each member is streamed from
+    disk by ``tarfile`` (no in-memory BytesIO), and the resulting tar is hashed
+    in 1 MiB chunks. The ``.tar`` IS the published + downloaded artifact, so this
+    digest is both the content-identity fingerprint and the Rust download pin.
     """
-    h = hashlib.sha256()
-    buf = io.BytesIO()
-    base = os.path.dirname(path.rstrip("/"))
-    with tarfile.open(fileobj=buf, mode="w") as tar:
-        members = []
-        for root, _, files in os.walk(path):
-            for f in files:
-                members.append(os.path.join(root, f))
+    base = os.path.dirname(pkg_path.rstrip("/"))
+    members = []
+    for root, _, files in os.walk(pkg_path):
+        for f in files:
+            members.append(os.path.join(root, f))
+    with tarfile.open(tar_path, "w") as tar:
         for full in sorted(members):
-            arcname = os.path.relpath(full, base)
-            info = tarfile.TarInfo(name=arcname)
+            info = tarfile.TarInfo(name=os.path.relpath(full, base))
             info.size = os.path.getsize(full)
             info.mtime = 0
             info.uid = info.gid = 0
             info.uname = info.gname = ""
             info.mode = 0o644
             with open(full, "rb") as fh:
-                tar.addfile(info, fh)
-    h.update(buf.getvalue())
+                tar.addfile(info, fh)  # tarfile streams the file contents
+
+    h = hashlib.sha256()
+    with open(tar_path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
     return h.hexdigest()
 
 
 def build_encoder(variant: str):
-    """Load the GigaAM model and return ``(model, encoder)`` ready for tracing."""
+    """Load the GigaAM model and return its ``encoder`` ready for tracing."""
     print(f"== load {variant} (cpu, fp32) ==")
     t0 = time.time()
     model = gigaam.load_model(variant, fp16_encoder=False, use_flash=False, device="cpu")
@@ -179,7 +185,7 @@ def build_encoder(variant: str):
     enc.pos_enc.extend_pe(enc.pos_emb_max_len, torch.device("cpu"))
     print(f"loaded in {time.time() - t0:.1f}s; subsampling={enc.pre_encode.subsampling_type}; "
           f"pe={tuple(enc.pos_enc.pe.shape)}")
-    return model, enc
+    return enc
 
 
 def convert_bucket(enc, mel_frames: int, nbits: int, group_size: int, out_dir: str) -> str:
@@ -201,13 +207,32 @@ def convert_bucket(enc, mel_frames: int, nbits: int, group_size: int, out_dir: s
         with torch.inference_mode():
             ref = wrapper(mel)
         eq = (ref - ref_full).abs()
-        print(f"  wrapper vs stock forward: max_abs={eq.max().item():.3e} "
+        max_abs = eq.max().item()
+        print(f"  wrapper vs stock forward: max_abs={max_abs:.3e} "
               f"mean_abs={eq.mean().item():.3e} out={tuple(ref.shape)}")
+        # FP32-vs-FP32: the static wrapper must reproduce the stock forward
+        # (expect ~1e-6). Hard-fail rather than silently shipping a divergent
+        # graph.
+        if max_abs > 1e-3:
+            raise SystemExit(
+                f"bucket {mel_frames}: static wrapper diverges from stock forward "
+                f"(max_abs={max_abs:.3e} > 1e-3)"
+            )
 
         with torch.inference_mode():
             traced = torch.jit.trace(wrapper, mel, check_trace=False)
             traced = torch.jit.freeze(traced.eval())
             torch.jit.run_frozen_optimizations(traced)
+            # Explicitly verify the (frozen, optimized) traced graph against the
+            # eager reference: check_trace=False skips torch's own re-run, so this
+            # closes the silent-bad-trace gap.
+            traced_out = traced(mel)
+        traced_abs = (traced_out - ref).abs().max().item()
+        if traced_abs > 1e-3:
+            raise SystemExit(
+                f"bucket {mel_frames}: traced graph diverges from wrapper "
+                f"(max_abs={traced_abs:.3e} > 1e-3)"
+            )
 
         print("  ct.convert (FP16, CPU_AND_NE, macOS15, mlprogram)")
         t1 = time.time()
@@ -238,11 +263,13 @@ def convert_bucket(enc, mel_frames: int, nbits: int, group_size: int, out_dir: s
     out_pkg = os.path.join(out_dir, f"gigaam_v3_encoder_{mel_frames}.mlpackage")
     if os.path.exists(out_pkg):
         shutil.rmtree(out_pkg)
-    pal.save(out_pkg)
+    pal.save(out_pkg)  # keep the unpacked .mlpackage for local use too
 
-    size = pkg_size_mb(out_pkg)
-    digest = pkg_sha256(out_pkg)
+    out_tar = out_pkg + ".tar"
+    digest = write_deterministic_tar(out_pkg, out_tar)
+    size = os.path.getsize(out_tar) / 1e6
     print(f"  saved {out_pkg}")
+    print(f"  wrote {out_tar}")
     print(f"  size={size:.1f} MB  sha256={digest}")
     return out_pkg
 
@@ -270,7 +297,7 @@ def main(argv=None) -> None:
     print(f"buckets={args.buckets} nbits={args.nbits} group_size={args.group_size} "
           f"variant={args.variant} out_dir={args.out_dir}")
 
-    _, enc = build_encoder(args.variant)
+    enc = build_encoder(args.variant)
     saved = [
         convert_bucket(enc, n, args.nbits, args.group_size, args.out_dir)
         for n in args.buckets
@@ -278,7 +305,13 @@ def main(argv=None) -> None:
 
     print("\n== artifacts ==")
     for pkg in saved:
-        print(f"  {os.path.basename(pkg)}  {pkg_size_mb(pkg):.1f} MB  {pkg_sha256(pkg)}")
+        tar_path = pkg + ".tar"
+        h = hashlib.sha256()
+        with open(tar_path, "rb") as fh:
+            for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                h.update(chunk)
+        size_mb = os.path.getsize(tar_path) / 1e6
+        print(f"  {os.path.basename(tar_path)}  {size_mb:.1f} MB  {h.hexdigest()}")
     print("DONE_CONVERT")
 
 
