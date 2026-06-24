@@ -1,7 +1,6 @@
 use crate::runtime::{
     error::RuntimeError,
     factory::{Runtime, RuntimeFactory},
-    ort::factory::OrtFactory,
 };
 
 use super::runtime::AneRuntime;
@@ -19,13 +18,16 @@ impl AneFactory {
 
 impl RuntimeFactory for AneFactory {
     fn create(&self, intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError> {
-        // Inner ort CPU runtime: serves decoder/joiner (always) and the
+        // Inner CPU runtime via the re-exported `crate::runtime::cpu_factory`
+        // seam rather than the concrete ort factory type — going through the
+        // re-export keeps the concrete ort types confined to their own module
+        // per the CI isolation guard. Serves decoder/joiner (always) and the
         // variable-length encoder fallback for clips outside the fill-floor.
-        let ort = OrtFactory::cpu().create(intra_threads)?;
-        Ok(Box::new(AneRuntime::new(ort)))
+        let inner = crate::runtime::cpu_factory().create(intra_threads)?;
+        Ok(Box::new(AneRuntime::new(inner)))
     }
 
     fn cpu_fallback(&self) -> Box<dyn RuntimeFactory> {
-        crate::runtime::ort::factory::cpu_factory()
+        crate::runtime::cpu_factory()
     }
 }

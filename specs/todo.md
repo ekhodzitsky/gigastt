@@ -299,6 +299,55 @@ long-file + upgrade docs). Deferred:
 
 ---
 
+## ANE backend — remaining (post-v2.5.0)
+
+The native CoreML/ANE encoder backend (`--features ane`, macOS ARM64)
+shipped in v2.5.0 (PR #121): per-bucket fixed `.mlpackage` {512,768,1536,3000},
+6-bit palettized, pad-up + fill-floor 0.5 + ort fallback; decoder/joiner on ort.
+Measured: 99.8% ANE residency, encoder ~369→23.6 ms (≈15.6×), warm e2e ~112×,
+WER vs ort ~1.11%, cold-start ~20 s→~86 ms via the compiled-model disk cache.
+Open follow-ups (all opt-in, ANE-path only, lower priority):
+
+### 28. Bucket-aligned long-audio chunking (P3)
+- Files >30 s chunk at a 24 s window → each full chunk pads into the 3000
+  bucket at ~80 % fill (20 % wasted encoder columns). Bumping
+  `CHUNK_WINDOW_SAMPLES` 24 s→30 s fills bucket 3000 at ~99.97 %, recovering
+  the pad-up — ~20 % fewer encoder columns / ~single-digit-to-low-teens % e2e
+  on long files only.
+- Fix (banked design, workflow `wf_b8e4fc09`): one-line window bump, fold into
+  the work that next rebuilds buckets. Gated on a long-audio (>30 s, multi-seam)
+  WER validation (it changes chunk boundaries → output) and the +25 % peak
+  encoder activation caveat (the reason the window is 24 s — use a backend-aware
+  30 s window only if an ort memory regression is measured). NOT worth doing
+  standalone; the gain is zero until exercised on long files.
+
+### 29. Streaming on ANE (P3)
+- Streaming windows (≤2.5 s, below the fill floor) fall back to the CPU/ort
+  encoder by design (ANE = file-mode). A small streaming-sized bucket or a
+  static-pad-mask wrapper could engage the ANE for live sessions.
+- Fix: deferred until there's streaming-on-ANE demand; the fallback is correct
+  (no crash, WER-neutral), just not accelerated.
+
+### 30. Batched ANE prediction (P3)
+- The spike measured batch=4 windows at 5.46 ms/window (vs ~9.7 ms single).
+  A batched encoder-predict path would lift concurrent/server throughput.
+- Fix: not implemented; relevant only under concurrent server load.
+
+### 31. ANE warmup probe (P3)
+- `Engine::warmup` pushes ~1 s silence (≈99 mel frames, below the fill floor),
+  so it exercises the ort fallback, not the ANE prediction — the first real
+  ANE-path request pays the cold first-predict cost (the compile is cached;
+  only the first prediction is cold).
+- Fix: a bucket-sized (≥384 mel) silent warmup probe to pre-warm the ANE path.
+
+### 32. mel extraction is the next fixed cost on the ANE path (P3)
+- Once the encoder is offloaded, mel/feature extraction (~3.8 ms, ~11 % of the
+  warm ANE e2e) is the largest remaining fixed CPU stage.
+- Fix: SIMD/FFT tuning is possible but risks feature/WER parity — deferred; the
+  absolute payoff caps at <4 ms.
+
+---
+
 ## Trace of what IS resolved (for completeness)
 
 - **Native Rust INT8 quantization** — `src/quantize.rs`, CLI

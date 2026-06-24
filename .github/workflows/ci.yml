@@ -506,6 +506,13 @@ jobs:
           # Mirrors the allowlist enforced by `deny.toml` so a new transitive
           # dep with an off-list license fails review instead of slipping in.
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib, CC0-1.0, MPL-2.0, OpenSSL, Unicode-3.0, Unicode-DFS-2016, CDLA-Permissive-2.0
+          # GitHub's Cargo license detection mis-parses filetime's `MIT/Apache-2.0`
+          # (slash form) as an unknown LicenseRef and cannot detect a license for
+          # several crates.io packages. cargo-deny / `deny.toml` (the authoritative
+          # license gate, run in the separate "Cargo Deny" job) vets all of these
+          # as MIT/Apache/Zlib, so exempt the affected ANE-stack packages from this
+          # secondary check rather than weakening the allowlist.
+          allow-dependencies-licenses: pkg:cargo/filetime, pkg:cargo/objc2, pkg:cargo/objc2-core-ml, pkg:cargo/objc2-foundation, pkg:cargo/half, pkg:cargo/tar
 
   docs:
     runs-on: ubuntu-latest
@@ -539,9 +546,10 @@ jobs:
         with:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # coreml+cuda is a hard compile_error and nnapi is Android-only, so the
-      # platform execution-provider features are excluded from the powerset.
-      - run: cargo hack check --feature-powerset --workspace --exclude-features coreml,cuda,nnapi --locked
+      # coreml+cuda is a hard compile_error, nnapi is Android-only, and ane is
+      # Apple-only (the objc2 base crate hard compile_errors on non-Apple targets),
+      # so the platform execution-provider features are excluded from the powerset.
+      - run: cargo hack check --feature-powerset --workspace --exclude-features coreml,cuda,nnapi,ane --locked
 
   publish-dry-run:
     runs-on: ubuntu-latest
