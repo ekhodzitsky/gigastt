@@ -3803,10 +3803,12 @@ mod tests {
             return;
         };
 
-        // Mirror the encoder-session selection policy so the table can label the
-        // path the ANE engine took without instrumenting the session itself.
+        // Mirror the encoder-session selection policy (select_bucket over the
+        // shipped ladder) so the table can label the bucket the ANE engine took
+        // without instrumenting the session itself.
+        use crate::model::ANE_BUCKETS;
+        use crate::runtime::coreml::encoder_session::select_bucket;
         const FILL_FLOOR: f64 = 0.5;
-        const BUCKET: usize = 768;
         // Aggregate gate: the mean WER(ANE vs ort) across all 15 clips must stay
         // small. Per-clip gate: at most ONE word may differ from ort — the
         // documented FP16-pad-up borderline-token flip (see FILL_FLOOR) is allowed
@@ -3823,15 +3825,22 @@ mod tests {
         let mut clip_word_diffs: Vec<(String, usize)> = Vec::new();
 
         eprintln!(
-            "\n{:<12} {:>5} {:>6} {:>9} {:>6} {}",
-            "clip", "T", "fill%", "path", "ident", "texts"
+            "\n{:<12} {:>5} {:>6} {:>9} {:>6} texts",
+            "clip", "T", "fill%", "path", "ident"
         );
         for (path, reference) in &fixtures {
             let samples = audio::decode_audio_file(path).expect("decode fixture");
             let (features, num_frames) = ane_engine.features.compute(&samples);
-            let fill = num_frames as f64 / BUCKET as f64;
-            let on_ane = num_frames <= BUCKET && fill >= FILL_FLOOR;
-            let path_label = if on_ane { "ANE-768" } else { "ort-fb" };
+            let bucket = select_bucket(num_frames, ANE_BUCKETS, FILL_FLOOR);
+            let on_ane = bucket.is_some();
+            let fill = match bucket {
+                Some(n) => num_frames as f64 / n as f64,
+                None => 0.0,
+            };
+            let path_label = match bucket {
+                Some(n) => format!("ANE-{n}"),
+                None => "ort-fb".to_string(),
+            };
 
             // Frame-count equality: the ANE and ort encoders must emit the SAME
             // encoded_len for the same mel input. (On the ort-fallback path this
@@ -3949,8 +3958,9 @@ mod tests {
             return;
         };
 
+        use crate::model::ANE_BUCKETS;
+        use crate::runtime::coreml::encoder_session::select_bucket;
         const FILL_FLOOR: f64 = 0.5;
-        const BUCKET: usize = 768;
         const WARM: usize = 1;
         const TIMED: usize = 6;
 
@@ -3972,17 +3982,24 @@ mod tests {
         }
 
         eprintln!(
-            "\n{:<12} {:>5} {:>6} {:>9} {:>9} {:>9} {:>9} {:>8}",
-            "clip", "T", "audio_s", "ort_med_s", "ane_med_s", "ort_RTFx", "ane_RTFx", "speedup"
+            "\n{:<12} {:>5} {:>6} {:>6} {:>9} {:>9} {:>9} {:>9} {:>8}",
+            "clip",
+            "T",
+            "bucket",
+            "audio_s",
+            "ort_med_s",
+            "ane_med_s",
+            "ort_RTFx",
+            "ane_RTFx",
+            "speedup"
         );
         let mut any_ane = false;
         for (path, _ref) in golos_fixtures() {
             let samples = audio::decode_audio_file(&path).expect("decode fixture");
             let (_features, num_frames) = ane_engine.features.compute(&samples);
-            let fill = num_frames as f64 / BUCKET as f64;
-            if !(num_frames <= BUCKET && fill >= FILL_FLOOR) {
+            let Some(bucket) = select_bucket(num_frames, ANE_BUCKETS, FILL_FLOOR) else {
                 continue; // only clips that exercise the ANE encoder path
-            }
+            };
             any_ane = true;
             let audio_s = samples.len() as f64 / 16000.0;
             let ort_med = median_secs(&ort_engine, &path);
@@ -3996,13 +4013,13 @@ mod tests {
                 .unwrap_or(&path)
                 .to_string();
             eprintln!(
-                "{:<12} {:>5} {:>6.2} {:>9.4} {:>9.4} {:>9.1} {:>9.1} {:>7.2}x",
-                clip, num_frames, audio_s, ort_med, ane_med, ort_rtfx, ane_rtfx, speedup
+                "{:<12} {:>5} {:>6} {:>6.2} {:>9.4} {:>9.4} {:>9.1} {:>9.1} {:>7.2}x",
+                clip, num_frames, bucket, audio_s, ort_med, ane_med, ort_rtfx, ane_rtfx, speedup
             );
         }
         assert!(
             any_ane,
-            "no Golos fixture took the ANE path (>= 384 mel frames); cannot measure e2e RTFx"
+            "no Golos fixture took the ANE path (>= 256 mel frames at >= 50% fill); cannot measure e2e RTFx"
         );
     }
 

@@ -76,7 +76,7 @@ jobs:
             --with torch --with coremltools --with gigaam \
             --with soundfile --with scikit-learn --with "numpy<2" \
             python scripts/convert_gigaam_ane.py \
-              --buckets 768,1536,3000 --nbits 6 --out-dir "$OUT_DIR"
+              --buckets 512,768,1536,3000 --nbits 6 --out-dir "$OUT_DIR"
 
       # The convert script already wrote one deterministic `.tar` per bucket
       # (the single published asset that reconstructs the .mlpackage dir on the
@@ -148,7 +148,7 @@ jobs:
           body: |
             Per-bucket palettized Core ML encoder packages for the macOS ANE backend.
             One deterministic uncompressed `gigaam_v3_encoder_<N>.mlpackage.tar` per
-            mel bucket (768 / 1536 / 3000); the Rust side downloads the `.tar` and
+            mel bucket (512 / 768 / 1536 / 3000); the Rust side downloads the `.tar` and
             unpacks it to reconstruct the `.mlpackage` directory. FP16 mlprogram +
             6-bit palettization (per_grouped_channel, group_size 32). Verify with
             `SHA256SUMS.txt` — each `.tar` digest is the value pinned on the Rust side.

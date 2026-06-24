@@ -2,7 +2,7 @@
 
 > Optional `--features ane`: run the GigaAM v3 **encoder** on the Apple **Neural Engine** via a native Core ML `.mlpackage`, behind the PR #115 runtime seam. Additive/opt-in; default `ort` path unchanged.
 
-> **Note — this first half is the ORIGINAL pre-implementation plan, superseded by the shipped design in the [Quickstart](#quickstart-user-guide) below.** Where the two disagree, the Quickstart is authoritative. Known divergences: (1) the bucket ladder is `[768, 1536, 3000]`, not `[384, 768, 1536, 3000]` — 384 is the **fill floor** derived as 50% of the 768 bucket, not a real bucket; (2) `EnumeratedShapes` was **rejected** in favor of per-bucket FIXED-shape `.mlpackage`s. The plan is kept for historical context only.
+> **Note — this first half is the ORIGINAL pre-implementation plan, superseded by the shipped design in the [Quickstart](#quickstart-user-guide) below.** Where the two disagree, the Quickstart is authoritative. Known divergences: (1) the shipped bucket ladder is `[512, 768, 1536, 3000]`, not the plan's `[384, 768, 1536, 3000]` — 384 was a **fill floor** (50% of the 768 bucket), not a real bucket; 512 is the real smallest bucket, covering 3–5 s clips at higher fill; (2) `EnumeratedShapes` was **rejected** in favor of per-bucket FIXED-shape `.mlpackage`s. The plan is kept for historical context only.
 
 ## Why (validated by spike, 2026-06-23, Apple M1 Pro)
 A native coremltools conversion of the GigaAM v3 conformer encoder (NOT the ORT CoreML EP) lands **99.9% of compute on the ANE** from a straight torch.jit.trace (no attention rewrite needed), at **339× warm RTFx** for the encoder on a 15 s window (vs 126× CPU), with **near-lossless accuracy**: on 15 Golos clips, FP16-ANE vs fp32 baseline = 14/15 byte-identical, WER delta **+1.33%** (one near-homophone slip). This refutes the prior "ANE not worth it / ORT CoreML EP can't run the conformer" conclusion (issue #42 was an ORT-EP limitation, not a CoreML one). Win over the existing Candle/Metal path is power/thermals + raw encoder throughput; tradeoff is FP16 (not byte-exact) + a CoreML build/distribution step + an objc2 bridge.
@@ -133,10 +133,11 @@ Do **not** combine with `--features coreml`, `--features cuda`,
 
 The ANE backend reads per-bucket `.mlpackage`s from
 `~/.gigastt/models/ane/` (a sibling of the ONNX encoder), one fixed-shape
-package per bucket in the ladder `[768, 1536, 3000]` mel frames (≈8 s / 15 s /
-30 s windows):
+package per bucket in the ladder `[512, 768, 1536, 3000]` mel frames (≈5 s / 8 s /
+15 s / 30 s windows):
 
 ```
+~/.gigastt/models/ane/gigaam_v3_encoder_512.mlpackage
 ~/.gigastt/models/ane/gigaam_v3_encoder_768.mlpackage
 ~/.gigastt/models/ane/gigaam_v3_encoder_1536.mlpackage
 ~/.gigastt/models/ane/gigaam_v3_encoder_3000.mlpackage
@@ -191,11 +192,14 @@ pointing at the conversion / `gigastt download --ane` step.
 - **Fill floor (`FILL_FLOOR = 0.5`).** A window must fill **≥ 50%** of its bucket
   for the ANE path to be trusted. Below that, the mask-free zero-pad output
   diverges enough that a borderline token could flip, so the window falls back to
-  the variable-length `ort` encoder. The smallest bucket (768) therefore covers
-  real frame counts in `[384, 768]`.
+  the variable-length `ort` encoder. The smallest bucket (512) therefore covers
+  real frame counts in `[256, 512]` — the typical 3–5 s clip range — at higher
+  fill (less pad-up waste / lower divergence) than routing those clips up to 768;
+  768 now covers `(512, 768]`. All buckets clear the ~288-mel ANE-residency floor,
+  so each stays resident on the Neural Engine.
 - **Streaming falls back to CPU.** The streaming window is capped at 2.5 s
-  (≤ 250 mel frames), which is below the 384-frame floor of the 768 bucket, so
-  **every streaming window takes the `ort` fallback**. Streaming works exactly as
+  (≤ 250 mel frames), which is below the 256-frame floor of the smallest (512)
+  bucket, so **every streaming window takes the `ort` fallback**. Streaming works exactly as
   on the default build — no crash, no ANE benefit. ANE is a file-mode
   accelerator.
 - **Over-max windows.** Files longer than the largest bucket use gigastt's

@@ -87,7 +87,7 @@ const ANE_RELEASE_BASE: &str =
 /// pads each clip's mel up to the smallest bucket >= its length and runs the
 /// matching fixed-window package.
 #[cfg(feature = "ane")]
-pub const ANE_BUCKETS: &[usize] = &[768, 1536, 3000];
+pub const ANE_BUCKETS: &[usize] = &[512, 768, 1536, 3000];
 
 /// Per-bucket SHA-256 of the deterministic `.mlpackage.tar` published by
 /// `release-ane.yml`. Each digest is simultaneously the content-identity
@@ -97,7 +97,7 @@ pub const ANE_BUCKETS: &[usize] = &[768, 1536, 3000];
 /// running the Release ANE workflow, fill each entry from the printed
 /// `SHA256SUMS.txt` and bump [`ANE_RELEASE_BASE`]'s tag in the same change.
 #[cfg(all(feature = "net", feature = "ane"))]
-const ANE_TAR_CHECKSUMS: &[(usize, &str)] = &[(768, ""), (1536, ""), (3000, "")];
+const ANE_TAR_CHECKSUMS: &[(usize, &str)] = &[(512, ""), (768, ""), (1536, ""), (3000, "")];
 
 /// HuggingFace repo hosting the optional RUPunct punctuation model (MIT).
 #[cfg(feature = "net")]
@@ -2000,7 +2000,24 @@ mod tests {
     #[test]
     fn test_ane_buckets_ladder_pinned() {
         // Must match the convert script's --buckets default.
-        assert_eq!(ANE_BUCKETS, &[768, 1536, 3000]);
+        assert_eq!(ANE_BUCKETS, &[512, 768, 1536, 3000]);
+    }
+
+    /// Every shipped bucket must clear the ANE-residency floor (~288 mel frames):
+    /// below it the fixed-shape graph falls off the Neural Engine onto the CPU EP
+    /// (measured in the conversion spike), so a too-small bucket would silently
+    /// regress to CPU. 512 (the smallest) clears 288; this guards future ladder
+    /// edits from adding a bucket below the residency floor.
+    #[cfg(feature = "ane")]
+    #[test]
+    fn test_ane_buckets_above_residency_floor() {
+        const ANE_RESIDENCY_FLOOR: usize = 288;
+        for &b in ANE_BUCKETS {
+            assert!(
+                b >= ANE_RESIDENCY_FLOOR,
+                "ANE bucket {b} is below the {ANE_RESIDENCY_FLOOR}-mel residency floor — it would evict to CPU"
+            );
+        }
     }
 
     #[cfg(all(feature = "net", feature = "ane"))]

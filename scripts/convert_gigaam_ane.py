@@ -278,8 +278,8 @@ def parse_args(argv=None):
     p = argparse.ArgumentParser(
         description="Convert + palettize the GigaAM v3 encoder to per-bucket ANE Core ML packages.",
     )
-    p.add_argument("--buckets", default="768,1536,3000",
-                   help="Comma-separated mel-frame bucket lengths (default: 768,1536,3000).")
+    p.add_argument("--buckets", default="512,768,1536,3000",
+                   help="Comma-separated mel-frame bucket lengths (default: 512,768,1536,3000).")
     p.add_argument("--nbits", type=int, default=6, help="Palettization bit-width (default: 6).")
     p.add_argument("--group-size", type=int, default=32,
                    help="per_grouped_channel group size (default: 32).")
