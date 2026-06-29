@@ -41,7 +41,7 @@ __internals = []
 ort = "2.0.0-rc.12"
 candle-core = { version = "0.9", optional = true }
 candle-nn = { version = "0.9", optional = true }
-safetensors = { version = "0.5", optional = true }
+safetensors = { version = "0.7", optional = true }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"], optional = true }
 futures-util = { version = "0.3", optional = true }
 reqwest = { version = "0.13", features = ["stream"], optional = true }
