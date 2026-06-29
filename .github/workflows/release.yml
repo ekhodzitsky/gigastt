@@ -394,7 +394,7 @@ jobs:
       # we don't publish a baked tag here because it would balloon the image by
       # ~850 MB.
       - name: Build + push CPU image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -413,7 +413,7 @@ jobs:
       # CUDA image: amd64 only — the nvidia/cuda base images and the CUDA EP
       # are x86_64-only, so an arm64 variant cannot be built.
       - name: Build + push CUDA image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile.cuda
