@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Runtime Isolation
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check ort is isolated to runtime/ort
         run: |
           set -e
