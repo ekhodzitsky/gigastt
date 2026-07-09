@@ -14,3 +14,10 @@ repository = "https://github.com/ekhodzitsky/gigastt"
 lto = true
 codegen-units = 1
 strip = true
+
+# Local overflow-guard patch for symphonia-metadata: a crafted APEv2 tag header
+# (APE tags ride on MP3 uploads) overflows `size + 32` in ape.rs and panics with
+# "attempt to add with overflow". The vendored copy saturates instead. Drop this
+# patch once symphonia-metadata >= 0.6.1 ships the fix upstream.
+[patch.crates-io]
+symphonia-metadata = { path = "vendor/symphonia-metadata-0.6.0" }

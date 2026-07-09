@@ -25,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the logical CPUs. No effect on the CoreML / CUDA / ANE builds, where the accelerator owns
   scheduling. The Docker `CMD` needs no override to benefit.
 
+### Fixed
+
+- **Integer-overflow panic on a crafted APEv2 tag header.** A 36-byte APEv2 tag
+  (APE tags can ride on MP3 uploads) with an unbounded `size` field made
+  `symphonia-metadata`'s `size + 32` overflow and panic with "attempt to add
+  with overflow", reachable from the audio-upload path. A vendored one-line guard
+  (`saturating_add`) in `symphonia-metadata` turns the crafted header into a clean
+  decode error instead of a panic, and the SSE `/v1/transcribe/stream` decode is
+  now wrapped in `catch_unwind` (matching the REST handler) so any future
+  decode-path panic is absorbed as a 422 rather than surfacing as a 500.
+
 ## [2.5.0] - 2026-06-24
 
 ### Added

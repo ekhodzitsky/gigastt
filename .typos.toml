@@ -1,6 +1,14 @@
 # Project-specific allowlist for `typos` (crate-ci/typos).
 # These are deliberate hyphenated prefixes and accepted variant spellings
 # that the default dictionary otherwise flags.
+
+[files]
+# `vendor/` holds third-party crates copied verbatim for a local patch (e.g.
+# the symphonia-metadata APE-overflow guard). Their comments/docs are upstream's
+# and carry pre-existing typos we don't own or fix — skip them so our own
+# sources stay the only thing typos gates.
+extend-exclude = ["vendor/"]
+
 [default.extend-words]
 # "mis-sized" / "mis-ordered" — legitimate hyphenated prefix usage.
 mis = "mis"

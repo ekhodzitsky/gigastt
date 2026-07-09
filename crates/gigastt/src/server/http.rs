@@ -646,7 +646,19 @@ pub async fn transcribe_stream(
     // a refcount bump and `decode_audio_bytes_shared` reads the upload
     // buffer in place.
     let samples = tokio::task::spawn_blocking(move || {
-        gigastt_core::inference::audio::decode_audio_bytes_shared(body)
+        // catch_unwind mirrors the REST handler: a panic inside the blocking
+        // decode (e.g. a crafted container that trips an upstream arithmetic
+        // panic) is absorbed and surfaced as a normal decode error instead of a
+        // `JoinError`, so the SSE path returns a clean 422 rather than a 500.
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            gigastt_core::inference::audio::decode_audio_bytes_shared(body)
+        })) {
+            Ok(inner) => inner,
+            Err(_) => {
+                tracing::error!("Panic in SSE audio decode — treated as decode error");
+                Err(anyhow::anyhow!("Audio decode thread panicked"))
+            }
+        }
     })
     .await
     .map_err(|e| {

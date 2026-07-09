@@ -4083,8 +4083,6 @@ dependencies = [
 [[package]]
 name = "symphonia-metadata"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a31acf5cd623398a6208e2225d18f4b20f761c55098a796a5247ad516a4a8681"
 dependencies = [
  "lazy_static",
  "log",

@@ -864,6 +864,23 @@ mod tests {
     }
 
     #[test]
+    fn test_decode_audio_bytes_ape_overflow_crash_is_graceful() {
+        // Regression: a crafted 36-byte APEv2 tag header (APE tags can ride on
+        // MP3 uploads) sets an unbounded `size` field that made
+        // symphonia-metadata's `size + 32` overflow and panic with "attempt to
+        // add with overflow" (ape.rs). The vendored overflow-guard patch
+        // saturates instead, so decode must return a graceful `Err` — never
+        // panic. Fixture is the exact fuzz artifact that reddened the soak run.
+        let crash = include_bytes!("../../tests/fixtures/ape_overflow_crash.bin");
+        assert_eq!(crash.len(), 36, "fixture must stay the 36-byte crash input");
+        let result = decode_audio_bytes(crash);
+        assert!(
+            result.is_err(),
+            "crafted APEv2 header must yield a decode error, not panic or Ok"
+        );
+    }
+
+    #[test]
     fn test_decode_audio_bytes_wav() {
         let silence: Vec<i16> = vec![0; 16000]; // 1 second at 16kHz
         let wav = make_wav_bytes(&silence, 16000);
