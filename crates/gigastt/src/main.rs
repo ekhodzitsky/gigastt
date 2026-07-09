@@ -158,12 +158,15 @@ enum Commands {
         batch_pool_size: usize,
 
         /// Intra-op thread count for the encoder session on the CPU build. The
-        /// encoder dominates the single-utterance cost, so more threads help on
-        /// weak CPUs / long single-file jobs. Default 1 (no change vs prior
-        /// builds). Auto-clamped so `pool_size * encoder_intra_threads` can't
+        /// encoder dominates the single-utterance cost, so more threads speed up
+        /// weak CPUs / long single-file jobs. When unset, defaults to the logical
+        /// CPU count divided across the concurrently-running pool triplets
+        /// (`pool_size + batch_pool_size`), so a default install uses every core.
+        /// An explicit value (flag or env, including `1`) is honoured as-is. The
+        /// resolved value is still auto-clamped so `pool_size * threads` can't
         /// exceed the logical CPU count. No effect on CoreML / CUDA builds.
-        #[arg(long, env = "GIGASTT_ENCODER_INTRA_THREADS", default_value_t = 1)]
-        encoder_intra_threads: usize,
+        #[arg(long, env = "GIGASTT_ENCODER_INTRA_THREADS")]
+        encoder_intra_threads: Option<usize>,
 
         /// Explicitly acknowledge binding to a non-loopback address.
         /// Can also be enabled via `GIGASTT_ALLOW_BIND_ANY=1`.
@@ -406,10 +409,12 @@ enum Commands {
 
         /// Intra-op thread count for the encoder session on the CPU build. The
         /// encoder dominates the single-utterance cost, so more threads speed up
-        /// long single-file jobs on weak CPUs. Default 1 (no change vs prior
-        /// builds). No effect on CoreML / CUDA builds.
-        #[arg(long, env = "GIGASTT_ENCODER_INTRA_THREADS", default_value_t = 1)]
-        encoder_intra_threads: usize,
+        /// long single-file jobs on weak CPUs. When unset, defaults to the logical
+        /// CPU count (offline transcription runs a single triplet). An explicit
+        /// value (flag or env, including `1`) is honoured as-is. No effect on
+        /// CoreML / CUDA builds.
+        #[arg(long, env = "GIGASTT_ENCODER_INTRA_THREADS")]
+        encoder_intra_threads: Option<usize>,
 
         /// Export format: json, txt, srt, vtt, md [default: txt]
         #[arg(short, long, env = "GIGASTT_FORMAT", default_value = "txt")]
@@ -572,6 +577,32 @@ fn is_loopback_host(host: &str) -> bool {
         return ip.is_loopback();
     }
     false
+}
+
+/// Resolve the encoder intra-op thread count when the operator left the flag /
+/// env unset. `requested == Some(v)` (an explicit flag/env value, including `1`)
+/// is honoured verbatim and only passes through the engine's oversubscription
+/// clamp downstream. `None` (unset) spreads the logical CPUs across the
+/// concurrently-running pool triplets: `max(1, logical_cpus / total_pool_slots)`,
+/// so a default install uses every core instead of one. `total_pool_slots` is the
+/// effective number of triplets that can run at once (serve: `pool_size +
+/// batch_pool_size`; offline transcribe: `1`).
+///
+/// Pure and total so the budgeting math is unit-tested without touching ORT or
+/// the real CPU count.
+fn resolve_encoder_intra_threads(
+    requested: Option<usize>,
+    total_pool_slots: usize,
+    logical_cpus: usize,
+) -> usize {
+    match requested {
+        Some(explicit) => explicit,
+        None => {
+            let slots = total_pool_slots.max(1);
+            let cpus = logical_cpus.max(1);
+            (cpus / slots).max(1)
+        }
+    }
 }
 
 /// clap value parser for `--model-variant`. Accepts `rnnt` / `e2e_rnnt`
@@ -977,12 +1008,23 @@ async fn main() -> anyhow::Result<()> {
                     ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
                     let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
                     let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
+                    // Resolve the intra-op default from the effective number of
+                    // concurrently-running triplets when the operator didn't set
+                    // it. The engine still clamps `pool_size * threads` below the
+                    // logical CPU count.
+                    let resolved_intra_threads = resolve_encoder_intra_threads(
+                        encoder_intra_threads,
+                        pool_size + batch_pool_size,
+                        std::thread::available_parallelism()
+                            .map(|n| n.get())
+                            .unwrap_or(1),
+                    );
                     let mut engine = inference::Engine::load_with_pools_threads(
                         &model_dir,
                         pool_size,
                         pool_min_size,
                         batch_pool_size,
-                        encoder_intra_threads,
+                        resolved_intra_threads,
                     )?
                     .with_punctuator(punctuator)
                     .with_itn(resolve_itn(itn, resolved))
@@ -1082,14 +1124,22 @@ async fn main() -> anyhow::Result<()> {
             maybe_download_vad_model(vad, &vad_model_dir).await;
             let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
             let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
-            // Single-triplet pool for offline file transcription; thread count
-            // is opt-in (default 1 ⇒ identical sessions to the prior build).
+            // Single-triplet pool for offline file transcription; when the
+            // thread count is unset it defaults to every logical CPU (one
+            // running triplet), else the explicit value is used as-is.
+            let resolved_intra_threads = resolve_encoder_intra_threads(
+                encoder_intra_threads,
+                1,
+                std::thread::available_parallelism()
+                    .map(|n| n.get())
+                    .unwrap_or(1),
+            );
             let mut engine = inference::Engine::load_with_pools_threads(
                 &model_dir,
                 1,
                 1,
                 0,
-                encoder_intra_threads,
+                resolved_intra_threads,
             )?
             .with_punctuator(punctuator)
             .with_itn(resolve_itn(itn, resolved))
@@ -1215,7 +1265,7 @@ mod tests {
 
     #[test]
     fn test_cli_serve_encoder_intra_threads_default() {
-        // Unset → default 1 (no behavior change vs prior builds).
+        // Unset → None, so the default resolves from the pool size at load time.
         let _guard = ENV_LOCK.lock().unwrap();
         let _restore = EnvRestore(
             "GIGASTT_ENCODER_INTRA_THREADS",
@@ -1229,7 +1279,7 @@ mod tests {
             Commands::Serve {
                 encoder_intra_threads,
                 ..
-            } => assert_eq!(encoder_intra_threads, 1),
+            } => assert_eq!(encoder_intra_threads, None),
             _ => panic!("expected Serve"),
         }
     }
@@ -1250,7 +1300,7 @@ mod tests {
             Commands::Serve {
                 encoder_intra_threads,
                 ..
-            } => assert_eq!(encoder_intra_threads, 4),
+            } => assert_eq!(encoder_intra_threads, Some(4)),
             _ => panic!("expected Serve"),
         }
     }
@@ -1272,7 +1322,7 @@ mod tests {
             Commands::Serve {
                 encoder_intra_threads,
                 ..
-            } => assert_eq!(encoder_intra_threads, 6),
+            } => assert_eq!(encoder_intra_threads, Some(6)),
             _ => panic!("expected Serve"),
         }
     }
@@ -1298,9 +1348,31 @@ mod tests {
             Commands::Transcribe {
                 encoder_intra_threads,
                 ..
-            } => assert_eq!(encoder_intra_threads, 3),
+            } => assert_eq!(encoder_intra_threads, Some(3)),
             _ => panic!("expected Transcribe"),
         }
+    }
+
+    #[test]
+    fn test_resolve_encoder_intra_threads_defaults_by_pool() {
+        // Unset → logical CPUs spread across the concurrently-running triplets.
+        assert_eq!(resolve_encoder_intra_threads(None, 2, 10), 5);
+        assert_eq!(resolve_encoder_intra_threads(None, 1, 10), 10);
+        // Never drop below one thread, even on a single-core box or a pool that
+        // is wider than the CPU count.
+        assert_eq!(resolve_encoder_intra_threads(None, 1, 1), 1);
+        assert_eq!(resolve_encoder_intra_threads(None, 8, 4), 1);
+        // A zero slot count (defensive) still yields at least one thread.
+        assert_eq!(resolve_encoder_intra_threads(None, 0, 10), 10);
+    }
+
+    #[test]
+    fn test_resolve_encoder_intra_threads_explicit_passthrough() {
+        // An explicit value (including 1) is honoured verbatim; the engine's own
+        // clamp still applies downstream.
+        assert_eq!(resolve_encoder_intra_threads(Some(1), 2, 10), 1);
+        assert_eq!(resolve_encoder_intra_threads(Some(4), 2, 10), 4);
+        assert_eq!(resolve_encoder_intra_threads(Some(16), 1, 4), 16);
     }
 
     #[test]

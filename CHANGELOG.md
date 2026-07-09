@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-request RTF `info!` log on every completed file transcription (audio seconds, wall seconds, RTF, encoder label `int8/cpu` etc.); covers CLI `transcribe`, REST `/v1/transcribe`, and SSE — not the streaming WebSocket path.
 - `warn!` when the INT8 quantized encoder is missing and the engine falls back to the FP32 encoder on the default ORT path; names the one-line fix (`gigastt download` or `gigastt quantize`). Suppressed for candle and ANE builds, which have their own model formats.
 
+### Changed
+
+- **CPU encoder now uses all cores by default (`--encoder-intra-threads`).** When the
+  flag / `GIGASTT_ENCODER_INTRA_THREADS` env is left unset, the encoder intra-op thread
+  count now defaults to the machine's logical CPU count divided across the
+  concurrently-running pool triplets (`serve`: `pool_size + batch_pool_size`; offline
+  `transcribe`: a single triplet), instead of the previous fixed `1`. A default install
+  on an N-core box now decodes across the available cores rather than pinning one. An
+  explicit value (flag or env, including `1`) is still honoured verbatim, and the
+  resolved count continues to be auto-clamped so `pool_size * threads` can't oversubscribe
+  the logical CPUs. No effect on the CoreML / CUDA / ANE builds, where the accelerator owns
+  scheduling. The Docker `CMD` needs no override to benefit.
+
 ## [2.5.0] - 2026-06-24
 
 ### Added
