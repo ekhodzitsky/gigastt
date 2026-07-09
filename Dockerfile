@@ -32,6 +32,9 @@ COPY crates/gigastt-ffi/Cargo.toml crates/gigastt-ffi/
 COPY crates/gigastt/Cargo.toml crates/gigastt/
 COPY crates/gigastt-uniffi/Cargo.toml crates/gigastt-uniffi/
 COPY crates/gigastt-node/Cargo.toml crates/gigastt-node/
+# Vendored crate referenced by `[patch.crates-io]` in the workspace Cargo.toml —
+# must be present before the dependency-prefetch build resolves the lockfile.
+COPY vendor/ vendor/
 # Every [[bench]]/[[test]]/[[bin]] target declared in the manifests must exist
 # on disk for cargo to parse the workspace, hence the extra stubs below.
 # (gigastt-uniffi and gigastt-node are workspace members but not dependencies of
