@@ -179,6 +179,11 @@ paths:
         via the `format` query parameter: `txt`, `srt`, `vtt`, `md`. Use
         `download` to send `Content-Disposition: attachment`.
 
+        Pass `segments=true` to add a cue-grouped `segments` array to the default
+        JSON response (same boundaries as the `srt` / `vtt` exports); combined
+        with `format=md` it switches Markdown to `### [mm:ss]` segment headers.
+        `txt` / `srt` / `vtt` ignore `segments` (already flat / cue-based).
+
         The entire file is processed in a single inference session.
         Max audio duration: 10 minutes.
       operationId: transcribeFile
@@ -220,6 +225,16 @@ paths:
             type: boolean
             default: false
           description: Include per-word timestamps in Markdown output.
+        - name: segments
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: |
+            Add a cue-grouped `segments` array to the default JSON response, or
+            (with `format=md`) emit `### [mm:ss]` segment headers. Ignored for
+            `txt` / `srt` / `vtt`.
       requestBody:
         required: true
         content:
@@ -542,6 +557,42 @@ components:
           format: double
           example: 2.5
           description: Audio duration in seconds
+        segments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Segment"
+          description: |
+            Cue-grouped segments. Present only when the request passed
+            `segments=true`; omitted otherwise so existing clients are
+            unaffected. Segments share their boundaries with the SRT/VTT exports.
+
+    Segment:
+      type: object
+      required:
+        - start
+        - end
+        - text
+        - words
+      properties:
+        start:
+          type: number
+          format: double
+          example: 0.0
+          description: Segment start time in seconds (start of its first word)
+        end:
+          type: number
+          format: double
+          example: 2.5
+          description: Segment end time in seconds (end of its last word)
+        text:
+          type: string
+          example: "привет как дела"
+          description: Rendered segment text (speaker label prefix when diarized)
+        words:
+          type: array
+          items:
+            $ref: "#/components/schemas/WordInfo"
+          description: The words that fall within this segment's span
 
     WordInfo:
       type: object

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Segment-level output on `POST /v1/transcribe` (`?segments=true`).** The default JSON
+  response gains an additive `segments` array — `[{start, end, text, words:[…]}]` — that
+  groups words into cue-sized segments, sharing the exact boundaries used by the `srt` /
+  `vtt` exports (one grouping source), while the top-level `text` / `words` / `duration`
+  stay unchanged. Combined with `format=md`, `segments=true` switches Markdown to
+  `### [mm:ss]` (widening to `[hh:mm:ss]` past an hour) section headers per segment instead
+  of the flat `# Transcript` blob. Fully opt-in: the default response and plain `format=md`
+  are byte-unchanged, and `txt` / `srt` / `vtt` ignore the flag (already flat / cue-based).
 - **Model hot-reload without a restart.** A new loopback-only `POST /v1/admin/reload`
   rebuilds the inference engine from the exact boot recipe (model dir, pool sizes,
   encoder threads, and the punctuation / ITN / VAD / hotword chain) and atomically

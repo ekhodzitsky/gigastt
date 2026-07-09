@@ -16,7 +16,7 @@ use arc_swap::ArcSwap;
 
 use super::config::{RuntimeLimits, pool_retry_after_ms, pool_retry_after_secs};
 use super::metrics::MetricsRegistry;
-use gigastt_core::export::{ExportFormat, RenderOpts};
+use gigastt_core::export::{ExportFormat, RenderOpts, Segment};
 use gigastt_core::inference::Engine;
 
 /// Shared application state for all handlers. Carries runtime limits so the
@@ -150,6 +150,11 @@ pub struct TranscribeResponse {
     pub words: Vec<gigastt_core::inference::WordInfo>,
     /// Duration of the submitted audio in seconds.
     pub duration: f64,
+    /// Cue-sized segments, present only when the caller passed `?segments=true`.
+    /// Additive: absent from the default response, so existing clients that read
+    /// `text` / `words` / `duration` are unaffected.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub segments: Option<Vec<Segment>>,
 }
 
 /// Query parameters for `/v1/transcribe` export formatting.
@@ -169,6 +174,12 @@ pub struct ExportParams {
     /// Include per-word timestamps in Markdown output.
     #[serde(default)]
     pub word_timestamps: Option<bool>,
+    /// Return cue-sized segments. In the default (JSON) response this adds a
+    /// `segments` array; combined with `format=md` it switches Markdown to
+    /// `### [mm:ss]` segment headers. Ignored for `txt`/`srt`/`vtt` (those are
+    /// already flat / cue-based).
+    #[serde(default)]
+    pub segments: Option<bool>,
 }
 
 /// Render a transcription result into the requested export format.
@@ -195,7 +206,20 @@ fn render_export_response(
         include_word_timestamps: params.word_timestamps.unwrap_or(false),
     };
 
-    let body = format.render(result, &opts);
+    // Precedence for `format` × `segments`: only Markdown composes with
+    // `segments=true`, switching to `### [mm:ss]` section headers over the same
+    // cue boundaries as SRT/VTT. `txt`/`srt`/`vtt` ignore `segments` (flat /
+    // already cue-based); plain `format=md` keeps the frontmatter + `# Transcript`
+    // blob unchanged.
+    let body = if format == ExportFormat::Md && params.segments.unwrap_or(false) {
+        gigastt_core::export::to_md_segments(
+            result,
+            opts.max_chars_per_line,
+            opts.max_words_per_line,
+        )
+    } else {
+        format.render(result, &opts)
+    };
     let mut builder = Response::builder()
         .status(StatusCode::OK)
         .header(header::CONTENT_TYPE, format.content_type());
@@ -604,10 +628,24 @@ pub async fn transcribe(
             if let Some(rendered) = render_export_response(&result, &params)? {
                 Ok(rendered)
             } else {
+                // Default JSON response. `?segments=true` adds a cue-grouped
+                // `segments` array (same boundaries as SRT/VTT) alongside the
+                // unchanged top-level `text` / `words` / `duration`; absent
+                // otherwise so existing clients see the exact same shape.
+                let segments = if params.segments.unwrap_or(false) {
+                    Some(gigastt_core::export::to_segments(
+                        &result.words,
+                        params.max_chars_per_line.unwrap_or(80),
+                        params.max_words_per_line.unwrap_or(14),
+                    ))
+                } else {
+                    None
+                };
                 Ok(Json(TranscribeResponse {
                     text: result.text,
                     words: result.words,
                     duration: result.duration_s,
+                    segments,
                 })
                 .into_response())
             }
@@ -997,6 +1035,7 @@ mod tests {
             words: vec![],
 
             duration: 1.5,
+            segments: None,
         };
         let json = serde_json::to_string(&resp).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -1364,6 +1403,47 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    #[ignore = "requires model"]
+    async fn test_transcribe_segments_json() {
+        // `?segments=true` on the default JSON response adds a `segments` array
+        // with sane start/end ordering and per-segment words, while keeping the
+        // top-level text/words/duration contract.
+        let state = Arc::new(AppState {
+            engine: engine_swap(test_engine()),
+            limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
+            metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
+            shutdown: tokio_util::sync::CancellationToken::new(),
+            tracker: tokio_util::task::TaskTracker::new(),
+        });
+        let params = ExportParams {
+            segments: Some(true),
+            ..ExportParams::default()
+        };
+        let resp = transcribe(State(state), Query(params), short_wav())
+            .await
+            .expect("transcribe with segments should succeed");
+        assert_eq!(resp.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(resp.into_body(), 1 << 20)
+            .await
+            .unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        // Top-level contract is preserved.
+        assert!(v.get("text").is_some());
+        assert!(v.get("words").is_some());
+        assert!(v.get("duration").is_some());
+        // The segments array is present and every segment has monotonic timing.
+        let segments = v["segments"].as_array().expect("segments array present");
+        for seg in segments {
+            let start = seg["start"].as_f64().unwrap();
+            let end = seg["end"].as_f64().unwrap();
+            assert!(end >= start, "segment end {end} < start {start}");
+            assert!(seg["words"].is_array());
+        }
+    }
+
     fn sample_export_result() -> gigastt_core::inference::TranscribeResult {
         use gigastt_core::inference::WordInfo;
         gigastt_core::inference::TranscribeResult {
@@ -1577,11 +1657,114 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn test_render_export_md_segments_emits_headers() {
+        // `format=md` + `segments=true` switches Markdown to `### [mm:ss]`
+        // section headers over the cue boundaries, dropping the flat
+        // `# Transcript` blob.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("md".into()),
+            segments: Some(true),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(header::CONTENT_TYPE).unwrap(),
+            "text/markdown; charset=utf-8"
+        );
+        let body = axum::body::to_bytes(resp.into_body(), 4096).await.unwrap();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(text.contains("### [00:00]"));
+        assert!(text.contains("[SPEAKER_0] привет мир"));
+        // Segment mode replaces the flat transcript blob.
+        assert!(!text.contains("# Transcript"));
+    }
+
+    #[tokio::test]
+    async fn test_render_export_md_without_segments_unchanged() {
+        // Plain `format=md` (no segments) keeps the existing frontmatter +
+        // `# Transcript` layout — segment mode is strictly opt-in.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("md".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        let body = axum::body::to_bytes(resp.into_body(), 4096).await.unwrap();
+        let text = String::from_utf8(body.to_vec()).unwrap();
+        assert!(text.contains("# Transcript"));
+        assert!(!text.contains("### ["));
+    }
+
+    #[tokio::test]
+    async fn test_render_export_segments_ignored_for_srt() {
+        // `segments=true` is a JSON/Markdown affordance; SRT is already
+        // cue-based and must render identically with or without the flag.
+        let result = sample_export_result();
+        let plain = ExportParams {
+            format: Some("srt".into()),
+            ..ExportParams::default()
+        };
+        let with_segments = ExportParams {
+            format: Some("srt".into()),
+            segments: Some(true),
+            ..ExportParams::default()
+        };
+        let a = render_export_response(&result, &plain).unwrap().unwrap();
+        let b = render_export_response(&result, &with_segments)
+            .unwrap()
+            .unwrap();
+        let a_body = axum::body::to_bytes(a.into_body(), 4096).await.unwrap();
+        let b_body = axum::body::to_bytes(b.into_body(), 4096).await.unwrap();
+        assert_eq!(a_body, b_body);
+    }
+
+    #[test]
+    fn test_transcribe_response_omits_segments_when_none() {
+        // The default response must be byte-identical to the pre-feature shape:
+        // no `segments` key when the caller didn't ask for it.
+        let resp = TranscribeResponse {
+            text: "hello".into(),
+            words: vec![],
+            duration: 1.5,
+            segments: None,
+        };
+        let v = serde_json::to_value(&resp).unwrap();
+        assert!(v.get("segments").is_none());
+        assert_eq!(v["text"], "hello");
+        assert_eq!(v["duration"], 1.5);
+    }
+
+    #[test]
+    fn test_transcribe_response_includes_segments_when_present() {
+        use gigastt_core::export::to_segments;
+        use gigastt_core::inference::WordInfo;
+        let words = vec![
+            WordInfo::new("привет", 0.0, 0.5, 0.98, None),
+            WordInfo::new("мир", 0.6, 1.0, 0.97, None),
+        ];
+        let resp = TranscribeResponse {
+            text: "привет мир".into(),
+            words: words.clone(),
+            duration: 1.0,
+            segments: Some(to_segments(&words, 80, 14)),
+        };
+        let v = serde_json::to_value(&resp).unwrap();
+        let segments = v["segments"].as_array().unwrap();
+        assert_eq!(segments.len(), 1);
+        assert_eq!(segments[0]["start"], 0.0);
+        assert_eq!(segments[0]["end"], 1.0);
+        assert_eq!(segments[0]["text"], "привет мир");
+        assert_eq!(segments[0]["words"][0]["word"], "привет");
+    }
+
     #[test]
     fn test_export_params_deserialize_from_query() {
         // The query-param shape drives format negotiation; confirm axum's Query
         // extractor maps every field so the handler sees the caller's choices.
-        let uri: axum::http::Uri = "http://x/?format=srt&download=out.srt&max_chars_per_line=20&max_words_per_line=3&word_timestamps=true"
+        let uri: axum::http::Uri = "http://x/?format=srt&download=out.srt&max_chars_per_line=20&max_words_per_line=3&word_timestamps=true&segments=true"
             .parse()
             .unwrap();
         let Query(params): Query<ExportParams> = Query::try_from_uri(&uri).unwrap();
@@ -1590,6 +1773,7 @@ mod tests {
         assert_eq!(params.max_chars_per_line, Some(20));
         assert_eq!(params.max_words_per_line, Some(3));
         assert_eq!(params.word_timestamps, Some(true));
+        assert_eq!(params.segments, Some(true));
     }
 
     #[test]
