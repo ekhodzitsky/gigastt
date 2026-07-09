@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Per-request RTF `info!` log on every completed file transcription (audio seconds, wall seconds, RTF, encoder label `int8/cpu` etc.); covers CLI `transcribe`, REST `/v1/transcribe`, and SSE — not the streaming WebSocket path.
+- `warn!` when the INT8 quantized encoder is missing and the engine falls back to the FP32 encoder on the default ORT path; names the one-line fix (`gigastt download` or `gigastt quantize`). Suppressed for candle and ANE builds, which have their own model formats.
+
 ## [2.5.0] - 2026-06-24
 
 ### Added

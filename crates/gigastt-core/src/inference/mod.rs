@@ -1107,6 +1107,14 @@ impl Engine {
         if !cfg!(feature = "candle") {
             if is_int8 {
                 tracing::info!("Using INT8 quantized encoder");
+            } else if !cfg!(feature = "ane") {
+                // On the default ORT path the INT8 encoder is expected. Warn so
+                // the operator knows inference will be slower and larger than
+                // intended. Fix: run `gigastt quantize` or re-run `gigastt download`.
+                tracing::warn!(
+                    "INT8 encoder not found — loading FP32 encoder (4× larger, slower). \
+                     Run `gigastt download` or `gigastt quantize` to generate it."
+                );
             }
 
             tracing::info!(
@@ -1831,6 +1839,7 @@ impl Engine {
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
+        let wall_start = std::time::Instant::now();
         let duration_s = float_samples.len() as f64 / 16000.0;
 
         // When a VAD is attached, decode only the detected speech regions
@@ -1899,6 +1908,32 @@ impl Engine {
             Some(p) => p.restore(&text),
             None => text,
         };
+
+        let wall_s = wall_start.elapsed().as_secs_f64();
+        let rtf = if duration_s > 0.0 {
+            wall_s / duration_s
+        } else {
+            0.0
+        };
+        let encoder_label = if self.int8 { "int8" } else { "fp32" };
+        let backend_label = if cfg!(feature = "candle") {
+            "candle"
+        } else if cfg!(feature = "ane") {
+            "ane"
+        } else if cfg!(feature = "coreml") {
+            "coreml"
+        } else if cfg!(feature = "cuda") {
+            "cuda"
+        } else {
+            "cpu"
+        };
+        tracing::info!(
+            audio_s = format_args!("{duration_s:.2}"),
+            wall_s = format_args!("{wall_s:.2}"),
+            rtf = format_args!("{rtf:.3}"),
+            encoder = format_args!("{encoder_label}/{backend_label}"),
+            "transcribe complete"
+        );
 
         Ok(TranscribeResult {
             text,
