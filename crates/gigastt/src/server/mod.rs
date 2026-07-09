@@ -257,9 +257,9 @@ pub async fn run_with_config_listener(
 }
 
 /// Like [`run_with_config_listener`], but also accepts the [`EngineBuilder`]
-/// recipe that `POST /v1/admin/reload` (and SIGHUP) use to rebuild the engine
-/// in place. `None` disables the reload endpoint (`reload_unsupported`) — the
-/// thin `run` / `run_with_shutdown` and test entry points take that path.
+/// recipe that `POST /v1/admin/reload` uses to rebuild the engine in place.
+/// `None` disables the reload endpoint (`reload_unsupported`) — the thin
+/// `run` / `run_with_shutdown` and test entry points take that path.
 pub async fn run_with_config_listener_reloadable(
     engine: gigastt_core::inference::Engine,
     mut config: ServerConfig,

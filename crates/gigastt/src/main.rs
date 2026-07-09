@@ -1007,12 +1007,16 @@ async fn main() -> anyhow::Result<()> {
                 let vad_model_dir = vad_model_dir.clone();
                 let hotwords_file = hotwords_file.clone();
                 std::sync::Arc::new(move || -> anyhow::Result<inference::Engine> {
-                    // Detect the head present on disk; fall back to the requested
-                    // variant, else the default, when the dir has no encoder yet.
-                    let resolved =
-                        model::ModelVariant::detect_in_dir(std::path::Path::new(&model_dir))
-                            .or(model_variant)
-                            .unwrap_or_default();
+                    // Honor the explicit --model-variant when set; otherwise
+                    // detect what is present on disk. Reload never downloads, so
+                    // if the requested variant's files are absent the engine load
+                    // will fail with a clear error — the operator asked for a
+                    // variant that isn't there.
+                    let resolved = model_variant
+                        .or_else(|| {
+                            model::ModelVariant::detect_in_dir(std::path::Path::new(&model_dir))
+                        })
+                        .unwrap_or_default();
                     ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
                     let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
                     let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);

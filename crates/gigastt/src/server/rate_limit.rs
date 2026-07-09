@@ -364,6 +364,13 @@ fn is_rfc1918(ip: IpAddr) -> bool {
 /// async fn rate_limit_middleware(limiter: Arc<RateLimiter>, trust_proxy: bool, req: Request, next: Next) -> Response
 /// { ret.status() == 429 || ret.status() == next.run(req).await.status() }
 /// ```
+/// Paths exempt from per-IP rate limiting. These are either handled by a
+/// separate mechanism (loopback-only enforcement in the handler itself) or
+/// are already outside the main request budget.
+fn is_rate_limit_exempt(path: &str) -> bool {
+    path == "/v1/admin/reload"
+}
+
 pub async fn rate_limit_middleware(
     limiter: Arc<RateLimiter>,
     trust_proxy: bool,
@@ -371,6 +378,9 @@ pub async fn rate_limit_middleware(
     req: Request,
     next: Next,
 ) -> Response {
+    if is_rate_limit_exempt(req.uri().path()) {
+        return next.run(req).await;
+    }
     let Some(ip) = extract_client_ip(&req, trust_proxy) else {
         tracing::debug!("rate limit: could not determine client IP");
         return next.run(req).await;
@@ -620,6 +630,22 @@ mod tests {
             "len={} must not exceed cap={}",
             limiter.len(),
             limiter.max_entries
+        );
+    }
+
+    #[test]
+    fn test_admin_reload_is_rate_limit_exempt() {
+        assert!(
+            is_rate_limit_exempt("/v1/admin/reload"),
+            "/v1/admin/reload must be exempt from rate limiting"
+        );
+        assert!(
+            !is_rate_limit_exempt("/v1/transcribe"),
+            "/v1/transcribe must NOT be exempt"
+        );
+        assert!(
+            !is_rate_limit_exempt("/health"),
+            "/health must NOT be exempt (it is outside the rate-limit layer entirely)"
         );
     }
 

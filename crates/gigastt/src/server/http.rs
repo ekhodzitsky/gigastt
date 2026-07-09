@@ -52,9 +52,9 @@ pub struct AppState {
 }
 
 /// Recipe that rebuilds a fully-configured [`Engine`] from the operator's boot
-/// options. Stored in [`AppState`] so the reload endpoint (and SIGHUP) can
-/// produce a fresh engine that re-applies the punctuation / ITN / VAD / hotword
-/// chain — a bare `Engine::load_*` starts with all of those set to `None`.
+/// options. Stored in [`AppState`] so `POST /v1/admin/reload` can produce a
+/// fresh engine that re-applies the punctuation / ITN / VAD / hotword chain —
+/// a bare `Engine::load_*` starts with all of those set to `None`.
 pub type EngineBuilder = Arc<dyn Fn() -> anyhow::Result<Engine> + Send + Sync>;
 
 /// GET /metrics — Prometheus text-format exposition. Returns 404 when the

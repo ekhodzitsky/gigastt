@@ -17,7 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   engine untouched (the server is never left without a model). In-flight requests keep
   the engine they started on and finish against its pool. The endpoint is restricted to
   loopback callers by an explicit peer-IP check that holds even under `--bind-all` /
-  `--cors-allow-any`; a second concurrent reload is rejected with `409`. Returns
+  `--cors-allow-any`; a second concurrent reload is rejected with `409`. The endpoint
+  is also exempt from the per-IP rate limiter — an operator triggering a reload is
+  gated by the 409/403 logic, not the token bucket. Returns
   `200 {"reloaded":true,"variant":…,"encoder":"int8"|"fp32"}` on success.
 
 ## [2.6.0] - 2026-07-09
