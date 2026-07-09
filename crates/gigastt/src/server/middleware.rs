@@ -17,6 +17,7 @@ fn metric_path_label(path: &str) -> &'static str {
         "/v1/transcribe" => "/v1/transcribe",
         "/v1/transcribe/stream" => "/v1/transcribe/stream",
         "/v1/ws" => "/v1/ws",
+        "/v1/admin/reload" => "/v1/admin/reload",
         "/metrics" => "/metrics",
         _ => "other",
     }
@@ -38,15 +39,17 @@ pub(crate) async fn http_metrics_middleware(
     let method = req.method().clone();
     let path = metric_path_label(req.uri().path());
     let start = std::time::Instant::now();
-    // Sample pool availability on every request.
+    // Sample pool availability on every request against the currently-live
+    // engine (a hot-reload may have swapped it).
+    let engine = state.engine.load_full();
     registry.gauge_set(
         "gigastt_pool_available",
         &[],
-        state.engine.pool.available() as i64,
+        engine.pool.available() as i64,
     );
     // Plus the dedicated batch pool, when one was split off, so its saturation
     // is visible separately from the interactive pool.
-    http::sample_batch_pool_gauges(&registry, &state.engine);
+    http::sample_batch_pool_gauges(&registry, &engine);
     let response = next.run(req).await;
     let elapsed = start.elapsed().as_secs_f64();
     let status = response.status().as_u16().to_string();

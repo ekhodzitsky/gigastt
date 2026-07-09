@@ -994,17 +994,25 @@ async fn main() -> anyhow::Result<()> {
                 config,
             );
 
-            // Build the engine in the background while a minimal bootstrap
-            // responder serves /health (200) and /ready (503 initializing) on the
-            // port, so probes / Docker HEALTHCHECK don't see connection-refused
-            // during the first-run model download + INT8 quantization. The heavy
-            // synchronous work (quantize, ONNX session load, post-processor loads)
-            // runs on a blocking thread so the bootstrap responder stays snappy.
-            let load = async move {
-                let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
-                maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
-                maybe_download_vad_model(vad, &vad_model_dir).await;
-                tokio::task::spawn_blocking(move || -> anyhow::Result<inference::Engine> {
+            // The reusable engine build recipe, captured so BOTH first-run boot
+            // and `POST /v1/admin/reload` produce a byte-for-byte identical
+            // engine — including the punctuation / ITN / VAD / hotword chain a
+            // fresh `Engine::load_*` starts without. Synchronous (ONNX session
+            // load, quantization) so it can run on a blocking thread on either
+            // path; it re-detects the on-disk variant so a reload picks up a
+            // model swapped on disk between boot and reload.
+            let build_engine: server::EngineBuilder = {
+                let model_dir = model_dir.clone();
+                let punct_model_dir = punct_model_dir.clone();
+                let vad_model_dir = vad_model_dir.clone();
+                let hotwords_file = hotwords_file.clone();
+                std::sync::Arc::new(move || -> anyhow::Result<inference::Engine> {
+                    // Detect the head present on disk; fall back to the requested
+                    // variant, else the default, when the dir has no encoder yet.
+                    let resolved =
+                        model::ModelVariant::detect_in_dir(std::path::Path::new(&model_dir))
+                            .or(model_variant)
+                            .unwrap_or_default();
                     ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
                     let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
                     let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
@@ -1043,10 +1051,30 @@ async fn main() -> anyhow::Result<()> {
                     log_rss();
                     Ok(engine)
                 })
-                .await
-                .context("engine load task panicked")?
             };
-            server::run_with_config_loading(server_config, None, load).await?;
+
+            // Build the engine in the background while a minimal bootstrap
+            // responder serves /health (200) and /ready (503 initializing) on the
+            // port, so probes / Docker HEALTHCHECK don't see connection-refused
+            // during the first-run model download + INT8 quantization. The heavy
+            // synchronous work (quantize, ONNX session load, post-processor loads)
+            // runs on a blocking thread so the bootstrap responder stays snappy.
+            let boot_builder = build_engine.clone();
+            let load = async move {
+                let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
+                maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
+                maybe_download_vad_model(vad, &vad_model_dir).await;
+                tokio::task::spawn_blocking(move || boot_builder())
+                    .await
+                    .context("engine load task panicked")?
+            };
+            server::run_with_config_loading_reloadable(
+                server_config,
+                None,
+                load,
+                Some(build_engine),
+            )
+            .await?;
         }
         Commands::Download {
             model_dir,

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Model hot-reload without a restart.** A new loopback-only `POST /v1/admin/reload`
+  rebuilds the inference engine from the exact boot recipe (model dir, pool sizes,
+  encoder threads, and the punctuation / ITN / VAD / hotword chain) and atomically
+  swaps it in. The new engine is warmed before the swap so the first request after a
+  reload pays no cold-start cost, and a build failure leaves the currently-serving
+  engine untouched (the server is never left without a model). In-flight requests keep
+  the engine they started on and finish against its pool. The endpoint is restricted to
+  loopback callers by an explicit peer-IP check that holds even under `--bind-all` /
+  `--cors-allow-any`; a second concurrent reload is rejected with `409`. Returns
+  `200 {"reloaded":true,"variant":…,"encoder":"int8"|"fp32"}` on success.
+
 ## [2.6.0] - 2026-07-09
 
 ### Added

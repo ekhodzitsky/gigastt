@@ -223,4 +223,4 @@ Engine auto-detects and prefers INT8 if available; falls back to FP32.
 ## Known limitations (v0.9)
 - CPU EP runs on any platform; CoreML EP requires macOS ARM64; CUDA EP requires Linux x86_64 with CUDA 12+
 - `protoc` must be on `PATH` at build time (in-tree ONNX quantization pipeline regenerates types via `prost-build`)
-- Hot-reload of the INT8 encoder after `serve` boot still requires a restart (tracked as open item `19` in `specs/todo.md`).
+- The model can be hot-reloaded after `serve` boot without a restart via the loopback-only `POST /v1/admin/reload` endpoint (rebuilds the engine from the boot recipe, warms it, then atomically swaps; keeps the old engine on failure). Replacing the model *files* on disk still requires that endpoint (or a restart) for the change to take effect.

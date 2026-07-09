@@ -108,6 +108,10 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
         }
     }
     let _ws_guard = WsMetricsGuard(state.clone());
+    // Snapshot the live engine once for the whole session; a concurrent
+    // hot-reload swaps the `ArcSwap`, but this session keeps the engine (and
+    // pool) it checked out from until it ends.
+    let engine = state.engine.load_full();
     let checkout_start = std::time::Instant::now();
     // `select!` the pool checkout against the shutdown token so SIGTERM
     // during pool saturation returns immediately instead of waiting the full
@@ -127,7 +131,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
         }
         res = tokio::time::timeout(
             std::time::Duration::from_secs(state.limits.load().pool_checkout_timeout_secs),
-            state.engine.pool.checkout(),
+            engine.pool.checkout(),
         ) => match res {
             Ok(Ok(guard)) => guard,
             Ok(Err(_pool_closed)) => {
@@ -173,7 +177,7 @@ async fn handle_ws(socket: WebSocket, peer: SocketAddr, state: Arc<http::AppStat
     let result = handle_ws_inner(
         socket,
         peer,
-        &state.engine,
+        &engine,
         &limits,
         reservation,
         state.shutdown.clone(),

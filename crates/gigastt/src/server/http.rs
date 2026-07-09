@@ -30,12 +30,32 @@ use gigastt_core::inference::Engine;
 /// WebSocket handlers and `spawn_blocking` SSE tasks fall outside that lane
 /// and must be drained explicitly.
 pub struct AppState {
-    pub engine: Arc<Engine>,
+    /// The live inference engine, held behind an [`ArcSwap`] so it can be
+    /// atomically replaced by the model hot-reload endpoint without a restart.
+    /// Handlers `load_full()` the current `Arc<Engine>` at request start and
+    /// use it for the whole request; a concurrent swap only affects requests
+    /// that start after it, so in-flight work always finishes against the
+    /// engine (and pool) it began with.
+    pub engine: Arc<ArcSwap<Engine>>,
+    /// Rebuilds the engine from the exact boot recipe (model dir, pool sizes,
+    /// threads, punctuation / ITN / VAD / hotwords). `Some` on the real server
+    /// path; `None` for the thin `run`/`run_with_shutdown` test entry points
+    /// and unit tests, where the reload endpoint reports `reload_unsupported`.
+    pub engine_builder: Option<EngineBuilder>,
+    /// Serializes model reloads so two concurrent `POST /v1/admin/reload`
+    /// calls can't both rebuild + swap; the loser gets `409 reload_in_progress`.
+    pub reload_lock: Arc<tokio::sync::Mutex<()>>,
     pub limits: Arc<ArcSwap<RuntimeLimits>>,
     pub metrics_registry: Option<Arc<MetricsRegistry>>,
     pub shutdown: tokio_util::sync::CancellationToken,
     pub tracker: tokio_util::task::TaskTracker,
 }
+
+/// Recipe that rebuilds a fully-configured [`Engine`] from the operator's boot
+/// options. Stored in [`AppState`] so the reload endpoint (and SIGHUP) can
+/// produce a fresh engine that re-applies the punctuation / ITN / VAD / hotword
+/// chain — a bare `Engine::load_*` starts with all of those set to `None`.
+pub type EngineBuilder = Arc<dyn Fn() -> anyhow::Result<Engine> + Send + Sync>;
 
 /// GET /metrics — Prometheus text-format exposition. Returns 404 when the
 /// server was started without `--metrics`.
@@ -335,7 +355,7 @@ pub struct ReadinessResponse {
 /// minimal bootstrap responder (see [`super::run_with_config_loading`]) that
 /// reports `model: "loading"`; this handler only runs once the engine is ready.
 pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
-    let engine = &state.engine;
+    let engine = state.engine.load_full();
     let variant = engine.variant();
     Json(HealthResponse {
         status: "ok".into(),
@@ -365,27 +385,24 @@ pub(crate) fn sample_batch_pool_gauges(reg: &MetricsRegistry, engine: &Engine) {
 
 /// GET /ready — readiness probe for k8s and orchestrators.
 pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
+    let engine = state.engine.load_full();
     if state.shutdown.is_cancelled() {
         return (
             StatusCode::SERVICE_UNAVAILABLE,
             Json(ReadinessResponse {
                 status: "not_ready".into(),
                 pool_available: 0,
-                pool_total: state.engine.pool.total(),
+                pool_total: engine.pool.total(),
                 reason: Some("shutting_down".into()),
             }),
         )
             .into_response();
     }
-    let available = state.engine.pool.available();
+    let available = engine.pool.available();
     if let Some(ref reg) = state.metrics_registry {
         reg.gauge_set("gigastt_pool_available", &[], available as i64);
-        reg.gauge_set(
-            "gigastt_pool_waiters",
-            &[],
-            state.engine.pool.waiters() as i64,
-        );
-        sample_batch_pool_gauges(reg, &state.engine);
+        reg.gauge_set("gigastt_pool_waiters", &[], engine.pool.waiters() as i64);
+        sample_batch_pool_gauges(reg, &engine);
     }
     if available == 0 {
         return (
@@ -393,7 +410,7 @@ pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
             Json(ReadinessResponse {
                 status: "not_ready".into(),
                 pool_available: 0,
-                pool_total: state.engine.pool.total(),
+                pool_total: engine.pool.total(),
                 reason: Some("pool_exhausted".into()),
             }),
         )
@@ -402,7 +419,7 @@ pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
     Json(ReadinessResponse {
         status: "ready".into(),
         pool_available: available,
-        pool_total: state.engine.pool.total(),
+        pool_total: engine.pool.total(),
         reason: None,
     })
     .into_response()
@@ -410,7 +427,7 @@ pub async fn readiness(State(state): State<Arc<AppState>>) -> Response {
 
 /// GET /v1/models — list loaded models and capabilities.
 pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
-    let engine = &state.engine;
+    let engine = state.engine.load_full();
     #[cfg(feature = "diarization")]
     let diarization = engine.has_speaker_encoder();
     #[cfg(not(feature = "diarization"))]
@@ -422,7 +439,7 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
             engine.pool.available() as i64,
         );
         reg.gauge_set("gigastt_pool_waiters", &[], engine.pool.waiters() as i64);
-        sample_batch_pool_gauges(reg, engine);
+        sample_batch_pool_gauges(reg, &engine);
     }
     let variant = engine.variant();
     Json(ModelInfo {
@@ -486,6 +503,11 @@ pub async fn transcribe(
         ));
     }
 
+    // Snapshot the current engine once at request start; a concurrent hot-reload
+    // swaps the `ArcSwap`, but this request keeps the engine (and its pool) it
+    // began with for its whole lifetime.
+    let engine = state.engine.load_full();
+
     // Checkout a session triplet from the batch pool (blocks if none
     // available) — this is a long file-transcription job, so it draws from the
     // dedicated batch pool when one exists (falling back to the interactive
@@ -495,7 +517,7 @@ pub async fn transcribe(
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
         std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
-        state.engine.pool_for_batch().checkout(),
+        engine.pool_for_batch().checkout(),
     )
     .await
     {
@@ -521,8 +543,6 @@ pub async fn transcribe(
         );
     }
     let mut reservation = guard.into_owned();
-
-    let engine = state.engine.clone();
 
     let inference_start = std::time::Instant::now();
     let span = tracing::Span::current();
@@ -685,10 +705,13 @@ pub async fn transcribe_stream(
     // interactive pool otherwise) so it can't starve real-time WebSocket
     // streaming, matching `/v1/transcribe`. Strip the lifetime via `into_owned`
     // so the triplet can travel through `spawn_blocking`.
+    // Snapshot the current engine once; a concurrent hot-reload swap only
+    // affects later requests, so this stream rides the pool it started on.
+    let engine = state.engine.load_full();
     let checkout_start = std::time::Instant::now();
     let guard = match tokio::time::timeout(
         std::time::Duration::from_secs(limits.pool_checkout_timeout_secs),
-        state.engine.pool_for_batch().checkout(),
+        engine.pool_for_batch().checkout(),
     )
     .await
     {
@@ -720,7 +743,6 @@ pub async fn transcribe_stream(
         Result<gigastt_core::inference::TranscriptSegment, StreamError>,
     >(16);
 
-    let engine = state.engine.clone();
     // The axum handler future has already returned by the time the SSE stream
     // starts flowing, so `with_graceful_shutdown` can't observe this task. Clone
     // the shutdown token and check it before every chunk so SIGTERM during a
@@ -795,6 +817,154 @@ pub async fn transcribe_stream(
             .interval(std::time::Duration::from_secs(15))
             .text(""),
     ))
+}
+
+/// Whether the reload endpoint should accept a request from `peer`.
+///
+/// Model reload is an administrative, machine-local action: it must stay
+/// reachable only from the loopback interface even under `--bind-all` /
+/// `--cors-allow-any`, which would otherwise widen `origin_middleware` (the only
+/// other gate). Pure so the loopback decision can be unit-tested without a model
+/// or a live socket.
+fn peer_is_loopback(peer: &std::net::SocketAddr) -> bool {
+    peer.ip().is_loopback()
+}
+
+/// POST /v1/admin/reload — rebuild the inference engine from the boot recipe and
+/// atomically swap it in without a restart.
+///
+/// Strictly loopback-only (checked here, not just via the origin middleware),
+/// serialized by a mutex so two reloads can't race, and fail-safe: a build error
+/// leaves the currently-serving engine untouched. The new engine is warmed
+/// before the swap so the first post-swap request doesn't pay the cold cost.
+/// In-flight requests keep the engine they started on and finish against its
+/// pool; the old engine drops when its last reference goes.
+pub async fn reload(
+    axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<std::net::SocketAddr>,
+    State(state): State<Arc<AppState>>,
+) -> Response {
+    // Gotcha #2: enforce loopback here so reload stays local even when
+    // `origin_middleware` has been widened by `--bind-all` / `--cors-allow-any`
+    // or a caller omits the Origin header.
+    if !peer_is_loopback(&peer) {
+        tracing::warn!(peer = %peer, "Rejecting non-loopback model reload request");
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "error": "Model reload is only available from loopback",
+                "code": "loopback_only",
+            })),
+        )
+            .into_response();
+    }
+
+    let Some(builder) = state.engine_builder.clone() else {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "error": "Model reload is not available on this server",
+                "code": "reload_unsupported",
+            })),
+        )
+            .into_response();
+    };
+
+    // Serialize reloads: the loser of the race gets 409 rather than queueing, so
+    // an operator hammering the endpoint can't stack up concurrent rebuilds.
+    let _reload_guard = match state.reload_lock.try_lock() {
+        Ok(guard) => guard,
+        Err(_) => {
+            return (
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({
+                    "error": "A model reload is already in progress",
+                    "code": "reload_in_progress",
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    tracing::info!(peer = %peer, "Model reload requested — rebuilding engine");
+
+    // Build the new engine off the request path (ONNX session load is blocking).
+    let build = tokio::task::spawn_blocking(move || builder()).await;
+
+    let new_engine = match build {
+        Ok(Ok(engine)) => engine,
+        Ok(Err(e)) => {
+            // Keep the old engine untouched. Log the detail, return a sanitized
+            // message (no path / model leakage) matching the internal-error policy.
+            tracing::error!("Model reload build failed: {e:#}");
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({
+                    "error": "Model reload failed; the previous model is still serving",
+                    "code": "reload_failed",
+                })),
+            )
+                .into_response();
+        }
+        Err(join_err) => {
+            tracing::error!("Model reload build task panicked: {join_err}");
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({
+                    "error": "Model reload failed; the previous model is still serving",
+                    "code": "reload_failed",
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    // Warm the fresh engine BEFORE swapping so the first post-swap request
+    // doesn't pay the EP-compile / first-allocation cost. A warmup failure is
+    // non-fatal (mirrors boot): the engine already fell back to CPU internally.
+    let new_engine = match tokio::task::spawn_blocking(move || {
+        if let Err(e) = new_engine.warmup() {
+            tracing::warn!("Reloaded engine warmup failed (swapping anyway): {e:#}");
+        }
+        new_engine
+    })
+    .await
+    {
+        Ok(engine) => engine,
+        Err(join_err) => {
+            tracing::error!("Model reload warmup task panicked: {join_err}");
+            return (
+                StatusCode::SERVICE_UNAVAILABLE,
+                Json(serde_json::json!({
+                    "error": "Model reload failed; the previous model is still serving",
+                    "code": "reload_failed",
+                })),
+            )
+                .into_response();
+        }
+    };
+
+    let variant = new_engine.variant();
+    let encoder = if new_engine.is_int8() { "int8" } else { "fp32" };
+
+    // Atomic swap. In-flight requests holding the old `Arc<Engine>` finish
+    // against the old pool; it drops when its last reference goes. We do NOT
+    // close the old pool — that would strand in-flight work.
+    state.engine.store(Arc::new(new_engine));
+    tracing::info!(
+        variant = variant.as_str(),
+        encoder,
+        "Model reloaded and swapped"
+    );
+
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "reloaded": true,
+            "variant": variant.as_str(),
+            "encoder": encoder,
+        })),
+    )
+        .into_response()
 }
 
 #[cfg(test)]
@@ -958,9 +1128,11 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_readiness_when_shutdown_cancelled() {
         let state = Arc::new(AppState {
-            engine: test_engine(),
+            engine: engine_swap(test_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -981,9 +1153,11 @@ mod tests {
             .map(|_| engine.pool.checkout_blocking().unwrap())
             .collect();
         let state = Arc::new(AppState {
-            engine,
+            engine: engine_swap(engine),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -999,12 +1173,14 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_transcribe_payload_too_large() {
         let state = Arc::new(AppState {
-            engine: test_engine(),
+            engine: engine_swap(test_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits {
                 body_limit_bytes: 10,
                 ..RuntimeLimits::default()
             })),
             metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1020,9 +1196,11 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_models_with_metrics() {
         let state = Arc::new(AppState {
-            engine: test_engine(),
+            engine: engine_swap(test_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: Some(Arc::new(MetricsRegistry::new())),
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1049,9 +1227,11 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_readiness_with_metrics() {
         let state = Arc::new(AppState {
-            engine: fresh_engine(),
+            engine: engine_swap(fresh_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: Some(Arc::new(MetricsRegistry::new())),
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1065,9 +1245,11 @@ mod tests {
         let engine = fresh_engine();
         engine.pool.close();
         let state = Arc::new(AppState {
-            engine,
+            engine: engine_swap(engine),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1083,9 +1265,11 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_transcribe_stream_invalid_audio() {
         let state = Arc::new(AppState {
-            engine: test_engine(),
+            engine: engine_swap(test_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1101,12 +1285,14 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_transcribe_stream_payload_too_large() {
         let state = Arc::new(AppState {
-            engine: test_engine(),
+            engine: engine_swap(test_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits {
                 body_limit_bytes: 10,
                 ..RuntimeLimits::default()
             })),
             metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1124,9 +1310,11 @@ mod tests {
         let engine = fresh_engine();
         engine.pool.close();
         let state = Arc::new(AppState {
-            engine,
+            engine: engine_swap(engine),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: None,
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1142,9 +1330,11 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_transcribe_with_metrics() {
         let state = Arc::new(AppState {
-            engine: test_engine(),
+            engine: engine_swap(test_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: Some(Arc::new(MetricsRegistry::new())),
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1159,9 +1349,11 @@ mod tests {
     #[ignore = "requires model"]
     async fn test_transcribe_stream_with_metrics() {
         let state = Arc::new(AppState {
-            engine: test_engine(),
+            engine: engine_swap(test_engine()),
             limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
             metrics_registry: Some(Arc::new(MetricsRegistry::new())),
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
             shutdown: tokio_util::sync::CancellationToken::new(),
             tracker: tokio_util::task::TaskTracker::new(),
         });
@@ -1467,6 +1659,84 @@ mod tests {
     }
 
     #[test]
+    fn test_peer_is_loopback_guard() {
+        use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
+        // IPv4 + IPv6 loopback are accepted regardless of source port.
+        assert!(peer_is_loopback(&SocketAddr::from((
+            Ipv4Addr::LOCALHOST,
+            5000
+        ))));
+        assert!(peer_is_loopback(&SocketAddr::from((
+            Ipv6Addr::LOCALHOST,
+            5000
+        ))));
+        // A non-loopback peer (LAN / public) is rejected — reload must stay local
+        // even under --bind-all / --cors-allow-any.
+        assert!(!peer_is_loopback(&SocketAddr::from((
+            Ipv4Addr::new(192, 168, 1, 10),
+            9876
+        ))));
+        assert!(!peer_is_loopback(&SocketAddr::from((
+            Ipv4Addr::new(10, 0, 0, 1),
+            9876
+        ))));
+        assert!(!peer_is_loopback(&SocketAddr::from((
+            Ipv4Addr::new(8, 8, 8, 8),
+            443
+        ))));
+    }
+
+    #[tokio::test]
+    #[ignore = "requires model"]
+    async fn test_reload_rejects_non_loopback_peer() {
+        // The loopback guard fires before any engine work: a non-loopback
+        // ConnectInfo yields 403 `loopback_only` even with a builder present.
+        // Model-gated only because `AppState` needs a concrete `Engine`; the
+        // pure guard logic is covered model-free by `test_peer_is_loopback_guard`.
+        use std::net::{Ipv4Addr, SocketAddr};
+        let state = Arc::new(AppState {
+            engine: engine_swap(test_engine()),
+            engine_builder: Some(Arc::new(|| {
+                anyhow::bail!("builder must not run for a rejected peer")
+            })),
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
+            limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
+            metrics_registry: None,
+            shutdown: tokio_util::sync::CancellationToken::new(),
+            tracker: tokio_util::task::TaskTracker::new(),
+        });
+        let peer = SocketAddr::from((Ipv4Addr::new(203, 0, 113, 7), 40000));
+        let resp = reload(axum::extract::ConnectInfo(peer), State(state)).await;
+        assert_eq!(resp.status(), StatusCode::FORBIDDEN);
+        let bytes = axum::body::to_bytes(resp.into_body(), 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "loopback_only");
+    }
+
+    #[tokio::test]
+    #[ignore = "requires model"]
+    async fn test_reload_unsupported_when_no_builder() {
+        // A loopback peer with no stored builder (the thin `run_with_shutdown` /
+        // test path) gets `reload_unsupported`, not a swap.
+        use std::net::{Ipv4Addr, SocketAddr};
+        let state = Arc::new(AppState {
+            engine: engine_swap(test_engine()),
+            engine_builder: None,
+            reload_lock: Arc::new(tokio::sync::Mutex::new(())),
+            limits: Arc::new(ArcSwap::from_pointee(RuntimeLimits::default())),
+            metrics_registry: None,
+            shutdown: tokio_util::sync::CancellationToken::new(),
+            tracker: tokio_util::task::TaskTracker::new(),
+        });
+        let peer = SocketAddr::from((Ipv4Addr::LOCALHOST, 40000));
+        let resp = reload(axum::extract::ConnectInfo(peer), State(state)).await;
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        let bytes = axum::body::to_bytes(resp.into_body(), 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "reload_unsupported");
+    }
+
+    #[test]
     fn test_sse_data_payload_includes_words_and_timestamp() {
         // A successful segment carries text, timestamp and words through
         // unchanged so SSE clients can render word-level UI.
@@ -1498,6 +1768,12 @@ mod tests {
 
     fn fresh_engine() -> Arc<Engine> {
         Arc::new(Engine::load_with_pool_size(&gigastt_core::model::default_model_dir(), 1).unwrap())
+    }
+
+    /// Wrap an engine handle in the `ArcSwap` the `AppState` now holds. Keeps
+    /// the model-gated test constructors terse after the hot-reload swap change.
+    fn engine_swap(engine: Arc<Engine>) -> Arc<ArcSwap<Engine>> {
+        Arc::new(ArcSwap::new(engine))
     }
 
     fn minimal_wav() -> Bytes {

@@ -441,3 +441,75 @@ async fn test_clean_shutdown_releases_listener() {
         "clean shutdown must release the listener (drain path must complete)"
     );
 }
+
+// ---------------------------------------------------------------------------
+// 8. shutdown closes the RELOADED engine's pools, not the boot engine's
+// ---------------------------------------------------------------------------
+
+/// Guards the hot-reload shutdown invariant: after a model reload swaps in a new
+/// engine, a subsequent shutdown must close the *live* engine's pools so waiters
+/// parked on the new pool wake with `PoolError::Closed` (503 `pool_closed`). If
+/// shutdown closed a pre-swap snapshot instead, this waiter would hang and the
+/// 10 s timeout below would fire.
+#[ignore]
+#[tokio::test]
+async fn test_shutdown_after_reload_closes_new_engine_pool() {
+    let model_dir = common::model_dir();
+    let (port, shutdown) = common::start_server_reloadable(&model_dir, &model_dir).await;
+    let client = reqwest::Client::new();
+
+    // Swap the engine BEFORE saturating, so the pool the waiter parks on belongs
+    // to the reloaded engine — not the one captured at boot.
+    let reload = client
+        .post(format!("http://127.0.0.1:{port}/v1/admin/reload"))
+        .send()
+        .await
+        .expect("reload request failed");
+    assert_eq!(reload.status(), 200, "reload should succeed");
+
+    // Saturate the (new) default pool with long-running REST jobs.
+    let long_wav = common::generate_wav(60, 16000);
+    let mut occupiers = Vec::new();
+    for _ in 0..4 {
+        let url = format!("http://127.0.0.1:{port}/v1/transcribe");
+        let body = long_wav.clone();
+        let c = client.clone();
+        occupiers.push(tokio::spawn(async move {
+            let _ = c.post(&url).body(body).send().await;
+        }));
+    }
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // A waiter blocked inside the new pool's `checkout()`.
+    let waiter_url = format!("http://127.0.0.1:{port}/v1/transcribe");
+    let waiter_body = long_wav.clone();
+    let waiter = tokio::spawn(async move {
+        reqwest::Client::new()
+            .post(&waiter_url)
+            .body(waiter_body)
+            .send()
+            .await
+    });
+    tokio::time::sleep(Duration::from_millis(500)).await;
+
+    // Shutdown must close the reloaded engine's pools.
+    let _ = shutdown.send(());
+
+    let resp = tokio::time::timeout(Duration::from_secs(10), waiter)
+        .await
+        .expect("waiter did not resolve within 10s — shutdown closed the wrong engine's pool")
+        .expect("waiter task panicked");
+    let resp = resp.expect("waiter request failed before reaching the server");
+    assert_eq!(
+        resp.status().as_u16(),
+        503,
+        "waiter on the reloaded engine's pool must get 503 on shutdown"
+    );
+    let body_text = resp.text().await.expect("read body");
+    let body: serde_json::Value = serde_json::from_str(&body_text).expect("invalid JSON body");
+    assert_eq!(body["code"], "pool_closed");
+
+    for h in occupiers {
+        let _ = h.await;
+    }
+}

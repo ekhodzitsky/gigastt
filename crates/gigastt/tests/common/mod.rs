@@ -78,6 +78,37 @@ pub async fn start_server(model_dir: &str) -> (u16, oneshot::Sender<()>) {
     (port, shutdown_tx)
 }
 
+/// Start a server whose `POST /v1/admin/reload` endpoint is wired to an engine
+/// builder that loads from `builder_model_dir`. The initially-served engine is
+/// always built from the real `model_dir`; `builder_model_dir` is what a reload
+/// rebuilds from — point it at a garbage dir to exercise the fail-safe
+/// keep-old-engine path. Returns `(port, shutdown_sender)`.
+pub async fn start_server_reloadable(
+    model_dir: &str,
+    builder_model_dir: &str,
+) -> (u16, oneshot::Sender<()>) {
+    let (port, listener) = free_port().await;
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+
+    let engine = gigastt::inference::Engine::load(model_dir).unwrap();
+    let config = gigastt::server::ServerConfig::local(port);
+
+    let builder_dir = builder_model_dir.to_string();
+    let builder: gigastt::server::EngineBuilder =
+        std::sync::Arc::new(move || Ok(gigastt::inference::Engine::load(&builder_dir)?));
+
+    tokio::spawn(gigastt::server::run_with_config_listener_reloadable(
+        engine,
+        config,
+        Some(shutdown_rx),
+        listener,
+        Some(builder),
+    ));
+
+    wait_for_ready(port, Duration::from_secs(30)).await;
+    (port, shutdown_tx)
+}
+
 /// Start the server with an explicit session-pool size. Used by the pool
 /// saturation tests so they don't depend on `DEFAULT_POOL_SIZE` (which changed
 /// to 2 in v2.3) or the RAM-aware cap — a small fixed pool is deterministic.

@@ -11,6 +11,7 @@ pub mod rate_limit;
 mod ws;
 
 pub use config::{OriginPolicy, RuntimeLimits, ServerConfig};
+pub use http::EngineBuilder;
 
 use anyhow::{Context, Result};
 use arc_swap::ArcSwap;
@@ -136,6 +137,22 @@ pub async fn run_with_config_loading<Fut>(
 where
     Fut: std::future::Future<Output = Result<gigastt_core::inference::Engine>> + Send + 'static,
 {
+    run_with_config_loading_reloadable(config, shutdown, load, None).await
+}
+
+/// Like [`run_with_config_loading`], but also carries the [`EngineBuilder`]
+/// recipe so the server that starts after the model loads exposes a working
+/// `POST /v1/admin/reload`. The `load` future typically calls the *same*
+/// builder once to produce the boot engine, so boot and reload share one recipe.
+pub async fn run_with_config_loading_reloadable<Fut>(
+    config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+    load: Fut,
+    engine_builder: Option<http::EngineBuilder>,
+) -> Result<()>
+where
+    Fut: std::future::Future<Output = Result<gigastt_core::inference::Engine>> + Send + 'static,
+{
     let addr: SocketAddr = format!("{}:{}", config.host, config.port)
         .parse()
         .context("Invalid host:port")?;
@@ -215,7 +232,14 @@ where
         Outcome::Loaded(res) => {
             let engine = (*res).context("engine load task panicked")??;
             tracing::info!("Model ready — starting full server");
-            run_with_config_listener(engine, config, Some(real_rx), listener).await
+            run_with_config_listener_reloadable(
+                engine,
+                config,
+                Some(real_rx),
+                listener,
+                engine_builder,
+            )
+            .await
         }
     }
 }
@@ -225,9 +249,23 @@ where
 /// race between `free_port()` and server startup.
 pub async fn run_with_config_listener(
     engine: gigastt_core::inference::Engine,
+    config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+    listener: tokio::net::TcpListener,
+) -> Result<()> {
+    run_with_config_listener_reloadable(engine, config, shutdown, listener, None).await
+}
+
+/// Like [`run_with_config_listener`], but also accepts the [`EngineBuilder`]
+/// recipe that `POST /v1/admin/reload` (and SIGHUP) use to rebuild the engine
+/// in place. `None` disables the reload endpoint (`reload_unsupported`) — the
+/// thin `run` / `run_with_shutdown` and test entry points take that path.
+pub async fn run_with_config_listener_reloadable(
+    engine: gigastt_core::inference::Engine,
     mut config: ServerConfig,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
     listener: tokio::net::TcpListener,
+    engine_builder: Option<http::EngineBuilder>,
 ) -> Result<()> {
     if config.limits.pool_checkout_timeout_secs == 0 {
         tracing::warn!("pool_checkout_timeout_secs=0 would make the pool unusable; clamping to 1");
@@ -345,7 +383,9 @@ pub async fn run_with_config_listener(
     let tracker = tokio_util::task::TaskTracker::new();
 
     let state = Arc::new(http::AppState {
-        engine: Arc::new(engine),
+        engine: Arc::new(ArcSwap::from_pointee(engine)),
+        engine_builder: engine_builder.clone(),
+        reload_lock: Arc::new(tokio::sync::Mutex::new(())),
         limits: Arc::new(ArcSwap::from_pointee(config.limits.clone())),
         metrics_registry: metrics_registry.clone(),
         shutdown: shutdown_root.clone(),
@@ -457,6 +497,15 @@ pub async fn run_with_config_listener(
         // /v1/ws is the canonical WebSocket path (versioned, aligned with REST).
         .route("/v1/ws", get(ws::ws_handler))
         .route("/v1/ws", options(|| async { StatusCode::NO_CONTENT }))
+        // Admin: hot-reload the model without a restart. Registered inside the
+        // protected router so it inherits `origin_middleware`, but the handler
+        // additionally enforces a strict loopback peer check (see `http::reload`)
+        // so it stays local even under `--bind-all` / `--cors-allow-any`.
+        .route("/v1/admin/reload", post(http::reload))
+        .route(
+            "/v1/admin/reload",
+            options(|| async { StatusCode::NO_CONTENT }),
+        )
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             middleware::http_metrics_middleware,
@@ -504,9 +553,11 @@ pub async fn run_with_config_listener(
         protected
     };
 
-    // Clone the engine handle before `state` is consumed by `with_state` so
-    // the shutdown closure can call `pool.close()` after the listener task
-    // begins draining.
+    // Clone the *swap handle* (not a snapshot) before `state` is consumed by
+    // `with_state` so the shutdown closure can close the pools of whichever
+    // engine is live at shutdown time. Capturing a pre-swap snapshot here would
+    // close the boot engine's pools even after a hot-reload swapped in a new
+    // one, stranding the new pool's waiters (they'd never get `PoolError::Closed`).
     let shutdown_engine = state.engine.clone();
 
     // Clone the state for the separate metrics listener before `state` is moved
@@ -617,8 +668,10 @@ pub async fn run_with_config_listener(
             // Wake every waiter still blocked on `pool.checkout()` with
             // PoolError::Closed so they fall through to a 503 / `pool_closed`
             // response instead of being stranded for the full checkout timeout.
+            // Load the engine that is live *now* (a hot-reload may have swapped
+            // it since boot) so we close the pool waiters are actually parked on.
             // Idempotent — safe even if the pool was already closed.
-            shutdown_engine.close_pools();
+            shutdown_engine.load_full().close_pools();
         }
     };
 
