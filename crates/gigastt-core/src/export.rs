@@ -232,7 +232,7 @@ struct Cue {
 
 /// A grouped transcript segment: a cue-sized span of words with an aggregate
 /// start/end and text. Segments share their boundaries with the SRT/VTT cues
-/// (both come from [`build_cues`]), so `?segments=true` JSON, SRT, VTT, and the
+/// (both come from `build_cues`), so `?segments=true` JSON, SRT, VTT, and the
 /// segment-grouped Markdown mode all agree on where segments begin and end.
 #[derive(Clone, Debug, Serialize)]
 pub struct Segment {
@@ -340,7 +340,7 @@ pub fn to_segments(words: &[WordInfo], max_chars: usize, max_words: usize) -> Ve
 /// section headers per cue-sized segment, followed by that segment's text.
 ///
 /// Shares its boundaries with SRT/VTT and `?segments=true` (all via
-/// [`build_cues`]). Motivated by downstream consumers that otherwise fabricate
+/// `build_cues`). Motivated by downstream consumers that otherwise fabricate
 /// `### mm:ss` offsets because only flat per-word timings were exposed.
 pub fn to_md_segments(result: &TranscribeResult, max_chars: usize, max_words: usize) -> String {
     let segments = to_segments(&result.words, max_chars, max_words);
