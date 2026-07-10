@@ -92,7 +92,10 @@ pub fn value_to_tensor(value: Value) -> Result<Tensor, RuntimeError> {
 mod tests {
     use super::*;
 
+    // Skipped under Miri: constructs a real `ort::value::Tensor`, which calls
+    // into the onnxruntime C API — a foreign function Miri cannot interpret.
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_tensor_ort_roundtrip_f32() {
         let tensor = Tensor::new(
             Shape::new(vec![2, 3]),
@@ -105,6 +108,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_tensor_ort_roundtrip_i32() {
         let tensor = Tensor::new(Shape::new(vec![3]), TensorData::I32(vec![1, 2, 3])).unwrap();
         let value = tensor.clone().into_ort_value().unwrap();
@@ -113,6 +117,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_tensor_ort_roundtrip_i64() {
         let tensor =
             Tensor::new(Shape::new(vec![2, 2]), TensorData::I64(vec![1, 2, 3, 4])).unwrap();

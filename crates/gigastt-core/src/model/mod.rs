@@ -1398,6 +1398,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_stream_to_partial_then_finalize_success() {
         let server = wiremock::MockServer::start().await;
         let payload = b"fake model bytes";
@@ -1424,6 +1425,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_stream_to_partial_then_finalize_http_error() {
         let server = wiremock::MockServer::start().await;
         wiremock::Mock::given(wiremock::matchers::method("GET"))
@@ -1444,6 +1446,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_stream_to_partial_then_finalize_checksum_mismatch() {
         let server = wiremock::MockServer::start().await;
         let payload = b"wrong bytes";
@@ -1491,6 +1494,7 @@ mod tests {
     /// `ensure_punct_model` short-circuits (no network, no `.partial`) when all
     /// three files are already present.
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_ensure_punct_model_present_no_download() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let dir = tmp.path();
@@ -1749,6 +1753,7 @@ mod tests {
     /// Verify that `ensure_model(None, dir)` with a complete E2eRnnt install
     /// does NOT create any `.partial` files (no download triggered).
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_ensure_model_none_respects_existing_e2e_install() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let dir = tmp.path();
@@ -1794,6 +1799,7 @@ mod tests {
     /// `ensure_model_variant(None, dir)`: with a complete install already on
     /// disk it must succeed without touching the network (no `.partial` files).
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_ensure_model_wrapper_uses_existing_install() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let dir = tmp.path();
@@ -1821,6 +1827,7 @@ mod tests {
     /// `ensure_model_variant(Some(Rnnt), dir)` against a matching install is the
     /// `VariantAction::Use` branch: returns Rnnt with no download.
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_ensure_model_variant_explicit_match_uses_existing() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let dir = tmp.path();
@@ -1844,6 +1851,7 @@ mod tests {
     /// `ensure_vad_model` short-circuits (no network, no `.partial`) when the
     /// Silero ONNX file is already present in the VAD directory.
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_ensure_vad_model_present_no_download() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let dir = tmp.path();
@@ -1903,6 +1911,7 @@ mod tests {
     /// a complete Rnnt set pre-staged under a nested path is detected and used
     /// as-is (early `Use(...)` return) without any network access.
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_ensure_model_variant_uses_complete_set_in_nested_path() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let nested = tmp.path().join("a").join("b").join("models");
@@ -1990,6 +1999,7 @@ mod tests {
     /// `ensure_prequantized_model_variant` short-circuits (no network, no
     /// `.partial`) when the pre-quantized set is already present.
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_ensure_prequantized_present_no_download() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let dir = tmp.path();

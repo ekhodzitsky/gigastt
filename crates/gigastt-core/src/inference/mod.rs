@@ -2854,6 +2854,7 @@ mod tests {
     // pool.
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_guard_returns_triplet_on_normal_drop() {
         let pool = Pool::new(vec![1u32, 2, 3]);
         assert_eq!(pool.available(), 3);
@@ -2866,6 +2867,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_guard_returns_triplet_on_panic_unwind() {
         // The guard's Drop impl runs during unwind, so a panic between
         // checkout and the natural end of scope still restores capacity.
@@ -2886,6 +2888,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_close_wakes_waiters_with_closed() {
         // A waiter blocked in `checkout` after the inventory is exhausted
         // must resolve to PoolError::Closed when `close()` fires. Map the
@@ -2906,6 +2909,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_fifo_under_contention() {
         // With a single-slot pool and three queued waiters, the order of
         // wake-ups must match the order in which `checkout` was called.
@@ -2942,6 +2946,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_into_owned_for_spawn_blocking() {
         // `into_owned` strips the lifetime so the item can be moved into a
         // blocking thread, then `OwnedReservation::checkin` returns it.
@@ -2964,6 +2969,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_owned_reservation_returns_on_spawn_blocking_panic() {
         // If the blocking task panics, the reservation's Drop must still
         // return the item so the pool does not leak capacity.
@@ -2986,6 +2992,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_owned_reservation_drop_returns_item() {
         // Dropping an unchecked-in reservation still returns the item.
         let pool = std::sync::Arc::new(Pool::new(vec![String::from("triplet")]));
@@ -3003,6 +3010,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_close_is_idempotent() {
         // `pool.close()` is wired into the shutdown hook; calling it twice
         // (e.g. shutdown signal + Drop) must not panic.
@@ -3012,6 +3020,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_waiters_count() {
         let pool = std::sync::Arc::new(Pool::<u32>::new(vec![]));
         let w1 = tokio::spawn({
@@ -3030,6 +3039,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_owned_reservation_round_trip_through_option() {
         // Mirrors the pattern used by `handle_binary_frame` in ws.rs:
         // the reservation is temporarily moved out of an Option into
@@ -3054,6 +3064,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_slot_not_leaked_on_cancelled_checkout() {
         // If a checkout future is cancelled after registering a waiter but
         // before receiving an item, the oneshot receiver is dropped while the
@@ -3084,6 +3095,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_slot_not_leaked_on_timeout_checkout() {
         // Same scenario as above, but using tokio::time::timeout instead of
         // abort — this is the exact path hit by the REST and WS handlers.
@@ -3107,6 +3119,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
     async fn test_pool_multiple_dead_waiters_are_skipped() {
         // Several cancelled waiters in a row should all be skipped in one
         // checkin pass.
@@ -3456,6 +3469,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "mel FFT over 1s of audio is too slow under Miri")]
     fn test_feature_extractor_compute_mel_reuses_buffers() {
         // `compute_mel` writes into caller-owned scratch buffers and returns the
         // frame count. One second of 16 kHz audio → ~100 frames; the output

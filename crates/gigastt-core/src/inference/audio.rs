@@ -594,6 +594,7 @@ mod tests {
     // --- resample tests ---
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_downsample_length() {
         let input: Vec<f32> = (0..4800).map(|i| (i as f32).sin()).collect();
         let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
@@ -608,6 +609,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_upsample_length() {
         let input: Vec<f32> = (0..800).map(|i| (i as f32).sin()).collect();
         let output = resample(&input, SampleRate(8000), SampleRate(16000)).unwrap();
@@ -621,6 +623,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_preserves_dc() {
         // Constant signal should remain approximately constant after resampling.
         // Rubato FIR filter may cause transients at edges; check the middle 80%.
@@ -752,6 +755,7 @@ mod tests {
     // --- stress tests: robustness edge cases ---
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_nan_input() {
         let input = vec![f32::NAN; 1000];
         let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
@@ -763,6 +767,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_infinity_input() {
         let input = vec![f32::INFINITY; 500];
         let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();
@@ -776,6 +781,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_mixed_nan_normal() {
         let mut input = vec![0.5_f32; 480];
         input[100] = f32::NAN;
@@ -1110,6 +1116,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_decode_wav_resamples_to_16k() {
         // 48kHz mono WAV exercises the n_frames_hint capacity reservation and
         // the post-decode resample-to-16kHz branch.
@@ -1189,6 +1196,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_with_cache_sanitizes_non_finite() {
         let mut cache: Option<rubato::Async<f32>> = None;
         let mut input = vec![0.5_f32; 480];
@@ -1218,6 +1226,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
     fn test_resample_with_cache_reuses_then_recreates() {
         let mut cache: Option<rubato::Async<f32>> = None;
         let mut out = Vec::new();
@@ -1283,7 +1292,12 @@ mod tests {
     }
 }
 
-#[cfg(test)]
+// Excluded under Miri: proptest runs hundreds of cases per property, each
+// driving the resampler / WAV decoder — orders of magnitude too slow under
+// the Miri interpreter to finish in the nightly job's budget. The same
+// properties run natively on every `cargo test`; this only trims the Miri
+// coverage, not the stable-toolchain coverage.
+#[cfg(all(test, not(miri)))]
 mod proptests {
     use super::tests::make_wav_bytes;
     use super::*;

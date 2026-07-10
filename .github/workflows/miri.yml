@@ -1,0 +1,122 @@
+# Nightly memory-safety / data-race pass over the pure-Rust core.
+#
+# This job is deliberately narrow. What it DOES cover:
+#   * Miri (undefined-behaviour / aliasing / provenance / integer-overflow
+#     interpreter) over the ~320 synchronous unit tests in `gigastt-core` that
+#     exercise pure-Rust logic: the INT8 quantizer, the RNN-T greedy decode
+#     loop, the tokenizer, the audio-byte / PCM16-framing decode surface, the
+#     tensor / protocol / export / error / itn / punctuation / vad / lexicon /
+#     bias modules, and the mock runtime.
+#   * ThreadSanitizer over the `Pool` checkout / checkin / OwnedReservation
+#     concurrency primitive (blocking + async slow paths, FIFO-under-contention,
+#     panic-unwind return-to-pool). Items are plain `u32` / `String`, so the
+#     signal is about the pool's own synchronization, not model code.
+#
+# What it does NOT cover (left to the existing e2e / soak / CoreML-smoke jobs
+# plus code review — do not read this as a broad "memory-safety CI"):
+#   * The onnxruntime inference path (Miri interprets Rust MIR and cannot call
+#     the onnxruntime C API; the ort-FFI roundtrip tests are `#[cfg_attr(miri,
+#     ignore)]`).
+#   * The objc2 / Core ML ANE bridge (Objective-C runtime, macOS-only; compiled
+#     out here via `--no-default-features`).
+#   * The `gigastt-ffi` C-ABI cdylib.
+#   * `ArcSwap<Engine>` hot-reload (integration-tested, not unit-tested).
+#   * The mel-spectrogram FFT and rubato resampler numeric paths — excluded from
+#     the Miri subset because a single sinc-resample / 1 s mel transform runs for
+#     minutes under the interpreter (see the `#[cfg_attr(miri, ignore)]` /
+#     `#[cfg(all(test, not(miri)))]` markers). These are numeric-correctness
+#     tests with little UB signal; they run natively on every `cargo test`. This
+#     is a documented Miri coverage gap, not a disabled test.
+#
+# NOTE: the Miri skip set was locked empirically on a macOS/aarch64 host (Miri
+# interprets host-agnostic MIR, so the eligible/ineligible split is the same),
+# while this workflow runs the interpretation on ubuntu-latest / x86_64.
+
+name: Nightly Miri + TSAN
+
+on:
+  schedule:
+    # 03:42 UTC daily — skewed off soak.yml's 03:17 so the two nightly jobs
+    # don't contend for runners.
+    - cron: '42 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: miri-tsan-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  miri:
+    runs-on: ubuntu-latest
+    name: Miri (pure-Rust core)
+    timeout-minutes: 40
+    env:
+      # Override rust-toolchain.toml's stable pin: Miri only ships on nightly.
+      RUSTUP_TOOLCHAIN: nightly
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: miri
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: miri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # `--no-default-features` drops diarization (polyvoice) and the coreml/ane
+      # bridges; `__internals` exposes the synthetic constructors the tests use;
+      # `net` keeps the download-helper unit tests compiling (their `#[cfg(net)]`
+      # helpers are referenced by non-gated tests); `async-pool` compiles the
+      # async pool path. `--lib` restricts to unit tests (integration tests need
+      # the 850 MB model). The ineligible tests (ort FFI, tokio runtime, heavy
+      # FFT/resample) carry `#[cfg_attr(miri, ignore)]` / `#[cfg(not(miri))]`
+      # markers in-source, so no `--skip` list is needed here.
+      - name: cargo miri test (core, sync subset)
+        env:
+          # -Zmiri-disable-isolation: a handful of tests touch tempfiles. No
+          #   network / no real ort is reached.
+          # -Zmiri-strict-provenance: the pointer-heavy quantizer / tensor code
+          #   is provenance-clean, so run the stricter check for free.
+          MIRIFLAGS: -Zmiri-disable-isolation -Zmiri-strict-provenance
+        run: >
+          cargo miri test
+          -p gigastt-core --lib
+          --no-default-features
+          --features "__internals file-decode net async-pool"
+
+  tsan:
+    runs-on: ubuntu-latest
+    name: TSAN (Pool concurrency)
+    timeout-minutes: 40
+    env:
+      RUSTUP_TOOLCHAIN: nightly
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          # -Zbuild-std recompiles the standard library with the sanitizer.
+          components: rust-src
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: tsan
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # ThreadSanitizer over the pool tests only (filter `pool`). `-Zbuild-std`
+      # + an explicit target are required for a sanitized std. The host lock was
+      # done on aarch64-apple-darwin; CI uses the Linux gnu target.
+      - name: cargo test -Zsanitizer=thread (pool)
+        env:
+          RUSTFLAGS: -Zsanitizer=thread
+          RUSTDOCFLAGS: -Zsanitizer=thread
+        run: >
+          cargo test
+          -p gigastt-core --lib
+          --no-default-features
+          --features "__internals file-decode net async-pool"
+          -Zbuild-std
+          --target x86_64-unknown-linux-gnu
+          pool -- --test-threads=1

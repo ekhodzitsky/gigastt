@@ -186,7 +186,14 @@ impl MelSpectrogram {
     }
 }
 
-#[cfg(test)]
+// Excluded under Miri: every test drives a real `rustfft` forward transform
+// over 1 s / 200 ms buffers (dozens of FFTs per test). The FFT inner loops are
+// orders of magnitude too slow under the Miri interpreter to finish in the
+// nightly job's budget. These are numeric-correctness tests, not pointer /
+// aliasing tests — they add nothing to Miri's UB signal and run natively on
+// every `cargo test`. Documented coverage gap: the mel FFT path is not
+// Miri-checked.
+#[cfg(all(test, not(miri)))]
 mod tests {
     use super::*;
 
