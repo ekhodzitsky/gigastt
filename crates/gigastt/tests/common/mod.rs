@@ -78,6 +78,28 @@ pub async fn start_server(model_dir: &str) -> (u16, oneshot::Sender<()>) {
     (port, shutdown_tx)
 }
 
+/// Start the server serving a caller-built [`Engine`]. Lets a test attach
+/// specific recognition knobs (punctuation / ITN / VAD) at boot so it can then
+/// exercise the per-request overrides against a known baseline. Returns
+/// `(port, shutdown_sender)`.
+pub async fn start_server_with_engine(
+    engine: gigastt::inference::Engine,
+) -> (u16, oneshot::Sender<()>) {
+    let (port, listener) = free_port().await;
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+
+    let config = gigastt::server::ServerConfig::local(port);
+    tokio::spawn(gigastt::server::run_with_config_listener(
+        engine,
+        config,
+        Some(shutdown_rx),
+        listener,
+    ));
+
+    wait_for_ready(port, Duration::from_secs(30)).await;
+    (port, shutdown_tx)
+}
+
 /// Start a server whose `POST /v1/admin/reload` endpoint is wired to an engine
 /// builder that loads from `builder_model_dir`. The initially-served engine is
 /// always built from the real `model_dir`; `builder_model_dir` is what a reload

@@ -180,6 +180,30 @@ pub struct ExportParams {
     /// already flat / cue-based).
     #[serde(default)]
     pub segments: Option<bool>,
+    /// Per-request override for the punctuation / casing restoration pass.
+    /// `Some(true)` forces it on (409 `punctuation_not_available` if no
+    /// punctuation model is loaded), `Some(false)` skips it, absent = the
+    /// server's boot default. Applies to `POST /v1/transcribe` only.
+    #[serde(default)]
+    pub punctuation: Option<bool>,
+    /// Per-request override for inverse text normalization (number-words →
+    /// digits). `Some(true)`/`Some(false)` force the state, absent = boot
+    /// default. Pure code (no model), so always accepted. `POST /v1/transcribe`
+    /// only.
+    #[serde(default)]
+    pub itn: Option<bool>,
+    /// Per-request override for VAD gating. `Some(true)` decodes only detected
+    /// speech (409 `vad_not_loaded` if no VAD is loaded), `Some(false)` decodes
+    /// the whole buffer, absent = boot default. `POST /v1/transcribe` only.
+    #[serde(default)]
+    pub vad: Option<bool>,
+    /// Forward-compatibility guard for a future multi-model server: names the
+    /// recognition head the request expects. A single-variant engine can't
+    /// switch, so any value other than the loaded variant returns 409
+    /// `variant_not_loaded`; matching (or absent) proceeds. `POST /v1/transcribe`
+    /// only.
+    #[serde(default)]
+    pub variant: Option<String>,
 }
 
 /// Render a transcription result into the requested export format.
@@ -532,6 +556,35 @@ pub async fn transcribe(
     // began with for its whole lifetime.
     let engine = state.engine.load_full();
 
+    // Per-request recognition-knob overrides (additive; all absent = the boot
+    // defaults, byte-identical to the pre-feature response). Validate them
+    // *before* checking out a session so an impossible request (a knob turned on
+    // without its resource loaded, or a variant this single-model engine can't
+    // serve) fails fast with a 409 instead of holding a pool triplet.
+    if let Some(requested) = params.variant.as_deref() {
+        // Forward-compat guard only: a single-variant engine can't switch heads,
+        // so a `?variant=X` where X != the loaded variant is a 409. An unknown
+        // token likewise can't match the loaded variant, so it 409s too.
+        let matches = gigastt_core::model::ModelVariant::from_str(requested)
+            .map(|v| v == engine.variant())
+            .unwrap_or(false);
+        if !matches {
+            return Err(api_error(
+                StatusCode::CONFLICT,
+                "Requested model variant is not loaded",
+                "variant_not_loaded",
+            ));
+        }
+    }
+    let overrides = gigastt_core::inference::TranscribeOverrides {
+        punctuation: params.punctuation,
+        itn: params.itn,
+        vad: params.vad,
+    };
+    if let Err(e) = engine.validate_overrides(&overrides) {
+        return Err(api_error(StatusCode::CONFLICT, e.message(), e.code()));
+    }
+
     // Checkout a session triplet from the batch pool (blocks if none
     // available) — this is a long file-transcription job, so it draws from the
     // dedicated batch pool when one exists (falling back to the interactive
@@ -576,8 +629,10 @@ pub async fn transcribe(
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             // `body` is an `axum::body::Bytes` (re-export of `bytes::Bytes`):
             // `clone()` is a refcount bump, not a data copy, so the decode
-            // path shares the original upload buffer.
-            engine.transcribe_bytes_shared(body, &mut reservation)
+            // path shares the original upload buffer. `overrides` is `Copy`
+            // and already validated above; with all fields absent this is
+            // byte-identical to `transcribe_bytes_shared`.
+            engine.transcribe_bytes_shared_with_overrides(body, &mut reservation, &overrides)
         }));
         match r {
             Ok(inference_result) => inference_result,
@@ -1080,6 +1135,45 @@ mod tests {
         let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(v["error"], "bad request");
         assert_eq!(v["code"], "bad_request");
+    }
+
+    #[tokio::test]
+    async fn test_override_conflict_error_mapping() {
+        // The per-request-knob 409s reuse the shared `api_error` machinery, so
+        // they must carry StatusCode::CONFLICT and the stable code an operator's
+        // client keys off. Drive it via the same `OverrideError::{code,message}`
+        // the handler maps, plus the standalone `variant_not_loaded` guard.
+        use gigastt_core::inference::OverrideError;
+        for err in [
+            OverrideError::VadNotLoaded,
+            OverrideError::PunctuationNotAvailable,
+        ] {
+            let resp = api_error(StatusCode::CONFLICT, err.message(), err.code());
+            let (parts, body) = resp.into_parts();
+            assert_eq!(parts.status, StatusCode::CONFLICT);
+            let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
+            let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(v["code"], err.code());
+            assert!(v["error"].as_str().is_some_and(|s| !s.is_empty()));
+        }
+        assert_eq!(OverrideError::VadNotLoaded.code(), "vad_not_loaded");
+        assert_eq!(
+            OverrideError::PunctuationNotAvailable.code(),
+            "punctuation_not_available"
+        );
+
+        // The variant guard is a standalone literal (no engine needed to check
+        // the code/status contract it emits).
+        let resp = api_error(
+            StatusCode::CONFLICT,
+            "Requested model variant is not loaded",
+            "variant_not_loaded",
+        );
+        let (parts, body) = resp.into_parts();
+        assert_eq!(parts.status, StatusCode::CONFLICT);
+        let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "variant_not_loaded");
     }
 
     #[tokio::test]
@@ -1784,6 +1878,36 @@ mod tests {
         assert!(params.format.is_none());
         assert!(params.download.is_none());
         assert!(params.max_chars_per_line.is_none());
+        // The per-request knob overrides default to absent so the handler falls
+        // back to the engine's boot policy (byte-unchanged response).
+        assert!(params.punctuation.is_none());
+        assert!(params.itn.is_none());
+        assert!(params.vad.is_none());
+        assert!(params.variant.is_none());
+    }
+
+    #[test]
+    fn test_transcribe_knob_params_deserialize_from_query() {
+        // `?punctuation=false&itn=false&vad=false&variant=rnnt` maps to
+        // `Some(false)`/`Some("rnnt")`, letting the handler override the boot
+        // policy per request.
+        let uri: axum::http::Uri = "http://x/?punctuation=false&itn=false&vad=false&variant=rnnt"
+            .parse()
+            .unwrap();
+        let Query(params): Query<ExportParams> = Query::try_from_uri(&uri).unwrap();
+        assert_eq!(params.punctuation, Some(false));
+        assert_eq!(params.itn, Some(false));
+        assert_eq!(params.vad, Some(false));
+        assert_eq!(params.variant.as_deref(), Some("rnnt"));
+
+        // The `true` direction deserializes symmetrically.
+        let uri: axum::http::Uri = "http://x/?punctuation=true&itn=true&vad=true"
+            .parse()
+            .unwrap();
+        let Query(params): Query<ExportParams> = Query::try_from_uri(&uri).unwrap();
+        assert_eq!(params.punctuation, Some(true));
+        assert_eq!(params.itn, Some(true));
+        assert_eq!(params.vad, Some(true));
     }
 
     #[test]

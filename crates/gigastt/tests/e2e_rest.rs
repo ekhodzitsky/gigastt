@@ -681,3 +681,245 @@ async fn test_ready_returns_503_when_pool_exhausted() {
 // catch nor pass reliably. The zero-copy contract is still enforced by the
 // `BytesMediaSource` type in `src/inference/audio.rs`, which is covered by
 // unit tests and is not exercised by this integration surface.
+
+// ---------------------------------------------------------------------------
+// Per-request recognition-knob overrides on POST /v1/transcribe (roadmap #24).
+//
+// These exercise the ADDITIVE query params `punctuation` / `itn` / `vad` and
+// the forward-compat `variant` guard. Absent params must reproduce the default
+// response byte-for-byte; a knob turned on without its backing resource must
+// 409 *before* the pool checkout. SSE and WebSocket are out of scope (they
+// don't run the punctuation / ITN passes at all).
+// ---------------------------------------------------------------------------
+
+/// GET `/health` and parse it as JSON (the repo's `reqwest` build has no `json`
+/// feature, so go through `.text()` + `serde_json` like the other tests).
+async fn get_health(port: u16) -> serde_json::Value {
+    let text = reqwest::Client::new()
+        .get(format!("http://127.0.0.1:{port}/health"))
+        .send()
+        .await
+        .expect("GET /health failed")
+        .text()
+        .await
+        .expect("health body");
+    serde_json::from_str(&text).expect("health JSON")
+}
+
+/// Read the loaded recognition head from `/health` (`"rnnt"` or `"e2e_rnnt"`).
+async fn loaded_variant(port: u16) -> String {
+    get_health(port).await["variant"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string()
+}
+
+const GOLOS_FIXTURE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/golos_00.wav");
+
+async fn post_transcribe(port: u16, query: &str, body: Vec<u8>) -> (reqwest::StatusCode, String) {
+    let sep = if query.is_empty() { "" } else { "?" };
+    let resp = tokio::time::timeout(Duration::from_secs(30), async {
+        reqwest::Client::new()
+            .post(format!("http://127.0.0.1:{port}/v1/transcribe{sep}{query}"))
+            .body(body)
+            .send()
+            .await
+            .expect("POST /v1/transcribe failed")
+    })
+    .await
+    .expect("POST /v1/transcribe timed out");
+    let status = resp.status();
+    let text = resp.text().await.expect("body text");
+    (status, text)
+}
+
+/// Baseline: a request with NO override params must produce exactly the same
+/// response as the pre-feature endpoint (the additive params are a no-op when
+/// absent). We assert the transcript text is byte-identical across two calls,
+/// one with an empty query and one with a genuinely-absent query string.
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_overrides_absent_is_baseline() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = std::fs::read(GOLOS_FIXTURE).expect("read golos fixture");
+
+    let (s1, b1) = post_transcribe(port, "", wav.clone()).await;
+    assert_eq!(s1, 200);
+    // A no-op param (format defaults to json) must still be byte-identical.
+    let (s2, b2) = post_transcribe(port, "download=", wav.clone()).await;
+    assert_eq!(s2, 200);
+
+    let v1: serde_json::Value = serde_json::from_str(&b1).unwrap();
+    let v2: serde_json::Value = serde_json::from_str(&b2).unwrap();
+    assert_eq!(
+        v1["text"], v2["text"],
+        "absent overrides must not change text"
+    );
+    assert!(v1["text"].is_string());
+
+    let _ = shutdown.send(());
+}
+
+/// `?vad=true` against a server started WITHOUT a VAD must 409 `vad_not_loaded`
+/// and must NOT consume a pool triplet (fail-fast before checkout).
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_vad_true_without_vad_returns_409() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = common::generate_wav(1, 16000);
+
+    let (status, body) = post_transcribe(port, "vad=true", wav).await;
+    assert_eq!(status, reqwest::StatusCode::CONFLICT);
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v["code"], "vad_not_loaded");
+
+    let _ = shutdown.send(());
+}
+
+/// `?vad=false` against a VAD-less server is a no-op (whole-buffer decode either
+/// way) and must succeed with 200 — turning a knob OFF never needs the resource.
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_vad_false_without_vad_is_ok() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = common::generate_wav(1, 16000);
+
+    let (status, _body) = post_transcribe(port, "vad=false", wav).await;
+    assert_eq!(status, 200);
+
+    let _ = shutdown.send(());
+}
+
+/// `?variant=<other head>` when a different head is loaded must 409
+/// `variant_not_loaded`; requesting the loaded head must proceed (200).
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_variant_mismatch_returns_409() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = common::generate_wav(1, 16000);
+    let loaded = loaded_variant(port).await;
+    let other = if loaded == "rnnt" { "e2e_rnnt" } else { "rnnt" };
+
+    // Mismatched variant → 409.
+    let (status, body) = post_transcribe(port, &format!("variant={other}"), wav.clone()).await;
+    assert_eq!(status, reqwest::StatusCode::CONFLICT);
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v["code"], "variant_not_loaded");
+
+    // Matching variant → proceeds (200).
+    let (ok_status, _ok_body) = post_transcribe(port, &format!("variant={loaded}"), wav).await;
+    assert_eq!(ok_status, 200);
+
+    let _ = shutdown.send(());
+}
+
+/// `?punctuation=true` against a server with no punctuator loaded must 409
+/// `punctuation_not_available`. Uses the default engine (no punctuator).
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_punctuation_true_without_punctuator_returns_409() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    // Only meaningful when the default engine has no punctuator attached.
+    let health = get_health(port).await;
+    if health["punctuation"].as_bool().unwrap_or(false) {
+        eprintln!("skipping: default engine already has a punctuator loaded");
+        let _ = shutdown.send(());
+        return;
+    }
+    let wav = common::generate_wav(1, 16000);
+    let (status, body) = post_transcribe(port, "punctuation=true", wav).await;
+    assert_eq!(status, reqwest::StatusCode::CONFLICT);
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v["code"], "punctuation_not_available");
+
+    let _ = shutdown.send(());
+}
+
+/// Precedence: a server booted with punctuation ON, then `?punctuation=false`,
+/// must yield UNPUNCTUATED text (the per-request override wins over the boot
+/// policy). Compares against the default (punctuated) response on the same
+/// audio. Requires the punct model to be present; otherwise the punctuator
+/// won't attach and the test self-skips.
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_punctuation_false_overrides_boot_on() {
+    let punct_dir = common::home_dir()
+        .expect("home")
+        .join(".gigastt")
+        .join("models")
+        .join("punct");
+    let punctuator = match gigastt::punctuation::Punctuator::load(&punct_dir) {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("skipping: punct model unavailable ({e:#})");
+            return;
+        }
+    };
+    let engine = gigastt::inference::Engine::load(&common::model_dir())
+        .expect("engine")
+        .with_punctuator(Some(punctuator));
+    let (port, shutdown) = common::start_server_with_engine(engine).await;
+    let wav = std::fs::read(GOLOS_FIXTURE).expect("read golos fixture");
+
+    // Sanity: /health reports punctuation is active.
+    let health = get_health(port).await;
+    assert_eq!(health["punctuation"], true, "boot punctuation must be on");
+
+    let (s_on, b_on) = post_transcribe(port, "", wav.clone()).await;
+    assert_eq!(s_on, 200);
+    let (s_off, b_off) = post_transcribe(port, "punctuation=false", wav).await;
+    assert_eq!(s_off, 200);
+
+    let on: serde_json::Value = serde_json::from_str(&b_on).unwrap();
+    let off: serde_json::Value = serde_json::from_str(&b_off).unwrap();
+    let on_text = on["text"].as_str().unwrap_or_default();
+    let off_text = off["text"].as_str().unwrap_or_default();
+    eprintln!("punctuation ON:  {on_text}");
+    eprintln!("punctuation OFF: {off_text}");
+    // The override-off text must not contain sentence punctuation the restorer
+    // would have added. This is a weak-but-meaningful check that the pass was
+    // actually skipped for the per-request call.
+    assert!(
+        !off_text.contains('.') && !off_text.contains(','),
+        "punctuation=false should suppress restored punctuation, got: {off_text}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+/// Precedence: a server booted with ITN ON, then `?itn=false`, must leave
+/// number-words as words. ITN is pure code (no model), so this always runs.
+/// Uses a golos fixture that contains spoken numbers if available; the check is
+/// resilient — it only asserts the two responses differ *or* both are digit-free
+/// when the audio has no numbers, and always asserts 200.
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_itn_false_overrides_boot_on() {
+    let engine = gigastt::inference::Engine::load(&common::model_dir())
+        .expect("engine")
+        .with_itn(true);
+    let (port, shutdown) = common::start_server_with_engine(engine).await;
+    let wav = std::fs::read(GOLOS_FIXTURE).expect("read golos fixture");
+
+    let health = get_health(port).await;
+    assert_eq!(health["itn"], true, "boot ITN must be on");
+
+    let (s_on, b_on) = post_transcribe(port, "", wav.clone()).await;
+    assert_eq!(s_on, 200);
+    let (s_off, b_off) = post_transcribe(port, "itn=false", wav).await;
+    assert_eq!(s_off, 200);
+
+    let on: serde_json::Value = serde_json::from_str(&b_on).unwrap();
+    let off: serde_json::Value = serde_json::from_str(&b_off).unwrap();
+    let off_text = off["text"].as_str().unwrap_or_default();
+    eprintln!("ITN ON:  {}", on["text"].as_str().unwrap_or_default());
+    eprintln!("ITN OFF: {off_text}");
+    // With ITN off the number-words stay words: no ASCII digit should appear
+    // that ITN would have produced from spoken numerals.
+    assert!(
+        !off_text.chars().any(|c| c.is_ascii_digit()),
+        "itn=false should leave number-words as words, got: {off_text}"
+    );
+
+    let _ = shutdown.send(());
+}

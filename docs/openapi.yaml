@@ -235,6 +235,47 @@ paths:
             Add a cue-grouped `segments` array to the default JSON response, or
             (with `format=md`) emit `### [mm:ss]` segment headers. Ignored for
             `txt` / `srt` / `vtt`.
+        - name: punctuation
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            Per-request override for the punctuation / casing restoration pass.
+            `true` forces it on, `false` skips it; absent = the server's boot
+            policy (byte-unchanged response). `true` when no punctuation model is
+            loaded returns `409 punctuation_not_available`. Applies to this
+            endpoint only — the SSE / WebSocket paths never run this pass.
+        - name: itn
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            Per-request override for inverse text normalization (number-words →
+            digits). `true` / `false` force the state; absent = boot policy. Pure
+            code (no model), so always accepted. This endpoint only.
+        - name: vad
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: |
+            Per-request override for VAD silence-skipping. `true` decodes only
+            detected speech regions (requires the server started with `--vad`;
+            otherwise `409 vad_not_loaded`), `false` decodes the whole buffer;
+            absent = boot policy. This endpoint only.
+        - name: variant
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [rnnt, e2e_rnnt]
+          description: |
+            Forward-compatibility guard naming the recognition head the request
+            expects. A single-model server can't switch heads, so any value
+            other than the loaded variant returns `409 variant_not_loaded`;
+            matching or absent proceeds. This endpoint only.
       requestBody:
         required: true
         content:
@@ -317,6 +358,8 @@ paths:
                 привет как дела
         "400":
           $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/OverrideConflict"
         "413":
           $ref: "#/components/responses/PayloadTooLarge"
         "422":
@@ -667,6 +710,32 @@ components:
           example:
             error: "Transcription failed. Check audio format."
             code: transcription_error
+
+    OverrideConflict:
+      description: |
+        A per-request override requested a knob the server can't honour: a knob
+        turned on without its backing resource loaded, or a `variant` that isn't
+        the loaded head. Returned before any pool checkout (fail-fast).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            vad_not_loaded:
+              summary: "?vad=true but the server has no VAD"
+              value:
+                error: "VAD requested but not loaded; start the server with --vad"
+                code: vad_not_loaded
+            punctuation_not_available:
+              summary: "?punctuation=true but no punctuation model is loaded"
+              value:
+                error: "punctuation requested but no punctuation model is loaded"
+                code: punctuation_not_available
+            variant_not_loaded:
+              summary: "?variant=<head> differs from the loaded head"
+              value:
+                error: "Requested model variant is not loaded"
+                code: variant_not_loaded
 
     ServiceUnavailable:
       description: Server busy or shutting down

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Per-request recognition-knob overrides on `POST /v1/transcribe`.** Three additive,
+  optional query params let a single running server vary the post-processing knobs per
+  request instead of only at boot: `?punctuation=true|false` (punctuation / casing
+  restoration pass), `?itn=true|false` (inverse text normalization, number-words →
+  digits), and `?vad=true|false` (VAD silence-skipping). An absent param falls back to
+  the server's boot policy, so the default response is byte-for-byte unchanged. A knob
+  can only be turned *on* per-request when its backing resource is loaded: `?vad=true`
+  on a server started without `--vad` returns `409 vad_not_loaded`, and
+  `?punctuation=true` with no punctuation model returns `409 punctuation_not_available`
+  — both validated before any pool checkout (fail-fast). Turning a knob *off*, and ITN
+  in either direction, is always accepted. A forward-compatibility `?variant=<head>`
+  guard returns `409 variant_not_loaded` when the requested head differs from the loaded
+  one (a single-model server can't switch heads; matching or absent proceeds). Scope:
+  `POST /v1/transcribe` only — the SSE `/v1/transcribe/stream` and WebSocket paths do not
+  run the punctuation / ITN passes, so the punctuation / ITN knobs don't apply there.
+  Deferred: per-request hotword biasing and multi-model variant switching.
+
 ## [2.7.0] - 2026-07-10
 
 ### Added

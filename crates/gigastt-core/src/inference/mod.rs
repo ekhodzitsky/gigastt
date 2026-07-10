@@ -892,6 +892,28 @@ impl Engine {
         self.punctuator.is_some()
     }
 
+    /// Reject a [`TranscribeOverrides`] that turns a knob on without the backing
+    /// resource loaded. Call this *before* checking out a session so the request
+    /// fails fast (the REST layer maps the error to a `409`). Turning a knob off
+    /// (`Some(false)`) and ITN in either direction are always valid — ITN is pure
+    /// code with no model to load.
+    ///
+    /// # Errors
+    ///
+    /// - [`OverrideError::VadNotLoaded`] when `vad = Some(true)` but no VAD is
+    ///   attached.
+    /// - [`OverrideError::PunctuationNotAvailable`] when `punctuation = Some(true)`
+    ///   but no punctuator is attached.
+    pub fn validate_overrides(&self, o: &TranscribeOverrides) -> Result<(), OverrideError> {
+        if o.vad == Some(true) && self.vad.is_none() {
+            return Err(OverrideError::VadNotLoaded);
+        }
+        if o.punctuation == Some(true) && self.punctuator.is_none() {
+            return Err(OverrideError::PunctuationNotAvailable);
+        }
+        Ok(())
+    }
+
     /// Enable or disable inverse text normalization (Russian number-words →
     /// digits) on file-transcription output, consuming and returning `self`
     /// (builder style). When enabled, ITN runs *before* the punctuation pass so
@@ -1789,11 +1811,26 @@ impl Engine {
         path: &str,
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
+        self.transcribe_file_with_overrides(path, triplet, &TranscribeOverrides::default())
+    }
+
+    /// Like [`Engine::transcribe_file`] but applies per-request recognition-knob
+    /// [`overrides`](TranscribeOverrides). With `TranscribeOverrides::default()`
+    /// this is byte-for-byte [`Engine::transcribe_file`]; the plain method
+    /// delegates here so binding call sites (FFI / UniFFI / Node) keep the
+    /// no-override signature unchanged.
+    #[cfg(feature = "file-decode")]
+    pub fn transcribe_file_with_overrides(
+        &self,
+        path: &str,
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+    ) -> Result<TranscribeResult, GigasttError> {
         let float_samples =
             audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
                 reason: format!("{e:#}"),
             })?;
-        self.transcribe_samples(&float_samples, triplet)
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides)
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
@@ -1824,11 +1861,27 @@ impl Engine {
         data: bytes::Bytes,
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
+        self.transcribe_bytes_shared_with_overrides(data, triplet, &TranscribeOverrides::default())
+    }
+
+    /// Like [`Engine::transcribe_bytes_shared`] but applies per-request
+    /// recognition-knob [`overrides`](TranscribeOverrides). With
+    /// `TranscribeOverrides::default()` this is byte-for-byte
+    /// [`Engine::transcribe_bytes_shared`]; the plain method delegates here so
+    /// the zero-copy REST call site can opt into overrides without changing the
+    /// no-override signature that other callers rely on.
+    #[cfg(feature = "file-decode")]
+    pub fn transcribe_bytes_shared_with_overrides(
+        &self,
+        data: bytes::Bytes,
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+    ) -> Result<TranscribeResult, GigasttError> {
         let float_samples =
             audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
                 reason: format!("{e:#}"),
             })?;
-        self.transcribe_samples(&float_samples, triplet)
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides)
     }
 
     /// Run the full mel + encoder + RNN-T decode pipeline on an already-decoded
@@ -1839,24 +1892,52 @@ impl Engine {
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
+        self.transcribe_samples_with_overrides(
+            float_samples,
+            triplet,
+            &TranscribeOverrides::default(),
+        )
+    }
+
+    /// Override-aware tail of the file-transcription pipeline. With
+    /// `TranscribeOverrides::default()` (all `None`) it is byte-for-byte the
+    /// engine-default path; each `Some(_)` field flips the corresponding
+    /// post-processing knob for this call only. `overrides` is assumed already
+    /// validated by [`Engine::validate_overrides`] — an on-request with the
+    /// resource missing degrades gracefully (VAD absent → whole-buffer decode)
+    /// rather than erroring here.
+    fn transcribe_samples_with_overrides(
+        &self,
+        float_samples: &[f32],
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+    ) -> Result<TranscribeResult, GigasttError> {
         let wall_start = std::time::Instant::now();
         let duration_s = float_samples.len() as f64 / 16000.0;
 
-        // When a VAD is attached, decode only the detected speech regions
+        // Take the VAD path only when a VAD is attached AND the caller hasn't
+        // opted out for this request. `?vad=false` forces the whole-buffer decode
+        // even on a VAD-enabled engine; `None` uses the engine default (VAD path
+        // iff a VAD is attached). `?vad=true` on a VAD-less engine can't reach
+        // here — the handler 409s first — but the `self.vad.is_some()` guard keeps
+        // this correct regardless.
+        let use_vad = self.vad.is_some() && overrides.vad.unwrap_or(true);
+
+        // When the VAD path is taken, decode only the detected speech regions
         // (skipping silence) and remap word timestamps back to the original
         // timeline. VAD is non-blocking: on any VAD error we log and decode the
         // whole buffer, exactly as if no VAD were attached. With no VAD the path
         // is byte-for-byte the previous behaviour.
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
-        let mut words = match &self.vad {
-            Some(vad) => match vad.speech_regions(float_samples, &self.vad_config) {
+        let mut words = match (use_vad, &self.vad) {
+            (true, Some(vad)) => match vad.speech_regions(float_samples, &self.vad_config) {
                 Ok(regions) => self.decode_speech_regions(float_samples, &regions, triplet)?,
                 Err(e) => {
                     tracing::warn!("VAD failed, decoding full audio: {e:#}");
                     self.decode_words(float_samples, triplet)?
                 }
             },
-            None => self.decode_words(float_samples, triplet)?,
+            _ => self.decode_words(float_samples, triplet)?,
         };
 
         #[cfg(feature = "diarization")]
@@ -1893,20 +1974,24 @@ impl Engine {
         // Optional inverse text normalization (number-words → digits) for the
         // plain `rnnt` head. Runs BEFORE punctuation so the restorer cases the
         // already-digitized text. No-op when disabled; word-level timing is
-        // left untouched — only the joined `text` is rewritten.
-        let text = if self.itn {
+        // left untouched — only the joined `text` is rewritten. The per-request
+        // override wins over the engine default; `None` keeps the boot policy.
+        let text = if overrides.itn.unwrap_or(self.itn) {
             crate::itn::apply_itn(&text)
         } else {
             text
         };
 
-        // Optional punctuation / casing restoration (plain `rnnt` head). When
-        // no punctuator is attached this is a no-op; `restore` itself never
-        // fails (returns the input unchanged on internal error). Word-level
-        // timing is left untouched — only the joined `text` is restored.
+        // Optional punctuation / casing restoration (plain `rnnt` head). The
+        // engine default is "on iff a punctuator is attached"; a per-request
+        // override can force it off (`Some(false)`) or on (`Some(true)`, only
+        // reachable when a punctuator is loaded — the handler 409s otherwise).
+        // The `self.punctuator` guard keeps this a no-op when none is attached;
+        // `restore` itself never fails (returns the input unchanged on error).
+        // Word-level timing is left untouched — only the joined `text` changes.
         let text = match &self.punctuator {
-            Some(p) => p.restore(&text),
-            None => text,
+            Some(p) if overrides.punctuation.unwrap_or(true) => p.restore(&text),
+            _ => text,
         };
 
         let wall_s = wall_start.elapsed().as_secs_f64();
@@ -2257,6 +2342,76 @@ pub struct TranscribeResult {
     pub duration_s: f64,
 }
 
+/// Per-request overrides for the recognition post-processing knobs, letting a
+/// single loaded engine vary punctuation / ITN / VAD per file-transcription
+/// call instead of only at boot. `None` on a field means "use the engine's
+/// boot default", so a `TranscribeOverrides::default()` (all `None`) reproduces
+/// the pre-feature behaviour byte-for-byte.
+///
+/// A knob can only be turned *on* per-request if the underlying resource is
+/// loaded: `vad = Some(true)` requires a VAD to be attached, and
+/// `punctuation = Some(true)` requires a punctuator. Call
+/// [`Engine::validate_overrides`] before transcribing to reject impossible
+/// requests (mapped to `409` on the REST surface); turning a knob *off*
+/// (`Some(false)`) is always valid.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TranscribeOverrides {
+    /// Override the punctuation / casing restoration pass. `Some(true)` forces
+    /// it on (requires a punctuator), `Some(false)` skips it, `None` = engine
+    /// default (on iff a punctuator is attached).
+    pub punctuation: Option<bool>,
+    /// Override inverse text normalization (number-words → digits).
+    /// `Some(true)` / `Some(false)` force the state; `None` = engine default.
+    /// ITN is pure code (no model), so `Some(true)` is always valid.
+    pub itn: Option<bool>,
+    /// Override VAD gating. `Some(true)` decodes only detected speech regions
+    /// (requires a VAD to be attached), `Some(false)` decodes the whole buffer,
+    /// `None` = engine default (VAD path iff a VAD is attached).
+    pub vad: Option<bool>,
+}
+
+/// Why a [`TranscribeOverrides`] was rejected: a knob was turned on per-request
+/// but the resource backing it isn't loaded. Carries a stable machine-readable
+/// [`code`](OverrideError::code) so the REST layer can surface a `409` with a
+/// consistent contract without re-deriving the string.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OverrideError {
+    /// `vad = Some(true)` but no VAD is attached to the engine.
+    VadNotLoaded,
+    /// `punctuation = Some(true)` but no punctuator is attached to the engine.
+    PunctuationNotAvailable,
+}
+
+impl OverrideError {
+    /// Stable, machine-readable error code for the REST `409` payload.
+    pub fn code(self) -> &'static str {
+        match self {
+            OverrideError::VadNotLoaded => "vad_not_loaded",
+            OverrideError::PunctuationNotAvailable => "punctuation_not_available",
+        }
+    }
+
+    /// Human-readable, non-sensitive message for the REST `409` payload.
+    pub fn message(self) -> &'static str {
+        match self {
+            OverrideError::VadNotLoaded => {
+                "VAD requested but not loaded; start the server with --vad"
+            }
+            OverrideError::PunctuationNotAvailable => {
+                "punctuation requested but no punctuation model is loaded"
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for OverrideError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.message())
+    }
+}
+
+impl std::error::Error for OverrideError {}
+
 /// A transcript segment emitted by the inference engine.
 ///
 /// Partial segments (`is_final == false`) represent interim results that may change.
@@ -2288,6 +2443,34 @@ impl TranscriptSegment {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_transcribe_overrides_default_all_none() {
+        // The default overrides must be all-`None` so a request with no knobs
+        // reproduces the engine's boot behaviour byte-for-byte.
+        let o = TranscribeOverrides::default();
+        assert_eq!(o.punctuation, None);
+        assert_eq!(o.itn, None);
+        assert_eq!(o.vad, None);
+    }
+
+    #[test]
+    fn test_override_error_codes_stable() {
+        // Stable machine-readable codes surfaced as the REST 409 `code`.
+        assert_eq!(OverrideError::VadNotLoaded.code(), "vad_not_loaded");
+        assert_eq!(
+            OverrideError::PunctuationNotAvailable.code(),
+            "punctuation_not_available"
+        );
+        // Messages are non-empty and don't leak internals.
+        assert!(!OverrideError::VadNotLoaded.message().is_empty());
+        assert!(!OverrideError::PunctuationNotAvailable.message().is_empty());
+        // Display matches message().
+        assert_eq!(
+            OverrideError::VadNotLoaded.to_string(),
+            OverrideError::VadNotLoaded.message()
+        );
+    }
 
     #[test]
     fn test_cap_pool_size_for_ram_clamps_on_low_memory() {
@@ -4251,6 +4434,100 @@ mod tests {
             assert!(result.text.is_empty(), "blank-only decode yields no text");
             assert!(result.words.is_empty());
             assert!((result.duration_s - 100.0 / 16000.0).abs() < 1e-9);
+        }
+
+        #[test]
+        fn test_validate_overrides_truth_table() {
+            use crate::inference::{OverrideError, TranscribeOverrides};
+
+            // The tiny mock engine loads with no VAD and no punctuator attached,
+            // so any knob turned *on* per-request must be rejected, and any knob
+            // turned *off* (or ITN in either direction) must be accepted.
+            let (engine, _tmp) = tiny_mock_engine();
+            assert!(!engine.has_vad(), "mock engine has no VAD");
+            assert!(!engine.has_punctuator(), "mock engine has no punctuator");
+
+            // All absent → OK (byte-unchanged default path).
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides::default()),
+                Ok(())
+            );
+
+            // vad=Some(true) with no VAD → err vad_not_loaded.
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    vad: Some(true),
+                    ..Default::default()
+                }),
+                Err(OverrideError::VadNotLoaded)
+            );
+            // vad=Some(false) is always OK (opting out never needs a resource).
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    vad: Some(false),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+
+            // punctuation=Some(true) with no punctuator → err.
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    punctuation: Some(true),
+                    ..Default::default()
+                }),
+                Err(OverrideError::PunctuationNotAvailable)
+            );
+            // punctuation=Some(false) is always OK.
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    punctuation: Some(false),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+
+            // itn=Some(true) is always OK (pure code, no model to load).
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    itn: Some(true),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    itn: Some(false),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+        }
+
+        #[test]
+        fn test_transcribe_samples_with_overrides_vad_off_matches_default() {
+            use crate::inference::TranscribeOverrides;
+
+            // `?vad=false` on a VAD-less engine is a no-op relative to the default
+            // path (both decode the whole buffer), so the output must be identical.
+            let (engine, _tmp) = tiny_mock_engine();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let samples = vec![0.0f32; 100];
+            let baseline = engine
+                .transcribe_samples(&samples, &mut guard)
+                .expect("baseline decode");
+            let with_vad_off = engine
+                .transcribe_samples_with_overrides(
+                    &samples,
+                    &mut guard,
+                    &TranscribeOverrides {
+                        vad: Some(false),
+                        ..Default::default()
+                    },
+                )
+                .expect("vad-off decode");
+            assert_eq!(baseline.text, with_vad_off.text);
+            assert_eq!(baseline.words.len(), with_vad_off.words.len());
         }
     }
 }
