@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Turkic Cyrillic letters, folds Uzbek apostrophe variants, and excludes number-bearing
   sentences where the charwise heads spell digits out and no words↔digits ITN exists).
 
+### Fixed
+
+- **Speaker diarization now feeds WeSpeaker the expected fbank features.** The previous legacy
+  extractor passed rank-2 raw waveform tensors to a rank-3 feature model, so offline and streaming
+  diarization logged `Got: 2 Expected: 3` and returned transcripts without speaker labels.
+
 ## [2.11.0] - 2026-07-17
 
 ### Added

@@ -75,6 +75,12 @@ use crate::runtime::tensor::{Shape, Tensor, TensorData, TensorDataView};
 use features::MelSpectrogram;
 use tokenizer::Tokenizer;
 
+#[cfg(feature = "diarization")]
+#[allow(deprecated)] // legacy FbankOnnxExtractor — see import note above
+fn load_speaker_encoder(model_path: &Path, pool_size: usize) -> anyhow::Result<FbankOnnxExtractor> {
+    FbankOnnxExtractor::new(model_path, SPEAKER_EMBEDDING_DIM, pool_size)
+}
+
 /// Number of mel frequency bins used for spectrogram features.
 pub const N_MELS: usize = 64;
 /// FFT window size in samples (320 samples = 20ms at 16kHz).
@@ -1194,12 +1200,10 @@ impl Engine {
         );
 
         #[cfg(feature = "diarization")]
-        #[allow(deprecated)] // legacy FbankOnnxExtractor::new — see import note above
         let speaker_encoder = {
             let model_path = model_dir.join("wespeaker_resnet34.onnx");
             if model_path.exists() {
-                match FbankOnnxExtractor::new(&model_path, SPEAKER_EMBEDDING_DIM, SPEAKER_POOL_SIZE)
-                {
+                match load_speaker_encoder(&model_path, SPEAKER_POOL_SIZE) {
                     Ok(enc) => {
                         tracing::info!("Speaker encoder loaded (diarization available)");
                         Some(std::sync::Arc::new(enc))
@@ -3742,6 +3746,29 @@ mod tests {
             .expect("engine should load");
         let state = engine.create_state(true);
         assert!(state.audio_buffer.is_empty());
+    }
+
+    #[cfg(feature = "diarization")]
+    #[test]
+    #[ignore = "requires the WeSpeaker diarization model"]
+    #[allow(deprecated)] // legacy EmbeddingExtractor — see import note above
+    fn test_speaker_encoder_accepts_waveform_audio() {
+        let model_path =
+            Path::new(&crate::model::default_model_dir()).join("wespeaker_resnet34.onnx");
+        let encoder = load_speaker_encoder(&model_path, 1).expect("speaker encoder should load");
+        let samples: Vec<f32> = (0..24_000)
+            .map(|i| {
+                let phase = std::f32::consts::TAU * 220.0 * i as f32 / 16_000.0;
+                0.1 * phase.sin()
+            })
+            .collect();
+
+        let embedding = encoder
+            .extract(&samples, &DiaConfig::default())
+            .expect("waveform must be converted to rank-3 fbank features");
+
+        assert_eq!(embedding.len(), SPEAKER_EMBEDDING_DIM);
+        assert!(embedding.iter().all(|value| value.is_finite()));
     }
 
     #[test]
