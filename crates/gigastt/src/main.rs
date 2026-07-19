@@ -3,7 +3,7 @@ use clap::{Parser, Subcommand};
 use gigastt::server;
 use gigastt::server::{OriginPolicy, RuntimeLimits, ServerConfig};
 use gigastt_core::export::{ExportFormat, RenderOpts};
-use gigastt_core::model::ModelVariant;
+use gigastt_core::model::{ModelVariant, ProgressMode};
 use gigastt_core::{inference, model};
 use std::net::IpAddr;
 use std::str::FromStr;
@@ -320,6 +320,18 @@ enum Commands {
         /// FP32 download path).
         #[arg(long, default_value_t = false)]
         prequantized: bool,
+
+        /// Progress reporting format: `human` (default — interactive `\r`
+        /// progress on stderr) or `json` (NDJSON events on stdout, one object
+        /// per line, for sidecar integrators; human progress and tracing logs
+        /// stay off stdout in this mode).
+        #[arg(
+            long,
+            env = "GIGASTT_DOWNLOAD_PROGRESS",
+            default_value = "human",
+            value_parser = parse_progress_mode
+        )]
+        progress: ProgressMode,
 
         /// Also fetch the per-bucket palettized ANE (Core ML) encoder packages
         /// into `~/.gigastt/models/ane/` for the macOS Neural Engine backend.
@@ -663,6 +675,11 @@ fn parse_model_variant(s: &str) -> Result<ModelVariant, String> {
     s.parse()
 }
 
+/// Parse the `download --progress` value (`human` | `json`).
+fn parse_progress_mode(s: &str) -> Result<ProgressMode, String> {
+    s.parse()
+}
+
 /// Whether to run the optional punctuation / casing restoration pass.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum PunctuationMode {
@@ -934,6 +951,11 @@ fn ensure_int8_encoder(variant: ModelVariant, model_dir: &str, skip: bool) -> an
         );
     }
     tracing::info!("Quantizing encoder to INT8 (~2 min, one-time)…");
+    // Surface the ~2-minute pass as its own phase so a sidecar watching the
+    // NDJSON stream does not read it as a hang.
+    model::emit_progress_event(&model::ProgressEvent::Quantize {
+        file: variant.encoder_file().to_string(),
+    });
     gigastt_core::quantize::quantize_model(&input, &int8_path)?;
     tracing::info!("INT8 encoder saved to {}", int8_path.display());
     Ok(())
@@ -969,10 +991,24 @@ fn log_ane_backend(resolved: ModelVariant) {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
+    // NDJSON download progress owns stdout: in `--progress=json` mode the
+    // tracing writer moves to stderr so stdout carries nothing but event
+    // lines (the default writer is stdout).
+    let json_progress = matches!(
+        &cli.command,
+        Commands::Download { progress, .. } if *progress == ProgressMode::Json
+    );
+
     let directive = format!("gigastt={}", cli.log_level);
-    tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive(directive.parse()?))
-        .init();
+    let filter = EnvFilter::from_default_env().add_directive(directive.parse()?);
+    if json_progress {
+        tracing_subscriber::fmt()
+            .with_env_filter(filter)
+            .with_writer(std::io::stderr)
+            .init();
+    } else {
+        tracing_subscriber::fmt().with_env_filter(filter).init();
+    }
 
     match cli.command {
         Commands::Serve {
@@ -1149,38 +1185,78 @@ async fn main() -> anyhow::Result<()> {
             skip_diarization,
             skip_quantize,
             prequantized,
+            progress,
             #[cfg(feature = "ane")]
             ane,
         } => {
+            model::set_progress_mode(progress);
             // `download` is an explicit action: the requested variant maps to
             // the default (Rnnt) so a bare `gigastt download` fetches something
             // useful.
-            if prequantized && !model_variant.is_ctc() {
-                // Lean path: fetch the INT8 bundle from the pinned Release — no
-                // FP32 download, no on-device quantization, no protoc.
-                model::ensure_prequantized_model_variant(Some(model_variant), &model_dir).await?;
-            } else {
-                // The Multilingual CTC heads' standard download already fetches
-                // istupakov's pre-quantized INT8 encoder directly from HuggingFace,
-                // so `--prequantized` is a no-op refinement for them (no separate
-                // GitHub-Release bundle). `ensure_int8_encoder` then finds the INT8
-                // encoder already present and skips on-device quantization.
-                let resolved = model::ensure_model_variant(Some(model_variant), &model_dir).await?;
-                ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
-            }
-            #[cfg(feature = "diarization")]
-            {
-                if !skip_diarization {
-                    model::ensure_speaker_model(&model_dir).await?;
+            let download = async {
+                if prequantized && !model_variant.is_ctc() {
+                    // Lean path: fetch the INT8 bundle from the pinned Release — no
+                    // FP32 download, no on-device quantization, no protoc.
+                    model::ensure_prequantized_model_variant(Some(model_variant), &model_dir)
+                        .await?;
+                } else {
+                    // The Multilingual CTC heads' standard download already fetches
+                    // istupakov's pre-quantized INT8 encoder directly from HuggingFace,
+                    // so `--prequantized` is a no-op refinement for them (no separate
+                    // GitHub-Release bundle). `ensure_int8_encoder` then finds the INT8
+                    // encoder already present and skips on-device quantization.
+                    let resolved =
+                        model::ensure_model_variant(Some(model_variant), &model_dir).await?;
+                    ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
+                }
+                #[cfg(feature = "diarization")]
+                {
+                    if !skip_diarization {
+                        model::ensure_speaker_model(&model_dir).await?;
+                    }
+                }
+                #[cfg(feature = "ane")]
+                if ane {
+                    let ane_dir = model::default_ane_model_dir();
+                    model::ensure_ane_packages(&ane_dir).await?;
+                    tracing::info!("ANE encoder packages ready at {ane_dir}");
+                }
+                tracing::info!("Model ready at {model_dir}");
+                anyhow::Ok(())
+            };
+            tokio::select! {
+                result = download => {
+                    match result {
+                        Ok(()) => {
+                            model::emit_progress_event(&model::ProgressEvent::Done {
+                                model_dir: model_dir.clone(),
+                            });
+                        }
+                        Err(e) => {
+                            let kind = model::classify_download_error(&e);
+                            model::emit_progress_event(&model::ProgressEvent::Error {
+                                kind,
+                                message: format!("{e:#}"),
+                            });
+                            // Same rendering anyhow's `Termination` would print,
+                            // then the documented per-kind exit code (all != 0).
+                            eprintln!("Error: {e:?}");
+                            std::process::exit(kind.exit_code());
+                        }
+                    }
+                }
+                sig = tokio::signal::ctrl_c() => {
+                    if let Err(e) = sig {
+                        tracing::warn!("Failed to listen for Ctrl-C: {e}");
+                    }
+                    model::emit_progress_event(&model::ProgressEvent::Error {
+                        kind: model::ProgressErrorKind::Interrupted,
+                        message: "interrupted by SIGINT".to_string(),
+                    });
+                    eprintln!("Interrupted by Ctrl-C");
+                    std::process::exit(model::ProgressErrorKind::Interrupted.exit_code());
                 }
             }
-            #[cfg(feature = "ane")]
-            if ane {
-                let ane_dir = model::default_ane_model_dir();
-                model::ensure_ane_packages(&ane_dir).await?;
-                tracing::info!("ANE encoder packages ready at {ane_dir}");
-            }
-            tracing::info!("Model ready at {model_dir}");
         }
         Commands::Quantize { model_dir, force } => {
             // Quantize an existing model dir: detect the head already on disk
@@ -2625,6 +2701,64 @@ mod tests {
             Commands::Download { skip_quantize, .. } => assert!(skip_quantize),
             _ => panic!("expected Download"),
         }
+    }
+
+    #[test]
+    fn test_cli_download_progress_defaults_to_human() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_DOWNLOAD_PROGRESS",
+            std::env::var("GIGASTT_DOWNLOAD_PROGRESS").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_DOWNLOAD_PROGRESS");
+        }
+        let cli = Cli::parse_from(["gigastt", "download"]);
+        match cli.command {
+            Commands::Download { progress, .. } => assert_eq!(progress, ProgressMode::Human),
+            _ => panic!("expected Download"),
+        }
+    }
+
+    #[test]
+    fn test_cli_download_progress_json_flag() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_DOWNLOAD_PROGRESS",
+            std::env::var("GIGASTT_DOWNLOAD_PROGRESS").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_DOWNLOAD_PROGRESS");
+        }
+        let cli = Cli::parse_from(["gigastt", "download", "--progress", "json"]);
+        match cli.command {
+            Commands::Download { progress, .. } => assert_eq!(progress, ProgressMode::Json),
+            _ => panic!("expected Download"),
+        }
+    }
+
+    #[test]
+    fn test_cli_download_progress_env_var() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_DOWNLOAD_PROGRESS",
+            std::env::var("GIGASTT_DOWNLOAD_PROGRESS").ok(),
+        );
+        unsafe {
+            std::env::set_var("GIGASTT_DOWNLOAD_PROGRESS", "json");
+        }
+        let cli = Cli::parse_from(["gigastt", "download"]);
+        match cli.command {
+            Commands::Download { progress, .. } => assert_eq!(progress, ProgressMode::Json),
+            _ => panic!("expected Download"),
+        }
+    }
+
+    #[test]
+    fn test_parse_progress_mode_value_parser() {
+        assert_eq!(parse_progress_mode("human").unwrap(), ProgressMode::Human);
+        assert_eq!(parse_progress_mode("json").unwrap(), ProgressMode::Json);
+        assert!(parse_progress_mode("xml").is_err());
     }
 
     #[cfg(feature = "ane")]
