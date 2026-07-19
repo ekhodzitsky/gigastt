@@ -672,6 +672,14 @@ pub struct StreamingState {
     /// `process_chunk` finalizes the current segment. `None` = no VAD, and
     /// endpointing falls back to the decoder's blank-run heuristic alone.
     pub vad_endpointer: Option<crate::vad::VadEndpointer>,
+    /// Per-session punctuation/casing-restoration override applied to **final**
+    /// segments only (`None` = engine boot default). Set by the WS `configure`
+    /// message; SSE and FFI streaming leave it `None` so the boot policy
+    /// applies. Partials always stay raw.
+    pub punctuation: Option<bool>,
+    /// Per-session inverse-text-normalization override applied to **final**
+    /// segments only (`None` = engine boot default).
+    pub itn: Option<bool>,
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
     pub diarization_state: Option<StreamingPipeline<EnergyVad, SharedExtractor>>,
@@ -1664,6 +1672,8 @@ impl Engine {
                 .vad
                 .as_ref()
                 .map(|_| crate::vad::VadEndpointer::new(&self.vad_config)),
+            punctuation: None,
+            itn: None,
             #[cfg(feature = "diarization")]
             diarization_state,
         }
@@ -1745,7 +1755,8 @@ impl Engine {
         let ts = now_timestamp();
 
         if endpoint || over_cap || vad_endpoint {
-            let seg = state.assembler.finalize(ts);
+            let mut seg = state.assembler.finalize(ts);
+            self.enrich_final_segment(&mut seg, state);
             // Slide: retain the trailing left-context window for the next decode.
             let keep = STREAM_LEFT_CONTEXT_SAMPLES.min(state.audio_buffer.len());
             let slide_off = state.audio_buffer.len() - keep;
@@ -1850,7 +1861,31 @@ impl Engine {
         if state.assembler.is_empty() {
             return None;
         }
-        Some(state.assembler.finalize(now_timestamp()))
+        let mut seg = state.assembler.finalize(now_timestamp());
+        self.enrich_final_segment(&mut seg, state);
+        Some(seg)
+    }
+
+    /// Post-process a finalized streaming segment: ITN, then punctuation/casing
+    /// restoration on the joined `text`. Mirrors
+    /// [`Engine::finish_transcribe_result`]'s policy exactly — the per-session
+    /// override wins over the engine boot default (`None` keeps it), and the
+    /// `punctuator` guard makes the pass a graceful no-op when no punct model
+    /// is attached. Word payloads keep the raw decoder output, exactly like the
+    /// file path. Runs only at finalization boundaries (endpoint flush /
+    /// Stop-flush), so `partial` payloads are never rewritten and live previews
+    /// don't flicker between hypotheses.
+    fn enrich_final_segment(&self, seg: &mut TranscriptSegment, state: &StreamingState) {
+        let text = std::mem::take(&mut seg.text);
+        let text = if state.itn.unwrap_or(self.itn) {
+            crate::itn::apply_itn(&text)
+        } else {
+            text
+        };
+        seg.text = match &self.punctuator {
+            Some(p) if state.punctuation.unwrap_or(true) => p.restore(&text),
+            _ => text,
+        };
     }
 
     /// Transcribe an audio file to text (supports WAV, MP3, M4A/AAC, OGG, FLAC).
@@ -4925,6 +4960,78 @@ mod tests {
                 .expect("vad-off decode");
             assert_eq!(baseline.text, with_vad_off.text);
             assert_eq!(baseline.words.len(), with_vad_off.words.len());
+        }
+
+        #[test]
+        fn test_create_state_postprocess_overrides_default_to_none() {
+            // A fresh streaming state inherits the engine boot policy: both
+            // per-session overrides start unset.
+            let (engine, _tmp) = tiny_mock_engine();
+            let state = engine.create_state(false);
+            assert_eq!(state.punctuation, None);
+            assert_eq!(state.itn, None);
+        }
+
+        #[test]
+        fn test_flush_state_applies_itn_per_engine_default() {
+            // Streaming finals go through the same ITN pass as the file path:
+            // with the engine default on, number-words are digitized at flush.
+            let (engine, _tmp) = tiny_mock_engine();
+            let engine = engine.with_itn(true);
+            let mut state = engine.create_state(false);
+            state.assembler.set_words(vec![
+                super::word("двадцать", 0.0, 0.4),
+                super::word("один", 0.4, 0.8),
+            ]);
+            let seg = engine.flush_state(&mut state).expect("flush");
+            assert_eq!(seg.text, "21");
+            // Word payloads stay raw — only the joined text is rewritten.
+            assert_eq!(seg.words[0].word, "двадцать");
+            assert_eq!(seg.words[1].word, "один");
+        }
+
+        #[test]
+        fn test_flush_state_session_override_disables_itn() {
+            // `Configure{itn:false}` wins over an ITN-on engine boot policy.
+            let (engine, _tmp) = tiny_mock_engine();
+            let engine = engine.with_itn(true);
+            let mut state = engine.create_state(false);
+            state.itn = Some(false);
+            state.assembler.set_words(vec![
+                super::word("двадцать", 0.0, 0.4),
+                super::word("один", 0.4, 0.8),
+            ]);
+            let seg = engine.flush_state(&mut state).expect("flush");
+            assert_eq!(seg.text, "двадцать один");
+        }
+
+        #[test]
+        fn test_flush_state_default_leaves_text_raw() {
+            // Boot defaults (ITN off, no punctuator) reproduce the pre-feature
+            // behaviour byte-for-byte.
+            let (engine, _tmp) = tiny_mock_engine();
+            let mut state = engine.create_state(false);
+            state.assembler.set_words(vec![
+                super::word("двадцать", 0.0, 0.4),
+                super::word("один", 0.4, 0.8),
+            ]);
+            let seg = engine.flush_state(&mut state).expect("flush");
+            assert_eq!(seg.text, "двадцать один");
+        }
+
+        #[test]
+        fn test_flush_state_punctuation_request_without_punctuator_is_noop() {
+            // `Configure{punctuation:true}` on a punct-less server degrades
+            // gracefully: the final is emitted unchanged (streaming never
+            // errors on post-processing, unlike the REST 409).
+            let (engine, _tmp) = tiny_mock_engine();
+            let mut state = engine.create_state(false);
+            state.punctuation = Some(true);
+            state
+                .assembler
+                .set_words(vec![super::word("hello", 0.0, 0.4)]);
+            let seg = engine.flush_state(&mut state).expect("flush");
+            assert_eq!(seg.text, "hello");
         }
     }
 }
