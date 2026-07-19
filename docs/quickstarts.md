@@ -115,3 +115,39 @@ in Python, `transcribeFile`/`startS` in Node/Swift/Kotlin.)
 Packages are self-contained (onnxruntime is statically linked — see
 [embedding-packaging.md](embedding-packaging.md)); only the model directory is
 side-loaded.
+
+## Client SDKs for the server (Go / TypeScript)
+
+Different beast: these talk **to a running `gigastt serve`** over the
+WebSocket protocol v1.0 instead of embedding the engine. Typed
+`ready`/`partial`/`final`/`error` events (all wire fields, including `words[]`,
+`error.code`, `retry_after_ms`), callback dispatch, automatic reconnect with
+backoff that honors the server's `retry_after_ms` hint on pool saturation.
+
+- **Go** — module `github.com/ekhodzitsky/gigastt/sdks/go`, see
+  [sdks/go/README.md](../sdks/go/README.md):
+
+  ```go
+  client, err := gigastt.Dial(ctx, gigastt.DefaultURL,
+      gigastt.WithSampleRate(16000),
+      gigastt.WithReconnect(250*time.Millisecond, 5*time.Second, 10),
+      gigastt.WithHandlers(gigastt.Handlers{
+          OnFinal: func(t gigastt.Transcript) { fmt.Println(t.Text) },
+      }))
+  // client.SendPCM(pcm16) ... client.Stop()
+  ```
+
+- **TypeScript** — package `@gigastt/client` (Node ≥ 20 and browsers), see
+  [sdks/js/README.md](../sdks/js/README.md):
+
+  ```ts
+  const client = await GigasttClient.connect(DEFAULT_URL, {
+    sampleRate: 16000,
+    reconnect: { minDelayMs: 250, maxDelayMs: 5000, maxAttempts: 10 },
+    handlers: { onFinal: (t) => console.log(t.text) },
+  });
+  // client.sendPCM(pcm16) ... client.stop()
+  ```
+
+For one-file scripts without a library dependency, the `examples/` directory
+has minimal clients (Go, Bun/TypeScript, Python, Kotlin, Rust).

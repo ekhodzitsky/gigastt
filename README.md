@@ -103,6 +103,7 @@ $ gigastt serve
 | Stereo telephony recordings | Optional channel-speaker mode (`--stereo-speakers` CLI / `channels=split` REST) labels the left/right channels as `speaker_0` and `speaker_1` |
 | Speaker diarization | WeSpeaker ResNet34 embeddings + polyvoice clustering, compiled in by default (speaker model fetched by `gigastt download`, `--skip-diarization` to opt out) — offline files opt in per request (`?diarization=true`, exclusive with `channels=split`), live sessions via WS `Configure`; words &amp; segments gain `speaker` labels |
 | Async jobs | Long-file / batch transcription queue via `/v1/jobs` (opt-in with `--enable-jobs`): submit, poll, cancel, SSE progress, retry, and TTL eviction |
+| Client SDKs | Typed WebSocket clients for protocol v1.0 with reconnect honoring `retry_after_ms`: [Go (`sdks/go`)](sdks/go) · [TypeScript `@gigastt/client` (`sdks/js`)](sdks/js) |
 | Export | JSON · TXT · SRT · VTT · Markdown — per-word timings + confidence, or segment-level (`?segments=true` JSON, `### [mm:ss]` Markdown) |
 | Server hardening | loopback-only by default · origin allowlist · per-IP rate limiting · graceful drain · Prometheus `/metrics` on a separate port · loopback-only model hot-reload (`POST /v1/admin/reload`) |
 
