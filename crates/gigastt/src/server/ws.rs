@@ -395,8 +395,9 @@ async fn handle_binary_frame(
 }
 
 /// Handle `{"type":"configure",…}`. Rejects configure-after-first-audio,
-/// validates sample rate against `SUPPORTED_RATES`, and (with diarization
-/// feature) recreates the streaming state.
+/// validates sample rate against `SUPPORTED_RATES`, (with diarization
+/// feature) recreates the streaming state, and stores the per-session
+/// post-processing overrides (`punctuation` / `itn`) on it.
 #[allow(clippy::too_many_arguments)]
 async fn handle_configure_message(
     sink: &mut WsSink,
@@ -407,6 +408,8 @@ async fn handle_configure_message(
     sample_rate: Option<u32>,
     diarization: Option<bool>,
     protocol_version: Option<String>,
+    punctuation: Option<bool>,
+    itn: Option<bool>,
     peer: SocketAddr,
 ) -> Result<FrameOutcome> {
     if audio_received {
@@ -462,8 +465,21 @@ async fn handle_configure_message(
         *state_opt = Some(engine.create_state(enable_dia));
     }
     #[cfg(not(feature = "diarization"))]
-    {
-        let _ = (engine, state_opt, diarization);
+    let _ = (engine, diarization);
+
+    // Post-processing overrides apply to whatever state the session now holds
+    // (the diarization branch above may have just recreated it). An absent
+    // field leaves the previous value, so repeated Configures compose the same
+    // way `sample_rate` does.
+    if let Some(state) = state_opt.as_mut() {
+        if let Some(p) = punctuation {
+            tracing::info!("Client {peer} configured punctuation: {p}");
+            state.punctuation = Some(p);
+        }
+        if let Some(i) = itn {
+            tracing::info!("Client {peer} configured itn: {i}");
+            state.itn = Some(i);
+        }
     }
     Ok(FrameOutcome::Continue)
 }
@@ -746,6 +762,8 @@ async fn handle_ws_inner(
                             sample_rate,
                             diarization,
                             protocol_version,
+                            punctuation,
+                            itn,
                         }) => {
                             handle_configure_message(
                                 &mut sink,
@@ -756,6 +774,8 @@ async fn handle_ws_inner(
                                 sample_rate,
                                 diarization,
                                 protocol_version,
+                                punctuation,
+                                itn,
                                 peer,
                             )
                             .await
