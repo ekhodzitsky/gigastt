@@ -462,7 +462,14 @@ async fn handle_configure_message(
     #[cfg(feature = "diarization")]
     if let Some(enable_dia) = diarization {
         tracing::info!("Client {peer} configured diarization: {enable_dia}");
-        *state_opt = Some(engine.create_state(enable_dia));
+        let mut new_state = engine.create_state(enable_dia);
+        // The state is recreated wholesale; carry over any post-processing
+        // overrides an earlier Configure already set on this session.
+        if let Some(old) = state_opt.as_ref() {
+            new_state.punctuation = old.punctuation;
+            new_state.itn = old.itn;
+        }
+        *state_opt = Some(new_state);
     }
     #[cfg(not(feature = "diarization"))]
     let _ = (engine, diarization);

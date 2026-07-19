@@ -861,12 +861,14 @@ pub struct Engine {
     /// off for [`ModelVariant::E2eRnnt`] (already punctuated).
     variant: ModelVariant,
     /// Optional punctuation / casing restorer applied to file-transcription
-    /// output. `None` = pass-through (the default, and the only behaviour when
-    /// no punct model is installed). Attached via [`Engine::with_punctuator`].
+    /// output and to finalized streaming segments. `None` = pass-through (the
+    /// default, and the only behaviour when no punct model is installed).
+    /// Attached via [`Engine::with_punctuator`].
     punctuator: Option<crate::punctuation::Punctuator>,
     /// Whether to run inverse text normalization (Russian number-words →
-    /// digits) on file-transcription output, *before* the punctuation pass.
-    /// Off by default; toggled via [`Engine::with_itn`].
+    /// digits) on file-transcription output and finalized streaming segments,
+    /// *before* the punctuation pass. Off by default; toggled via
+    /// [`Engine::with_itn`].
     itn: bool,
     /// Optional contextual hotword biaser applied inside the greedy RNN-T decode
     /// loop (shallow fusion). `None` = no biasing (the default), and the decode
@@ -908,7 +910,9 @@ impl Engine {
     /// Attach an optional punctuation / casing restorer, consuming and
     /// returning `self` (builder style). Pass `None` for pass-through. When set,
     /// the restorer post-processes the final text of file transcription
-    /// ([`Engine::transcribe_file`] / [`Engine::transcribe_bytes_shared`]).
+    /// ([`Engine::transcribe_file`] / [`Engine::transcribe_bytes_shared`]) and
+    /// of finalized streaming segments ([`Engine::process_chunk`] /
+    /// [`Engine::flush_state`]).
     pub fn with_punctuator(mut self, punctuator: Option<crate::punctuation::Punctuator>) -> Self {
         self.punctuator = punctuator;
         self
@@ -942,9 +946,10 @@ impl Engine {
     }
 
     /// Enable or disable inverse text normalization (Russian number-words →
-    /// digits) on file-transcription output, consuming and returning `self`
-    /// (builder style). When enabled, ITN runs *before* the punctuation pass so
-    /// the restorer cases the already-digitized text.
+    /// digits) on file-transcription output and finalized streaming segments,
+    /// consuming and returning `self` (builder style). When enabled, ITN runs
+    /// *before* the punctuation pass so the restorer cases the
+    /// already-digitized text.
     pub fn with_itn(mut self, enabled: bool) -> Self {
         self.itn = enabled;
         self
