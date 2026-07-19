@@ -17,6 +17,36 @@ name = "gigastt"
 name = "benchmark"
 harness = false
 
+# Debian package built by `cargo deb` (cargo-deb) in the release workflow:
+# `gigastt_<ver>_amd64.deb` with the binary, the systemd unit, and the
+# environment-file example. The companion data package
+# `gigastt-model-int8_<ver>_all.deb` (models in /usr/share/gigastt/models/)
+# is assembled separately by scripts/build_model_deb.sh. See
+# docs/deployment.md, "Air-gapped / offline installation".
+[package.metadata.deb]
+maintainer = "Evgeny Khodzitsky <e@khodzitsky.ru>"
+license-file = ["../../LICENSE", "0"]
+depends = "$auto"
+section = "sound"
+priority = "optional"
+extended-description = """\
+On-device Russian speech-to-text server (WebSocket / REST / SSE on
+127.0.0.1:9876) powered by the GigaAM v3 RNN-T model via ONNX Runtime.
+No cloud APIs, no telemetry.
+.
+The model is not in this package: install the gigastt-model-int8 data
+package (offline), or let gigastt download it from HuggingFace on first
+start. Configuration: /etc/gigastt/gigastt.env; service: gigastt.service
+(not auto-enabled)."""
+assets = [
+    ["target/release/gigastt", "usr/bin/gigastt", "755"],
+    ["../../packaging/systemd/gigastt.service", "lib/systemd/system/gigastt.service", "644"],
+    ["../../packaging/systemd/gigastt.env", "etc/gigastt/gigastt.env", "644"],
+    ["../../README.md", "usr/share/doc/gigastt/README.md", "644"],
+]
+conf-files = ["/etc/gigastt/gigastt.env"]
+maintainer-scripts = "../../packaging/debian/"
+
 [features]
 default = ["diarization"]
 coreml = ["gigastt-core/coreml"]

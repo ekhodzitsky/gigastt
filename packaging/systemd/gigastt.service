@@ -1,0 +1,60 @@
+# systemd unit for the gigastt speech-to-text server.
+#
+# Shipped in the `gigastt` deb package and in the offline all-in-one tarball
+# (see packaging/offline/ and docs/deployment.md, "Air-gapped / offline
+# installation").
+#
+# Compatibility: every directive below is available in systemd 241 or older,
+# so the unit works on Astra Linux, RED OS and ALT without modification.
+# Do NOT add directives introduced after 241 (e.g. ProtectProc, ProtectClock,
+# ProtectHostname, RestrictSUIDSGID) — they break on those targets.
+
+[Unit]
+Description=gigastt local speech-to-text server (GigaAM v3, Russian)
+Documentation=https://github.com/ekhodzitsky/gigastt
+After=network.target
+
+[Service]
+Type=simple
+User=gigastt
+Group=gigastt
+
+# Optional environment overrides (RUST_LOG, GIGASTT_* — see the shipped
+# example). The `-` prefix makes a missing file non-fatal.
+EnvironmentFile=-/etc/gigastt/gigastt.env
+
+# Model and punctuation-model directories are passed explicitly: the gigastt
+# user has no $HOME, so the default ~/.gigastt/models lookup would not work.
+# Both directories are read-only at runtime (all models are pre-installed);
+# gigastt never writes to them once the files are present.
+#
+# The server binds 127.0.0.1:9876 by default (loopback only). Do NOT add
+# --bind-all here; expose the API through a reverse proxy instead
+# (docs/deployment.md). To change the port or add flags, create a drop-in
+# with `systemctl edit gigastt` instead of editing this file.
+ExecStart=/usr/bin/gigastt serve \
+    --model-dir /usr/share/gigastt/models \
+    --punct-model-dir /usr/share/gigastt/models/punct
+
+Restart=on-failure
+RestartSec=5
+
+# Hardening. The server needs no capabilities, no writable filesystem (models
+# are pre-installed, logs go to the journal), and no devices/kernel knobs.
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+# Loopback HTTP only: no DNS, no AF_NETLINK, no packet sockets.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

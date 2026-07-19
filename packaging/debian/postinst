@@ -1,0 +1,32 @@
+#!/bin/sh
+# postinst for the gigastt deb — create the service account and refresh
+# systemd. The service is intentionally NOT enabled or started here: the
+# model data package (gigastt-model-int8) or an online model download must be
+# in place first, and a 800 MB-resident service should be a deliberate
+# `systemctl enable --now gigastt` decision by the admin.
+set -e
+
+case "$1" in
+    configure)
+        if ! id gigastt >/dev/null 2>&1; then
+            NOLOGIN_SHELL="/usr/sbin/nologin"
+            [ -x "$NOLOGIN_SHELL" ] || NOLOGIN_SHELL="/sbin/nologin"
+            [ -x "$NOLOGIN_SHELL" ] || NOLOGIN_SHELL="/bin/false"
+            useradd --system --no-create-home --shell "$NOLOGIN_SHELL" gigastt || true
+        fi
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload || true
+        fi
+        cat <<'EOF'
+
+gigastt installed. Next steps:
+  1. Install the model data package (offline):  dpkg -i gigastt-model-int8_*_all.deb
+     …or let gigastt download the model on first start (needs network).
+  2. systemctl enable --now gigastt
+  3. curl http://127.0.0.1:9876/health
+
+EOF
+        ;;
+esac
+
+exit 0

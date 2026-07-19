@@ -1,0 +1,16 @@
+#!/bin/sh
+# postrm for the gigastt deb. Deliberately does NOT remove the `gigastt`
+# system user, /etc/gigastt, or /usr/share/gigastt: the user may be shared
+# with the model data package and stale state is harmless — removing accounts
+# or data on package removal is the kind of destructive surprise we avoid.
+set -e
+
+case "$1" in
+    remove|purge)
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload || true
+        fi
+        ;;
+esac
+
+exit 0

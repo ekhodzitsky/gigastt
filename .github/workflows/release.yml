@@ -41,6 +41,8 @@ jobs:
             asset_suffix: x86_64-unknown-linux-gnu
             cuda: false
             ffi: true
+            offline: true
+            deb: true
           - name: linux-aarch64-cpu
             os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
@@ -48,6 +50,7 @@ jobs:
             asset_suffix: aarch64-unknown-linux-gnu
             cuda: false
             ffi: true
+            offline: true
             # Cross-compiled on x86_64 via gcc-aarch64-linux-gnu (see the
             # "Install aarch64 cross-linker" step). Relies on a prebuilt
             # aarch64 onnxruntime being fetched by `ort` (download-binaries);
@@ -215,6 +218,106 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      # Offline all-in-one tarball: binary + pre-quantized INT8 model bundle +
+      # RUPunct punctuation model + install.sh + hardened systemd unit, for
+      # air-gapped sites that cannot fetch models from HuggingFace/GitHub at
+      # install time. Linux only (deb targets are Linux-first: Astra / ALT /
+      # RED OS via the tarball). Flows into the same SHA256SUMS / SLSA /
+      # minisign / release pipeline via the *.tar.gz globs in the publish job.
+      - name: Fetch offline model files
+        if: matrix.offline || matrix.deb
+        shell: bash
+        run: scripts/fetch_offline_models.sh "${{ runner.temp }}/offline-models"
+
+      - name: Build offline bundle
+        if: matrix.offline
+        id: package_offline
+        shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          SUFFIX: ${{ matrix.asset_suffix }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          ASSET="gigastt-${VERSION}-offline-${SUFFIX}.tar.gz"
+          scripts/build_offline_bundle.sh \
+            --version "$VERSION" \
+            --suffix "$SUFFIX" \
+            --binary "target/${TARGET}/release/gigastt" \
+            --models "${{ runner.temp }}/offline-models" \
+            --output .
+          echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+          echo "sha_file=${ASSET}.sha256" >> "$GITHUB_OUTPUT"
+
+      - name: Upload offline bundle artifact
+        if: matrix.offline
+        uses: actions/upload-artifact@v4
+        with:
+          name: gigastt-offline-${{ matrix.asset_suffix }}
+          path: |
+            ${{ steps.package_offline.outputs.asset }}
+            ${{ steps.package_offline.outputs.sha_file }}
+          if-no-files-found: error
+          retention-days: 7
+
+      # Debian packages (x86_64 only — Astra Linux / ALT / Ubuntu are amd64
+      # first; aarch64 users take the offline tarball):
+      #   gigastt_<ver>_amd64.deb        binary + systemd unit + /etc/gigastt
+      #                                  env example, built by cargo-deb from
+      #                                  [package.metadata.deb]
+      #   gigastt-model-int8_<ver>_all.deb  arch-independent model data
+      #                                  (/usr/share/gigastt/models/), built by
+      #                                  scripts/build_model_deb.sh
+      # Both flow into the publish job via the *.deb globs there.
+      - name: Install cargo-deb + dpkg-dev
+        if: matrix.deb
+        shell: bash
+        run: |
+          set -euo pipefail
+          # dpkg-dev provides dpkg-shlibdeps, which cargo-deb needs to resolve
+          # the `$auto` Depends list.
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends dpkg-dev
+          cargo install --locked --version 3.7.0 cargo-deb
+
+      - name: Build deb packages
+        if: matrix.deb
+        id: package_deb
+        shell: bash
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          # cargo-deb remaps target/release asset paths to the --target dir;
+          # the binary was already produced by the "Build release" step.
+          DEB="gigastt_${VERSION}_amd64.deb"
+          cargo deb --no-build --target "$TARGET" -p gigastt --output "$DEB"
+          sha256sum "$DEB" > "${DEB}.sha256"
+          MODEL_DEB="gigastt-model-int8_${VERSION}_all.deb"
+          scripts/build_model_deb.sh \
+            --version "$VERSION" \
+            --models "${{ runner.temp }}/offline-models" \
+            --output "$MODEL_DEB"
+          sha256sum "$MODEL_DEB" > "${MODEL_DEB}.sha256"
+          echo "deb=$DEB" >> "$GITHUB_OUTPUT"
+          echo "model_deb=$MODEL_DEB" >> "$GITHUB_OUTPUT"
+          ls -la "$DEB" "$MODEL_DEB"
+
+      - name: Upload deb artifacts
+        if: matrix.deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: gigastt-deb-${{ matrix.asset_suffix }}
+          path: |
+            ${{ steps.package_deb.outputs.deb }}
+            ${{ steps.package_deb.outputs.deb }}.sha256
+            ${{ steps.package_deb.outputs.model_deb }}
+            ${{ steps.package_deb.outputs.model_deb }}.sha256
+          if-no-files-found: error
+          retention-days: 7
+
   publish:
     name: Publish GitHub release
     needs: build
@@ -246,7 +349,8 @@ jobs:
         working-directory: dist
         run: |
           : > SHA256SUMS.txt
-          for f in *.tar.gz; do
+          for f in *.tar.gz *.deb; do
+            [ -e "$f" ] || continue
             (sha256sum "$f" 2>/dev/null || shasum -a 256 "$f") >> SHA256SUMS.txt
           done
           cat SHA256SUMS.txt
@@ -282,16 +386,17 @@ jobs:
         with:
           subject-path: |
             dist/*.tar.gz
+            dist/*.deb
             dist/SHA256SUMS.txt
             dist/*.cdx.json
 
-      # minisign signatures for tarballs + SHA256SUMS.txt. The
+      # minisign signatures for tarballs + debs + SHA256SUMS.txt. The
       # signing secret is injected via the `MINISIGN_SECRET_KEY` and
       # `MINISIGN_PASSWORD` repository secrets. When the secret is not
       # configured (forks, preview runs), the step degrades to a warning
       # so we don't break the release pipeline — minisign is added to
-      # the tarball asset list only if signing succeeds.
-      - name: Sign tarballs + SHA256SUMS with minisign
+      # the release asset list only if signing succeeds.
+      - name: Sign artifacts + SHA256SUMS with minisign
         if: env.HAS_MINISIGN_KEY == 'true'
         id: minisign
         shell: bash
@@ -309,7 +414,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends minisign
           printf '%s\n' "$MINISIGN_SECRET_KEY" > minisign.key
           chmod 600 minisign.key
-          for f in *.tar.gz SHA256SUMS.txt *.cdx.json; do
+          for f in *.tar.gz *.deb SHA256SUMS.txt *.cdx.json; do
             [ -f "$f" ] || continue
             # `-S` = sign; `-s` = secret key; `-c` = comment; `-t` = trusted
             # comment (appears in `-Vm` output). Pipe the password so
@@ -341,6 +446,7 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/*.sha256
+            dist/*.deb
             dist/SHA256SUMS.txt
             dist/*.cdx.json
             dist/*.minisig
