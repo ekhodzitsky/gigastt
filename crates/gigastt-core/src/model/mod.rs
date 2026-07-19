@@ -167,9 +167,11 @@ const PUNCT_FILES: &[(&str, &str)] = &[
 ///   encoder-only, 71-class multilingual char vocab (ru/en/kk/ky/uz), bare
 ///   lowercase output. Downloads istupakov's pre-quantized INT8 encoder.
 ///
-/// Real upstream filenames are kept on disk (no canonical-prefix rename), and
-/// the engine auto-detects the variant from the encoder file present in the
-/// model directory, so on-disk layout fully determines which head runs.
+/// Real upstream filenames are kept on disk (no canonical-prefix rename). An
+/// explicit `--model-variant` (the resolved variant threaded into the engine
+/// loader) selects the head; when none is given the engine auto-detects it from
+/// the encoder file present in the model directory (`rnnt` precedence when more
+/// than one head's files coexist).
 ///
 /// `#[non_exhaustive]`: recognition heads are added over time (this is an
 /// opt-in, additive catalog), so downstream matches must include a wildcard arm.

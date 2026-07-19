@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.1] - 2026-07-19
+
+### Fixed
+
+- **`--model-variant` is now honored when a model directory holds more than one head.**
+  Previously the engine re-detected the head from the files on disk (with `rnnt` precedence)
+  at load time, so `--model-variant e2e_rnnt` (or any non-default head) was silently ignored
+  whenever a directory contained more than one head's files — the highest-precedence head
+  loaded instead. The resolved variant is now threaded through to the engine loader, so the
+  requested head is the one that loads (and the load fails with a clear error if that head's
+  files are absent). With no `--model-variant`, on-disk auto-detection is unchanged. Adds the
+  additive `Engine::load_with_pools_threads_variant` entry point.
+
 ## [2.11.0] - 2026-07-17
 
 ### Added
@@ -1562,7 +1575,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.1...HEAD
+[2.11.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.8.0...v2.9.0

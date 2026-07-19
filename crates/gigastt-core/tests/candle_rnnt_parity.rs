@@ -17,8 +17,7 @@
 use std::path::Path;
 
 use gigastt_core::runtime_api::{
-    Runtime, RuntimeSession, Shape, Tensor, TensorData, TensorDataView, candle_factory,
-    production_factory,
+    Runtime, RuntimeSession, Shape, Tensor, TensorData, TensorDataView, candle_factory, cpu_factory,
 };
 
 const PRED_HIDDEN: usize = 320;
@@ -71,7 +70,10 @@ fn candle_decoder_matches_ort() {
         dir.display()
     );
 
-    let ort = production_factory(&dir).create(1).expect("ort runtime");
+    // Use the raw ort factory directly: `production_factory` auto-selects the
+    // Candle backend for an rnnt model dir, which would make this a candle-vs-candle
+    // comparison instead of the intended ort-vs-candle parity gate.
+    let ort = cpu_factory().create(1).expect("ort runtime");
     let ort_sess = ort
         .load_session(&dec_onnx, false)
         .expect("ort load decoder");
@@ -142,7 +144,10 @@ fn candle_joiner_matches_ort() {
         dir.display()
     );
 
-    let ort = production_factory(&dir).create(1).expect("ort runtime");
+    // Use the raw ort factory directly: `production_factory` auto-selects the
+    // Candle backend for an rnnt model dir, which would make this a candle-vs-candle
+    // comparison instead of the intended ort-vs-candle parity gate.
+    let ort = cpu_factory().create(1).expect("ort runtime");
     let ort_sess = ort
         .load_session(&joint_onnx, false)
         .expect("ort load joiner");

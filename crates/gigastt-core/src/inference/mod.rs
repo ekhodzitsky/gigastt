@@ -70,7 +70,7 @@ use crate::model::ModelVariant;
 use crate::runtime::factory::Runtime;
 #[allow(unused_imports)]
 use crate::runtime::factory::RuntimeFactory;
-use crate::runtime::production_factory;
+use crate::runtime::production_factory_variant;
 use crate::runtime::session::RuntimeSession;
 use crate::runtime::tensor::{Shape, Tensor, TensorData, TensorDataView};
 
@@ -143,6 +143,15 @@ fn total_ram_bytes() -> u64 {
     {
         0
     }
+}
+
+/// Resolve which recognition head the engine should load: an explicit
+/// `override_` (from `--model-variant`) always wins, else auto-detect from the
+/// on-disk layout (`rnnt` precedence). Extracted so the override precedence —
+/// the fix that keeps `--model-variant` effective when a directory holds more
+/// than one head — is unit-testable without model files.
+fn resolve_load_variant(override_: Option<ModelVariant>, model_dir: &Path) -> Option<ModelVariant> {
+    override_.or_else(|| ModelVariant::detect_in_dir(model_dir))
 }
 
 /// Encoder time subsampling factor (4 frames → 1 encoder output frame).
@@ -1063,11 +1072,38 @@ impl Engine {
         batch_pool_size: usize,
         encoder_intra_threads: usize,
     ) -> Result<Self, GigasttError> {
+        Self::load_with_pools_threads_variant(
+            model_dir,
+            None,
+            pool_size,
+            min_size,
+            batch_pool_size,
+            encoder_intra_threads,
+        )
+    }
+
+    /// Like [`Engine::load_with_pools_threads`], but lets the caller force which
+    /// recognition head to load instead of auto-detecting it.
+    ///
+    /// When `variant` is `Some(v)`, head `v` is loaded (and the load fails with a
+    /// clear `ModelLoad` error if `v`'s files aren't in `model_dir`). When it is
+    /// `None`, the on-disk layout is auto-detected with `rnnt` precedence, exactly
+    /// as [`Engine::load_with_pools_threads`]. This is the entry point that makes
+    /// `--model-variant` effective when a directory holds more than one head.
+    pub fn load_with_pools_threads_variant(
+        model_dir: &str,
+        variant: Option<ModelVariant>,
+        pool_size: usize,
+        min_size: usize,
+        batch_pool_size: usize,
+        encoder_intra_threads: usize,
+    ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
-        // Auto-detect which recognition head is present on disk (rnnt encoder
-        // takes precedence, else e2e_rnnt). The on-disk layout fully determines
-        // which head runs — callers select the variant only at download time.
-        let Some(variant) = ModelVariant::detect_in_dir(dir) else {
+        // Resolve the head once, up front: an explicit `variant` wins, else detect
+        // from disk (rnnt precedence). Resolving here (not just inside
+        // `load_with_factory`) keeps the RAM cap below sized to the head that will
+        // actually load.
+        let Some(variant) = resolve_load_variant(variant, dir) else {
             return Err(GigasttError::ModelLoad {
                 path: dir.display().to_string(),
                 source: None,
@@ -1089,9 +1125,10 @@ impl Engine {
         let encoder_intra_threads =
             Self::clamp_encoder_intra_threads(pool_size, encoder_intra_threads, logical_cpus);
 
-        let factory = production_factory(dir);
+        let factory = production_factory_variant(dir, Some(variant));
         Self::load_with_factory(
             dir,
+            Some(variant),
             pool_size,
             min_size,
             batch_pool_size,
@@ -1104,13 +1141,19 @@ impl Engine {
     /// by tests that inject a [`crate::runtime::factory::RuntimeFactory`].
     pub(crate) fn load_with_factory(
         model_dir: &Path,
+        variant_override: Option<ModelVariant>,
         pool_size: usize,
         min_size: usize,
         batch_pool_size: usize,
         factory: Box<dyn crate::runtime::factory::RuntimeFactory>,
         encoder_intra_threads: usize,
     ) -> Result<Self, GigasttError> {
-        let Some(variant) = ModelVariant::detect_in_dir(model_dir) else {
+        // Honor an explicit variant (e.g. from `--model-variant`) when the caller
+        // resolved one; otherwise auto-detect from the on-disk layout (rnnt
+        // precedence). Passing the override through is what makes `--model-variant`
+        // effective when a directory holds more than one head — without it the
+        // engine always re-detects and silently loads the highest-precedence head.
+        let Some(variant) = resolve_load_variant(variant_override, model_dir) else {
             return Err(GigasttError::ModelLoad {
                 path: model_dir.display().to_string(),
                 source: None,
@@ -3072,6 +3115,44 @@ mod tests {
         assert!(matches!(result, Err(GigasttError::ModelLoad { .. })));
     }
 
+    #[test]
+    fn test_resolve_load_variant_override_beats_disk_detection() {
+        // A directory holding BOTH the rnnt and e2e_rnnt encoders: on-disk
+        // detection returns rnnt (precedence), so without an explicit override the
+        // engine would silently ignore `--model-variant e2e_rnnt`. This is the
+        // regression this fix guards.
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join(ModelVariant::Rnnt.encoder_file()), b"x").unwrap();
+        std::fs::write(dir.path().join(ModelVariant::E2eRnnt.encoder_file()), b"x").unwrap();
+
+        // Sanity: bare on-disk detection prefers rnnt.
+        assert_eq!(
+            ModelVariant::detect_in_dir(dir.path()),
+            Some(ModelVariant::Rnnt)
+        );
+        // No override → auto-detect (rnnt precedence): behavior is unchanged.
+        assert_eq!(
+            resolve_load_variant(None, dir.path()),
+            Some(ModelVariant::Rnnt)
+        );
+        // Explicit override wins over the higher-precedence head on disk.
+        assert_eq!(
+            resolve_load_variant(Some(ModelVariant::E2eRnnt), dir.path()),
+            Some(ModelVariant::E2eRnnt)
+        );
+
+        // The override is honored even when its files aren't present — the engine
+        // load then fails with a clear ModelLoad error instead of silently loading
+        // whatever else is on disk.
+        let empty = tempfile::tempdir().expect("tempdir");
+        assert_eq!(
+            resolve_load_variant(Some(ModelVariant::E2eRnnt), empty.path()),
+            Some(ModelVariant::E2eRnnt)
+        );
+        // No override + empty dir → nothing to load.
+        assert_eq!(resolve_load_variant(None, empty.path()), None);
+    }
+
     // ---- Pool tests (B.7) ---------------------------------------------------
     //
     // These exercise `Pool<T>` with synthetic items so the contract is
@@ -3935,6 +4016,7 @@ mod tests {
 
         let ort_engine = Engine::load_with_factory(
             model_path,
+            None,
             1,
             1,
             0,
@@ -3944,6 +4026,7 @@ mod tests {
         .expect("ort engine should load");
         let candle_engine = Engine::load_with_factory(
             model_path,
+            None,
             1,
             1,
             0,
@@ -4011,6 +4094,7 @@ mod tests {
 
         let ort_engine = Engine::load_with_factory(
             model_path,
+            None,
             1,
             1,
             0,
@@ -4020,6 +4104,7 @@ mod tests {
         .expect("ort engine should load");
         let candle_engine = Engine::load_with_factory(
             model_path,
+            None,
             1,
             1,
             0,
@@ -4191,6 +4276,7 @@ mod tests {
 
         let ort_engine = Engine::load_with_factory(
             model_path,
+            None,
             1,
             1,
             0,
@@ -4200,6 +4286,7 @@ mod tests {
         .expect("ort engine should load");
         let ane_engine = Engine::load_with_factory(
             model_path,
+            None,
             1,
             1,
             0,
@@ -4652,7 +4739,7 @@ mod tests {
             );
 
             let factory = Box::new(MockFactory::new(sessions));
-            let engine = Engine::load_with_factory(dir, 1, 1, 0, factory, 1)
+            let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1)
                 .expect("engine should load with mock runtime");
             (engine, tmp)
         }

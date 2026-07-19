@@ -181,29 +181,49 @@ pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
 
 /// Returns a production `ort` factory that preserves the provider selection and
 /// disk-cache layout used by the engine before the runtime abstraction.
+///
+/// Public, stable 1-arg form: selects the backend from the variant detected on
+/// disk. The engine calls the crate-internal `production_factory_variant`
+/// instead, passing the head it has already resolved so an explicit
+/// `--model-variant` is honored.
 pub fn production_factory(model_dir: &Path) -> Box<dyn RuntimeFactory> {
+    production_factory_variant(
+        model_dir,
+        crate::model::ModelVariant::detect_in_dir(model_dir),
+    )
+}
+
+/// Like [`production_factory`], but the caller supplies the resolved recognition
+/// head. The rnnt-only candle/ane backends are gated on `variant` directly —
+/// re-detecting from disk here would reintroduce the multi-head bug where an
+/// explicit `--model-variant` override is overruled by `rnnt`-precedence
+/// detection. `None` (nothing resolved/detected) selects the ort factory, never
+/// the rnnt-only backends — matching the historical `production_factory`.
+pub(crate) fn production_factory_variant(
+    model_dir: &Path,
+    variant: Option<crate::model::ModelVariant>,
+) -> Box<dyn RuntimeFactory> {
+    // The candle/ane backends are rnnt-only, so they fire only for an explicit
+    // (or detected) `Rnnt` head. `is_rnnt` gates only those feature-gated blocks;
+    // on plain ort builds (cpu / coreml / cuda) it is otherwise unused.
+    let is_rnnt = variant == Some(crate::model::ModelVariant::Rnnt);
+    let _ = is_rnnt;
     // The Candle backend is rnnt-only (34-token char vocab,
-    // `EncoderConfig::v3_rnnt()`); for an `e2e_rnnt` model it would produce wrong
-    // output / fail to load. Use it only when the detected variant is `Rnnt`,
-    // otherwise fall back to the ort factory below.
+    // `EncoderConfig::v3_rnnt()`); for any other head it would produce wrong
+    // output / fail to load. Use it only for the `Rnnt` head, otherwise fall back
+    // to the ort factory below.
     #[cfg(feature = "candle")]
     {
-        if matches!(
-            crate::model::ModelVariant::detect_in_dir(model_dir),
-            Some(crate::model::ModelVariant::Rnnt)
-        ) {
+        if is_rnnt {
             return Box::new(crate::runtime::candle::factory::CandleFactory::new());
         }
     }
     // The ANE backend is rnnt-only (same restriction as Candle) and macOS-only
-    // (Apple frameworks); use it only when the detected variant is `Rnnt`,
-    // otherwise fall back to the ort factory below.
+    // (Apple frameworks); use it only for the `Rnnt` head, otherwise fall back to
+    // the ort factory below.
     #[cfg(all(feature = "ane", target_os = "macos"))]
     {
-        if matches!(
-            crate::model::ModelVariant::detect_in_dir(model_dir),
-            Some(crate::model::ModelVariant::Rnnt)
-        ) {
+        if is_rnnt {
             return Box::new(crate::runtime::coreml::factory::AneFactory::new());
         }
     }

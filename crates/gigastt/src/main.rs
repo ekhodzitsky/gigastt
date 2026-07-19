@@ -1092,8 +1092,9 @@ async fn main() -> anyhow::Result<()> {
                             .map(|n| n.get())
                             .unwrap_or(1),
                     );
-                    let mut engine = inference::Engine::load_with_pools_threads(
+                    let mut engine = inference::Engine::load_with_pools_threads_variant(
                         &model_dir,
+                        Some(resolved),
                         pool_size,
                         pool_min_size,
                         batch_pool_size,
@@ -1233,8 +1234,9 @@ async fn main() -> anyhow::Result<()> {
                     .map(|n| n.get())
                     .unwrap_or(1),
             );
-            let mut engine = inference::Engine::load_with_pools_threads(
+            let mut engine = inference::Engine::load_with_pools_threads_variant(
                 &model_dir,
+                Some(resolved),
                 1,
                 1,
                 0,
