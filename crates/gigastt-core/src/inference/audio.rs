@@ -624,25 +624,37 @@ pub fn resample(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate) -> 
     Ok(out_vec)
 }
 
-/// Resample audio using an optional cached resampler.
+/// Lower bound for the cached streaming resampler's chunk capacity.
 ///
-/// The cached resampler is created on first call and reused when the input
-/// chunk size matches. If the chunk size changes, the cache is recreated.
+/// The capacity is fixed when the resampler is first created and cannot be
+/// raised later without recreating it (which would reset the FIR state). A
+/// tiny first frame would otherwise cap every later frame at that size and
+/// make the oversized-frame split loop run many times per call; 4096 samples
+/// covers ~85 ms at 48 kHz, so realistic frames never split. The value only
+/// bounds per-call overhead — correctness holds for any capacity.
+const MIN_RESAMPLER_CAPACITY: usize = 4096;
+
+/// Resample audio using an optional cached resampler, writing into a caller-provided buffer.
+///
+/// The cached resampler is created once on first call and reused for the rest
+/// of the session; it is never recreated, so the FIR history and fractional
+/// phase survive across frames and no seam discontinuities appear at frame
+/// boundaries. Chunk sizes may vary freely between calls: sizes up to the
+/// resampler capacity are applied via `set_chunk_size` (which rubato supports
+/// without touching filter state), and larger chunks are fed through the same
+/// resampler in capacity-sized pieces.
+///
+/// Non-finite samples are sanitized in-place.
+///
+/// `samples` is consumed (moved) so that in-place sanitization avoids an
+/// extra allocation. Callers that already own the input vector should pass
+/// it directly; the buffer is not borrowed after the call.
 ///
 /// ```text
 /// { from_rate.0 > 0 && to_rate.0 > 0 }
 /// fn resample_with_cache(samples: Vec<f32>, from_rate: SampleRate, to_rate: SampleRate, cache: &mut Option<rubato::Async<f32>>, out_buf: &mut Vec<f32>) -> anyhow::Result<()>
 /// { ret.as_ref().map(|v| !v.is_empty() || samples.is_empty() || from_rate == to_rate).unwrap_or(true) }
 /// ```
-/// Resample audio using an optional cached resampler, writing into a caller-provided buffer.
-///
-/// The cached resampler is created on first call and reused when the input
-/// chunk size matches. If the chunk size changes, the cache is recreated.
-/// Non-finite samples are sanitized in-place.
-///
-/// `samples` is consumed (moved) so that in-place sanitization avoids an
-/// extra allocation. Callers that already own the input vector should pass
-/// it directly; the buffer is not borrowed after the call.
 pub fn resample_with_cache(
     mut samples: Vec<f32>,
     from_rate: SampleRate,
@@ -650,8 +662,6 @@ pub fn resample_with_cache(
     cache: &mut Option<rubato::Async<f32>>,
     out_buf: &mut Vec<f32>,
 ) -> anyhow::Result<()> {
-    use rubato::Resampler;
-
     if samples.is_empty() || from_rate.0 == 0 || to_rate.0 == 0 {
         out_buf.clear();
         return Ok(());
@@ -668,15 +678,7 @@ pub fn resample_with_cache(
         }
     }
 
-    let ratio = to_rate.0 as f64 / from_rate.0 as f64;
-    let chunk = samples.len();
-
-    let needs_new = match cache {
-        Some(r) => r.set_chunk_size(chunk).is_err(),
-        None => true,
-    };
-
-    if needs_new {
+    if cache.is_none() {
         use rubato::{
             Async, FixedAsync, SincInterpolationParameters, SincInterpolationType, WindowFunction,
         };
@@ -687,7 +689,11 @@ pub fn resample_with_cache(
             oversampling_factor: 256,
             window: WindowFunction::BlackmanHarris2,
         };
-        let r = Async::<f32>::new_sinc(ratio, 2.0, &params, chunk, 1, FixedAsync::Input)
+        let ratio = to_rate.0 as f64 / from_rate.0 as f64;
+        // Fix the capacity up front: it can never be raised without
+        // recreating the resampler and losing the FIR state.
+        let capacity = samples.len().max(MIN_RESAMPLER_CAPACITY);
+        let r = Async::<f32>::new_sinc(ratio, 2.0, &params, capacity, 1, FixedAsync::Input)
             .map_err(|e| anyhow::anyhow!("Resampler init failed: {e}"))?;
         *cache = Some(r);
     }
@@ -696,15 +702,47 @@ pub fn resample_with_cache(
         Some(r) => r,
         None => anyhow::bail!("Resampler cache is None after initialization"),
     };
-    let needed = resampler.output_frames_next();
     out_buf.clear();
-    out_buf.resize(needed, 0.0);
+    let max_input = resampler.input_frames_max();
+    if samples.len() <= max_input {
+        process_cached_chunk(resampler, samples, out_buf)?;
+    } else {
+        // Frame exceeds the fixed capacity: feed it in capacity-sized pieces
+        // through the same resampler so the FIR state carries across pieces.
+        let mut piece_out = Vec::new();
+        for piece in samples.chunks(max_input) {
+            process_cached_chunk(resampler, piece.to_vec(), &mut piece_out)?;
+            out_buf.extend_from_slice(&piece_out);
+        }
+    }
+    Ok(())
+}
 
+/// Run one chunk through the cached resampler, replacing `dst` with the output.
+///
+/// `samples.len()` must not exceed `resampler.input_frames_max()`. The chunk
+/// size is applied via `set_chunk_size`, which adjusts the required
+/// input/output lengths while preserving the FIR history and fractional
+/// phase — this is what keeps variable-sized streaming frames seamless.
+fn process_cached_chunk(
+    resampler: &mut rubato::Async<f32>,
+    samples: Vec<f32>,
+    dst: &mut Vec<f32>,
+) -> anyhow::Result<()> {
     use rubato::audioadapter_buffers::direct::SequentialSliceOfVecs;
+
+    let chunk = samples.len();
+    resampler
+        .set_chunk_size(chunk)
+        .map_err(|e| anyhow::anyhow!("Resampler chunk resize failed: {e}"))?;
+    let needed = resampler.output_frames_next();
+    dst.clear();
+    dst.resize(needed, 0.0);
+
     let input_data = [samples];
     let input = SequentialSliceOfVecs::new(&input_data, 1, chunk)
         .map_err(|e| anyhow::anyhow!("Resampler input adapter failed: {e}"))?;
-    let mut output = SequentialSliceOfVecs::new_mut(std::slice::from_mut(out_buf), 1, needed)
+    let mut output = SequentialSliceOfVecs::new_mut(std::slice::from_mut(dst), 1, needed)
         .map_err(|e| anyhow::anyhow!("Resampler output adapter failed: {e}"))?;
     resampler
         .process_into_buffer(&input, &mut output, None)
@@ -1550,7 +1588,126 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
-    fn test_resample_with_cache_reuses_then_recreates() {
+    fn test_resample_with_cache_growing_chunks_match_one_shot() {
+        use std::f32::consts::PI;
+
+        // 1 s of a continuous two-tone signal at 48 kHz, continuous across the
+        // whole stream so any seam glitch shows up against the reference.
+        let n = 48_000usize;
+        let signal: Vec<f32> = (0..n)
+            .map(|i| {
+                let t = i as f32 / 48_000.0;
+                0.5 * (2.0 * PI * 440.0 * t).sin() + 0.3 * (2.0 * PI * 1_200.0 * t).sin()
+            })
+            .collect();
+
+        // Reference: one-shot resample of the whole signal in a single call.
+        let reference = resample(&signal, SampleRate(48_000), SampleRate(16_000)).unwrap();
+
+        // Stream the same signal in strictly growing frames (10 ms @ 48 kHz,
+        // +10 ms per frame). Every growth step used to recreate the resampler,
+        // resetting its FIR history and fractional phase at each seam.
+        let mut cache: Option<rubato::Async<f32>> = None;
+        let mut out = Vec::new();
+        let mut streamed = Vec::new();
+        let mut pos = 0usize;
+        let mut chunk = 480usize;
+        while pos < signal.len() {
+            let end = (pos + chunk).min(signal.len());
+            resample_with_cache(
+                signal[pos..end].to_vec(),
+                SampleRate(48_000),
+                SampleRate(16_000),
+                &mut cache,
+                &mut out,
+            )
+            .unwrap();
+            streamed.extend_from_slice(&out);
+            pos = end;
+            chunk += 480;
+        }
+        assert!(streamed.iter().all(|s| s.is_finite()));
+
+        // A recreated resampler drops the output-delay tail (~85 samples at
+        // 3:1) per recreation, so the streamed length collapses vs one-shot.
+        let len_diff = reference.len().abs_diff(streamed.len());
+        assert!(
+            len_diff <= 2,
+            "chunked stream diverged from one-shot reference: {} vs {} samples",
+            streamed.len(),
+            reference.len()
+        );
+
+        // Beyond the initial sinc transient (~sinc_len/2 * 1/3 ≈ 43 samples)
+        // the streamed output must track the one-shot reference closely; a
+        // seam discontinuity (FIR reset fade-in) shows up as a large spike.
+        let skip = 128;
+        let cmp_len = reference.len().min(streamed.len());
+        assert!(cmp_len > skip + 1_000, "not enough overlap to compare");
+        let mut max_diff = 0.0f32;
+        let mut max_at = 0usize;
+        for i in skip..cmp_len {
+            let d = (reference[i] - streamed[i]).abs();
+            if d > max_diff {
+                max_diff = d;
+                max_at = i;
+            }
+        }
+        assert!(
+            max_diff < 1e-3,
+            "seam discontinuity: max |streamed - reference| = {max_diff} at sample {max_at}"
+        );
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+    fn test_resample_with_cache_growth_keeps_instance() {
+        let mut cache: Option<rubato::Async<f32>> = None;
+        let mut out = Vec::new();
+        let feed =
+            |cache: &mut Option<rubato::Async<f32>>, out: &mut Vec<f32>, n: usize, seed: f32| {
+                let input: Vec<f32> = (0..n).map(|i| (i as f32 * seed).sin()).collect();
+                resample_with_cache(input, SampleRate(48_000), SampleRate(16_000), cache, out)
+                    .unwrap();
+            };
+
+        // First frame fixes the resampler capacity.
+        feed(&mut cache, &mut out, 480, 0.01);
+        let capacity = cache.as_ref().unwrap().input_frames_max();
+        assert!(capacity >= 480);
+
+        // Growing frames must NOT change the capacity: a change means the
+        // resampler was recreated and its FIR state was lost.
+        feed(&mut cache, &mut out, 960, 0.02);
+        assert_eq!(
+            cache.as_ref().unwrap().input_frames_max(),
+            capacity,
+            "resampler recreated on frame growth"
+        );
+        feed(&mut cache, &mut out, 2_000, 0.03);
+        assert_eq!(cache.as_ref().unwrap().input_frames_max(), capacity);
+
+        // A frame larger than the initial capacity must also survive without
+        // recreation (fed through in capacity-sized pieces).
+        feed(&mut cache, &mut out, capacity + 1_001, 0.01);
+        assert_eq!(
+            cache.as_ref().unwrap().input_frames_max(),
+            capacity,
+            "oversized frame must be split, not trigger recreation"
+        );
+        assert!(out.iter().all(|s| s.is_finite()));
+
+        // A frame one sample over capacity splits into a full piece plus a
+        // 1-sample remainder (which defers its output via the fractional
+        // phase); this must succeed and keep the instance.
+        feed(&mut cache, &mut out, capacity + 1, 0.02);
+        assert_eq!(cache.as_ref().unwrap().input_frames_max(), capacity);
+        assert!(out.iter().all(|s| s.is_finite()));
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+    fn test_resample_with_cache_reuses_across_chunk_sizes() {
         let mut cache: Option<rubato::Async<f32>> = None;
         let mut out = Vec::new();
         // First call creates the resampler.
@@ -1580,7 +1737,8 @@ mod tests {
         assert!(cache.is_some());
         assert!(!out.is_empty());
 
-        // Third call with a DIFFERENT chunk size forces recreation (or resize).
+        // Third call with a DIFFERENT chunk size resizes in place — the
+        // resampler is never recreated, so its FIR state survives.
         let input3: Vec<f32> = (0..960).map(|i| (i as f32 * 0.01).sin()).collect();
         resample_with_cache(
             input3,
