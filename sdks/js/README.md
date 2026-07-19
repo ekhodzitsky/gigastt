@@ -109,17 +109,17 @@ npm run build     # emit dist/ (ESM + .d.ts)
 Requires a running server with the model (~850 MB download):
 
 ```sh
-# once: download the model, then start the server from the repository root
+# once: download the model (~850 MB), then start the server from the repository root
 cargo run -- download
 cargo run --release -- serve
 
-# then point any script using GigasttClient at it, e.g. the quickstart above:
-GIGASTT_URL=ws://127.0.0.1:9876/v1/ws node yourscript.mjs
+# in another terminal, from this directory
+GIGASTT_TEST_WS_URL=ws://127.0.0.1:9876/v1/ws npx vitest run test/live.test.ts
 ```
 
-The unit tests assert the same wire contract the live server speaks
-(`docs/asyncapi.yaml`); the connect → configure → ready → PCM → stop → final
-flow is exercised end-to-end against the mock server.
+The live test (`test/live.test.ts`) is skipped unless `GIGASTT_TEST_WS_URL` is
+set; it streams a generated sine tone and asserts a complete
+ready → audio → stop → final session.
 
 ## Publishing
 
