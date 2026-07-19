@@ -1092,3 +1092,327 @@ async fn test_ws_tone_audio_produces_final_text() {
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// 24. Streaming finals get ITN + punctuation; partials stay raw
+//
+// The engine enriches a segment's joined `text` at finalization time only
+// (endpoint flush / Stop flush): ITN, then punctuation/casing restoration.
+// `words[]` payloads always keep the raw decoder output, and `partial`
+// messages are never rewritten. The enrichment-positive tests assume the
+// bare `rnnt` head (the default download since v2.3) and self-skip on
+// `e2e_rnnt`, which is already punctuated by the model itself.
+// ---------------------------------------------------------------------------
+
+const GOLOS_FIXTURE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/golos_00.wav");
+
+type WsSink = futures_util::stream::SplitSink<
+    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
+    tokio_tungstenite::tungstenite::Message,
+>;
+type WsStream = futures_util::stream::SplitStream<
+    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>,
+>;
+
+/// Decode the golos fixture (real Russian speech, contains the spoken number
+/// "шестьдесят тысяч") to PCM16 bytes at 16 kHz for WS streaming.
+fn golos_pcm16() -> Vec<u8> {
+    let samples =
+        gigastt::inference::audio::decode_audio_file(GOLOS_FIXTURE).expect("decode golos fixture");
+    let mut bytes = Vec::with_capacity(samples.len() * 2);
+    for s in samples {
+        let v = (s * 32767.0).clamp(-32768.0, 32767.0) as i16;
+        bytes.extend_from_slice(&v.to_le_bytes());
+    }
+    bytes
+}
+
+/// GET `/health` as JSON (used to read the loaded head / post-processing
+/// capabilities when deciding whether a test is meaningful).
+async fn get_health(port: u16) -> serde_json::Value {
+    let text = reqwest::Client::new()
+        .get(format!("http://127.0.0.1:{port}/health"))
+        .send()
+        .await
+        .expect("GET /health failed")
+        .text()
+        .await
+        .expect("health body");
+    serde_json::from_str(&text).expect("health JSON")
+}
+
+/// Load the punct model from the default dir, or return None (test self-skips).
+fn load_punctuator_or_skip() -> Option<gigastt::punctuation::Punctuator> {
+    let punct_dir = common::home_dir()
+        .expect("home")
+        .join(".gigastt")
+        .join("models")
+        .join("punct");
+    match gigastt::punctuation::Punctuator::load(&punct_dir) {
+        Ok(p) => Some(p),
+        Err(e) => {
+            eprintln!("skipping: punct model unavailable ({e:#})");
+            None
+        }
+    }
+}
+
+/// Stream the golos fixture over an established WS session (the caller must
+/// have configured 16 kHz first), send Stop, and collect every partial plus
+/// the first final as raw JSON payloads.
+async fn stream_golos_and_collect(
+    sink: &mut WsSink,
+    stream: &mut WsStream,
+) -> (Vec<serde_json::Value>, serde_json::Value) {
+    let pcm = golos_pcm16();
+    // ~100 ms per frame at 16 kHz PCM16 mono.
+    for chunk in pcm.chunks(3200) {
+        sink.send(Message::Binary(chunk.to_vec().into()))
+            .await
+            .unwrap();
+    }
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "stop"}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    let mut partials = Vec::new();
+    loop {
+        let msg = tokio::time::timeout(Duration::from_secs(30), stream.next())
+            .await
+            .expect("timeout waiting for Final")
+            .expect("stream ended")
+            .expect("ws error");
+        let text = msg.into_text().expect("expected text message");
+        let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        match v["type"].as_str().unwrap_or("") {
+            "partial" => partials.push(v),
+            "final" => return (partials, v),
+            other => panic!("Unexpected message type {other}: {text}"),
+        }
+    }
+}
+
+/// Rebuild the raw transcript from a segment's `words[]` payload (what the
+/// `text` field looked like before any post-processing).
+fn joined_words(segment: &serde_json::Value) -> String {
+    segment["words"]
+        .as_array()
+        .map(|words| {
+            words
+                .iter()
+                .filter_map(|w| w["word"].as_str())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .unwrap_or_default()
+}
+
+/// With a punctuator attached, the WS final segment's text is enriched
+/// (capitalized / punctuated) while its `words[]` stay raw decoder output.
+#[ignore]
+#[tokio::test]
+async fn test_ws_final_punctuated_with_punctuator() {
+    let Some(punctuator) = load_punctuator_or_skip() else {
+        return;
+    };
+    let engine = gigastt::inference::Engine::load(&common::model_dir())
+        .expect("engine")
+        .with_punctuator(Some(punctuator));
+    let (port, _shutdown) = common::start_server_with_engine(engine).await;
+    if get_health(port).await["variant"].as_str().unwrap_or("") != "rnnt" {
+        eprintln!("skipping: e2e_rnnt head is already punctuated by the model");
+        return;
+    }
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    let (_partials, final_seg) = stream_golos_and_collect(&mut sink, &mut stream).await;
+    let text = final_seg["text"].as_str().unwrap_or_default();
+    let raw = joined_words(&final_seg);
+    eprintln!("final (enriched): {text}");
+    eprintln!("words (raw join): {raw}");
+
+    assert!(!raw.is_empty(), "speech fixture must decode to words");
+    assert!(
+        text != raw,
+        "enriched final text must differ from the raw words join: {text}"
+    );
+    let first = text.chars().next().unwrap_or(' ');
+    assert!(
+        first.is_uppercase() || text.contains(['.', ',', '?', '!']),
+        "final should carry restored casing/punctuation, got: {text}"
+    );
+    // Word payloads are never rewritten: joined words equal the bare decoder
+    // hypothesis (all lowercase, no sentence punctuation).
+    assert_eq!(raw, raw.to_lowercase(), "words stay raw: {raw}");
+    assert!(
+        !raw.contains(['.', ',', '?', '!']),
+        "words carry no restored punctuation: {raw}"
+    );
+}
+
+/// Partial messages must stay raw even when the punctuator is attached:
+/// a partial's `text` is byte-identical to the join of its `words[]`.
+#[ignore]
+#[tokio::test]
+async fn test_ws_partials_stay_raw_with_punctuator() {
+    let Some(punctuator) = load_punctuator_or_skip() else {
+        return;
+    };
+    let engine = gigastt::inference::Engine::load(&common::model_dir())
+        .expect("engine")
+        .with_punctuator(Some(punctuator));
+    let (port, _shutdown) = common::start_server_with_engine(engine).await;
+    if get_health(port).await["variant"].as_str().unwrap_or("") != "rnnt" {
+        eprintln!("skipping: e2e_rnnt head is already punctuated by the model");
+        return;
+    }
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    let (partials, _final_seg) = stream_golos_and_collect(&mut sink, &mut stream).await;
+    assert!(
+        !partials.is_empty(),
+        "streaming speech must produce at least one partial"
+    );
+    for p in &partials {
+        let text = p["text"].as_str().unwrap_or_default();
+        assert_eq!(
+            text,
+            joined_words(p),
+            "partial text must equal the raw words join (never enriched): {text}"
+        );
+    }
+}
+
+/// `Configure{punctuation:false}` on a punctuator-equipped server disables the
+/// pass for this session only: the final text is the raw words join.
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_punctuation_false_disables_final_enrichment() {
+    let Some(punctuator) = load_punctuator_or_skip() else {
+        return;
+    };
+    let engine = gigastt::inference::Engine::load(&common::model_dir())
+        .expect("engine")
+        .with_punctuator(Some(punctuator));
+    let (port, _shutdown) = common::start_server_with_engine(engine).await;
+    if get_health(port).await["variant"].as_str().unwrap_or("") != "rnnt" {
+        eprintln!("skipping: e2e_rnnt head is already punctuated by the model");
+        return;
+    }
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    sink.send(Message::Text(
+        serde_json::to_string(
+            &serde_json::json!({"type": "configure", "sample_rate": 16000, "punctuation": false}),
+        )
+        .unwrap()
+        .into(),
+    ))
+    .await
+    .unwrap();
+
+    let (_partials, final_seg) = stream_golos_and_collect(&mut sink, &mut stream).await;
+    let text = final_seg["text"].as_str().unwrap_or_default();
+    let raw = joined_words(&final_seg);
+    eprintln!("final with punctuation=false: {text}");
+
+    assert!(!raw.is_empty(), "speech fixture must decode to words");
+    assert_eq!(
+        text, raw,
+        "punctuation=false must leave the final text raw: {text}"
+    );
+    assert!(
+        !text.contains(['.', ',', '?', '!']),
+        "no restored punctuation expected: {text}"
+    );
+}
+
+/// `Configure{itn:false}` on an ITN-equipped server leaves number-words as
+/// words: no ASCII digits appear that ITN would have produced.
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_itn_false_disables_final_enrichment() {
+    let engine = gigastt::inference::Engine::load(&common::model_dir())
+        .expect("engine")
+        .with_itn(true);
+    let (port, _shutdown) = common::start_server_with_engine(engine).await;
+    if get_health(port).await["variant"].as_str().unwrap_or("") != "rnnt" {
+        eprintln!("skipping: e2e_rnnt head has ITN baked into the model");
+        return;
+    }
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    sink.send(Message::Text(
+        serde_json::to_string(
+            &serde_json::json!({"type": "configure", "sample_rate": 16000, "itn": false}),
+        )
+        .unwrap()
+        .into(),
+    ))
+    .await
+    .unwrap();
+
+    let (_partials, final_seg) = stream_golos_and_collect(&mut sink, &mut stream).await;
+    let text = final_seg["text"].as_str().unwrap_or_default();
+    eprintln!("final with itn=false: {text}");
+    assert!(
+        !text.chars().any(|c| c.is_ascii_digit()),
+        "itn=false should leave number-words as words, got: {text}"
+    );
+}
+
+/// A server WITHOUT a punctuator keeps the legacy behavior even when the
+/// client asks for punctuation: `Configure{punctuation:true}` is a graceful
+/// no-op — the session works and the final text is the raw words join.
+#[ignore]
+#[tokio::test]
+async fn test_ws_configure_punctuation_true_without_punctuator_is_noop() {
+    let (port, _shutdown) = common::start_server(&common::model_dir()).await;
+    let health = get_health(port).await;
+    if health["punctuation"].as_bool().unwrap_or(false) {
+        eprintln!("skipping: default engine already has a punctuator loaded");
+        return;
+    }
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    sink.send(Message::Text(
+        serde_json::to_string(
+            &serde_json::json!({"type": "configure", "sample_rate": 16000, "punctuation": true}),
+        )
+        .unwrap()
+        .into(),
+    ))
+    .await
+    .unwrap();
+
+    let (_partials, final_seg) = stream_golos_and_collect(&mut sink, &mut stream).await;
+    let text = final_seg["text"].as_str().unwrap_or_default();
+    let raw = joined_words(&final_seg);
+    eprintln!("final without punctuator: {text}");
+
+    assert!(!raw.is_empty(), "speech fixture must decode to words");
+    assert_eq!(
+        text, raw,
+        "no punctuator attached → final text stays raw: {text}"
+    );
+}

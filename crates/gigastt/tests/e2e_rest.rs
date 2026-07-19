@@ -688,8 +688,9 @@ async fn test_ready_returns_503_when_pool_exhausted() {
 // These exercise the ADDITIVE query params `punctuation` / `itn` / `vad` and
 // the forward-compat `variant` guard. Absent params must reproduce the default
 // response byte-for-byte; a knob turned on without its backing resource must
-// 409 *before* the pool checkout. SSE and WebSocket are out of scope (they
-// don't run the punctuation / ITN passes at all).
+// 409 *before* the pool checkout. SSE and WebSocket are out of scope for the
+// REST query-param surface (streaming enriches final segments by the engine
+// boot policy / WS Configure instead — see e2e_ws.rs).
 // ---------------------------------------------------------------------------
 
 /// GET `/health` and parse it as JSON (the repo's `reqwest` build has no `json`
