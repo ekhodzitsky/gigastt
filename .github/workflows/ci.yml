@@ -374,7 +374,12 @@ jobs:
       - name: Check WER threshold
         run: |
           THRESHOLD=$(cat .github/wer-threshold.txt | tr -d '[:space:]')
-          WER=$(sed -n 's/.*WER: \([0-9.]*\)%.*/\1/p' benchmark_output.txt | head -1)
+          # Anchor to the normalized-WER line only. benchmark.rs prints two
+          # `WER:`-bearing lines — `  WER: N%` (normalized, the gate target) and
+          # `  Verbatim (naive) WER: N%`. The old `.*WER:` matched both and relied
+          # on print order + `head -1`; `^  WER:` matches only the normalized line
+          # (the verbatim line starts with `  Verbatim`).
+          WER=$(sed -n 's/^  WER: \([0-9.]*\)%.*/\1/p' benchmark_output.txt | head -1)
           if [ -z "$WER" ]; then
             echo "ERROR: Could not extract WER from benchmark output"
             exit 1
@@ -635,16 +640,22 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Save baseline from main
-        # Branch refs are untrusted input — pass them through env vars rather
-        # than interpolating into the shell directly (script-injection guard).
+        # Branch refs are untrusted input — pass the base through an env var
+        # rather than interpolating into the shell directly (script-injection
+        # guard). Return to the PR head by the SHA captured up front, NOT by
+        # `github.head_ref`: on a fork PR the head branch name is not a local ref
+        # in this checkout, so `git checkout "$HEAD_REF"` dies with "pathspec did
+        # not match" — which (under the default `bash -e`) aborted this step and
+        # skipped the benchmark + regression gate, failing the job for every fork
+        # PR. `git checkout --detach <sha>` works for fork and same-repo alike.
         env:
           BASE_REF: ${{ github.base_ref }}
-          HEAD_REF: ${{ github.head_ref }}
         run: |
+          head_sha="$(git rev-parse HEAD)"
           git stash --include-untracked || true
-          git checkout "$BASE_REF"
+          git checkout "origin/$BASE_REF"
           cargo bench -p gigastt-core --features __internals -- --save-baseline main || true
-          git checkout "$HEAD_REF"
+          git checkout --detach "$head_sha"
           git stash pop || true
 
       - name: Run benchmarks

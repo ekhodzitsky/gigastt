@@ -42,6 +42,15 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # Pin Gradle instead of relying on whatever the runner image happens to
+      # ship: there is no committed Gradle wrapper, and `setup-java` does not
+      # install Gradle, so `gradle …` below would otherwise use an unpinned,
+      # image-version-dependent binary. 8.7 is the minimum Gradle for AGP 8.5.2
+      # (packaging/android/build.gradle.kts).
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android
@@ -119,9 +128,7 @@ jobs:
 
       - name: Assemble AAR
         working-directory: packaging/android
-        run: |
-          chmod +x ./gradlew 2>/dev/null || true
-          gradle :gigastt:assembleRelease --no-daemon
+        run: gradle :gigastt:assembleRelease --no-daemon
 
       - name: Upload AAR
         uses: actions/upload-artifact@v4

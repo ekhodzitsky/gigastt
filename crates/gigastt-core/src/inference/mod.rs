@@ -3829,6 +3829,25 @@ mod tests {
         assert!(state.audio_buffer.is_empty());
     }
 
+    // Model-free guard for the 2.11.2 diarization fix: `load_speaker_encoder` must
+    // stay wired to polyvoice's `FbankOnnxExtractor` (rank-3 fbank input) via its
+    // 3-arg constructor, NOT the old rank-2 raw-waveform `OnnxEmbeddingExtractor`
+    // (4-arg, with a segment-samples window) that caused the `Got: 2 Expected: 3`
+    // failure. The extractor reads the ONNX model at construction, so a nonexistent
+    // path returns Err (never panics/Ok). This runs on every PR without the ~26 MB
+    // model, and won't compile if the loader's return type / constructor arity
+    // regresses to the waveform extractor.
+    #[cfg(feature = "diarization")]
+    #[test]
+    fn test_load_speaker_encoder_missing_model_errors() {
+        let missing = Path::new("/nonexistent/gigastt-test/wespeaker_resnet34.onnx");
+        let result = load_speaker_encoder(missing, 1);
+        assert!(
+            result.is_err(),
+            "a missing WeSpeaker model must surface as Err, not panic or Ok"
+        );
+    }
+
     #[cfg(feature = "diarization")]
     #[test]
     #[ignore = "requires the WeSpeaker diarization model"]

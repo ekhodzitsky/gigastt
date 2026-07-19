@@ -193,40 +193,60 @@ pub fn production_factory(model_dir: &Path) -> Box<dyn RuntimeFactory> {
     )
 }
 
+/// Which runtime backend [`production_factory_variant`] selects for a resolved head.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BackendKind {
+    /// Default `ort` backend (CPU / CoreML EP / CUDA EP, by compile-time feature).
+    Ort,
+    /// Pure-Rust Candle backend — rnnt-only.
+    Candle,
+    /// Apple Neural Engine backend — rnnt-only, macOS-only.
+    Ane,
+}
+
+/// Pure backend selection for [`production_factory_variant`]. The rnnt-only
+/// Candle/ANE backends are chosen ONLY for a resolved `Rnnt` head on a build that
+/// compiled them in; every other head — and `None` — uses the `ort` backend.
+/// Extracted so the `--model-variant` → backend gate (the candle/ane half of the
+/// multi-head fix) is unit-testable without model files.
+pub(crate) fn select_backend(variant: Option<crate::model::ModelVariant>) -> BackendKind {
+    let is_rnnt = variant == Some(crate::model::ModelVariant::Rnnt);
+    #[cfg(feature = "candle")]
+    if is_rnnt {
+        return BackendKind::Candle;
+    }
+    #[cfg(all(feature = "ane", target_os = "macos"))]
+    if is_rnnt {
+        return BackendKind::Ane;
+    }
+    let _ = is_rnnt;
+    BackendKind::Ort
+}
+
 /// Like [`production_factory`], but the caller supplies the resolved recognition
-/// head. The rnnt-only candle/ane backends are gated on `variant` directly —
-/// re-detecting from disk here would reintroduce the multi-head bug where an
-/// explicit `--model-variant` override is overruled by `rnnt`-precedence
-/// detection. `None` (nothing resolved/detected) selects the ort factory, never
-/// the rnnt-only backends — matching the historical `production_factory`.
+/// head. The rnnt-only candle/ane backends are gated on `variant` directly (see
+/// [`select_backend`]) — re-detecting from disk here would reintroduce the
+/// multi-head bug where an explicit `--model-variant` override is overruled by
+/// `rnnt`-precedence detection. `None` (nothing resolved/detected) selects the ort
+/// factory, never the rnnt-only backends — matching the historical
+/// `production_factory`.
 pub(crate) fn production_factory_variant(
     model_dir: &Path,
     variant: Option<crate::model::ModelVariant>,
 ) -> Box<dyn RuntimeFactory> {
-    // The candle/ane backends are rnnt-only, so they fire only for an explicit
-    // (or detected) `Rnnt` head. `is_rnnt` gates only those feature-gated blocks;
-    // on plain ort builds (cpu / coreml / cuda) it is otherwise unused.
-    let is_rnnt = variant == Some(crate::model::ModelVariant::Rnnt);
-    let _ = is_rnnt;
-    // The Candle backend is rnnt-only (34-token char vocab,
-    // `EncoderConfig::v3_rnnt()`); for any other head it would produce wrong
-    // output / fail to load. Use it only for the `Rnnt` head, otherwise fall back
-    // to the ort factory below.
+    let backend = select_backend(variant);
+    // The Candle/ANE backends are rnnt-only (34-token char vocab,
+    // `EncoderConfig::v3_rnnt()`); for any other head they would produce wrong
+    // output / fail to load, so `select_backend` only picks them for `Rnnt`.
     #[cfg(feature = "candle")]
-    {
-        if is_rnnt {
-            return Box::new(crate::runtime::candle::factory::CandleFactory::new());
-        }
+    if backend == BackendKind::Candle {
+        return Box::new(crate::runtime::candle::factory::CandleFactory::new());
     }
-    // The ANE backend is rnnt-only (same restriction as Candle) and macOS-only
-    // (Apple frameworks); use it only for the `Rnnt` head, otherwise fall back to
-    // the ort factory below.
     #[cfg(all(feature = "ane", target_os = "macos"))]
-    {
-        if is_rnnt {
-            return Box::new(crate::runtime::coreml::factory::AneFactory::new());
-        }
+    if backend == BackendKind::Ane {
+        return Box::new(crate::runtime::coreml::factory::AneFactory::new());
     }
+    let _ = backend;
 
     let factory = if cfg!(feature = "coreml") {
         OrtFactory::coreml()
@@ -236,4 +256,65 @@ pub(crate) fn production_factory_variant(
         OrtFactory::cpu().with_optimized_cache_dir(model_dir.join("optimized_cache"))
     };
     Box::new(factory)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::ModelVariant;
+
+    // The rnnt-only candle/ane backends must NEVER be selected for a non-rnnt head
+    // or for `None`, on any build — this is the exact gate the multi-head
+    // `--model-variant` fix added so candle/ane honor the resolved head instead of
+    // re-detecting `rnnt` from disk. Model-free; runs in the PR-gating unit tests.
+    #[test]
+    fn select_backend_non_rnnt_and_none_are_always_ort() {
+        assert_eq!(
+            select_backend(Some(ModelVariant::E2eRnnt)),
+            BackendKind::Ort
+        );
+        assert_eq!(select_backend(Some(ModelVariant::MlCtc)), BackendKind::Ort);
+        assert_eq!(
+            select_backend(Some(ModelVariant::MlCtcLarge)),
+            BackendKind::Ort
+        );
+        assert_eq!(select_backend(None), BackendKind::Ort);
+    }
+
+    // On the default ort builds (cpu / coreml / cuda) even `Rnnt` uses the ort
+    // backend — the rnnt-only accelerated backends aren't compiled in.
+    #[cfg(not(any(feature = "candle", all(feature = "ane", target_os = "macos"))))]
+    #[test]
+    fn select_backend_rnnt_is_ort_without_accelerated_backend() {
+        assert_eq!(select_backend(Some(ModelVariant::Rnnt)), BackendKind::Ort);
+    }
+
+    // On a candle build, `Rnnt` picks the Candle backend but every other head (and
+    // `None`) still falls through to ort — proving the fix's `is_rnnt` gate.
+    #[cfg(feature = "candle")]
+    #[test]
+    fn select_backend_candle_only_for_rnnt() {
+        assert_eq!(
+            select_backend(Some(ModelVariant::Rnnt)),
+            BackendKind::Candle
+        );
+        assert_eq!(
+            select_backend(Some(ModelVariant::E2eRnnt)),
+            BackendKind::Ort
+        );
+        assert_eq!(select_backend(Some(ModelVariant::MlCtc)), BackendKind::Ort);
+        assert_eq!(select_backend(None), BackendKind::Ort);
+    }
+
+    // Same for the ANE (macOS) build.
+    #[cfg(all(feature = "ane", target_os = "macos"))]
+    #[test]
+    fn select_backend_ane_only_for_rnnt() {
+        assert_eq!(select_backend(Some(ModelVariant::Rnnt)), BackendKind::Ane);
+        assert_eq!(
+            select_backend(Some(ModelVariant::E2eRnnt)),
+            BackendKind::Ort
+        );
+        assert_eq!(select_backend(None), BackendKind::Ort);
+    }
 }
