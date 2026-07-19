@@ -57,6 +57,26 @@ measured here (no reference set).
 > harness, manifests, and normalization as the rows above; bare lowercase output, so pair
 > with `--punctuation` / `--itn` for readable text.
 
+### Punctuation quality — `e2e_rnnt` vs `rnnt` + RuPunct restore
+
+The low-WER `rnnt` head is bare lowercase, so readable Russian comes two ways: bake it in
+with the `e2e_rnnt` head (one pass), or restore it on top of `rnnt` with the `--punctuation`
+RuPunct model plus `--itn` (two passes). Measured on **775 punctuated FLEURS-ru references**
+(the `raw_transcription` field; numbers are written as digits, so both configs run `--itn on`
+to match), position-based F1 with the same metric as
+[`benchmark/benchmark_punctuation.py`](../benchmark/benchmark_punctuation.py):
+
+| Config | Punctuation F1 | Capitalization F1 |
+|---|---|---|
+| `e2e_rnnt` (one pass, baked in) | **0.540** | **0.726** |
+| `rnnt` + RuPunct restore (two passes) | 0.355 | 0.656 |
+
+`e2e_rnnt` wins on both — and the gap is a **lower bound**: the metric is position-based, so
+`e2e_rnnt`'s higher WER (more misrecognized words shift downstream positions) handicaps *its*
+own score, yet it still leads. This is why both heads are kept: `rnnt` for lowest WER on raw
+text, `e2e_rnnt` as the single-pass path to punctuated / cased / ITN'd Russian whose
+punctuation is better than restoring it after the fact.
+
 **Honest reading:**
 
 - **Clean read** → a **statistical tie**: gigastt-rnnt (3.55%) vs **Vosk 0.54 (2.97%)** —

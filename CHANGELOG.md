@@ -7,34 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **Benchmarks: measured Russian WER for the GigaAM Multilingual CTC heads.** Through the
-  same Python harness, manifests, and normalization as the other engines
-  (`docs/benchmarks.md`): `ml_ctc_large` (600M) 4.44% clean read / 5.70% far-field,
-  `ml_ctc` (220M) 6.15% / 8.28% — the 600M head approaches the Russian-specialized `rnnt`
-  (3.55% / 4.08%) and beats the old `e2e_rnnt` (8.60% clean). Adds `gigastt-ml-ctc` /
-  `gigastt-ml-ctc-large` benchmark runners. Phone / YouTube WER are not measured (no local
-  reference audio).
-- **Benchmarks: measured English WER for the GigaAM Multilingual CTC heads.** On a
-  1000-sample slice of LibriSpeech `test-clean` (verbatim WER; `docs/benchmarks.md`):
-  `ml_ctc_large` (600M) **4.63%**, `ml_ctc` (220M) 6.67% — only ~0.2 pp behind their Russian
-  clean-read WER, so the model card's "moderate on English" understates them on clean read.
-  The Russian-only `rnnt` / `e2e_rnnt` heads are Cyrillic-only and score 100% on English.
-  Adds `scripts/prepare_librispeech.py`.
-- **Benchmarks: measured Kazakh / Kyrgyz / Uzbek WER for the GigaAM Multilingual CTC heads.**
-  On FLEURS test splits (`docs/benchmarks.md`), digit-free Unicode-verbatim WER: `ml_ctc_large`
-  (600M) Kazakh **6.52%** / Kyrgyz **7.39%** / Uzbek **9.21%**, `ml_ctc` (220M) 7.21 / 8.82 /
-  11.96. Across all five supported languages the 600M head is 4.4–9.2% clean-read WER. Adds
-  `scripts/prepare_fleurs.py` and `scripts/wer_unicode.py` (Unicode-complete WER that keeps the
-  Turkic Cyrillic letters, folds Uzbek apostrophe variants, and excludes number-bearing
-  sentences where the charwise heads spell digits out and no words↔digits ITN exists).
-
 ### Fixed
 
 - **Speaker diarization now feeds WeSpeaker the expected fbank features.** The previous legacy
   extractor passed rank-2 raw waveform tensors to a rank-3 feature model, so offline and streaming
   diarization logged `Got: 2 Expected: 3` and returned transcripts without speaker labels.
+
+## [2.11.1] - 2026-07-19
+
+### Fixed
+
+- **`--model-variant` is now honored when a model directory holds more than one head.**
+  Previously the engine re-detected the head from the files on disk (with `rnnt` precedence)
+  at load time, so `--model-variant e2e_rnnt` (or any non-default head) was silently ignored
+  whenever a directory contained more than one head's files — the highest-precedence head
+  loaded instead. The resolved variant is now threaded through to the engine loader, so the
+  requested head is the one that loads (and the load fails with a clear error if that head's
+  files are absent). With no `--model-variant`, on-disk auto-detection is unchanged. Adds the
+  additive `Engine::load_with_pools_threads_variant` entry point.
 
 ## [2.11.0] - 2026-07-17
 
@@ -60,6 +50,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     via `--model-variant` (or `GIGASTT_MODEL_VARIANT`); the engine also auto-detects the head
     from the encoder present on disk. REST `/v1/models` reports them as
     `gigaam-multilingual-ctc` / `gigaam-multilingual-large-ctc`.
+- **Benchmark WER for the Multilingual CTC heads across all five supported languages**
+  (`docs/benchmarks.md`). Clean-read WER for the 600M head: Russian 4.44% (`golos_crowd_1k`),
+  English 4.63% (LibriSpeech `test-clean`), Kazakh 6.52% / Kyrgyz 7.39% / Uzbek 9.21% (FLEURS,
+  digit-free) — 4.4–9.2% across languages; the 220M head is 6.15–11.96%. The Russian-only
+  `rnnt` / `e2e_rnnt` heads are Cyrillic-only (100% WER on English). Adds the `gigastt-ml-ctc`
+  / `gigastt-ml-ctc-large` benchmark runners and `scripts/prepare_librispeech.py`,
+  `scripts/prepare_fleurs.py`, `scripts/wer_unicode.py` (a Unicode-complete WER with the
+  number / apostrophe normalization these languages need). Russian phone / YouTube WER are not
+  measured (no local reference audio).
 
 ### Fixed
 
@@ -1582,7 +1581,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.1...HEAD
+[2.11.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.8.0...v2.9.0

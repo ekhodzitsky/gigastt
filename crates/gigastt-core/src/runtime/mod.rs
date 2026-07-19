@@ -29,6 +29,7 @@ pub fn ane_factory() -> Box<dyn RuntimeFactory> {
 pub use error::RuntimeError;
 #[allow(unused_imports)]
 pub use factory::{Runtime, RuntimeFactory};
+pub(crate) use ort::factory::production_factory_variant;
 #[allow(unused_imports)]
 pub use ort::factory::{cpu_factory, production_factory};
 #[allow(unused_imports)]

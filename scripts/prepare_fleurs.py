@@ -36,6 +36,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--slice-size", type=int, default=1000, help="Max samples in the manifest")
     p.add_argument("--seed", type=int, default=42, help="Random seed for deterministic selection")
     p.add_argument("--split", type=str, default="test", help="Dataset split")
+    p.add_argument(
+        "--field",
+        default="transcription",
+        choices=["transcription", "raw_transcription"],
+        help="Reference field. `transcription` is lowercase/normalized (WER); "
+        "`raw_transcription` keeps punctuation + casing (punctuation benchmark) and "
+        "names the manifest `fleurs_<lang>_punct`.",
+    )
     p.add_argument("--output-dir", type=Path, default=None, help="WAV output dir (default derived from lang)")
     p.add_argument("--manifest-path", type=Path, default=None, help="Manifest JSON path (default derived from lang)")
     return p.parse_args()
@@ -44,7 +52,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     lang = args.config.split("_")[0]  # kk_kz -> kk
-    name = f"fleurs_{lang}"
+    name = f"fleurs_{lang}" + ("_punct" if args.field == "raw_transcription" else "")
     output_dir = (args.output_dir or Path(f"~/.gigastt/benchmarks/{name}")).expanduser()
     manifest_path = args.manifest_path or (REPO_ROOT / f"benchmark/manifests/{name}.json")
 
@@ -59,7 +67,7 @@ def main() -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
     written = []
     for row in ds:
-        ref = (row.get("transcription") or "").strip()
+        ref = (row.get(args.field) or "").strip()
         if not ref:
             continue
         audio = row["audio"]
