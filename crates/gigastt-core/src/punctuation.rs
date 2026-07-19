@@ -557,5 +557,52 @@ mod tests {
         );
     }
 
+    /// Latency probe for the streaming use case: `restore` runs synchronously
+    /// on the finalization boundary of every streaming segment, so its cost on
+    /// short (1–10 word) segments adds directly to final-segment latency.
+    /// Prints p50/p95 per segment length; a generous sanity ceiling keeps the
+    /// run self-checking without flaking on slow machines (the probe is
+    /// model-gated and runs manually, not in CI).
+    #[test]
+    #[ignore = "requires punct model at ~/.gigastt/models/punct"]
+    fn test_restore_latency_short_segments() {
+        let dir = default_punct_model_dir();
+        let punct = Punctuator::load(Path::new(&dir)).expect("load punct model");
+
+        let cases: &[(&str, &str)] = &[
+            ("1 word", "привет"),
+            ("5 words", "привет меня зовут анна"),
+            (
+                "10 words",
+                "привет меня зовут анна сколько будет стоить шестьдесят тысяч тенге",
+            ),
+        ];
+        const ITERS: usize = 50;
+
+        for (label, text) in cases {
+            // Warmup: first runs pay tokenizer/thread-pool lazy init.
+            for _ in 0..5 {
+                let _ = punct.restore(text);
+            }
+            let mut samples = Vec::with_capacity(ITERS);
+            for _ in 0..ITERS {
+                let start = std::time::Instant::now();
+                let _ = punct.restore(text);
+                samples.push(start.elapsed());
+            }
+            samples.sort();
+            let p50 = samples[ITERS / 2];
+            let p95 = samples[ITERS * 95 / 100];
+            eprintln!(
+                "restore latency {label}: p50={p50:?} p95={p95:?} max={:?}",
+                samples[ITERS - 1]
+            );
+            assert!(
+                p95 < std::time::Duration::from_millis(500),
+                "restore p95 on a short segment must stay well under 500ms, got {p95:?} ({label})"
+            );
+        }
+    }
+
     use crate::model::default_punct_model_dir;
 }
