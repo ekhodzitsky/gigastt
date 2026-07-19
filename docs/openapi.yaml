@@ -94,7 +94,7 @@ paths:
                 status: ok
                 model: gigaam-v3-rnnt
                 variant: rnnt
-                version: "2.3.0"
+                version: "2.11.2"
                 punctuation: true
                 itn: true
 
@@ -146,7 +146,7 @@ paths:
                 id: gigaam-v3-rnnt
                 name: GigaAM v3 RNN-T
                 variant: rnnt
-                version: "2.3.0"
+                version: "2.11.2"
                 encoder: int8
                 vocab_size: 34
                 sample_rate: 16000
@@ -728,7 +728,7 @@ components:
           description: Recognition head in use
         version:
           type: string
-          example: "2.3.0"
+          example: "2.11.2"
           description: Server version (semver)
         punctuation:
           type: boolean
@@ -801,7 +801,7 @@ components:
           description: Recognition head in use
         version:
           type: string
-          example: "2.3.0"
+          example: "2.11.2"
         encoder:
           type: string
           enum: [fp32, int8]

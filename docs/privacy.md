@@ -24,7 +24,9 @@ retained.
 
 The only outbound network call gigastt makes is the one-time model download:
 
-- Files are fetched from `huggingface.co` (`istupakov/gigaam-v3-onnx`).
+- Files are fetched from `huggingface.co` (`istupakov/gigaam-v3-onnx` for the
+  `rnnt`/`e2e_rnnt` heads; `istupakov/gigaam-multilingual-ctc-onnx` and
+  `istupakov/gigaam-multilingual-large-ctc-onnx` for the `ml_ctc`/`ml_ctc_large` heads).
 - Each file is SHA-256 verified before use and written atomically to disk.
 - After the initial download, gigastt operates fully offline.
 

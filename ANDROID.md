@@ -113,15 +113,19 @@ Gradle packages these automatically into the APK/AAB.
 
 ## Model Bundling
 
-The GigaAM v3 INT8 model set is ~225 MB on disk (FP32 is ~850 MB):
+The GigaAM v3 INT8 model set for the default `rnnt` head is ~225 MB on disk
+(FP32 is ~850 MB). A fresh `gigastt download` produces the `v3_rnnt_*` files
+below; the `e2e_rnnt` head uses the parallel `v3_e2e_rnnt_*` names (its BPE vocab
+is ~50 KB), and the multilingual heads ship a single
+`multilingual[_large]_ctc.int8.onnx` + `multilingual_vocab.txt`.
 
 | File | Size (approx) |
 |------|---------------|
-| `v3_e2e_rnnt_encoder_int8.onnx` | ~215 MB |
-| `v3_e2e_rnnt_encoder.onnx` (FP32) | ~844 MB |
-| `v3_e2e_rnnt_decoder.onnx` | ~4.4 MB |
-| `v3_e2e_rnnt_joint.onnx` | ~2.6 MB |
-| `v3_e2e_rnnt_vocab.txt` | ~50 KB |
+| `v3_rnnt_encoder_int8.onnx` | ~215 MB |
+| `v3_rnnt_encoder.onnx` (FP32) | ~844 MB |
+| `v3_rnnt_decoder.onnx` | ~3.3 MB |
+| `v3_rnnt_joint.onnx` | ~1.4 MB |
+| `v3_vocab.txt` | ~200 B |
 
 > **Always use the INT8 encoder on mobile.** The FP32 encoder will OOM on most devices.
 
@@ -202,7 +206,7 @@ class MainActivity : AppCompatActivity() {
 
 ## On-device Quantization
 
-Instead of bundling or downloading the ~215 MB INT8 encoder, you can ship the ~850 MB FP32 encoder and quantize it on the device after download. This is a one-time operation that takes about 2 minutes on a modern flagship phone and produces `v3_e2e_rnnt_encoder_int8.onnx` in the same directory.
+Instead of bundling or downloading the ~215 MB INT8 encoder, you can ship the ~850 MB FP32 encoder and quantize it on the device after download. This is a one-time operation that takes about 2 minutes on a modern flagship phone and produces `v3_rnnt_encoder_int8.onnx` (or `v3_e2e_rnnt_encoder_int8.onnx` for the e2e head) in the same directory.
 
 ```kotlin
 val modelDir = File(context.filesDir, "gigastt_models")

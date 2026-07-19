@@ -209,7 +209,7 @@ Downloaded to `~/.gigastt/models/` from `istupakov/gigaam-v3-onnx`:
 | `v3_rnnt_joint.onnx` | ~1.4 MB | RNN-T joiner |
 | `v3_vocab.txt` | small | char vocabulary (34 tokens) |
 
-The `e2e_rnnt` head (`--model-variant e2e_rnnt`) uses the parallel `v3_e2e_rnnt_*` filenames with a 1025-token BPE vocab.
+The `e2e_rnnt` head (`--model-variant e2e_rnnt`) uses the parallel `v3_e2e_rnnt_*` filenames with a 1025-token BPE vocab. The multilingual heads `ml_ctc` / `ml_ctc_large` (`--model-variant ml_ctc` / `ml_ctc_large`) are encoder-only: they download the pre-quantized `multilingual_ctc.int8.onnx` (~225 MB) / `multilingual_large_ctc.int8.onnx` (~592 MB) plus `multilingual_vocab.txt` (71-class multilingual char vocab, ru/en/kk/ky/uz) from `istupakov/gigaam-multilingual-ctc-onnx` / `istupakov/gigaam-multilingual-large-ctc-onnx` — no decoder/joiner.
 
 ## Development Conventions
 

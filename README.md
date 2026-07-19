@@ -50,7 +50,7 @@ Conditions: Apple M1, CPU EP, INT8/greedy, 1000 samples/domain (clean read 992; 
 Where rivals win, and when not to reach for gigastt:
 
 - **Clean read is a tie, not a win** — gigastt 3.55% (2.9–4.2) vs Vosk 0.54 2.97% (2.4–3.6); the CIs overlap and Vosk's point estimate is slightly ahead.
-- **Russian only** — zero multilingual coverage. For breadth use Vosk (20+ languages) or whisper.cpp / faster-whisper / sherpa-onnx (~99). gigastt is a specialist.
+- **Russian-first, narrowly multilingual** — the default `rnnt` / `e2e_rnnt` heads are Russian-only; the opt-in `ml_ctc` / `ml_ctc_large` heads add just ru/en/kk/ky/uz. For real breadth use Vosk (20+ languages) or whisper.cpp / faster-whisper / sherpa-onnx (~99). gigastt is a specialist.
 - **Not the speed leader** — Vosk (RTF ~0.03) and T-one (~0.06) are faster; gigastt (~0.10) is comfortably real-time, not the fastest.
 - **Peak RAM at the default `--pool-size 2` (790 MB) loses** to Vosk 0.54 (560 MB) and T-one greedy (672 MB); single-session (~400 MB) is competitive — drop to `--pool-size 1` for the lean profile.
 - **Streaming is buffered/chunked** over an offline RNN-T, not a natively streaming acoustic model; ~0.78 s TTFP is not a lowest-latency claim.
@@ -112,7 +112,7 @@ $ gigastt serve
 
 ## Requirements
 
-Rust **1.88+**, `protoc` on `PATH`. macOS 14+ (Apple Silicon, CoreML) or Linux x86_64 (optional NVIDIA CUDA 12+). ~1.5 GB disk, ~790 MB RAM at the default `--pool-size 2` (~400 MB single-session). The `gigastt-core` crate has no server dependencies — embed it directly: `gigastt-core = "2.10"`.
+Rust **1.88+**, `protoc` on `PATH`. macOS 14+ (Apple Silicon, CoreML) or Linux x86_64 (optional NVIDIA CUDA 12+). ~1.5 GB disk, ~790 MB RAM at the default `--pool-size 2` (~400 MB single-session). The `gigastt-core` crate has no server dependencies — embed it directly: `gigastt-core = "2.11"`.
 
 ## License
 

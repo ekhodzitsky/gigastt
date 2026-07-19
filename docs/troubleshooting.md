@@ -12,3 +12,5 @@
 | WebSocket closes with 1008 | Session exceeded `--max-session-secs` | Increase `--max-session-secs` or send shorter streams |
 | 429 Too Many Requests | Rate limiter enabled and bucket exhausted | Wait for `Retry-After`, or disable with `--rate-limit-per-minute 0` |
 | Empty transcription for noisy audio | Input too quiet or wrong format | Ensure 16-bit PCM; normalize level; check supported formats |
+| Diarization returns no speaker labels; logs show `Got: 2 Expected: 3` | Pre-2.11.2 bug — the WeSpeaker encoder was fed rank-2 waveform instead of rank-3 fbank features | Upgrade to **2.11.2+** (fixed); ensure `wespeaker_resnet34.onnx` is present in `~/.gigastt/models/` |
+| `--model-variant` ignored when the model dir holds more than one head | Pre-2.11.1 bug — the engine re-detected the head from disk (`rnnt` precedence) and dropped the requested variant | Upgrade to **2.11.1+** (the resolved variant is now honored); or keep each head in its own `--model-dir` |
