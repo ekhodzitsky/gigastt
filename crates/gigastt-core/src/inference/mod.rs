@@ -1887,7 +1887,7 @@ impl Engine {
             audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
                 reason: format!("{e:#}"),
             })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides)
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, false)
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
@@ -1938,7 +1938,28 @@ impl Engine {
             audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
                 reason: format!("{e:#}"),
             })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides)
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, false)
+    }
+
+    /// Like [`Engine::transcribe_bytes_shared_with_overrides`], but also runs
+    /// offline speaker diarization (labels each word's `speaker`) when a speaker
+    /// encoder is loaded. Diarization is **opt-in per request** (`?diarization=true`
+    /// on the REST surface): the non-diarized transcribe methods never label
+    /// speakers, so a plain transcript — and the `channels=split` dual-mono
+    /// fallback — carries no speaker labels. Without the `diarization` feature or a
+    /// loaded speaker encoder this is byte-for-byte the non-diarized method.
+    #[cfg(feature = "file-decode")]
+    pub fn transcribe_bytes_shared_with_overrides_diarized(
+        &self,
+        data: bytes::Bytes,
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+    ) -> Result<TranscribeResult, GigasttError> {
+        let float_samples =
+            audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
+                reason: format!("{e:#}"),
+            })?;
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, true)
     }
 
     /// Transcribe a multi-channel recording with one speaker label per channel.
@@ -1993,6 +2014,7 @@ impl Engine {
             float_samples,
             triplet,
             &TranscribeOverrides::default(),
+            false,
         )
     }
 
@@ -2008,7 +2030,14 @@ impl Engine {
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
+        diarize: bool,
     ) -> Result<TranscribeResult, GigasttError> {
+        // `diarize` is opt-in per request: offline speaker diarization only runs
+        // when the caller asked for it (REST `?diarization=true`). A plain
+        // transcript — and the `channels=split` dual-mono fallback — must carry no
+        // speaker labels, so the default paths pass `false`.
+        #[cfg(not(feature = "diarization"))]
+        let _ = diarize;
         let wall_start = std::time::Instant::now();
         let duration_s = float_samples.len() as f64 / 16000.0;
 
@@ -2016,7 +2045,7 @@ impl Engine {
         let mut words = self.decode_words_for_samples(float_samples, triplet, overrides)?;
 
         #[cfg(feature = "diarization")]
-        if let Some(ref enc) = self.speaker_encoder {
+        if diarize && let Some(ref enc) = self.speaker_encoder {
             let config = DiaConfig::default();
             let vad_config = VadConfig::default();
             let pipeline = Pipeline::new(config, vad_config);
@@ -4891,6 +4920,7 @@ mod tests {
                         vad: Some(false),
                         ..Default::default()
                     },
+                    false,
                 )
                 .expect("vad-off decode");
             assert_eq!(baseline.text, with_vad_off.text);

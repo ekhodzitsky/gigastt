@@ -719,6 +719,14 @@ impl JobExecution for RealJobExecutor {
                         } else {
                             engine_for_inference.transcribe_channels(&channels, &mut reservation)
                         }
+                    } else if params.diarization == Some(true) {
+                        // Diarization is opt-in (`?diarization=true`): only then run
+                        // the offline speaker pass, matching the sync REST path.
+                        engine_for_inference.transcribe_bytes_shared_with_overrides_diarized(
+                            body_for_inference,
+                            &mut reservation,
+                            &overrides,
+                        )
                     } else {
                         engine_for_inference.transcribe_bytes_shared_with_overrides(
                             body_for_inference,

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.3] - 2026-07-19
+
+### Fixed
+
+- **Offline file transcription no longer diarizes unless asked.** After the 2.11.2 WeSpeaker
+  fix made the speaker encoder actually work, every `/v1/transcribe` (and SSE stream) began
+  attaching speaker labels whenever the diarization model was present — ignoring the opt-in
+  `?diarization=true` parameter and, in particular, labelling the `channels=split` dual-mono
+  fallback. Offline speaker diarization is now gated on the request: a plain transcript carries
+  no `speaker` fields, and only `?diarization=true` runs the speaker pass. Streaming (WebSocket)
+  was already correctly gated. Adds the additive `Engine::transcribe_bytes_shared_with_overrides_diarized`
+  entry point.
+
 ## [2.11.2] - 2026-07-19
 
 ### Fixed
@@ -1583,7 +1596,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.2...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.3...HEAD
+[2.11.3]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.2...v2.11.3
 [2.11.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.1...v2.11.2
 [2.11.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.10.0...v2.11.0

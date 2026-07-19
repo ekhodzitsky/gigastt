@@ -702,12 +702,18 @@ pub async fn transcribe(
                 } else {
                     engine.transcribe_channels(&channels, &mut reservation)
                 }
+            } else if request_diarization {
+                // Diarization is opt-in (`?diarization=true`): only then run the
+                // offline speaker pass. `body` is `axum::body::Bytes` (a
+                // `bytes::Bytes` re-export) so the decode shares the upload buffer.
+                engine.transcribe_bytes_shared_with_overrides_diarized(
+                    body,
+                    &mut reservation,
+                    &overrides,
+                )
             } else {
-                // `body` is an `axum::body::Bytes` (re-export of `bytes::Bytes`):
-                // `clone()` is a refcount bump, not a data copy, so the decode
-                // path shares the original upload buffer. `overrides` is `Copy`
-                // and already validated above; with all fields absent this is
-                // byte-identical to `transcribe_bytes_shared`.
+                // No diarization requested: byte-identical to the pre-existing
+                // zero-copy path. `overrides` is `Copy` and already validated above.
                 engine.transcribe_bytes_shared_with_overrides(body, &mut reservation, &overrides)
             }
         }));

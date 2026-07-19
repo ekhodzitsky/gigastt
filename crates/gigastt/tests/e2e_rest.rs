@@ -1046,6 +1046,54 @@ async fn test_transcribe_channels_split_dual_mono_fallback() {
     let _ = shutdown.send(());
 }
 
+// Offline diarization is opt-in per request: a plain `/v1/transcribe` must NOT
+// label speakers, and only `?diarization=true` runs the speaker pass. This guards
+// the 2.11.2 regression where the working fbank extractor made every offline
+// transcript diarize unconditionally (the dual-mono fallback above then emitted
+// speakers). Single-speaker fixture → the diarized pass labels every word speaker_0.
+#[ignore]
+#[tokio::test]
+async fn test_transcribe_diarization_is_opt_in() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = std::fs::read(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/golos_00.wav"
+    ))
+    .expect("read fixture");
+
+    let words_for = |query: &str, wav: Vec<u8>| {
+        let url = format!("http://127.0.0.1:{port}/v1/transcribe{query}");
+        async move {
+            let resp = reqwest::Client::new()
+                .post(url)
+                .body(wav)
+                .send()
+                .await
+                .expect("POST /v1/transcribe failed");
+            assert_eq!(resp.status(), 200);
+            let body: serde_json::Value =
+                serde_json::from_str(&resp.text().await.expect("text body")).expect("JSON");
+            body["words"].as_array().cloned().expect("words array")
+        }
+    };
+
+    // Default: no diarization requested → no speaker labels.
+    let default_words = words_for("", wav.clone()).await;
+    assert!(
+        default_words.iter().all(|w| w["speaker"].is_null()),
+        "plain /v1/transcribe must not emit speaker labels"
+    );
+
+    // Opt-in: ?diarization=true → the offline speaker pass labels words.
+    let diarized_words = words_for("?diarization=true", wav).await;
+    assert!(
+        diarized_words.iter().any(|w| !w["speaker"].is_null()),
+        "?diarization=true must label at least one word with a speaker"
+    );
+
+    let _ = shutdown.send(());
+}
+
 #[ignore]
 #[tokio::test]
 async fn test_transcribe_channels_split_with_diarization_returns_400() {
