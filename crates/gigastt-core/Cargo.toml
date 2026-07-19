@@ -16,6 +16,13 @@ categories = ["multimedia::audio"]
 # cargo-semver-checks otherwise flags as a major-only change.
 [package.metadata.cargo-semver-checks.lints]
 enum_marked_non_exhaustive = "allow"
+# The internal `SharedExtractor` diarization adapter lost the `UnwindSafe` /
+# `RefUnwindSafe` auto traits when its inner extractor was swapped to polyvoice's
+# fbank extractor (the fix for WeSpeaker rank-3 input). `SharedExtractor` is an
+# internal adapter — not re-exported at the crate root and unused outside this
+# crate — so the panic-safety auto-trait loss is not a real downstream break and
+# must not force a major bump for a diarization bugfix.
+auto_trait_impl_removed = "allow"
 
 [lib]
 crate-type = ["rlib"]

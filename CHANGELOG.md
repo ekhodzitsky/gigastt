@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.11.2] - 2026-07-19
+
 ### Fixed
 
 - **Speaker diarization now feeds WeSpeaker the expected fbank features.** The previous legacy
@@ -1581,7 +1583,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.1...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.2...HEAD
+[2.11.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.1...v2.11.2
 [2.11.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.0...v2.11.1
 [2.11.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.9.0...v2.10.0
