@@ -65,9 +65,14 @@ brew tap ekhodzitsky/gigastt https://github.com/ekhodzitsky/gigastt && brew inst
 # crates.io — нужен protoc в PATH (brew install protobuf / apt install protobuf-compiler)
 cargo install gigastt
 
-# Docker (CUDA: Dockerfile.cuda; вшить модель в образ: --build-arg GIGASTT_BAKE_MODEL=1)
+# Готовый образ из GHCR (CPU, multi-arch amd64+arm64; суффикс -cuda для CUDA-варианта)
+docker pull ghcr.io/ekhodzitsky/gigastt:latest
+
+# Или соберите свой образ (CUDA: Dockerfile.cuda; вшить модель в образ: --build-arg GIGASTT_BAKE_MODEL=1)
 docker build -t gigastt . && docker run -p 9876:9876 gigastt
 ```
+
+Встраивание вместо сервера? `npm install gigastt` (Node.js) · `pip install gigastt` (Python на PyPI) · Swift / Kotlin биндинги в работе — все оборачивают тот же движок, модель подкладывается отдельно: [In-process quickstarts](docs/quickstarts.md).
 
 Модель GigaAM v3 (~850 МБ) скачивается автоматически при первом запуске и квантуется в INT8 до ~225 МБ.
 
@@ -92,9 +97,11 @@ $ gigastt serve
 | Головы | `rnnt` (34-токенный char, дефолт — ниже всех WER) · `e2e_rnnt` (1025-токенный BPE, пунктуация / регистр / ITN встроены) · `ml_ctc` / `ml_ctc_large` (GigaAM Multilingual charwise-CTC, 220M / 600M, 71-токенный multilingual char — ru/en/kk/ky/uz) |
 | Постобработка | опциональные пунктуация, регистр и русский ITN — нативно на `e2e_rnnt` или встроенный проход RuPunct + ITN на `rnnt` (авто-докачка; `--punctuation` / `--itn`), переопределяемо на каждый запрос (`?punctuation=` / `?itn=` / `?vad=`) |
 | Доставка | статический бинарник · C-ABI FFI `cdylib` (Android / mobile) · крейт `gigastt-core` (без серверных зависимостей) |
-| Провайдеры исполнения | CPU (любая платформа) · CoreML / Neural Engine (macOS ARM64) · CUDA 12+ (Linux x86_64) · NNAPI (Android) |
+| Провайдеры исполнения | CPU (любая платформа) · CoreML / Neural Engine (macOS ARM64) · CUDA 12+ (Linux x86_64) · NNAPI (Android) · [ANE](docs/ane-backend.md) (`--features ane`, macOS ARM64 — энкодер ≈15.6× на Neural Engine, тёплый e2e ≈10× быстрее CPU-сборки, WER ≈1.11% против `ort`; только файловый режим) · [Candle/Metal](docs/candle-backend.md) (`--features candle`, экспериментальный — вывод побайтово совпадает с `ort`) |
 | Стриминг | инкрементальные partial'ы по WebSocket · REST + SSE для файлов · один порт 9876 |
 | Аудио на вход | WAV · M4A/AAC · MP3 · OGG/Vorbis · FLAC (авто-микс в моно) |
+| Стерео-телефония | Опциональный режим «канал = спикер» (`--stereo-speakers` в CLI / `channels=split` в REST) помечает левый/правый каналы как `speaker_0` и `speaker_1` |
+| Диаризация | Эмбеддинги WeSpeaker ResNet34 + кластеризация polyvoice, встроена по умолчанию (speaker-модель скачивается командой `gigastt download`, отказ — `--skip-diarization`) — файлы включают её на каждый запрос (`?diarization=true`, несовместимо с `channels=split`), живые сессии — через WS `Configure`; слова и сегменты получают метки `speaker` |
 | Асинхронные задачи | Очередь для длинных файлов / batch-распознавания через `/v1/jobs` (включается `--enable-jobs`): submit, poll, отмена, SSE-прогресс, retry и TTL-евикция |
 | Экспорт | JSON · TXT · SRT · VTT · Markdown — пословные тайминги + confidence или посегментно (`?segments=true` JSON, `### [mm:ss]` Markdown) |
 | Защита сервера | loopback по умолчанию · origin-allowlist · rate-limiting по IP · graceful drain · Prometheus `/metrics` на отдельном порту · loopback-only горячая перезагрузка модели (`POST /v1/admin/reload`) |

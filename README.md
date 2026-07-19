@@ -65,9 +65,14 @@ brew tap ekhodzitsky/gigastt https://github.com/ekhodzitsky/gigastt && brew inst
 # crates.io — needs protoc on PATH (brew install protobuf / apt install protobuf-compiler)
 cargo install gigastt
 
-# Docker (CUDA: Dockerfile.cuda; bake the model with --build-arg GIGASTT_BAKE_MODEL=1)
+# Prebuilt image from GHCR (CPU, multi-arch amd64+arm64; append -cuda for the CUDA variant)
+docker pull ghcr.io/ekhodzitsky/gigastt:latest
+
+# Or build your own image (CUDA: Dockerfile.cuda; bake the model with --build-arg GIGASTT_BAKE_MODEL=1)
 docker build -t gigastt . && docker run -p 9876:9876 gigastt
 ```
+
+Embedding instead of serving? `npm install gigastt` (Node.js) · `pip install gigastt` (Python on PyPI) · Swift / Kotlin bindings in progress — all wrap the same engine, model side-loaded: [In-process quickstarts](docs/quickstarts.md).
 
 The GigaAM v3 model (~850 MB) auto-downloads on first run and is INT8-quantized to ~225 MB.
 
@@ -92,10 +97,11 @@ $ gigastt serve
 | Heads | `rnnt` (34-token char, default — lowest WER) · `e2e_rnnt` (1025-token BPE, punctuation / casing / ITN baked in) · `ml_ctc` / `ml_ctc_large` (GigaAM Multilingual charwise CTC, 220M / 600M, 71-token multilingual char — ru/en/kk/ky/uz) |
 | Post-processing | optional punctuation, casing &amp; Russian ITN — native on `e2e_rnnt`, or a bundled RuPunct + ITN pass on `rnnt` (auto-downloaded; `--punctuation` / `--itn`), overridable per request (`?punctuation=` / `?itn=` / `?vad=`) |
 | Delivery | static binary · C-ABI FFI `cdylib` (Android / mobile) · `gigastt-core` crate (no server deps) |
-| Execution providers | CPU (any platform) · CoreML EP (macOS ARM64) · CUDA 12+ (Linux x86_64) · NNAPI (Android) |
+| Execution providers | CPU (any platform) · CoreML EP (macOS ARM64) · CUDA 12+ (Linux x86_64) · NNAPI (Android) · [ANE](docs/ane-backend.md) (`--features ane`, macOS ARM64 — encoder ≈15.6× on the Neural Engine, warm e2e ≈10× over the CPU build, WER ≈1.11% vs `ort`; file-mode only) · [Candle/Metal](docs/candle-backend.md) (`--features candle`, experimental — output byte-for-byte identical to `ort`) |
 | Streaming | incremental WebSocket partials · REST + SSE for files · single port 9876 |
 | Audio in | WAV · M4A/AAC · MP3 · OGG/Vorbis · FLAC (auto mono mix for multi-channel) |
 | Stereo telephony recordings | Optional channel-speaker mode (`--stereo-speakers` CLI / `channels=split` REST) labels the left/right channels as `speaker_0` and `speaker_1` |
+| Speaker diarization | WeSpeaker ResNet34 embeddings + polyvoice clustering, compiled in by default (speaker model fetched by `gigastt download`, `--skip-diarization` to opt out) — offline files opt in per request (`?diarization=true`, exclusive with `channels=split`), live sessions via WS `Configure`; words &amp; segments gain `speaker` labels |
 | Async jobs | Long-file / batch transcription queue via `/v1/jobs` (opt-in with `--enable-jobs`): submit, poll, cancel, SSE progress, retry, and TTL eviction |
 | Export | JSON · TXT · SRT · VTT · Markdown — per-word timings + confidence, or segment-level (`?segments=true` JSON, `### [mm:ss]` Markdown) |
 | Server hardening | loopback-only by default · origin allowlist · per-IP rate limiting · graceful drain · Prometheus `/metrics` on a separate port · loopback-only model hot-reload (`POST /v1/admin/reload`) |
