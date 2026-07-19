@@ -183,6 +183,9 @@ crates/
     e2e_*.rs              # E2E test suites
     load_test.rs          # Load tests
     soak_test.rs          # Soak test
+sdks/
+  go/                   # Go module: typed WS client (protocol v1.0), reconnect honoring retry_after_ms
+  js/                   # npm @gigastt/client: TypeScript WS client, Node >= 20 + browsers, vitest
 ```
 
 ## Key Constants
