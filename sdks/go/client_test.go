@@ -318,7 +318,11 @@ func TestReconnectAfterAbnormalDrop(t *testing.T) {
 		expectConfigure(t, conn)
 		writeJSON(t, conn, readyPayload())
 		if n == 1 {
-			// Abnormal close: no close frame.
+			// Wait for one audio frame (proving the client processed ready),
+			// then drop the connection abnormally: no close frame.
+			if _, _, err := conn.ReadMessage(); err != nil {
+				t.Errorf("read before drop: %v", err)
+			}
 			return
 		}
 		_, _, _ = conn.ReadMessage()
@@ -338,6 +342,9 @@ func TestReconnectAfterAbnormalDrop(t *testing.T) {
 	}
 
 	waitFor(t, readyCount, "initial ready")
+	if err := c.SendPCM([]byte{0x00, 0x00}); err != nil {
+		t.Fatalf("SendPCM: %v", err)
+	}
 	waitFor(t, readyCount, "ready after reconnect")
 	if got := m.conns.Load(); got != 2 {
 		t.Errorf("connections = %d, want 2", got)
