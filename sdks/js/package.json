@@ -1,0 +1,56 @@
+{
+  "name": "@gigastt/client",
+  "version": "0.1.0",
+  "description": "Typed WebSocket client for the gigastt speech-to-text server (protocol v1.0), for Node.js and browsers",
+  "keywords": [
+    "gigastt",
+    "gigaam",
+    "speech-to-text",
+    "stt",
+    "asr",
+    "russian",
+    "websocket"
+  ],
+  "license": "MIT",
+  "author": "gigastt contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ekhodzitsky/gigastt",
+    "directory": "sdks/js"
+  },
+  "homepage": "https://github.com/ekhodzitsky/gigastt/tree/main/sdks/js",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.18.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
