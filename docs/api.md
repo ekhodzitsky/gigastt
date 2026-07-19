@@ -23,6 +23,28 @@ Client                            Server
 16 kHz internally). Protocol messages are versioned via the `type` field; new fields
 are additive only.
 
+**Transcript post-processing.** `partial` messages are always the raw decoder
+hypothesis (lowercase, no punctuation) and may change with more audio. `final`
+messages are enriched at the finalization boundary when the server has the
+resources loaded: inverse text normalization (number-words → digits), then
+punctuation/casing restoration (`--punctuation` / `--itn`; default `auto` = on
+for the bare `rnnt` head, off for `e2e_rnnt` which is already punctuated). The
+`words[]` payload always keeps the raw decoder output — only the joined `text`
+is rewritten. The same applies to SSE `final` events on `/v1/transcribe/stream`
+(server defaults; there are no per-request parameters there yet).
+
+Per session, the client can override the server policy with additive `configure`
+fields (sent before the first audio frame):
+
+```json
+{"type": "configure", "sample_rate": 16000, "punctuation": false, "itn": false}
+```
+
+Omitting a field keeps the server default; repeated `configure` messages compose
+(an absent field leaves the previous value). Asking for `punctuation: true` on a
+server without a punctuation model is a graceful no-op — finals stay raw, no
+error is emitted.
+
 ## REST
 
 | Endpoint | Method | Description |

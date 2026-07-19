@@ -12,10 +12,23 @@ info:
     1. Client connects to `ws://{host}:{port}/v1/ws` (default: `ws://127.0.0.1:9876/v1/ws`).
        - Server binds `127.0.0.1` by default; use `--bind-all` (or `GIGASTT_ALLOW_BIND_ANY=1`) plus `--host 0.0.0.0` for Docker.
     2. Server sends `ready` message with model info, protocol version, `supported_rates`, and `diarization` capability
-    3. (Optional) Client sends `configure` to pick a non-default `sample_rate` and/or enable `diarization`
+    3. (Optional) Client sends `configure` to pick a non-default `sample_rate`, enable `diarization`,
+       and/or override the post-processing policy (`punctuation`, `itn`)
     4. Client streams raw PCM16 audio as binary frames (default 48 kHz mono, or the negotiated rate)
     5. Server responds with `partial` and `final` transcript messages
     6. Client sends `stop` (JSON) or closes connection to end session
+
+    ## Transcript Post-processing
+
+    - `partial` messages are always the raw decoder hypothesis (lowercase, no punctuation) and may change with more audio.
+    - `final` messages are enriched at the finalization boundary when the server has the resources loaded:
+      inverse text normalization (number-words → digits), then punctuation/casing restoration.
+      Word payloads (`words[]`) always keep the raw decoder output — only the joined `text` is rewritten.
+    - Server default: enrichment on for the bare `rnnt` head when a punctuation model is installed
+      (`--punctuation auto`), off for `e2e_rnnt` (already punctuated by the model itself).
+    - Per-session opt-out: `configure` with `punctuation: false` / `itn: false`; omitting a field keeps
+      the server default. Requesting `punctuation: true` on a server without a punctuation model is a
+      graceful no-op (finals stay raw).
 
     ## Audio Format
 
@@ -257,7 +270,10 @@ components:
         text:
           type: string
           example: "привет как"
-          description: Current interim transcription (may change as more audio arrives)
+          description: >-
+            Current interim transcription (may change as more audio arrives).
+            Always the raw decoder output — ITN/punctuation are applied to
+            `final` segments only.
         timestamp:
           type: number
           format: double
@@ -282,8 +298,12 @@ components:
           description: Message type discriminator
         text:
           type: string
-          example: "привет как дела"
-          description: Finalized transcription for the completed utterance
+          example: "Привет, как дела?"
+          description: >-
+            Finalized transcription for the completed utterance. Enriched with
+            ITN + punctuation/casing restoration when enabled (server default
+            or per-session `configure` override); `words[]` always keep the
+            raw decoder output.
         timestamp:
           type: number
           format: double
@@ -351,6 +371,20 @@ components:
           type: boolean
           example: true
           description: Enable speaker diarization (if available)
+        punctuation:
+          type: boolean
+          example: false
+          description: >-
+            Per-session punctuation/casing-restoration override applied to
+            `final` segments only. Omitted = server default (on iff the server
+            has a punctuation model attached). `true` on a server without a
+            punctuation model is a graceful no-op.
+        itn:
+          type: boolean
+          example: false
+          description: >-
+            Per-session inverse text normalization override (number-words →
+            digits) applied to `final` segments only. Omitted = server default.
 
     StopMessage:
       type: object
