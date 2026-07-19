@@ -86,6 +86,34 @@ gigastt download [OPTIONS]
                          Env: GIGASTT_MODEL_VARIANT.
   --skip-diarization     Skip downloading the speaker diarization model
   --skip-quantize        Skip auto-quantization after download (FP32 only)
+  --prequantized         Fetch the pre-quantized INT8 bundle from the pinned
+                         GitHub Release (no FP32 download, no on-device quantize)
+  --progress <FORMAT>    Progress output: human (default) | json.
+                         Env: GIGASTT_DOWNLOAD_PROGRESS.
+
+  Machine-readable progress (--progress=json)
+    stdout carries one NDJSON event per line and nothing else (human progress
+    and logs stay on stderr), so a sidecar can drive an exact progress bar:
+
+      {"phase":"download","file":"v3_rnnt_encoder.onnx","bytes_done":N,"bytes_total":M}
+      {"phase":"verify","file":"v3_rnnt_encoder.onnx"}
+      {"phase":"quantize","file":"v3_rnnt_encoder.onnx"}
+      {"phase":"done","model_dir":"/home/u/.gigastt/models"}
+      {"phase":"error","kind":"network|disk|checksum|interrupted|other","message":"..."}
+
+    download events fire on the first chunk, then at most once per ~200 ms per
+    file, and always once at 100% (bytes_total is 0 when the server does not
+    send a length). verify fires per SHA-256 check; quantize marks the start
+    of the ~2-minute on-device INT8 pass. done is emitted once, last, on
+    success; error is emitted right before a non-zero exit.
+
+  Exit codes
+    0    success
+    1    other error
+    2    network error (unreachable host, broken stream, HTTP error status)
+    3    disk error (cannot create/write/rename model files)
+    4    checksum mismatch (corrupt or tampered download)
+    130  interrupted (Ctrl-C / SIGINT)
 
 gigastt transcribe [OPTIONS] <FILE>
   --model-dir <DIR>           Model directory [default: ~/.gigastt/models]

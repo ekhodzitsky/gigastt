@@ -361,6 +361,7 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_JOBS_MAX` | `--jobs-max` | 100 |
 | `GIGASTT_JOBS_RETRY` | `--jobs-retry` | 3 |
 | `GIGASTT_SKIP_QUANTIZE` | `--skip-quantize` | false |
+| `GIGASTT_DOWNLOAD_PROGRESS` | `download --progress` | human |
 | `GIGASTT_METRICS` | `--metrics` | false |
 | `GIGASTT_METRICS_LISTEN` | `--metrics-listen` | 127.0.0.1:9090 |
 | `GIGASTT_MODEL_VARIANT` | `--model-variant` | rnnt (fresh installs) |

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Machine-readable `gigastt download` progress (`--progress=json`).** A new opt-in
+  flag (env `GIGASTT_DOWNLOAD_PROGRESS`) switches model download reporting to NDJSON on
+  stdout — one JSON event per line and nothing else on stdout (human progress and logs
+  stay on stderr): throttled per-file byte progress (`download`), `verify` at each
+  SHA-256 check, `quantize` when the ~2-minute on-device INT8 pass starts (previously
+  invisible to integrators and easily mistaken for a hang), a terminal `done`, and an
+  `error` event before any non-zero exit. Sidecar integrators can now drive an exact
+  progress bar per file and phase instead of polling the model directory size. The
+  default `human` mode is unchanged. `gigastt download` failures also gain a documented
+  exit-code taxonomy — `2` network, `3` disk, `4` checksum, `130` interrupted (Ctrl-C),
+  `1` other — keeping the historical `!= 0` failure contract. See
+  [docs/cli.md](docs/cli.md).
 - **Client SDKs for the WebSocket protocol: `gigastt-go` and `@gigastt/client` (TypeScript).**
   Two idiomatic, typed clients of protocol v1.0 under `sdks/` — typed
   `Ready`/`Partial`/`Final`/`Error` events (all fields, including `words[]`, `code`, and
