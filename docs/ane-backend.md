@@ -143,8 +143,17 @@ package per bucket in the ladder `[512, 768, 1536, 3000]` mel frames (≈5 s / 8
 ~/.gigastt/models/ane/gigaam_v3_encoder_3000.mlpackage
 ```
 
-**Today (no published ANE release):** convert + palettize them locally from the
-PyTorch model. Run on macOS ARM64:
+**Pre-built packages (default):** the per-bucket packages are published on the
+[`ane-v3-2026-06-24` GitHub release](https://github.com/ekhodzitsky/gigastt/releases/tag/ane-v3-2026-06-24);
+`gigastt download --ane` fetches them (SHA-256-verified) into the same
+directory:
+
+```sh
+gigastt download --ane
+```
+
+**Convert locally instead:** to rebuild the packages from the PyTorch model
+(e.g. with a different bucket ladder), run on macOS ARM64:
 
 ```sh
 uv run --python 3.13 \
@@ -153,16 +162,6 @@ uv run --python 3.13 \
 ```
 
 This writes the per-bucket `.mlpackage`s into `~/.gigastt/models/ane/`.
-
-**Once an ANE release is published** (maintainer-gated; deferred for now):
-
-```sh
-gigastt download --ane
-```
-
-fetches the per-bucket packages (SHA-256-verified) into the same directory.
-Until then `gigastt download --ane` has no release to pull from — use the local
-conversion above.
 
 The bucket-768 package alone is enough to engage the ANE path for short files;
 the engine logs which buckets it found and compiles each present package once
@@ -208,14 +207,22 @@ pointing at the conversion / `gigastt download --ane` step.
 
 ## Performance & accuracy (honest numbers)
 
-- **End-to-end RTFx ≈ 3.7× over the `ort` CPU build** (≈ 8.7 → 32 RTFx on the
-  measured Golos clips), **decode-bound**: the ANE makes the encoder almost free
-  (~230× encoder speedup), but the CPU RNN-T greedy decode loop dominates the
-  full pipeline, so the e2e win is far smaller than the raw encoder win.
+Measured on an Apple M1 Pro at the v2.5.0 ship gate (`rnnt` head, Golos clips) —
+these are the numbers carried in the v2.5.0 CHANGELOG entry and `specs/todo.md`.
+An earlier revision of this section quoted a pre-ship measurement round
+(≈ 3.7× e2e, ~230× encoder); it is superseded by the shipped figures below.
+
+- **Warm end-to-end ≈ 10× over the `ort` CPU build** (≈ 112 RTFx warm),
+  **decode-bound**: the ANE cuts the encoder to ≈ 23.6 ms from ≈ 369 ms per
+  window (≈ 15.6×, 99.8% ANE residency), but the CPU RNN-T greedy decode loop
+  and feature extraction dominate the full pipeline once the encoder is
+  offloaded, so the e2e win is far smaller than the raw encoder win.
 - **WER vs `ort` ≈ 1.11%** on the 15-clip Golos set: transcripts are
   byte-identical except for a single borderline FP16-pad-up token flip on one
   clip. The ANE encoder is FP16 (not byte-exact), so parity is "near-lossless",
   not bit-exact (unlike the `candle` backend, which is byte-for-byte identical).
+- **Cold-start:** a compiled-model disk cache cuts the ~20 s first load to
+  ~86 ms on later starts.
 
 ## Confirming the ANE path is engaged
 
