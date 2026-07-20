@@ -1416,3 +1416,55 @@ async fn test_ws_configure_punctuation_true_without_punctuator_is_noop() {
         "no punctuator attached → final text stays raw: {text}"
     );
 }
+
+/// Post-processing overrides survive mid-session state recreation: a
+/// `configure` that sets `diarization` rebuilds the streaming state wholesale
+/// (in diarization-enabled builds), and a previously sent `punctuation: false`
+/// must carry over to the new state — configure-after-audio is rejected, so
+/// the client has no way to re-send it.
+#[ignore]
+#[tokio::test]
+async fn test_ws_punctuation_override_survives_diarization_reconfigure() {
+    let Some(punctuator) = load_punctuator_or_skip() else {
+        return;
+    };
+    let engine = gigastt::inference::Engine::load(&common::model_dir())
+        .expect("engine")
+        .with_punctuator(Some(punctuator));
+    let (port, _shutdown) = common::start_server_with_engine(engine).await;
+    if get_health(port).await["variant"].as_str().unwrap_or("") != "rnnt" {
+        eprintln!("skipping: e2e_rnnt head is already punctuated by the model");
+        return;
+    }
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    sink.send(Message::Text(
+        serde_json::to_string(
+            &serde_json::json!({"type": "configure", "sample_rate": 16000, "punctuation": false}),
+        )
+        .unwrap()
+        .into(),
+    ))
+    .await
+    .unwrap();
+    // This second configure recreates the streaming state (diarization
+    // branch); the punctuation override above must survive the rebuild.
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "configure", "diarization": false}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    let (_partials, final_seg) = stream_golos_and_collect(&mut sink, &mut stream).await;
+    let text = final_seg["text"].as_str().unwrap_or_default();
+    let raw = joined_words(&final_seg);
+    eprintln!("final after diarization reconfigure: {text}");
+
+    assert!(!raw.is_empty(), "speech fixture must decode to words");
+    assert_eq!(
+        text, raw,
+        "punctuation=false must survive the diarization state recreation: {text}"
+    );
+}
