@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.12.0] - 2026-07-20
+
+### Added
+
+- **Streaming `final` segments now carry ITN + punctuation/casing restoration.** Both the
+  WebSocket and SSE streaming paths post-process each segment at its finalization boundary
+  (endpoint flush / stop flush) with the same policy as file transcription: inverse text
+  normalization first, then punctuation/casing restoration when a punctuation model is
+  attached (`--punctuation` / `--itn`, default `auto` = on for the bare `rnnt` head, off
+  for `e2e_rnnt`, which is already punctuated by the model). `partial` messages stay the
+  raw decoder hypothesis, and `words[]` payloads keep the raw output — only the joined
+  `text` is rewritten, exactly like the file path. Live-dictation clients no longer have
+  to choose between streaming previews and readable transcripts.
+  - Additive WS `configure` fields `punctuation` / `itn` override the server policy per
+    session (sent before the first audio frame; an omitted field keeps the server
+    default; `punctuation: true` on a server without a punctuation model is a graceful
+    no-op). The overrides survive mid-session state recreation (diarization
+    reconfiguration, post-panic session reset). SSE follows the server boot policy —
+    per-request parameters for `/v1/transcribe/stream` are not part of this release.
+  - Measured cost at the finalization boundary: `restore` on 1–10-word segments is
+    p95 ≈ 0.5–1.0 ms (debug build, Apple Silicon) — three orders of magnitude under a
+    100 ms budget, so enrichment runs unconditionally regardless of segment length.
+  - The `ClientMessage::Configure` struct variant is now `#[non_exhaustive]` (match it
+    with a `..` rest pattern): the wire protocol grows by additive optional fields, and
+    the marking lets future ones ship as minor releases.
+
 ## [2.11.3] - 2026-07-19
 
 ### Fixed
