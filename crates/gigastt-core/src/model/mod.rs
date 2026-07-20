@@ -26,6 +26,7 @@ use std::os::fd::AsRawFd;
 /// `Json` emits NDJSON events — one [`ProgressEvent`] per line — on stdout
 /// for sidecar integrators.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
 pub enum ProgressMode {
     /// Interactive human reporter: a `\r`-redrawn percentage line on stderr.
     #[default]
@@ -62,6 +63,7 @@ impl std::str::FromStr for ProgressMode {
 /// documented `gigastt download` exit-code taxonomy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum ProgressErrorKind {
     /// Network failure: unreachable host, TLS, broken stream, HTTP error status.
     Network,
@@ -79,10 +81,17 @@ impl ProgressErrorKind {
     /// `gigastt download` process exit code for this failure category. `0` is
     /// success; every category keeps the historical `!= 0` failure contract.
     pub fn exit_code(self) -> i32 {
+        // BSD `sysexits`-flavored codes, deliberately avoiding 2: clap exits 2
+        // on argument/usage errors (before any event can be emitted), and an
+        // integrator keying retries off "network" must be able to tell the two
+        // apart.
         match self {
-            ProgressErrorKind::Network => 2,
-            ProgressErrorKind::Disk => 3,
-            ProgressErrorKind::Checksum => 4,
+            // EX_UNAVAILABLE: the remote end could not be reached / served.
+            ProgressErrorKind::Network => 69,
+            // EX_IOERR: local create/write/rename failure.
+            ProgressErrorKind::Disk => 74,
+            // EX_DATAERR: SHA-256 mismatch on a staged download.
+            ProgressErrorKind::Checksum => 65,
             // Conventional 128 + SIGINT.
             ProgressErrorKind::Interrupted => 130,
             // Historical generic failure code (anyhow's `Termination`).
@@ -96,6 +105,7 @@ impl ProgressErrorKind {
 /// event; the `phase` tag is the discriminator integrators match on.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(tag = "phase", rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum ProgressEvent {
     /// Byte progress of one file's download (throttled to ~200 ms per file,
     /// plus an unconditional event at 100%).
@@ -1685,10 +1695,21 @@ mod tests {
     #[test]
     fn test_progress_error_kind_exit_codes_keep_nonzero_contract() {
         assert_eq!(ProgressErrorKind::Other.exit_code(), 1);
-        assert_eq!(ProgressErrorKind::Network.exit_code(), 2);
-        assert_eq!(ProgressErrorKind::Disk.exit_code(), 3);
-        assert_eq!(ProgressErrorKind::Checksum.exit_code(), 4);
+        assert_eq!(ProgressErrorKind::Network.exit_code(), 69);
+        assert_eq!(ProgressErrorKind::Disk.exit_code(), 74);
+        assert_eq!(ProgressErrorKind::Checksum.exit_code(), 65);
         assert_eq!(ProgressErrorKind::Interrupted.exit_code(), 130);
+        // 2 stays reserved for clap usage errors: a misconfigured invocation
+        // must never look like a transient (retryable) download failure.
+        for kind in [
+            ProgressErrorKind::Other,
+            ProgressErrorKind::Network,
+            ProgressErrorKind::Disk,
+            ProgressErrorKind::Checksum,
+            ProgressErrorKind::Interrupted,
+        ] {
+            assert_ne!(kind.exit_code(), 2, "{kind:?} must not collide with clap");
+        }
         for kind in [
             ProgressErrorKind::Network,
             ProgressErrorKind::Disk,
