@@ -397,3 +397,156 @@ fn cli_serve_boots_and_graceful_shutdown() {
         }
     }
 }
+
+// ─── model-gated: download --progress=json (NDJSON contract) ────────────────
+
+/// Symlink the named files from the real model dir into `dst`, skipping any
+/// that are absent (the caller's gating decides what is required).
+#[cfg(unix)]
+fn link_model_files(dst: &std::path::Path, names: &[&str]) {
+    let src = std::path::PathBuf::from(common::model_dir());
+    for name in names {
+        let from = src.join(name);
+        if from.exists() {
+            std::os::unix::fs::symlink(&from, dst.join(name)).expect("symlink model file");
+        }
+    }
+}
+
+/// Happy path with everything already present: stdout must be pure NDJSON —
+/// every line parses as a JSON object with a `phase` tag and the final line is
+/// `{"phase":"done",…}`. Human `\r`-progress and tracing logs must not leak
+/// into stdout.
+#[cfg(unix)]
+#[ignore = "requires the GigaAM model (~850MB)"]
+#[test]
+fn cli_download_json_happy_path_stdout_is_pure_ndjson() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    link_model_files(
+        tmp.path(),
+        &[
+            "v3_rnnt_encoder.onnx",
+            "v3_rnnt_decoder.onnx",
+            "v3_rnnt_joint.onnx",
+            "v3_vocab.txt",
+            "v3_rnnt_encoder_int8.onnx",
+        ],
+    );
+
+    let out = Command::new(bin())
+        .args([
+            "download",
+            "--model-dir",
+            tmp.path().to_str().unwrap(),
+            "--model-variant",
+            "rnnt",
+            "--progress=json",
+            "--skip-diarization",
+        ])
+        .output()
+        .expect("run");
+    assert!(
+        out.status.success(),
+        "download failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+
+    let stdout = String::from_utf8(out.stdout).expect("stdout must be UTF-8");
+    let lines: Vec<&str> = stdout.lines().filter(|l| !l.is_empty()).collect();
+    assert!(!lines.is_empty(), "json mode must emit at least one event");
+    for line in &lines {
+        let v: serde_json::Value = serde_json::from_str(line)
+            .unwrap_or_else(|e| panic!("non-JSON stdout line {line:?}: {e}"));
+        assert!(
+            v.get("phase").and_then(|p| p.as_str()).is_some(),
+            "every event carries a phase tag: {line}"
+        );
+    }
+    let last: serde_json::Value = serde_json::from_str(lines.last().unwrap()).unwrap();
+    assert_eq!(last["phase"], "done", "final event must be done: {last}");
+    assert!(
+        last["model_dir"].as_str().is_some(),
+        "done event carries model_dir: {last}"
+    );
+}
+
+/// The ~2-minute INT8 quantization pass must announce itself as its own
+/// `quantize` phase as soon as it starts (a sidecar reading the stream would
+/// otherwise mistake it for a hang). FP32 weights are linked in without the
+/// INT8 encoder to force the pass; the subprocess is killed right after the
+/// event arrives — the test asserts the emission, not the quantization.
+#[cfg(unix)]
+#[ignore = "requires the GigaAM model (~850MB)"]
+#[test]
+fn cli_download_json_emits_quantize_phase() {
+    use std::io::BufRead;
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    link_model_files(
+        tmp.path(),
+        &[
+            "v3_rnnt_encoder.onnx",
+            "v3_rnnt_decoder.onnx",
+            "v3_rnnt_joint.onnx",
+            "v3_vocab.txt",
+        ],
+    );
+
+    let mut child = Command::new(bin())
+        .args([
+            "download",
+            "--model-dir",
+            tmp.path().to_str().unwrap(),
+            "--model-variant",
+            "rnnt",
+            "--progress=json",
+            "--skip-diarization",
+        ])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn");
+
+    let stdout = child.stdout.take().expect("piped stdout");
+    let (tx, rx) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        for line in std::io::BufReader::new(stdout).lines() {
+            let Ok(line) = line else { break };
+            if tx.send(line).is_err() {
+                break;
+            }
+        }
+    });
+
+    let deadline = Instant::now() + Duration::from_secs(120);
+    let mut saw_quantize = false;
+    while Instant::now() < deadline {
+        match rx.recv_timeout(Duration::from_millis(500)) {
+            Ok(line) if line.is_empty() => continue,
+            Ok(line) => {
+                let v: serde_json::Value = serde_json::from_str(&line)
+                    .unwrap_or_else(|e| panic!("non-JSON stdout line {line:?}: {e}"));
+                if v["phase"] == "quantize" {
+                    assert_eq!(
+                        v["file"], "v3_rnnt_encoder.onnx",
+                        "quantize event names the encoder being quantized: {v}"
+                    );
+                    saw_quantize = true;
+                    break;
+                }
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                if let Some(status) = child.try_wait().expect("try_wait") {
+                    panic!("download exited ({status}) before emitting a quantize event");
+                }
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    assert!(
+        saw_quantize,
+        "quantize phase event must be emitted when the INT8 encoder is missing"
+    );
+}
