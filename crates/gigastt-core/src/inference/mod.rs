@@ -1883,9 +1883,9 @@ impl Engine {
     ///
     /// Latency: measured via `punctuation::tests::test_restore_latency_short_segments`
     /// (debug build, Apple Silicon), `restore` costs p95 ≈ 0.45–1.0 ms on 1–10
-    /// word segments — three orders of magnitude below the 100 ms budget that
-    /// would force a segment-length gate, so enrichment always runs regardless
-    /// of segment length.
+    /// word segments — roughly two orders of magnitude below the 100 ms budget
+    /// that would force a segment-length gate, so enrichment always runs
+    /// regardless of segment length.
     fn enrich_final_segment(&self, seg: &mut TranscriptSegment, state: &StreamingState) {
         let text = std::mem::take(&mut seg.text);
         let text = if state.itn.unwrap_or(self.itn) {

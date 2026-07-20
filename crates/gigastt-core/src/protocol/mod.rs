@@ -61,8 +61,9 @@ pub enum ClientMessage {
     /// Configure session parameters (must be sent before first audio frame).
     ///
     /// `#[non_exhaustive]`: the wire protocol evolves by adding optional
-    /// fields (see the compatibility convention above), so this variant gains
-    /// fields in minor releases — always match it with a `..` rest pattern.
+    /// fields only (existing fields are never renamed or removed), so this
+    /// variant gains fields in minor releases — always match it with a `..`
+    /// rest pattern.
     #[non_exhaustive]
     Configure {
         /// Audio sample rate in Hz (e.g., 8000, 16000, 24000, 44100, 48000). Optional.

@@ -27,8 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     reconfiguration, post-panic session reset). SSE follows the server boot policy —
     per-request parameters for `/v1/transcribe/stream` are not part of this release.
   - Measured cost at the finalization boundary: `restore` on 1–10-word segments is
-    p95 ≈ 0.5–1.0 ms (debug build, Apple Silicon) — three orders of magnitude under a
-    100 ms budget, so enrichment runs unconditionally regardless of segment length.
+    p95 ≈ 0.5–1.0 ms (debug build, Apple Silicon) — roughly two orders of magnitude under
+    a 100 ms budget, so enrichment runs unconditionally regardless of segment length.
   - The `ClientMessage::Configure` struct variant is now `#[non_exhaustive]` (match it
     with a `..` rest pattern): the wire protocol grows by additive optional fields, and
     the marking lets future ones ship as minor releases.
