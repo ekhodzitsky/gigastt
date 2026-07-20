@@ -1193,7 +1193,14 @@ async fn main() -> anyhow::Result<()> {
             // `download` is an explicit action: the requested variant maps to
             // the default (Rnnt) so a bare `gigastt download` fetches something
             // useful.
-            let download = async {
+            //
+            // The flow runs on its own task: the INT8 quantization pass and the
+            // large-file SHA-256 verify are synchronous, and polled inline they
+            // would starve the select's signal branch — Ctrl-C must interrupt
+            // immediately at any phase (a sidecar's cancel path relies on it).
+            let dl_model_dir = model_dir.clone();
+            let mut download = tokio::spawn(async move {
+                let model_dir = dl_model_dir;
                 if prequantized && !model_variant.is_ctc() {
                     // Lean path: fetch the INT8 bundle from the pinned Release — no
                     // FP32 download, no on-device quantization, no protoc.
@@ -1223,9 +1230,26 @@ async fn main() -> anyhow::Result<()> {
                 }
                 tracing::info!("Model ready at {model_dir}");
                 anyhow::Ok(())
+            });
+            // Resolves only on a *delivered* SIGINT. A failed handler
+            // registration is logged and parks forever — it must not fabricate
+            // an interrupt and abort a healthy download with exit 130.
+            let interrupted = async {
+                match tokio::signal::ctrl_c().await {
+                    Ok(()) => (),
+                    Err(e) => {
+                        tracing::warn!("Failed to listen for Ctrl-C: {e}");
+                        std::future::pending::<()>().await
+                    }
+                }
             };
             tokio::select! {
-                result = download => {
+                joined = &mut download => {
+                    // Flatten the JoinHandle: a panic inside the download task
+                    // is reported through the same error contract.
+                    let result = joined
+                        .map_err(|e| anyhow::anyhow!("download task failed: {e}"))
+                        .and_then(|r| r);
                     match result {
                         Ok(()) => {
                             model::emit_progress_event(&model::ProgressEvent::Done {
@@ -1245,10 +1269,7 @@ async fn main() -> anyhow::Result<()> {
                         }
                     }
                 }
-                sig = tokio::signal::ctrl_c() => {
-                    if let Err(e) = sig {
-                        tracing::warn!("Failed to listen for Ctrl-C: {e}");
-                    }
+                _ = interrupted => {
                     model::emit_progress_event(&model::ProgressEvent::Error {
                         kind: model::ProgressErrorKind::Interrupted,
                         message: "interrupted by SIGINT".to_string(),
