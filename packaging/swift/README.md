@@ -8,6 +8,13 @@ ships as a prebuilt `GigasttFFI.xcframework` (device `arm64` + simulator
 `arm64`/`x86_64`), with ONNX Runtime statically linked into each slice — there is no
 separate runtime to bundle.
 
+The package is published in two places: in the engine monorepo
+(`packaging/swift`, for local path dependencies and development) and in the
+[ekhodzitsky/gigastt-swift](https://github.com/ekhodzitsky/gigastt-swift)
+mirror — the canonical remote install source, tagged with engine releases
+(SwiftPM requires `Package.swift` at the repository root, so the monorepo
+subdirectory cannot be consumed via URL).
+
 ## Requirements
 
 - iOS 15 or later
@@ -15,16 +22,34 @@ separate runtime to bundle.
 
 ## Installation
 
-> **Remote SPM install is not available yet.** SwiftPM requires
-> `Package.swift` at the root of the git repository, and this package lives
-> in `packaging/swift/` of the gigastt monorepo. A dedicated `gigastt-swift`
-> mirror repository (with tags matching engine releases) is planned; until
-> then, depend on the package locally as described below.
+### Swift Package Manager (Xcode)
 
-### Local package (works today)
+File -> Add Package Dependencies, then enter the mirror repository URL:
 
-Clone the repository (a sparse checkout keeps it small — only the package
-directory is materialized):
+```
+https://github.com/ekhodzitsky/gigastt-swift
+```
+
+Add the `GigaSTT` product to your target.
+
+### Package.swift
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/ekhodzitsky/gigastt-swift", from: "2.10.0")
+],
+targets: [
+    .target(name: "MyApp", dependencies: [
+        .product(name: "GigaSTT", package: "gigastt-swift")
+    ])
+]
+```
+
+### Local checkout (development)
+
+To work against a local copy of the wrapper instead, clone the monorepo
+(a sparse checkout keeps it small — only the package directory is
+materialized):
 
 ```sh
 git clone --depth 1 --filter=blob:none --sparse https://github.com/ekhodzitsky/gigastt
@@ -48,12 +73,10 @@ targets: [
 ]
 ```
 
-The prebuilt `GigasttFFI.xcframework` itself is fetched from GitHub releases:
-the `url:`/`checksum:` in `Package.swift` are rewritten automatically by
-`.github/workflows/ios-xcframework.yml` on every release it runs for, so a
-fresh clone of `main` always resolves without manual edits (currently pinned
-to the v2.10.0 asset; the FFI surface and these wrapper sources have not
-changed since, so the binary is ABI-identical).
+The prebuilt `GigasttFFI.xcframework` is fetched from GitHub releases in both
+modes: the `url:`/`checksum:` in `Package.swift` are rewritten automatically
+by `.github/workflows/ios-xcframework.yml` on every xcframework release, so
+no manual edits are ever needed.
 
 ## Shipping the model
 
