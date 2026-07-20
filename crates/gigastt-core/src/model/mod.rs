@@ -1478,6 +1478,14 @@ async fn download_file(variant: ModelVariant, filename: &str, dir: &Path) -> Res
     stream_to_partial_then_finalize(&url, &final_dest, expected, filename).await
 }
 
+/// Whether air-gapped mode is active: `GIGASTT_OFFLINE` set to anything but
+/// `""` / `"0"`. In this mode every would-be network fetch fails fast with an
+/// instruction naming the missing file instead of a connect timeout.
+#[cfg(feature = "net")]
+fn offline_mode() -> bool {
+    std::env::var_os("GIGASTT_OFFLINE").is_some_and(|v| !v.is_empty() && v != "0")
+}
+
 /// Streaming download with SHA-256 verification and atomic rename.
 ///
 /// Stages the response into `<final_dest>.partial`, verifies the hash (when
@@ -1516,6 +1524,20 @@ async fn stream_to_partial_then_finalize_with_sink(
     label: &str,
     sink: &ProgressSink,
 ) -> Result<()> {
+    // Air-gapped guard: every network fetch in this crate funnels through this
+    // function, so one check here covers the model download, the prequantized
+    // bundle, ANE packages, and the speaker / punctuation / VAD models. Checked
+    // per call (not cached) so the `--offline` CLI flag, which sets the env var
+    // at startup, and an externally exported variable behave identically.
+    if offline_mode() {
+        anyhow::bail!(
+            "offline mode (GIGASTT_OFFLINE=1): refusing to download {label}; \
+             place the file at {} manually (see docs/deployment.md, \
+             \"Air-gapped / offline installation\")",
+            final_dest.display()
+        );
+    }
+
     let partial = partial_path_unique(final_dest);
 
     tracing::info!("Downloading {label}...");
@@ -3144,6 +3166,60 @@ mod tests {
         assert!(
             format!("{err}").contains("not yet published"),
             "unexpected error: {err}"
+        );
+    }
+
+    /// The offline-bundle fetch script duplicates the crate's SHA-256 pins
+    /// (it must run on a machine without gigastt installed). Silent drift —
+    /// e.g. re-quantizing the encoder and bumping only the crate constant —
+    /// would break release builds at tag time; this pins the two sources of
+    /// truth together in PR CI instead.
+    #[test]
+    fn test_fetch_offline_models_script_pins_match_crate_constants() {
+        let script_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../scripts/fetch_offline_models.sh");
+        let script = std::fs::read_to_string(&script_path).expect("read fetch_offline_models.sh");
+
+        assert!(
+            script.contains(PREQUANT_RELEASE_BASE),
+            "script must fetch the model bundle from the release the crate pins ({PREQUANT_RELEASE_BASE})"
+        );
+        assert!(
+            script.contains(PUNCT_HF_REPO),
+            "script must fetch the punctuation model from the repo the crate pins ({PUNCT_HF_REPO})"
+        );
+
+        // Join backslash-continued lines so every `fetch "URL" "DEST" "SHA"`
+        // call is a single parseable line.
+        let joined = script.replace("\\\n", " ");
+        let mut checked = 0usize;
+        for line in joined.lines() {
+            let line = line.trim();
+            if !line.starts_with("fetch ") {
+                continue;
+            }
+            let parts: Vec<&str> = line.split('"').collect();
+            assert!(parts.len() >= 6, "unparseable fetch line: {line}");
+            let (dest, sha) = (parts[3], parts[5]);
+            let file = dest.rsplit('/').next().expect("dest basename");
+            let expected = if file == ModelVariant::Rnnt.encoder_int8_file() {
+                ModelVariant::Rnnt.encoder_int8_checksum()
+            } else if let Some(c) = ModelVariant::Rnnt.checksum(file) {
+                c
+            } else if let Some((_, c)) = PUNCT_FILES.iter().find(|(f, _)| *f == file) {
+                c
+            } else {
+                panic!("script fetches {file}, which the crate has no pin for");
+            };
+            assert_eq!(
+                sha, expected,
+                "SHA-256 pin drift for {file}: script says {sha}, crate says {expected}"
+            );
+            checked += 1;
+        }
+        assert!(
+            checked >= 7,
+            "expected the script to pin at least 7 files, parsed {checked}"
         );
     }
 }

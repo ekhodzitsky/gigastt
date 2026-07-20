@@ -20,6 +20,12 @@ struct Cli {
     #[arg(long, global = true, default_value = "info")]
     log_level: String,
 
+    /// Air-gapped mode: refuse every network fetch (model download, punctuation /
+    /// diarization / VAD auto-fetch) with an instruction naming the missing file
+    /// instead of a connect timeout. Equivalent to GIGASTT_OFFLINE=1.
+    #[arg(long, global = true)]
+    offline: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -991,6 +997,14 @@ fn log_ane_backend(resolved: ModelVariant) {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
+    if cli.offline {
+        // Translate the flag into the env var the download guard in
+        // gigastt-core reads, so both spellings behave identically.
+        // Safety: this is the first statement after argument parsing — nothing
+        // has read or written the process environment concurrently yet (the
+        // only env readers live further down this same call path).
+        unsafe { std::env::set_var("GIGASTT_OFFLINE", "1") };
+    }
     // NDJSON download progress owns stdout: in `--progress=json` mode the
     // tracing writer moves to stderr so stdout carries nothing but event
     // lines (the default writer is stdout).

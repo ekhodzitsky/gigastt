@@ -615,3 +615,58 @@ fn cli_download_json_error_event_and_exit_code_are_consistent() {
         "exit code must match the documented mapping for kind={kind}"
     );
 }
+
+// ─── no-model: air-gapped mode (GIGASTT_OFFLINE / --offline) ────────────────
+
+/// With the env var set and an empty model dir, download must fail fast with
+/// an instruction naming the missing file — not a network timeout. Hermetic:
+/// no model, no network (the guard fires before any connection attempt).
+#[test]
+fn cli_download_offline_env_fails_fast_with_instruction() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let out = Command::new(bin())
+        .env("GIGASTT_OFFLINE", "1")
+        .args([
+            "download",
+            "--model-dir",
+            tmp.path().to_str().unwrap(),
+            "--model-variant",
+            "rnnt",
+            "--skip-diarization",
+        ])
+        .output()
+        .expect("run");
+    assert!(!out.status.success(), "offline download must fail");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("offline mode"),
+        "error must explain offline mode, got: {stderr}"
+    );
+    assert!(
+        stderr.contains(tmp.path().to_str().unwrap()),
+        "error must name where to place the file, got: {stderr}"
+    );
+}
+
+/// The --offline flag is equivalent to GIGASTT_OFFLINE=1.
+#[test]
+fn cli_download_offline_flag_fails_fast() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let out = Command::new(bin())
+        .args([
+            "download",
+            "--offline",
+            "--model-dir",
+            tmp.path().to_str().unwrap(),
+            "--model-variant",
+            "rnnt",
+            "--skip-diarization",
+        ])
+        .output()
+        .expect("run");
+    assert!(!out.status.success(), "--offline download must fail");
+    assert!(
+        String::from_utf8_lossy(&out.stderr).contains("offline mode"),
+        "error must explain offline mode"
+    );
+}
