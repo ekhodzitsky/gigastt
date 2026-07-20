@@ -42,6 +42,32 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Fail fast: a bad SWIFT_PACKAGE_TOKEN is otherwise discovered only on
+      # the mirror push, after a ~40-minute build (public-repo clones accept
+      # any token, so the clone itself is NOT a validation). Check auth +
+      # Contents:write on the mirror repo before doing any expensive work.
+      - name: Validate SWIFT_PACKAGE_TOKEN
+        if: github.ref == 'refs/heads/main' && env.HAS_SWIFT_PACKAGE_TOKEN == 'true'
+        shell: bash
+        env:
+          SWIFT_PACKAGE_TOKEN: ${{ secrets.SWIFT_PACKAGE_TOKEN }}
+        run: |
+          set -euo pipefail
+          BODY="$RUNNER_TEMP/gigastt-swift-repo.json"
+          CODE="$(curl -sS -o "$BODY" -w '%{http_code}' \
+            -H "Authorization: Bearer ${SWIFT_PACKAGE_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/ekhodzitsky/gigastt-swift)"
+          if [ "$CODE" != "200" ]; then
+            echo "::error ::SWIFT_PACKAGE_TOKEN was rejected by the GitHub API (HTTP $CODE). Recreate the secret with a valid fine-grained PAT (Contents: write on ekhodzitsky/gigastt-swift)."
+            exit 1
+          fi
+          if [ "$(jq -r '.permissions.push // false' "$BODY")" != "true" ]; then
+            echo "::error ::SWIFT_PACKAGE_TOKEN is valid but lacks Contents:write on ekhodzitsky/gigastt-swift."
+            exit 1
+          fi
+          echo "SWIFT_PACKAGE_TOKEN validated (auth + Contents:write on gigastt-swift)."
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
