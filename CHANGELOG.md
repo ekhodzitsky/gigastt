@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Client SDKs for the WebSocket protocol: `gigastt-go` and `@gigastt/client` (TypeScript).**
+  Two idiomatic, typed clients of protocol v1.0 under `sdks/` — typed
+  `Ready`/`Partial`/`Final`/`Error` events (all fields, including `words[]`, `code`, and
+  `retry_after_ms`), a single socket writer, reconnect with exponential backoff that honors
+  the server's `retry_after_ms` on pool saturation, and context/AbortSignal lifecycles. The
+  TypeScript package runs on Node and in browsers (global `WebSocket` with an injectable
+  transport and `ws` fallback). Both ship mock-server test suites (run in CI on `sdks/`
+  changes) plus a live-server integration test gated on `GIGASTT_TEST_WS_URL`, and README
+  quickstarts. Additive protocol fields are ignored by design, matching the compatibility
+  convention. Package publication (npm / Go module tags) is a separate release step.
+
 ### Fixed
 
 - **WebSocket resampling no longer resets filter state when frame sizes grow.** The cached
