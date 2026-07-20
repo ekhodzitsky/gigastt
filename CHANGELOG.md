@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **WebSocket resampling no longer resets filter state when frame sizes grow.** The cached
+  streaming resampler used to be recreated whenever a frame arrived that was larger than any
+  seen before, discarding the FIR history and fractional phase mid-stream — audible as clicks
+  or seams at frame boundaries for non-16 kHz WebSocket sessions with variable frame sizes
+  (typically the first seconds of a stream, while frame sizes ramp up). The resampler is now
+  built once per session with a fixed capacity; variable-sized frames are applied via
+  `set_chunk_size`, which preserves filter state, and frames larger than the capacity are fed
+  through the same instance in capacity-sized pieces. Verified by an equivalence test against
+  a one-shot resample of the same signal.
+
 ## [2.12.0] - 2026-07-20
 
 ### Added
