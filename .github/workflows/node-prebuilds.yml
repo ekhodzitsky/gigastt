@@ -98,7 +98,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Download all prebuilt .node binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: crates/gigastt-node/artifacts
           pattern: bindings-*
