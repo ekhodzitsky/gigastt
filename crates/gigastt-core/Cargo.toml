@@ -28,6 +28,15 @@ enum_marked_non_exhaustive = "allow"
 # next major (either restore the auto traits upstream in polyvoice or make the
 # adapter genuinely `pub(crate)`).
 auto_trait_impl_removed = "allow"
+# The WS wire protocol evolves by adding optional fields to existing messages
+# (documented compatibility convention in `protocol/mod.rs`), so the
+# `ClientMessage::Configure` struct variant is `#[non_exhaustive]`: foreign
+# matches need a `..` rest pattern, and each future additive field ships as a
+# minor release instead of a major one. `ClientMessage` is Deserialize-only
+# (the server's inbound parse type), so losing foreign construction of the
+# variant costs nothing real. Allow the one-time marking, which
+# cargo-semver-checks otherwise flags as a major-only change.
+enum_variant_marked_non_exhaustive = "allow"
 
 [lib]
 crate-type = ["rlib"]
