@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Air-gapped distribution: offline tarball, Debian packages, systemd unit.** Every
+  release now ships `gigastt-<ver>-offline-<target>.tar.gz` for both Linux targets —
+  binary + pre-quantized INT8 `rnnt` model + punctuation model + hardened systemd unit
+  (`ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`; compatible with systemd 241)
+  + `install.sh` + an offline README — alongside two Debian packages:
+  `gigastt_<ver>_<arch>.deb` (binary, unit, `/etc/gigastt/` config) and
+  `gigastt-model-int8_<ver>_all.deb` (model files under `/usr/share/gigastt/models/`).
+  All are signed like the other release assets (`.sha256`, `SHA256SUMS.txt`, minisign).
+  An installation lands and serves without a single network connection; rpm is
+  intentionally deferred (the tarball covers rpm-based distributions). See
+  `docs/deployment.md`, "Air-gapped / offline installation".
+- **Offline mode: `--offline` / `GIGASTT_OFFLINE=1`.** Every code path that would
+  download a model — `gigastt download`, the punctuation / VAD auto-fetch inside
+  `serve` — fails fast with an error naming the missing file and where to place it,
+  instead of a network timeout. All fetches funnel through a single download function
+  in `gigastt-core`, so the guard covers the model download, the pre-quantized bundle,
+  ANE packages, and the speaker / punctuation / VAD models alike. The shipped systemd
+  unit enables it via `/etc/gigastt/gigastt.env`. The `reqwest` network audit result
+  is recorded in `docs/privacy.md`.
 - **Machine-readable `gigastt download` progress (`--progress=json`).** A new opt-in
   flag (env `GIGASTT_DOWNLOAD_PROGRESS`) switches model download reporting to NDJSON on
   stdout — one JSON event per line and nothing else on stdout (the human `\r`-progress

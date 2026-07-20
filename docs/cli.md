@@ -9,6 +9,10 @@ gigastt [OPTIONS] <COMMAND>
 
 Options:
   --log-level <LEVEL>    Log level [default: info]
+  --offline              Air-gapped mode (env: GIGASTT_OFFLINE=1): refuse every
+                         network fetch — model download, punctuation/VAD
+                         auto-fetch — with an error naming the missing file
+                         instead of a connect timeout
 
 Commands:
   serve        Start STT server

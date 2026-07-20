@@ -304,6 +304,43 @@ services:
 
 If you observe clients hanging past the cap or not receiving `Final` on deploy, see `docs/runbook.md` for the rollback escape hatches.
 
+## Air-gapped / offline installation
+
+For hosts with no internet access, every release publishes a self-contained
+tarball per Linux target — `gigastt-<ver>-offline-<target>.tar.gz` (binary +
+INT8 `rnnt` model + punctuation model + systemd unit + `install.sh`) — plus two
+Debian packages: `gigastt_<ver>_<arch>.deb` (binary + unit) and
+`gigastt-model-int8_<ver>_all.deb` (the same model set under
+`/usr/share/gigastt/models/`). All are signed like the other release assets
+(per-asset `.sha256`, `SHA256SUMS.txt`, minisign).
+
+```sh
+# Tarball flow (any distro, incl. rpm-based like RED OS — rpm is deferred):
+tar xf gigastt-<ver>-offline-x86_64-unknown-linux-gnu.tar.gz
+cd gigastt-<ver>-offline && sudo ./install.sh   # binary, model, unit, gigastt user
+sudo systemctl start gigastt
+curl 127.0.0.1:9876/health
+
+# Debian flow:
+sudo dpkg -i gigastt_<ver>_amd64.deb gigastt-model-int8_<ver>_all.deb
+sudo systemctl start gigastt
+```
+
+**Offline mode.** `GIGASTT_OFFLINE=1` (or the `--offline` flag) makes every
+code path that would download a model — `gigastt download`, the punctuation /
+VAD auto-fetch inside `serve` — fail fast with an error naming the file to
+provide and where to put it, instead of a network timeout. The shipped systemd
+unit sets it via `/etc/gigastt/gigastt.env`, so the service never attempts a
+connection. To add optional models later (speaker diarization, other
+recognition heads), fetch them on a connected machine with `gigastt download`
+and copy the files into the model directory; see the bundled
+`README-OFFLINE.md` for exact paths.
+
+Note on builds: the *runtime* needs no network, but building from source does
+(`ort` fetches a prebuilt onnxruntime) — use the prebuilt artifacts above in
+air-gapped contours, or see `docs/embedding-packaging.md` for vendored-ort
+builds.
+
 ## Upgrading from 2.0.x / 2.1.x
 
 **The default recognition head changed.** Fresh installs from 2.2.0+ default to

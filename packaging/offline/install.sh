@@ -114,7 +114,7 @@ if [ "$SYSTEMD" = "yes" ]; then
     install -d /etc/gigastt
     if [ ! -f /etc/gigastt/gigastt.env ]; then
         install -m 0644 "${BUNDLE_DIR}/systemd/gigastt.env" /etc/gigastt/gigastt.env
-        echo "   installed /etc/gigastt/gigastt.env (all defaults commented out)"
+        echo "   installed /etc/gigastt/gigastt.env (offline mode on; other defaults commented out)"
     else
         echo "   kept existing /etc/gigastt/gigastt.env"
     fi

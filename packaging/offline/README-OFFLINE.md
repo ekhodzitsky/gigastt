@@ -79,12 +79,15 @@ Model directories are read-only at runtime; logs go to the journal
 
 ## What is NOT in the bundle
 
-These optional features download their models on first use and therefore
-still need network access (they fail open with a warning, never block
-transcription):
+These optional features need model files that are not part of the bundle.
+The shipped systemd unit runs with `GIGASTT_OFFLINE=1`, so a missing file is
+a fast, instructive error naming the path to fill — never a network attempt
+or a connect timeout:
 
 - `--vad` (Silero VAD, off by default),
-- speaker diarization (`--diarization`, offline by default since 2.11.3),
+- speaker diarization (opt-in per request: `?diarization=true` on REST,
+  `Configure{diarization}` over WebSocket; needs the speaker model fetched by
+  `gigastt download` on a connected machine and copied over),
 - the `e2e_rnnt` / `ml_ctc` / `ml_ctc_large` recognition heads
   (fetch on a connected machine with `gigastt download --prequantized`,
   then copy `~/.gigastt/models/` over).
