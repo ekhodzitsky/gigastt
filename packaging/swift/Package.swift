@@ -13,12 +13,12 @@ let package = Package(
         // Prebuilt C-ABI static library, shipped as an xcframework attached to
         // a GitHub release by .github/workflows/ios-xcframework.yml.
         //
-        // After the first workflow run, paste the printed `url:` and
-        // `checksum:` into the binary target below.
+        // The `url:` and `checksum:` below are rewritten automatically by that
+        // workflow on every release it runs for — do not edit them by hand.
         .binaryTarget(
             name: "GigasttFFI",
-            url: "REPLACE_WITH_URL",
-            checksum: "REPLACE_WITH_CHECKSUM"
+            url: "https://github.com/ekhodzitsky/gigastt/releases/download/v2.10.0/GigasttFFI.xcframework.zip",
+            checksum: "cf1d3cc12ebb2c2353797a762f53f5b0add48a147b07d7b4e16f696a177e4ba6"
         ),
         // --- Local development -------------------------------------------------
         // To build against a locally produced xcframework instead of the

@@ -5,7 +5,7 @@ No cloud APIs, no network calls at inference time, full privacy.
 
 This package wraps the gigastt C ABI in a safe Swift interface. The native code
 ships as a prebuilt `GigasttFFI.xcframework` (device `arm64` + simulator
-`arm64`), with ONNX Runtime statically linked into each slice — there is no
+`arm64`/`x86_64`), with ONNX Runtime statically linked into each slice — there is no
 separate runtime to bundle.
 
 ## Requirements
@@ -15,29 +15,45 @@ separate runtime to bundle.
 
 ## Installation
 
-### Swift Package Manager (Xcode)
+> **Remote SPM install is not available yet.** SwiftPM requires
+> `Package.swift` at the root of the git repository, and this package lives
+> in `packaging/swift/` of the gigastt monorepo. A dedicated `gigastt-swift`
+> mirror repository (with tags matching engine releases) is planned; until
+> then, depend on the package locally as described below.
 
-File -> Add Package Dependencies, then enter the repository URL:
+### Local package (works today)
 
+Clone the repository (a sparse checkout keeps it small — only the package
+directory is materialized):
+
+```sh
+git clone --depth 1 --filter=blob:none --sparse https://github.com/ekhodzitsky/gigastt
+cd gigastt
+git sparse-checkout set packaging/swift
 ```
-https://github.com/ekhodzitsky/gigastt
-```
 
-Point the package to the `packaging/swift` directory and add the `GigaSTT`
-product to your target.
+In Xcode: File -> Add Package Dependencies... -> Add Local... -> select the
+`packaging/swift` directory, then add the `GigaSTT` product to your target.
 
-### Package.swift
+Or from another `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/ekhodzitsky/gigastt", from: "0.9.0")
+    .package(path: "/path/to/gigastt/packaging/swift")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
-        .product(name: "GigaSTT", package: "gigastt")
+        .product(name: "GigaSTT", package: "GigaSTT")
     ])
 ]
 ```
+
+The prebuilt `GigasttFFI.xcframework` itself is fetched from GitHub releases:
+the `url:`/`checksum:` in `Package.swift` are rewritten automatically by
+`.github/workflows/ios-xcframework.yml` on every release it runs for, so a
+fresh clone of `main` always resolves without manual edits (currently pinned
+to the v2.10.0 asset; the FFI surface and these wrapper sources have not
+changed since, so the binary is ABI-identical).
 
 ## Shipping the model
 
