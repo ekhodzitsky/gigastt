@@ -1,0 +1,8 @@
+[book]
+title = "GigaSTT Workbook"
+authors = ["ekhodzitsky"]
+language = "en"
+src = "src"
+
+[output.html]
+git-repository-url = "https://github.com/ekhodzitsky/gigastt"

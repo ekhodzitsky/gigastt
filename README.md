@@ -117,6 +117,7 @@ $ gigastt serve
 
 | Guide | Contents |
 |---|---|
+| **[Workbook](https://ekhodzitsky.github.io/gigastt/)** | Scenario-driven recipes (EN + RU): install → transcribe → stream → deploy |
 | **[API](docs/api.md)** | WebSocket protocol, REST + SSE, error codes, client examples (Python/Bun/Go/Kotlin) |
 | **[Benchmarks](docs/benchmarks.md)** | WER / RTF / footprint vs 6 engines across 4 Russian domains, with caveats |
 | **[Architecture](docs/architecture.md)** | Pipeline, model, hardware acceleration, INT8 quantization, project layout |

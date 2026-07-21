@@ -1,5 +1,7 @@
 # API
 
+> **Recipes:** the [GigaSTT Workbook](https://ekhodzitsky.github.io/gigastt/) holds scenario-driven guides (EN + RU); this document stays the canonical API reference.
+
 gigastt exposes WebSocket (streaming), REST, and SSE on a single port (default `9876`).
 Machine-readable specs: [`docs/asyncapi.yaml`](asyncapi.yaml) (WebSocket) and
 [`docs/openapi.yaml`](openapi.yaml) (REST).

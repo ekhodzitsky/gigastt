@@ -97,6 +97,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   evicted), so a connect/disconnect flood can no longer accumulate senders
   between broadcasts.
 
+### Docs
+
+- **Bilingual workbook skeleton (EN + RU) published via mdBook.** A new
+  scenario-driven cookbook lives in `docs/workbook/` — two mdBook instances
+  (`en/` canonical, `ru/` mirror, identical chapter file names) with six
+  chapter stubs (getting started, file transcription, streaming, models and
+  backends, server integration, deployment & ops) plus a chapter template and
+  a documentation-map intro. A new `docs.yml` workflow builds both books on
+  every PR that touches them and deploys `public/en/`, `public/ru/`, and a
+  root language selector to GitHub Pages on pushes to `main`
+  (<https://ekhodzitsky.github.io/gigastt/>). README (EN/RU), `docs/cli.md`,
+  and `docs/api.md` link to the published book.
+- **Documentation inventory + archive.** Every file under `docs/` is
+  classified (reference / guide / historical) in the workbook intro.
+  Completed design documents moved to `docs/archive/`:
+  `candle-metal-backend-plan.md` and `candle-metal-backend-design.md`
+  (superseded by the shipped backend documented in
+  [docs/candle-backend.md](docs/candle-backend.md)).
+
 ## [2.13.0] - 2026-07-20
 
 ### Added

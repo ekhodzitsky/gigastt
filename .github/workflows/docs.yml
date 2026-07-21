@@ -1,0 +1,65 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths: ['docs/workbook/**']
+  pull_request:
+    branches: [main]
+    paths: ['docs/workbook/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    name: Build books (en + ru)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: peaceiris/actions-mdbook@v2
+        with:
+          mdbook-version: '0.5.4'
+      - name: Build English book
+        run: mdbook build docs/workbook/en
+      - name: Build Russian book
+        run: mdbook build docs/workbook/ru
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: peaceiris/actions-mdbook@v2
+        with:
+          mdbook-version: '0.5.4'
+      - name: Build both books into public/
+        run: |
+          set -e
+          mdbook build docs/workbook/en
+          mdbook build docs/workbook/ru
+          mkdir -p public
+          mv docs/workbook/en/book public/en
+          mv docs/workbook/ru/book public/ru
+          cp docs/workbook/index.html public/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - id: deployment
+        uses: actions/deploy-pages@v4

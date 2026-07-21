@@ -110,6 +110,7 @@ $ gigastt serve
 
 | Гайд | Содержание |
 |---|---|
+| **[Книга рецептов](https://ekhodzitsky.github.io/gigastt/)** | Сценарные рецепты (EN + RU): установка → транскрибация → стриминг → деплой |
 | **[API](docs/api.md)** | WebSocket-протокол, REST + SSE, коды ошибок, клиенты (Python/Bun/Go/Kotlin) |
 | **[Benchmarks](docs/benchmarks.md)** | WER / RTF / footprint против 6 движков на 4 русских доменах, с оговорками |
 | **[Architecture](docs/architecture.md)** | Пайплайн, модель, аппаратное ускорение, INT8, структура проекта |
