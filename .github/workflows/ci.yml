@@ -507,6 +507,44 @@ jobs:
       - uses: actions/checkout@v7
       - uses: crate-ci/typos@v1
 
+  docs-drift:
+    # Advisory gate against documentation drift (scripts/check-docs-drift.py):
+    # CLI flags vs cli.md, WS error codes vs asyncapi.yaml/api.md, audio
+    # formats, mdBook TOCs, EN/RU workbook parity, relative links.
+    # continue-on-error keeps it non-blocking while it stabilizes — revisit
+    # promoting it to a required check after 2026-09-15.
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    name: Docs Drift (advisory)
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7
+      # On pushes to main the gate always runs; on PRs only when a path the
+      # gate compares could have changed.
+      - if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - 'crates/gigastt/src/main.rs'
+              - 'crates/gigastt/src/server/ws.rs'
+              - 'crates/gigastt-core/src/inference/audio.rs'
+              - 'scripts/check-docs-drift.py'
+              - 'scripts/check-docs-drift.allowlist'
+              - 'README*.md'
+              - 'packaging/**/README*'
+      - if: github.event_name != 'pull_request' || steps.filter.outputs.docs == 'true'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: mdbook
+      - if: github.event_name != 'pull_request' || steps.filter.outputs.docs == 'true'
+        name: Check docs drift
+        run: python3 scripts/check-docs-drift.py
+
   dependency-review:
     # PR-only: compares the PR's dependency delta against the base branch,
     # so it has nothing to diff on a direct push to main.

@@ -86,3 +86,9 @@ Completed design/plan documents kept for archaeology in
 - New chapters follow the [`_template.md`](_template.md) structure.
 - **English is canonical.** The Russian book (`docs/workbook/ru/`) mirrors this
   one with identical file names; both versions are updated in the same PR.
+- When a feature changes the documented surface (CLI flags, error codes, audio
+  formats), update the chapter, the book `SUMMARY.md`, and the canonical
+  references in the same PR — and keep the docs-drift gate green:
+  `python3 scripts/check-docs-drift.py` (advisory in CI; it compares CLI
+  flags, WS error codes, audio formats, mdBook TOCs, EN/RU parity, and
+  relative links against the code).

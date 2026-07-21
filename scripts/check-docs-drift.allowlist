@@ -1,0 +1,29 @@
+# Allowlist for scripts/check-docs-drift.py.
+#
+# Every entry must carry a justification comment (the checker refuses entries
+# without one). Keep this file short: an allowlisted item is documentation
+# debt — prefer fixing the docs over extending this list.
+
+[flags-undocumented-ok]
+# Flags that exist in crates/gigastt/src/main.rs but are intentionally absent
+# from docs/cli.md.
+ane  # gated behind `--features ane` (experimental Core ML/ANE backend); documented separately in docs/ane-backend.md
+
+[envs-undocumented-ok]
+# GIGASTT_* env vars read by main.rs but intentionally absent from docs/cli.md.
+
+[doc-flags-phantom-ok]
+# `--flag` tokens that appear in docs/cli.md but are not clap flags
+# (e.g. flags of other tools shown in examples).
+
+[doc-envs-phantom-ok]
+# GIGASTT_* tokens that appear in docs/cli.md but are not read by main.rs.
+
+[ws-codes-doc-only]
+# Codes in the docs/api.md + docs/asyncapi.yaml error-code sets that ws.rs
+# never emits (they belong to another surface but are listed for discoverability).
+payload_too_large  # REST/SSE-only (HTTP 413); api.md lists it in the WS table with an explicit "REST/SSE surface" note
+
+[ws-codes-undocumented-ok]
+# Codes emitted by ws.rs that are deliberately not part of the documented
+# error-code enum.

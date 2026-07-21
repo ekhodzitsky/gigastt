@@ -45,7 +45,29 @@ gigastt serve [OPTIONS]
   --itn <MODE>              Inverse text normalization (number-words → digits):
                             auto | on | off [default: auto = on for rnnt, off for
                             e2e_rnnt]. Runs before punctuation. Env: GIGASTT_ITN.
+  --hotwords-file <FILE>    Contextual hotword biasing: file of phrases to boost
+                            (one per line, optional `\t<weight>` suffix). Off when
+                            unset. Env: GIGASTT_HOTWORDS_FILE.
+  --hotwords-default        Also bias the built-in Russian brand/acronym lexicon.
+                            Env: GIGASTT_HOTWORDS_DEFAULT.
+  --hotwords-boost <N>      Additive logit boost for hotword continuation tokens
+                            [default: 5.0]. Env: GIGASTT_HOTWORDS_BOOST.
+  --vad                     Voice activity detection: skip silence before decoding
+                            and finalize streaming segments on trailing silence.
+                            Downloads the Silero VAD model on first use.
+                            Env: GIGASTT_VAD.
+  --vad-threshold <N>       VAD speech-probability threshold in [0,1]
+                            [default: 0.5]. No effect unless --vad.
+                            Env: GIGASTT_VAD_THRESHOLD.
+  --vad-min-silence-ms <N>  Minimum trailing silence (ms) to close a speech region
+                            [default: 500]. No effect unless --vad.
+                            Env: GIGASTT_VAD_MIN_SILENCE_MS.
+  --vad-model-dir <DIR>     Silero VAD model directory [default: ~/.gigastt/models/vad].
+                            Env: GIGASTT_VAD_MODEL_DIR.
   --pool-size <N>           Concurrent inference sessions [default: 2]
+  --encoder-intra-threads <N>  Intra-op threads for the encoder session (CPU build
+                            only). Unset: logical CPUs divided across the pool.
+                            Env: GIGASTT_ENCODER_INTRA_THREADS.
   --pool-checkout-timeout-secs <S>  Seconds a handler waits for a free session triplet
                             before returning 503 [default: 30].
                             Env: GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS.
@@ -65,6 +87,9 @@ gigastt serve [OPTIONS]
                             Env: GIGASTT_RATE_LIMIT_PER_MINUTE.
   --rate-limit-burst <N>    Token-bucket burst size [default: 10].
                             Env: GIGASTT_RATE_LIMIT_BURST.
+  --trust-proxy             Trust X-Forwarded-For / X-Real-IP for rate-limit IP
+                            extraction (only when the direct peer is loopback or
+                            RFC1918 private). Env: GIGASTT_TRUST_PROXY.
   --metrics                 Expose Prometheus metrics at GET /metrics.
                             Off by default. Env: GIGASTT_METRICS.
   --metrics-listen <ADDR>   Bind address for the separate metrics listener
@@ -78,6 +103,15 @@ gigastt serve [OPTIONS]
                                 off from --pool-size so a long file job can't starve
                                 WebSocket/SSE streaming. 0 disables the split [default: 0].
                                 Env: GIGASTT_BATCH_POOL_SIZE.
+  --enable-jobs                 Enable the asynchronous /v1/jobs API for long-file and
+                                batch transcription (off by default; routes 404 when
+                                disabled). Env: GIGASTT_ENABLE_JOBS.
+  --jobs-ttl-secs <N>           TTL for finished/failed/cancelled jobs before eviction
+                                [default: 3600]. Env: GIGASTT_JOBS_TTL_SECS.
+  --jobs-max <N>                Max jobs kept in memory; POST /v1/jobs returns 429 when
+                                full [default: 100]. Env: GIGASTT_JOBS_MAX.
+  --jobs-retry <N>              Max retries for a job on inference_timeout or panic
+                                [default: 3]. Env: GIGASTT_JOBS_RETRY.
   --inference-timeout-secs <N>  Per-request inference timeout; a run exceeding it returns
                                 inference_timeout (REST 504 / WS close). 0 disables
                                 [default: 600]. Env: GIGASTT_INFERENCE_TIMEOUT_SECS.
@@ -85,6 +119,8 @@ gigastt serve [OPTIONS]
                                 Env: GIGASTT_MAX_SESSION_SECS.
   --shutdown-drain-secs <S>     Max wait for in-flight sessions on SIGTERM [default: 10].
                                 Env: GIGASTT_SHUTDOWN_DRAIN_SECS.
+  --config <FILE>               Path to a TOML config file for runtime limits
+                                (reloaded on SIGHUP).
   --skip-quantize               Skip auto-quantization step on first run.
                                 Env: GIGASTT_SKIP_QUANTIZE.
 
@@ -139,18 +175,44 @@ gigastt transcribe [OPTIONS] <FILE>
   --itn <MODE>                Inverse text normalization (number-words → digits):
                               auto | on | off [default: auto = on for rnnt, off for
                               e2e_rnnt]. Runs before punctuation. Env: GIGASTT_ITN.
-  -f, --format <FORMAT>       Export format: json, txt, srt, vtt, md [default: txt]
-  -o, --output <FILE>         Write rendered output to file instead of stdout
-  --max-chars-per-line <N>    Max chars per subtitle line (SRT/VTT) [default: 80]
-  --max-words-per-line <N>    Max words per subtitle line (SRT/VTT) [default: 14]
-  --word-timestamps           Include per-word timestamps in Markdown output
+  --hotwords-file <FILE>      Hotword biasing: file of phrases to boost (one per
+                              line, optional `\t<weight>`). Env: GIGASTT_HOTWORDS_FILE.
+  --hotwords-default          Also bias the built-in brand/acronym lexicon.
+                              Env: GIGASTT_HOTWORDS_DEFAULT.
+  --hotwords-boost <N>        Logit boost for hotword tokens [default: 5.0].
+                              Env: GIGASTT_HOTWORDS_BOOST.
+  --vad                       Voice activity detection: skip silence before decoding
+                              (downloads the Silero VAD model on first use).
+                              Env: GIGASTT_VAD.
+  --vad-threshold <N>         VAD speech-probability threshold [default: 0.5].
+                              Env: GIGASTT_VAD_THRESHOLD.
+  --vad-min-silence-ms <N>    Minimum trailing silence (ms) to close a speech region
+                              [default: 500]. Env: GIGASTT_VAD_MIN_SILENCE_MS.
+  --vad-model-dir <DIR>       Silero VAD model directory [default: ~/.gigastt/models/vad].
+                              Env: GIGASTT_VAD_MODEL_DIR.
+  --encoder-intra-threads <N>  Intra-op threads for the encoder session (CPU build
+                              only). Env: GIGASTT_ENCODER_INTRA_THREADS.
+  -f, --format <FORMAT>       Export format: json, txt, srt, vtt, md [default: txt].
+                              Env: GIGASTT_FORMAT.
+  -o, --output <FILE>         Write rendered output to file instead of stdout.
+                              Env: GIGASTT_OUTPUT.
+  --max-chars-per-line <N>    Max chars per subtitle line (SRT/VTT) [default: 80].
+                              Env: GIGASTT_MAX_CHARS_PER_LINE.
+  --max-words-per-line <N>    Max words per subtitle line (SRT/VTT) [default: 14].
+                              Env: GIGASTT_MAX_WORDS_PER_LINE.
+  --word-timestamps           Include per-word timestamps in Markdown output.
+                              Env: GIGASTT_WORD_TIMESTAMPS.
+  --stereo-speakers           Transcribe left/right channels as separate speakers
+                              (speaker_0 / speaker_1); falls back to mono when the
+                              input is not stereo. Env: GIGASTT_STEREO_SPEAKERS.
   --codec <CODEC>             Decode a headerless raw stream instead of a container:
                               pcmu | pcma | g722 (aliases: ulaw, alaw). Requires
                               --sample-rate. Env: GIGASTT_CODEC.
   --sample-rate <HZ>          Sample rate of a raw --codec stream (8000 or 16000
                               for g722). Env: GIGASTT_SAMPLE_RATE.
-  Supports: WAV (incl. G.711 A-law/μ-law and G.722 payloads), M4A, MP3, OGG,
-            FLAC (mono or auto-mixed); raw .ulaw/.alaw/.g722 via --codec
+  Supports: WAV (incl. G.711 A-law/μ-law and G.722 payloads), M4A, MP3,
+            OGG/Vorbis, OGG/Opus (.opus), FLAC (mono or auto-mixed);
+            raw .ulaw/.alaw/.g722 via --codec
 
   Examples:
     gigastt transcribe recording.wav
@@ -182,6 +244,9 @@ gigastt transcribe-batch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
   --max-chars-per-line <N>    Max chars per subtitle line (SRT/VTT) [default: 80]
   --max-words-per-line <N>    Max words per subtitle line (SRT/VTT) [default: 14]
   --word-timestamps           Include per-word timestamps in Markdown output
+  Also accepts the recognition flags of `transcribe`: --hotwords-file,
+  --hotwords-default, --hotwords-boost, --vad, --vad-threshold,
+  --vad-min-silence-ms, --vad-model-dir, --encoder-intra-threads.
   Exit codes: 0 = all files done · 1 = at least one file failed · 130 = interrupted
   (Ctrl-C finishes in-flight files, skips the rest).
 

@@ -153,6 +153,24 @@ impl MediaSource for BytesMediaSource {
     }
 }
 
+// docs-drift: codecs
+// Canonical decode surface, one token per supported input. Kept in sync with
+// the FORMATS table in scripts/check-docs-drift.py and the format lists in
+// docs/api.md ("Audio formats and telephony codecs") and docs/cli.md
+// ("Supports:" line) — update all three together when adding a codec.
+// wav
+// wav-g711
+// wav-g722
+// mp3
+// m4a
+// ogg-vorbis
+// ogg-opus
+// flac
+// raw-pcmu
+// raw-pcma
+// raw-g722
+// docs-drift: end
+
 /// Decode any supported audio file to mono f32 samples at 16kHz.
 ///
 /// Supports WAV, MP3, M4A/AAC, OGG/Vorbis, OGG/Opus (`.opus`), and FLAC.
