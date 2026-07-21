@@ -54,7 +54,7 @@ diarization = ["dep:polyvoice"]
 # side-load models and feed raw PCM).
 net = ["dep:reqwest", "dep:tokio", "dep:futures-util"]  # HTTP model download
 async-pool = ["dep:tokio"]                              # async Pool::checkout; blocking path needs neither
-file-decode = ["dep:symphonia"]                         # file transcription; raw-PCM streaming does not need it
+file-decode = ["dep:symphonia", "dep:audio-codec"]      # file transcription; raw-PCM streaming does not need it
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = []
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
@@ -83,6 +83,10 @@ hex = "0.4"
 rustfft = "6"
 rubato = "3.0"
 symphonia = { version = "0.6", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
+# Telephony codecs (G.711 A/μ-law tables, G.722 ADPCM) for RTP dumps and
+# Asterisk-style raw captures. `default-features = false` drops the opus
+# feature so we do not pull a second Opus implementation next to symphonia's.
+audio-codec = { version = "0.3", default-features = false, optional = true }
 tokenizers = { version = "0.23", default-features = false, features = ["fancy-regex"] }
 bytes = "1"
 prost = "0.14"

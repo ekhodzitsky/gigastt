@@ -299,6 +299,29 @@ paths:
             both are set. Actual diarization output requires the speaker-encoder
             model to be loaded on the server (downloaded automatically when the
             `diarization` feature is enabled).
+        - name: codec
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pcmu, pcma, g722, ulaw, alaw]
+          description: >-
+            Declare the upload body as a raw headerless telephony stream (RTP
+            dump, Asterisk Monitor raw) instead of sniffing a container:
+            `pcmu` (alias `ulaw`), `pcma` (alias `alaw`), or `g722`. Requires
+            `sample_rate`; unknown values return 400 `unsupported_codec`.
+            This endpoint only.
+        - name: sample_rate
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: >-
+            Sample rate (Hz) of a raw `codec` upload — mandatory when `codec`
+            is set (typical telephony: 8000; missing or out-of-range values
+            return 400 `invalid_sample_rate`). G.722 always decodes to its
+            native 16 kHz; both 8000 (the SDP clock-rate convention) and 16000
+            are accepted for it.
       requestBody:
         required: true
         content:

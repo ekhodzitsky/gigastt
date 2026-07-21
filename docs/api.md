@@ -365,6 +365,12 @@ includes a `speaker` integer:
   `words`, and an optional `speaker` when channel split or diarization is active.
   With `format=md`, `segments=true` switches Markdown output to `### [mm:ss]`
   section headers instead of a single flat transcript blob.
+- `codec` (optional, string) — declare a raw headerless telephony stream instead
+  of a container: `pcmu` (alias `ulaw`), `pcma` (alias `alaw`), or `g722`. See
+  "Audio formats and telephony codecs" below.
+- `sample_rate` (optional, integer, Hz) — mandatory when `codec` is set
+  (typical telephony: `8000`). G.722 always decodes to its native 16 kHz; both
+  `8000` (the SDP clock-rate convention) and `16000` are accepted for it.
 
 ```sh
 # JSON with word timestamps and grouped segments
@@ -397,6 +403,41 @@ curl -X POST "http://127.0.0.1:9876/v1/transcribe?format=md&segments=true" \
 #
 # Как дела?
 ```
+
+### Audio formats and telephony codecs
+
+The container is sniffed from the upload bytes — `Content-Type` is ignored.
+This applies to every file-transcription endpoint (`/v1/transcribe`,
+`/v1/transcribe/stream`, `/v1/jobs`):
+
+| Input | Decoder |
+|---|---|
+| WAV (PCM 8–32 bit, IEEE float) | symphonia |
+| WAV with G.711 A-law / μ-law (8 kHz typical) | symphonia |
+| WAV with G.722 ADPCM (tags `0x0064`, `0x028F`) | built-in fallback (`audio-codec`) |
+| MP3, M4A/AAC, OGG/Vorbis, FLAC | symphonia |
+| Raw headerless `.ulaw` / `.alaw` / `.g722` | `audio-codec` — requires `?codec=` |
+
+**Telephony notes**
+
+- **G.711 A-law / μ-law in WAV** decode natively; a 8 kHz file is resampled to
+  the model's 16 kHz.
+- **G.722 in WAV** (what Asterisk, Cisco, and Teams-player exports write —
+  format tag `0x0064`, ffmpeg writes `0x028F`) decodes to its native 16 kHz.
+- **Headerless streams** (RTP dumps, Asterisk Monitor raw) carry no container
+  to sniff, so the codec must be declared explicitly on `/v1/transcribe`:
+
+```sh
+curl -X POST "http://127.0.0.1:9876/v1/transcribe?codec=pcmu&sample_rate=8000" \
+  -H "Content-Type: application/octet-stream" --data-binary @call.ulaw
+
+curl -X POST "http://127.0.0.1:9876/v1/transcribe?codec=g722&sample_rate=8000" \
+  -H "Content-Type: application/octet-stream" --data-binary @call.g722
+```
+
+A raw stream posted **without** `codec` is rejected with `422 invalid_audio`,
+exactly as before. The CLI mirrors this with
+`gigastt transcribe call.ulaw --codec pcmu --sample-rate 8000`.
 
 ### Export formats
 
@@ -460,6 +501,8 @@ it backs off on `503` pool saturation instead of failing mid-job.
 |---|---|---|
 | 400 | `empty_body` | Request body is empty |
 | 400 | `invalid_format` | Unsupported `format` query value |
+| 400 | `unsupported_codec` | Unknown `codec` query value (supported: `pcmu`, `pcma`, `g722`) |
+| 400 | `invalid_sample_rate` | `sample_rate` missing with `codec`, or outside the accepted range |
 | 400 | `conflicting_modes` | Both `channels=split` and `diarization=true` were requested |
 | 404 | `jobs_disabled` | `POST /v1/jobs` called without `--enable-jobs` |
 | 404 | `job_not_found` | Unknown or expired job id |

@@ -618,6 +618,20 @@ enum Commands {
         /// files, and files with more than two channels. Env: GIGASTT_STEREO_SPEAKERS.
         #[arg(long, env = "GIGASTT_STEREO_SPEAKERS", default_value_t = false)]
         stereo_speakers: bool,
+
+        /// Raw headerless telephony codec of the input file: `pcmu` (alias
+        /// `ulaw`), `pcma` (alias `alaw`), or `g722`. When set, the file is
+        /// decoded as a raw byte stream (RTP dump, Asterisk Monitor raw)
+        /// instead of sniffing a container. Requires `--sample-rate`.
+        /// Env: GIGASTT_CODEC.
+        #[arg(long, env = "GIGASTT_CODEC", requires = "sample_rate")]
+        codec: Option<String>,
+
+        /// Sample rate (Hz) of a raw `--codec` input (typical telephony: 8000).
+        /// G.722 decodes to its native 16 kHz; both 8000 (the SDP clock-rate
+        /// convention) and 16000 are accepted for it. Env: GIGASTT_SAMPLE_RATE.
+        #[arg(long, env = "GIGASTT_SAMPLE_RATE")]
+        sample_rate: Option<u32>,
     },
 
     /// Transcribe every audio file in a directory (offline, one-shot)
@@ -1623,6 +1637,8 @@ async fn main() -> anyhow::Result<()> {
             max_words_per_line,
             word_timestamps,
             stereo_speakers,
+            codec,
+            sample_rate,
         } => {
             // Single-triplet pool for offline file transcription; when the
             // thread count is unset it defaults to every logical CPU (one
@@ -1645,7 +1661,28 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
             let mut guard = engine.pool.checkout().await?;
-            let result = if stereo_speakers {
+            let result = if let Some(codec_name) = codec.as_deref() {
+                // Raw headerless telephony input: decode via the codec tables
+                // and re-wrap as an in-memory WAV, bypassing container sniffing.
+                let telephony_codec = inference::audio::TelephonyCodec::from_name(codec_name)
+                    .ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "unsupported codec '{codec_name}' (supported: pcmu, pcma, g722)"
+                        )
+                    })?;
+                // clap enforces `--sample-rate` when `--codec` is given; keep a
+                // graceful error instead of an unwrap in case that ever changes.
+                let rate = sample_rate
+                    .ok_or_else(|| anyhow::anyhow!("--sample-rate is required with --codec"))?;
+                telephony_codec
+                    .validate_sample_rate(rate)
+                    .map_err(|e| anyhow::anyhow!("{e}"))?;
+                let raw = std::fs::read(&file)
+                    .with_context(|| format!("Failed to open audio file: {file}"))?;
+                let samples = inference::audio::decode_telephony_raw(&raw, telephony_codec, rate)?;
+                let wav = inference::audio::encode_wav_pcm16(&samples, 16000);
+                engine.transcribe_bytes(&wav, &mut guard)
+            } else if stereo_speakers {
                 let channels = inference::audio::load_audio_channels(&file)?;
                 let fallback_reason = match channels.len() {
                     0 => Some("no channels"),
@@ -2192,6 +2229,53 @@ mod tests {
             } => {
                 assert!(!stereo_speakers);
             }
+            _ => panic!("expected Transcribe"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_codec_flags() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe",
+            "call.ulaw",
+            "--codec",
+            "pcmu",
+            "--sample-rate",
+            "8000",
+        ]);
+        match cli.command {
+            Commands::Transcribe {
+                codec, sample_rate, ..
+            } => {
+                assert_eq!(codec.as_deref(), Some("pcmu"));
+                assert_eq!(sample_rate, Some(8000));
+            }
+            _ => panic!("expected Transcribe"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_codec_requires_sample_rate() {
+        // clap must reject `--codec` without `--sample-rate` before any engine
+        // work happens.
+        let result = Cli::try_parse_from(["gigastt", "transcribe", "call.ulaw", "--codec", "pcmu"]);
+        assert!(result.is_err(), "--codec without --sample-rate must fail");
+    }
+
+    #[test]
+    fn test_cli_transcribe_sample_rate_alone_is_allowed() {
+        // `--sample-rate` without `--codec` parses (it is simply unused), so
+        // scripts can always append both flags uniformly.
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe",
+            "audio.wav",
+            "--sample-rate",
+            "8000",
+        ]);
+        match cli.command {
+            Commands::Transcribe { codec, .. } => assert!(codec.is_none()),
             _ => panic!("expected Transcribe"),
         }
     }

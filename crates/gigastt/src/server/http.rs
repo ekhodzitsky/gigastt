@@ -224,6 +224,19 @@ pub struct ExportParams {
     /// Request speaker diarization. Mutually exclusive with `channels=split`.
     #[serde(default)]
     pub diarization: Option<bool>,
+    /// Raw headerless telephony codec of the upload body: `pcmu` (alias
+    /// `ulaw`), `pcma` (alias `alaw`), or `g722`. When set, the body is
+    /// decoded as a raw byte stream of that codec instead of sniffing a
+    /// container — for RTP dumps and Asterisk Monitor raw captures. Requires
+    /// `sample_rate`.
+    #[serde(default)]
+    pub codec: Option<String>,
+    /// Sample rate (Hz) of a raw `codec` upload — mandatory when `codec` is
+    /// set (typical telephony: 8000). G.722 decodes to its native 16 kHz
+    /// regardless; both 8000 (the SDP clock-rate convention) and 16000 are
+    /// accepted for it.
+    #[serde(default)]
+    pub sample_rate: Option<u32>,
 }
 
 /// Render a transcription result into the requested export format.
@@ -389,6 +402,57 @@ fn api_inference_timeout_error() -> ApiError {
         "Inference timed out.",
         "inference_timeout",
     )
+}
+
+/// Resolve the `?codec=` / `?sample_rate=` query pair into a raw-decode recipe.
+/// `Ok(None)` means no `codec` was given and the body is probed as a container
+/// as before. Validation is done up front so a malformed request fails with a
+/// 400 before a pool slot is reserved. Kept separate from the handler so the
+/// status codes are unit-testable without a model.
+#[allow(clippy::result_large_err)]
+fn resolve_raw_codec(
+    params: &ExportParams,
+) -> Result<Option<(gigastt_core::inference::audio::TelephonyCodec, u32)>, ApiError> {
+    let Some(name) = params.codec.as_deref() else {
+        return Ok(None);
+    };
+    let codec =
+        gigastt_core::inference::audio::TelephonyCodec::from_name(name).ok_or_else(|| {
+            api_error(
+                StatusCode::BAD_REQUEST,
+                "Unsupported codec. Supported: pcmu (ulaw), pcma (alaw), g722",
+                "unsupported_codec",
+            )
+        })?;
+    let sample_rate = params.sample_rate.ok_or_else(|| {
+        api_error(
+            StatusCode::BAD_REQUEST,
+            "sample_rate is required when codec is set",
+            "invalid_sample_rate",
+        )
+    })?;
+    codec
+        .validate_sample_rate(sample_rate)
+        .map_err(|reason| api_error(StatusCode::BAD_REQUEST, &reason, "invalid_sample_rate"))?;
+    Ok(Some((codec, sample_rate)))
+}
+
+/// Decode a raw telephony byte stream and re-wrap it as an in-memory PCM16
+/// WAV, so every downstream engine path (mono, `channels=split`, diarized)
+/// works unchanged. Runs inside the blocking inference closure; errors map to
+/// the same 422 as container decode failures.
+fn raw_codec_to_wav(
+    body: &[u8],
+    codec: gigastt_core::inference::audio::TelephonyCodec,
+    sample_rate: u32,
+) -> Result<Bytes, gigastt_core::error::GigasttError> {
+    let samples = gigastt_core::inference::audio::decode_telephony_raw(body, codec, sample_rate)
+        .map_err(|e| gigastt_core::error::GigasttError::InvalidAudio {
+            reason: format!("{e:#}"),
+        })?;
+    Ok(Bytes::from(
+        gigastt_core::inference::audio::encode_wav_pcm16(&samples, 16000),
+    ))
 }
 
 /// Check out a session triplet from the engine's batch pool with the configured
@@ -619,7 +683,9 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
 
 /// POST /v1/transcribe — upload audio file, get full transcript.
 ///
-/// Accepts raw audio body. Supported formats: WAV, MP3, M4A/AAC, OGG, FLAC.
+/// Accepts raw audio body. Supported formats: WAV (including G.711 A-law /
+/// μ-law and G.722 inside WAV), MP3, M4A/AAC, OGG, FLAC — plus headerless
+/// telephony streams when `?codec=pcmu|pcma|g722&sample_rate=N` is given.
 /// Max body size enforced by the axum `DefaultBodyLimit` layer configured
 /// from [`RuntimeLimits::body_limit_bytes`] (default 50 MiB).
 pub async fn transcribe(
@@ -659,6 +725,11 @@ pub async fn transcribe(
             "conflicting_modes",
         ));
     }
+
+    // Raw telephony upload (`?codec=`): validate the codec/rate pair up front
+    // so a malformed request 400s before a pool slot is reserved. The actual
+    // decode happens inside the blocking closure below.
+    let raw_codec = resolve_raw_codec(&params)?;
 
     // Snapshot the current engine once at request start; a concurrent hot-reload
     // swaps the `ArcSwap`, but this request keeps the engine (and its pool) it
@@ -708,6 +779,13 @@ pub async fn transcribe(
         let _enter = span.enter();
         // catch_unwind ensures triplet is returned to pool even on panic
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            // Raw telephony upload: decode the headerless byte stream and
+            // re-wrap it as an in-memory WAV so every downstream path (mono,
+            // channels=split, diarized) works unchanged.
+            let body = match raw_codec {
+                Some((codec, rate)) => raw_codec_to_wav(&body, codec, rate)?,
+                None => body,
+            };
             if split_channels {
                 let channels = gigastt_core::inference::audio::decode_audio_bytes_shared_channels(
                     body.clone(),
@@ -1543,6 +1621,128 @@ mod tests {
         let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
         let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(v["code"], "inference_timeout");
+    }
+
+    #[test]
+    fn test_resolve_raw_codec_absent_is_none() {
+        let params = ExportParams::default();
+        assert!(resolve_raw_codec(&params).unwrap().is_none());
+    }
+
+    #[test]
+    fn test_resolve_raw_codec_valid_pairs() {
+        for (name, rate) in [
+            ("pcmu", 8000),
+            ("ulaw", 8000),
+            ("pcma", 8000),
+            ("alaw", 16000),
+            ("g722", 8000),
+            ("g722", 16000),
+        ] {
+            let params = ExportParams {
+                codec: Some(name.into()),
+                sample_rate: Some(rate),
+                ..Default::default()
+            };
+            assert!(
+                resolve_raw_codec(&params).unwrap().is_some(),
+                "{name}@{rate} must resolve"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_resolve_raw_codec_unknown_codec_is_400() {
+        let params = ExportParams {
+            codec: Some("g729".into()),
+            sample_rate: Some(8000),
+            ..Default::default()
+        };
+        let resp = resolve_raw_codec(&params).unwrap_err();
+        let (parts, body) = resp.into_parts();
+        assert_eq!(parts.status, StatusCode::BAD_REQUEST);
+        let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "unsupported_codec");
+    }
+
+    #[tokio::test]
+    async fn test_resolve_raw_codec_missing_sample_rate_is_400() {
+        let params = ExportParams {
+            codec: Some("pcmu".into()),
+            sample_rate: None,
+            ..Default::default()
+        };
+        let resp = resolve_raw_codec(&params).unwrap_err();
+        let (parts, body) = resp.into_parts();
+        assert_eq!(parts.status, StatusCode::BAD_REQUEST);
+        let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
+        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(v["code"], "invalid_sample_rate");
+    }
+
+    #[tokio::test]
+    async fn test_resolve_raw_codec_bad_sample_rate_is_400() {
+        for (name, rate) in [("pcmu", 4000), ("g722", 44100)] {
+            let params = ExportParams {
+                codec: Some(name.into()),
+                sample_rate: Some(rate),
+                ..Default::default()
+            };
+            let resp = resolve_raw_codec(&params).unwrap_err();
+            let (parts, body) = resp.into_parts();
+            assert_eq!(parts.status, StatusCode::BAD_REQUEST, "{name}@{rate}");
+            let bytes = axum::body::to_bytes(body, 1024).await.unwrap();
+            let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+            assert_eq!(v["code"], "invalid_sample_rate", "{name}@{rate}");
+        }
+    }
+
+    #[test]
+    fn test_raw_codec_to_wav_produces_decodable_wav() {
+        // μ-law silence (0xFF ≈ 0) re-wraps into a WAV the standard pipeline
+        // accepts: the full raw→16kHz-WAV transform without a model.
+        let raw = vec![0xFFu8; 8000]; // 1 s of μ-law silence at 8 kHz
+        let wav = raw_codec_to_wav(
+            &raw,
+            gigastt_core::inference::audio::TelephonyCodec::Pcmu,
+            8000,
+        )
+        .unwrap();
+        let samples = gigastt_core::inference::audio::decode_audio_bytes_shared(wav).unwrap();
+        assert!(
+            samples.len() > 12_000 && samples.len() <= 16_000,
+            "expected ~1 s at 16 kHz, got {}",
+            samples.len()
+        );
+        assert!(
+            samples.iter().all(|s| s.abs() < 0.01),
+            "μ-law silence must decode to near-silence"
+        );
+    }
+
+    #[test]
+    fn test_raw_codec_to_wav_rejects_bad_input() {
+        let result = raw_codec_to_wav(
+            &[],
+            gigastt_core::inference::audio::TelephonyCodec::Pcmu,
+            8000,
+        );
+        assert!(result.is_err(), "empty raw payload must error");
+    }
+
+    #[test]
+    fn test_export_params_parse_codec_query() {
+        // The query string is how REST clients pass the pair; pin it through
+        // axum's Query extractor itself (the exact extraction path the
+        // handler uses).
+        let uri: axum::http::Uri = "http://localhost/v1/transcribe?codec=pcmu&sample_rate=8000"
+            .parse()
+            .unwrap();
+        let axum::extract::Query(params) = axum::extract::Query::<ExportParams>::try_from_uri(&uri)
+            .expect("codec query must parse");
+        assert_eq!(params.codec.as_deref(), Some("pcmu"));
+        assert_eq!(params.sample_rate, Some(8000));
     }
 
     #[test]

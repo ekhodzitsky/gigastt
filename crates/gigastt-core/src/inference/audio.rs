@@ -168,6 +168,18 @@ impl MediaSource for BytesMediaSource {
 /// ```
 #[cfg(feature = "file-decode")]
 pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
+    // G.722-in-WAV (format tag 0x0064) has no symphonia decoder: sniff the
+    // first chunk headers, and only when they declare G.722 read the file
+    // fully and decode it here. Other inputs stream through symphonia as
+    // before, so plain WAVs keep their from-disk memory profile.
+    if sniffs_as_g722_wav(path)? {
+        let bytes =
+            std::fs::read(path).with_context(|| format!("Failed to read audio file: {path}"))?;
+        if let Some(result) = try_decode_g722_wav(&bytes) {
+            return result;
+        }
+    }
+
     let file =
         std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
@@ -232,10 +244,274 @@ pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
 /// ```
 #[cfg(feature = "file-decode")]
 pub fn decode_audio_bytes_shared(data: Bytes) -> Result<Vec<f32>> {
+    // G.722-in-WAV (format tag 0x0064) has no symphonia decoder; detect it
+    // before the generic probe and decode via the telephony fallback.
+    if let Some(result) = try_decode_g722_wav(&data) {
+        return result;
+    }
     let source = BytesMediaSource::new(data);
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
     let hint = Hint::new();
     decode_audio_inner(mss, hint, "bytes")
+}
+
+/// WAV format tags for ITU-T G.722 ADPCM. Symphonia's RIFF demuxer maps them
+/// to `CODEC_TYPE_NULL` and there is no decoder for it, so G.722-in-WAV (what
+/// Asterisk / Cisco / Teams players export) is detected up front and decoded
+/// via the `audio-codec` crate. Both registered tags are accepted: 0x0064
+/// (WAVE_FORMAT_G722_ADPCM, SBC/Asterisk exports) and 0x028F
+/// (WAVE_FORMAT_ADPCM_G722, what ffmpeg/libavcodec writes).
+#[cfg(feature = "file-decode")]
+const WAV_FORMAT_TAGS_G722_ADPCM: [u16; 2] = [0x0064, 0x028F];
+
+/// Size of the leading window inspected for a G.722 `fmt ` chunk. The `fmt `
+/// chunk is virtually always the first chunk (ffmpeg, sox, and Asterisk all
+/// write it at offset 12); when it lies beyond the window the file falls
+/// through to symphonia and fails there as an unsupported codec, exactly as
+/// before.
+#[cfg(feature = "file-decode")]
+const WAV_SNIFF_WINDOW: usize = 512;
+
+/// Inspect the leading bytes of a RIFF/WAVE buffer for a G.722 ADPCM format
+/// tag in the `fmt ` chunk. Returns `Some(is_g722)` when the `fmt ` chunk was
+/// found inside the window, `None` when the buffer is not RIFF/WAVE or the
+/// `fmt ` chunk lies beyond it.
+#[cfg(feature = "file-decode")]
+fn sniff_wav_g722_tag(window: &[u8]) -> Option<bool> {
+    if window.len() < 12 || &window[0..4] != b"RIFF" || &window[8..12] != b"WAVE" {
+        return None;
+    }
+    let mut pos = 12usize;
+    while pos + 8 <= window.len() {
+        let id = &window[pos..pos + 4];
+        let size = u32::from_le_bytes([
+            window[pos + 4],
+            window[pos + 5],
+            window[pos + 6],
+            window[pos + 7],
+        ]) as usize;
+        let start = pos + 8;
+        if id == b"fmt " {
+            // Need at least the 2-byte format tag.
+            if size < 2 || start + 2 > window.len() {
+                return None;
+            }
+            let tag = u16::from_le_bytes([window[start], window[start + 1]]);
+            return Some(WAV_FORMAT_TAGS_G722_ADPCM.contains(&tag));
+        }
+        // RIFF chunks are word-aligned: odd sizes carry a pad byte.
+        pos = start.saturating_add(size).saturating_add(size & 1);
+    }
+    None
+}
+
+/// Locate a RIFF chunk payload by 4-byte id, tolerating a truncated final
+/// chunk (clamped to the buffer end so decoders see the bytes that actually
+/// arrived).
+#[cfg(feature = "file-decode")]
+fn find_riff_chunk<'a>(data: &'a [u8], want: &[u8; 4]) -> Option<&'a [u8]> {
+    if data.len() < 12 {
+        return None;
+    }
+    let mut pos = 12usize;
+    while pos + 8 <= data.len() {
+        let id = &data[pos..pos + 4];
+        let size = u32::from_le_bytes([data[pos + 4], data[pos + 5], data[pos + 6], data[pos + 7]])
+            as usize;
+        let start = pos + 8;
+        let end = start.saturating_add(size).min(data.len());
+        if id == want {
+            return Some(&data[start..end]);
+        }
+        pos = start.saturating_add(size).saturating_add(size & 1);
+    }
+    None
+}
+
+/// Read the header window of `path` and report whether it declares a
+/// G.722-in-WAV stream. Open errors carry the same message the regular path
+/// would produce; unreadable/short headers simply report `false` so the
+/// symphonia path renders the canonical error.
+#[cfg(feature = "file-decode")]
+fn sniffs_as_g722_wav(path: &str) -> Result<bool> {
+    use std::io::Read as _;
+    let mut file =
+        std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
+    let mut window = [0u8; WAV_SNIFF_WINDOW];
+    let mut read = 0usize;
+    while read < window.len() {
+        match file.read(&mut window[read..]) {
+            Ok(0) => break,
+            Ok(n) => read += n,
+            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(e) => {
+                return Err(e).with_context(|| format!("Failed to read audio file: {path}"));
+            }
+        }
+    }
+    Ok(sniff_wav_g722_tag(&window[..read]) == Some(true))
+}
+
+/// Decode a G.722-in-WAV buffer to mono f32 at 16 kHz (the native G.722
+/// output rate). Returns `None` when the buffer is not G.722-in-WAV — the
+/// caller then falls through to the symphonia pipeline; `Some(Err(..))` when
+/// it IS G.722-in-WAV but malformed, so the error names the real problem
+/// instead of surfacing as a generic "unsupported codec".
+#[cfg(feature = "file-decode")]
+fn try_decode_g722_wav(data: &[u8]) -> Option<Result<Vec<f32>>> {
+    if sniff_wav_g722_tag(data) != Some(true) {
+        return None;
+    }
+    let payload = match find_riff_chunk(data, b"data") {
+        Some(p) if !p.is_empty() => p,
+        _ => return Some(Err(anyhow::anyhow!("G.722 WAV has no data chunk"))),
+    };
+    // Duration cap, same budget as container decodes: two PCM16 samples per
+    // encoded byte at the native 16 kHz rate.
+    let num_samples = payload.len().saturating_mul(2);
+    if num_samples > max_decode_samples(16000) {
+        let observed_s = num_samples as f64 / 16000.0;
+        return Some(Err(anyhow::anyhow!(
+            "Audio file too long ({observed_s:.0}s). Maximum supported: {MAX_DURATION_S:.0}s."
+        )));
+    }
+    let mut decoder = audio_codec::g722::G722Decoder::new();
+    let pcm = audio_codec::Decoder::decode(&mut decoder, payload);
+    tracing::info!(
+        "Decoded G.722 WAV: {} samples at 16000Hz ({:.1}s)",
+        pcm.len(),
+        pcm.len() as f64 / 16000.0
+    );
+    Some(Ok(pcm.iter().map(|&s| f32::from(s) / 32768.0).collect()))
+}
+
+/// Headerless telephony codecs accepted for raw uploads (`?codec=` on REST,
+/// `--codec` on the CLI). WAV-carried G.711/G.722 needs no such hint — the
+/// container declares the codec — so this enum only covers the raw RTP-dump /
+/// Asterisk Monitor case.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TelephonyCodec {
+    /// G.711 μ-law (PCMU): one byte per sample, typically 8 kHz.
+    Pcmu,
+    /// G.711 A-law (PCMA): one byte per sample, typically 8 kHz.
+    Pcma,
+    /// G.722 ADPCM @ 64 kbit/s: two PCM16 samples per byte, native 16 kHz.
+    G722,
+}
+
+impl TelephonyCodec {
+    /// Parse a codec name, case-insensitive. Accepts the RTP/SIP aliases
+    /// `ulaw` (PCMU) and `alaw` (PCMA) alongside the canonical names.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name.to_ascii_lowercase().as_str() {
+            "pcmu" | "ulaw" => Some(Self::Pcmu),
+            "pcma" | "alaw" => Some(Self::Pcma),
+            "g722" => Some(Self::G722),
+            _ => None,
+        }
+    }
+
+    /// Validate the caller-declared sample rate of a raw stream. A G.711 byte
+    /// stream carries no rate of its own, so any rate inside the telephony
+    /// band is accepted and resampled from; G.722 always decodes to its
+    /// native 16 kHz, but 8000 is accepted too because SDP/RTP announces
+    /// G.722 with an 8 kHz clock rate for historical reasons.
+    pub fn validate_sample_rate(self, sample_rate: u32) -> Result<(), String> {
+        match self {
+            Self::G722 if sample_rate != 8000 && sample_rate != 16000 => Err(format!(
+                "g722 decodes to 16 kHz natively; sample_rate must be 8000 (SDP convention) or 16000, got {sample_rate}"
+            )),
+            Self::Pcmu | Self::Pcma if !(8000..=48000).contains(&sample_rate) => Err(format!(
+                "sample_rate must be within 8000..=48000 Hz for raw G.711, got {sample_rate}"
+            )),
+            _ => Ok(()),
+        }
+    }
+}
+
+/// Decode a headerless telephony byte stream to mono f32 at 16 kHz.
+///
+/// `sample_rate` is the declared rate of the input (see
+/// [`TelephonyCodec::validate_sample_rate`]); G.722 ignores it and always
+/// decodes to its native 16 kHz. The duration cap matches container decodes
+/// (`MAX_DURATION_S`), evaluated on the decoded sample count before the f32
+/// buffer is allocated.
+#[cfg(feature = "file-decode")]
+pub fn decode_telephony_raw(
+    data: &[u8],
+    codec: TelephonyCodec,
+    sample_rate: u32,
+) -> Result<Vec<f32>> {
+    if data.is_empty() {
+        anyhow::bail!("Empty audio payload");
+    }
+    codec
+        .validate_sample_rate(sample_rate)
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
+    let (pcm, rate) = match codec {
+        TelephonyCodec::Pcmu => {
+            let mut decoder = audio_codec::pcmu::PcmuDecoder::new();
+            (
+                audio_codec::Decoder::decode(&mut decoder, data),
+                sample_rate,
+            )
+        }
+        TelephonyCodec::Pcma => {
+            let mut decoder = audio_codec::pcma::PcmaDecoder::new();
+            (
+                audio_codec::Decoder::decode(&mut decoder, data),
+                sample_rate,
+            )
+        }
+        TelephonyCodec::G722 => {
+            let mut decoder = audio_codec::g722::G722Decoder::new();
+            (audio_codec::Decoder::decode(&mut decoder, data), 16000)
+        }
+    };
+    if pcm.len() > max_decode_samples(rate) {
+        let observed_s = pcm.len() as f64 / rate as f64;
+        anyhow::bail!(
+            "Audio file too long ({observed_s:.0}s). Maximum supported: {MAX_DURATION_S:.0}s."
+        );
+    }
+    let mut samples: Vec<f32> = pcm.iter().map(|&s| f32::from(s) / 32768.0).collect();
+    if rate != 16000 {
+        samples =
+            resample(&samples, SampleRate(rate), SampleRate(16000)).context("Resampling failed")?;
+    }
+    Ok(samples)
+}
+
+/// Wrap mono f32 samples in a PCM16 RIFF/WAVE container. Lets raw-codec
+/// uploads (already decoded to 16 kHz) flow back through the standard
+/// container-probing engine entry points without a temp file. Samples are
+/// clamped to [-1.0, 1.0]; non-finite values become silence.
+#[cfg(feature = "file-decode")]
+pub fn encode_wav_pcm16(samples: &[f32], sample_rate: u32) -> Vec<u8> {
+    let data_size = (samples.len() * 2) as u32;
+    let mut buf = Vec::with_capacity(44 + data_size as usize);
+    buf.extend_from_slice(b"RIFF");
+    buf.extend_from_slice(&(36 + data_size).to_le_bytes());
+    buf.extend_from_slice(b"WAVE");
+    buf.extend_from_slice(b"fmt ");
+    buf.extend_from_slice(&16u32.to_le_bytes()); // fmt chunk size
+    buf.extend_from_slice(&1u16.to_le_bytes()); // PCM
+    buf.extend_from_slice(&1u16.to_le_bytes()); // mono
+    buf.extend_from_slice(&sample_rate.to_le_bytes());
+    buf.extend_from_slice(&(sample_rate * 2).to_le_bytes()); // byte rate
+    buf.extend_from_slice(&2u16.to_le_bytes()); // block align
+    buf.extend_from_slice(&16u16.to_le_bytes()); // bits per sample
+    buf.extend_from_slice(b"data");
+    buf.extend_from_slice(&data_size.to_le_bytes());
+    for &s in samples {
+        let v = if s.is_finite() {
+            s.clamp(-1.0, 1.0)
+        } else {
+            0.0
+        };
+        buf.extend_from_slice(&((v * 32767.0).round() as i16).to_le_bytes());
+    }
+    buf
 }
 
 /// Decode an audio file to one f32 sample vector per channel at 16 kHz.
@@ -1770,6 +2046,335 @@ mod tests {
         // A grossly inflated rate must also be rejected (not panic / not allocate).
         let result = decode_audio_bytes(&make_wav_bytes(&silence, 1_000_000_000));
         assert!(result.is_err(), "absurd sample_rate must be rejected");
+    }
+
+    // --- telephony codecs: G.711 / G.722 ---
+
+    /// Build a WAV buffer with an arbitrary format tag around an encoded
+    /// payload (mono). The `fmt ` chunk carries the 2-byte `cbSize` extension
+    /// field (18 bytes total) because symphonia rejects 16-byte `fmt ` chunks
+    /// for the G.711 tags — and it is what ffmpeg writes for all of these.
+    fn make_compressed_wav(tag: u16, sample_rate: u32, byte_rate: u32, payload: &[u8]) -> Vec<u8> {
+        let data_size = payload.len() as u32;
+        let mut buf = Vec::with_capacity(46 + payload.len());
+        buf.extend_from_slice(b"RIFF");
+        buf.extend_from_slice(&(38 + data_size).to_le_bytes());
+        buf.extend_from_slice(b"WAVE");
+        buf.extend_from_slice(b"fmt ");
+        buf.extend_from_slice(&18u32.to_le_bytes()); // fmt chunk size (incl. cbSize)
+        buf.extend_from_slice(&tag.to_le_bytes());
+        buf.extend_from_slice(&1u16.to_le_bytes()); // mono
+        buf.extend_from_slice(&sample_rate.to_le_bytes());
+        buf.extend_from_slice(&byte_rate.to_le_bytes());
+        buf.extend_from_slice(&1u16.to_le_bytes()); // block align
+        buf.extend_from_slice(&8u16.to_le_bytes()); // bits per sample
+        buf.extend_from_slice(&0u16.to_le_bytes()); // cbSize = 0
+        buf.extend_from_slice(b"data");
+        buf.extend_from_slice(&data_size.to_le_bytes());
+        buf.extend_from_slice(payload);
+        buf
+    }
+
+    fn test_tone_8k(n_samples: usize) -> Vec<i16> {
+        (0..n_samples)
+            .map(|i| ((i as f32 * 0.05).sin() * 12000.0) as i16)
+            .collect()
+    }
+
+    #[test]
+    fn test_telephony_codec_from_name() {
+        assert_eq!(
+            TelephonyCodec::from_name("pcmu"),
+            Some(TelephonyCodec::Pcmu)
+        );
+        assert_eq!(
+            TelephonyCodec::from_name("PCMU"),
+            Some(TelephonyCodec::Pcmu)
+        );
+        assert_eq!(
+            TelephonyCodec::from_name("ulaw"),
+            Some(TelephonyCodec::Pcmu)
+        );
+        assert_eq!(
+            TelephonyCodec::from_name("pcma"),
+            Some(TelephonyCodec::Pcma)
+        );
+        assert_eq!(
+            TelephonyCodec::from_name("alaw"),
+            Some(TelephonyCodec::Pcma)
+        );
+        assert_eq!(
+            TelephonyCodec::from_name("G722"),
+            Some(TelephonyCodec::G722)
+        );
+        assert_eq!(TelephonyCodec::from_name("g729"), None);
+        assert_eq!(TelephonyCodec::from_name(""), None);
+    }
+
+    #[test]
+    fn test_telephony_codec_validate_sample_rate() {
+        assert!(TelephonyCodec::Pcmu.validate_sample_rate(8000).is_ok());
+        assert!(TelephonyCodec::Pcma.validate_sample_rate(16000).is_ok());
+        assert!(TelephonyCodec::Pcma.validate_sample_rate(48000).is_ok());
+        assert!(TelephonyCodec::Pcmu.validate_sample_rate(7999).is_err());
+        assert!(TelephonyCodec::Pcma.validate_sample_rate(48001).is_err());
+        // G.722 decodes to 16 kHz natively; 8000 is the SDP clock-rate alias.
+        assert!(TelephonyCodec::G722.validate_sample_rate(8000).is_ok());
+        assert!(TelephonyCodec::G722.validate_sample_rate(16000).is_ok());
+        assert!(TelephonyCodec::G722.validate_sample_rate(44100).is_err());
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+    fn test_decode_telephony_raw_pcmu_roundtrip() {
+        let source = test_tone_8k(8000);
+        let mut encoder = audio_codec::pcmu::PcmuEncoder::new();
+        let encoded = audio_codec::Encoder::encode(&mut encoder, &source);
+        assert_eq!(encoded.len(), source.len(), "G.711 is one byte per sample");
+        let decoded = decode_telephony_raw(&encoded, TelephonyCodec::Pcmu, 8000).unwrap();
+        // Resampled 8k → 16k: roughly double, minus the FIR delay slack.
+        assert!(
+            decoded.len() > 12_000 && decoded.len() <= 16_000,
+            "unexpected decoded length {}",
+            decoded.len()
+        );
+        // G.711 is lossy but near-transparent: compare against the source
+        // (resampled) with a loose bound instead of the raw encoded bytes.
+        let expected = resample(
+            &source
+                .iter()
+                .map(|&s| f32::from(s) / 32768.0)
+                .collect::<Vec<_>>(),
+            SampleRate(8000),
+            SampleRate(16000),
+        )
+        .unwrap();
+        let n = decoded.len().min(expected.len());
+        let mse: f64 = decoded[..n]
+            .iter()
+            .zip(&expected[..n])
+            .map(|(a, b)| f64::from((a - b) * (a - b)))
+            .sum::<f64>()
+            / n as f64;
+        assert!(
+            mse.sqrt() < 0.02,
+            "G.711 μ-law roundtrip RMSE {}",
+            mse.sqrt()
+        );
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+    fn test_decode_telephony_raw_pcma_roundtrip() {
+        let source = test_tone_8k(8000);
+        let mut encoder = audio_codec::pcma::PcmaEncoder::new();
+        let encoded = audio_codec::Encoder::encode(&mut encoder, &source);
+        let decoded = decode_telephony_raw(&encoded, TelephonyCodec::Pcma, 8000).unwrap();
+        assert!(decoded.len() > 12_000 && decoded.len() <= 16_000);
+        assert!(decoded.iter().all(|s| s.is_finite()));
+    }
+
+    /// RMSE between two equal-rate signals at the best integer lag within
+    /// ±`max_lag` samples. Lossy codecs carry an inherent group delay (the
+    /// G.722 QMF bank), so a fixed-alignment RMSE would report the delay as
+    /// distortion instead of measuring actual reconstruction error.
+    fn best_lag_rmse(a: &[f32], b: &[f32], max_lag: usize) -> f64 {
+        let mut best = f64::INFINITY;
+        for lag in 0..=max_lag {
+            for (a_slice, b_slice) in [
+                (a.get(lag..).unwrap_or(&[]), b),
+                (a, b.get(lag..).unwrap_or(&[])),
+            ] {
+                let n = a_slice.len().min(b_slice.len());
+                if n < 100 {
+                    continue;
+                }
+                let mse = a_slice[..n]
+                    .iter()
+                    .zip(&b_slice[..n])
+                    .map(|(x, y)| {
+                        let d = f64::from(x - y);
+                        d * d
+                    })
+                    .sum::<f64>()
+                    / n as f64;
+                best = best.min(mse.sqrt());
+            }
+        }
+        best
+    }
+
+    #[test]
+    fn test_decode_telephony_raw_g722_roundtrip() {
+        // 1 s of 16 kHz tone; G.722 output stays at its native 16 kHz.
+        let source: Vec<i16> = (0..16000)
+            .map(|i| ((i as f32 * 0.03).sin() * 10000.0) as i16)
+            .collect();
+        let mut encoder = audio_codec::g722::G722Encoder::new();
+        let encoded = audio_codec::Encoder::encode(&mut encoder, &source);
+        assert_eq!(encoded.len(), source.len() / 2, "64 kbit/s over 16 kHz");
+        let decoded = decode_telephony_raw(&encoded, TelephonyCodec::G722, 8000).unwrap();
+        assert_eq!(decoded.len(), source.len(), "G.722 stays at native 16 kHz");
+        // ADPCM roundtrip: compare against the source at the best lag (the
+        // codec's QMF bank delays the output by a few samples).
+        let source_f32: Vec<f32> = source.iter().map(|&s| f32::from(s) / 32768.0).collect();
+        let rmse = best_lag_rmse(&decoded, &source_f32, 64);
+        assert!(rmse < 0.05, "G.722 roundtrip best-lag RMSE {rmse}");
+    }
+
+    #[test]
+    fn test_decode_telephony_raw_empty_errors() {
+        assert!(decode_telephony_raw(&[], TelephonyCodec::Pcmu, 8000).is_err());
+        assert!(decode_telephony_raw(&[], TelephonyCodec::G722, 16000).is_err());
+    }
+
+    #[test]
+    fn test_decode_telephony_raw_invalid_rate_errors() {
+        let payload = vec![0xFFu8; 160];
+        assert!(decode_telephony_raw(&payload, TelephonyCodec::Pcmu, 4000).is_err());
+        assert!(decode_telephony_raw(&payload, TelephonyCodec::G722, 44100).is_err());
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+    fn test_decode_audio_bytes_g711_alaw_wav() {
+        // G.711 A-law in WAV (tag 0x0006) is decoded by symphonia's PCM codec —
+        // this pins the de-facto support so it cannot silently regress.
+        let source = test_tone_8k(8000);
+        let mut encoder = audio_codec::pcma::PcmaEncoder::new();
+        let encoded = audio_codec::Encoder::encode(&mut encoder, &source);
+        let wav = make_compressed_wav(0x0006, 8000, 8000, &encoded);
+        let decoded = decode_audio_bytes(&wav).unwrap();
+        assert!(
+            decoded.len() > 12_000 && decoded.len() <= 16_000,
+            "unexpected decoded length {}",
+            decoded.len()
+        );
+        assert!(decoded.iter().all(|s| s.is_finite()));
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+    fn test_decode_audio_bytes_g711_mulaw_wav() {
+        // G.711 μ-law in WAV (tag 0x0007), same symphonia PCM path.
+        let source = test_tone_8k(8000);
+        let mut encoder = audio_codec::pcmu::PcmuEncoder::new();
+        let encoded = audio_codec::Encoder::encode(&mut encoder, &source);
+        let wav = make_compressed_wav(0x0007, 8000, 8000, &encoded);
+        let decoded = decode_audio_bytes(&wav).unwrap();
+        assert!(
+            decoded.len() > 12_000 && decoded.len() <= 16_000,
+            "unexpected decoded length {}",
+            decoded.len()
+        );
+        assert!(decoded.iter().all(|s| s.is_finite()));
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_g722_wav_fallback() {
+        // G.722-in-WAV (tag 0x0064) has no symphonia decoder; the fallback must
+        // kick in and produce 2 samples per encoded byte at native 16 kHz.
+        let source: Vec<i16> = (0..16000)
+            .map(|i| ((i as f32 * 0.03).sin() * 10000.0) as i16)
+            .collect();
+        let mut encoder = audio_codec::g722::G722Encoder::new();
+        let encoded = audio_codec::Encoder::encode(&mut encoder, &source);
+        for tag in [0x0064u16, 0x028F] {
+            let wav = make_compressed_wav(tag, 16000, 8000, &encoded);
+            let decoded = decode_audio_bytes(&wav).unwrap_or_else(|e| {
+                panic!("G.722 WAV (tag {tag:#06x}) must decode via the fallback: {e}")
+            });
+            assert_eq!(
+                decoded.len(),
+                source.len(),
+                "G.722 WAV must decode to native 16 kHz (tag {tag:#06x})"
+            );
+        }
+    }
+
+    #[test]
+    fn test_try_decode_g722_wav_malformed_inputs() {
+        // Not RIFF at all → None (falls through to symphonia).
+        assert!(try_decode_g722_wav(b"not a wave file").is_none());
+        // PCM WAV → None (symphonia handles it).
+        let pcm_wav = make_wav_bytes(&[0i16; 32], 16000);
+        assert!(try_decode_g722_wav(&pcm_wav).is_none());
+        // G.722 tag but no data chunk → Some(Err), not a panic or silent None.
+        let mut header_only = make_compressed_wav(0x0064, 16000, 8000, &[]);
+        header_only.truncate(38); // strip the data chunk header + payload
+        let result = try_decode_g722_wav(&header_only);
+        assert!(
+            matches!(result, Some(Err(_))),
+            "expected Some(Err), got {result:?}"
+        );
+        // Truncated data payload must decode the bytes present, not panic.
+        let mut enc = audio_codec::g722::G722Encoder::new();
+        let encoded = audio_codec::Encoder::encode(&mut enc, &[0i16; 320]);
+        let mut wav = make_compressed_wav(0x0064, 16000, 8000, &encoded);
+        wav.truncate(wav.len() - 3);
+        let result = try_decode_g722_wav(&wav);
+        assert!(
+            matches!(result, Some(Ok(_))),
+            "truncated data must not panic"
+        );
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_g722_wav_ffmpeg_fixture_matches_reference() {
+        // Independent-reference verification: `g722_tone.wav` was ENCODED by
+        // ffmpeg (libavcodec G.722, tag 0x028F) and `g722_tone_ffmpeg.pcm` is
+        // ffmpeg's own DECODE of it (see scripts/generate_telephony_fixtures.sh).
+        // Our `audio-codec` decode is compared against ffmpeg's decode, so the
+        // fixed-point port is validated against a second implementation rather
+        // than against itself. Tolerance: RMSE below 1% of full scale.
+        let wav = include_bytes!("../../tests/fixtures/telephony/g722_tone.wav");
+        let reference_pcm = include_bytes!("../../tests/fixtures/telephony/g722_tone_ffmpeg.pcm");
+        let ours = decode_audio_bytes(wav).expect("ffmpeg G.722 WAV must decode");
+        let reference: Vec<f32> = reference_pcm
+            .chunks_exact(2)
+            .map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0)
+            .collect();
+        assert_eq!(
+            ours.len(),
+            reference.len(),
+            "sample count must match ffmpeg's decode exactly"
+        );
+        let mse: f64 = ours
+            .iter()
+            .zip(reference.iter())
+            .map(|(a, b)| {
+                let d = f64::from(a - b);
+                d * d
+            })
+            .sum::<f64>()
+            / ours.len() as f64;
+        assert!(
+            mse.sqrt() < 0.01,
+            "G.722 decode diverged from ffmpeg reference: RMSE {}",
+            mse.sqrt()
+        );
+    }
+
+    #[test]
+    fn test_encode_wav_pcm16_roundtrip() {
+        let source: Vec<f32> = (0..16000).map(|i| (i as f32 * 0.02).sin() * 0.5).collect();
+        let wav = encode_wav_pcm16(&source, 16000);
+        let decoded = decode_audio_bytes(&wav).unwrap();
+        assert_eq!(decoded.len(), source.len());
+        for (a, b) in decoded.iter().zip(source.iter()) {
+            assert!((a - b).abs() < 1e-3, "PCM16 roundtrip drift: {a} vs {b}");
+        }
+    }
+
+    #[test]
+    fn test_encode_wav_pcm16_clamps_and_sanitizes() {
+        let samples = [2.0f32, -2.0, f32::NAN, 0.5];
+        let wav = encode_wav_pcm16(&samples, 16000);
+        let decoded = decode_audio_bytes(&wav).unwrap();
+        assert!((decoded[0] - 1.0).abs() < 1e-3, "must clamp to +1");
+        assert!((decoded[1] + 1.0).abs() < 1e-3, "must clamp to -1");
+        assert!(decoded[2].abs() < 1e-3, "NaN must become silence");
+        assert!((decoded[3] - 0.5).abs() < 1e-3);
     }
 }
 

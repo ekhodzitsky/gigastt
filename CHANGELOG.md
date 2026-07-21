@@ -27,6 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   graceful Ctrl-C (in-flight files finish; `transcribe-batch` exits 130 like
   `download`). Files already present when `watch` starts are left for
   `transcribe-batch`. See [docs/cli.md](docs/cli.md).
+- **Telephony codecs for file transcription.** `/v1/transcribe` now accepts the
+  typical PBX/VoIP outputs end to end:
+  - G.711 A-law / μ-law in WAV — already decoded via symphonia, now pinned by
+    unit + e2e tests and documented.
+  - G.722 ADPCM in WAV (format tags `0x0064` and `0x028F` — Asterisk / Cisco /
+    Teams-player exports), decoded via the MIT-licensed `audio-codec` crate in
+    a fallback path when symphonia declines the tag. Decoder output is verified
+    against an independent ffmpeg/libavcodec reference decode.
+  - Headerless raw `.ulaw` / `.alaw` / `.g722` streams (RTP dumps, Asterisk
+    Monitor raw) via the new `?codec=pcmu|pcma|g722` query parameter with a
+    mandatory `sample_rate` (G.722 accepts `8000`, the SDP clock-rate
+    convention, or `16000` and always decodes to its native 16 kHz). A raw
+    stream posted without `codec` is still rejected with `422 invalid_audio`.
+  - CLI parity: `gigastt transcribe call.ulaw --codec pcmu --sample-rate 8000`.
 
 ### Changed
 

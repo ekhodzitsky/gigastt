@@ -251,6 +251,11 @@ The `e2e_rnnt` head (`--model-variant e2e_rnnt`) uses the parallel `v3_e2e_rnnt_
 ### Audio format support
 
 - **File transcription**: WAV, M4A/AAC, MP3, OGG/Vorbis, FLAC (via symphonia)
+- **Telephony codecs**: G.711 A-law/μ-law in WAV (via symphonia); G.722 ADPCM
+  in WAV (format tags 0x0064/0x028F, via the MIT `audio-codec` crate as a
+  fallback when symphonia declines the tag); headerless raw `.ulaw`/`.alaw`/
+  `.g722` streams via `?codec=pcmu|pcma|g722&sample_rate=N` on `/v1/transcribe`
+  or `transcribe --codec … --sample-rate …` on the CLI
 - **WebSocket streaming**: raw PCM16 binary frames at configurable sample rate
   (8/16/24/44.1/48 kHz, default 48kHz); resampled to 16kHz server-side via rubato
 - Auto mono mix for multi-channel files
@@ -379,6 +384,8 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_WATCH_POLL_INTERVAL_MS` | `watch --poll-interval-ms` | 1000 |
 | `GIGASTT_WATCH_SETTLE_POLLS` | `watch --settle-polls` | 2 |
 | `GIGASTT_STEREO_SPEAKERS` | `--stereo-speakers` | false |
+| `GIGASTT_CODEC` | `transcribe --codec` | — |
+| `GIGASTT_SAMPLE_RATE` | `transcribe --sample-rate` | — |
 | `RUST_LOG` | — | `gigastt=info` |
 
 ## Useful Commands for Agents

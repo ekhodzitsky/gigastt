@@ -181,6 +181,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
+name = "audio-codec"
+version = "0.3.40"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1affd3ba1faa8ae5c47c98f6c5e36eb321f4cb4567d7a7e1a8f3452fe40d57a"
+dependencies = [
+ "anyhow",
+ "g729-sys",
+]
+
+[[package]]
 name = "audio-core"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1360,6 +1370,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "g729-sys"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c0115766e9b2dcbc585946d207299fe2fce9bf0b8d4ba0d3592c6e0f66fe116"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
 name = "gemm"
 version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1680,6 +1699,7 @@ name = "gigastt-core"
 version = "2.13.0"
 dependencies = [
  "anyhow",
+ "audio-codec",
  "bytes",
  "candle-core",
  "candle-nn",
