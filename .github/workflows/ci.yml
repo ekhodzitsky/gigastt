@@ -586,9 +586,17 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       # Both published crates: gigastt-core is the library, gigastt is the
       # `cargo install gigastt` binary — packaging breakage in either fails CI.
+      #
+      # The gigastt leg runs with --no-verify: in the packaged crate the
+      # path-dependency on gigastt-core resolves to the version already on
+      # crates.io, so any PR that changes core's API *and* uses it from the
+      # server crate would fail to compile here even though the code is
+      # correct (at real release time core is published first). --no-verify
+      # still exercises `cargo package` (manifest, metadata, file inclusion);
+      # the compile itself is covered by the build/test jobs.
       - run: |
           cargo publish --dry-run -p gigastt-core --locked
-          cargo publish --dry-run -p gigastt --locked
+          cargo publish --dry-run -p gigastt --locked --no-verify
 
   msrv:
     runs-on: ubuntu-latest
