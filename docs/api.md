@@ -44,7 +44,9 @@ Sent immediately after the WebSocket handshake, before any audio is accepted.
   "sample_rate": 48000,
   "version": "1.0",
   "supported_rates": [8000, 16000, 24000, 44100, 48000],
-  "diarization": false
+  "diarization": false,
+  "max_session_secs": 3600,
+  "idle_timeout_secs": 300
 }
 ```
 
@@ -56,6 +58,8 @@ Sent immediately after the WebSocket handshake, before any audio is accepted.
 | `supported_rates` | integer[] | Accepted input sample rates in Hz; omitted if empty. Use it instead of hardcoding a rate list |
 | `diarization` | boolean | `true` when the speaker-encoder model is loaded and diarization can be enabled per session; omitted when `false` |
 | `min_protocol_version` | string | Oldest protocol version the server accepts; omitted when equal to `version` (only one version supported) |
+| `max_session_secs` | integer | Wall-clock session cap (`--max-session-secs`); `0` means disabled. Always sent — plan long recordings around it instead of discovering it via close 1008 |
+| `idle_timeout_secs` | integer | Idle timeout (`--idle-timeout-secs`): close 1001 after this many seconds without frames. Always sent |
 
 #### `partial` / `final`
 
@@ -68,6 +72,7 @@ complete (endpointing detected, or the stream was flushed by `stop`/shutdown).
   "text": "Привет, как дела?",
   "timestamp": 1712700001.456,
   "is_final": true,
+  "confidence": 0.95,
   "words": [
     {"word": "привет", "start": 0.0, "end": 0.4, "confidence": 0.97},
     {"word": "как", "start": 0.5, "end": 0.7, "confidence": 0.93},
@@ -81,6 +86,7 @@ complete (endpointing detected, or the stream was flushed by `stop`/shutdown).
 | `text` | string | Joined transcript text (see post-processing below) |
 | `timestamp` | number | Unix time (seconds) when the segment was produced |
 | `is_final` | boolean | Mirrors the `type` discriminator (`true` in `final`) |
+| `confidence` | number | Segment-level confidence: the duration-weighted mean of `words[].confidence` (plain mean when all word durations are zero). Omitted when the segment has no words. It is an average of per-word softmax scores — not a calibrated probability |
 | `words[]` | object[] | Per-word detail; may be empty on flushed/empty finals |
 
 Each `words[]` entry:
@@ -258,14 +264,19 @@ progress); the onnxruntime linking trade-offs are in
 # Full JSON
 curl -X POST http://127.0.0.1:9876/v1/transcribe \
   -H "Content-Type: application/octet-stream" --data-binary @recording.wav
-# {"text":"Привет, как дела?","words":[{"word":"Привет,","start":0.5,"end":0.9,"confidence":0.97}, ...],"duration":3.5}
+# {"text":"Привет, как дела?","words":[{"word":"Привет,","start":0.5,"end":0.9,"confidence":0.97}, ...],"confidence":0.94,"duration":3.5}
 
 # SSE streaming
 curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
   -H "Content-Type: application/octet-stream" --data-binary @recording.wav
 # data: {"type":"partial","text":"привет как"}
-# data: {"type":"final","text":"Привет, как дела?"}
+# data: {"type":"final","text":"Привет, как дела?","confidence":0.94}
 ```
+
+The full-JSON response, SSE `final` events, and job results also carry an
+optional top-level `confidence` — the duration-weighted mean of
+`words[].confidence` (an average of per-word softmax scores, not a calibrated
+probability; omitted when there are no words).
 
 ## Asynchronous jobs
 

@@ -7,6 +7,12 @@ info:
     Real-time speech-to-text WebSocket API powered by GigaAM v3 (rnnt head by default).
     On-device Russian speech recognition via ONNX Runtime.
 
+    This document is the machine-readable schema. The human-readable protocol
+    reference (field tables, error codes, close codes, examples) lives in
+    [docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md);
+    troubleshooting for common integration failures is in
+    [docs/troubleshooting.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/troubleshooting.md).
+
     ## Connection Flow
 
     1. Client connects to `ws://{host}:{port}/v1/ws` (default: `ws://127.0.0.1:9876/v1/ws`).
