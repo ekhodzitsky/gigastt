@@ -548,6 +548,7 @@ mod tests {
                 WordInfo::new("привет", 0.0, 0.5, 0.98, None),
                 WordInfo::new("мир", 0.6, 1.0, 0.97, None),
             ],
+            confidence: Some(0.975),
             duration_s: 1.0,
         }
     }
