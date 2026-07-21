@@ -2,7 +2,7 @@
 
 Idiomatic **Swift**, **Kotlin**, and **Python** bindings for [gigastt](https://github.com/ekhodzitsky/gigastt) — on-device Russian speech-to-text — generated from one Rust source with [UniFFI](https://mozilla.github.io/uniffi-rs/).
 
-Wraps the synchronous `gigastt-core` engine: models are **side-loaded** (no HTTP download dependency) and inference uses the blocking pool path (**no tokio runtime**), so the bindings are lean. Errors are **typed** (`GigasttError` → Swift `throws` / Kotlin exceptions / Python exceptions) and objects are reference-counted (no manual free).
+Wraps the synchronous `gigastt-core` engine: models are **side-loaded** (no HTTP download dependency) and inference uses the blocking pool path (**no tokio runtime**), so the bindings are lean. Errors are **typed** (`GigasttFfiError` → Swift `throws` / Kotlin exceptions / Python exceptions) and objects are reference-counted (no manual free).
 
 ## API
 
@@ -11,7 +11,7 @@ Wraps the synchronous `gigastt-core` engine: models are **side-loaded** (no HTTP
 | `Engine` | `new(model_dir)` · `new_with_pool_size(model_dir, pool_size)` · `transcribe_file(path) -> Transcript` |
 | `Stream` | `new(engine)` · `process_chunk(pcm16, sample_rate) -> [TranscriptSegment]` · `flush() -> [TranscriptSegment]` |
 | records | `Transcript { text, words, duration_s }` · `TranscriptSegment { text, words, is_final }` · `Word { text, start_s, end_s, confidence, speaker }` |
-| errors | `GigasttError`: `ModelNotFound` · `InvalidAudio` · `PoolExhausted` · `Inference` · `InvalidArgument` |
+| errors | `GigasttFfiError`: `ModelNotFound` · `InvalidAudio` · `PoolExhausted` · `Inference` · `InvalidArgument` |
 
 `process_chunk` takes little-endian mono PCM16 and resamples to 16 kHz internally.
 
@@ -59,7 +59,7 @@ Errors surface as exceptions:
 ```python
 try:
     g.Engine("/no/such/dir")
-except g.GigasttError.ModelNotFound as e:
+except g.GigasttFfiError.ModelNotFound as e:
     ...
 ```
 

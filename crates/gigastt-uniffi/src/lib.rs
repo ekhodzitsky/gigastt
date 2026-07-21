@@ -3,7 +3,7 @@
 //!
 //! Wraps the synchronous `gigastt-core` engine: models are side-loaded (no HTTP
 //! download) and inference uses the blocking pool path (no tokio runtime).
-//! Errors are typed (`GigasttError`) and map to Swift `throws` / Kotlin
+//! Errors are typed (`GigasttFfiError`) and map to Swift `throws` / Kotlin
 //! exceptions / Python exceptions instead of the C-ABI's NULL sentinels; objects
 //! are reference-counted, so there is no manual free.
 
@@ -16,8 +16,13 @@ use gigastt_core::inference::{
 uniffi::setup_scaffolding!();
 
 /// Errors surfaced across the binding boundary.
+///
+/// Deliberately *not* named `GigasttError`: the core crate already exports a
+/// public [`gigastt_core::error::GigasttError`], and two same-named public error
+/// enums invite mix-ups. The `Ffi` marker also makes it clear at call sites
+/// that this is the flat, string-carrying mirror intended for foreign bindings.
 #[derive(Debug, thiserror::Error, uniffi::Error)]
-pub enum GigasttError {
+pub enum GigasttFfiError {
     /// The model directory is missing files or the engine failed to load.
     #[error("model not found or failed to load: {msg}")]
     ModelNotFound { msg: String },
@@ -35,9 +40,27 @@ pub enum GigasttError {
     InvalidArgument { msg: String },
 }
 
-impl From<gigastt_core::error::GigasttError> for GigasttError {
+impl From<gigastt_core::error::GigasttError> for GigasttFfiError {
     fn from(e: gigastt_core::error::GigasttError) -> Self {
-        GigasttError::Inference { msg: e.to_string() }
+        use gigastt_core::error::GigasttError as Core;
+        match e {
+            e @ Core::ModelLoad { .. } => GigasttFfiError::ModelNotFound { msg: e.to_string() },
+            Core::InvalidAudio { reason } => GigasttFfiError::InvalidAudio { msg: reason },
+            Core::InvalidInput { message } => GigasttFfiError::InvalidArgument { msg: message },
+            Core::Io(err) => GigasttFfiError::Inference {
+                msg: err.to_string(),
+            },
+            Core::Inference { source } => GigasttFfiError::Inference {
+                msg: source.to_string(),
+            },
+            // The core enum is `#[non_exhaustive]`, so a wildcard arm is
+            // required here. Every current core variant is listed explicitly
+            // above: removing or renaming one fails compilation in this match
+            // instead of silently drifting the bindings.
+            other => GigasttFfiError::Inference {
+                msg: other.to_string(),
+            },
+        }
     }
 }
 
@@ -96,9 +119,9 @@ pub struct Engine {
 impl Engine {
     /// Load the GigaAM v3 model from `model_dir` with the default pool size.
     #[uniffi::constructor]
-    pub fn new(model_dir: String) -> Result<Arc<Self>, GigasttError> {
+    pub fn new(model_dir: String) -> Result<Arc<Self>, GigasttFfiError> {
         let inner = CoreEngine::load(&model_dir)
-            .map_err(|e| GigasttError::ModelNotFound { msg: e.to_string() })?;
+            .map_err(|e| GigasttFfiError::ModelNotFound { msg: e.to_string() })?;
         Ok(Arc::new(Self { inner }))
     }
 
@@ -108,24 +131,24 @@ impl Engine {
     pub fn new_with_pool_size(
         model_dir: String,
         pool_size: u32,
-    ) -> Result<Arc<Self>, GigasttError> {
+    ) -> Result<Arc<Self>, GigasttFfiError> {
         let inner = CoreEngine::load_with_pool_size(&model_dir, pool_size as usize)
-            .map_err(|e| GigasttError::ModelNotFound { msg: e.to_string() })?;
+            .map_err(|e| GigasttFfiError::ModelNotFound { msg: e.to_string() })?;
         Ok(Arc::new(Self { inner }))
     }
 
     /// Transcribe an audio file (WAV / MP3 / M4A / OGG / FLAC) to text + word
     /// timings. Blocks until inference completes.
-    pub fn transcribe_file(&self, path: String) -> Result<Transcript, GigasttError> {
+    pub fn transcribe_file(&self, path: String) -> Result<Transcript, GigasttFfiError> {
         let mut guard = self
             .inner
             .pool
             .checkout_blocking()
-            .map_err(|_| GigasttError::PoolExhausted)?;
+            .map_err(|_| GigasttFfiError::PoolExhausted)?;
         let r = self
             .inner
             .transcribe_file(&path, &mut guard)
-            .map_err(GigasttError::from)?;
+            .map_err(GigasttFfiError::from)?;
         Ok(Transcript {
             text: r.text,
             words: r.words.into_iter().map(word_from).collect(),
@@ -151,12 +174,12 @@ pub struct Stream {
 impl Stream {
     /// Open a streaming session against `engine`.
     #[uniffi::constructor]
-    pub fn new(engine: Arc<Engine>) -> Result<Arc<Self>, GigasttError> {
+    pub fn new(engine: Arc<Engine>) -> Result<Arc<Self>, GigasttFfiError> {
         let guard = engine
             .inner
             .pool
             .checkout_blocking()
-            .map_err(|_| GigasttError::PoolExhausted)?;
+            .map_err(|_| GigasttFfiError::PoolExhausted)?;
         let reservation = guard.into_owned();
         let state = engine.inner.create_state(false);
         Ok(Arc::new(Self {
@@ -171,7 +194,7 @@ impl Stream {
         &self,
         pcm16: Vec<u8>,
         sample_rate: u32,
-    ) -> Result<Vec<TranscriptSegment>, GigasttError> {
+    ) -> Result<Vec<TranscriptSegment>, GigasttFfiError> {
         let mut guard = self.inner.lock().expect("stream mutex poisoned");
         let StreamInner { state, reservation } = &mut *guard;
 
@@ -188,7 +211,7 @@ impl Stream {
                 &mut state.resampler,
                 &mut state.resample_output_buf,
             )
-            .map_err(|e| GigasttError::InvalidAudio { msg: e.to_string() })?;
+            .map_err(|e| GigasttFfiError::InvalidAudio { msg: e.to_string() })?;
             samples = std::mem::take(&mut state.resample_output_buf);
         }
 
@@ -196,14 +219,76 @@ impl Stream {
             .engine
             .inner
             .process_chunk(&samples, state, reservation)
-            .map_err(GigasttError::from)?;
+            .map_err(GigasttFfiError::from)?;
         Ok(segs.into_iter().map(segment_from).collect())
     }
 
     /// Flush remaining buffered audio and return any final segment(s).
-    pub fn flush(&self) -> Result<Vec<TranscriptSegment>, GigasttError> {
+    pub fn flush(&self) -> Result<Vec<TranscriptSegment>, GigasttFfiError> {
         let mut guard = self.inner.lock().expect("stream mutex poisoned");
         let seg = self.engine.inner.flush_state(&mut guard.state);
         Ok(seg.into_iter().map(segment_from).collect())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gigastt_core::error::GigasttError as CoreError;
+
+    #[test]
+    fn test_from_model_load_maps_to_model_not_found() {
+        let core = CoreError::ModelLoad {
+            path: "/models/encoder.onnx".into(),
+            source: None,
+        };
+        match GigasttFfiError::from(core) {
+            GigasttFfiError::ModelNotFound { msg } => {
+                assert!(msg.contains("/models/encoder.onnx"));
+            }
+            other => panic!("expected ModelNotFound, got {other}"),
+        }
+    }
+
+    #[test]
+    fn test_from_invalid_audio_maps_to_invalid_audio() {
+        let core = CoreError::InvalidAudio {
+            reason: "too long".into(),
+        };
+        match GigasttFfiError::from(core) {
+            GigasttFfiError::InvalidAudio { msg } => assert_eq!(msg, "too long"),
+            other => panic!("expected InvalidAudio, got {other}"),
+        }
+    }
+
+    #[test]
+    fn test_from_invalid_input_maps_to_invalid_argument() {
+        let core = CoreError::InvalidInput {
+            message: "bad sample rate".into(),
+        };
+        match GigasttFfiError::from(core) {
+            GigasttFfiError::InvalidArgument { msg } => assert_eq!(msg, "bad sample rate"),
+            other => panic!("expected InvalidArgument, got {other}"),
+        }
+    }
+
+    #[test]
+    fn test_from_io_maps_to_inference() {
+        let core = CoreError::Io(std::io::Error::other("disk gone"));
+        match GigasttFfiError::from(core) {
+            GigasttFfiError::Inference { msg } => assert!(msg.contains("disk gone")),
+            other => panic!("expected Inference, got {other}"),
+        }
+    }
+
+    #[test]
+    fn test_from_inference_maps_to_inference_with_source_message() {
+        let core = CoreError::Inference {
+            source: Box::new(std::io::Error::other("decoder failed")),
+        };
+        match GigasttFfiError::from(core) {
+            GigasttFfiError::Inference { msg } => assert_eq!(msg, "decoder failed"),
+            other => panic!("expected Inference, got {other}"),
+        }
     }
 }

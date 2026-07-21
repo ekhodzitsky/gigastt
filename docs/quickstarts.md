@@ -38,7 +38,7 @@ print([seg.text for seg in s.flush()])
 # typed errors
 try:
     g.Engine("/no/such/dir")
-except g.GigasttError.ModelNotFound:
+except g.GigasttFfiError.ModelNotFound:
     ...
 ```
 
@@ -90,7 +90,7 @@ t.words.forEach { println("${it.text} ${it.startS} ${it.endS} ${it.confidence}")
 val s = Stream(engine)
 s.processChunk(pcm16, 16000u).forEach { println(it.text) }
 
-// errors throw GigasttException subtypes
+// errors throw GigasttFfiException subtypes
 ```
 
 ## Surface (all bindings)
