@@ -1423,6 +1423,39 @@ fn partial_path_unique(final_path: &Path) -> std::path::PathBuf {
     std::path::PathBuf::from(s)
 }
 
+/// RAII guard that removes a staged `.partial` file when the download path
+/// returns early (stream error, write failure, finalize failure). Armed when
+/// the staging path is chosen and disarmed only after the partial has been
+/// renamed into its final location, so a flaky network cannot accumulate
+/// orphaned `.partial` files.
+#[cfg(feature = "net")]
+struct PartialFileGuard(Option<std::path::PathBuf>);
+
+#[cfg(feature = "net")]
+impl PartialFileGuard {
+    fn new(path: std::path::PathBuf) -> Self {
+        Self(Some(path))
+    }
+
+    /// Disarm after the partial was renamed into place: the file no longer
+    /// exists at the staging path, so there is nothing left to clean up.
+    fn disarm(mut self) {
+        self.0 = None;
+    }
+}
+
+#[cfg(feature = "net")]
+impl Drop for PartialFileGuard {
+    fn drop(&mut self) {
+        if let Some(path) = self.0.take() {
+            // Best-effort: a missing file (already cleaned up, or never
+            // created because the request failed before staging) is fine,
+            // and a removal failure must not mask the original error.
+            let _ = std::fs::remove_file(path);
+        }
+    }
+}
+
 /// Compute SHA-256 for a file synchronously, returning the lowercase hex digest.
 #[cfg(feature = "net")]
 fn sha256_file(path: &Path) -> Result<String> {
@@ -1539,6 +1572,9 @@ async fn stream_to_partial_then_finalize_with_sink(
     }
 
     let partial = partial_path_unique(final_dest);
+    // Remove the staged partial on any early return below; disarmed after the
+    // successful rename at the end of this function.
+    let cleanup = PartialFileGuard::new(partial.clone());
 
     tracing::info!("Downloading {label}...");
 
@@ -1590,6 +1626,7 @@ async fn stream_to_partial_then_finalize_with_sink(
         });
     }
     finalize_download(&partial, final_dest, expected_sha256, label)?;
+    cleanup.disarm();
     tracing::info!("Saved {label}");
 
     Ok(())
@@ -2207,6 +2244,74 @@ mod tests {
             msg.contains("SHA-256 mismatch"),
             "error should mention mismatch: {msg}"
         );
+    }
+
+    /// The RAII guard removes the staged partial on drop (early return) but
+    /// leaves it alone once disarmed (successful rename).
+    #[test]
+    fn test_partial_file_guard_drop_removes_staged_file() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let partial = tmp.path().join("model.onnx.partial");
+        std::fs::write(&partial, b"half-written junk").expect("write partial");
+
+        drop(PartialFileGuard::new(partial.clone()));
+        assert!(!partial.exists(), "guard drop must remove the partial");
+
+        std::fs::write(&partial, b"half-written junk").expect("write partial");
+        PartialFileGuard::new(partial.clone()).disarm();
+        assert!(partial.exists(), "disarmed guard must keep the partial");
+    }
+
+    /// A connection cut mid-stream leaves no orphan `.partial` behind: the
+    /// guard cleans up the staged bytes so a retry starts clean.
+    #[tokio::test]
+    #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
+    async fn test_stream_to_partial_then_finalize_stream_error_removes_partial() {
+        use tokio::io::AsyncReadExt as _;
+
+        // Hand-rolled stub: hyper (and therefore wiremock) refuses to send a
+        // body shorter than the declared content-length, so speak raw HTTP/1.1
+        // instead — send the headers, a fraction of the promised body, then
+        // close the socket to cut the stream.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind stub server");
+        let addr = listener.local_addr().expect("local addr");
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.expect("accept");
+            // Drain the tiny GET request so the response does not race it.
+            let mut buf = [0u8; 1024];
+            let _ = socket.read(&mut buf).await;
+            let head = "HTTP/1.1 200 OK\r\ncontent-length: 4096\r\nconnection: close\r\n\r\n";
+            socket.write_all(head.as_bytes()).await.expect("write head");
+            socket
+                .write_all(b"half of the model")
+                .await
+                .expect("write body");
+            // The socket closes on drop, truncating the promised body.
+        });
+
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let final_path = tmp.path().join("model.onnx");
+        let url = format!("http://{addr}/model.onnx");
+
+        let err = stream_to_partial_then_finalize(&url, &final_path, None, "model.onnx")
+            .await
+            .expect_err("truncated body should fail");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("Download stream error"),
+            "error should come from the stream read: {msg}"
+        );
+        server.await.expect("stub server task");
+
+        assert!(!final_path.exists(), "final must not appear on failure");
+        let orphans: Vec<_> = std::fs::read_dir(tmp.path())
+            .expect("read dir")
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().contains(".partial"))
+            .collect();
+        assert!(orphans.is_empty(), "no orphan .partial files: {orphans:?}");
     }
 
     /// End-to-end NDJSON contract on a local HTTP stub: the download of one
