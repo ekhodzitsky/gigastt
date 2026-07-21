@@ -20,6 +20,10 @@ extend-exclude = [
     # streams with no NUL bytes in the sniffed window, so typos treats them as
     # text and flags random byte sequences as words.
     "crates/gigastt/tests/fixtures/telephony/",
+    # Binary OGG/Opus fixtures: the sniffed window contains no NUL bytes, so
+    # typos treats compressed audio as text and flags random byte sequences.
+    "crates/gigastt/tests/fixtures/opus/",
+    "crates/gigastt-core/tests/fixtures/opus/",
 ]
 
 [default.extend-words]

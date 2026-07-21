@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Opus file support for file transcription.** `/v1/transcribe` and
+  `gigastt transcribe` now accept OGG/Opus and `.opus` files — Telegram voice
+  notes, browser MediaRecorder captures, and `opusenc` output. Symphonia
+  demuxes the OGG container but ships no Opus decoder, so packets are decoded
+  by the pure-Rust BSD-3-Clause `opus-rs` crate (a libopus port; decoder
+  only) in the same fallback architecture as the telephony codecs, then
+  resampled from the native 48 kHz to the model's 16 kHz. Mono and stereo
+  (mixed to mono) are supported; multistream (>2 channel) OGG/Opus is
+  rejected. Decoder output is verified against an independent ffmpeg/libopus
+  reference decode.
 - **macOS support in the Swift package.** `GigasttFFI.xcframework` now ships a
   macOS arm64 slice alongside the iOS ones (ONNX Runtime statically linked into
   the slice, no separate runtime to bundle), and the package declares

@@ -427,7 +427,15 @@ This applies to every file-transcription endpoint (`/v1/transcribe`,
 | WAV with G.711 A-law / μ-law (8 kHz typical) | symphonia |
 | WAV with G.722 ADPCM (tags `0x0064`, `0x028F`) | built-in fallback (`audio-codec`) |
 | MP3, M4A/AAC, OGG/Vorbis, FLAC | symphonia |
+| OGG/Opus, `.opus` (Telegram voice, MediaRecorder) | built-in fallback (`opus-rs`, pure Rust) |
 | Raw headerless `.ulaw` / `.alaw` / `.g722` | `audio-codec` — requires `?codec=` |
+
+**Opus notes**
+
+- **OGG/Opus and `.opus`** (Telegram voice notes, browser MediaRecorder
+  captures) decode at their native 48 kHz and are resampled to the model's
+  16 kHz; stereo is mixed to mono. Multistream (>2 channel) OGG/Opus is not
+  supported.
 
 **Telephony notes**
 

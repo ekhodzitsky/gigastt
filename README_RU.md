@@ -99,7 +99,7 @@ $ gigastt serve
 | Доставка | статический бинарник · C-ABI FFI `cdylib` (Android / mobile) · крейт `gigastt-core` (без серверных зависимостей) |
 | Провайдеры исполнения | CPU (любая платформа) · CoreML / Neural Engine (macOS ARM64) · CUDA 12+ (Linux x86_64) · NNAPI (Android) · [ANE](docs/ane-backend.md) (`--features ane`, macOS ARM64 — энкодер ≈15.6× на Neural Engine, тёплый e2e ≈10× быстрее CPU-сборки, WER ≈1.11% против `ort`; только файловый режим) · [Candle/Metal](docs/candle-backend.md) (`--features candle`, экспериментальный — вывод побайтово совпадает с `ort`) |
 | Стриминг | инкрементальные partial'ы по WebSocket · REST + SSE для файлов · один порт 9876 |
-| Аудио на вход | WAV · M4A/AAC · MP3 · OGG/Vorbis · FLAC (авто-микс в моно) |
+| Аудио на вход | WAV · M4A/AAC · MP3 · OGG/Vorbis · OGG/Opus (`.opus`) · FLAC (авто-микс в моно) |
 | Стерео-телефония | Опциональный режим «канал = спикер» (`--stereo-speakers` в CLI / `channels=split` в REST) помечает левый/правый каналы как `speaker_0` и `speaker_1` |
 | Диаризация | Эмбеддинги WeSpeaker ResNet34 + кластеризация polyvoice, встроена по умолчанию (speaker-модель скачивается командой `gigastt download`, отказ — `--skip-diarization`) — файлы включают её на каждый запрос (`?diarization=true`, несовместимо с `channels=split`), живые сессии — через WS `Configure`; слова и сегменты получают метки `speaker` |
 | Асинхронные задачи | Очередь для длинных файлов / batch-распознавания через `/v1/jobs` (включается `--enable-jobs`): submit, poll, отмена, SSE-прогресс, retry и TTL-евикция |

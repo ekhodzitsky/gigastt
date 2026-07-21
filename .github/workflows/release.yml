@@ -153,7 +153,7 @@ jobs:
           else
             cp "target/${TARGET}/release/gigastt" "$STAGE/gigastt"
           fi
-          cp LICENSE README.md CHANGELOG.md "$STAGE/" 2>/dev/null || true
+          cp LICENSE NOTICE README.md CHANGELOG.md "$STAGE/" 2>/dev/null || true
 
           tar -C "$STAGE" -czf "$ASSET" .
           sha256sum "$ASSET" > "${ASSET}.sha256" 2>/dev/null || shasum -a 256 "$ASSET" > "${ASSET}.sha256"
@@ -200,7 +200,7 @@ jobs:
           cp "target/${TARGET}/release/libgigastt_ffi.a" "$STAGE/lib/"
           # build.rs (cbindgen) regenerates the C header at this path.
           cp crates/gigastt-ffi/include/gigastt.h "$STAGE/include/"
-          cp LICENSE README.md "$STAGE/" 2>/dev/null || true
+          cp LICENSE NOTICE README.md "$STAGE/" 2>/dev/null || true
           tar -C "$STAGE" -czf "$ASSET" .
           sha256sum "$ASSET" > "${ASSET}.sha256" 2>/dev/null || shasum -a 256 "$ASSET" > "${ASSET}.sha256"
           echo "asset=$ASSET" >> "$GITHUB_OUTPUT"

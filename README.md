@@ -105,7 +105,7 @@ $ gigastt serve
 | Delivery | static binary · C-ABI FFI `cdylib` (Android / mobile) · `gigastt-core` crate (no server deps) |
 | Execution providers | CPU (any platform) · CoreML EP (macOS ARM64) · CUDA 12+ (Linux x86_64) · NNAPI (Android) · [ANE](docs/ane-backend.md) (`--features ane`, macOS ARM64 — encoder ≈15.6× on the Neural Engine, warm e2e ≈10× over the CPU build, WER ≈1.11% vs `ort`; file-mode only) · [Candle/Metal](docs/candle-backend.md) (`--features candle`, experimental — output byte-for-byte identical to `ort`) |
 | Streaming | incremental WebSocket partials · REST + SSE for files · single port 9876 |
-| Audio in | WAV · M4A/AAC · MP3 · OGG/Vorbis · FLAC (auto mono mix for multi-channel) |
+| Audio in | WAV · M4A/AAC · MP3 · OGG/Vorbis · OGG/Opus (`.opus`) · FLAC (auto mono mix for multi-channel) |
 | Stereo telephony recordings | Optional channel-speaker mode (`--stereo-speakers` CLI / `channels=split` REST) labels the left/right channels as `speaker_0` and `speaker_1` |
 | Speaker diarization | WeSpeaker ResNet34 embeddings + polyvoice clustering, compiled in by default (speaker model fetched by `gigastt download`, `--skip-diarization` to opt out) — offline files opt in per request (`?diarization=true`, exclusive with `channels=split`), live sessions via WS `Configure`; words &amp; segments gain `speaker` labels |
 | Async jobs | Long-file / batch transcription queue via `/v1/jobs` (opt-in with `--enable-jobs`): submit, poll, cancel, SSE progress, retry, and TTL eviction |

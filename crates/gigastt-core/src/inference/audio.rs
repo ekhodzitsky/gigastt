@@ -8,9 +8,11 @@ use rubato::Resampler;
 #[cfg(feature = "file-decode")]
 use symphonia::core::codecs::audio::AudioDecoderOptions;
 #[cfg(feature = "file-decode")]
+use symphonia::core::codecs::audio::well_known::CODEC_ID_OPUS;
+#[cfg(feature = "file-decode")]
 use symphonia::core::formats::probe::Hint;
 #[cfg(feature = "file-decode")]
-use symphonia::core::formats::{FormatOptions, TrackType};
+use symphonia::core::formats::{FormatOptions, FormatReader, TrackType};
 #[cfg(feature = "file-decode")]
 use symphonia::core::io::{MediaSource, MediaSourceStream};
 #[cfg(feature = "file-decode")]
@@ -153,7 +155,7 @@ impl MediaSource for BytesMediaSource {
 
 /// Decode any supported audio file to mono f32 samples at 16kHz.
 ///
-/// Supports WAV, MP3, M4A/AAC, OGG/Vorbis, and FLAC via symphonia.
+/// Supports WAV, MP3, M4A/AAC, OGG/Vorbis, OGG/Opus (`.opus`), and FLAC.
 /// Multi-channel audio is mixed to mono. Files longer than the duration cap
 /// (`MAX_DURATION_S`) are rejected; long files are decoded in bounded chunks.
 ///
@@ -226,8 +228,8 @@ pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
 /// Decode audio from a shared [`Bytes`] buffer in place — no `to_vec()` clone.
 ///
 /// Same logic as [`decode_audio_file`] but reads from a reference-counted
-/// in-memory buffer. Supports WAV, MP3, M4A/AAC, OGG/Vorbis, and FLAC via
-/// symphonia. Multi-channel audio is mixed to mono. The duration cap
+/// in-memory buffer. Supports WAV, MP3, M4A/AAC, OGG/Vorbis, OGG/Opus
+/// (`.opus`), and FLAC. Multi-channel audio is mixed to mono. The duration cap
 /// (`MAX_DURATION_S`) is enforced **incrementally** on each decoded packet: a
 /// malicious or malformed upload is aborted before its decoded samples blow up
 /// RAM.
@@ -514,6 +516,110 @@ pub fn encode_wav_pcm16(samples: &[f32], sample_rate: u32) -> Vec<u8> {
     buf
 }
 
+/// Maximum decoded samples per channel for one Opus packet: 120 ms at 48 kHz
+/// (RFC 6716 §3.2.5). A packet claiming more is malformed.
+#[cfg(feature = "file-decode")]
+const OPUS_MAX_PACKET_SAMPLES: usize = 5760;
+
+/// Total decoded samples per channel for an Opus packet at 48 kHz, parsed
+/// from the TOC byte (RFC 6716 §3.1): the 5-bit configuration selects the
+/// per-frame duration and the 2 low bits the frame count (code 3 reads it
+/// from the second byte). The `opus-rs` decoder API takes the exact packet
+/// duration rather than an output-buffer capacity, so it is computed here
+/// instead of trusting demuxer timestamps.
+#[cfg(feature = "file-decode")]
+fn opus_packet_frame_size(packet: &[u8]) -> Option<usize> {
+    // Per-frame duration in 48 kHz samples for each of the 32 TOC
+    // configurations (RFC 6716 Table 2): SILK 10/20/40/60 ms, hybrid 10/20
+    // ms, CELT 2.5/5/10/20 ms.
+    #[rustfmt::skip]
+    const FRAME_DURATION_48K: [usize; 32] = [
+        480, 960, 1920, 2880, // SILK narrowband
+        480, 960, 1920, 2880, // SILK mediumband
+        480, 960, 1920, 2880, // SILK wideband
+        480, 960,             // hybrid super-wideband
+        480, 960,             // hybrid fullband
+        120, 240, 480, 960,   // CELT narrowband
+        120, 240, 480, 960,   // CELT wideband
+        120, 240, 480, 960,   // CELT super-wideband
+        120, 240, 480, 960,   // CELT fullband
+    ];
+    let toc = *packet.first()?;
+    let frames = match toc & 0b11 {
+        0 => 1,
+        1 | 2 => 2,
+        _ => usize::from(packet.get(1)? & 0x3F),
+    };
+    if frames == 0 {
+        return None;
+    }
+    let size = FRAME_DURATION_48K[(toc >> 3) as usize] * frames;
+    (size <= OPUS_MAX_PACKET_SAMPLES).then_some(size)
+}
+
+/// Decode the packets of an Opus track (OGG container) to per-channel f32
+/// samples at 48 kHz.
+///
+/// Symphonia's OGG demuxer recognizes Opus (`CODEC_ID_OPUS`) but ships no
+/// Opus decoder, so packets are decoded here with the pure-Rust `opus-rs`
+/// libopus port (decoder only). Per RFC 7845 the decode rate is always
+/// 48 kHz — the rate symphonia's mapper reports — and callers resample to
+/// 16 kHz like for every other format. Only mono and stereo are supported,
+/// which covers Telegram voice notes, browser MediaRecorder captures, and
+/// `.opus` files; multistream (>2ch) OGG/Opus is rejected. `max_samples` is
+/// the per-channel duration budget, enforced incrementally as in the
+/// symphonia decode loops.
+#[cfg(feature = "file-decode")]
+fn decode_opus_channels(
+    format: &mut dyn FormatReader,
+    track_id: u32,
+    channels: usize,
+    max_samples: usize,
+) -> Result<Vec<Vec<f32>>> {
+    if !(1..=2).contains(&channels) {
+        anyhow::bail!("Opus with {channels} channels is not supported (mono/stereo only)");
+    }
+    let mut decoder = opus_rs::OpusDecoder::new(48_000, channels)
+        .map_err(|e| anyhow::anyhow!("Opus decoder init failed: {e}"))?;
+    let mut per_channel: Vec<Vec<f32>> = (0..channels).map(|_| Vec::new()).collect();
+    let mut pcm: Vec<f32> = Vec::new();
+    loop {
+        let packet = match format.next_packet() {
+            Ok(Some(p)) => p,
+            Ok(None) => break,
+            Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+        };
+        if packet.track_id != track_id {
+            continue;
+        }
+        let frame_size = opus_packet_frame_size(&packet.data)
+            .ok_or_else(|| anyhow::anyhow!("Malformed Opus packet"))?;
+        pcm.resize(frame_size * channels, 0.0);
+        let decoded = decoder
+            .decode(&packet.data, frame_size, &mut pcm)
+            .map_err(|e| anyhow::anyhow!("Opus decode error: {e}"))?
+            .min(frame_size);
+        if channels == 1 {
+            per_channel[0].extend_from_slice(&pcm[..decoded]);
+        } else {
+            for frame in 0..decoded {
+                for (c, buf) in per_channel.iter_mut().enumerate() {
+                    buf.push(pcm[frame * channels + c]);
+                }
+            }
+        }
+        // Incremental duration cap, same as the symphonia decode loops.
+        let decoded_len = per_channel.first().map(|v| v.len()).unwrap_or(0);
+        if decoded_len > max_samples {
+            let observed_s = decoded_len as f64 / 48_000.0;
+            anyhow::bail!(
+                "Audio file too long ({observed_s:.0}s). Maximum supported: {MAX_DURATION_S:.0}s."
+            );
+        }
+    }
+    Ok(per_channel)
+}
+
 /// Decode an audio file to one f32 sample vector per channel at 16 kHz.
 ///
 /// Same probe/decode/resample pipeline as [`decode_audio_file`], but keeps
@@ -590,60 +696,68 @@ fn decode_audio_inner_channels<'s>(
 
     tracing::info!("Audio ({source_label}): {sample_rate}Hz, {channels}ch (split)");
 
-    let mut decoder = symphonia::default::get_codecs()
-        .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
-        .context("Unsupported audio codec")?;
+    // Symphonia demuxes OGG/Opus but ships no Opus decoder, so Opus packets
+    // go through the `opus-rs` fallback and rejoin the shared resample tail.
+    let mut per_channel: Vec<Vec<f32>> = if audio_params.codec == CODEC_ID_OPUS {
+        decode_opus_channels(&mut *format, track_id, channels, max_samples)?
+    } else {
+        let mut decoder = symphonia::default::get_codecs()
+            .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
+            .context("Unsupported audio codec")?;
 
-    let mut per_channel: Vec<Vec<f32>> = (0..channels)
-        .map(|_| match n_frames_hint {
-            Some(n) if n > 0 && n <= max_samples as u64 => Vec::with_capacity(n as usize),
-            _ => Vec::new(),
-        })
-        .collect();
+        let mut per_channel: Vec<Vec<f32>> = (0..channels)
+            .map(|_| match n_frames_hint {
+                Some(n) if n > 0 && n <= max_samples as u64 => Vec::with_capacity(n as usize),
+                _ => Vec::new(),
+            })
+            .collect();
 
-    loop {
-        let packet = match format.next_packet() {
-            Ok(Some(p)) => p,
-            Ok(None) => break,
-            Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
-        };
+        loop {
+            let packet = match format.next_packet() {
+                Ok(Some(p)) => p,
+                Ok(None) => break,
+                Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+            };
 
-        if packet.track_id != track_id {
-            continue;
-        }
-
-        let decoded = decoder.decode(&packet).context("Decode error")?;
-        let spec = decoded.spec().clone();
-        let num_frames = decoded.frames();
-        let ch = spec.channels().count();
-
-        if ch > per_channel.len() {
-            per_channel.resize_with(ch, Vec::new);
-        }
-
-        if ch > 1 {
-            let mut interleaved: Vec<f32> = Vec::with_capacity(num_frames * ch);
-            decoded.copy_to_vec_interleaved(&mut interleaved);
-            for frame in 0..num_frames {
-                for c in 0..ch {
-                    per_channel[c].push(interleaved[frame * ch + c]);
-                }
+            if packet.track_id != track_id {
+                continue;
             }
-        } else if !per_channel.is_empty() {
-            let offset = per_channel[0].len();
-            per_channel[0].resize(offset + num_frames, 0.0);
-            decoded.copy_to_slice_interleaved(&mut per_channel[0][offset..]);
+
+            let decoded = decoder.decode(&packet).context("Decode error")?;
+            let spec = decoded.spec().clone();
+            let num_frames = decoded.frames();
+            let ch = spec.channels().count();
+
+            if ch > per_channel.len() {
+                per_channel.resize_with(ch, Vec::new);
+            }
+
+            if ch > 1 {
+                let mut interleaved: Vec<f32> = Vec::with_capacity(num_frames * ch);
+                decoded.copy_to_vec_interleaved(&mut interleaved);
+                for frame in 0..num_frames {
+                    for c in 0..ch {
+                        per_channel[c].push(interleaved[frame * ch + c]);
+                    }
+                }
+            } else if !per_channel.is_empty() {
+                let offset = per_channel[0].len();
+                per_channel[0].resize(offset + num_frames, 0.0);
+                decoded.copy_to_slice_interleaved(&mut per_channel[0][offset..]);
+            }
+
+            if per_channel.first().map(|v| v.len()).unwrap_or(0) > max_samples {
+                let observed_s =
+                    per_channel.first().map(|v| v.len()).unwrap_or(0) as f64 / sample_rate as f64;
+                anyhow::bail!(
+                    "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
+                    observed_s
+                );
+            }
         }
 
-        if per_channel.first().map(|v| v.len()).unwrap_or(0) > max_samples {
-            let observed_s =
-                per_channel.first().map(|v| v.len()).unwrap_or(0) as f64 / sample_rate as f64;
-            anyhow::bail!(
-                "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
-                observed_s
-            );
-        }
-    }
+        per_channel
+    };
 
     let duration_s = per_channel
         .first()
@@ -766,66 +880,76 @@ fn decode_audio_inner<'s>(
 
     tracing::info!("Audio ({source_label}): {sample_rate}Hz, {channels}ch");
 
-    let mut decoder = symphonia::default::get_codecs()
-        .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
-        .context("Unsupported audio codec")?;
-
     // Sample budget from a CLAMPED rate (header `sample_rate` capped at
     // MAX_DECODE_SAMPLE_RATE), so a crafted header cannot inflate the duration
     // cap or the capacity hint. Computed before the capacity match so the hint
     // is bounded by the same budget.
     let max_samples: usize = max_decode_samples(sample_rate);
 
-    let mut all_samples: Vec<f32> = match n_frames_hint {
-        Some(n) if n > 0 && n <= max_samples as u64 => Vec::with_capacity(n as usize),
-        _ => Vec::new(),
-    };
+    // Symphonia demuxes OGG/Opus but ships no Opus decoder, so Opus packets
+    // go through the `opus-rs` fallback (mono mix included) and rejoin the
+    // shared duration-log / resample tail.
+    let mut all_samples: Vec<f32> = if audio_params.codec == CODEC_ID_OPUS {
+        let per_channel = decode_opus_channels(&mut *format, track_id, channels, max_samples)?;
+        mix_channels_to_mono(&per_channel)
+    } else {
+        let mut decoder = symphonia::default::get_codecs()
+            .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
+            .context("Unsupported audio codec")?;
 
-    loop {
-        let packet = match format.next_packet() {
-            Ok(Some(p)) => p,
-            Ok(None) => break,
-            Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+        let mut all_samples: Vec<f32> = match n_frames_hint {
+            Some(n) if n > 0 && n <= max_samples as u64 => Vec::with_capacity(n as usize),
+            _ => Vec::new(),
         };
 
-        if packet.track_id != track_id {
-            continue;
-        }
+        loop {
+            let packet = match format.next_packet() {
+                Ok(Some(p)) => p,
+                Ok(None) => break,
+                Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+            };
 
-        let decoded = decoder.decode(&packet).context("Decode error")?;
-        let spec = decoded.spec().clone();
-        let num_frames = decoded.frames();
-        let ch = spec.channels().count();
-
-        // Mix to mono if multi-channel
-        if ch > 1 {
-            let mut interleaved: Vec<f32> = Vec::with_capacity(num_frames * ch);
-            decoded.copy_to_vec_interleaved(&mut interleaved);
-            for frame in 0..num_frames {
-                let mut sum = 0.0_f32;
-                for c in 0..ch {
-                    sum += interleaved[frame * ch + c];
-                }
-                all_samples.push(sum / ch as f32);
+            if packet.track_id != track_id {
+                continue;
             }
-        } else {
-            let offset = all_samples.len();
-            all_samples.resize(offset + num_frames, 0.0);
-            decoded.copy_to_slice_interleaved(&mut all_samples[offset..]);
+
+            let decoded = decoder.decode(&packet).context("Decode error")?;
+            let spec = decoded.spec().clone();
+            let num_frames = decoded.frames();
+            let ch = spec.channels().count();
+
+            // Mix to mono if multi-channel
+            if ch > 1 {
+                let mut interleaved: Vec<f32> = Vec::with_capacity(num_frames * ch);
+                decoded.copy_to_vec_interleaved(&mut interleaved);
+                for frame in 0..num_frames {
+                    let mut sum = 0.0_f32;
+                    for c in 0..ch {
+                        sum += interleaved[frame * ch + c];
+                    }
+                    all_samples.push(sum / ch as f32);
+                }
+            } else {
+                let offset = all_samples.len();
+                all_samples.resize(offset + num_frames, 0.0);
+                decoded.copy_to_slice_interleaved(&mut all_samples[offset..]);
+            }
+
+            // Incremental duration cap: abort before the next packet is decoded
+            // if the accumulated buffer already exceeds the duration budget.
+            // This prevents a crafted upload from allocating hundreds of MiB of
+            // PCM before the post-loop guard gets a chance to run.
+            if all_samples.len() > max_samples {
+                let observed_s = all_samples.len() as f64 / sample_rate as f64;
+                anyhow::bail!(
+                    "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
+                    observed_s
+                );
+            }
         }
 
-        // Incremental duration cap: abort before the next packet is decoded
-        // if the accumulated buffer already exceeds the duration budget.
-        // This prevents a crafted upload from allocating hundreds of MiB of
-        // PCM before the post-loop guard gets a chance to run.
-        if all_samples.len() > max_samples {
-            let observed_s = all_samples.len() as f64 / sample_rate as f64;
-            anyhow::bail!(
-                "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
-                observed_s
-            );
-        }
-    }
+        all_samples
+    };
 
     let duration_s = all_samples.len() as f64 / sample_rate as f64;
     tracing::info!(
@@ -2353,6 +2477,76 @@ mod tests {
             "G.722 decode diverged from ffmpeg reference: RMSE {}",
             mse.sqrt()
         );
+    }
+
+    // --- Opus (OGG container, pure-Rust opus-rs fallback decoder) ---
+
+    #[test]
+    fn test_opus_packet_frame_size_toc_parsing() {
+        // Config 0 (SILK 10 ms), code 0: one 10 ms frame = 480 samples.
+        assert_eq!(opus_packet_frame_size(&[0b0000_0000]), Some(480));
+        // Config 3 (SILK 60 ms), code 1: two 60 ms frames = 5760 (the max).
+        assert_eq!(opus_packet_frame_size(&[0b0001_1001]), Some(5760));
+        // Config 16 (CELT 2.5 ms), code 0: 120 samples.
+        assert_eq!(opus_packet_frame_size(&[0b1000_0000]), Some(120));
+        // Config 31 (CELT 20 ms), code 2: two 20 ms frames = 1920.
+        assert_eq!(opus_packet_frame_size(&[0b1111_1010]), Some(1920));
+        // Config 12 (hybrid 10 ms), code 3: M=3 frames from the second byte.
+        assert_eq!(opus_packet_frame_size(&[0b0110_0011, 3]), Some(1440));
+        // Code 3 with M=0 frames is invalid.
+        assert_eq!(opus_packet_frame_size(&[0b0110_0011, 0]), None);
+        // Over 120 ms total (60 ms x 3) exceeds the RFC 6716 packet maximum.
+        assert_eq!(opus_packet_frame_size(&[0b0001_1011, 3]), None);
+        // Empty packet.
+        assert_eq!(opus_packet_frame_size(&[]), None);
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_opus_ogg_matches_ffmpeg_reference() {
+        // Independent-reference verification: `opus_tone.ogg` was ENCODED by
+        // ffmpeg (libopus) and `opus_tone_ffmpeg.pcm` is ffmpeg's own DECODE
+        // of it resampled to 16 kHz mono (see
+        // scripts/generate_opus_fixtures.sh). Our opus-rs decode is compared
+        // against libopus, so the pure-Rust port is validated against a
+        // second implementation rather than against itself. We do not trim
+        // the OpusHead pre-skip (ffmpeg does), so the comparison runs at the
+        // best lag. Tolerance: RMSE below 2% of full scale.
+        let ogg = include_bytes!("../../tests/fixtures/opus/opus_tone.ogg");
+        let reference_pcm = include_bytes!("../../tests/fixtures/opus/opus_tone_ffmpeg.pcm");
+        let ours = decode_audio_bytes(ogg).expect("OGG/Opus must decode");
+        let reference: Vec<f32> = reference_pcm
+            .chunks_exact(2)
+            .map(|c| f32::from(i16::from_le_bytes([c[0], c[1]])) / 32768.0)
+            .collect();
+        // 3 s of tone at 16 kHz; the untrimmed pre-skip on our side and the
+        // resampler's FIR delay shift the exact count by a few hundred.
+        assert!(
+            ours.len() > 46_000 && ours.len() < 50_000,
+            "unexpected decoded length {}",
+            ours.len()
+        );
+        let rmse = best_lag_rmse(&ours, &reference, 1024);
+        assert!(
+            rmse < 0.02,
+            "Opus decode diverged from ffmpeg reference: RMSE {rmse}"
+        );
+    }
+
+    #[test]
+    fn test_decode_audio_file_opus_extension_matches_bytes() {
+        // The file path probes with an `.opus` extension hint; the bytes path
+        // sniffs content only. Both must decode the same OGG/Opus stream
+        // identically (the CLI transcribes via `decode_audio_file`).
+        let ogg = include_bytes!("../../tests/fixtures/opus/opus_tone.ogg");
+        let mut tmp = tempfile::NamedTempFile::with_suffix(".opus").expect("temp file");
+        std::io::Write::write_all(&mut tmp, ogg).expect("write temp file");
+        let via_file = decode_audio_file(tmp.path().to_str().expect("utf-8 path"))
+            .expect("OGG/Opus file must decode");
+        let via_bytes = decode_audio_bytes(ogg).expect("OGG/Opus bytes must decode");
+        assert_eq!(via_file.len(), via_bytes.len());
+        for (a, b) in via_file.iter().zip(via_bytes.iter()) {
+            assert!((a - b).abs() < f32::EPSILON);
+        }
     }
 
     #[test]

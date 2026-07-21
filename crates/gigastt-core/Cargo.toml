@@ -54,7 +54,7 @@ diarization = ["dep:polyvoice"]
 # side-load models and feed raw PCM).
 net = ["dep:reqwest", "dep:tokio", "dep:futures-util"]  # HTTP model download
 async-pool = ["dep:tokio"]                              # async Pool::checkout; blocking path needs neither
-file-decode = ["dep:symphonia", "dep:audio-codec"]      # file transcription; raw-PCM streaming does not need it
+file-decode = ["dep:symphonia", "dep:audio-codec", "dep:opus-rs"] # file transcription; raw-PCM streaming does not need it
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = []
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
@@ -85,8 +85,12 @@ rubato = "3.0"
 symphonia = { version = "0.6", features = ["aac", "isomp4", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
 # Telephony codecs (G.711 A/μ-law tables, G.722 ADPCM) for RTP dumps and
 # Asterisk-style raw captures. `default-features = false` drops the opus
-# feature so we do not pull a second Opus implementation next to symphonia's.
+# feature so we do not pull a second Opus implementation next to opus-rs.
 audio-codec = { version = "0.3", default-features = false, optional = true }
+# Pure-Rust Opus decoder (libopus port, BSD-3-Clause). Symphonia demuxes
+# OGG/Opus containers but ships no Opus decoder, so packets are decoded with
+# this crate (decoder only — the encoder is not used).
+opus-rs = { version = "0.1", optional = true }
 tokenizers = { version = "0.23", default-features = false, features = ["fancy-regex"] }
 bytes = "1"
 prost = "0.14"

@@ -1711,6 +1711,7 @@ dependencies = [
  "objc2",
  "objc2-core-ml",
  "objc2-foundation",
+ "opus-rs",
  "ort",
  "parking_lot",
  "polyvoice",
@@ -2823,6 +2824,12 @@ dependencies = [
  "pkg-config",
  "vcpkg",
 ]
+
+[[package]]
+name = "opus-rs"
+version = "0.1.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cc978697f3ada0ad98b323b9d85e85c6b08d478830148636c19b6d5f2ac9b85"
 
 [[package]]
 name = "ort"
