@@ -472,12 +472,20 @@ jobs:
       - uses: actions/checkout@v7
       # `rustsec/audit-check` ships a prebuilt cargo-audit, saving the ~90 s
       # `cargo install --locked` rebuild on every PR run.
+      # The ignore list is extracted from deny.toml (the single source of
+      # truth, enforced by the `deny` job) so the two gates cannot drift.
+      # Only quoted IDs in the [advisories] section are taken, so a RUSTSEC
+      # number mentioned in a comment is not picked up.
+      - name: Read advisory ignores from deny.toml
+        id: advisories
+        run: |
+          ignores=$(sed -n '/^\[advisories\]/,/^\[/p' deny.toml \
+            | grep -oE '"RUSTSEC-[0-9]{4}-[0-9]+"' | tr -d '"' | paste -sd, -)
+          echo "ignore=$ignores" >> "$GITHUB_OUTPUT"
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # `paste` is unmaintained (RUSTSEC-2024-0436) and pulled in transitively
-          # via `tokenizers`; no fix available. Mirrors the deny.toml ignore.
-          ignore: RUSTSEC-2024-0436
+          ignore: ${{ steps.advisories.outputs.ignore }}
 
   deny:
     runs-on: ubuntu-latest
@@ -576,7 +584,11 @@ jobs:
         with:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      - run: cargo publish --dry-run -p gigastt-core --locked
+      # Both published crates: gigastt-core is the library, gigastt is the
+      # `cargo install gigastt` binary — packaging breakage in either fails CI.
+      - run: |
+          cargo publish --dry-run -p gigastt-core --locked
+          cargo publish --dry-run -p gigastt --locked
 
   msrv:
     runs-on: ubuntu-latest
