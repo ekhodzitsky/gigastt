@@ -488,8 +488,8 @@ mod tests {
     }
 
     /// config + tokenizer both load, but the ONNX model file is absent: `load`
-    /// must fail at `Session::commit_from_file` (the `ort_err` + context branch),
-    /// never panic. This is the last gate the caller turns into "punct disabled".
+    /// must fail inside `OrtRuntime::load_session` (the `RuntimeError::LoadFailed`
+    /// branch), never panic. This is the last gate the caller turns into "punct disabled".
     // Skipped under Miri: this is the one punctuation-load test that drives
     // past the config + tokenizer gates into `OrtRuntime::load_session`, which
     // calls the onnxruntime C API — a foreign function Miri cannot interpret.

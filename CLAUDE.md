@@ -180,7 +180,7 @@ Three-tier test architecture:
 - `anyhow` for error handling, `tracing` for logging
 - No `unwrap()` in production paths (use `?`, `context()`, or `unwrap_or_else`)
 - Shared constants in `crates/gigastt-core/src/inference/mod.rs`, referenced by sub-modules
-- `ort` errors wrapped via `ort_err()` helper (Send/Sync workaround)
+- `ort` errors are converted to typed `RuntimeError` at the `runtime/ort` seam (no `anyhow` wrapping)
 - Execution provider selection uses `#[cfg(feature = "coreml")]` / `#[cfg(feature = "cuda")]` blocks in `crates/gigastt-core/src/inference/mod.rs`; default falls through to CPU EP
 - **No internal task-tracker IDs in code/docs.** Never write tracker indices (`V1-NN`, `SUS-NN`, `TODO-NN`, etc.) into source comments, `CHANGELOG.md`, `docs/`, CI files, or any artifact — they are noise to anyone without the tracker. Describe *what* the code does and *why*; if a fix maps to a tracked item, that linkage lives only in `specs/prod-readiness-v1.0.md` (the tracker), not in the code.
 
