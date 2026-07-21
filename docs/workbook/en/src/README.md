@@ -12,15 +12,18 @@ This book is a **cookbook, not a reference**. The canonical references stay in
 
 1. [Getting started](01-getting-started.md) — install, download the model,
    first transcription.
-2. [File transcription](02-file-transcription.md) — CLI, batch, and watch-mode
+2. [CLI and batch processing](02-cli-batch.md) — CLI, batch, and watch-mode
    recipes for audio files.
-3. [Streaming](03-streaming.md) — real-time transcription over WebSocket.
-4. [Models and backends](04-models-and-backends.md) — model variants,
-   quantization, execution providers, alternative backends.
-5. [Server integration](05-server-integration.md) — REST/SSE/WS APIs, SDKs,
-   async jobs.
+3. [Telephony & VoIP](03-telephony-voip.md) — G.711/G.722/Opus and PBX
+   recordings.
+4. [Streaming over WebSocket](04-streaming-ws.md) — real-time transcription
+   over WebSocket.
+5. [Desktop & embedded](05-desktop-embedded.md) — Swift/SPM, sidecar,
+   Electron, UniFFI.
 6. [Deployment & ops](06-deployment-ops.md) — production deployment,
    monitoring, and operations.
+7. [Models and backends](07-models-and-backends.md) — model variants,
+   quantization, execution providers, alternative backends (in progress).
 
 The [Russian version](../../ru/src/README.md) mirrors this book chapter by
 chapter.
@@ -75,8 +78,11 @@ Completed design/plan documents kept for archaeology in
   AsyncAPI/OpenAPI schemas remain the canonical references. Link to them —
   do not copy their content.
 - Every command and example in a chapter must be verified before merge.
-- Use **relative `.md` links only**, so they work both on GitHub and in the
-  rendered book. No mdBook-specific templating.
+- Inside the book (chapter ↔ chapter, chapter ↔ intro) use **relative `.md`
+  links** — they work both on GitHub and in the rendered book. Links from the
+  book to repository files (`docs/`, `crates/`, …) must be **absolute GitHub
+  URLs** — relative ones 404 on the published site. No mdBook-specific
+  templating.
 - New chapters follow the [`_template.md`](_template.md) structure.
 - **English is canonical.** The Russian book (`docs/workbook/ru/`) mirrors this
   one with identical file names; both versions are updated in the same PR.

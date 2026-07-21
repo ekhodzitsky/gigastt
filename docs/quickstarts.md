@@ -75,13 +75,15 @@ and use a client SDK (below); the trade-offs are tabulated in
 import GigaSTT
 
 let engine = try Engine(modelDir: "/path/to/models")
-let t = try engine.transcribeFile(path: "recording.wav")
-print(t.text)
-for w in t.words { print(w.text, w.startS, w.endS, w.confidence) }
+let text = try engine.transcribeFile(path: "recording.wav")
+print(text)
 
-// streaming
+// streaming — segments carry per-word metadata
 let s = try Stream(engine: engine)
-for seg in try s.processChunk(pcm16: data, sampleRate: 16000) { print(seg.text) }
+for seg in try s.processChunk(data, sampleRate: 16000) {
+    print(seg.text, seg.isFinal)
+    for w in seg.words { print(w.word, w.start, w.end, w.confidence) }
+}
 
 // errors: do/catch on GigasttError
 ```

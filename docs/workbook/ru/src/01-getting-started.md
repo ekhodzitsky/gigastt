@@ -207,7 +207,7 @@ gigastt serve --model-variant e2e_rnnt      # и явно подать её
 Цифры WER/RTF по каждой голове — в
 [docs/benchmarks.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/benchmarks.md);
 более глубокий обзор моделей и бэкендов — в главе
-[Модели и бэкенды](04-models-and-backends.md).
+[Модели и бэкенды](07-models-and-backends.md).
 
 ## Дорогой первый запуск
 
@@ -304,7 +304,7 @@ curl -F file=@recording.wav http://127.0.0.1:9876/v1/transcribe
   контрольные суммы, minisign, SLSA provenance для артефактов релизов
 - [packaging/offline/README-OFFLINE.md](https://github.com/ekhodzitsky/gigastt/blob/main/packaging/offline/README-OFFLINE.md) —
   состав офлайн-бандла и опции установщика
-- [Транскрибация файлов](02-file-transcription.md) — следующая глава: пакетная
+- [CLI и пакетная обработка](02-cli-batch.md) — следующая глава: пакетная
   обработка, режим watch, форматы экспорта
-- [Модели и бэкенды](04-models-and-backends.md) — головы, квантизация,
+- [Модели и бэкенды](07-models-and-backends.md) — головы, квантизация,
   execution providers в деталях

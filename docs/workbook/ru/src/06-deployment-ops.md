@@ -401,8 +401,8 @@ curl -s http://127.0.0.1:9090/metrics | grep '^gigastt_pool_available'
 
 Затем транскрибируйте один короткий файл через тот API, который реально
 выставлен (REST-рецепты:
-[Интеграция с сервером](05-server-integration.md); проверка через CLI:
-[Транскрибация файлов](02-file-transcription.md)).
+[CLI и пакетная обработка](02-cli-batch.md); проверка через CLI:
+[Начало работы](01-getting-started.md)).
 
 ## Частые ошибки
 
@@ -440,7 +440,8 @@ curl -s http://127.0.0.1:9090/metrics | grep '^gigastt_pool_available'
 ## Ссылки
 
 - [Начало работы](01-getting-started.md) — установка и первая транскрибация
-- [Интеграция с сервером](05-server-integration.md) — рецепты REST / SSE / WebSocket
+- [CLI и пакетная обработка](02-cli-batch.md) — рецепты REST / SSE / jobs
+- [Стриминг по WebSocket](04-streaming-ws.md) — паттерны WebSocket-протокола
 - [docs/deployment.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/deployment.md) — reverse proxy, TLS, манифесты Kubernetes
 - [docs/runbook.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/runbook.md) — симптом → причина → аварийный выход
 - [docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md) — полный справочник флагов `serve`

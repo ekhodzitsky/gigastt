@@ -456,8 +456,9 @@ curl -X POST "http://127.0.0.1:9876/v1/transcribe?codec=g722&sample_rate=8000" \
   -H "Content-Type: application/octet-stream" --data-binary @call.g722
 ```
 
-A raw stream posted **without** `codec` is rejected with `422 invalid_audio`,
-exactly as before. The CLI mirrors this with
+A raw stream posted **without** `codec` is rejected with `422` (code
+`invalid_audio` or `transcription_error`, depending on which stage rejects
+it), exactly as before. The CLI mirrors this with
 `gigastt transcribe call.ulaw --codec pcmu --sample-rate 8000`.
 
 ### Export formats
@@ -525,7 +526,7 @@ it backs off on `503` pool saturation instead of failing mid-job.
 | 400 | `unsupported_codec` | Unknown `codec` query value (supported: `pcmu`, `pcma`, `g722`) |
 | 400 | `invalid_sample_rate` | `sample_rate` missing with `codec`, or outside the accepted range |
 | 400 | `conflicting_modes` | Both `channels=split` and `diarization=true` were requested |
-| 404 | `jobs_disabled` | `POST /v1/jobs` called without `--enable-jobs` |
+| 404 | — (no JSON body) | `/v1/jobs/*` routes are not registered when `--enable-jobs` is off |
 | 404 | `job_not_found` | Unknown or expired job id |
 | 409 | `job_not_finished` | `GET /v1/jobs/{id}/result` called before the job is done |
 | 409 | `job_not_cancellable` | `DELETE /v1/jobs/{id}` called on a terminal job |

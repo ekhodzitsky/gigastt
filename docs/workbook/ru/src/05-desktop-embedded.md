@@ -205,8 +205,8 @@ Runtime — отдельный рантайм бандлить не нужно. 
    `gigastt --version` подпроцессом.
 7. **Транскрибация.** Для live-частичных результатов откройте
    WebSocket-сессию на `/v1/ws` (паттерны — в главе
-   [Стриминг](03-streaming.md)); для целых файлов — POST на `/v1/transcribe`
-   (рецепты — в главе [Серверная интеграция](05-server-integration.md)). При
+   [Стриминг по WebSocket](04-streaming-ws.md)); для целых файлов — POST на `/v1/transcribe`
+   (рецепты — в главе [CLI и пакетная обработка](02-cli-batch.md)). При
    насыщении пула сервер отвечает 503 + `Retry-After` (REST) или ошибкой с
    `retry_after_ms` (WS) — соблюдайте подсказку вместо выдумывания своего
    backoff'а. Перед закрытием WS-сессии отправьте `{"type":"stop"}`, чтобы
@@ -434,8 +434,8 @@ cargo run -p gigastt-uniffi --bin uniffi-bindgen -- generate --library "$LIB" --
 В этой книге:
 
 - [Начало работы](01-getting-started.md) — установка и скачивание модели
-- [Стриминг](03-streaming.md) — паттерны WebSocket-протокола для sidecar'я
-- [Серверная интеграция](05-server-integration.md) — рецепты REST / SSE / jobs
+- [Стриминг по WebSocket](04-streaming-ws.md) — паттерны WebSocket-протокола для sidecar'я
+- [CLI и пакетная обработка](02-cli-batch.md) — рецепты REST / SSE / jobs
 
 Справочные материалы (не дублируем — читайте здесь):
 

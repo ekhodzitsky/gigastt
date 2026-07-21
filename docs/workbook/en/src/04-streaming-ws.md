@@ -201,7 +201,7 @@ roles in the UI — treat them differently.
   casing restoration. The `rnnt` head needs the punctuation model attached
   (server `--punctuation auto` default; check `GET /health` →
   `"punctuation":true`); the `e2e_rnnt` head punctuates by itself — see
-  [Models and backends](04-models-and-backends.md). `words[]` always keep
+  [Models and backends](07-models-and-backends.md). `words[]` always keep
   the raw decoder output in both message types; only the joined `text` is
   rewritten:
 
@@ -707,8 +707,8 @@ clients) is in progress; this chapter covers the native protocol only.
   [sdks/go](https://github.com/ekhodzitsky/gigastt/tree/main/sdks/go),
   [sdks/js](https://github.com/ekhodzitsky/gigastt/tree/main/sdks/js)
 - In this book: [Getting started](01-getting-started.md) for install and
-  first run, [Models and backends](04-models-and-backends.md) for heads and
-  punctuation/ITN behavior, [Server integration](05-server-integration.md)
-  for REST/SSE/jobs alternatives to live streaming,
+  first run, [Models and backends](07-models-and-backends.md) for heads and
+  punctuation/ITN behavior, [CLI and batch processing](02-cli-batch.md)
+  for REST/jobs alternatives to live streaming,
   [Deployment & ops](06-deployment-ops.md) for running `serve` in
   production.

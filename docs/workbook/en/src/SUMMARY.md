@@ -3,8 +3,9 @@
 [Introduction](README.md)
 
 - [Getting started](01-getting-started.md)
-- [File transcription](02-file-transcription.md)
-- [Streaming](03-streaming.md)
-- [Models and backends](04-models-and-backends.md)
-- [Server integration](05-server-integration.md)
+- [CLI and batch processing](02-cli-batch.md)
+- [Telephony & VoIP](03-telephony-voip.md)
+- [Streaming over WebSocket](04-streaming-ws.md)
+- [Desktop & embedded](05-desktop-embedded.md)
 - [Deployment & ops](06-deployment-ops.md)
+- [Models and backends](07-models-and-backends.md)

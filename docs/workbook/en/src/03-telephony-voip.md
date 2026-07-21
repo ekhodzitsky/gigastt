@@ -237,7 +237,7 @@ Two kinds of telephony files are **not** scanned:
 
 Verify: `out/` contains one `.txt`/`.json` per source file and the command
 exits 0. For an inbox that keeps receiving new recordings, `gigastt watch`
-does the same continuously — see [File transcription](02-file-transcription.md)
+does the same continuously — see [CLI and batch processing](02-cli-batch.md)
 for batch/watch details and long recordings.
 
 ## Format cheat sheet
@@ -324,7 +324,7 @@ fixtures pass, the problem is the file, not the server — go back to Step 0.
 
 ## Links
 
-- [File transcription](02-file-transcription.md) — batch and watch mode,
+- [CLI and batch processing](02-cli-batch.md) — batch and watch mode,
   export formats, long recordings.
 - [Getting started](01-getting-started.md) — installation and model download.
 - [Introduction](README.md) — documentation map.

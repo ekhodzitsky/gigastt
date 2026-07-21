@@ -205,7 +205,7 @@ gigastt serve --model-variant e2e_rnnt      # and serve it explicitly
 
 WER/RTF numbers per head are in
 [docs/benchmarks.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/benchmarks.md);
-the deeper model/backend tour is in [Models and backends](04-models-and-backends.md).
+the deeper model/backend tour is in [Models and backends](07-models-and-backends.md).
 
 ## The expensive first run
 
@@ -299,7 +299,7 @@ The full symptom → cause → fix table lives in
   checksums, minisign, SLSA provenance for release artifacts
 - [packaging/offline/README-OFFLINE.md](https://github.com/ekhodzitsky/gigastt/blob/main/packaging/offline/README-OFFLINE.md) —
   offline bundle contents and installer options
-- [File transcription](02-file-transcription.md) — the next chapter: batch,
+- [CLI and batch processing](02-cli-batch.md) — the next chapter: batch,
   watch mode, export formats
-- [Models and backends](04-models-and-backends.md) — heads, quantization,
+- [Models and backends](07-models-and-backends.md) — heads, quantization,
   execution providers in depth

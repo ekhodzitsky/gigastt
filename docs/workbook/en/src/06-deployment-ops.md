@@ -389,8 +389,8 @@ curl -s http://127.0.0.1:9090/metrics | grep '^gigastt_pool_available'
 ```
 
 Then transcribe one short file through the API you actually expose (REST
-recipes: [Server integration](05-server-integration.md); CLI check:
-[File transcription](02-file-transcription.md)).
+recipes: [CLI and batch processing](02-cli-batch.md); CLI check:
+[Getting started](01-getting-started.md)).
 
 ## Common pitfalls
 
@@ -426,7 +426,8 @@ recipes: [Server integration](05-server-integration.md); CLI check:
 ## Links
 
 - [Getting started](01-getting-started.md) — install and first transcription
-- [Server integration](05-server-integration.md) — REST / SSE / WebSocket recipes
+- [CLI and batch processing](02-cli-batch.md) — REST / SSE / jobs recipes
+- [Streaming over WebSocket](04-streaming-ws.md) — WebSocket protocol patterns
 - [docs/deployment.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/deployment.md) — reverse proxy, TLS, Kubernetes manifests
 - [docs/runbook.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/runbook.md) — symptom → cause → escape hatch
 - [docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md) — full `serve` flag reference

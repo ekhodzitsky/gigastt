@@ -201,8 +201,8 @@ gracefully.
    Gate your minimum engine version on the `version` field instead of running
    `gigastt --version` in a subprocess.
 7. **Transcribe.** For live partial results open a WebSocket session on
-   `/v1/ws` (patterns in [Streaming](03-streaming.md)); for whole files POST to
-   `/v1/transcribe` (recipes in [Server integration](05-server-integration.md)).
+   `/v1/ws` (patterns in [Streaming over WebSocket](04-streaming-ws.md)); for whole files POST to
+   `/v1/transcribe` (recipes in [CLI and batch processing](02-cli-batch.md)).
    On pool saturation the server answers 503 + `Retry-After` (REST) or an
    error with `retry_after_ms` (WS) — honor it instead of inventing a backoff.
    Before closing a WS session, send `{"type":"stop"}` so the server flushes
@@ -424,8 +424,8 @@ End-to-end checklist, whichever path you took:
 In this book:
 
 - [Getting started](01-getting-started.md) — install and model download
-- [Streaming](03-streaming.md) — WebSocket protocol patterns for the sidecar
-- [Server integration](05-server-integration.md) — REST / SSE / jobs recipes
+- [Streaming over WebSocket](04-streaming-ws.md) — WebSocket protocol patterns for the sidecar
+- [CLI and batch processing](02-cli-batch.md) — REST / SSE / jobs recipes
 
 Reference material (do not duplicate — read here):
 
