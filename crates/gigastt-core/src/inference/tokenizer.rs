@@ -1,4 +1,5 @@
-//! BPE tokenizer for GigaAM v3 e2e_rnnt.
+//! Tokenizer for the GigaAM v3 RNN-T heads: the plain `rnnt` char vocab and
+//! the `e2e_rnnt` BPE vocab.
 
 use anyhow::{Context, Result, ensure};
 use std::path::Path;

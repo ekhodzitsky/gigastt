@@ -1,4 +1,4 @@
-//! RNN-T greedy decoding for GigaAM v3 e2e_rnnt.
+//! RNN-T greedy decoding shared by the GigaAM v3 rnnt and e2e_rnnt heads.
 
 use anyhow::{Context, Result};
 

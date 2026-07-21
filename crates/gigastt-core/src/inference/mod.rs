@@ -1,4 +1,4 @@
-//! ONNX Runtime inference engine for GigaAM v3 e2e_rnnt.
+//! ONNX Runtime inference engine for GigaAM v3 (rnnt head by default, e2e_rnnt optional).
 //!
 //! Loads encoder, decoder, and joiner ONNX models and runs the RNN-T streaming decode loop.
 
