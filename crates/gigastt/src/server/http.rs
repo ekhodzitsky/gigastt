@@ -274,19 +274,19 @@ fn render_export_response(
         } else {
             filename.clone()
         };
-        // The filename is user-controlled (query param), so build the header value
-        // defensively: a filename with control characters would be an invalid
-        // header value and otherwise panic when the response is built below. Fall
-        // back to the safe default name when the requested value isn't valid.
-        let disposition =
-            header::HeaderValue::from_str(&format!("attachment; filename=\"{filename}\""))
-                .unwrap_or_else(|_| {
-                    header::HeaderValue::from_str(&format!(
-                        "attachment; filename=\"transcript.{}\"",
-                        format.extension()
-                    ))
-                    .expect("static content-disposition is always a valid header value")
-                });
+        // The filename is user-controlled (query param), so emit it as an
+        // RFC 6266 value: quotes/semicolons can no longer inject extra header
+        // parameters (filename spoofing) and non-ASCII names survive via
+        // `filename*`. The helper output is pure ASCII, which makes the header
+        // conversion infallible; keep the defensive fallback anyway.
+        let disposition = header::HeaderValue::from_str(&content_disposition_attachment(&filename))
+            .unwrap_or_else(|_| {
+                header::HeaderValue::from_str(&format!(
+                    "attachment; filename=\"transcript.{}\"",
+                    format.extension()
+                ))
+                .expect("static content-disposition is always a valid header value")
+            });
         builder = builder.header(header::CONTENT_DISPOSITION, disposition);
     }
 
@@ -298,6 +298,36 @@ fn render_export_response(
         )
     })?;
     Ok(Some(response))
+}
+
+/// Build a `Content-Disposition: attachment` value for a user-controlled
+/// filename per RFC 6266. The legacy quoted `filename=` parameter carries an
+/// ASCII fallback (`"` / `\` / control / non-ASCII characters replaced by
+/// `_`), and the full name travels percent-encoded in `filename*=UTF-8''…`
+/// (RFC 5987 attr-char set emitted verbatim, everything else as `%XX` UTF-8
+/// bytes). Without the fallback sanitization a name like `x"; filename*=…`
+/// would splice extra parameters into the header — `HeaderValue` only rejects
+/// control characters, not quotes or semicolons — letting an attacker spoof
+/// the download filename seen by the client. The output is always printable
+/// ASCII, so `HeaderValue::from_str` accepts it unconditionally.
+fn content_disposition_attachment(filename: &str) -> String {
+    let mut fallback = String::with_capacity(filename.len());
+    for c in filename.chars() {
+        match c {
+            '"' | '\\' => fallback.push('_'),
+            c if c.is_ascii() && !c.is_ascii_control() => fallback.push(c),
+            _ => fallback.push('_'),
+        }
+    }
+    let mut encoded = String::with_capacity(filename.len());
+    for &b in filename.as_bytes() {
+        if b.is_ascii_alphanumeric() || b"!#$&+-.^_`|~".contains(&b) {
+            encoded.push(char::from(b));
+        } else {
+            encoded.push_str(&format!("%{b:02X}"));
+        }
+    }
+    format!("attachment; filename=\"{fallback}\"; filename*=UTF-8''{encoded}")
 }
 
 /// Error response produced by the REST handlers. Using `Response` directly
@@ -1932,14 +1962,15 @@ mod tests {
         let resp = render_export_response(&result, &params).unwrap().unwrap();
         assert_eq!(
             resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
-            "attachment; filename=\"recording.vtt\""
+            "attachment; filename=\"recording.vtt\"; filename*=UTF-8''recording.vtt"
         );
     }
 
     #[tokio::test]
     async fn test_render_export_download_filename_with_control_char_does_not_panic() {
-        // The download filename is user-controlled; a control character must not
-        // produce an invalid header value / panic — it falls back to the default.
+        // The download filename is user-controlled; control characters must not
+        // produce an invalid header value / panic — they are sanitized out of
+        // the quoted fallback and percent-encoded in `filename*`.
         let result = sample_export_result();
         let params = ExportParams {
             format: Some("srt".into()),
@@ -1950,7 +1981,7 @@ mod tests {
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(
             resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
-            "attachment; filename=\"transcript.srt\""
+            "attachment; filename=\"evil__Injected: x\"; filename*=UTF-8''evil%0D%0AInjected%3A%20x"
         );
     }
 
@@ -2024,8 +2055,71 @@ mod tests {
         let resp = render_export_response(&result, &params).unwrap().unwrap();
         assert_eq!(
             resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
-            "attachment; filename=\"transcript.vtt\""
+            "attachment; filename=\"transcript.vtt\"; filename*=UTF-8''transcript.vtt"
         );
+    }
+
+    #[tokio::test]
+    async fn test_render_export_download_filename_injection_neutralized() {
+        // A crafted `download` value trying to splice a second `filename*`
+        // parameter must survive only as inert data: the quote becomes `_` in
+        // the fallback, and the `filename*` bytes are percent-encoded, so the
+        // spoofed `spoofed.exe` never appears as a real header parameter.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("srt".into()),
+            download: Some("evil\"; filename*=UTF-8''spoofed.exe".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(
+            resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
+            "attachment; filename=\"evil_; filename*=UTF-8''spoofed.exe\"; \
+             filename*=UTF-8''evil%22%3B%20filename%2A%3DUTF-8%27%27spoofed.exe"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_render_export_download_filename_unicode_percent_encoded() {
+        // Non-ASCII names get an ASCII-safe fallback for legacy clients and
+        // keep the full UTF-8 name percent-encoded in `filename*` (RFC 6266).
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("txt".into()),
+            download: Some("é.txt".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        assert_eq!(
+            resp.headers().get(header::CONTENT_DISPOSITION).unwrap(),
+            "attachment; filename=\"_.txt\"; filename*=UTF-8''%C3%A9.txt"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_render_export_download_filename_cyrillic_percent_encoded() {
+        // Cyrillic input must not leak raw non-ASCII bytes into the header:
+        // the fallback replaces each non-ASCII character, `filename*` carries
+        // the percent-encoded UTF-8, and the whole value stays ASCII.
+        let result = sample_export_result();
+        let params = ExportParams {
+            format: Some("srt".into()),
+            download: Some("отчёт.srt".into()),
+            ..ExportParams::default()
+        };
+        let resp = render_export_response(&result, &params).unwrap().unwrap();
+        let value = resp
+            .headers()
+            .get(header::CONTENT_DISPOSITION)
+            .unwrap()
+            .to_str()
+            .unwrap();
+        let encoded_name = format!("{}.srt", "%d0%be%d1%82%d1%87%d1%91%d1%82".to_uppercase());
+        assert_eq!(
+            value,
+            format!("attachment; filename=\"_____.srt\"; filename*=UTF-8''{encoded_name}")
+        );
+        assert!(value.is_ascii());
     }
 
     #[tokio::test]

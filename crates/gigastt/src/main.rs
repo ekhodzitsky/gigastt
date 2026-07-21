@@ -635,6 +635,23 @@ fn ensure_bind_allowed(host: &str, bind_all_flag: bool) -> anyhow::Result<()> {
     )
 }
 
+/// Consent gate for the separate metrics listener. That listener serves
+/// Prometheus `/metrics` with no CORS allowlist or rate limiter, so a
+/// non-loopback `--metrics-listen` requires the same explicit `--bind-all`
+/// (or `GIGASTT_ALLOW_BIND_ANY=1`) opt-in as the primary port — keeps the
+/// loopback-by-default invariant symmetric instead of letting telemetry leak
+/// network-wide silently. No-op when metrics are disabled: nothing is bound.
+fn ensure_metrics_bind_allowed(
+    metrics_enabled: bool,
+    metrics_listen: &std::net::SocketAddr,
+    bind_all_flag: bool,
+) -> anyhow::Result<()> {
+    if !metrics_enabled {
+        return Ok(());
+    }
+    ensure_bind_allowed(&metrics_listen.ip().to_string(), bind_all_flag)
+}
+
 fn is_loopback_host(host: &str) -> bool {
     // Accept the common human forms first.
     let lowered = host.trim().to_ascii_lowercase();
@@ -1085,13 +1102,7 @@ async fn main() -> anyhow::Result<()> {
             )?;
             let metrics_listen =
                 metrics_listen.unwrap_or_else(server::config::default_metrics_listen);
-            // The metrics listener carries no CORS allowlist or rate limiter, so
-            // a non-loopback bind requires the same explicit `--bind-all` opt-in
-            // the primary port does — keeps the loopback-by-default invariant
-            // symmetric instead of letting telemetry leak network-wide silently.
-            if metrics {
-                ensure_bind_allowed(&metrics_listen.ip().to_string(), bind_all)?;
-            }
+            ensure_metrics_bind_allowed(metrics, &metrics_listen, bind_all)?;
             let server_config = build_server_config(
                 port,
                 host,
@@ -1458,6 +1469,51 @@ mod tests {
     #[test]
     fn test_ensure_bind_allowed_explicit_flag_ok() {
         ensure_bind_allowed("0.0.0.0", true).expect("explicit --bind-all must pass");
+    }
+
+    #[test]
+    fn test_ensure_metrics_bind_allowed_disabled_skips_gate() {
+        // Metrics off: no listener is bound, so even a wildcard address needs
+        // no consent.
+        let addr = "0.0.0.0:9090".parse().unwrap();
+        ensure_metrics_bind_allowed(false, &addr, false)
+            .expect("disabled metrics listener must skip the gate");
+    }
+
+    #[test]
+    fn test_ensure_metrics_bind_allowed_loopback_ok() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let addr = "127.0.0.1:9090".parse().unwrap();
+        ensure_metrics_bind_allowed(true, &addr, false)
+            .expect("loopback metrics bind must be allowed");
+    }
+
+    #[test]
+    fn test_ensure_metrics_bind_allowed_non_loopback_requires_flag() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let previous = std::env::var("GIGASTT_ALLOW_BIND_ANY").ok();
+        unsafe {
+            std::env::remove_var("GIGASTT_ALLOW_BIND_ANY");
+        }
+        let addr = "0.0.0.0:9090".parse().unwrap();
+        let result = ensure_metrics_bind_allowed(true, &addr, false);
+        if let Some(v) = previous {
+            unsafe {
+                std::env::set_var("GIGASTT_ALLOW_BIND_ANY", v);
+            }
+        }
+        assert!(
+            result.is_err(),
+            "0.0.0.0 metrics bind without --bind-all must be rejected"
+        );
+    }
+
+    #[test]
+    fn test_ensure_metrics_bind_allowed_explicit_flag_ok() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let addr = "0.0.0.0:9090".parse().unwrap();
+        ensure_metrics_bind_allowed(true, &addr, true)
+            .expect("explicit --bind-all must allow the metrics bind");
     }
 
     #[test]
