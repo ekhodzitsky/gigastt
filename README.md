@@ -84,6 +84,12 @@ The GigaAM v3 model (~850 MB) auto-downloads on first run and is INT8-quantized 
 $ gigastt transcribe recording.wav
 Привет, как дела?
 
+# Batch-process a whole folder (txt + json per file, 2 workers):
+$ gigastt transcribe-batch samples/ out/
+
+# Or watch a folder and transcribe files as they are dropped in:
+$ gigastt watch inbox/ out/ --move-to inbox/done/
+
 # Or run the server — WebSocket + REST + SSE on one port (loopback only):
 $ gigastt serve
 # WebSocket  ws://127.0.0.1:9876/v1/ws

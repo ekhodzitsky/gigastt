@@ -15,6 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.macOS(.v13)` next to `.iOS(.v15)` — macOS apps can embed GigaSTT directly
   instead of shipping the CLI as a sidecar. The release workflow smoke-tests
   the macOS slice before publishing. The xcframework zip grows by ~30 MB.
+- **Batch and watch-folder CLI: `gigastt transcribe-batch` and `gigastt watch`.**
+  First-class folder transcription without shell wrappers: `transcribe-batch
+  <in> <out>` recursively transcribes every WAV / MP3 / M4A / OGG / FLAC file
+  under a directory, writing `<stem>.txt` + `<stem>.json` (configurable via
+  `--format txt,json,md,srt,vtt`) per file with `--pool-size` parallel workers;
+  `watch <in> <out>` polls a folder and transcribes new or changed files once
+  their size+mtime stays stable across `--settle-polls` polls, so
+  partially-copied files are never picked up. Both support `--move-to done/` /
+  `--delete-source` post-success source policies, per-file retries, and
+  graceful Ctrl-C (in-flight files finish; `transcribe-batch` exits 130 like
+  `download`). Files already present when `watch` starts are left for
+  `transcribe-batch`. See [docs/cli.md](docs/cli.md).
 
 ### Changed
 

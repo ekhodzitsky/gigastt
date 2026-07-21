@@ -18,6 +18,8 @@ Commands:
   serve        Start STT server
   download     Download model (~850 MB) and auto-generate INT8 encoder
   transcribe   Transcribe audio file (offline)
+  transcribe-batch  Transcribe every audio file in a directory (offline)
+  watch        Watch a directory and transcribe new/changed audio files
   quantize     Quantize encoder to INT8 (always available since v0.9.0)
 
 gigastt serve [OPTIONS]
@@ -146,6 +148,57 @@ gigastt transcribe [OPTIONS] <FILE>
     gigastt transcribe recording.wav
     gigastt transcribe recording.wav -f srt -o recording.srt
     gigastt transcribe recording.wav -f md --word-timestamps -o notes.md
+
+gigastt transcribe-batch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
+  Recursively transcribe every audio file (WAV, MP3, M4A, OGG, FLAC) under
+  INPUT_DIR, writing one `<stem>.<ext>` file per format into OUTPUT_DIR.
+  Files are processed in parallel (--pool-size workers). Files already inside
+  a --move-to directory are excluded from the scan.
+  --model-dir <DIR>           Model directory [default: ~/.gigastt/models]
+  --model-variant <V>         Recognition head: rnnt | e2e_rnnt | ml_ctc | ml_ctc_large.
+                              Omit to auto-detect. Env: GIGASTT_MODEL_VARIANT.
+  --punctuation <MODE>        Restore punctuation/casing: auto | on | off.
+                              Env: GIGASTT_PUNCTUATION.
+  --punct-model-dir <DIR>     Punctuation model directory. Env: GIGASTT_PUNCT_MODEL_DIR.
+  --itn <MODE>                Inverse text normalization: auto | on | off. Env: GIGASTT_ITN.
+  -f, --format <LIST>         Export formats, comma-separated: txt, json, md, srt, vtt
+                              [default: txt,json]. Env: GIGASTT_FORMAT.
+  --pool-size <N>             Concurrent transcription workers [default: 2]
+  --retries <N>               Extra attempts per file after a failure [default: 0].
+                              Env: GIGASTT_BATCH_RETRIES.
+  --move-to <DIR>             Move each successfully transcribed source into DIR
+                              (e.g. --move-to done/). Env: GIGASTT_BATCH_MOVE_TO.
+  --delete-source             Delete each successfully transcribed source
+                              (exclusive with --move-to). Env: GIGASTT_BATCH_DELETE_SOURCE.
+  --max-chars-per-line <N>    Max chars per subtitle line (SRT/VTT) [default: 80]
+  --max-words-per-line <N>    Max words per subtitle line (SRT/VTT) [default: 14]
+  --word-timestamps           Include per-word timestamps in Markdown output
+  Exit codes: 0 = all files done · 1 = at least one file failed · 130 = interrupted
+  (Ctrl-C finishes in-flight files, skips the rest).
+
+  Examples:
+    gigastt transcribe-batch samples/ out/
+    gigastt transcribe-batch samples/ out/ --format txt,json,srt --pool-size 4
+    gigastt transcribe-batch inbox/ out/ --move-to inbox/done/
+
+gigastt watch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
+  Poll INPUT_DIR and transcribe new/changed audio files as they appear. A file
+  is scheduled only after its size+mtime is unchanged for --settle-polls
+  consecutive polls, so partially-copied files are never picked up. Files
+  already present at startup are registered but NOT transcribed (use
+  transcribe-batch for the backlog). Ctrl-C stops polling and waits for
+  in-flight files before exiting.
+  Same options as transcribe-batch, plus:
+  --poll-interval-ms <MS>     Poll interval [default: 1000].
+                              Env: GIGASTT_WATCH_POLL_INTERVAL_MS.
+  --settle-polls <N>          Identical polls required before scheduling a file
+                              [default: 2]. Env: GIGASTT_WATCH_SETTLE_POLLS.
+  --retries <N>               Extra attempts per file after a failure [default: 2].
+                              Env: GIGASTT_BATCH_RETRIES.
+
+  Examples:
+    gigastt watch inbox/ out/ --move-to inbox/done/
+    gigastt watch inbox/ out/ --format txt --delete-source
 
 gigastt quantize [OPTIONS]          # always available since v0.9.0
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]

@@ -368,11 +368,16 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_PUNCTUATION` | `--punctuation` | auto |
 | `GIGASTT_PUNCT_MODEL_DIR` | `--punct-model-dir` | `~/.gigastt/models/punct/` |
 | `GIGASTT_ITN` | `--itn` | auto |
-| `GIGASTT_FORMAT` | `transcribe --format` | `txt` |
+| `GIGASTT_FORMAT` | `transcribe --format` | `txt` (`txt,json` for `transcribe-batch` / `watch`) |
 | `GIGASTT_OUTPUT` | `transcribe --output` | — |
 | `GIGASTT_MAX_CHARS_PER_LINE` | `transcribe --max-chars-per-line` | — |
 | `GIGASTT_MAX_WORDS_PER_LINE` | `transcribe --max-words-per-line` | — |
 | `GIGASTT_WORD_TIMESTAMPS` | `transcribe --word-timestamps` | false |
+| `GIGASTT_BATCH_MOVE_TO` | `transcribe-batch / watch --move-to` | — |
+| `GIGASTT_BATCH_DELETE_SOURCE` | `transcribe-batch / watch --delete-source` | false |
+| `GIGASTT_BATCH_RETRIES` | `transcribe-batch / watch --retries` | 0 / 2 |
+| `GIGASTT_WATCH_POLL_INTERVAL_MS` | `watch --poll-interval-ms` | 1000 |
+| `GIGASTT_WATCH_SETTLE_POLLS` | `watch --settle-polls` | 2 |
 | `GIGASTT_STEREO_SPEAKERS` | `--stereo-speakers` | false |
 | `RUST_LOG` | — | `gigastt=info` |
 

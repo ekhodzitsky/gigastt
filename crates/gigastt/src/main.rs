@@ -1,5 +1,6 @@
 use anyhow::Context;
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
+use gigastt::batch;
 use gigastt::server;
 use gigastt::server::{OriginPolicy, RuntimeLimits, ServerConfig};
 use gigastt_core::export::{ExportFormat, RenderOpts};
@@ -28,6 +29,136 @@ struct Cli {
 
     #[command(subcommand)]
     command: Commands,
+}
+
+/// Engine / post-processing flags shared by the offline directory commands
+/// (`transcribe-batch`, `watch`). Mirrors the corresponding `transcribe` flags.
+#[derive(Args)]
+struct OfflineEngineArgs {
+    /// Model directory
+    #[arg(long, default_value_t = model::default_model_dir())]
+    model_dir: String,
+
+    /// Recognition head to use. Omit to auto-detect from the model directory.
+    /// Env: GIGASTT_MODEL_VARIANT.
+    #[arg(
+        long,
+        env = "GIGASTT_MODEL_VARIANT",
+        value_parser = parse_model_variant
+    )]
+    model_variant: Option<ModelVariant>,
+
+    /// Punctuation + capitalization restoration: `on`, `off`, or `auto`.
+    /// Env: GIGASTT_PUNCTUATION.
+    #[arg(
+        long,
+        env = "GIGASTT_PUNCTUATION",
+        default_value = "auto",
+        value_parser = parse_punctuation_mode
+    )]
+    punctuation: PunctuationMode,
+
+    /// Directory holding the optional punctuation model.
+    /// Env: GIGASTT_PUNCT_MODEL_DIR.
+    #[arg(
+        long,
+        env = "GIGASTT_PUNCT_MODEL_DIR",
+        default_value_t = model::default_punct_model_dir()
+    )]
+    punct_model_dir: String,
+
+    /// Inverse text normalization (Russian number-words → digits):
+    /// `on`, `off`, or `auto`. Env: GIGASTT_ITN.
+    #[arg(
+        long,
+        env = "GIGASTT_ITN",
+        default_value = "auto",
+        value_parser = parse_itn_mode
+    )]
+    itn: ItnMode,
+
+    /// Contextual hotword biasing: path to a file of phrases to boost (one
+    /// phrase per line, optional `\t<weight>` suffix). Env: GIGASTT_HOTWORDS_FILE.
+    #[arg(long, env = "GIGASTT_HOTWORDS_FILE")]
+    hotwords_file: Option<String>,
+
+    /// Also bias the built-in Russian brand/acronym lexicon.
+    /// Env: GIGASTT_HOTWORDS_DEFAULT.
+    #[arg(long, env = "GIGASTT_HOTWORDS_DEFAULT", default_value_t = false)]
+    hotwords_default: bool,
+
+    /// Additive logit boost applied to hotword continuation tokens [default: 5.0].
+    /// Env: GIGASTT_HOTWORDS_BOOST.
+    #[arg(long, env = "GIGASTT_HOTWORDS_BOOST")]
+    hotwords_boost: Option<f32>,
+
+    /// Voice activity detection: skip silence before decoding. Env: GIGASTT_VAD.
+    #[arg(long, env = "GIGASTT_VAD", default_value_t = false)]
+    vad: bool,
+
+    /// VAD speech-probability threshold in [0,1] [default: 0.5].
+    /// Env: GIGASTT_VAD_THRESHOLD.
+    #[arg(long, env = "GIGASTT_VAD_THRESHOLD")]
+    vad_threshold: Option<f32>,
+
+    /// Minimum trailing silence (ms) to close a speech region [default: 500].
+    /// Env: GIGASTT_VAD_MIN_SILENCE_MS.
+    #[arg(long, env = "GIGASTT_VAD_MIN_SILENCE_MS")]
+    vad_min_silence_ms: Option<u32>,
+
+    /// Directory holding the Silero VAD model (`silero_vad.onnx`).
+    /// Env: GIGASTT_VAD_MODEL_DIR.
+    #[arg(long, env = "GIGASTT_VAD_MODEL_DIR", default_value_t = model::default_vad_model_dir())]
+    vad_model_dir: String,
+
+    /// Intra-op thread count for the encoder session on the CPU build. When
+    /// unset, defaults to the logical CPU count divided across the pool.
+    /// Env: GIGASTT_ENCODER_INTRA_THREADS.
+    #[arg(long, env = "GIGASTT_ENCODER_INTRA_THREADS")]
+    encoder_intra_threads: Option<usize>,
+
+    /// Number of concurrent transcription workers (engine session pool). Each
+    /// session loads its own encoder copy (~0.4 GB resident for the INT8
+    /// encoder), so the default is 2 to bound the memory footprint.
+    #[arg(long, default_value_t = 2)]
+    pool_size: usize,
+}
+
+/// Output / source-policy flags shared by `transcribe-batch` and `watch`.
+#[derive(Args)]
+struct BatchOutputArgs {
+    /// Export formats, comma-separated: txt, json, md, srt, vtt.
+    /// One `<stem>.<ext>` file is written per format. Env: GIGASTT_FORMAT.
+    #[arg(short, long, env = "GIGASTT_FORMAT", default_value = "txt,json")]
+    format: String,
+
+    /// Move each successfully transcribed source file into this directory
+    /// (e.g. `--move-to done/`). Mutually exclusive with `--delete-source`.
+    /// Env: GIGASTT_BATCH_MOVE_TO.
+    #[arg(long, env = "GIGASTT_BATCH_MOVE_TO", conflicts_with = "delete_source")]
+    move_to: Option<String>,
+
+    /// Delete each successfully transcribed source file. Failed files are
+    /// always left in place. Env: GIGASTT_BATCH_DELETE_SOURCE.
+    #[arg(long, env = "GIGASTT_BATCH_DELETE_SOURCE", default_value_t = false)]
+    delete_source: bool,
+
+    /// Extra attempts per file after a failure, with a short backoff
+    /// [default: 0 for transcribe-batch, 2 for watch]. Env: GIGASTT_BATCH_RETRIES.
+    #[arg(long, env = "GIGASTT_BATCH_RETRIES")]
+    retries: Option<u32>,
+
+    /// Maximum characters per subtitle/caption line (SRT/VTT) [default: 80]
+    #[arg(long, env = "GIGASTT_MAX_CHARS_PER_LINE")]
+    max_chars_per_line: Option<usize>,
+
+    /// Maximum words per subtitle/caption line (SRT/VTT) [default: 14]
+    #[arg(long, env = "GIGASTT_MAX_WORDS_PER_LINE")]
+    max_words_per_line: Option<usize>,
+
+    /// Include per-word timestamps in Markdown output
+    #[arg(long, env = "GIGASTT_WORD_TIMESTAMPS", default_value_t = false)]
+    word_timestamps: bool,
 }
 
 // `Serve` carries many optional CLI flags, so it is much larger than the other
@@ -487,6 +618,49 @@ enum Commands {
         /// files, and files with more than two channels. Env: GIGASTT_STEREO_SPEAKERS.
         #[arg(long, env = "GIGASTT_STEREO_SPEAKERS", default_value_t = false)]
         stereo_speakers: bool,
+    },
+
+    /// Transcribe every audio file in a directory (offline, one-shot)
+    TranscribeBatch {
+        /// Directory scanned recursively for audio files (WAV, MP3, M4A, OGG, FLAC)
+        input_dir: String,
+
+        /// Directory the `<stem>.<ext>` transcripts are written into
+        output_dir: String,
+
+        #[command(flatten)]
+        engine: OfflineEngineArgs,
+
+        #[command(flatten)]
+        output: BatchOutputArgs,
+    },
+
+    /// Watch a directory and transcribe new/changed audio files as they appear
+    Watch {
+        /// Directory polled for audio files (WAV, MP3, M4A, OGG, FLAC). Files
+        /// already present at startup are registered but not transcribed.
+        input_dir: String,
+
+        /// Directory the `<stem>.<ext>` transcripts are written into
+        output_dir: String,
+
+        #[command(flatten)]
+        engine: OfflineEngineArgs,
+
+        #[command(flatten)]
+        output: BatchOutputArgs,
+
+        /// Poll interval in milliseconds [default: 1000]. Polling with a
+        /// stability check keeps the watcher dependency-free and handles
+        /// files still being copied into the directory.
+        /// Env: GIGASTT_WATCH_POLL_INTERVAL_MS.
+        #[arg(long, env = "GIGASTT_WATCH_POLL_INTERVAL_MS", default_value_t = 1000)]
+        poll_interval_ms: u64,
+
+        /// Consecutive polls with an identical size+mtime required before a
+        /// file is scheduled [default: 2]. Env: GIGASTT_WATCH_SETTLE_POLLS.
+        #[arg(long, env = "GIGASTT_WATCH_SETTLE_POLLS", default_value_t = 2)]
+        settle_polls: u32,
     },
 }
 
@@ -984,6 +1158,115 @@ fn ensure_int8_encoder(variant: ModelVariant, model_dir: &str, skip: bool) -> an
     Ok(())
 }
 
+/// Load the offline CLI engine (`transcribe`, `transcribe-batch`, `watch`):
+/// ensure the model, attach the punctuation / ITN / VAD / hotword chain, and
+/// size the session pool to `pool_size`. Kept as one helper so every offline
+/// command builds a byte-for-byte identical engine.
+#[allow(clippy::too_many_arguments)]
+async fn load_offline_engine(
+    model_dir: &str,
+    model_variant: Option<ModelVariant>,
+    punctuation: PunctuationMode,
+    punct_model_dir: &str,
+    itn: ItnMode,
+    hotwords_file: Option<&str>,
+    hotwords_default: bool,
+    hotwords_boost: Option<f32>,
+    vad: bool,
+    vad_threshold: Option<f32>,
+    vad_min_silence_ms: Option<u32>,
+    vad_model_dir: &str,
+    encoder_intra_threads: Option<usize>,
+    pool_size: usize,
+) -> anyhow::Result<inference::Engine> {
+    let resolved = model::ensure_model_variant(model_variant, model_dir).await?;
+    maybe_download_punct_model(punctuation, punct_model_dir, resolved).await;
+    maybe_download_vad_model(vad, vad_model_dir).await;
+    let punctuator = maybe_load_punctuator(punctuation, punct_model_dir, resolved);
+    let hotwords = resolve_hotwords(hotwords_file, hotwords_default);
+    let resolved_intra_threads = resolve_encoder_intra_threads(
+        encoder_intra_threads,
+        pool_size,
+        std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1),
+    );
+    let mut engine = inference::Engine::load_with_pools_threads_variant(
+        model_dir,
+        Some(resolved),
+        pool_size,
+        1,
+        0,
+        resolved_intra_threads,
+    )?
+    .with_punctuator(punctuator)
+    .with_itn(resolve_itn(itn, resolved))
+    .with_vad(
+        maybe_load_vad(vad, vad_model_dir),
+        build_vad_config(vad_threshold, vad_min_silence_ms),
+    );
+    if let Some(pairs) = hotwords {
+        engine = engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
+    }
+    log_rss();
+    Ok(engine)
+}
+
+/// Build the synchronous transcribe closure injected into the batch / watch
+/// runners: check out a pool triplet (blocking — the runner calls it from a
+/// blocking thread) and transcribe one file.
+fn make_transcribe_fn(engine: std::sync::Arc<inference::Engine>) -> batch::TranscribeFn {
+    std::sync::Arc::new(move |path: std::path::PathBuf| {
+        let path_str = path
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("non-UTF-8 path: {}", path.display()))?;
+        let mut guard = engine
+            .pool
+            .checkout_blocking()
+            .map_err(|e| anyhow::anyhow!("session pool closed: {e}"))?;
+        Ok(engine.transcribe_file(path_str, &mut guard)?)
+    })
+}
+
+/// Cancellation token fired on SIGINT, shared by the batch / watch runners for
+/// graceful shutdown (finish in-flight files, stop scheduling new ones).
+fn ctrl_c_token() -> tokio_util::sync::CancellationToken {
+    let token = tokio_util::sync::CancellationToken::new();
+    let inner = token.clone();
+    tokio::spawn(async move {
+        match tokio::signal::ctrl_c().await {
+            Ok(()) => inner.cancel(),
+            Err(e) => tracing::warn!("Failed to listen for Ctrl-C: {e}"),
+        }
+    });
+    token
+}
+
+/// Build the [`batch::BatchOptions`] shared by `transcribe-batch` and `watch`
+/// from the parsed CLI flags.
+fn build_batch_options(
+    input_dir: &str,
+    output_dir: &str,
+    pool_size: usize,
+    retries: u32,
+    out: &BatchOutputArgs,
+) -> anyhow::Result<batch::BatchOptions> {
+    Ok(batch::BatchOptions {
+        input_dir: std::path::PathBuf::from(input_dir),
+        output_dir: std::path::PathBuf::from(output_dir),
+        formats: batch::parse_formats(&out.format).map_err(|e| anyhow::anyhow!("{e}"))?,
+        render_opts: RenderOpts {
+            max_chars_per_line: out.max_chars_per_line.unwrap_or(80),
+            max_words_per_line: out.max_words_per_line.unwrap_or(14),
+            include_word_timestamps: out.word_timestamps,
+        },
+        move_to: out.move_to.as_deref().map(std::path::PathBuf::from),
+        delete_source: out.delete_source,
+        concurrency: pool_size,
+        retries,
+    })
+}
+
 /// Log a concise summary of the active ANE (Core ML / Apple Neural Engine)
 /// encoder backend at startup. No-op outside `--features ane`.
 ///
@@ -1341,40 +1624,26 @@ async fn main() -> anyhow::Result<()> {
             word_timestamps,
             stereo_speakers,
         } => {
-            let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
-            maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
-            maybe_download_vad_model(vad, &vad_model_dir).await;
-            let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
-            let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
             // Single-triplet pool for offline file transcription; when the
             // thread count is unset it defaults to every logical CPU (one
             // running triplet), else the explicit value is used as-is.
-            let resolved_intra_threads = resolve_encoder_intra_threads(
+            let engine = load_offline_engine(
+                &model_dir,
+                model_variant,
+                punctuation,
+                &punct_model_dir,
+                itn,
+                hotwords_file.as_deref(),
+                hotwords_default,
+                hotwords_boost,
+                vad,
+                vad_threshold,
+                vad_min_silence_ms,
+                &vad_model_dir,
                 encoder_intra_threads,
                 1,
-                std::thread::available_parallelism()
-                    .map(|n| n.get())
-                    .unwrap_or(1),
-            );
-            let mut engine = inference::Engine::load_with_pools_threads_variant(
-                &model_dir,
-                Some(resolved),
-                1,
-                1,
-                0,
-                resolved_intra_threads,
-            )?
-            .with_punctuator(punctuator)
-            .with_itn(resolve_itn(itn, resolved))
-            .with_vad(
-                maybe_load_vad(vad, &vad_model_dir),
-                build_vad_config(vad_threshold, vad_min_silence_ms),
-            );
-            if let Some(pairs) = hotwords {
-                engine =
-                    engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
-            }
-            log_rss();
+            )
+            .await?;
             let mut guard = engine.pool.checkout().await?;
             let result = if stereo_speakers {
                 let channels = inference::audio::load_audio_channels(&file)?;
@@ -1414,6 +1683,107 @@ async fn main() -> anyhow::Result<()> {
                     tracing::info!("Wrote {} export to {path}", format);
                 }
                 None => println!("{rendered}"),
+            }
+        }
+        Commands::TranscribeBatch {
+            input_dir,
+            output_dir,
+            engine: eng,
+            output: out,
+        } => {
+            let engine = load_offline_engine(
+                &eng.model_dir,
+                eng.model_variant,
+                eng.punctuation,
+                &eng.punct_model_dir,
+                eng.itn,
+                eng.hotwords_file.as_deref(),
+                eng.hotwords_default,
+                eng.hotwords_boost,
+                eng.vad,
+                eng.vad_threshold,
+                eng.vad_min_silence_ms,
+                &eng.vad_model_dir,
+                eng.encoder_intra_threads,
+                eng.pool_size,
+            )
+            .await?;
+            let opts = build_batch_options(
+                &input_dir,
+                &output_dir,
+                eng.pool_size,
+                out.retries.unwrap_or(0),
+                &out,
+            )?;
+            let summary = batch::run_batch(
+                &opts,
+                make_transcribe_fn(std::sync::Arc::new(engine)),
+                ctrl_c_token(),
+            )
+            .await?;
+            tracing::info!(
+                processed = summary.processed,
+                failed = summary.failed,
+                skipped = summary.skipped,
+                "batch finished"
+            );
+            if summary.interrupted {
+                // Same contract as `download`: SIGINT exits 130.
+                std::process::exit(130);
+            }
+            if summary.failed > 0 {
+                std::process::exit(1);
+            }
+        }
+        Commands::Watch {
+            input_dir,
+            output_dir,
+            engine: eng,
+            output: out,
+            poll_interval_ms,
+            settle_polls,
+        } => {
+            let engine = load_offline_engine(
+                &eng.model_dir,
+                eng.model_variant,
+                eng.punctuation,
+                &eng.punct_model_dir,
+                eng.itn,
+                eng.hotwords_file.as_deref(),
+                eng.hotwords_default,
+                eng.hotwords_boost,
+                eng.vad,
+                eng.vad_threshold,
+                eng.vad_min_silence_ms,
+                &eng.vad_model_dir,
+                eng.encoder_intra_threads,
+                eng.pool_size,
+            )
+            .await?;
+            let opts = batch::WatchOptions {
+                batch: build_batch_options(
+                    &input_dir,
+                    &output_dir,
+                    eng.pool_size,
+                    out.retries.unwrap_or(2),
+                    &out,
+                )?,
+                poll_interval: std::time::Duration::from_millis(poll_interval_ms),
+                settle_polls,
+            };
+            let summary = batch::run_watch(
+                &opts,
+                make_transcribe_fn(std::sync::Arc::new(engine)),
+                ctrl_c_token(),
+            )
+            .await?;
+            tracing::info!(
+                processed = summary.processed,
+                failed = summary.failed,
+                "watch stopped"
+            );
+            if summary.failed > 0 {
+                std::process::exit(1);
             }
         }
     }
@@ -2923,5 +3293,148 @@ mod tests {
     fn test_cli_serve_rejects_bad_itn_value() {
         let res = Cli::try_parse_from(["gigastt", "serve", "--itn", "sometimes"]);
         assert!(res.is_err(), "invalid itn mode must be rejected");
+    }
+
+    #[test]
+    fn test_cli_transcribe_batch_defaults() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let restores: Vec<EnvRestore> = ["GIGASTT_FORMAT", "GIGASTT_BATCH_RETRIES"]
+            .iter()
+            .map(|k| {
+                let r = EnvRestore(k, std::env::var(k).ok());
+                unsafe {
+                    std::env::remove_var(k);
+                }
+                r
+            })
+            .collect();
+        let cli = Cli::parse_from(["gigastt", "transcribe-batch", "samples/", "out/"]);
+        match cli.command {
+            Commands::TranscribeBatch {
+                input_dir,
+                output_dir,
+                engine,
+                output,
+            } => {
+                assert_eq!(input_dir, "samples/");
+                assert_eq!(output_dir, "out/");
+                assert_eq!(engine.pool_size, 2);
+                assert_eq!(engine.model_variant, None);
+                assert_eq!(output.format, "txt,json");
+                assert_eq!(output.move_to, None);
+                assert!(!output.delete_source);
+                assert_eq!(output.retries, None);
+            }
+            _ => panic!("expected TranscribeBatch"),
+        }
+        drop(restores);
+    }
+
+    #[test]
+    fn test_cli_transcribe_batch_flags() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "transcribe-batch",
+            "in/",
+            "out/",
+            "--format",
+            "md,srt",
+            "--move-to",
+            "in/done",
+            "--pool-size",
+            "4",
+            "--retries",
+            "1",
+        ]);
+        match cli.command {
+            Commands::TranscribeBatch { engine, output, .. } => {
+                assert_eq!(engine.pool_size, 4);
+                assert_eq!(output.format, "md,srt");
+                assert_eq!(output.move_to, Some("in/done".to_string()));
+                assert_eq!(output.retries, Some(1));
+            }
+            _ => panic!("expected TranscribeBatch"),
+        }
+    }
+
+    #[test]
+    fn test_cli_transcribe_batch_move_to_conflicts_with_delete_source() {
+        let res = Cli::try_parse_from([
+            "gigastt",
+            "transcribe-batch",
+            "in/",
+            "out/",
+            "--move-to",
+            "done/",
+            "--delete-source",
+        ]);
+        assert!(res.is_err(), "--move-to and --delete-source must conflict");
+    }
+
+    #[test]
+    fn test_cli_watch_defaults() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let restores: Vec<EnvRestore> = [
+            "GIGASTT_WATCH_POLL_INTERVAL_MS",
+            "GIGASTT_WATCH_SETTLE_POLLS",
+            "GIGASTT_FORMAT",
+        ]
+        .iter()
+        .map(|k| {
+            let r = EnvRestore(k, std::env::var(k).ok());
+            unsafe {
+                std::env::remove_var(k);
+            }
+            r
+        })
+        .collect();
+        let cli = Cli::parse_from(["gigastt", "watch", "in/", "out/"]);
+        match cli.command {
+            Commands::Watch {
+                input_dir,
+                output_dir,
+                poll_interval_ms,
+                settle_polls,
+                engine,
+                output,
+            } => {
+                assert_eq!(input_dir, "in/");
+                assert_eq!(output_dir, "out/");
+                assert_eq!(poll_interval_ms, 1000);
+                assert_eq!(settle_polls, 2);
+                assert_eq!(engine.pool_size, 2);
+                assert_eq!(output.format, "txt,json");
+            }
+            _ => panic!("expected Watch"),
+        }
+        drop(restores);
+    }
+
+    #[test]
+    fn test_cli_watch_flags() {
+        let cli = Cli::parse_from([
+            "gigastt",
+            "watch",
+            "in/",
+            "out/",
+            "--poll-interval-ms",
+            "250",
+            "--settle-polls",
+            "4",
+            "--delete-source",
+        ]);
+        match cli.command {
+            Commands::Watch {
+                poll_interval_ms,
+                settle_polls,
+                output,
+                ..
+            } => {
+                assert_eq!(poll_interval_ms, 250);
+                assert_eq!(settle_polls, 4);
+                assert!(output.delete_source);
+            }
+            _ => panic!("expected Watch"),
+        }
     }
 }
