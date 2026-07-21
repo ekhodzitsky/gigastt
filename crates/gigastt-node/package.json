@@ -3,7 +3,21 @@
   "version": "2.11.3",
   "description": "On-device Russian speech-to-text (GigaAM v3) — Node.js binding",
   "license": "MIT",
-  "repository": "https://github.com/ekhodzitsky/gigastt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekhodzitsky/gigastt.git",
+    "directory": "crates/gigastt-node"
+  },
+  "homepage": "https://github.com/ekhodzitsky/gigastt#readme",
+  "keywords": [
+    "russian",
+    "speech-to-text",
+    "stt",
+    "gigaam",
+    "speech-recognition",
+    "transcription",
+    "offline"
+  ],
   "main": "loader.js",
   "types": "gigastt.d.ts",
   "files": [

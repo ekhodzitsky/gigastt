@@ -4,6 +4,28 @@ Node.js binding for [gigastt](https://github.com/ekhodzitsky/gigastt) — on-dev
 
 Wraps the synchronous `gigastt-core` engine: models are **side-loaded** (no HTTP download) and inference runs on a libuv worker thread via napi's `AsyncTask`, so calls return **Promises** and never block the event loop. Errors are thrown JS `Error`s and objects are garbage-collected (no manual free). onnxruntime is statically linked, so the `.node` addon is self-contained.
 
+## In-process (this package) vs sidecar server
+
+This package embeds the engine **inside your Node/Electron process** — desktop JS
+with no sidecar. The alternative is shipping `gigastt serve` next to your app and
+talking to it over WebSocket/REST. Pick consciously:
+
+| | In-process (`npm install gigastt`) | Sidecar (`gigastt serve` + WS/REST client) |
+|---|---|---|
+| Deployment | Single `npm install` — one prebuilt binary fetched by postinstall | Binary discovery on the user's machine, spawn, supervision, port selection |
+| Interface | Plain JS calls; errors are thrown `Error`s | Wire protocol over a loopback port (`/v1/ws`, REST, SSE) |
+| Versioning | App and engine are one artifact, shipped together | App must gate on the discovered server's version |
+| Memory | Model + pool live in your app's process (budget ~400 MB RSS per pool session) | Model lives in the separate server process |
+| Concurrency | One engine/pool instance per app process | One server shared by several apps/clients |
+| Failure isolation | An engine crash takes the app down (and vice versa) | Server crashes are isolated; the app survives and can restart it |
+| Upgrades | Redeploy the app | Upgrade the server independently of any client |
+
+Rule of thumb: a desktop app that owns its whole audio pipeline (an Electron
+recorder, a dictation tool) is simplest in-process; a setup shared by several
+clients, or one that must survive engine crashes, belongs behind the sidecar.
+For Electron, construct the `Engine` in the **main process** and keep one
+`Stream` per audio channel — see [`examples/electron_main.mjs`](../../examples/electron_main.mjs).
+
 ## API
 
 | Type | Members |

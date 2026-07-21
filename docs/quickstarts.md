@@ -42,7 +42,7 @@ except g.GigasttError.ModelNotFound:
     ...
 ```
 
-## Node — `npm install gigastt`
+## Node / Electron — `npm install gigastt`
 
 ```js
 const { Engine, Stream } = require('gigastt');
@@ -60,6 +60,14 @@ console.log((await s.flush()).map((seg) => seg.text));
 // errors are thrown JS Errors (message prefixed with a stable code)
 try { new Engine('/no/such/dir'); } catch (e) { /* e.message starts "ModelNotFound:" */ }
 ```
+
+The engine runs **in-process** — no sidecar server, port, or version gate — which
+makes it the shortest path for desktop JS. In an Electron app, construct the
+`Engine` in the main process and keep one `Stream` per audio channel (e.g. mic +
+system): [examples/electron_main.mjs](../examples/electron_main.mjs). If you need
+crash isolation or one engine shared by several apps instead, run `gigastt serve`
+and use a client SDK (below); the trade-offs are tabulated in
+[crates/gigastt-node/README.md](../crates/gigastt-node/README.md).
 
 ## Swift — SwiftPM
 

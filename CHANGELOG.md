@@ -347,6 +347,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (indistinguishable from a crash) while the model loads. A shutdown signal
   during loading exits cleanly without serving. The heavy load work runs on a
   blocking thread so the bootstrap responder stays responsive.
+- **Node.js binding: the `gigastt` npm package (napi-rs).** `crates/gigastt-node`
+  wraps the engine in an idiomatic JS API — `new Engine(modelDir, poolSize?)`,
+  `engine.transcribeFile(path)`, `stream.processChunk(pcm16, sampleRate)` /
+  `stream.flush()` — running inference on a libuv worker thread via napi's
+  `AsyncTask` (Promises, never blocking the event loop), with failures thrown as
+  JS `Error`s prefixed by a stable code (`ModelNotFound`, `InvalidAudio`,
+  `PoolExhausted`, `Inference`) matching the C-ABI / UniFFI contract across
+  bindings. It is a single JS-only package: the postinstall downloads exactly one
+  prebuilt `gigastt.<platform>.node` — onnxruntime statically linked, so the addon
+  is self-contained — from the `node-v<version>` GitHub release. Prebuilt
+  platforms: `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc`
+  (Intel macOS omitted — ort ships no onnxruntime for it), built per native runner
+  by the Node Prebuilds workflow. Desktop JS (Electron) gets an in-process engine
+  with no sidecar to spawn. See `crates/gigastt-node/README.md`.
+- **Pre-quantized INT8 model bundle: `gigastt download --prequantized`.**
+  Integrators can now skip the ~844 MB FP32 encoder download, the ~2-minute
+  on-device INT8 quantization pass, and the `protoc` build dependency by fetching
+  a pre-quantized bundle (INT8 encoder + decoder + joiner + vocab) directly from a
+  pinned GitHub Release; the engine prefers the INT8 encoder and runs from this
+  set alone (verified: an INT8-only model directory loads and transcribes). The
+  bundle is quantized for both heads, SHA-256 pinned, minisign-signed, and
+  published by the `release-model` workflow. Intended for embedding and
+  air-gapped installs.
+- **Android AAR packaging pipeline (experimental).** `packaging/android/` is a
+  Gradle library module (JNA + UniFFI-generated Kotlin, `jniLibs` source sets,
+  consumer ProGuard rules), and the `android-aar` workflow cross-builds
+  `libgigastt_uniffi.so` for `arm64-v8a` / `armeabi-v7a` / `x86_64` with
+  cargo-ndk, generates the Kotlin bindings, and assembles the AAR (Maven
+  publication gated on credentials). The same release also ships FFI tarballs —
+  `gigastt-ffi` cdylib + staticlib + the cbindgen C header, onnxruntime
+  statically linked — for `x86_64` and `aarch64` Linux, a drop-in embedding
+  artifact for ARM servers and Raspberry Pi.
+- **iOS xcframework + SwiftPM package.** `packaging/swift/` ships a SwiftPM
+  package (swift-tools 5.9, iOS 15+) whose binary target wraps
+  `GigasttFFI.xcframework` — the `gigastt-ffi` static library with onnxruntime
+  statically linked, so each slice is self-contained — plus a safe Swift wrapper
+  over the C ABI: `Engine` (`transcribeFile`) and `Stream` (`processChunk` /
+  `flush`) with RAII handle management, typed `GigasttError`, and Codable structs
+  matching the streaming JSON. The release workflow builds the xcframework and
+  pins its URL/checksum into `Package.swift`.
 
 ### Changed
 
