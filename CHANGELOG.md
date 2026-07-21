@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **WebSocket protocol fully documented for integrators.** The `docs/api.md`
+  WebSocket section is now a complete human-readable reference — every `ready`,
+  `partial`/`final` (including per-word `start`/`end`/`confidence`/`speaker`),
+  and `error` field, the `configure`/`stop` semantics (`stop` flushes trailing
+  audio and emits a last `final` — the explicit end-of-stream marker), the full
+  error-code and close-code tables, keepalive behavior, `/health` vs `/ready`
+  lifecycle (including the bootstrap responder and the `version` field for
+  version gates without exec-ing the binary), and session/frame limits with
+  guidance for >1 h sessions. `docs/troubleshooting.md` gains the matching
+  failure scenarios: port-already-in-use and orphaned sidecars, the one-hour
+  session cap, raw lowercase WS finals, slow first run, pre-2.0.14 CoreML
+  builds, a capture/startup/config triage checklist, and log-sharing hygiene.
 - **File-transcription duration cap lowered from 2 hours to 30 minutes.** The cap
   bounds the fully decoded PCM buffer of an upload; 30 minutes ≈ the largest
   uncompressed PCM16@16kHz file the default 50 MiB body limit admits and bounds

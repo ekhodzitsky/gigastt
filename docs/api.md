@@ -7,21 +7,90 @@ Machine-readable specs: [`docs/asyncapi.yaml`](asyncapi.yaml) (WebSocket) and
 ## WebSocket — real-time streaming
 
 Connect to `ws://127.0.0.1:9876/v1/ws`, send PCM16 audio frames, receive transcription
-in real time.
+in real time. This section is the human-readable protocol reference; the
+machine-readable schema (same fields, same error codes) lives in
+[`docs/asyncapi.yaml`](asyncapi.yaml). Field-level source of truth:
+`crates/gigastt-core/src/protocol/mod.rs`.
 
 ```
 Client                            Server
   |-------- connect --------------> |
-  | <------- ready ----------------- |  {type:"ready", version:"1.0"}
+  | <------- ready ----------------- |  {type:"ready", model, version, supported_rates, ...}
   |------- configure (optional) --> |  {type:"configure", sample_rate:16000}
   |-------- binary PCM16 ---------> |
-  | <------- partial --------------- |  {type:"partial", text:"привет"}
-  | <------- final ----------------- |  {type:"final", text:"Привет, как дела?"}
+  | <------- partial --------------- |  {type:"partial", text, words[], ...}
+  |-------- binary PCM16 ---------> |
+  | <------- final ----------------- |  {type:"final", text, words[], ...}
+  |--------- stop ----------------> |  {type:"stop"}
+  | <------- final ----------------- |  trailing words flushed, then the client closes
 ```
 
-**Supported sample rates:** 8, 16, 24, 44.1, 48 kHz (default 48 kHz, resampled to
-16 kHz internally). Protocol messages are versioned via the `type` field; new fields
-are additive only.
+**Versioning.** Protocol messages are discriminated by the `type` field; the
+current version is `1.0`, reported in `ready.version`. New fields are additive
+only — never removed or renamed — so clients must ignore fields they do not
+know. A client may announce its version via `configure.protocol_version`; an
+unsupported value is rejected with `unsupported_protocol_version`.
+
+### Server → Client messages
+
+#### `ready`
+
+Sent immediately after the WebSocket handshake, before any audio is accepted.
+
+```json
+{
+  "type": "ready",
+  "model": "gigaam-v3-rnnt",
+  "sample_rate": 48000,
+  "version": "1.0",
+  "supported_rates": [8000, 16000, 24000, 44100, 48000],
+  "diarization": false
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `model` | string | Loaded head: `gigaam-v3-rnnt`, `gigaam-v3-e2e-rnnt`, `gigaam-multilingual-ctc`, or `gigaam-multilingual-large-ctc` |
+| `sample_rate` | integer | Default input rate in Hz (48000 for backward compatibility) — used when no `configure` overrides it |
+| `version` | string | WebSocket protocol version (semver-lite `major.minor`) |
+| `supported_rates` | integer[] | Accepted input sample rates in Hz; omitted if empty. Use it instead of hardcoding a rate list |
+| `diarization` | boolean | `true` when the speaker-encoder model is loaded and diarization can be enabled per session; omitted when `false` |
+| `min_protocol_version` | string | Oldest protocol version the server accepts; omitted when equal to `version` (only one version supported) |
+
+#### `partial` / `final`
+
+Both carry the same `TranscriptSegment` payload; `final` means the utterance is
+complete (endpointing detected, or the stream was flushed by `stop`/shutdown).
+
+```json
+{
+  "type": "final",
+  "text": "Привет, как дела?",
+  "timestamp": 1712700001.456,
+  "is_final": true,
+  "words": [
+    {"word": "привет", "start": 0.0, "end": 0.4, "confidence": 0.97},
+    {"word": "как", "start": 0.5, "end": 0.7, "confidence": 0.93},
+    {"word": "дела", "start": 0.8, "end": 1.1, "confidence": 0.95}
+  ]
+}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `text` | string | Joined transcript text (see post-processing below) |
+| `timestamp` | number | Unix time (seconds) when the segment was produced |
+| `is_final` | boolean | Mirrors the `type` discriminator (`true` in `final`) |
+| `words[]` | object[] | Per-word detail; may be empty on flushed/empty finals |
+
+Each `words[]` entry:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `word` | string | Recognized word (BPE tokens joined, raw decoder casing) |
+| `start` / `end` | number | Word boundaries in seconds from the start of the stream |
+| `confidence` | number | Mean softmax confidence over the word's BPE tokens, 0.0–1.0. Real decoder output — use it instead of a hardcoded constant |
+| `speaker` | integer | Zero-based speaker label; present only when diarization is active |
 
 **Transcript post-processing.** `partial` messages are always the raw decoder
 hypothesis (lowercase, no punctuation) and may change with more audio. `final`
@@ -33,17 +102,140 @@ for the bare `rnnt` head, off for `e2e_rnnt` which is already punctuated). The
 is rewritten. The same applies to SSE `final` events on `/v1/transcribe/stream`
 (server defaults; there are no per-request parameters there yet).
 
-Per session, the client can override the server policy with additive `configure`
-fields (sent before the first audio frame):
+#### `error`
+
+```json
+{"type": "error", "message": "Server busy, try again later", "code": "timeout", "retry_after_ms": 30000}
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `message` | string | Generic user-facing description (internal details are never leaked) |
+| `code` | string | Machine-readable code — branch on this, not on `message` (table below) |
+| `retry_after_ms` | integer | Suggested backoff in milliseconds; present only for transient backpressure (`timeout` on pool saturation). Honor it instead of guessing a retry delay |
+
+### Client → Server messages
+
+#### `configure`
+
+Optional; must be sent **before the first audio frame** (otherwise the server
+replies with `configure_too_late` and keeps the previous settings).
 
 ```json
 {"type": "configure", "sample_rate": 16000, "punctuation": false, "itn": false}
 ```
 
-Omitting a field keeps the server default; repeated `configure` messages compose
-(an absent field leaves the previous value). Asking for `punctuation: true` on a
-server without a punctuation model is a graceful no-op — finals stay raw, no
-error is emitted.
+| Field | Type | Meaning |
+|---|---|---|
+| `sample_rate` | integer | Input rate in Hz; must be one of `ready.supported_rates`, else `invalid_sample_rate` (the session continues at the previous rate) |
+| `diarization` | boolean | Enable speaker diarization for this session (requires `ready.diarization: true`) |
+| `protocol_version` | string | Version the client wants to speak; unsupported values are rejected with `unsupported_protocol_version` and the server ends the session |
+| `punctuation` | boolean | Per-session punctuation/casing override for `final` segments only. `true` on a server without a punctuation model is a graceful no-op — finals stay raw, no error |
+| `itn` | boolean | Per-session inverse text normalization override (`final` segments only) |
+
+All fields are optional. Omitting a field keeps the server default; repeated
+`configure` messages compose (an absent field leaves the previous value).
+
+#### `stop`
+
+```json
+{"type": "stop"}
+```
+
+Asks the server to **finalize the session**: it decodes any audio still buffered
+since the last partial (trailing words are not lost), emits one last `final`
+message — possibly with empty `text` if nothing was pending — and only then is
+the session over. The correct end-of-stream pattern is: send `stop`, wait for
+the `final`, then close the socket. Do **not** close immediately after the last
+audio frame or insert a fixed drain delay — the `final` after `stop` is the
+explicit, lossless end marker.
+
+#### Binary audio frames
+
+Raw PCM16 signed little-endian, mono, at the negotiated rate (default 48 kHz;
+resampled to 16 kHz internally). Frame size up to `--ws-frame-max-bytes`
+(default 512 KiB ≈ 16 s at 16 kHz). Odd-length frames are fine — the trailing
+byte is carried into the next frame. Empty frames are tolerated up to a
+per-session cap (1000) and then closed with `policy_violation` + close code
+1008.
+
+### Keepalive
+
+The server sends a WebSocket **ping every 30 s** and closes the connection after
+**2 consecutive pings** with no inbound frame in between (≈ 90 s detection of a
+half-open peer). Any inbound frame — pong, binary audio, or text — counts as
+liveness and resets the counter. Standard WS clients answer pings automatically;
+you do not need to send your own pings.
+
+### Error codes
+
+Codes emitted on the WebSocket (`error` message, sometimes followed by a close
+frame). The same enum is declared in [`docs/asyncapi.yaml`](asyncapi.yaml).
+
+| Code | Session after | Meaning |
+|---|---|---|
+| `timeout` | ends (never opened) | Pool saturation: no inference slot freed within the checkout window (default 30 s). `retry_after_ms` is set — wait and reconnect |
+| `pool_closed` | ends | Server is shutting down, pool closed to new sessions |
+| `idle_timeout` | ends (close 1001) | No frames for `--idle-timeout-secs` (default 300 s) |
+| `max_session_duration_exceeded` | ends (close 1008) | Wall-clock session cap `--max-session-secs` (default 3600 s) hit; a `final` is flushed before the close |
+| `policy_violation` | ends (close 1008) | Empty-frame spam (over 1000 empty binary frames) |
+| `inference_timeout` | ends | One inference run exceeded `--inference-timeout-secs` (default 600 s) |
+| `inference_error` | continues | Inference failed on the last chunk (bad audio format, etc.); the session state is intact |
+| `inference_panic` | continues, state reset | Inference panicked; the decoder state was reset, so earlier audio context is lost — already-received `final`s remain valid |
+| `configure_too_late` | continues | `configure` arrived after the first audio frame; previous settings kept |
+| `invalid_sample_rate` | continues | Rate not in `supported_rates`; previous rate kept |
+| `unsupported_protocol_version` | ends | Client requested a protocol version the server does not speak |
+| `payload_too_large` | — | REST/SSE surface (body over `--body-limit-bytes`). On WS, an oversized frame is rejected by the transport with close code 1009 instead |
+
+### Close codes
+
+| Code | When |
+|---|---|
+| 1001 Going Away | Graceful shutdown drain (SIGTERM), `idle_timeout`, or keepalive ping timeout. A `final` is flushed first on shutdown |
+| 1008 Policy Violation | `max_session_duration_exceeded`, `policy_violation` |
+| 1009 Message Too Big | A frame exceeded `--ws-frame-max-bytes` |
+| 1006 Abnormal Closure | Never sent by the server — the client observes it when an established socket drops with no close frame (process killed, crash, middlebox). Do not confuse it with an *upgrade refusal*: while the model is still loading, `/v1/ws` answers HTTP 503 `{"code":"initializing"}` before any socket exists — poll `/ready` and retry later instead of killing the process. If the port listens but even `/health` fails, suspect an orphaned process holding the port — see [troubleshooting](troubleshooting.md) |
+
+### Session lifecycle: `/health` vs `/ready`
+
+Use the HTTP probes to drive client-side state machines — do not spawn
+`gigastt --version` or guess from TCP connectability:
+
+- `GET /health` — **liveness**. Returns 200 as soon as the listener is up,
+  including during first-run model download/quantization, when it is served by a
+  minimal bootstrap responder:
+  `{"status":"ok","model":"loading","version":"2.13.0"}`. Once the engine is up:
+  `{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}`.
+  The `version` field is present in **both** phases — use it for version gates
+  instead of executing the binary.
+- `GET /ready` — **readiness**. 200 `{"status":"ready","pool_available":N,"pool_total":M}`
+  when at least one inference slot is free; 503 with
+  `{"status":"not_ready","reason":"initializing"}` while the model loads,
+  `"pool_exhausted"` when all slots are busy, or `"shutting_down"` during drain.
+  Gate first audio on `/ready`, gate process liveness on `/health`.
+
+### Session and frame limits
+
+Defaults; every limit is a CLI flag with a matching `GIGASTT_*` env var
+(see `gigastt serve --help`):
+
+| Limit | Default | Behavior at the limit |
+|---|---|---|
+| `--pool-size` | 2 | Concurrent inference sessions; the next connect waits up to 30 s, then `timeout` + `retry_after_ms` (WS) or 503 + `Retry-After` (REST) |
+| `--idle-timeout-secs` | 300 | No frames for 5 min → `idle_timeout` + close 1001. Streaming silence (quiet PCM) keeps the session alive — silence is still audio |
+| `--max-session-secs` | 3600 | Wall-clock cap → `max_session_duration_exceeded` + flushed `final` + close 1008. `0` disables |
+| `--ws-frame-max-bytes` | 512 KiB | Larger frame → close 1009 |
+| `--inference-timeout-secs` | 600 | One hung inference run → `inference_timeout`, session ends |
+
+**Long sessions (interviews over an hour):** the 1-hour cap is the default, not
+a hard limit — raise `--max-session-secs` (or set `0`) and keep frames flowing
+so the idle timeout never trips. Reconnecting on the cap is also safe: the
+server flushes a `final` before closing, so nothing recognized is lost. See
+[troubleshooting](troubleshooting.md) for the failure scenarios these limits
+produce. Embedding the binary as a managed sidecar (spawn, readiness probing,
+version gating) is covered by the embedding guide (`docs/embedding.md`, in
+progress); the onnxruntime linking trade-offs are in
+[embedding-packaging](embedding-packaging.md).
 
 ## REST
 
