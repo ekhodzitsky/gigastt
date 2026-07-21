@@ -785,6 +785,8 @@ mod tests {
             supported_rates: vec![16000],
             diarization: false,
             min_protocol_version: None,
+            max_session_secs: 3600,
+            idle_timeout_secs: 300,
         };
         let json = json_text(&msg);
         assert!(json.contains("\"type\":\"ready\""));

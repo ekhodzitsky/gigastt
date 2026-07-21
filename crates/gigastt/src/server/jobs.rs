@@ -983,6 +983,7 @@ mod tests {
             text: "ok".into(),
             words: vec![],
             duration_s: 1.0,
+            confidence: None,
         })
     }
 

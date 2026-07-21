@@ -538,6 +538,7 @@ mod tests {
             text: "привет как дела".to_string(),
             words: sample_words(),
             duration_s: 1.4,
+            confidence: None,
         }
     }
 
@@ -718,6 +719,7 @@ mod tests {
                 speaker: None,
             }],
             duration_s: 0.3,
+            confidence: None,
         };
         let md = to_md(&result, true);
         assert!(md.contains("speakers: 0"));
@@ -731,6 +733,7 @@ mod tests {
             text: String::new(),
             words: Vec::new(),
             duration_s: 0.0,
+            confidence: None,
         };
         let md = to_md(&result, true);
         // Empty word list means the appendix table is omitted entirely.
@@ -750,6 +753,7 @@ mod tests {
                 speaker: Some(2),
             }],
             duration_s: 0.5,
+            confidence: None,
         };
         let md = to_md(&result, true);
         // Pipe in the word must be escaped to avoid breaking the table column.
@@ -872,6 +876,7 @@ mod tests {
             text: String::new(),
             words: Vec::new(),
             duration_s: 0.0,
+            confidence: None,
         };
         let md = to_md_segments(&result, 80, 14);
         // No words means no section headers, but the frontmatter still renders.

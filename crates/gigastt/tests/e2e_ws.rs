@@ -46,6 +46,11 @@ async fn test_ws_connect_receives_ready() {
         rates.contains(&serde_json::json!(48000)),
         "supported_rates should contain 48000"
     );
+
+    // Session caps are always advertised (server defaults: 3600s session,
+    // 300s idle) so clients can plan reconnects before a close frame.
+    assert_eq!(ready["max_session_secs"], 3600);
+    assert_eq!(ready["idle_timeout_secs"], 300);
 }
 
 // ---------------------------------------------------------------------------
@@ -1466,5 +1471,61 @@ async fn test_ws_punctuation_override_survives_diarization_reconfigure() {
     assert_eq!(
         text, raw,
         "punctuation=false must survive the diarization state recreation: {text}"
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Session limits in `ready` + segment-level confidence
+// ---------------------------------------------------------------------------
+
+/// The `ready` message advertises the server's session caps verbatim so a
+/// client can plan a reconnect before hitting `max_session_duration_exceeded`
+/// or an idle close. Distinctive non-default values prove the payload is
+/// wired to the live config, not hardcoded.
+#[ignore]
+#[tokio::test]
+async fn test_ws_ready_reports_configured_session_limits() {
+    let model_dir = common::model_dir();
+    let limits = gigastt::server::RuntimeLimits {
+        max_session_secs: 4567,
+        idle_timeout_secs: 123,
+        ..Default::default()
+    };
+    let (port, _shutdown) = common::start_server_with_limits(&model_dir, limits).await;
+
+    let (_sink, _stream, ready) = common::ws_connect(port).await;
+
+    assert_eq!(ready["max_session_secs"], 4567);
+    assert_eq!(ready["idle_timeout_secs"], 123);
+}
+
+/// A final segment decoded from real speech carries a segment-level
+/// `confidence` aggregate in [0, 1] alongside the per-word scores.
+#[ignore]
+#[tokio::test]
+async fn test_ws_final_carries_segment_confidence() {
+    let model_dir = common::model_dir();
+    let (port, _shutdown) = common::start_server(&model_dir).await;
+
+    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    sink.send(Message::Text(
+        serde_json::to_string(&serde_json::json!({"type": "configure", "sample_rate": 16000}))
+            .unwrap()
+            .into(),
+    ))
+    .await
+    .unwrap();
+
+    let (_partials, final_seg) = stream_golos_and_collect(&mut sink, &mut stream).await;
+    assert!(
+        !joined_words(&final_seg).is_empty(),
+        "speech fixture must decode to words"
+    );
+    let confidence = final_seg["confidence"]
+        .as_f64()
+        .expect("final with words must carry a numeric confidence");
+    assert!(
+        (0.0..=1.0).contains(&confidence),
+        "segment confidence must lie in [0, 1], got {confidence}"
     );
 }

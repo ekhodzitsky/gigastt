@@ -573,6 +573,8 @@ async fn handle_ws_inner(
         supported_rates: SUPPORTED_RATES.to_vec(),
         diarization: diarization_available,
         min_protocol_version: None,
+        max_session_secs: limits.max_session_secs,
+        idle_timeout_secs: limits.idle_timeout_secs,
     };
     send_server_message(&mut sink, &ready).await?;
 

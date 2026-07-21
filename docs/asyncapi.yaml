@@ -11,7 +11,8 @@ info:
 
     1. Client connects to `ws://{host}:{port}/v1/ws` (default: `ws://127.0.0.1:9876/v1/ws`).
        - Server binds `127.0.0.1` by default; use `--bind-all` (or `GIGASTT_ALLOW_BIND_ANY=1`) plus `--host 0.0.0.0` for Docker.
-    2. Server sends `ready` message with model info, protocol version, `supported_rates`, and `diarization` capability
+    2. Server sends `ready` message with model info, protocol version, `supported_rates`, `diarization`
+       capability, and the configured session caps (`max_session_secs`, `idle_timeout_secs`)
     3. (Optional) Client sends `configure` to pick a non-default `sample_rate`, enable `diarization`,
        and/or override the post-processing policy (`punctuation`, `itn`)
     4. Client streams raw PCM16 audio as binary frames (default 48 kHz mono, or the negotiated rate)
@@ -255,6 +256,20 @@ components:
           type: boolean
           example: false
           description: Whether speaker diarization is available
+        max_session_secs:
+          type: integer
+          example: 3600
+          description: >-
+            Wall-clock session cap in seconds (server `--max-session-secs`;
+            `0` = no cap). Always sent so clients can plan a reconnect before
+            the server closes the socket with `max_session_duration_exceeded`.
+        idle_timeout_secs:
+          type: integer
+          example: 300
+          description: >-
+            Idle timeout in seconds (server `--idle-timeout-secs`): the server
+            closes the session when no frame arrives within this window.
+            Always sent.
 
     PartialMessage:
       type: object
@@ -284,6 +299,18 @@ components:
           items:
             $ref: "#/components/schemas/WordInfo"
           description: Word-level transcription with timestamps
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.93
+          description: >-
+            Mean confidence across the segment's words (duration-weighted
+            average of `words[].confidence`; plain average when every word has
+            zero duration). An average of per-word softmax scores — not a
+            calibrated probability that the segment is correct. Omitted when
+            the segment has no words.
 
     FinalMessage:
       type: object
@@ -314,6 +341,18 @@ components:
           items:
             $ref: "#/components/schemas/WordInfo"
           description: Word-level transcription with timestamps
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.95
+          description: >-
+            Mean confidence across the segment's words (duration-weighted
+            average of `words[].confidence`; plain average when every word has
+            zero duration). An average of per-word softmax scores — not a
+            calibrated probability that the segment is correct. Omitted when
+            the segment has no words.
 
     ErrorMessage:
       type: object

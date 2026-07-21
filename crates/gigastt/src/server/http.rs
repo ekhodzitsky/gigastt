@@ -163,6 +163,12 @@ pub struct TranscribeResponse {
     pub words: Vec<gigastt_core::inference::WordInfo>,
     /// Duration of the submitted audio in seconds.
     pub duration: f64,
+    /// Mean confidence across all words (duration-weighted average of
+    /// `words[].confidence`): an average of per-word softmax scores, not a
+    /// calibrated transcript probability. Additive; omitted when no words
+    /// were decoded so the pre-field response shape is preserved.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f32>,
     /// Transcript segments grouped from word timestamps, present only when the
     /// caller passed `?segments=true`. Additive: absent from the default response,
     /// so existing clients that read `text` / `words` / `duration` are unaffected.
@@ -523,13 +529,18 @@ fn sse_data_payload(
     match result {
         Ok(seg) => {
             let ty = if seg.is_final { "final" } else { "partial" };
-            serde_json::json!({
+            let mut payload = serde_json::json!({
                 "type": ty,
                 "text": seg.text,
                 "timestamp": seg.timestamp,
                 "words": seg.words,
-            })
-            .to_string()
+            });
+            // Same omission contract as the WS segment payload: no words →
+            // no `confidence` key at all.
+            if let Some(confidence) = seg.confidence {
+                payload["confidence"] = confidence.into();
+            }
+            payload.to_string()
         }
         Err(err) => serde_json::json!({
             "type": "error",
@@ -887,6 +898,7 @@ pub async fn transcribe(
                     text: result.text,
                     words: result.words,
                     duration: result.duration_s,
+                    confidence: result.confidence,
                     segments,
                 })
                 .into_response())
@@ -1383,6 +1395,7 @@ pub async fn get_job_result(
             text: result.text,
             words: result.words,
             duration: result.duration_s,
+            confidence: result.confidence,
             segments,
         })
         .into_response())
@@ -1492,6 +1505,7 @@ mod tests {
             words: vec![],
 
             duration: 1.5,
+            confidence: None,
             segments: None,
         };
         let json = serde_json::to_string(&resp).unwrap();
@@ -1779,6 +1793,23 @@ mod tests {
         let partial_payload = sse_data_payload(&Ok(partial));
         let v: serde_json::Value = serde_json::from_str(&partial_payload).unwrap();
         assert_eq!(v["type"], "partial");
+    }
+
+    #[test]
+    fn test_sse_data_payload_confidence_present_only_when_some() {
+        // A segment with words carries the aggregate; an empty one omits the
+        // key entirely, matching the WS payload contract.
+        let mut seg = gigastt_core::inference::TranscriptSegment::empty_final();
+        seg.confidence = Some(0.85);
+        let payload = sse_data_payload(&Ok(seg));
+        let v: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        let c = v["confidence"].as_f64().expect("numeric confidence");
+        assert!((c - 0.85).abs() < 1e-6, "got {c}");
+
+        let empty = gigastt_core::inference::TranscriptSegment::empty_final();
+        let payload = sse_data_payload(&Ok(empty));
+        let v: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        assert!(v.get("confidence").is_none());
     }
 
     #[tokio::test]
@@ -2110,6 +2141,7 @@ mod tests {
                 WordInfo::new("мир", 0.6, 1.0, 0.97, Some(0)),
             ],
             duration_s: 1.0,
+            confidence: None,
         }
     }
 
@@ -2450,12 +2482,40 @@ mod tests {
             text: "hello".into(),
             words: vec![],
             duration: 1.5,
+            confidence: None,
             segments: None,
         };
         let v = serde_json::to_value(&resp).unwrap();
         assert!(v.get("segments").is_none());
         assert_eq!(v["text"], "hello");
         assert_eq!(v["duration"], 1.5);
+    }
+
+    #[test]
+    fn test_transcribe_response_confidence_present_only_when_some() {
+        // With words decoded, the aggregate rides the top-level response;
+        // without words the key is omitted so the response shape matches the
+        // pre-field contract exactly.
+        let with = TranscribeResponse {
+            text: "hello".into(),
+            words: vec![],
+            duration: 1.5,
+            confidence: Some(0.87),
+            segments: None,
+        };
+        let v = serde_json::to_value(&with).unwrap();
+        let c = v["confidence"].as_f64().expect("numeric confidence");
+        assert!((c - 0.87).abs() < 1e-6, "got {c}");
+
+        let without = TranscribeResponse {
+            text: String::new(),
+            words: vec![],
+            duration: 0.0,
+            confidence: None,
+            segments: None,
+        };
+        let v = serde_json::to_value(&without).unwrap();
+        assert!(v.get("confidence").is_none());
     }
 
     #[test]
@@ -2470,6 +2530,7 @@ mod tests {
             text: "привет мир".into(),
             words: words.clone(),
             duration: 1.0,
+            confidence: None,
             segments: Some(to_segments(&words, 80, 14)),
         };
         let v = serde_json::to_value(&resp).unwrap();

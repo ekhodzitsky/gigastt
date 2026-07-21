@@ -29,6 +29,15 @@ pub enum ServerMessage {
         /// to `version` (i.e. only one version is supported) for backward compat.
         #[serde(skip_serializing_if = "Option::is_none")]
         min_protocol_version: Option<String>,
+        /// Maximum wall-clock session duration in seconds (server
+        /// `--max-session-secs`; `0` = no cap). Always sent so clients can
+        /// plan a reconnect before the server closes the socket with
+        /// `max_session_duration_exceeded`. Additive; older clients ignore it.
+        max_session_secs: u64,
+        /// Idle timeout in seconds (server `--idle-timeout-secs`): the server
+        /// closes the session when no frame arrives within this window.
+        /// Always sent; additive, older clients ignore it.
+        idle_timeout_secs: u64,
     },
 
     /// Partial (interim) transcript — may change with more audio.
@@ -111,6 +120,8 @@ mod tests {
             supported_rates: vec![],
             diarization: false,
             min_protocol_version: Some(PROTOCOL_VERSION.into()),
+            max_session_secs: 3600,
+            idle_timeout_secs: 300,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -122,12 +133,34 @@ mod tests {
     }
 
     #[test]
+    fn test_ready_session_limits_always_serialized() {
+        // The session caps are plain `u64` fields (no skip attr): they must be
+        // present in every ready payload so clients can plan around them
+        // before hitting a close frame. A zero cap serializes as `0`, not null
+        // or an omitted key.
+        let msg = ServerMessage::Ready {
+            model: "test".into(),
+            sample_rate: 48000,
+            version: "1.0".into(),
+            supported_rates: vec![],
+            diarization: false,
+            min_protocol_version: None,
+            max_session_secs: 0,
+            idle_timeout_secs: 42,
+        };
+        let v = serde_json::to_value(&msg).unwrap();
+        assert_eq!(v["max_session_secs"], 0);
+        assert_eq!(v["idle_timeout_secs"], 42);
+    }
+
+    #[test]
     fn test_partial_serialization_no_version() {
         let msg = ServerMessage::Partial(crate::inference::TranscriptSegment {
             text: "hello".into(),
             timestamp: 1.0,
             words: vec![],
             is_final: false,
+            confidence: None,
         });
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -142,6 +175,7 @@ mod tests {
             timestamp: 1.0,
             words: vec![],
             is_final: true,
+            confidence: None,
         });
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -206,6 +240,8 @@ mod tests {
             supported_rates: vec![8000, 16000, 24000, 44100, 48000],
             diarization: false,
             min_protocol_version: None,
+            max_session_secs: 3600,
+            idle_timeout_secs: 300,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -221,6 +257,8 @@ mod tests {
             supported_rates: vec![],
             diarization: false,
             min_protocol_version: None,
+            max_session_secs: 3600,
+            idle_timeout_secs: 300,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -347,6 +385,8 @@ mod tests {
             supported_rates: vec![],
             diarization: false,
             min_protocol_version: None,
+            max_session_secs: 3600,
+            idle_timeout_secs: 300,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -362,6 +402,8 @@ mod tests {
             supported_rates: vec![],
             diarization: false,
             min_protocol_version: None,
+            max_session_secs: 3600,
+            idle_timeout_secs: 300,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();

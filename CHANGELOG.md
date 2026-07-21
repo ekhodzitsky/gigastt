@@ -41,6 +41,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     convention, or `16000` and always decodes to its native 16 kHz). A raw
     stream posted without `codec` is still rejected with `422 invalid_audio`.
   - CLI parity: `gigastt transcribe call.ulaw --codec pcmu --sample-rate 8000`.
+- **Segment-level confidence on every transcript surface.** `final`/`partial`
+  WebSocket messages, SSE stream events, and the REST `/v1/transcribe` JSON
+  response now carry an optional `confidence` field: the duration-weighted
+  average of the segment's per-word softmax scores (plain average when every
+  word has zero duration; omitted when the segment has no words). It is an
+  average of word scores, not a calibrated segment probability. Additive and
+  omitted-when-absent, so existing clients are unaffected.
+- **Session limits advertised in the WebSocket `ready` message.** The payload
+  now always includes `max_session_secs` and `idle_timeout_secs` from the
+  server configuration, so clients can plan a reconnect before the server
+  closes the socket with `max_session_duration_exceeded` or an idle timeout
+  instead of discovering the caps by getting cut off. Additive; protocol
+  version stays `1.0`.
 
 ### Changed
 

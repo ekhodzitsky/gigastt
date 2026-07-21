@@ -632,6 +632,31 @@ impl WordInfo {
     }
 }
 
+/// Aggregate per-word confidences into a single segment-level score:
+/// a duration-weighted mean of `words[].confidence` (longer words count
+/// more). Falls back to a plain mean when every word has zero duration, and
+/// returns `None` for an empty word list. The result is an average of
+/// per-word softmax scores — **not** a calibrated probability that the
+/// segment is correct.
+fn aggregate_confidence(words: &[WordInfo]) -> Option<f32> {
+    if words.is_empty() {
+        return None;
+    }
+    let mut weighted_sum = 0.0_f64;
+    let mut total_weight = 0.0_f64;
+    for w in words {
+        let weight = (w.end - w.start).max(0.0);
+        weighted_sum += f64::from(w.confidence) * weight;
+        total_weight += weight;
+    }
+    let mean = if total_weight > 0.0 {
+        weighted_sum / total_weight
+    } else {
+        words.iter().map(|w| f64::from(w.confidence)).sum::<f64>() / words.len() as f64
+    };
+    Some(mean as f32)
+}
+
 /// Per-connection streaming state that persists across audio chunks.
 ///
 /// Created via [`Engine::create_state`]. Holds the decoder LSTM state, an audio
@@ -782,11 +807,13 @@ impl TranscriptAssembler {
 
     /// Build a **final** segment and reset internal accumulation.
     pub fn finalize(&mut self, timestamp: f64) -> TranscriptSegment {
+        let confidence = aggregate_confidence(&self.words);
         TranscriptSegment {
             text: std::mem::take(&mut self.text),
             words: std::mem::take(&mut self.words),
             is_final: true,
             timestamp,
+            confidence,
         }
     }
 
@@ -797,6 +824,7 @@ impl TranscriptAssembler {
             words: self.words.clone(),
             is_final: false,
             timestamp,
+            confidence: aggregate_confidence(&self.words),
         }
     }
 
@@ -2029,6 +2057,7 @@ impl Engine {
                 text: String::new(),
                 words: Vec::new(),
                 duration_s: 0.0,
+                confidence: None,
             });
         }
 
@@ -2038,6 +2067,7 @@ impl Engine {
             let words = self.decode_words_for_samples(channel_samples, triplet, &overrides)?;
             let duration_s = channel_samples.len() as f64 / 16000.0;
             per_channel.push(TranscribeResult {
+                confidence: aggregate_confidence(&words),
                 text: String::new(),
                 words,
                 duration_s,
@@ -2329,6 +2359,7 @@ impl Engine {
 
         TranscribeResult {
             text,
+            confidence: aggregate_confidence(&words),
             words,
             duration_s,
         }
@@ -2558,6 +2589,13 @@ pub struct TranscribeResult {
     pub words: Vec<WordInfo>,
     /// Duration of the decoded audio in seconds.
     pub duration_s: f64,
+    /// Mean confidence across all words (duration-weighted average of
+    /// `words[].confidence`; plain average when every word has zero
+    /// duration). An average of per-word softmax scores — **not** a
+    /// calibrated probability that the transcript is correct. `None` when no
+    /// words were decoded; omitted from JSON in that case.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f32>,
 }
 
 /// Per-request overrides for the recognition post-processing knobs, letting a
@@ -2659,6 +2697,7 @@ pub fn merge_channel_results(per_channel: Vec<TranscribeResult>) -> TranscribeRe
         .join(" ");
 
     TranscribeResult {
+        confidence: aggregate_confidence(&all_words),
         text,
         words: all_words,
         duration_s,
@@ -2679,6 +2718,13 @@ pub struct TranscriptSegment {
     pub is_final: bool,
     /// Unix timestamp (seconds since epoch) when this segment was produced.
     pub timestamp: f64,
+    /// Mean confidence across the segment's words (duration-weighted average
+    /// of `words[].confidence`; plain average when every word has zero
+    /// duration). An average of per-word softmax scores — **not** a
+    /// calibrated probability that the segment is correct. `None` when the
+    /// segment has no words; omitted from JSON in that case.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confidence: Option<f32>,
 }
 
 impl TranscriptSegment {
@@ -2688,6 +2734,7 @@ impl TranscriptSegment {
             words: vec![],
             is_final: true,
             timestamp: now_timestamp(),
+            confidence: None,
         }
     }
 }
@@ -2894,11 +2941,13 @@ mod tests {
                 text: String::new(),
                 words: vec![],
                 duration_s: 0.0,
+                confidence: None,
             },
             TranscribeResult {
                 text: String::new(),
                 words: vec![],
                 duration_s: 0.0,
+                confidence: None,
             },
         ]);
         assert!(merged.words.is_empty());
@@ -2914,11 +2963,13 @@ mod tests {
                 sample_word("как", 1.0, 1.3, None),
             ],
             duration_s: 1.5,
+            confidence: None,
         };
         let ch1 = TranscribeResult {
             text: String::new(),
             words: vec![sample_word("да", 0.5, 0.8, None)],
             duration_s: 1.5,
+            confidence: None,
         };
         let merged = merge_channel_results(vec![ch0, ch1]);
         assert_eq!(merged.words.len(), 3);
@@ -2936,11 +2987,13 @@ mod tests {
             text: String::new(),
             words: vec![sample_word("а", 0.5, 0.7, None)],
             duration_s: 1.0,
+            confidence: None,
         };
         let ch1 = TranscribeResult {
             text: String::new(),
             words: vec![sample_word("б", 0.5, 0.7, None)],
             duration_s: 1.0,
+            confidence: None,
         };
         let merged = merge_channel_results(vec![ch0, ch1]);
         assert_eq!(merged.words[0].word, "а");
@@ -2963,11 +3016,13 @@ mod tests {
             text: String::new(),
             words: vec![sample_word("a", 0.0, 0.5, None)],
             duration_s: 5.0,
+            confidence: None,
         };
         let ch1 = TranscribeResult {
             text: String::new(),
             words: vec![sample_word("b", 0.5, 1.0, None)],
             duration_s: 12.0,
+            confidence: None,
         };
         let merged = merge_channel_results(vec![ch0, ch1]);
         assert_eq!(merged.duration_s, 12.0);
@@ -3576,6 +3631,80 @@ mod tests {
         assert!(!seg.is_final);
         // partial must not reset the assembler.
         assert!(!asm.is_empty());
+    }
+
+    #[test]
+    fn test_aggregate_confidence_duration_weighted() {
+        // The longer word dominates: (0.9*1.0 + 0.5*3.0) / 4.0 = 0.6.
+        let words = vec![
+            WordInfo::new("short", 0.0, 1.0, 0.9, None),
+            WordInfo::new("long", 1.0, 4.0, 0.5, None),
+        ];
+        let c = aggregate_confidence(&words).expect("non-empty words give a score");
+        assert!((c - 0.6).abs() < 1e-6, "duration-weighted mean, got {c}");
+    }
+
+    #[test]
+    fn test_aggregate_confidence_zero_duration_plain_mean() {
+        // Zero-duration words carry no weight; fall back to the plain mean
+        // (0.8 + 0.6) / 2 = 0.7 instead of a 0/0 divide.
+        let words = vec![
+            WordInfo::new("a", 1.0, 1.0, 0.8, None),
+            WordInfo::new("b", 2.0, 2.0, 0.6, None),
+        ];
+        let c = aggregate_confidence(&words).expect("non-empty words give a score");
+        assert!((c - 0.7).abs() < 1e-6, "plain mean, got {c}");
+    }
+
+    #[test]
+    fn test_aggregate_confidence_empty_words_none() {
+        assert_eq!(aggregate_confidence(&[]), None);
+    }
+
+    #[test]
+    fn test_assembler_fills_segment_confidence() {
+        let mut asm = TranscriptAssembler::new();
+        asm.append(vec![
+            WordInfo::new("hello", 0.0, 0.5, 0.9, None),
+            WordInfo::new("world", 0.5, 1.0, 0.8, None),
+        ]);
+        let partial = asm.partial(0.5);
+        let c = partial.confidence.expect("partial carries the aggregate");
+        assert!(
+            (c - 0.85).abs() < 1e-6,
+            "equal durations → plain mean, got {c}"
+        );
+        let final_seg = asm.finalize(1.0);
+        let c = final_seg.confidence.expect("final carries the aggregate");
+        assert!((c - 0.85).abs() < 1e-6, "got {c}");
+        // An empty assembler yields an empty segment with no score.
+        let empty = asm.finalize(1.0);
+        assert_eq!(empty.confidence, None);
+    }
+
+    #[test]
+    fn test_segment_confidence_omitted_from_json_when_none() {
+        // Backward-compatible payload: a segment without words must serialize
+        // exactly like before the field existed — no `confidence` key at all.
+        let seg = TranscriptSegment::empty_final();
+        let v = serde_json::to_value(&seg).unwrap();
+        assert!(v.get("confidence").is_none());
+    }
+
+    #[test]
+    fn test_segment_old_json_without_confidence_still_deserializes() {
+        // Client-side view of the wire contract: payloads written before the
+        // `confidence` field existed (no key) must keep parsing into a typed
+        // client that knows the field — it simply defaults to `None`. The
+        // core segment type is Serialize-only; this mirrors a typed SDK.
+        #[derive(serde::Deserialize)]
+        struct ClientSegmentView {
+            #[serde(default)]
+            confidence: Option<f32>,
+        }
+        let old_json = r#"{"text":"привет","words":[],"is_final":true,"timestamp":1.0}"#;
+        let view: ClientSegmentView = serde_json::from_str(old_json).unwrap();
+        assert_eq!(view.confidence, None);
     }
 
     #[test]
