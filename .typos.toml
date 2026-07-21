@@ -16,6 +16,10 @@ extend-exclude = [
     "vendor/",
     "benchmark/manifests/",
     "benchmark/results_full/",
+    # Raw telephony fixtures (G.711 A-law/μ-law, G.722) are headerless binary
+    # streams with no NUL bytes in the sniffed window, so typos treats them as
+    # text and flags random byte sequences as words.
+    "crates/gigastt/tests/fixtures/telephony/",
 ]
 
 [default.extend-words]
