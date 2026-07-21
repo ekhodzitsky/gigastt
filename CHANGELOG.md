@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **macOS support in the Swift package.** `GigasttFFI.xcframework` now ships a
+  macOS arm64 slice alongside the iOS ones (ONNX Runtime statically linked into
+  the slice, no separate runtime to bundle), and the package declares
+  `.macOS(.v13)` next to `.iOS(.v15)` — macOS apps can embed GigaSTT directly
+  instead of shipping the CLI as a sidecar. The release workflow smoke-tests
+  the macOS slice before publishing. The xcframework zip grows by ~30 MB.
+
 ### Changed
 
 - **File-transcription duration cap lowered from 2 hours to 30 minutes.** The cap

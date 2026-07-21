@@ -4,7 +4,8 @@ import PackageDescription
 let package = Package(
     name: "GigaSTT",
     platforms: [
-        .iOS(.v15)
+        .iOS(.v15),
+        .macOS(.v13)
     ],
     products: [
         .library(name: "GigaSTT", targets: ["GigaSTT"])
@@ -33,7 +34,15 @@ let package = Package(
         // -----------------------------------------------------------------------
         .target(
             name: "GigaSTT",
-            dependencies: ["GigasttFFI"]
+            dependencies: ["GigasttFFI"],
+            // ONNX Runtime inside the static archive is C++; its `-lc++` link
+            // directive is emitted by cargo for the Rust link only and does not
+            // propagate through the xcframework, so the consumer link must add
+            // libc++ explicitly or the final app fails with undefined
+            // `std::__1::*` symbols.
+            linkerSettings: [
+                .linkedLibrary("c++")
+            ]
         )
     ]
 )

@@ -1,6 +1,7 @@
 name: iOS xcframework
 
-# Builds GigasttFFI.xcframework (device arm64 + simulator arm64/x86_64),
+# Builds GigasttFFI.xcframework (iOS device arm64 + simulator arm64/x86_64 +
+# macOS arm64),
 # attaches the zip to a GitHub release, then rewrites the SwiftPM binaryTarget
 # url + checksum in packaging/swift/Package.swift and commits that to main
 # (only when dispatched from main). A follow-up job verifies the published
@@ -70,7 +71,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios,aarch64-apple-darwin
 
       - name: Install protoc
         run: brew install protobuf
@@ -110,6 +111,14 @@ jobs:
           ORT_LIB_LOCATION="$RUNNER_TEMP/ort-x64-stub" \
             cargo rustc --release -p gigastt-ffi --target x86_64-apple-ios --crate-type staticlib
 
+      # macOS arm64 (Apple Silicon): the pyke prebuilt for aarch64-apple-darwin
+      # is a static libonnxruntime.a exactly like the iOS ones, so the slice is
+      # self-contained — no vendored dylib, no extra link flags. There is no
+      # x86_64-apple-darwin prebuilt upstream, so the macOS slice stays
+      # arm64-only (no universal lipo step).
+      - name: Build staticlib (macOS arm64)
+        run: cargo build --release -p gigastt-ffi --target aarch64-apple-darwin
+
       # Regenerate the C header from the FFI crate, then stage a Headers/ dir
       # (gigastt.h + module.modulemap) shared by every xcframework slice.
       - name: Generate header + stage Headers/
@@ -145,8 +154,59 @@ jobs:
             -headers build/Headers \
             -library build/sim/libgigastt_ffi.a \
             -headers build/Headers \
+            -library target/aarch64-apple-darwin/release/libgigastt_ffi.a \
+            -headers build/Headers \
             -output GigasttFFI.xcframework
           plutil -p GigasttFFI.xcframework/Info.plist
+
+      # Smoke-test the macOS slice before publishing: a scratch executable
+      # package consumes the just-built xcframework by path (the documented
+      # local-development mode) and calls into the C ABI through the Swift
+      # wrapper. Engine creation against a missing model dir must fail cleanly
+      # with NULL — reaching that error path proves the statically linked
+      # archive loads and runs on macOS. Fails the build if the macOS slice is
+      # missing or broken, so a bad zip never reaches the release.
+      - name: Smoke-test macOS slice
+        shell: bash
+        run: |
+          set -euo pipefail
+          SMOKE="$RUNNER_TEMP/gigastt-smoke"
+          mkdir -p "$SMOKE/Sources/smoke"
+          cp -R GigasttFFI.xcframework "$SMOKE/"
+          cp -R packaging/swift/Sources/GigaSTT "$SMOKE/Sources/GigaSTT"
+          cat > "$SMOKE/Package.swift" <<'EOF'
+          // swift-tools-version:5.9
+          import PackageDescription
+          // Mirrors packaging/swift/Package.swift (path binaryTarget instead of
+          // the released url) plus an executable target that calls into the C ABI.
+          let package = Package(
+              name: "smoke",
+              platforms: [.macOS(.v13)],
+              targets: [
+                  .binaryTarget(name: "GigasttFFI", path: "GigasttFFI.xcframework"),
+                  .target(
+                      name: "GigaSTT",
+                      dependencies: ["GigasttFFI"],
+                      linkerSettings: [
+                          .linkedLibrary("c++")
+                      ]
+                  ),
+                  .executableTarget(name: "smoke", dependencies: ["GigaSTT"])
+              ]
+          )
+          EOF
+          cat > "$SMOKE/Sources/smoke/main.swift" <<'EOF'
+          import GigaSTT
+
+          do {
+              _ = try Engine(modelDir: "/nonexistent-model-dir")
+              fatalError("expected engineLoadFailed for a missing model dir")
+          } catch {
+              print("macOS smoke OK: C ABI linked, missing model dir rejected (\(error))")
+          }
+          EOF
+          swift build --package-path "$SMOKE"
+          swift run --package-path "$SMOKE" smoke
 
       - name: Zip xcframework
         run: |

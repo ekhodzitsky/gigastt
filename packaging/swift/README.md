@@ -1,12 +1,12 @@
 # GigaSTT for Swift
 
-On-device Russian speech-to-text for iOS, powered by GigaAM v3 and ONNX Runtime.
-No cloud APIs, no network calls at inference time, full privacy.
+On-device Russian speech-to-text for iOS and macOS, powered by GigaAM v3 and
+ONNX Runtime. No cloud APIs, no network calls at inference time, full privacy.
 
 This package wraps the gigastt C ABI in a safe Swift interface. The native code
-ships as a prebuilt `GigasttFFI.xcframework` (device `arm64` + simulator
-`arm64`/`x86_64`), with ONNX Runtime statically linked into each slice — there is no
-separate runtime to bundle.
+ships as a prebuilt `GigasttFFI.xcframework` (iOS device `arm64` + simulator
+`arm64`/`x86_64` + macOS `arm64`), with ONNX Runtime statically linked into
+each slice — there is no separate runtime to bundle.
 
 The package is published in two places: in the engine monorepo
 (`packaging/swift`, for local path dependencies and development) and in the
@@ -17,7 +17,7 @@ subdirectory cannot be consumed via URL).
 
 ## Requirements
 
-- iOS 15 or later
+- iOS 15 or later, or macOS 13 or later (Apple Silicon)
 - Xcode 15 or later (Swift 5.9 tools)
 
 ## Installation
