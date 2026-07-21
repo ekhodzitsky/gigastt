@@ -130,6 +130,12 @@ pub struct Job {
     pub event_channels: Vec<tokio::sync::mpsc::UnboundedSender<JobEvent>>,
 }
 
+/// Upper bound on simultaneous SSE listeners per job. Dead channels are
+/// pruned on subscribe and on broadcast, but broadcasts can be ≥500 ms apart
+/// (and rarer for a queued job), so a connect/disconnect flood could otherwise
+/// accumulate `UnboundedSender`s faster than they get cleaned up.
+pub(crate) const MAX_JOB_EVENT_SUBSCRIBERS: usize = 32;
+
 impl Job {
     /// Create a new queued job.
     pub fn queued(body: Bytes, params: ExportParams) -> Self {
@@ -148,6 +154,17 @@ impl Job {
             error: None,
             event_channels: Vec::new(),
         }
+    }
+
+    /// Register an SSE listener, pruning closed channels first. When the
+    /// subscriber cap is reached, the oldest listener is evicted (its stream
+    /// ends) so a connect/disconnect flood cannot grow the list without bound.
+    pub(crate) fn subscribe(&mut self, tx: tokio::sync::mpsc::UnboundedSender<JobEvent>) {
+        self.event_channels.retain(|tx| !tx.is_closed());
+        if self.event_channels.len() >= MAX_JOB_EVENT_SUBSCRIBERS {
+            self.event_channels.remove(0);
+        }
+        self.event_channels.push(tx);
     }
 }
 
@@ -458,6 +475,11 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                                 j.status = JobStatus::Done;
                                 j.result = Some(res);
                                 j.processed_seconds = total;
+                                // Release the upload: a terminal job never needs
+                                // its body again, and holding it for the full TTL
+                                // would keep up to jobs_max × body-limit of dead
+                                // audio in RAM.
+                                j.body = Bytes::new();
                             }),
                         )
                         .await;
@@ -474,6 +496,9 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                         .unwrap_or(0);
                     let retryable = is_retryable_error(&e) && attempts <= self.max_retries;
                     if retryable {
+                        // Keep the body: the requeued job needs it for the
+                        // next attempt. It is released when the job reaches a
+                        // terminal state.
                         let _ = self
                             .store
                             .update(
@@ -504,6 +529,10 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                                     move |j| {
                                         j.status = JobStatus::Failed;
                                         j.error = Some(sanitized);
+                                        // Same release as the Done path: a
+                                        // failed job is terminal and no longer
+                                        // needs its upload.
+                                        j.body = Bytes::new();
                                     }
                                 }),
                             )
@@ -1330,5 +1359,140 @@ mod tests {
         let resp = job_status_response(&job);
         assert_eq!(resp.percent, 35);
         assert_eq!(resp.processed_seconds, 3.5);
+    }
+
+    #[tokio::test]
+    async fn test_queue_done_job_releases_body() {
+        let store: Arc<dyn JobStore> = Arc::new(InMemoryJobStore::new(test_limits()));
+        let executor = MockExecutor {
+            results: Arc::new(Mutex::new(vec![ok_result()])),
+            delay_ms: 0,
+        };
+        let queue = JobQueue::new(
+            store.clone(),
+            1,
+            0,
+            tokio_util::sync::CancellationToken::new(),
+        );
+        queue.spawn(executor);
+
+        let id = store
+            .create(Job::queued(
+                Bytes::from_static(b"audio-bytes"),
+                ExportParams::default(),
+            ))
+            .await
+            .unwrap();
+
+        for _ in 0..50 {
+            let job = store.get(&id).await.unwrap().unwrap();
+            if matches!(job.status, JobStatus::Done) {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+
+        let job = store.get(&id).await.unwrap().unwrap();
+        assert!(matches!(job.status, JobStatus::Done));
+        assert!(job.body.is_empty());
+    }
+
+    /// Records the body length seen by each attempt so tests can verify the
+    /// upload survives retries and is only released at a terminal state.
+    #[derive(Clone)]
+    struct BodyLenRecorder {
+        lens: Arc<Mutex<Vec<usize>>>,
+    }
+
+    impl JobExecution for BodyLenRecorder {
+        async fn execute(
+            &self,
+            _id: &str,
+            _store: Arc<dyn JobStore>,
+            body: Bytes,
+            _params: ExportParams,
+        ) -> anyhow::Result<gigastt_core::inference::TranscribeResult> {
+            self.lens.lock().push(body.len());
+            Err(anyhow::anyhow!("inference_timeout"))
+        }
+    }
+
+    #[tokio::test]
+    async fn test_queue_failed_job_releases_body_after_retries() {
+        // max_retries=1 → two attempts, then terminal Failed.
+        let limits = RuntimeLimits {
+            jobs_retry: 1,
+            ..test_limits()
+        };
+        let store: Arc<dyn JobStore> = Arc::new(InMemoryJobStore::new(limits));
+        let lens = Arc::new(Mutex::new(Vec::new()));
+        let executor = BodyLenRecorder { lens: lens.clone() };
+        let queue = JobQueue::new(
+            store.clone(),
+            1,
+            1,
+            tokio_util::sync::CancellationToken::new(),
+        );
+        queue.spawn(executor);
+
+        let id = store
+            .create(Job::queued(
+                Bytes::from_static(b"audio-bytes"),
+                ExportParams::default(),
+            ))
+            .await
+            .unwrap();
+
+        for _ in 0..50 {
+            let job = store.get(&id).await.unwrap().unwrap();
+            if matches!(job.status, JobStatus::Failed) {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+
+        let job = store.get(&id).await.unwrap().unwrap();
+        assert!(matches!(job.status, JobStatus::Failed));
+        // Both attempts received the full upload; the body is released only
+        // once the job reaches a terminal state.
+        assert_eq!(*lens.lock(), vec![11, 11]);
+        assert!(job.body.is_empty());
+    }
+
+    #[test]
+    fn test_subscribe_prunes_closed_channels() {
+        let mut job = Job::queued(Bytes::new(), ExportParams::default());
+        let (dead_tx, dead_rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+        job.event_channels.push(dead_tx);
+        drop(dead_rx);
+
+        let (live_tx, _live_rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+        job.subscribe(live_tx);
+
+        assert_eq!(job.event_channels.len(), 1);
+    }
+
+    #[test]
+    fn test_subscribe_evicts_oldest_at_cap() {
+        let mut job = Job::queued(Bytes::new(), ExportParams::default());
+        let mut rxs = Vec::new();
+        for _ in 0..MAX_JOB_EVENT_SUBSCRIBERS {
+            let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+            job.subscribe(tx);
+            rxs.push(rx);
+        }
+        assert_eq!(job.event_channels.len(), MAX_JOB_EVENT_SUBSCRIBERS);
+
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+        job.subscribe(tx);
+        rxs.push(rx);
+
+        // The list stays capped; the oldest listener was evicted, so its
+        // stream is disconnected.
+        assert_eq!(job.event_channels.len(), MAX_JOB_EVENT_SUBSCRIBERS);
+        assert!(matches!(
+            rxs[0].try_recv(),
+            Err(tokio::sync::mpsc::error::TryRecvError::Disconnected)
+        ));
     }
 }

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **File-transcription duration cap lowered from 2 hours to 30 minutes.** The cap
+  bounds the fully decoded PCM buffer of an upload; 30 minutes ≈ the largest
+  uncompressed PCM16@16kHz file the default 50 MiB body limit admits and bounds
+  the decoded f32 buffer at ~346 MB per concurrent decode (down from ~1.4 GB),
+  closing a >27× memory-amplification vector on compressed uploads. Chunked
+  long-form decoding is unaffected below the cap.
+
+### Fixed
+
+- **Finished jobs no longer pin their upload in RAM.** A `Done`/`Failed` job used
+  to keep its raw audio body for the full `--jobs-ttl-secs` (up to
+  `--jobs-max` × body-limit of dead audio); the body is now released as soon as
+  execution ends (retries keep it for the next attempt).
+- **Per-job SSE subscriber list is bounded.** `GET /v1/jobs/{id}/events` now
+  prunes closed channels on subscribe and caps listeners at 32 per job (oldest
+  evicted), so a connect/disconnect flood can no longer accumulate senders
+  between broadcasts.
+
 ## [2.13.0] - 2026-07-20
 
 ### Added

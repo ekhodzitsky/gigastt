@@ -185,7 +185,7 @@ paths:
         `txt` / `srt` / `vtt` ignore `segments` (already flat / cue-based).
 
         The entire file is processed in a single inference session.
-        Max audio duration: 10 minutes.
+        Max audio duration: 30 minutes.
       operationId: transcribeFile
       parameters:
         - name: format

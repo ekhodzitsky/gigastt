@@ -21,11 +21,13 @@ use super::{HOP_LENGTH, N_FFT};
 const MAX_BUFFER_SAMPLES: usize = 16000 * 5; // 5 seconds at 16kHz
 /// Hard upper bound on file-transcription audio length (seconds). Long-form
 /// inputs are decoded in bounded overlapping chunks (see
-/// `Engine::transcribe_samples_chunked`), so peak memory is O(chunk) regardless
-/// of file length; this cap now only fences off genuinely absurd / adversarial
-/// uploads rather than the old 10-minute encoder-memory limit. Raised to 2h.
+/// `Engine::transcribe_samples_chunked`), so peak encoder memory is O(chunk)
+/// regardless of file length; this cap bounds the fully decoded PCM buffer
+/// instead. 30 minutes ≈ the largest uncompressed PCM16@16kHz upload the
+/// default 50 MiB body limit admits (~27 min), and bounds the decoded f32
+/// buffer at 30 min × 48 kHz × 4 B ≈ 346 MB per concurrent decode.
 #[cfg(feature = "file-decode")]
-const MAX_DURATION_S: f64 = 7200.0; // 2 hours
+const MAX_DURATION_S: f64 = 1800.0; // 30 minutes
 /// Upper bound on a header-declared sample rate. Legal rates (8k–48k) stay well
 /// below this; anything above is a malformed/adversarial header and is rejected
 /// before it can scale the duration cap or the capacity hint.
@@ -1281,19 +1283,17 @@ mod tests {
 
     #[test]
     fn test_decode_duration_cap_pure() {
-        // Pure cap math (testable without realizing a multi-hour PCM buffer):
-        // the sample budget scales with the clamped rate and the raised cap.
-        // A >10-minute file is now under budget (chunked long-form decode bounds
-        // memory); only genuinely absurd lengths trip the cap.
+        // Pure cap math (testable without realizing a multi-minute PCM buffer):
+        // the sample budget scales with the clamped rate and the duration cap.
         let budget_16k = max_decode_samples(16000);
-        // 2h cap at 16kHz => 7200 * 16000 samples.
-        assert_eq!(budget_16k, 7200 * 16000);
-        // 12 minutes (the old reject point) is now comfortably under budget.
-        assert!(12 * 60 * 16000 < budget_16k, "12-minute file must pass now");
-        // >2h is over budget and would be rejected.
+        // 30-min cap at 16kHz => 1800 * 16000 samples.
+        assert_eq!(budget_16k, 1800 * 16000);
+        // 12 minutes (the old reject point) is comfortably under budget.
+        assert!(12 * 60 * 16000 < budget_16k, "12-minute file must pass");
+        // >30 min is over budget and would be rejected.
         assert!(
-            (2 * 3600 + 1) * 16000 > budget_16k,
-            ">2h must exceed budget"
+            (30 * 60 + 1) * 16000 > budget_16k,
+            ">30min must exceed budget"
         );
         // Header rate is clamped: a crafted 192kHz header can't inflate the
         // budget past the 48kHz ceiling.
