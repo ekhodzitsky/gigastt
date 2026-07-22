@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.14.0] - 2026-07-22
+
 ### Added
 
 - **Opus file support for file transcription.** `/v1/transcribe` and
@@ -58,6 +60,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   word has zero duration; omitted when the segment has no words). It is an
   average of word scores, not a calibrated segment probability. Additive and
   omitted-when-absent, so existing clients are unaffected.
+- **Swift package is remotely installable via the `gigastt-swift` mirror repo.**
+  SwiftPM requires `Package.swift` at the repository root, so the monorepo
+  subdirectory could never be consumed by URL; the new
+  [ekhodzitsky/gigastt-swift](https://github.com/ekhodzitsky/gigastt-swift)
+  mirror carries the manifest at its root and is tagged with engine releases
+  (`from: "2.13.0"` and up). On every xcframework release the workflow now
+  rewrites the manifest's `url:`/`checksum:` automatically (no more manual
+  placeholders), mirrors the package to `gigastt-swift` with the matching tag,
+  and re-resolves it end to end on a clean runner; a pre-flight step validates
+  the mirror token in seconds instead of failing the push after a 40-minute
+  build.
 - **Session limits advertised in the WebSocket `ready` message.** The payload
   now always includes `max_session_secs` and `idle_timeout_secs` from the
   server configuration, so clients can plan a reconnect before the server
@@ -67,6 +80,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **UniFFI binding error type renamed: `GigasttError` → `GigasttFfiError`.**
+  The generated Swift/Kotlin/Python bindings previously shadowed the core
+  `GigasttError` name and collapsed every core error into a single `Inference`
+  variant. The binding type is now `GigasttFfiError` (Kotlin:
+  `GigasttFfiException`) with an explicit per-variant mapping, so binding
+  errors no longer drift from the core. **Breaking for consumers of the
+  UniFFI bindings** (catch clauses and imports need the new name); the
+  hand-written SwiftPM wrapper API is unchanged.
 - **WebSocket protocol fully documented for integrators.** The `docs/api.md`
   WebSocket section is now a complete human-readable reference — every `ready`,
   `partial`/`final` (including per-word `start`/`end`/`confidence`/`speaker`),
@@ -88,6 +109,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **The metrics listener now honors the bind-consent gate.** `--metrics-listen`
+  previously bypassed the loopback-by-default check that guards the main port;
+  a non-loopback metrics address now also requires `--bind-all` (or
+  `GIGASTT_ALLOW_BIND_ANY=1`), closing an accidental-exposure path.
+- **`Content-Disposition` filenames are sanitized per RFC 6266.** Export
+  downloads now send an ASCII-sanitized quoted `filename=` fallback plus a
+  percent-encoded `filename*=UTF-8''…`, so a crafted upload filename can no
+  longer inject header parameters.
+- **Interrupted model downloads no longer leave orphaned `.partial` files.**
+  A RAII guard removes the staged file on any path that does not reach the
+  final atomic rename.
 - **Finished jobs no longer pin their upload in RAM.** A `Done`/`Failed` job used
   to keep its raw audio body for the full `--jobs-ttl-secs` (up to
   `--jobs-max` × body-limit of dead audio); the body is now released as soon as
@@ -99,16 +131,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Docs
 
-- **Bilingual workbook skeleton (EN + RU) published via mdBook.** A new
-  scenario-driven cookbook lives in `docs/workbook/` — two mdBook instances
-  (`en/` canonical, `ru/` mirror, identical chapter file names) with six
-  chapter stubs (getting started, file transcription, streaming, models and
-  backends, server integration, deployment & ops) plus a chapter template and
-  a documentation-map intro. A new `docs.yml` workflow builds both books on
-  every PR that touches them and deploys `public/en/`, `public/ru/`, and a
-  root language selector to GitHub Pages on pushes to `main`
-  (<https://ekhodzitsky.github.io/gigastt/>). README (EN/RU), `docs/cli.md`,
-  and `docs/api.md` link to the published book.
+- **The GigaSTT Workbook — a full bilingual cookbook (EN + RU) on GitHub Pages.**
+  <https://ekhodzitsky.github.io/gigastt/> is a complete scenario-driven book
+  (mdBook, built and deployed by a new `docs.yml` workflow on every change):
+  getting started, CLI & batch processing, telephony & VoIP, streaming over
+  WebSocket, desktop & embedded (Swift/SPM, sidecar, Electron, UniFFI),
+  deployment & ops, and models & backends. Recipes were verified live against
+  the model and server. The English book is canonical; the Russian mirror
+  keeps an identical chapter structure.
+- **Docs-drift gate in CI (advisory).** A fast checker now compares
+  `docs/cli.md` flags against the CLI definition, the WS error-code table
+  against `asyncapi.yaml` and the server code, documented audio formats
+  against the decoder, mdBook TOCs against chapter files, EN/RU parity, and
+  every relative link in the docs. Its first sweep fixed real drift: 35
+  undocumented CLI flags/env vars in `docs/cli.md` and a Swift snippet in
+  `docs/quickstarts.md` that no longer matched the shipped wrapper.
+- **WebSocket protocol fully documented for integrators** (see Changed), and
+  a troubleshooting guide covering the failure modes integrators actually hit.
+- **Node/Electron path documented.** The npm package README positions
+  in-process vs sidecar embedding, `examples/electron_main.mjs` shows the
+  OpenOffer-style dual-channel pattern, and the quickstart guide covers the
+  Node path.
 - **Documentation inventory + archive.** Every file under `docs/` is
   classified (reference / guide / historical) in the workbook intro.
   Completed design documents moved to `docs/archive/`:

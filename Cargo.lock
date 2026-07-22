@@ -1669,7 +1669,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt"
-version = "2.13.0"
+version = "2.14.0"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -1696,7 +1696,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-core"
-version = "2.13.0"
+version = "2.14.0"
 dependencies = [
  "anyhow",
  "audio-codec",
@@ -1737,7 +1737,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-ffi"
-version = "2.13.0"
+version = "2.14.0"
 dependencies = [
  "cbindgen",
  "gigastt-core",
@@ -1747,7 +1747,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-node"
-version = "2.13.0"
+version = "2.14.0"
 dependencies = [
  "gigastt-core",
  "napi",
@@ -1757,7 +1757,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-uniffi"
-version = "2.13.0"
+version = "2.14.0"
 dependencies = [
  "gigastt-core",
  "thiserror 2.0.19",
