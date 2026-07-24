@@ -7,23 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- **Streaming window-cap no longer emits `final`.** Hitting the ~2.5 s encoder
-  window now commits a stable prefix and emits a non-final `partial` so the
-  utterance keeps growing. True `final` / `speech_final` is reserved for VAD
-  silence, decoder blank-run (when no VAD), or client `stop` — fixing premature
-  command execution in voice assistants (Irene) that treat every `final` as
-  "command complete". Additive wire fields on segments: `speech_final` (omitted
-  when false) and `endpoint_reason` (`vad` | `blank` | `stop`).
-
-### Added
-
-- **`--endpoint-mode auto|assistant|manual`** (`GIGASTT_ENDPOINT_MODE`) and
-  per-session WS `configure.endpoint_mode` / `configure.min_silence_ms`.
-  `assistant` ends utterances only on VAD silence (pair with `--vad`); `manual`
-  only on `stop`. Cap never finalizes under any mode.
-
 ### Changed
 
 - **Documentation hygiene pass.** Supported versions in `SECURITY.md` track
@@ -42,6 +25,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   install recipe; appendices for error-code jump tables and offline checklists;
   closed the notarization open loop with an explicit out-of-band note; drift gate
   forbids previous-minor pins and required recipe tokens in the English book.
+
+## [2.14.2] - 2026-07-24
+
+### Fixed
+
+- **Streaming window-cap no longer emits `final`.** Hitting the ~2.5 s encoder
+  window now commits a stable prefix and emits a non-final `partial` so the
+  utterance keeps growing. True `final` / `speech_final` is reserved for VAD
+  silence, decoder blank-run (when no VAD), or client `stop` — fixing premature
+  command execution in voice assistants (Irene) that treat every `final` as
+  "command complete". Additive wire fields on segments: `speech_final` (omitted
+  when false) and `endpoint_reason` (`vad` | `blank` | `stop`) (#212).
+
+### Added
+
+- **`--endpoint-mode auto|assistant|manual`** (`GIGASTT_ENDPOINT_MODE`) and
+  per-session WS `configure.endpoint_mode` / `configure.min_silence_ms`.
+  `assistant` ends utterances only on VAD silence (pair with `--vad`); `manual`
+  only on `stop`. Cap never finalizes under any mode (#212).
 
 ## [2.14.1] - 2026-07-24
 
@@ -1935,7 +1937,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.1...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.2...HEAD
+[2.14.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.1...v2.14.2
 [2.14.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.0...v2.14.1
 [2.14.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.13.0...v2.14.0
 [2.13.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.12.0...v2.13.0
