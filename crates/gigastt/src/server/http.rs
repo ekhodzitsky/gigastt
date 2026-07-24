@@ -176,17 +176,6 @@ pub struct TranscribeResponse {
     pub segments: Option<Vec<Segment>>,
 }
 
-/// OpenAI-compatible transcription response for `POST /v1/audio/transcriptions`.
-///
-/// Matches the minimal OpenAI Audio Transcriptions JSON shape used by
-/// llama-swap, Hermes Agent, and other clients that point `base_url` at a
-/// local STT server: only `{"text":"..."}` (no `words` / `duration`).
-#[derive(Debug, Serialize, Deserialize)]
-pub struct OpenAITranscriptionResponse {
-    /// Full recognized transcript text.
-    pub text: String,
-}
-
 /// Query parameters for `/v1/transcribe` export formatting.
 #[derive(Debug, Default, Clone, Deserialize)]
 pub struct ExportParams {
@@ -970,54 +959,6 @@ async fn run_file_transcription(
     }
 }
 
-/// Parse an OpenAI-style multipart body for `POST /v1/audio/transcriptions`.
-///
-/// Requires a non-empty `file` field. Accepts (and ignores) `model` and any
-/// other OpenAI form fields (`language`, `prompt`, `response_format`, …) so
-/// clients that send the full OpenAI request shape keep working. A single-head
-/// server always runs the loaded engine regardless of the `model` string
-/// (llama-swap / Hermes often pass `whisper-1` or a local alias).
-async fn parse_openai_transcription_multipart(mut multipart: Multipart) -> Result<Bytes, ApiError> {
-    let mut file: Option<Bytes> = None;
-    while let Some(field) = multipart.next_field().await.map_err(|e| {
-        api_error(
-            StatusCode::BAD_REQUEST,
-            &format!("Invalid multipart body: {e}"),
-            "invalid_multipart",
-        )
-    })? {
-        let name = field.name().unwrap_or("").to_string();
-        let data = field.bytes().await.map_err(|e| {
-            api_error(
-                StatusCode::BAD_REQUEST,
-                &format!("Failed to read multipart field: {e}"),
-                "invalid_multipart",
-            )
-        })?;
-        match name.as_str() {
-            "file" => file = Some(data),
-            // Accepted for OpenAI client compatibility; not used for routing.
-            "model" | "language" | "prompt" | "response_format" | "temperature" => {}
-            _ => {}
-        }
-    }
-    let file = file.ok_or_else(|| {
-        api_error(
-            StatusCode::BAD_REQUEST,
-            "Missing required form field: file",
-            "missing_file",
-        )
-    })?;
-    if file.is_empty() {
-        return Err(api_error(
-            StatusCode::BAD_REQUEST,
-            "Empty request body",
-            "empty_body",
-        ));
-    }
-    Ok(file)
-}
-
 /// POST /v1/transcribe — upload audio file, get full transcript.
 ///
 /// Accepts raw audio body. Supported formats: WAV (including G.711 A-law /
@@ -1056,19 +997,28 @@ pub async fn transcribe(
 
 /// POST /v1/audio/transcriptions — OpenAI-compatible file transcription.
 ///
-/// Minimal surface for clients that speak the OpenAI Audio Transcriptions API
-/// (llama-swap, Hermes Agent, OpenAI SDKs with a custom `base_url`):
-/// `multipart/form-data` with `file` (+ optional `model`) → `{"text":"..."}`.
+/// Compatibility surface for clients that speak the OpenAI Audio Transcriptions
+/// API (llama-swap, Hermes Agent, OpenAI SDKs with a custom `base_url`):
+/// `multipart/form-data` with required `file` and optional
+/// `model` / `response_format` / `language` / `timestamp_granularities[]`.
 ///
-/// Reuses the same inference pipeline as [`transcribe`]; does not expose
-/// export formats, segments, or word timestamps (use `/v1/transcribe` for those).
+/// | `response_format` | Body |
+/// |---|---|
+/// | `json` (default) | `{"text":"..."}` |
+/// | `text` | plain text |
+/// | `srt` / `vtt` | captions |
+/// | `verbose_json` | Whisper-style JSON (`task`, `language`, `duration`, `text`, optional `segments`/`words`) |
+///
+/// Reuses the same inference pipeline as [`transcribe`]. `model` is accepted
+/// and ignored (single loaded head). For diarization, telephony codecs, or
+/// native export knobs use `/v1/transcribe`.
 pub async fn openai_transcriptions(
     State(state): State<Arc<AppState>>,
     multipart: Multipart,
-) -> Result<Json<OpenAITranscriptionResponse>, ApiError> {
-    let body = parse_openai_transcription_multipart(multipart).await?;
-    let result = run_file_transcription(&state, body, &ExportParams::default()).await?;
-    Ok(Json(OpenAITranscriptionResponse { text: result.text }))
+) -> Result<Response, ApiError> {
+    let req = super::openai::parse_openai_multipart(multipart).await?;
+    let result = run_file_transcription(&state, req.file, &ExportParams::default()).await?;
+    Ok(super::openai::render_openai_response(&result, &req.options))
 }
 
 /// POST /v1/transcribe/stream — upload audio file, get SSE stream of partial/final results.
@@ -1657,184 +1607,6 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["text"], "hello");
         assert_eq!(v["duration"], 1.5);
-    }
-
-    #[test]
-    fn test_openai_transcription_response_is_text_only() {
-        // OpenAI-compatible clients (llama-swap, Hermes) expect exactly
-        // `{"text":"..."}` — no words/duration fields from the native API.
-        let resp = OpenAITranscriptionResponse {
-            text: "привет".into(),
-        };
-        let v = serde_json::to_value(&resp).unwrap();
-        assert_eq!(v["text"], "привет");
-        let obj = v.as_object().unwrap();
-        assert_eq!(
-            obj.len(),
-            1,
-            "OpenAI response must contain only `text`: {obj:?}"
-        );
-    }
-
-    /// Build a minimal `multipart/form-data` body for OpenAI transcription tests.
-    fn openai_multipart_body(boundary: &str, fields: &[(&str, Option<&str>, &[u8])]) -> Vec<u8> {
-        // fields: (name, optional filename, value bytes)
-        let mut body = Vec::new();
-        for (name, filename, value) in fields {
-            body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
-            match filename {
-                Some(fname) => {
-                    body.extend_from_slice(
-                        format!(
-                            "Content-Disposition: form-data; name=\"{name}\"; filename=\"{fname}\"\r\n\
-                             Content-Type: application/octet-stream\r\n\r\n"
-                        )
-                        .as_bytes(),
-                    );
-                }
-                None => {
-                    body.extend_from_slice(
-                        format!("Content-Disposition: form-data; name=\"{name}\"\r\n\r\n")
-                            .as_bytes(),
-                    );
-                }
-            }
-            body.extend_from_slice(value);
-            body.extend_from_slice(b"\r\n");
-        }
-        body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
-        body
-    }
-
-    #[tokio::test]
-    async fn test_parse_openai_multipart_extracts_file_and_ignores_model() {
-        use axum::Router;
-        use axum::routing::post;
-
-        let app = Router::new().route(
-            "/t",
-            post(|multipart: Multipart| async move {
-                match parse_openai_transcription_multipart(multipart).await {
-                    Ok(bytes) => (StatusCode::OK, bytes).into_response(),
-                    Err(resp) => resp,
-                }
-            }),
-        );
-
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let port = listener.local_addr().unwrap().port();
-        tokio::spawn(async move {
-            axum::serve(listener, app).await.unwrap();
-        });
-
-        let boundary = "----gigasttTestBoundary";
-        let file_bytes = b"RIFF....fake-wav-payload";
-        let body = openai_multipart_body(
-            boundary,
-            &[
-                ("model", None, b"whisper-1"),
-                ("file", Some("clip.wav"), file_bytes),
-                ("language", None, b"ru"),
-            ],
-        );
-
-        let resp = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/t"))
-            .header(
-                "content-type",
-                format!("multipart/form-data; boundary={boundary}"),
-            )
-            .body(body)
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), 200);
-        let got = resp.bytes().await.unwrap();
-        assert_eq!(&got[..], file_bytes);
-    }
-
-    #[tokio::test]
-    async fn test_parse_openai_multipart_missing_file_returns_400() {
-        use axum::Router;
-        use axum::routing::post;
-
-        let app = Router::new().route(
-            "/t",
-            post(|multipart: Multipart| async move {
-                match parse_openai_transcription_multipart(multipart).await {
-                    Ok(bytes) => (StatusCode::OK, bytes).into_response(),
-                    Err(resp) => resp,
-                }
-            }),
-        );
-
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let port = listener.local_addr().unwrap().port();
-        tokio::spawn(async move {
-            axum::serve(listener, app).await.unwrap();
-        });
-
-        let boundary = "----gigasttTestBoundary";
-        let body = openai_multipart_body(boundary, &[("model", None, b"whisper-1")]);
-
-        let resp = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/t"))
-            .header(
-                "content-type",
-                format!("multipart/form-data; boundary={boundary}"),
-            )
-            .body(body)
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), 400);
-        let v: serde_json::Value = serde_json::from_str(&resp.text().await.unwrap()).unwrap();
-        assert_eq!(v["code"], "missing_file");
-    }
-
-    #[tokio::test]
-    async fn test_parse_openai_multipart_empty_file_returns_400() {
-        use axum::Router;
-        use axum::routing::post;
-
-        let app = Router::new().route(
-            "/t",
-            post(|multipart: Multipart| async move {
-                match parse_openai_transcription_multipart(multipart).await {
-                    Ok(bytes) => (StatusCode::OK, bytes).into_response(),
-                    Err(resp) => resp,
-                }
-            }),
-        );
-
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
-        let port = listener.local_addr().unwrap().port();
-        tokio::spawn(async move {
-            axum::serve(listener, app).await.unwrap();
-        });
-
-        let boundary = "----gigasttTestBoundary";
-        let body = openai_multipart_body(
-            boundary,
-            &[
-                ("model", None, b"gigaam-v3-rnnt"),
-                ("file", Some("empty.wav"), b""),
-            ],
-        );
-
-        let resp = reqwest::Client::new()
-            .post(format!("http://127.0.0.1:{port}/t"))
-            .header(
-                "content-type",
-                format!("multipart/form-data; boundary={boundary}"),
-            )
-            .body(body)
-            .send()
-            .await
-            .unwrap();
-        assert_eq!(resp.status(), 400);
-        let v: serde_json::Value = serde_json::from_str(&resp.text().await.unwrap()).unwrap();
-        assert_eq!(v["code"], "empty_body");
     }
 
     #[test]

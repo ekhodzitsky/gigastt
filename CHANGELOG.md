@@ -11,9 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **OpenAI-compatible `POST /v1/audio/transcriptions`.** Multipart form with
   required `file` and optional `model` (accepted for client compatibility,
-  ignored — the loaded engine is always used) returns `{"text":"..."}`. Thin
-  alias over the same pipeline as `/v1/transcribe` for llama-swap, Hermes Agent,
-  and OpenAI SDKs pointed at a custom `base_url` (#214).
+  ignored — the loaded engine is always used). Supports OpenAI
+  `response_format` (`json` · `text` · `srt` · `vtt` · `verbose_json`),
+  `language` (echoed in verbose), and `timestamp_granularities[]` (`word` /
+  `segment`). Default remains `{"text":"..."}`. Same pipeline as
+  `/v1/transcribe` for llama-swap, Hermes Agent, and OpenAI SDKs with a custom
+  `base_url` (#214).
 
 ### Changed
 

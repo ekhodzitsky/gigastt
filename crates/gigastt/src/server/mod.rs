@@ -8,6 +8,7 @@ pub mod http;
 pub mod jobs;
 pub mod metrics;
 pub(crate) mod middleware;
+pub(crate) mod openai;
 pub mod rate_limit;
 mod ws;
 

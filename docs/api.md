@@ -298,24 +298,52 @@ probability; omitted when there are no words).
 
 ### OpenAI-compatible transcriptions
 
-`POST /v1/audio/transcriptions` is a thin compatibility layer over the same
+`POST /v1/audio/transcriptions` is a compatibility layer over the same
 inference pipeline as `/v1/transcribe`, shaped for the
-[OpenAI Audio Transcriptions API](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create):
+[OpenAI Audio Transcriptions API](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create)
+(llama-swap, Hermes Agent, OpenAI SDKs with a custom `base_url`).
 
 | Input | Notes |
 |---|---|
 | `Content-Type` | `multipart/form-data` |
 | `file` | Required. Audio bytes (same formats as `/v1/transcribe`) |
-| `model` | Accepted for client compatibility; **ignored**. A single-head server always uses the loaded engine (`gigaam-v3-rnnt`, …). Pass any string (`whisper-1`, a local alias, or the real model id). |
+| `model` | Accepted for client compatibility; **ignored**. Pass any string (`whisper-1`, a local alias, or the real model id). |
+| `response_format` | `json` (default) · `text` · `srt` · `vtt` · `verbose_json`. Unknown → `400 invalid_response_format`. |
+| `language` | Accepted; echoed in `verbose_json` (default `ru`). Does not switch the loaded head. |
+| `timestamp_granularities[]` | With `verbose_json`: `word` and/or `segment`. Default (neither set) = segments only. |
+| `prompt`, `temperature` | Accepted and ignored (SDK compatibility). |
 
-| Output | Notes |
+| `response_format` | Body |
 |---|---|
-| `{"text":"..."}` | Only field. No `words` / `duration` / export formats. |
+| `json` | `{"text":"..."}` only |
+| `text` | plain text (`text/plain`) |
+| `srt` / `vtt` | captions |
+| `verbose_json` | Whisper-style: `task`, `language`, `duration`, `text`, optional `segments` / `words` |
 
-For word timestamps, segments, SRT/VTT, diarization, or telephony codecs, use
-`POST /v1/transcribe` instead. Point llama-swap / Hermes Agent `base_url` at
-`http://127.0.0.1:9876/v1` (path suffix `/audio/transcriptions` is appended by
-the client).
+```sh
+# Default JSON
+curl -X POST http://127.0.0.1:9876/v1/audio/transcriptions \
+  -F model=whisper-1 -F file=@recording.wav
+# {"text":"…"}
+
+# Verbose with word + segment timestamps
+curl -X POST http://127.0.0.1:9876/v1/audio/transcriptions \
+  -F model=whisper-1 -F file=@recording.wav \
+  -F response_format=verbose_json \
+  -F language=ru \
+  -F 'timestamp_granularities[]=word' \
+  -F 'timestamp_granularities[]=segment'
+
+# Plain text / SRT
+curl -X POST http://127.0.0.1:9876/v1/audio/transcriptions \
+  -F model=whisper-1 -F file=@recording.wav -F response_format=text
+curl -X POST http://127.0.0.1:9876/v1/audio/transcriptions \
+  -F model=whisper-1 -F file=@recording.wav -F response_format=srt
+```
+
+Point llama-swap / Hermes Agent `base_url` at `http://127.0.0.1:9876/v1`
+(path suffix `/audio/transcriptions` is appended by the client). For
+diarization, telephony codecs, or native export knobs use `POST /v1/transcribe`.
 
 ## Admin reload
 

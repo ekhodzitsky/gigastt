@@ -491,13 +491,17 @@ paths:
     post:
       summary: OpenAI-compatible file transcription
       description: |
-        Minimal OpenAI Audio Transcriptions compatible endpoint for clients that
-        speak that API shape (llama-swap, Hermes Agent, OpenAI SDKs with a custom
-        `base_url`). Multipart form with required `file` and optional `model`
-        (accepted for compatibility, ignored — the loaded engine is always used).
-        Returns `{"text":"..."}` only. Same audio formats and 30-minute cap as
-        `/v1/transcribe`. For words, segments, exports, diarization, or
-        telephony codecs, use `POST /v1/transcribe` instead.
+        OpenAI Audio Transcriptions compatible endpoint for clients that speak
+        that API shape (llama-swap, Hermes Agent, OpenAI SDKs with a custom
+        `base_url`). Multipart form with required `file` and optional
+        `model` / `response_format` / `language` / `timestamp_granularities[]`.
+        `model` is accepted for compatibility and ignored (loaded engine always
+        used). Same audio formats and 30-minute cap as `/v1/transcribe`.
+
+        `response_format`: `json` (default, `{"text"}`) · `text` · `srt` · `vtt`
+        · `verbose_json` (Whisper-style: `task`, `language`, `duration`, `text`,
+        optional `segments`/`words`). For diarization, telephony codecs, or
+        native knobs use `POST /v1/transcribe`.
       operationId: createTranscription
       requestBody:
         required: true
@@ -517,19 +521,96 @@ paths:
                     Accepted for OpenAI client compatibility; ignored. Any string
                     works (`whisper-1`, a local alias, or a gigastt model id).
                   example: whisper-1
+                response_format:
+                  type: string
+                  enum: [json, text, srt, vtt, verbose_json]
+                  default: json
+                  description: Output shape (OpenAI Whisper formats).
+                language:
+                  type: string
+                  description: |
+                    Echoed in `verbose_json` (default `ru`). Does not switch the
+                    loaded recognition head.
+                  example: ru
+                timestamp_granularities:
+                  type: array
+                  items:
+                    type: string
+                    enum: [word, segment]
+                  description: |
+                    With `verbose_json`: include `words` and/or `segments`.
+                    Form field name is `timestamp_granularities[]`. Default when
+                    neither is set: segments only.
+                prompt:
+                  type: string
+                  description: Accepted and ignored (SDK compatibility).
+                temperature:
+                  type: string
+                  description: Accepted and ignored (SDK compatibility).
       responses:
         "200":
-          description: Transcription result (OpenAI minimal JSON)
+          description: |
+            Transcription result. Content type depends on `response_format`:
+            JSON for `json`/`verbose_json`, `text/plain` for `text`, captions for
+            `srt`/`vtt`.
           content:
             application/json:
               schema:
-                type: object
-                required: [text]
-                properties:
-                  text:
-                    type: string
-                    description: Full recognized transcript text.
-                    example: "Привет, как дела?"
+                oneOf:
+                  - type: object
+                    required: [text]
+                    properties:
+                      text:
+                        type: string
+                        example: "Привет, как дела?"
+                  - type: object
+                    required: [task, language, duration, text]
+                    properties:
+                      task:
+                        type: string
+                        example: transcribe
+                      language:
+                        type: string
+                        example: ru
+                      duration:
+                        type: number
+                        format: float
+                      text:
+                        type: string
+                      segments:
+                        type: array
+                        items:
+                          type: object
+                      words:
+                        type: array
+                        items:
+                          type: object
+              examples:
+                json:
+                  value:
+                    text: "Привет, как дела?"
+                verbose_json:
+                  value:
+                    task: transcribe
+                    language: ru
+                    duration: 3.5
+                    text: "Привет, как дела?"
+                    segments:
+                      - id: 0
+                        seek: 0
+                        start: 0.5
+                        end: 3.5
+                        text: " Привет, как дела?"
+            text/plain:
+              schema:
+                type: string
+                example: "Привет, как дела?"
+            application/x-subrip:
+              schema:
+                type: string
+            text/vtt:
+              schema:
+                type: string
         "400":
           $ref: "#/components/responses/BadRequest"
         "413":
