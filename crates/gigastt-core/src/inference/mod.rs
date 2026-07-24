@@ -64,7 +64,7 @@ use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
 use crate::error::GigasttError;
-use crate::model::ModelVariant;
+use crate::model::{ModelManifest, ModelVariant};
 use crate::runtime::factory::Runtime;
 #[allow(unused_imports)]
 use crate::runtime::factory::RuntimeFactory;
@@ -149,13 +149,82 @@ fn total_ram_bytes() -> u64 {
     }
 }
 
-/// Resolve which recognition head the engine should load: an explicit
-/// `override_` (from `--model-variant`) always wins, else auto-detect from the
-/// on-disk layout (`rnnt` precedence). Extracted so the override precedence —
-/// the fix that keeps `--model-variant` effective when a directory holds more
-/// than one head — is unit-testable without model files.
-fn resolve_load_variant(override_: Option<ModelVariant>, model_dir: &Path) -> Option<ModelVariant> {
-    override_.or_else(|| ModelVariant::detect_in_dir(model_dir))
+/// Resolve which recognition head the engine should load.
+///
+/// Precedence:
+/// 1. Explicit `override_` (from `--model-variant`) always wins.
+/// 2. Else `manifest.toml` architecture, when that file is present.
+/// 3. Else auto-detect from on-disk encoder filenames (`rnnt` precedence).
+///
+/// A present-but-invalid `manifest.toml` is a hard error (not silently ignored).
+/// Extracted so the override / manifest / disk precedence is unit-testable
+/// without model weights.
+fn resolve_load_variant(
+    override_: Option<ModelVariant>,
+    model_dir: &Path,
+) -> anyhow::Result<Option<ModelVariant>> {
+    // Always validate a present manifest so a corrupt pack fails clearly, even
+    // when the CLI override selects the architecture.
+    let manifest = ModelManifest::load(model_dir)?;
+    if let Some(v) = override_ {
+        return Ok(Some(v));
+    }
+    if let Some(m) = manifest {
+        return Ok(Some(m.architecture));
+    }
+    Ok(ModelVariant::detect_in_dir(model_dir))
+}
+
+/// On-disk model file paths for a load: either from `manifest.toml` or from the
+/// hardcoded [`ModelVariant`] basenames when no manifest is present.
+struct ResolvedModelFiles {
+    encoder: std::path::PathBuf,
+    decoder: Option<std::path::PathBuf>,
+    joint: Option<std::path::PathBuf>,
+    vocab: std::path::PathBuf,
+    using_int8: bool,
+}
+
+impl ResolvedModelFiles {
+    fn resolve(dir: &Path, variant: ModelVariant) -> anyhow::Result<Self> {
+        if let Some(m) = ModelManifest::load(dir)? {
+            let using_int8 = m.prefers_int8(dir);
+            return Ok(Self {
+                encoder: m.preferred_encoder_path(dir),
+                decoder: m.decoder_path(dir),
+                joint: m.joint_path(dir),
+                vocab: m.vocab_path(dir),
+                using_int8,
+            });
+        }
+        Ok(Self::from_variant(dir, variant))
+    }
+
+    fn from_variant(dir: &Path, variant: ModelVariant) -> Self {
+        let int8 = dir.join(variant.encoder_int8_file());
+        let (encoder, using_int8) = if int8.exists() {
+            (int8, true)
+        } else {
+            (dir.join(variant.encoder_file()), false)
+        };
+        if variant.is_ctc() {
+            Self {
+                encoder,
+                decoder: None,
+                joint: None,
+                vocab: dir.join(variant.vocab_file()),
+                using_int8,
+            }
+        } else {
+            Self {
+                encoder,
+                decoder: Some(dir.join(variant.decoder_file())),
+                joint: Some(dir.join(variant.joint_file())),
+                vocab: dir.join(variant.vocab_file()),
+                using_int8,
+            }
+        }
+    }
 }
 
 /// Encoder time subsampling factor (4 frames → 1 encoder output frame).
@@ -1207,15 +1276,24 @@ impl Engine {
         encoder_intra_threads: usize,
     ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
-        // Resolve the head once, up front: an explicit `variant` wins, else detect
-        // from disk (rnnt precedence). Resolving here (not just inside
-        // `load_with_factory`) keeps the RAM cap below sized to the head that will
-        // actually load.
-        let Some(variant) = resolve_load_variant(variant, dir) else {
-            return Err(GigasttError::ModelLoad {
-                path: dir.display().to_string(),
-                source: None,
-            });
+        // Resolve the head once, up front: an explicit `variant` wins, else
+        // manifest.toml architecture, else detect from disk (rnnt precedence).
+        // Resolving here (not just inside `load_with_factory`) keeps the RAM cap
+        // sized to the head that will actually load.
+        let variant = match resolve_load_variant(variant, dir) {
+            Ok(Some(v)) => v,
+            Ok(None) => {
+                return Err(GigasttError::ModelLoad {
+                    path: dir.display().to_string(),
+                    source: None,
+                });
+            }
+            Err(e) => {
+                return Err(GigasttError::ModelLoad {
+                    path: dir.display().to_string(),
+                    source: Some(e.into()),
+                });
+            }
         };
         // Bound the idle footprint: each pooled triplet deserializes its own
         // encoder copy, so a large `--pool-size` on a small host can OOM at
@@ -1257,15 +1335,25 @@ impl Engine {
         encoder_intra_threads: usize,
     ) -> Result<Self, GigasttError> {
         // Honor an explicit variant (e.g. from `--model-variant`) when the caller
-        // resolved one; otherwise auto-detect from the on-disk layout (rnnt
-        // precedence). Passing the override through is what makes `--model-variant`
-        // effective when a directory holds more than one head — without it the
-        // engine always re-detects and silently loads the highest-precedence head.
-        let Some(variant) = resolve_load_variant(variant_override, model_dir) else {
-            return Err(GigasttError::ModelLoad {
-                path: model_dir.display().to_string(),
-                source: None,
-            });
+        // resolved one; otherwise prefer `manifest.toml`, else auto-detect from
+        // the on-disk layout (rnnt precedence). Passing the override through is
+        // what makes `--model-variant` effective when a directory holds more than
+        // one head — without it the engine always re-detects and silently loads
+        // the highest-precedence head.
+        let variant = match resolve_load_variant(variant_override, model_dir) {
+            Ok(Some(v)) => v,
+            Ok(None) => {
+                return Err(GigasttError::ModelLoad {
+                    path: model_dir.display().to_string(),
+                    source: None,
+                });
+            }
+            Err(e) => {
+                return Err(GigasttError::ModelLoad {
+                    path: model_dir.display().to_string(),
+                    source: Some(e.into()),
+                });
+            }
         };
         let pool_size = pool_size.max(1);
         let min_size = min_size.clamp(1, pool_size);
@@ -1276,13 +1364,14 @@ impl Engine {
             source: Some(e.into()),
         };
 
+        let files = ResolvedModelFiles::resolve(model_dir, variant).map_err(model_load)?;
+
         tracing::info!("Detected model variant: {variant:?}");
         // The candle backend loads FP32 `candle/*.safetensors` and ignores the
         // INT8 ONNX encoder, so report no INT8 there and gate out the INT8 / ONNX
         // / CPU-EP logs below (which are wrong for candle), emitting an accurate
         // candle line instead. The default (ort) logging is unchanged.
-        let is_int8 =
-            !cfg!(feature = "candle") && model_dir.join(variant.encoder_int8_file()).exists();
+        let is_int8 = !cfg!(feature = "candle") && files.using_int8;
         if !cfg!(feature = "candle") {
             if is_int8 {
                 tracing::info!("Using INT8 quantized encoder");
@@ -1317,7 +1406,7 @@ impl Engine {
         // CoreML can reject a model at load time; fall back to CPU if that happens.
         #[cfg(feature = "coreml")]
         let triplets = match Self::load_triplets_runtime(
-            &*runtime, model_dir, variant, pool_size, min_size,
+            &*runtime, &files, variant, pool_size, min_size,
         )
         .map_err(model_load)
         {
@@ -1328,17 +1417,15 @@ impl Engine {
                 );
                 let cpu_factory = factory.cpu_fallback();
                 let runtime = cpu_factory.create(encoder_intra_threads)?;
-                Self::load_triplets_runtime(&*runtime, model_dir, variant, pool_size, min_size)
+                Self::load_triplets_runtime(&*runtime, &files, variant, pool_size, min_size)
                     .map_err(model_load)?
             }
         };
         #[cfg(not(feature = "coreml"))]
-        let triplets =
-            Self::load_triplets_runtime(&*runtime, model_dir, variant, pool_size, min_size)
-                .map_err(model_load)?;
+        let triplets = Self::load_triplets_runtime(&*runtime, &files, variant, pool_size, min_size)
+            .map_err(model_load)?;
 
-        let tokenizer =
-            Tokenizer::load(&model_dir.join(variant.vocab_file())).map_err(model_load)?;
+        let tokenizer = Tokenizer::load(&files.vocab).map_err(model_load)?;
         let features = FeatureExtractor::new();
 
         tracing::info!(
@@ -1405,7 +1492,7 @@ impl Engine {
                     .create(encoder_intra_threads)
                     .map_err(|e| anyhow::anyhow!(e))?;
                 let triplets =
-                    Self::load_triplets_runtime(&*runtime, model_dir, variant, pool_size, min_size)?;
+                    Self::load_triplets_runtime(&*runtime, &files, variant, pool_size, min_size)?;
                 let (pool, batch_pool) = Self::split_triplets(triplets, batch_pool_size);
                 e.pool = pool;
                 e.batch_pool = batch_pool;
@@ -1418,13 +1505,14 @@ impl Engine {
     }
 
     /// Path to the preferred encoder model for `variant`: INT8 quantized if
-    /// present, FP32 otherwise.
+    /// present, FP32 otherwise. Honors `manifest.toml` file names when present.
     fn encoder_model_path(dir: &Path, variant: ModelVariant) -> std::path::PathBuf {
-        let int8 = dir.join(variant.encoder_int8_file());
-        if int8.exists() {
-            int8
-        } else {
-            dir.join(variant.encoder_file())
+        match ResolvedModelFiles::resolve(dir, variant) {
+            Ok(files) => files.encoder,
+            // Invalid manifests are rejected earlier at variant resolution; this
+            // fallback keeps the helper usable in unit tests with no / corrupt
+            // manifest by using the hardcoded ModelVariant basenames.
+            Err(_) => ResolvedModelFiles::from_variant(dir, variant).encoder,
         }
     }
 
@@ -1581,19 +1669,19 @@ impl Engine {
     /// [`Runtime`], tolerating a partial pool down to `min_size`.
     fn load_triplets_runtime(
         runtime: &dyn Runtime,
-        dir: &Path,
+        files: &ResolvedModelFiles,
         variant: ModelVariant,
         pool_size: usize,
         min_size: usize,
     ) -> anyhow::Result<Vec<SessionTriplet>> {
-        let encoder_path = Self::encoder_model_path(dir, variant);
+        let encoder_path = files.encoder.clone();
         // CTC is encoder-only: no decoder/joiner ONNX exists on disk, and the CTC
         // branch in `run_inference` returns right after the encoder run without
         // touching them. Load them only for the RNN-T heads (leaving `None` for
         // CTC avoids holding an unused, never-run session per pool triplet).
         let is_ctc = variant.is_ctc();
-        let decoder_path = dir.join(variant.decoder_file());
-        let joiner_path = dir.join(variant.joint_file());
+        let decoder_path = files.decoder.clone();
+        let joiner_path = files.joint.clone();
 
         let results: Vec<anyhow::Result<SessionTriplet>> = std::thread::scope(|s| {
             let handles: Vec<_> = (0..pool_size)
@@ -1613,6 +1701,18 @@ impl Engine {
                             let (decoder, joiner) = if is_ctc {
                                 (None, None)
                             } else {
+                                let decoder_path = decoder_path.as_ref().ok_or_else(|| {
+                                    anyhow::anyhow!(
+                                        "decoder ONNX path missing for non-CTC architecture {}",
+                                        variant.as_str()
+                                    )
+                                })?;
+                                let joiner_path = joiner_path.as_ref().ok_or_else(|| {
+                                    anyhow::anyhow!(
+                                        "joint ONNX path missing for non-CTC architecture {}",
+                                        variant.as_str()
+                                    )
+                                })?;
                                 let decoder = runtime
                                     .load_session(decoder_path, false)
                                     .map_err(|e| anyhow::anyhow!(e))?;
@@ -3546,12 +3646,12 @@ mod tests {
         );
         // No override → auto-detect (rnnt precedence): behavior is unchanged.
         assert_eq!(
-            resolve_load_variant(None, dir.path()),
+            resolve_load_variant(None, dir.path()).unwrap(),
             Some(ModelVariant::Rnnt)
         );
         // Explicit override wins over the higher-precedence head on disk.
         assert_eq!(
-            resolve_load_variant(Some(ModelVariant::E2eRnnt), dir.path()),
+            resolve_load_variant(Some(ModelVariant::E2eRnnt), dir.path()).unwrap(),
             Some(ModelVariant::E2eRnnt)
         );
 
@@ -3560,11 +3660,115 @@ mod tests {
         // whatever else is on disk.
         let empty = tempfile::tempdir().expect("tempdir");
         assert_eq!(
-            resolve_load_variant(Some(ModelVariant::E2eRnnt), empty.path()),
+            resolve_load_variant(Some(ModelVariant::E2eRnnt), empty.path()).unwrap(),
             Some(ModelVariant::E2eRnnt)
         );
         // No override + empty dir → nothing to load.
-        assert_eq!(resolve_load_variant(None, empty.path()), None);
+        assert_eq!(resolve_load_variant(None, empty.path()).unwrap(), None);
+    }
+
+    #[test]
+    fn test_resolve_load_variant_manifest_beats_disk_detection() {
+        // Disk has rnnt (higher precedence), but manifest selects e2e_rnnt.
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join(ModelVariant::Rnnt.encoder_file()), b"x").unwrap();
+        std::fs::write(dir.path().join(ModelVariant::E2eRnnt.encoder_file()), b"x").unwrap();
+        std::fs::write(
+            dir.path().join(crate::model::MANIFEST_FILE),
+            r#"
+architecture = "e2e_rnnt"
+[files]
+encoder = "v3_e2e_rnnt_encoder.onnx"
+decoder = "v3_e2e_rnnt_decoder.onnx"
+joint = "v3_e2e_rnnt_joint.onnx"
+vocab = "v3_e2e_rnnt_vocab.txt"
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(
+            ModelVariant::detect_in_dir(dir.path()),
+            Some(ModelVariant::Rnnt)
+        );
+        assert_eq!(
+            resolve_load_variant(None, dir.path()).unwrap(),
+            Some(ModelVariant::E2eRnnt)
+        );
+        // CLI override still wins over the manifest architecture.
+        assert_eq!(
+            resolve_load_variant(Some(ModelVariant::Rnnt), dir.path()).unwrap(),
+            Some(ModelVariant::Rnnt)
+        );
+    }
+
+    #[test]
+    fn test_resolve_load_variant_invalid_manifest_is_error() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(
+            dir.path().join(crate::model::MANIFEST_FILE),
+            "not = [valid\n",
+        )
+        .unwrap();
+        assert!(resolve_load_variant(None, dir.path()).is_err());
+        // Even with an override, a corrupt manifest is a hard error.
+        assert!(resolve_load_variant(Some(ModelVariant::Rnnt), dir.path()).is_err());
+    }
+
+    #[test]
+    fn test_resolved_model_files_without_manifest_match_variant_basenames() {
+        // Regression: no manifest.toml → byte-identical hardcoded names.
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("v3_rnnt_encoder.onnx"), b"fp32").unwrap();
+        std::fs::write(dir.path().join("v3_rnnt_encoder_int8.onnx"), b"int8").unwrap();
+
+        let files = ResolvedModelFiles::resolve(dir.path(), ModelVariant::Rnnt).unwrap();
+        assert_eq!(
+            files.encoder.file_name().unwrap(),
+            "v3_rnnt_encoder_int8.onnx"
+        );
+        assert!(files.using_int8);
+        assert_eq!(
+            files.decoder.as_ref().unwrap().file_name().unwrap(),
+            "v3_rnnt_decoder.onnx"
+        );
+        assert_eq!(
+            files.joint.as_ref().unwrap().file_name().unwrap(),
+            "v3_rnnt_joint.onnx"
+        );
+        assert_eq!(files.vocab.file_name().unwrap(), "v3_vocab.txt");
+    }
+
+    #[test]
+    fn test_resolved_model_files_manifest_encoder_prefers_int8() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("custom_enc.onnx"), b"fp32").unwrap();
+        std::fs::write(dir.path().join("custom_enc_int8.onnx"), b"int8").unwrap();
+        std::fs::write(
+            dir.path().join(crate::model::MANIFEST_FILE),
+            r#"
+architecture = "rnnt"
+[files]
+encoder = "custom_enc.onnx"
+encoder_int8 = "custom_enc_int8.onnx"
+decoder = "custom_dec.onnx"
+joint = "custom_joint.onnx"
+vocab = "custom_vocab.txt"
+"#,
+        )
+        .unwrap();
+
+        let files = ResolvedModelFiles::resolve(dir.path(), ModelVariant::Rnnt).unwrap();
+        assert_eq!(
+            files.encoder.file_name().unwrap(),
+            "custom_enc_int8.onnx",
+            "manifest INT8 encoder must win when present on disk"
+        );
+        assert!(files.using_int8);
+        assert_eq!(
+            files.decoder.as_ref().unwrap().file_name().unwrap(),
+            "custom_dec.onnx"
+        );
+        assert_eq!(files.vocab.file_name().unwrap(), "custom_vocab.txt");
     }
 
     // ---- Pool tests (B.7) ---------------------------------------------------
@@ -4136,6 +4340,28 @@ mod tests {
         std::fs::write(dir.path().join("v3_rnnt_encoder.onnx"), b"fp32").unwrap();
         let path = Engine::encoder_model_path(dir.path(), ModelVariant::Rnnt);
         assert_eq!(path.file_name().unwrap(), "v3_rnnt_encoder.onnx");
+    }
+
+    #[test]
+    fn test_encoder_model_path_uses_manifest_int8_when_present() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        std::fs::write(dir.path().join("pack_enc.onnx"), b"fp32").unwrap();
+        std::fs::write(dir.path().join("pack_enc_int8.onnx"), b"int8").unwrap();
+        std::fs::write(
+            dir.path().join(crate::model::MANIFEST_FILE),
+            r#"
+architecture = "rnnt"
+[files]
+encoder = "pack_enc.onnx"
+encoder_int8 = "pack_enc_int8.onnx"
+decoder = "pack_dec.onnx"
+joint = "pack_joint.onnx"
+vocab = "pack_vocab.txt"
+"#,
+        )
+        .unwrap();
+        let path = Engine::encoder_model_path(dir.path(), ModelVariant::Rnnt);
+        assert_eq!(path.file_name().unwrap(), "pack_enc_int8.onnx");
     }
 
     #[test]

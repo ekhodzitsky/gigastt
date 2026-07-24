@@ -4,6 +4,15 @@
 //! Two recognition heads are selectable via [`ModelVariant`]: the plain `rnnt`
 //! head (default — lower WER, bare lowercase output) and the `e2e_rnnt` head
 //! (punctuation / casing / ITN baked in).
+//!
+//! An optional `manifest.toml` in the model directory can override ONNX/vocab
+//! basenames and select the architecture for third-party packs (see
+//! [`ModelManifest`]). When absent, load paths use the hardcoded
+//! [`ModelVariant`] filenames.
+
+mod manifest;
+
+pub use manifest::{MANIFEST_FILE, ManifestFiles, ModelManifest};
 
 #[cfg(feature = "net")]
 use anyhow::Context;
