@@ -547,13 +547,30 @@ paths:
                 temperature:
                   type: string
                   description: Accepted and ignored (SDK compatibility).
+                stream:
+                  type: boolean
+                  default: false
+                  description: |
+                    When true, respond with SSE (`text/event-stream`) of
+                    `transcript.text.delta` events, a final
+                    `transcript.text.done`, and `data: [DONE]`. Only valid with
+                    `response_format` json or text (default).
       responses:
         "200":
           description: |
-            Transcription result. Content type depends on `response_format`:
-            JSON for `json`/`verbose_json`, `text/plain` for `text`, captions for
-            `srt`/`vtt`.
+            Transcription result. Content type depends on `response_format` /
+            `stream`: JSON for `json`/`verbose_json`, `text/plain` for `text`,
+            captions for `srt`/`vtt`, or `text/event-stream` when `stream=true`.
           content:
+            text/event-stream:
+              schema:
+                type: string
+              example: |
+                data: {"type":"transcript.text.delta","delta":"Привет"}
+
+                data: {"type":"transcript.text.done","text":"Привет"}
+
+                data: [DONE]
             application/json:
               schema:
                 oneOf:

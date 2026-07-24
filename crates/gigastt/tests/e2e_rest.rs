@@ -1650,6 +1650,60 @@ async fn test_openai_transcriptions_invalid_format_returns_400() {
 
 #[ignore]
 #[tokio::test]
+async fn test_openai_transcriptions_stream_sse() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = common::generate_wav(2, 16000);
+    let (content_type, body) = openai_form("whisper-1", "clip.wav", &wav, &[("stream", "true")]);
+
+    let resp = post_openai(port, content_type, body).await;
+    assert_eq!(resp.status(), 200);
+    let ct = resp
+        .headers()
+        .get("content-type")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    assert!(
+        ct.starts_with("text/event-stream"),
+        "stream=true must be SSE, got {ct}"
+    );
+
+    let bytes = resp.bytes().await.expect("SSE body");
+    let text = String::from_utf8_lossy(&bytes);
+    assert!(
+        text.contains("transcript.text.done") || text.contains("[DONE]"),
+        "SSE must end with done/[DONE], got: {text}"
+    );
+    assert!(
+        text.contains("[DONE]"),
+        "OpenAI streams end with data: [DONE], got: {text}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_openai_transcriptions_stream_with_srt_returns_400() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = common::generate_wav(1, 16000);
+    let (content_type, body) = openai_form(
+        "whisper-1",
+        "clip.wav",
+        &wav,
+        &[("stream", "true"), ("response_format", "srt")],
+    );
+
+    let resp = post_openai(port, content_type, body).await;
+    assert_eq!(resp.status(), 400);
+    let body: serde_json::Value =
+        serde_json::from_str(&resp.text().await.expect("body")).expect("JSON");
+    assert_eq!(body["code"], "invalid_stream_options");
+
+    let _ = shutdown.send(());
+}
+
+#[ignore]
+#[tokio::test]
 async fn test_openai_transcriptions_missing_file_returns_400() {
     let (port, shutdown) = common::start_server(&common::model_dir()).await;
     let boundary = "----gigasttE2EBoundary";

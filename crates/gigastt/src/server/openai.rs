@@ -12,14 +12,17 @@
 //! | `response_format` | `json` (default) · `text` · `srt` · `vtt` · `verbose_json` |
 //! | `language` | accepted; echoed in `verbose_json` (default `ru`) |
 //! | `timestamp_granularities[]` | `word` / `segment` for `verbose_json` |
+//! | `stream` | `true`/`false` — SSE of `transcript.text.delta` + `done` + `[DONE]` |
 //! | `prompt`, `temperature` | accepted, ignored |
 //!
 //! Inference reuses the native pipeline; this module only shapes the request
-//! and response envelopes.
+//! and response envelopes. Streaming runs the real chunked encoder path and
+//! maps progressive text to OpenAI transcript events (append-only deltas).
 
 use axum::body::Bytes;
 use axum::extract::Multipart;
 use axum::http::{StatusCode, header};
+use axum::response::sse::Event;
 use axum::response::{IntoResponse, Json, Response};
 use gigastt_core::export::{RenderOpts, to_srt, to_transcript_segments, to_vtt};
 use gigastt_core::inference::{TranscribeResult, WordInfo};
@@ -56,6 +59,23 @@ impl OpenAIResponseFormat {
             )),
         }
     }
+
+    /// Wire token (for error messages).
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Json => "json",
+            Self::Text => "text",
+            Self::Srt => "srt",
+            Self::Vtt => "vtt",
+            Self::VerboseJson => "verbose_json",
+        }
+    }
+}
+
+impl std::fmt::Display for OpenAIResponseFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
 }
 
 /// Parsed OpenAI multipart options (everything except the audio file).
@@ -73,6 +93,9 @@ pub struct OpenAITranscriptionOptions {
     pub include_words: bool,
     /// Whether `verbose_json` should include segment-level timestamps.
     pub include_segments: bool,
+    /// When true, respond with an SSE stream of OpenAI transcript events
+    /// instead of a single buffered body.
+    pub stream: bool,
 }
 
 /// Fully parsed multipart request.
@@ -193,6 +216,14 @@ pub fn apply_openai_form_field(
                 }
             }
         }
+        "stream" => {
+            options.stream = parse_bool_form(&text()).ok_or_else(|| {
+                format!(
+                    "Invalid stream value '{}'. Use true or false",
+                    text().trim()
+                )
+            })?;
+        }
         // Accepted for SDK compatibility; no server-side effect.
         "prompt" | "temperature" => {}
         _ => {}
@@ -200,15 +231,148 @@ pub fn apply_openai_form_field(
     Ok(())
 }
 
+/// Parse OpenAI-style form booleans (`true`/`false`/`1`/`0`).
+fn parse_bool_form(raw: &str) -> Option<bool> {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "true" | "1" | "yes" | "on" => Some(true),
+        "false" | "0" | "no" | "off" => Some(false),
+        "" => Some(false),
+        _ => None,
+    }
+}
+
 /// After all fields are applied, resolve default granularities for
 /// `verbose_json`: if the client requested neither, include segments only
-/// (OpenAI historical default).
-pub fn finalize_openai_options(options: &mut OpenAITranscriptionOptions) {
+/// (OpenAI historical default). Streaming is incompatible with caption
+/// `response_format`s (SSE is always text-delta events).
+pub fn finalize_openai_options(options: &mut OpenAITranscriptionOptions) -> Result<(), String> {
     if options.response_format == OpenAIResponseFormat::VerboseJson
         && !options.include_words
         && !options.include_segments
     {
         options.include_segments = true;
+    }
+    if options.stream {
+        match options.response_format {
+            OpenAIResponseFormat::Json | OpenAIResponseFormat::Text => {}
+            other => {
+                return Err(format!(
+                    "stream=true is not supported with response_format='{other}'. Use json or text (or omit response_format)"
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// OpenAI streaming event: incremental text.
+#[derive(Debug, Serialize)]
+pub struct OpenAITranscriptDelta {
+    #[serde(rename = "type")]
+    pub event_type: &'static str,
+    pub delta: String,
+}
+
+/// OpenAI streaming event: full transcript at end of stream.
+#[derive(Debug, Serialize)]
+pub struct OpenAITranscriptDone {
+    #[serde(rename = "type")]
+    pub event_type: &'static str,
+    pub text: String,
+}
+
+/// SSE `data:` payload for a text delta.
+pub fn sse_delta_payload(delta: &str) -> String {
+    serde_json::to_string(&OpenAITranscriptDelta {
+        event_type: "transcript.text.delta",
+        delta: delta.to_string(),
+    })
+    .unwrap_or_else(|_| r#"{"type":"transcript.text.delta","delta":""}"#.into())
+}
+
+/// SSE `data:` payload for the terminal done event.
+pub fn sse_done_payload(text: &str) -> String {
+    serde_json::to_string(&OpenAITranscriptDone {
+        event_type: "transcript.text.done",
+        text: text.to_string(),
+    })
+    .unwrap_or_else(|_| r#"{"type":"transcript.text.done","text":""}"#.into())
+}
+
+/// Build an axum SSE event for a delta / done / `[DONE]` marker.
+pub fn sse_event_data(data: impl Into<String>) -> Event {
+    Event::default().data(data.into())
+}
+
+/// Tracks append-only OpenAI text for progressive streaming.
+///
+/// Gigastt partials rewrite the *current* utterance; finals close it.
+/// Deltas are emitted only when the cumulative view is a prefix extension of
+/// what was already sent (OpenAI deltas are append-only — never retract).
+#[derive(Debug, Default)]
+pub struct OpenAIStreamAssembler {
+    /// Text from completed (final) utterances.
+    committed: String,
+    /// Full cumulative text already sent as deltas.
+    last_emitted: String,
+}
+
+impl OpenAIStreamAssembler {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Full transcript for the terminal `transcript.text.done` event.
+    pub fn text(&self) -> &str {
+        // Prefer committed after finals; fall back to live-emitted partials.
+        if self.committed.len() >= self.last_emitted.len() {
+            &self.committed
+        } else {
+            &self.last_emitted
+        }
+    }
+
+    /// Ingest one native segment; return an optional delta to send.
+    pub fn push_segment(&mut self, text: &str, is_final: bool) -> Option<String> {
+        let live = text.trim();
+        let candidate = match (self.committed.is_empty(), live.is_empty()) {
+            (_, true) => self.committed.clone(),
+            (true, false) => live.to_string(),
+            (false, false) => format!("{} {live}", self.committed),
+        };
+
+        let mut delta = None;
+        if candidate.starts_with(&self.last_emitted) {
+            let d = candidate[self.last_emitted.len()..].to_string();
+            if !d.is_empty() {
+                self.last_emitted.clone_from(&candidate);
+                delta = Some(d);
+            }
+        }
+        // else: partial rewrote earlier tokens — skip (cannot unsend)
+
+        if is_final {
+            if !live.is_empty() {
+                self.committed = if self.committed.is_empty() {
+                    live.to_string()
+                } else {
+                    format!("{} {live}", self.committed)
+                };
+            }
+            // Align emission cursor with committed when it is a pure extension.
+            if self.committed.starts_with(&self.last_emitted) {
+                let d = self.committed[self.last_emitted.len()..].to_string();
+                self.last_emitted.clone_from(&self.committed);
+                if delta.is_none() && !d.is_empty() {
+                    delta = Some(d);
+                }
+            } else {
+                // Final disagrees with what we streamed — snap cursor for `done`
+                // accuracy without inventing a retracting delta.
+                self.last_emitted.clone_from(&self.committed);
+            }
+        }
+        delta
     }
 }
 
@@ -243,6 +407,8 @@ pub async fn parse_openai_multipart(
                 "invalid_response_format"
             } else if msg.contains("timestamp_granularity") {
                 "invalid_timestamp_granularity"
+            } else if msg.contains("stream") {
+                "invalid_stream"
             } else {
                 "invalid_multipart"
             };
@@ -250,7 +416,13 @@ pub async fn parse_openai_multipart(
         }
     }
 
-    finalize_openai_options(&mut options);
+    if let Err(msg) = finalize_openai_options(&mut options) {
+        return Err(openai_error(
+            StatusCode::BAD_REQUEST,
+            &msg,
+            "invalid_stream_options",
+        ));
+    }
 
     let file = file.ok_or_else(|| {
         openai_error(
@@ -428,7 +600,7 @@ mod tests {
         apply_openai_form_field(&mut opts, "timestamp_granularities[]", b"word").unwrap();
         apply_openai_form_field(&mut opts, "prompt", b"ignored").unwrap();
         apply_openai_form_field(&mut opts, "temperature", b"0").unwrap();
-        finalize_openai_options(&mut opts);
+        finalize_openai_options(&mut opts).unwrap();
 
         assert_eq!(opts.model.as_deref(), Some("whisper-1"));
         assert_eq!(opts.language.as_deref(), Some("Russian"));
@@ -444,9 +616,52 @@ mod tests {
             response_format: OpenAIResponseFormat::VerboseJson,
             ..Default::default()
         };
-        finalize_openai_options(&mut opts);
+        finalize_openai_options(&mut opts).unwrap();
         assert!(opts.include_segments);
         assert!(!opts.include_words);
+    }
+
+    #[test]
+    fn test_stream_flag_and_incompatible_format() {
+        let mut opts = OpenAITranscriptionOptions::default();
+        apply_openai_form_field(&mut opts, "stream", b"true").unwrap();
+        assert!(opts.stream);
+        finalize_openai_options(&mut opts).unwrap();
+
+        let mut opts = OpenAITranscriptionOptions {
+            stream: true,
+            response_format: OpenAIResponseFormat::Srt,
+            ..Default::default()
+        };
+        let err = finalize_openai_options(&mut opts).unwrap_err();
+        assert!(err.contains("stream=true"));
+    }
+
+    #[test]
+    fn test_stream_assembler_grows_and_finalizes() {
+        let mut a = OpenAIStreamAssembler::new();
+        assert_eq!(a.push_segment("привет", false).as_deref(), Some("привет"));
+        assert_eq!(a.push_segment("привет мир", false).as_deref(), Some(" мир"));
+        assert_eq!(a.push_segment("привет мир", true).as_deref(), None);
+        assert_eq!(a.text(), "привет мир");
+        // Second utterance
+        assert_eq!(
+            a.push_segment("как дела", true).as_deref(),
+            Some(" как дела")
+        );
+        assert_eq!(a.text(), "привет мир как дела");
+    }
+
+    #[test]
+    fn test_sse_payloads() {
+        let d = sse_delta_payload(" hi");
+        let v: serde_json::Value = serde_json::from_str(&d).unwrap();
+        assert_eq!(v["type"], "transcript.text.delta");
+        assert_eq!(v["delta"], " hi");
+        let done = sse_done_payload("hello");
+        let v: serde_json::Value = serde_json::from_str(&done).unwrap();
+        assert_eq!(v["type"], "transcript.text.done");
+        assert_eq!(v["text"], "hello");
     }
 
     #[test]
@@ -474,7 +689,7 @@ mod tests {
             language: Some("ru".into()),
             ..Default::default()
         };
-        finalize_openai_options(&mut opts);
+        finalize_openai_options(&mut opts).unwrap();
         let v = serde_json::to_value(build_verbose_response(&result, &opts)).unwrap();
         assert_eq!(v["task"], "transcribe");
         assert_eq!(v["language"], "ru");
@@ -504,7 +719,7 @@ mod tests {
             language: Some("English".into()),
             ..Default::default()
         };
-        finalize_openai_options(&mut opts);
+        finalize_openai_options(&mut opts).unwrap();
         let v = serde_json::to_value(build_verbose_response(&result, &opts)).unwrap();
         assert_eq!(v["language"], "en");
         assert!(v.get("segments").is_none());
@@ -523,7 +738,7 @@ mod tests {
             include_segments: true,
             ..Default::default()
         };
-        finalize_openai_options(&mut opts);
+        finalize_openai_options(&mut opts).unwrap();
         let v = serde_json::to_value(build_verbose_response(&result, &opts)).unwrap();
         assert!(v["segments"].is_array());
         assert!(v["words"].is_array());

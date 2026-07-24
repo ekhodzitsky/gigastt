@@ -311,6 +311,7 @@ inference pipeline as `/v1/transcribe`, shaped for the
 | `response_format` | `json` (default) · `text` · `srt` · `vtt` · `verbose_json`. Unknown → `400 invalid_response_format`. |
 | `language` | Accepted; echoed in `verbose_json` (default `ru`). Does not switch the loaded head. |
 | `timestamp_granularities[]` | With `verbose_json`: `word` and/or `segment`. Default (neither set) = segments only. |
+| `stream` | `true`/`false`. When true, SSE of OpenAI transcript events (only with `json`/`text`). |
 | `prompt`, `temperature` | Accepted and ignored (SDK compatibility). |
 
 | `response_format` | Body |
@@ -319,6 +320,19 @@ inference pipeline as `/v1/transcribe`, shaped for the
 | `text` | plain text (`text/plain`) |
 | `srt` / `vtt` | captions |
 | `verbose_json` | Whisper-style: `task`, `language`, `duration`, `text`, optional `segments` / `words` |
+
+**Streaming (`stream=true`).** Response is `text/event-stream`:
+
+```
+data: {"type":"transcript.text.delta","delta":"Привет"}
+data: {"type":"transcript.text.delta","delta":" мир"}
+data: {"type":"transcript.text.done","text":"Привет мир"}
+data: [DONE]
+```
+
+Deltas are append-only progressive text from the real chunked encoder path
+(same pipeline as `/v1/transcribe/stream`). Incompatible with `srt` / `vtt` /
+`verbose_json` → `400 invalid_stream_options`.
 
 ```sh
 # Default JSON
