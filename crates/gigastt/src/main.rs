@@ -14,7 +14,8 @@ use tracing_subscriber::EnvFilter;
 #[command(
     name = "gigastt",
     version,
-    about = "Local STT server powered by GigaAM v3"
+    about = "Local STT server powered by GigaAM v3",
+    after_long_help = "Engine and post-processing options (--model-variant, --punctuation, --itn, --vad, ...) are defined on the subcommands, not at the top level.\nSee `gigastt serve --help` or `gigastt transcribe --help` for the full list."
 )]
 struct Cli {
     /// Log level [default: info]
@@ -3365,6 +3366,24 @@ mod tests {
     fn test_cli_rejects_unknown_subcommand() {
         let res = Cli::try_parse_from(["gigastt", "bogus"]);
         assert!(res.is_err(), "unknown subcommand must be rejected");
+    }
+
+    #[test]
+    fn test_cli_top_level_long_help_points_to_subcommand_engine_flags() {
+        use clap::CommandFactory;
+        let help = Cli::command().render_long_help().to_string();
+        for needle in [
+            "serve --help",
+            "--punctuation",
+            "--itn",
+            "--vad",
+            "--model-variant",
+        ] {
+            assert!(
+                help.contains(needle),
+                "top-level long help must mention `{needle}`:\n{help}"
+            );
+        }
     }
 
     #[test]

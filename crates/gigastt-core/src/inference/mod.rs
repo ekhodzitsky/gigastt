@@ -695,7 +695,8 @@ pub struct StreamingState {
     /// Optional VAD endpoint detector (present only when the engine has a VAD).
     /// Fed every chunk's raw samples to track trailing silence; when it fires,
     /// `process_chunk` finalizes the current segment. `None` = no VAD, and
-    /// endpointing falls back to the decoder's blank-run heuristic alone.
+    /// endpointing falls back to the decoder's blank-run heuristic alone;
+    /// `Some` = the VAD owns endpointing and the blank-run heuristic is ignored.
     pub vad_endpointer: Option<crate::vad::VadEndpointer>,
     /// Per-session punctuation/casing-restoration override applied to **final**
     /// segments only (`None` = engine boot default). Set by the WS `configure`
@@ -904,10 +905,11 @@ pub struct Engine {
     /// via [`Engine::with_biaser`]. Shared across the session pool by reference.
     biaser: Option<bias::Biaser>,
     /// Optional Silero VAD. When set, file transcription skips silent regions
-    /// (decoding only detected speech) and streaming finalizes a segment on
-    /// VAD-detected trailing silence. `None` = no VAD: the file path decodes the
-    /// whole buffer and streaming endpointing is byte-for-byte unchanged.
-    /// Attached via [`Engine::with_vad`].
+    /// (decoding only detected speech) and streaming endpointing is owned by
+    /// VAD-detected trailing silence (the decoder's blank-run heuristic is
+    /// ignored, so `vad_config.min_silence_ms` fully controls finalization).
+    /// `None` = no VAD: the file path decodes the whole buffer and streaming
+    /// endpointing is byte-for-byte unchanged. Attached via [`Engine::with_vad`].
     vad: Option<crate::vad::SileroVad>,
     /// Thresholds for the VAD (speech threshold, min silence/speech, padding).
     /// Ignored when `vad` is `None`.
@@ -1020,7 +1022,8 @@ impl Engine {
     /// `self` (builder style). Pass `None` for no VAD (the default): file
     /// transcription then decodes the whole buffer and streaming endpointing is
     /// byte-for-byte unchanged. When set, file transcription skips silence and
-    /// streaming finalizes on VAD-detected trailing silence.
+    /// streaming endpointing is owned by VAD-detected trailing silence (the
+    /// decoder's blank-run heuristic is ignored).
     pub fn with_vad(
         mut self,
         vad: Option<crate::vad::SileroVad>,
@@ -1715,7 +1718,9 @@ impl Engine {
     /// Process a chunk of 16kHz f32 audio samples and return any new transcript segments.
     ///
     /// Returns [`TranscriptSegment`] with `is_final == false` during speech (Partial),
-    /// and `is_final == true` on endpointing (~600ms silence detected).
+    /// and `is_final == true` on endpointing (~600ms silence via the decoder's
+    /// blank-run heuristic; when a VAD is attached, VAD-detected trailing silence
+    /// of `--vad-min-silence-ms` owns endpointing instead).
     /// Streaming state (LSTM hidden/cell, leftover audio, accumulated text) is maintained in `state`.
     ///
     /// # Errors
@@ -1754,8 +1759,9 @@ impl Engine {
         // continuously (independent of the decode stride). A VAD endpoint forces
         // a decode + finalize this chunk even if the stride gate wouldn't fire.
         // VAD is non-blocking: an inference error is logged and ignored, leaving
-        // endpointing to the decoder's blank-run heuristic. With no VAD attached
-        // `vad_endpoint` is always false and the path is byte-for-byte unchanged.
+        // the window cap as the only backstop until the VAD recovers. With no
+        // VAD attached `vad_endpoint` is always false and the decoder's
+        // blank-run heuristic keeps owning endpointing, byte-for-byte unchanged.
         let mut vad_endpoint = false;
         if let (Some(vad), Some(ep)) = (self.vad.as_ref(), state.vad_endpointer.as_mut()) {
             match ep.push(vad, samples) {
@@ -1787,7 +1793,14 @@ impl Engine {
         state.pending_samples = 0;
         let ts = now_timestamp();
 
-        if endpoint || over_cap || vad_endpoint {
+        // When a VAD endpointer is attached it owns endpointing: the decoder's
+        // fixed ~600ms blank-run heuristic is ignored, so `--vad-min-silence-ms`
+        // fully controls when a segment finalizes (the window cap below remains
+        // as a backstop). Without a VAD the blank-run heuristic is the only
+        // endpoint signal and behaves exactly as before.
+        let decoder_endpoint = endpoint && state.vad_endpointer.is_none();
+
+        if decoder_endpoint || over_cap || vad_endpoint {
             let mut seg = state.assembler.finalize(ts);
             self.enrich_final_segment(&mut seg, state);
             // Slide: retain the trailing left-context window for the next decode.
@@ -5172,6 +5185,150 @@ mod tests {
                 .set_words(vec![super::word("hello", 0.0, 0.4)]);
             let seg = engine.flush_state(&mut state).expect("flush");
             assert_eq!(seg.text, "hello");
+        }
+
+        /// Engine whose scripted joiner emits one "▁hi" token on its first call
+        /// and blanks afterwards, over a 16-frame encoder output: a single
+        /// decode then crosses the decoder's blank-run endpoint threshold
+        /// (15 consecutive blanks), reproducing a decoder endpoint without a
+        /// model. The encoder expects exactly one decode stride of audio
+        /// (12800 samples → 79 mel frames).
+        fn blank_run_engine() -> (Engine, tempfile::TempDir) {
+            let tmp = tempfile::tempdir().expect("tempdir");
+            let dir = tmp.path();
+
+            std::fs::write(dir.join("v3_rnnt_encoder.onnx"), b"").unwrap();
+            std::fs::write(dir.join("v3_rnnt_decoder.onnx"), b"").unwrap();
+            std::fs::write(dir.join("v3_rnnt_joint.onnx"), b"").unwrap();
+            // vocab: index 0 = "▁hi", index 1 = "<blk>".
+            std::fs::write(dir.join("v3_vocab.txt"), "\u{2581}hi\n<blk>\n").unwrap();
+
+            // (12800 - N_FFT) / HOP_LENGTH + 1 mel frames for one stride.
+            const MEL_FRAMES: usize = 79;
+            // 16 frames: frame 0 emits the token, then a blank on the same
+            // frame's second joiner call; frames 1..=15 add 15 more blanks —
+            // 16 consecutive blanks, one above the endpoint threshold.
+            const ENC_LEN: usize = 16;
+
+            let mut sessions: HashMap<String, Arc<MockSession>> = HashMap::new();
+            sessions.insert(
+                "v3_rnnt_encoder".into(),
+                Arc::new(MockSession::new(
+                    vec![Shape::new(vec![1, 64, MEL_FRAMES]), Shape::new(vec![1])],
+                    vec![
+                        Tensor::new(
+                            Shape::new(vec![1, ENC_DIM, ENC_LEN]),
+                            TensorData::F32(vec![0.0; ENC_DIM * ENC_LEN]),
+                        )
+                        .unwrap(),
+                        Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![ENC_LEN as i64]))
+                            .unwrap(),
+                    ],
+                )),
+            );
+            sessions.insert(
+                "v3_rnnt_decoder".into(),
+                Arc::new(MockSession::new(
+                    vec![
+                        Shape::new(vec![1, 1]),
+                        Shape::new(vec![1, 1, PRED_HIDDEN]),
+                        Shape::new(vec![1, 1, PRED_HIDDEN]),
+                    ],
+                    vec![
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        )
+                        .unwrap(),
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        )
+                        .unwrap(),
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        )
+                        .unwrap(),
+                    ],
+                )),
+            );
+            sessions.insert(
+                "v3_rnnt_joint".into(),
+                Arc::new(
+                    MockSession::new(
+                        vec![
+                            Shape::new(vec![1, ENC_DIM, 1]),
+                            Shape::new(vec![1, PRED_HIDDEN, 1]),
+                        ],
+                        vec![
+                            Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(vec![0.0; 2]))
+                                .unwrap(),
+                        ],
+                    )
+                    .with_script(vec![
+                        // First joiner call: token 0 ("▁hi") wins the argmax.
+                        vec![
+                            Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(vec![2.0, 0.0]))
+                                .unwrap(),
+                        ],
+                        // All later calls: blank (id 1) wins.
+                        vec![
+                            Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(vec![0.0, 2.0]))
+                                .unwrap(),
+                        ],
+                    ]),
+                ),
+            );
+
+            let factory = Box::new(MockFactory::new(sessions));
+            let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1)
+                .expect("engine should load with mock runtime");
+            (engine, tmp)
+        }
+
+        #[test]
+        fn test_process_chunk_blank_endpoint_finalizes_without_vad() {
+            // No VAD attached: the decoder's blank-run heuristic is the only
+            // endpoint signal and finalizes the segment as before.
+            let (engine, _tmp) = blank_run_engine();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let mut state = engine.create_state(false);
+            let chunk = vec![0.0f32; 12800]; // one decode stride
+            let segs = engine
+                .process_chunk(&chunk, &mut state, &mut guard)
+                .expect("mock decode must not error");
+            assert_eq!(
+                segs.len(),
+                1,
+                "blank-run endpoint must finalize the segment"
+            );
+            assert!(segs[0].is_final);
+            assert_eq!(segs[0].text, "hi");
+        }
+
+        #[test]
+        fn test_process_chunk_blank_endpoint_ignored_with_vad() {
+            // With a VAD endpointer attached the VAD owns endpointing, so the
+            // decoder's blank-run heuristic must NOT finalize the segment —
+            // otherwise a `--vad-min-silence-ms` above ~600ms would be
+            // unreachable (the decoder would cut the segment first).
+            let (engine, _tmp) = blank_run_engine();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let mut state = engine.create_state(false);
+            state.vad_endpointer = Some(crate::vad::VadEndpointer::new(
+                &crate::vad::VadConfig::default(),
+            ));
+            let chunk = vec![0.0f32; 12800];
+            let segs = engine
+                .process_chunk(&chunk, &mut state, &mut guard)
+                .expect("mock decode must not error");
+            assert_eq!(segs.len(), 1, "decoded words still surface as a partial");
+            assert!(
+                !segs[0].is_final,
+                "blank-run must not finalize while a VAD owns endpointing"
+            );
+            assert_eq!(segs[0].text, "hi");
         }
     }
 }

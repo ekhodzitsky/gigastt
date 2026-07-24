@@ -13,6 +13,8 @@ use super::{DecoderState, PRED_HIDDEN};
 const MAX_TOKENS_PER_STEP: usize = 10;
 const ENC_DIM: usize = 768;
 /// Number of consecutive blank frames to trigger endpointing (~600ms at 40ms/frame).
+/// This is the streaming endpoint signal only when no VAD is attached; with a
+/// VAD, `process_chunk` ignores it and the VAD's `min_silence_ms` owns endpointing.
 pub(crate) const ENDPOINT_BLANK_THRESHOLD: usize = 15;
 
 /// Token emitted by the decoder with metadata.

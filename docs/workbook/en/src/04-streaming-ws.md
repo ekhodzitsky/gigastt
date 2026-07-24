@@ -227,12 +227,13 @@ transcript. Never persist partial text.
 
 A `final` fires when an utterance ends: the built-in endpointing triggers
 on roughly 0.6 s of trailing silence, and with the optional Silero VAD
-(server `--vad`, model auto-downloads) the endpoint follows
-`--vad-min-silence-ms` (default 500 ms). Continuous speech without pauses
-is also finalized — the streaming window caps out at ~2.5 s and slides, so
-the transcript keeps committing even through a monologue. A `final` also
-arrives on `stop` (Recipe 3) and before a server-initiated close (Recipe
-4).
+(server `--vad`, model auto-downloads) the VAD takes over endpointing
+entirely — the built-in 0.6 s heuristic is disabled and the endpoint
+follows `--vad-min-silence-ms` (default 500 ms). Continuous speech without
+pauses is also finalized — the streaming window caps out at ~2.5 s and
+slides, so the transcript keeps committing even through a monologue. A
+`final` also arrives on `stop` (Recipe 3) and before a server-initiated
+close (Recipe 4).
 
 Per-session post-processing overrides compose with the same `configure`
 message (finals only; partials always stay raw). Asking for

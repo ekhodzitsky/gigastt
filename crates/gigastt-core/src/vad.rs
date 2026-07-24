@@ -6,8 +6,9 @@
 //!    speech spans of a clip so the engine can decode only those, skipping long
 //!    pauses. Speedup is proportional to the silence fraction.
 //! 2. **Streaming endpointing** — [`VadEndpointer`] tracks trailing silence
-//!    across streamed chunks and signals when an utterance has ended, finalizing
-//!    a segment sooner / more reliably than the decoder's blank-run heuristic.
+//!    across streamed chunks and signals when an utterance has ended. When a
+//!    VAD is attached it owns endpointing: the decoder's blank-run heuristic
+//!    is ignored, so `min_silence_ms` fully controls finalization.
 //!
 //! The model is loaded through the same `ort` runtime the recognition engine
 //! already uses (no extra dependency, no second ONNX Runtime). The Silero v5

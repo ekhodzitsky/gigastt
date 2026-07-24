@@ -79,6 +79,9 @@ impl Runtime for MockRuntime {
 pub struct MockSession {
     pub expected_inputs: Vec<Shape>,
     pub outputs: Vec<Tensor>,
+    /// Optional per-call output script overriding `outputs` (see
+    /// [`MockSession::with_script`]).
+    script: Option<Vec<Vec<Tensor>>>,
     call_count: AtomicUsize,
 }
 
@@ -88,8 +91,17 @@ impl MockSession {
         Self {
             expected_inputs,
             outputs,
+            script: None,
             call_count: AtomicUsize::new(0),
         }
+    }
+
+    /// Return scripted outputs per call instead of the fixed `outputs`: call
+    /// `i` (0-based) returns `script[min(i, script.len() - 1)]`, so the last
+    /// entry repeats once the script is exhausted. An empty script is ignored.
+    pub fn with_script(mut self, script: Vec<Vec<Tensor>>) -> Self {
+        self.script = Some(script);
+        self
     }
 
     /// Number of times [`RuntimeSession::run`] has been called on this session.
@@ -103,6 +115,7 @@ impl Clone for MockSession {
         Self {
             expected_inputs: self.expected_inputs.clone(),
             outputs: self.outputs.clone(),
+            script: self.script.clone(),
             call_count: AtomicUsize::new(self.call_count.load(Ordering::Relaxed)),
         }
     }
@@ -124,7 +137,12 @@ impl RuntimeSession for MockSession {
                 });
             }
         }
-        self.call_count.fetch_add(1, Ordering::Relaxed);
+        let call = self.call_count.fetch_add(1, Ordering::Relaxed);
+        if let Some(script) = &self.script
+            && !script.is_empty()
+        {
+            return Ok(script[call.min(script.len() - 1)].clone());
+        }
         Ok(self.outputs.clone())
     }
 }
