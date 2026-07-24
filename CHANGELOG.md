@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Streaming window-cap no longer emits `final`.** Hitting the ~2.5 s encoder
+  window now commits a stable prefix and emits a non-final `partial` so the
+  utterance keeps growing. True `final` / `speech_final` is reserved for VAD
+  silence, decoder blank-run (when no VAD), or client `stop` — fixing premature
+  command execution in voice assistants (Irene) that treat every `final` as
+  "command complete". Additive wire fields on segments: `speech_final` (omitted
+  when false) and `endpoint_reason` (`vad` | `blank` | `stop`).
+
+### Added
+
+- **`--endpoint-mode auto|assistant|manual`** (`GIGASTT_ENDPOINT_MODE`) and
+  per-session WS `configure.endpoint_mode` / `configure.min_silence_ms`.
+  `assistant` ends utterances only on VAD silence (pair with `--vad`); `manual`
+  only on `stop`. Cap never finalizes under any mode.
+
 ### Changed
 
 - **Documentation hygiene pass.** Supported versions in `SECURITY.md` track

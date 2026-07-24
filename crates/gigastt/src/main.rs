@@ -275,6 +275,21 @@ enum Commands {
         #[arg(long, env = "GIGASTT_VAD_MODEL_DIR", default_value_t = model::default_vad_model_dir())]
         vad_model_dir: String,
 
+        /// Streaming utterance-end policy for WebSocket sessions.
+        /// `auto` (default): VAD silence if `--vad`, else decoder blank-run (~0.6 s).
+        /// `assistant`: only VAD silence ends utterances (use with `--vad`); blank-run
+        /// is ignored — preferred for voice-command clients like Irene.
+        /// `manual`: only client `stop` ends utterances.
+        /// The encoder window cap never emits `final` under any mode.
+        /// Env: GIGASTT_ENDPOINT_MODE. Overridable per session via WS configure.
+        #[arg(
+            long,
+            env = "GIGASTT_ENDPOINT_MODE",
+            value_parser = ["auto", "assistant", "manual"],
+            default_value = "auto"
+        )]
+        endpoint_mode: String,
+
         /// Number of concurrent inference sessions. Each session deserializes
         /// its own encoder copy (~0.4 GB resident for the INT8 encoder), so the
         /// default is 2 to bound the idle footprint; raise it for higher
@@ -1355,6 +1370,7 @@ async fn main() -> anyhow::Result<()> {
             vad_threshold,
             vad_min_silence_ms,
             vad_model_dir,
+            endpoint_mode,
             pool_size,
             pool_min_size,
             batch_pool_size,
@@ -1426,6 +1442,7 @@ async fn main() -> anyhow::Result<()> {
                 let punct_model_dir = punct_model_dir.clone();
                 let vad_model_dir = vad_model_dir.clone();
                 let hotwords_file = hotwords_file.clone();
+                let endpoint_mode = endpoint_mode.clone();
                 std::sync::Arc::new(move || -> anyhow::Result<inference::Engine> {
                     // Honor the explicit --model-variant when set; otherwise
                     // detect what is present on disk. Reload never downloads, so
@@ -1451,6 +1468,8 @@ async fn main() -> anyhow::Result<()> {
                             .map(|n| n.get())
                             .unwrap_or(1),
                     );
+                    let mode = inference::EndpointMode::parse_token(&endpoint_mode)
+                        .unwrap_or(inference::EndpointMode::Auto);
                     let mut engine = inference::Engine::load_with_pools_threads_variant(
                         &model_dir,
                         Some(resolved),
@@ -1464,7 +1483,8 @@ async fn main() -> anyhow::Result<()> {
                     .with_vad(
                         maybe_load_vad(vad, &vad_model_dir),
                         build_vad_config(vad_threshold, vad_min_silence_ms),
-                    );
+                    )
+                    .with_endpoint_mode(mode);
                     if let Some(pairs) = hotwords {
                         engine = engine.with_hotwords(
                             &pairs,
@@ -3045,11 +3065,32 @@ mod tests {
                 vad,
                 vad_threshold,
                 vad_min_silence_ms,
+                endpoint_mode,
                 ..
             } => {
                 assert!(!vad);
                 assert_eq!(vad_threshold, None);
                 assert_eq!(vad_min_silence_ms, None);
+                assert_eq!(endpoint_mode, "auto");
+            }
+            _ => panic!("expected Serve"),
+        }
+    }
+
+    #[test]
+    fn test_cli_serve_endpoint_mode_assistant() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let _restore = EnvRestore(
+            "GIGASTT_ENDPOINT_MODE",
+            std::env::var("GIGASTT_ENDPOINT_MODE").ok(),
+        );
+        unsafe {
+            std::env::remove_var("GIGASTT_ENDPOINT_MODE");
+        }
+        let cli = Cli::parse_from(["gigastt", "serve", "--endpoint-mode", "assistant"]);
+        match cli.command {
+            Commands::Serve { endpoint_mode, .. } => {
+                assert_eq!(endpoint_mode, "assistant");
             }
             _ => panic!("expected Serve"),
         }

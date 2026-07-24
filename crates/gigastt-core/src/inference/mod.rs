@@ -59,7 +59,7 @@ impl EmbeddingExtractor for SharedExtractor {
 compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.");
 
 use anyhow::Context;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::ops::{Deref, DerefMut};
 use std::path::Path;
 
@@ -232,13 +232,16 @@ const ENCODER_SUBSAMPLING: usize = 4;
 /// Seconds per encoder frame (HOP_LENGTH * ENCODER_SUBSAMPLING / 16000 = 0.04s).
 const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64 * ENCODER_SUBSAMPLING as f64) / 16000.0;
 
-/// Max streaming encoder window before forcing a finalize (samples @16kHz, 2.5s).
+/// Max streaming encoder window before sliding (samples @16kHz, 2.5s).
 /// Re-decoding the whole window each stride gives the offline Conformer left
 /// context; this cap bounds the per-stride encoder cost. With the 1.5s retained
 /// left context and the 0.8s stride, a 2.5s window keeps the steady-state
 /// re-encode overlap near ~3x (vs ~6.25x at a 5s window) — roughly half the
 /// streaming encoder work — while retaining enough left context that streaming
 /// quality stays on par with batch (covered by the `streaming_quality` tests).
+///
+/// Hitting the cap **commits a stable prefix** and slides; it does **not** emit
+/// a speech-final `final` (that would mean "utterance complete" to assistants).
 const STREAM_MAX_WINDOW_SAMPLES: usize = 16000 * 5 / 2;
 /// Left-context audio retained across a streaming finalize/slide (samples @16kHz,
 /// ~1.5s) so the next window keeps acoustic context instead of restarting cold.
@@ -793,6 +796,8 @@ pub struct StreamingState {
     /// Per-session inverse-text-normalization override applied to **final**
     /// segments only (`None` = engine boot default).
     pub itn: Option<bool>,
+    /// Per-session utterance-end policy (from engine boot or WS `configure`).
+    pub endpoint_mode: EndpointMode,
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
     pub diarization_state: Option<StreamingPipeline<EnergyVad, SharedExtractor>>,
@@ -844,12 +849,74 @@ impl FeatureExtractor {
     }
 }
 
+/// Why a streaming segment was closed as a true utterance endpoint.
+///
+/// Window-cap slides are **not** utterance endpoints and never set this field —
+/// they emit a non-final partial after committing a stable prefix instead.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum EndpointReason {
+    /// Silero VAD detected trailing silence (`--vad` / `min_silence_ms`).
+    Vad,
+    /// Decoder blank-run heuristic (~600 ms) with no VAD attached.
+    Blank,
+    /// Client `stop`, connection drain, or explicit flush.
+    Stop,
+}
+
+/// Streaming utterance-end policy for WebSocket (and other streaming) sessions.
+///
+/// The encoder window cap is **never** an utterance endpoint under any mode —
+/// it only commits a stable prefix so the next partial keeps growing.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum EndpointMode {
+    /// Default: VAD silence (if attached) or decoder blank-run ends utterances.
+    #[default]
+    Auto,
+    /// Voice-assistant friendly: only VAD silence ends utterances automatically.
+    /// Blank-run is ignored even without a VAD — pair with `--vad` or rely on
+    /// client `stop`. Window cap never finalizes.
+    Assistant,
+    /// Only explicit `stop` / flush ends utterances (no blank, no VAD endpoint).
+    Manual,
+}
+
+impl EndpointMode {
+    /// Parse a wire / CLI token (`auto` | `assistant` | `manual`).
+    pub fn parse_token(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "auto" => Some(Self::Auto),
+            "assistant" => Some(Self::Assistant),
+            "manual" => Some(Self::Manual),
+            _ => None,
+        }
+    }
+
+    /// Canonical wire token for this mode.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Auto => "auto",
+            Self::Assistant => "assistant",
+            Self::Manual => "manual",
+        }
+    }
+}
+
 /// Streaming transcript assembler.
 ///
 /// Accumulates recognized words and builds partial / final [`TranscriptSegment`]
 /// payloads. Separated from `Engine` so the segment-building policy can be tested
 /// in isolation without loading ONNX models.
+///
+/// Holds a **committed** (stable) prefix plus a **live** tail. Window-cap slides
+/// move the live tail into the committed prefix without ending the utterance;
+/// true endpoints (`finalize`) take both and reset.
 pub struct TranscriptAssembler {
+    committed_text: String,
+    committed_words: Vec<WordInfo>,
     text: String,
     words: Vec<WordInfo>,
 }
@@ -864,12 +931,14 @@ impl TranscriptAssembler {
     /// Create a new, empty transcript assembler.
     pub fn new() -> Self {
         Self {
+            committed_text: String::new(),
+            committed_words: Vec::new(),
             text: String::new(),
             words: Vec::new(),
         }
     }
 
-    /// Append new words to the accumulated transcript.
+    /// Append new words to the **live** tail of the transcript.
     pub fn append(&mut self, new_words: Vec<WordInfo>) {
         for w in &new_words {
             if !self.text.is_empty() {
@@ -880,10 +949,11 @@ impl TranscriptAssembler {
         self.words.extend(new_words);
     }
 
-    /// Replace the accumulated transcript with a freshly decoded hypothesis.
+    /// Replace the **live** tail with a freshly decoded hypothesis.
     ///
     /// The sliding-window streaming path re-decodes its whole context window on
     /// every chunk, so it overwrites (rather than appends) the current tail.
+    /// The committed (stable) prefix is left untouched.
     pub fn set_words(&mut self, words: Vec<WordInfo>) {
         self.text = words
             .iter()
@@ -893,32 +963,86 @@ impl TranscriptAssembler {
         self.words = words;
     }
 
-    /// Build a **final** segment and reset internal accumulation.
+    /// Move the live tail into the committed (stable) prefix without ending the
+    /// utterance. Used when the encoder window slides: words that leave the
+    /// re-decode context must not reappear, but the client must not see a
+    /// `final` (that would mean "command complete" for voice assistants).
+    pub fn commit_live(&mut self) {
+        if self.words.is_empty() {
+            return;
+        }
+        if !self.committed_text.is_empty() && !self.text.is_empty() {
+            self.committed_text.push(' ');
+        }
+        self.committed_text.push_str(&self.text);
+        self.committed_words.append(&mut self.words);
+        self.text.clear();
+    }
+
+    /// Full utterance text (committed prefix + live tail).
+    fn full_text(&self) -> String {
+        if self.committed_text.is_empty() {
+            self.text.clone()
+        } else if self.text.is_empty() {
+            self.committed_text.clone()
+        } else {
+            format!("{} {}", self.committed_text, self.text)
+        }
+    }
+
+    /// Full utterance words (committed prefix + live tail).
+    fn full_words(&self) -> Vec<WordInfo> {
+        let mut out = Vec::with_capacity(self.committed_words.len() + self.words.len());
+        out.extend_from_slice(&self.committed_words);
+        out.extend_from_slice(&self.words);
+        out
+    }
+
+    /// Build a **final** segment for a true utterance endpoint and reset.
     pub fn finalize(&mut self, timestamp: f64) -> TranscriptSegment {
-        let confidence = aggregate_confidence(&self.words);
+        self.finalize_with_reason(timestamp, EndpointReason::Stop)
+    }
+
+    /// Build a **final** segment with an explicit endpoint reason and reset.
+    pub fn finalize_with_reason(
+        &mut self,
+        timestamp: f64,
+        reason: EndpointReason,
+    ) -> TranscriptSegment {
+        self.commit_live();
+        let words = std::mem::take(&mut self.committed_words);
+        let text = std::mem::take(&mut self.committed_text);
+        let confidence = aggregate_confidence(&words);
+        self.text.clear();
+        self.words.clear();
         TranscriptSegment {
-            text: std::mem::take(&mut self.text),
-            words: std::mem::take(&mut self.words),
+            text,
+            words,
             is_final: true,
+            speech_final: true,
+            endpoint_reason: Some(reason),
             timestamp,
             confidence,
         }
     }
 
-    /// Build a **partial** segment from current accumulation without resetting.
+    /// Build a **partial** segment from committed + live without resetting.
     pub fn partial(&self, timestamp: f64) -> TranscriptSegment {
+        let words = self.full_words();
         TranscriptSegment {
-            text: self.text.clone(),
-            words: self.words.clone(),
+            text: self.full_text(),
+            words: words.clone(),
             is_final: false,
+            speech_final: false,
+            endpoint_reason: None,
             timestamp,
-            confidence: aggregate_confidence(&self.words),
+            confidence: aggregate_confidence(&words),
         }
     }
 
-    /// True if no words have been accumulated yet.
+    /// True if neither the committed prefix nor the live tail has words.
     pub fn is_empty(&self) -> bool {
-        self.text.is_empty()
+        self.committed_text.is_empty() && self.text.is_empty()
     }
 }
 
@@ -1001,6 +1125,9 @@ pub struct Engine {
     /// Thresholds for the VAD (speech threshold, min silence/speech, padding).
     /// Ignored when `vad` is `None`.
     vad_config: crate::vad::VadConfig,
+    /// Default streaming utterance-end policy for new sessions. Overridable
+    /// per session via WS `configure.endpoint_mode`.
+    endpoint_mode: EndpointMode,
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
     /// True when pooled encoder sessions run on the ANE fixed-shape pad-up path.
@@ -1173,6 +1300,23 @@ impl Engine {
     /// Whether a VAD is attached (silence skipping / VAD endpointing active).
     pub fn has_vad(&self) -> bool {
         self.vad.is_some()
+    }
+
+    /// Boot-time VAD config (threshold, min silence, …). Useful when recreating
+    /// a per-session endpointer after `configure.min_silence_ms`.
+    pub fn vad_config(&self) -> &crate::vad::VadConfig {
+        &self.vad_config
+    }
+
+    /// Boot-time streaming endpoint mode for new sessions.
+    pub fn endpoint_mode(&self) -> EndpointMode {
+        self.endpoint_mode
+    }
+
+    /// Set the default streaming utterance-end policy for new sessions.
+    pub fn with_endpoint_mode(mut self, mode: EndpointMode) -> Self {
+        self.endpoint_mode = mode;
+        self
     }
 
     /// Size of the BPE vocabulary the loaded tokenizer covers. Exposed so the
@@ -1470,6 +1614,7 @@ impl Engine {
             biaser: None,
             vad: None,
             vad_config: crate::vad::VadConfig::default(),
+            endpoint_mode: EndpointMode::Auto,
             int8: is_int8,
             ane_encoder,
             #[cfg(feature = "diarization")]
@@ -1874,6 +2019,7 @@ impl Engine {
                 .map(|_| crate::vad::VadEndpointer::new(&self.vad_config)),
             punctuation: None,
             itn: None,
+            endpoint_mode: self.endpoint_mode,
             #[cfg(feature = "diarization")]
             diarization_state,
         }
@@ -1882,10 +2028,16 @@ impl Engine {
     /// Process a chunk of 16kHz f32 audio samples and return any new transcript segments.
     ///
     /// Returns [`TranscriptSegment`] with `is_final == false` during speech (Partial),
-    /// and `is_final == true` on endpointing (~600ms silence via the decoder's
-    /// blank-run heuristic; when a VAD is attached, VAD-detected trailing silence
-    /// of `--vad-min-silence-ms` owns endpointing instead).
-    /// Streaming state (LSTM hidden/cell, leftover audio, accumulated text) is maintained in `state`.
+    /// and `is_final == true` only on a **true utterance endpoint**:
+    ///
+    /// - decoder blank-run (~600 ms) when no VAD and [`EndpointMode::Auto`];
+    /// - VAD trailing silence when a VAD is attached (and mode is not `Manual`);
+    /// - never on the ~2.5 s encoder window cap (cap commits a stable prefix and
+    ///   emits a non-final partial so voice assistants do not treat a slide as
+    ///   "command complete").
+    ///
+    /// Streaming state (LSTM hidden/cell, leftover audio, accumulated text) is
+    /// maintained in `state`.
     ///
     /// # Errors
     ///
@@ -1957,34 +2109,77 @@ impl Engine {
         state.pending_samples = 0;
         let ts = now_timestamp();
 
-        // When a VAD endpointer is attached it owns endpointing: the decoder's
-        // fixed ~600ms blank-run heuristic is ignored, so `--vad-min-silence-ms`
-        // fully controls when a segment finalizes (the window cap below remains
-        // as a backstop). Without a VAD the blank-run heuristic is the only
-        // endpoint signal and behaves exactly as before.
-        let decoder_endpoint = endpoint && state.vad_endpointer.is_none();
+        // True utterance endpoints only — never the encoder window cap.
+        // Cap used to emit `final` as a "backstop", which voice assistants
+        // (Irene) treated as "command complete" mid-phrase; it now commits a
+        // stable prefix and emits a non-final partial instead.
+        let speech_endpoint = Self::speech_endpoint(
+            state.endpoint_mode,
+            endpoint,
+            vad_endpoint,
+            state.vad_endpointer.is_some(),
+        );
 
-        if decoder_endpoint || over_cap || vad_endpoint {
-            let mut seg = state.assembler.finalize(ts);
+        if speech_endpoint {
+            let reason = if vad_endpoint {
+                EndpointReason::Vad
+            } else {
+                EndpointReason::Blank
+            };
+            let mut seg = state.assembler.finalize_with_reason(ts, reason);
             self.enrich_final_segment(&mut seg, state);
-            // Slide: retain the trailing left-context window for the next decode.
-            let keep = STREAM_LEFT_CONTEXT_SAMPLES.min(state.audio_buffer.len());
-            let slide_off = state.audio_buffer.len() - keep;
-            if slide_off > 0 {
-                audio::consume_audio_buffer(&mut state.audio_buffer, slide_off);
-                state.window_start_samples += slide_off;
-            }
-            state.context_samples = keep;
+            Self::slide_streaming_window(state);
             if seg.text.trim().is_empty() {
                 return Ok(vec![]);
             }
             return Ok(vec![seg]);
         }
 
+        if over_cap {
+            // Encoder cost bound: commit live words so they are not lost when
+            // the window slides, but do **not** end the utterance.
+            state.assembler.commit_live();
+            Self::slide_streaming_window(state);
+            if state.assembler.is_empty() {
+                return Ok(vec![]);
+            }
+            return Ok(vec![state.assembler.partial(ts)]);
+        }
+
         if state.assembler.is_empty() {
             return Ok(vec![]);
         }
         Ok(vec![state.assembler.partial(ts)])
+    }
+
+    /// Whether this decode should close the utterance (`final` / `speech_final`).
+    ///
+    /// Pure helper so endpoint policy is unit-testable without ONNX.
+    pub(crate) fn speech_endpoint(
+        mode: EndpointMode,
+        decoder_blank_endpoint: bool,
+        vad_endpoint: bool,
+        vad_attached: bool,
+    ) -> bool {
+        let decoder_endpoint = decoder_blank_endpoint && !vad_attached;
+        match mode {
+            EndpointMode::Auto => decoder_endpoint || vad_endpoint,
+            // Assistant: only VAD silence (when attached). Blank-run alone is too
+            // aggressive for multi-word voice commands.
+            EndpointMode::Assistant => vad_endpoint,
+            EndpointMode::Manual => false,
+        }
+    }
+
+    /// Slide the streaming audio window, retaining left context for the next decode.
+    fn slide_streaming_window(state: &mut StreamingState) {
+        let keep = STREAM_LEFT_CONTEXT_SAMPLES.min(state.audio_buffer.len());
+        let slide_off = state.audio_buffer.len() - keep;
+        if slide_off > 0 {
+            audio::consume_audio_buffer(&mut state.audio_buffer, slide_off);
+            state.window_start_samples += slide_off;
+        }
+        state.context_samples = keep;
     }
 
     /// Re-decode the whole retained window from a fresh decoder state and update
@@ -2075,7 +2270,9 @@ impl Engine {
         if state.assembler.is_empty() {
             return None;
         }
-        let mut seg = state.assembler.finalize(now_timestamp());
+        let mut seg = state
+            .assembler
+            .finalize_with_reason(now_timestamp(), EndpointReason::Stop);
         self.enrich_final_segment(&mut seg, state);
         Some(seg)
     }
@@ -3063,8 +3260,10 @@ pub fn merge_channel_results(per_channel: Vec<TranscribeResult>) -> TranscribeRe
 }
 /// A transcript segment emitted by the inference engine.
 ///
-/// Partial segments (`is_final == false`) represent interim results that may change.
-/// Final segments (`is_final == true`) represent completed utterances after endpointing.
+/// Partial segments (`is_final == false`) represent interim results that may change
+/// (including stable prefixes after a window-cap commit — still not an utterance end).
+/// Final segments (`is_final == true`, `speech_final == true`) represent completed
+/// utterances after true endpointing (VAD / blank / stop) — never after a window slide.
 #[derive(Debug, Clone, Serialize)]
 #[non_exhaustive]
 pub struct TranscriptSegment {
@@ -3074,6 +3273,14 @@ pub struct TranscriptSegment {
     pub words: Vec<WordInfo>,
     /// Whether this segment is final (utterance complete) or partial (interim).
     pub is_final: bool,
+    /// True only for a true end-of-utterance (`final`). Always false on partials.
+    /// Omitted from JSON when false so older clients never see a new key on partials.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub speech_final: bool,
+    /// Why the utterance closed. Present only on true finals; omitted on partials
+    /// and when the reason is not set (legacy empty finals).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub endpoint_reason: Option<EndpointReason>,
     /// Unix timestamp (seconds since epoch) when this segment was produced.
     pub timestamp: f64,
     /// Mean confidence across the segment's words (duration-weighted average
@@ -3091,6 +3298,8 @@ impl TranscriptSegment {
             text: String::new(),
             words: vec![],
             is_final: true,
+            speech_final: true,
+            endpoint_reason: Some(EndpointReason::Stop),
             timestamp: now_timestamp(),
             confidence: None,
         }
@@ -4101,9 +4310,87 @@ vocab = "custom_vocab.txt"
         assert_eq!(seg.text, "hello world");
         assert_eq!(seg.words.len(), 2);
         assert!(seg.is_final);
+        assert!(seg.speech_final);
+        assert_eq!(seg.endpoint_reason, Some(EndpointReason::Stop));
         assert_eq!(seg.timestamp, 1.0);
         // After finalize the assembler is reset.
         assert!(asm.is_empty());
+    }
+
+    #[test]
+    fn test_transcript_assembler_commit_live_preserves_prefix_across_set_words() {
+        let mut asm = TranscriptAssembler::new();
+        asm.append(vec![WordInfo::new("hello", 0.0, 0.5, 0.9, None)]);
+        asm.commit_live();
+        // Window slide re-decode replaces only the live tail.
+        asm.set_words(vec![WordInfo::new("world", 0.6, 1.0, 0.8, None)]);
+        let partial = asm.partial(1.0);
+        assert!(!partial.is_final);
+        assert!(!partial.speech_final);
+        assert_eq!(partial.text, "hello world");
+        assert_eq!(partial.words.len(), 2);
+        let fin = asm.finalize_with_reason(2.0, EndpointReason::Vad);
+        assert!(fin.speech_final);
+        assert_eq!(fin.endpoint_reason, Some(EndpointReason::Vad));
+        assert_eq!(fin.text, "hello world");
+        assert!(asm.is_empty());
+    }
+
+    #[test]
+    fn test_speech_endpoint_policy_matrix() {
+        // Auto: blank without VAD, or VAD fire.
+        assert!(Engine::speech_endpoint(
+            EndpointMode::Auto,
+            true,
+            false,
+            false
+        ));
+        assert!(Engine::speech_endpoint(
+            EndpointMode::Auto,
+            false,
+            true,
+            true
+        ));
+        assert!(!Engine::speech_endpoint(
+            EndpointMode::Auto,
+            true,
+            false,
+            true
+        )); // blank ignored w/ VAD
+        // Assistant: only VAD.
+        assert!(!Engine::speech_endpoint(
+            EndpointMode::Assistant,
+            true,
+            false,
+            false
+        ));
+        assert!(Engine::speech_endpoint(
+            EndpointMode::Assistant,
+            false,
+            true,
+            true
+        ));
+        // Manual: never auto.
+        assert!(!Engine::speech_endpoint(
+            EndpointMode::Manual,
+            true,
+            true,
+            true
+        ));
+    }
+
+    #[test]
+    fn test_endpoint_mode_parse_token() {
+        assert_eq!(EndpointMode::parse_token("auto"), Some(EndpointMode::Auto));
+        assert_eq!(
+            EndpointMode::parse_token("ASSISTANT"),
+            Some(EndpointMode::Assistant)
+        );
+        assert_eq!(
+            EndpointMode::parse_token("manual"),
+            Some(EndpointMode::Manual)
+        );
+        assert_eq!(EndpointMode::parse_token("nope"), None);
     }
 
     #[test]
@@ -5419,7 +5706,7 @@ vocab = "pack_vocab.txt"
         use std::collections::HashMap;
         use std::sync::Arc;
 
-        use crate::inference::{Engine, PRED_HIDDEN};
+        use crate::inference::{EndpointMode, EndpointReason, Engine, PRED_HIDDEN, WordInfo};
         use crate::runtime::mock::{MockFactory, MockSession};
         use crate::runtime::tensor::{Shape, Tensor, TensorData};
 
@@ -5896,6 +6183,8 @@ vocab = "pack_vocab.txt"
                 "blank-run endpoint must finalize the segment"
             );
             assert!(segs[0].is_final);
+            assert!(segs[0].speech_final);
+            assert_eq!(segs[0].endpoint_reason, Some(EndpointReason::Blank));
             assert_eq!(segs[0].text, "hi");
         }
 
@@ -5920,7 +6209,180 @@ vocab = "pack_vocab.txt"
                 !segs[0].is_final,
                 "blank-run must not finalize while a VAD owns endpointing"
             );
+            assert!(!segs[0].speech_final);
+            assert!(segs[0].endpoint_reason.is_none());
             assert_eq!(segs[0].text, "hi");
+        }
+
+        /// Mock engine whose encoder input shape matches a full 2.5 s window
+        /// (STREAM_MAX_WINDOW_SAMPLES → 249 mel frames), so we can hit `over_cap`
+        /// in a single `process_chunk` without multi-stride buffering.
+        fn blank_run_engine_window_cap() -> (Engine, tempfile::TempDir) {
+            let tmp = tempfile::tempdir().expect("tempdir");
+            let dir = tmp.path();
+            std::fs::write(dir.join("v3_rnnt_encoder.onnx"), b"").unwrap();
+            std::fs::write(dir.join("v3_rnnt_decoder.onnx"), b"").unwrap();
+            std::fs::write(dir.join("v3_rnnt_joint.onnx"), b"").unwrap();
+            std::fs::write(dir.join("v3_vocab.txt"), "\u{2581}hi\n<blk>\n").unwrap();
+
+            // (40000 - N_FFT) / HOP_LENGTH + 1 = 249 mel frames @ 16 kHz.
+            const MEL_FRAMES: usize = 249;
+            const ENC_LEN: usize = 16;
+
+            let mut sessions: HashMap<String, Arc<MockSession>> = HashMap::new();
+            sessions.insert(
+                "v3_rnnt_encoder".into(),
+                Arc::new(MockSession::new(
+                    vec![Shape::new(vec![1, 64, MEL_FRAMES]), Shape::new(vec![1])],
+                    vec![
+                        Tensor::new(
+                            Shape::new(vec![1, ENC_DIM, ENC_LEN]),
+                            TensorData::F32(vec![0.0; ENC_DIM * ENC_LEN]),
+                        )
+                        .unwrap(),
+                        Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![ENC_LEN as i64]))
+                            .unwrap(),
+                    ],
+                )),
+            );
+            sessions.insert(
+                "v3_rnnt_decoder".into(),
+                Arc::new(MockSession::new(
+                    vec![
+                        Shape::new(vec![1, 1]),
+                        Shape::new(vec![1, 1, PRED_HIDDEN]),
+                        Shape::new(vec![1, 1, PRED_HIDDEN]),
+                    ],
+                    vec![
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        )
+                        .unwrap(),
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        )
+                        .unwrap(),
+                        Tensor::new(
+                            Shape::new(vec![1, 1, PRED_HIDDEN]),
+                            TensorData::F32(vec![0.0; PRED_HIDDEN]),
+                        )
+                        .unwrap(),
+                    ],
+                )),
+            );
+            sessions.insert(
+                "v3_rnnt_joint".into(),
+                Arc::new(
+                    MockSession::new(
+                        vec![
+                            Shape::new(vec![1, ENC_DIM, 1]),
+                            Shape::new(vec![1, PRED_HIDDEN, 1]),
+                        ],
+                        vec![
+                            Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(vec![0.0; 2]))
+                                .unwrap(),
+                        ],
+                    )
+                    .with_script(vec![
+                        vec![
+                            Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(vec![2.0, 0.0]))
+                                .unwrap(),
+                        ],
+                        vec![
+                            Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(vec![0.0, 2.0]))
+                                .unwrap(),
+                        ],
+                    ]),
+                ),
+            );
+            let factory = Box::new(MockFactory::new(sessions));
+            let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1)
+                .expect("engine should load with mock runtime");
+            (engine, tmp)
+        }
+
+        #[test]
+        fn test_process_chunk_window_cap_emits_partial_not_final() {
+            // Hitting STREAM_MAX_WINDOW must commit a stable prefix and emit a
+            // non-final partial — never speech_final. Voice assistants treat
+            // every final as a command; cap-as-final was the Irene bug.
+            let (engine, _tmp) = blank_run_engine_window_cap();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let mut state = engine.create_state(false);
+            // Attach a VAD endpointer so the blank-run heuristic does not fire
+            // first; the cap path is what we exercise.
+            state.vad_endpointer = Some(crate::vad::VadEndpointer::new(
+                &crate::vad::VadConfig::default(),
+            ));
+            // One chunk at the window cap (2.5 s @ 16 kHz).
+            let chunk = vec![0.0f32; 16000 * 5 / 2];
+            let segs = engine
+                .process_chunk(&chunk, &mut state, &mut guard)
+                .expect("mock decode must not error");
+            assert_eq!(segs.len(), 1, "cap must still surface decoded text");
+            assert!(
+                !segs[0].is_final,
+                "window cap must not emit is_final (got final text={:?})",
+                segs[0].text
+            );
+            assert!(!segs[0].speech_final);
+            assert!(segs[0].endpoint_reason.is_none());
+            assert_eq!(segs[0].text, "hi");
+            // Committed prefix survives after cap commit + slide.
+            assert!(
+                !state.assembler.is_empty(),
+                "stable prefix must remain after cap commit"
+            );
+        }
+
+        #[test]
+        fn test_process_chunk_assistant_mode_ignores_blank_without_vad() {
+            let (engine, _tmp) = blank_run_engine();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let mut state = engine.create_state(false);
+            state.endpoint_mode = EndpointMode::Assistant;
+            let chunk = vec![0.0f32; 12800];
+            let segs = engine
+                .process_chunk(&chunk, &mut state, &mut guard)
+                .expect("mock decode must not error");
+            assert_eq!(segs.len(), 1);
+            assert!(
+                !segs[0].is_final,
+                "assistant mode must not finalize on blank-run alone"
+            );
+            assert_eq!(segs[0].text, "hi");
+        }
+
+        #[test]
+        fn test_process_chunk_manual_mode_never_auto_finalizes() {
+            let (engine, _tmp) = blank_run_engine();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let mut state = engine.create_state(false);
+            state.endpoint_mode = EndpointMode::Manual;
+            // Even with a synthetic VAD fire, Manual must not close.
+            // We only have blank-run here; Manual ignores it too.
+            let chunk = vec![0.0f32; 12800];
+            let segs = engine
+                .process_chunk(&chunk, &mut state, &mut guard)
+                .expect("mock decode must not error");
+            assert_eq!(segs.len(), 1);
+            assert!(!segs[0].is_final);
+        }
+
+        #[test]
+        fn test_flush_state_marks_stop_endpoint_reason() {
+            let (engine, _tmp) = blank_run_engine();
+            let mut state = engine.create_state(false);
+            state
+                .assembler
+                .append(vec![WordInfo::new("bye", 0.0, 0.3, 0.9, None)]);
+            let seg = engine.flush_state(&mut state).expect("flush");
+            assert!(seg.is_final);
+            assert!(seg.speech_final);
+            assert_eq!(seg.endpoint_reason, Some(EndpointReason::Stop));
+            assert_eq!(seg.text, "bye");
         }
     }
 }

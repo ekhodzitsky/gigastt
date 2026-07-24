@@ -417,6 +417,8 @@ async fn handle_configure_message(
     protocol_version: Option<String>,
     punctuation: Option<bool>,
     itn: Option<bool>,
+    endpoint_mode: Option<String>,
+    min_silence_ms: Option<u32>,
     peer: SocketAddr,
 ) -> Result<FrameOutcome> {
     if audio_received {
@@ -475,16 +477,17 @@ async fn handle_configure_message(
         if let Some(old) = state_opt.as_ref() {
             new_state.punctuation = old.punctuation;
             new_state.itn = old.itn;
+            new_state.endpoint_mode = old.endpoint_mode;
         }
         *state_opt = Some(new_state);
     }
     #[cfg(not(feature = "diarization"))]
-    let _ = (engine, diarization);
+    let _ = diarization;
 
-    // Post-processing overrides apply to whatever state the session now holds
-    // (the diarization branch above may have just recreated it). An absent
-    // field leaves the previous value, so repeated Configures compose the same
-    // way `sample_rate` does.
+    // Post-processing / endpoint overrides apply to whatever state the session
+    // now holds (the diarization branch above may have just recreated it). An
+    // absent field leaves the previous value, so repeated Configures compose
+    // the same way `sample_rate` does.
     if let Some(state) = state_opt.as_mut() {
         if let Some(p) = punctuation {
             tracing::info!("Client {peer} configured punctuation: {p}");
@@ -494,7 +497,42 @@ async fn handle_configure_message(
             tracing::info!("Client {peer} configured itn: {i}");
             state.itn = Some(i);
         }
+        if let Some(ref mode_s) = endpoint_mode {
+            match gigastt_core::inference::EndpointMode::parse_token(mode_s) {
+                Some(mode) => {
+                    tracing::info!("Client {peer} configured endpoint_mode: {mode_s}");
+                    state.endpoint_mode = mode;
+                }
+                None => {
+                    send_server_message(
+                        sink,
+                        &ServerMessage::Error {
+                            message: format!(
+                                "Unsupported endpoint_mode: {mode_s}. Supported: auto, assistant, manual"
+                            ),
+                            code: "invalid_endpoint_mode".into(),
+                            retry_after_ms: None,
+                        },
+                    )
+                    .await?;
+                    return Ok(FrameOutcome::Continue);
+                }
+            }
+        }
+        if let Some(ms) = min_silence_ms {
+            if engine.has_vad() {
+                let mut cfg = *engine.vad_config();
+                cfg.min_silence_ms = ms;
+                state.vad_endpointer = Some(gigastt_core::vad::VadEndpointer::new(&cfg));
+                tracing::info!("Client {peer} configured min_silence_ms: {ms}");
+            } else {
+                tracing::debug!(
+                    "Client {peer} set min_silence_ms={ms} but server has no VAD; ignored"
+                );
+            }
+        }
     }
+    let _ = engine;
     Ok(FrameOutcome::Continue)
 }
 
@@ -780,6 +818,8 @@ async fn handle_ws_inner(
                             protocol_version,
                             punctuation,
                             itn,
+                            endpoint_mode,
+                            min_silence_ms,
                             ..
                         }) => {
                             handle_configure_message(
@@ -793,6 +833,8 @@ async fn handle_ws_inner(
                                 protocol_version,
                                 punctuation,
                                 itn,
+                                endpoint_mode,
+                                min_silence_ms,
                                 peer,
                             )
                             .await

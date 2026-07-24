@@ -225,25 +225,32 @@ The UI rule of thumb: render the latest `partial` in a "preview" style
 replace the preview with `final.text` and append it to the committed
 transcript. Never persist partial text.
 
-A `final` fires when an utterance ends. **Endpointing ownership** (since
-2.14.1):
+A `final` fires when an utterance ends (`speech_final: true`, optional
+`endpoint_reason`). **Endpointing ownership:**
 
-| Server flags | Who ends an utterance | Knob |
+| Mode / flags | Who ends an utterance | Knob |
 |---|---|---|
-| default (no `--vad`) | Decoder blank-run heuristic (~0.6 s trailing silence) | not configurable |
-| `--vad` | **Silero VAD only** — blank-run heuristic is ignored | `--vad-min-silence-ms` (default 500) |
+| `auto` (default), no `--vad` | Decoder blank-run (~0.6 s) | — |
+| `auto` + `--vad` | **Silero VAD only** — blank-run ignored | `--vad-min-silence-ms` (default 500) |
+| `assistant` + `--vad` | **VAD only** (voice commands) | `--vad-min-silence-ms` (try 900–1500) |
+| `manual` | Client `stop` only | — |
 
-With VAD attached you can raise the silence threshold so natural pauses no
-longer split phrases mid-sentence (the pre-2.14.1 bug was that blank-run
-still fired at ~600 ms even when VAD was on). Continuous speech without
-pauses is also finalized — the streaming window caps out at ~2.5 s and
-slides, so the transcript keeps committing even through a monologue. A
-`final` also arrives on `stop` (Recipe 3) and before a server-initiated
-close (Recipe 4).
+The ~2.5 s encoder **window cap never ends an utterance** — it commits a stable
+prefix and keeps emitting `partial`s so monologues and long commands stay one
+turn. (Before this fix, cap-as-`final` made assistants like Irene fire mid-phrase.)
 
 ```sh
-# Longer silence before committing a final — better for deliberate dictation
+# Voice assistant (Irene): VAD owns the end of the command
+gigastt serve --vad --vad-min-silence-ms 1200 --endpoint-mode assistant
+
+# Dictation / captions with longer silence before commit
 gigastt serve --vad --vad-min-silence-ms 900
+```
+
+Per-session overrides (before first audio):
+
+```json
+{"type":"configure","sample_rate":16000,"endpoint_mode":"assistant","min_silence_ms":1200}
 ```
 
 Per-session post-processing overrides compose with the same `configure`

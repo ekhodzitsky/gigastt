@@ -385,6 +385,7 @@ components:
             - inference_timeout
             - configure_too_late
             - invalid_sample_rate
+            - invalid_endpoint_mode
             - timeout
             - pool_closed
             - max_session_duration_exceeded
@@ -430,6 +431,19 @@ components:
           description: >-
             Per-session inverse text normalization override (number-words →
             digits) applied to `final` segments only. Omitted = server default.
+        endpoint_mode:
+          type: string
+          enum: [auto, assistant, manual]
+          example: assistant
+          description: >-
+            Per-session utterance-end policy. Omitted = server `--endpoint-mode`.
+            Invalid values yield `invalid_endpoint_mode` and keep the previous mode.
+        min_silence_ms:
+          type: integer
+          example: 1200
+          description: >-
+            Per-session VAD trailing silence (ms). Overrides server
+            `--vad-min-silence-ms` for this connection. Ignored without VAD.
 
     StopMessage:
       type: object

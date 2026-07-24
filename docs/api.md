@@ -66,7 +66,10 @@ Sent immediately after the WebSocket handshake, before any audio is accepted.
 #### `partial` / `final`
 
 Both carry the same `TranscriptSegment` payload; `final` means the utterance is
-complete (endpointing detected, or the stream was flushed by `stop`/shutdown).
+complete (true endpointing: VAD silence, decoder blank-run without VAD, or
+`stop`/shutdown). The ~2.5 s encoder window **never** produces `final` — it
+commits a stable prefix as a non-final `partial` so long monologues stay one
+utterance for voice assistants.
 
 ```json
 {
@@ -88,6 +91,8 @@ complete (endpointing detected, or the stream was flushed by `stop`/shutdown).
 | `text` | string | Joined transcript text (see post-processing below) |
 | `timestamp` | number | Unix time (seconds) when the segment was produced |
 | `is_final` | boolean | Mirrors the `type` discriminator (`true` in `final`) |
+| `speech_final` | boolean | Present and `true` only on true utterance ends; omitted on partials |
+| `endpoint_reason` | string | Optional on finals: `vad` \| `blank` \| `stop` |
 | `confidence` | number | Segment-level confidence: the duration-weighted mean of `words[].confidence` (plain mean when all word durations are zero). Omitted when the segment has no words. It is an average of per-word softmax scores — not a calibrated probability |
 | `words[]` | object[] | Per-word detail; may be empty on flushed/empty finals |
 
@@ -140,6 +145,8 @@ replies with `configure_too_late` and keeps the previous settings).
 | `protocol_version` | string | Version the client wants to speak; unsupported values are rejected with `unsupported_protocol_version` and the server ends the session |
 | `punctuation` | boolean | Per-session punctuation/casing override for `final` segments only. `true` on a server without a punctuation model is a graceful no-op — finals stay raw, no error |
 | `itn` | boolean | Per-session inverse text normalization override (`final` segments only) |
+| `endpoint_mode` | string | `auto` \| `assistant` \| `manual` — overrides server `--endpoint-mode` for this session |
+| `min_silence_ms` | number | Per-session VAD trailing silence (ms); ignored if server has no VAD |
 
 All fields are optional. Omitting a field keeps the server default; repeated
 `configure` messages compose (an absent field leaves the previous value).
@@ -192,6 +199,7 @@ frame). The same enum is declared in [`docs/asyncapi.yaml`](asyncapi.yaml).
 | `inference_panic` | continues, state reset | Inference panicked; the decoder state was reset, so earlier audio context is lost — already-received `final`s remain valid |
 | `configure_too_late` | continues | `configure` arrived after the first audio frame; previous settings kept |
 | `invalid_sample_rate` | continues | Rate not in `supported_rates`; previous rate kept |
+| `invalid_endpoint_mode` | continues | `endpoint_mode` not one of `auto` / `assistant` / `manual`; previous mode kept |
 | `unsupported_protocol_version` | ends | Client requested a protocol version the server does not speak |
 | `payload_too_large` | — | REST/SSE surface (body over `--body-limit-bytes`). On WS, an oversized frame is rejected by the transport with close code 1009 instead |
 

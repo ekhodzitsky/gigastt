@@ -64,6 +64,8 @@ gigastt serve [OPTIONS]
                             Env: GIGASTT_VAD_MIN_SILENCE_MS.
   --vad-model-dir <DIR>     Silero VAD model directory [default: ~/.gigastt/models/vad].
                             Env: GIGASTT_VAD_MODEL_DIR.
+  --endpoint-mode <MODE>    WS utterance end: auto|assistant|manual [default: auto].
+                            Env: GIGASTT_ENDPOINT_MODE. Window cap never emits final.
   --pool-size <N>           Concurrent inference sessions [default: 2]
   --encoder-intra-threads <N>  Intra-op threads for the encoder session (CPU build
                             only). Unset: logical CPUs divided across the pool.
@@ -190,6 +192,8 @@ gigastt transcribe [OPTIONS] <FILE>
                               [default: 500]. Env: GIGASTT_VAD_MIN_SILENCE_MS.
   --vad-model-dir <DIR>       Silero VAD model directory [default: ~/.gigastt/models/vad].
                               Env: GIGASTT_VAD_MODEL_DIR.
+  --endpoint-mode <MODE>      WS utterance end: auto|assistant|manual [default: auto].
+                              Env: GIGASTT_ENDPOINT_MODE. Cap never emits final.
   --encoder-intra-threads <N>  Intra-op threads for the encoder session (CPU build
                               only). Env: GIGASTT_ENCODER_INTRA_THREADS.
   -f, --format <FORMAT>       Export format: json, txt, srt, vtt, md [default: txt].
@@ -246,7 +250,7 @@ gigastt transcribe-batch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
   --word-timestamps           Include per-word timestamps in Markdown output
   Also accepts the recognition flags of `transcribe`: --hotwords-file,
   --hotwords-default, --hotwords-boost, --vad, --vad-threshold,
-  --vad-min-silence-ms, --vad-model-dir, --encoder-intra-threads.
+  --vad-min-silence-ms, --vad-model-dir, --endpoint-mode, --encoder-intra-threads.
   Exit codes: 0 = all files done · 1 = at least one file failed · 130 = interrupted
   (Ctrl-C finishes in-flight files, skips the rest).
 

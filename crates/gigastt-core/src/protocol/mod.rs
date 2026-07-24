@@ -99,6 +99,16 @@ pub enum ClientMessage {
         /// Optional.
         #[serde(default)]
         itn: Option<bool>,
+        /// Streaming utterance-end policy: `"auto"` | `"assistant"` | `"manual"`.
+        /// Omitted = server boot default (`--endpoint-mode`). Optional/unknown
+        /// values are rejected with `invalid_endpoint_mode`. Optional.
+        #[serde(default)]
+        endpoint_mode: Option<String>,
+        /// Per-session minimum trailing silence (ms) for VAD endpointing.
+        /// Overrides server `--vad-min-silence-ms` for this connection only.
+        /// No effect when the server has no VAD loaded. Optional.
+        #[serde(default)]
+        min_silence_ms: Option<u32>,
     },
 }
 
@@ -160,12 +170,17 @@ mod tests {
             timestamp: 1.0,
             words: vec![],
             is_final: false,
+            speech_final: false,
+            endpoint_reason: None,
             confidence: None,
         });
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["type"], "partial");
         assert!(v.get("version").is_none());
+        // Partials omit speech_final / endpoint_reason for backward-compatible wire size.
+        assert!(v.get("speech_final").is_none());
+        assert!(v.get("endpoint_reason").is_none());
     }
 
     #[test]
@@ -175,12 +190,16 @@ mod tests {
             timestamp: 1.0,
             words: vec![],
             is_final: true,
+            speech_final: true,
+            endpoint_reason: Some(crate::inference::EndpointReason::Vad),
             confidence: None,
         });
         let json = serde_json::to_string(&msg).unwrap();
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["type"], "final");
         assert!(v.get("version").is_none());
+        assert_eq!(v["speech_final"], true);
+        assert_eq!(v["endpoint_reason"], "vad");
     }
 
     #[test]
@@ -367,10 +386,33 @@ mod tests {
         let msg: ClientMessage = serde_json::from_str(json).unwrap();
         match msg {
             ClientMessage::Configure {
-                punctuation, itn, ..
+                punctuation,
+                itn,
+                endpoint_mode,
+                min_silence_ms,
+                ..
             } => {
                 assert_eq!(punctuation, None);
                 assert_eq!(itn, None);
+                assert_eq!(endpoint_mode, None);
+                assert_eq!(min_silence_ms, None);
+            }
+            _ => panic!("Expected Configure"),
+        }
+    }
+
+    #[test]
+    fn test_configure_endpoint_mode_and_min_silence_deserialize() {
+        let json = r#"{"type":"configure","endpoint_mode":"assistant","min_silence_ms":1200}"#;
+        let msg: ClientMessage = serde_json::from_str(json).unwrap();
+        match msg {
+            ClientMessage::Configure {
+                endpoint_mode,
+                min_silence_ms,
+                ..
+            } => {
+                assert_eq!(endpoint_mode.as_deref(), Some("assistant"));
+                assert_eq!(min_silence_ms, Some(1200));
             }
             _ => panic!("Expected Configure"),
         }
