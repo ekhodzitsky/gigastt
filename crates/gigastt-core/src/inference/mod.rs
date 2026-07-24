@@ -2894,7 +2894,7 @@ pub const DEFAULT_HOTWORDS_BOOST: f32 = 5.0;
 /// Semantics when passed to the hotwords parameter of file-transcription APIs:
 /// - `None` (argument absent) → keep the engine boot biaser unchanged.
 /// - `Some(empty phrases)` → force biasing **off** for this request.
-/// - `Some(non-empty phrases)` → build a temporary [`bias::Biaser`] for this
+/// - `Some(non-empty phrases)` → build a temporary hotword biaser for this
 ///   request only (engine boot biaser is not consulted).
 ///
 /// Kept separate from [`TranscribeOverrides`] so that type remains `Copy`/`Eq`
