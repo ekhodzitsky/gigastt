@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.14.1] - 2026-07-24
+
+### Fixed
+
+- **Streaming endpointing is now fully controlled by `--vad-min-silence-ms`
+  when the VAD is enabled.** Previously the decoder's hardcoded blank-run
+  heuristic (~600 ms of trailing silence) finalized the current segment even
+  with `--vad` active, so raising `--vad-min-silence-ms` could only cut
+  phrases *earlier*, never later — a natural pause between words split
+  utterances mid-phrase on WebSocket streams. With a VAD attached the
+  blank-run heuristic is now ignored and VAD-detected trailing silence owns
+  endpointing (the ~2.5 s window cap remains as a backstop); without a VAD
+  behavior is unchanged. File transcription, SSE, and the jobs API are
+  unaffected. Reported via the Irene Voice Assistant integration.
+
+### Added
+
+- **Top-level CLI help now points to the subcommand engine flags.**
+  `gigastt --help` shows a note that `--model-variant`, `--punctuation`,
+  `--itn`, `--vad`, and the other engine / post-processing options are
+  defined on the subcommands — see `gigastt serve --help` or
+  `gigastt transcribe --help` — instead of leaving users to conclude the
+  flags don't exist (#202).
+
 ## [2.14.0] - 2026-07-22
 
 ### Added
@@ -1875,7 +1899,11 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.3...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.1...HEAD
+[2.14.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.0...v2.14.1
+[2.14.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.13.0...v2.14.0
+[2.13.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.12.0...v2.13.0
+[2.12.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.3...v2.12.0
 [2.11.3]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.2...v2.11.3
 [2.11.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.1...v2.11.2
 [2.11.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.11.0...v2.11.1
