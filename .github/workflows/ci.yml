@@ -456,6 +456,11 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           files: ./cobertura-unit.xml
+          # Flag must match codecov.yml `flags.unit` so e2e can carryforward
+          # across commits and the badge does not dip to unit-only (~75%) while
+          # Coverage (E2E) is still running on main.
+          flags: unit
+          name: unit
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -809,6 +814,11 @@ jobs:
           cargo llvm-cov --no-report -p gigastt --test e2e_errors    -- --ignored --test-threads=1
           cargo llvm-cov --no-report -p gigastt --test e2e_shutdown  -- --ignored --test-threads=1
           cargo llvm-cov --no-report -p gigastt --test e2e_rate_limit -- --ignored --test-threads=1
+          # jobs + admin reload were missing from coverage-e2e while present as
+          # dedicated targets — they close large miss blocks in server/jobs.rs
+          # and the loopback reload path in server/mod.rs + http.rs.
+          cargo llvm-cov --no-report -p gigastt --test e2e_jobs         -- --ignored --test-threads=1
+          cargo llvm-cov --no-report -p gigastt --test e2e_admin_reload -- --ignored --test-threads=1
           # CLI subprocess + REST/SSE handler coverage. e2e_cli has non-ignored
           # tests too, so use --include-ignored to run the whole target.
           cargo llvm-cov --no-report -p gigastt --test e2e_cli       -- --include-ignored --test-threads=1
@@ -821,6 +831,9 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           files: ./cobertura-e2e.xml
+          # Flag must match codecov.yml `flags.e2e` (carryforward: true).
+          flags: e2e
+          name: e2e
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 

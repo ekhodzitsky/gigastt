@@ -5,10 +5,15 @@
 #   * e2e  — model-gated lib/bin + integration + CLI subprocess coverage
 #            (main-push only; needs the ~850 MB model)
 #
-# Measured line coverage of the merged report is ~94% and function coverage
-# ~95.5%. The remaining uncovered lines are dominated by fault-injection-only
-# paths (ONNX-runtime internal failures, network model-download errors, forced
-# panics / inference timeouts, OS-signal handlers) and defensive guards that are
+# Both uploads MUST pass `flags: unit` / `flags: e2e` in codecov-action so
+# carryforward works. Without flags, a fresh main commit shows unit-only
+# coverage (~75%) until Coverage (E2E) finishes (~20+ min later), and the
+# badge dips even though real merged coverage is unchanged.
+#
+# Merged line coverage of production paths is ~90–91%. The remaining
+# uncovered lines are dominated by fault-injection-only paths (ONNX-runtime
+# internal failures, network model-download errors, forced panics /
+# inference timeouts, OS-signal handlers) and defensive guards that are
 # unreachable in normal operation — deliberately left untested rather than
 # covered with brittle mocks.
 
@@ -47,3 +52,9 @@ comment:
 ignore:
   - "**/tests/**"
   - "crates/gigastt-core/src/onnx_proto.rs" # prost-generated ONNX protobuf types
+  # Native addons / bindgen stubs are exercised outside cargo llvm-cov
+  # (npm vitest for node; uniffi-bindgen is a thin CLI wrapper). Counting
+  # them in the Rust report permanently dilutes the badge without adding
+  # signal about server/core quality.
+  - "crates/gigastt-node/**"
+  - "crates/gigastt-uniffi/src/bin/**"
