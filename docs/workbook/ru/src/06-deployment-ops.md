@@ -475,6 +475,8 @@ curl -s http://127.0.0.1:9090/metrics | grep '^gigastt_pool_available'
 - [Начало работы](01-getting-started.md) — установка и первая транскрибация
 - [CLI и пакетная обработка](02-cli-batch.md) — рецепты REST / SSE / jobs
 - [Стриминг по WebSocket](04-streaming-ws.md) — паттерны WebSocket-протокола
+- [Приложение A — Коды ошибок](appendix-error-codes.md) — jump table HTTP/WS/close
+- [Приложение B — Offline-чеклист](appendix-offline-checklist.md) — air-gapped список
 - [docs/deployment.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/deployment.md) — reverse proxy, TLS, манифесты Kubernetes
 - [docs/runbook.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/runbook.md) — симптом → причина → аварийный выход
 - [docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md) — полный справочник флагов `serve`

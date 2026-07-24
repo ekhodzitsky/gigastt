@@ -9,3 +9,8 @@
 - [Десктоп и встраивание](05-desktop-embedded.md)
 - [Развёртывание и эксплуатация](06-deployment-ops.md)
 - [Модели и бэкенды](07-models-and-backends.md)
+
+---
+
+- [Приложение A — Коды ошибок](appendix-error-codes.md)
+- [Приложение B — Offline-чеклист](appendix-offline-checklist.md)

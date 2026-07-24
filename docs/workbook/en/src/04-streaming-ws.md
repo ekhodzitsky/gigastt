@@ -687,11 +687,12 @@ You have a healthy streaming integration when all of these hold:
 
 ## Common pitfalls
 
-Symptom → cause, with a pointer to the fix — the full operator table lives
-in [docs/troubleshooting.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/troubleshooting.md)
-and the error/close code tables in
-[docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md#error-codes);
-do not debug from memory.
+Symptom → cause, with a pointer to the fix — the cookbook jump table is
+[Appendix A — Error codes](appendix-error-codes.md); the full operator table
+lives in
+[docs/troubleshooting.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/troubleshooting.md)
+and the field-level tables in
+[docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md#error-codes).
 
 | Symptom | Cause | Where to look |
 |---|---|---|
@@ -725,4 +726,5 @@ clients) is in progress; this chapter covers the native protocol only.
   punctuation/ITN behavior, [CLI and batch processing](02-cli-batch.md)
   for REST/jobs alternatives to live streaming,
   [Deployment & ops](06-deployment-ops.md) for running `serve` in
-  production.
+  production, [Appendix A — Error codes](appendix-error-codes.md) for
+  REST/WS/close jump table.

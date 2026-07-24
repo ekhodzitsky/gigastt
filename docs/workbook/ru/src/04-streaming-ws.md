@@ -689,12 +689,12 @@ python3 stream_wav.py crates/gigastt/tests/fixtures/golos_00.wav
 
 ## Типичные ошибки
 
-Симптом → причина с указателем на исправление — полная таблица для
-оператора живёт в
+Симптом → причина с указателем на исправление — jump table в
+[Приложении A — Коды ошибок](appendix-error-codes.md); полная таблица
+оператора — в
 [docs/troubleshooting.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/troubleshooting.md),
-а таблицы кодов ошибок/закрытия — в
-[docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md#error-codes);
-не отлаживайте по памяти.
+а таблицы полей — в
+[docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md#error-codes).
 
 | Симптом | Причина | Куда смотреть |
 |---|---|---|
@@ -728,4 +728,5 @@ Deepgram) в работе; эта глава покрывает только н�
   пунктуации/ITN, [CLI и пакетная обработка](02-cli-batch.md) —
   альтернативы живому стримингу на REST/jobs,
   [Развёртывание и эксплуатация](06-deployment-ops.md) — запуск `serve` в
-  продакшене.
+  продакшене, [Приложение A — Коды ошибок](appendix-error-codes.md) — jump
+  table REST/WS/close.

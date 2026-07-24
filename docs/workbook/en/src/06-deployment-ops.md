@@ -462,6 +462,8 @@ recipes: [CLI and batch processing](02-cli-batch.md); CLI check:
 - [Getting started](01-getting-started.md) — install and first transcription
 - [CLI and batch processing](02-cli-batch.md) — REST / SSE / jobs recipes
 - [Streaming over WebSocket](04-streaming-ws.md) — WebSocket protocol patterns
+- [Appendix A — Error codes](appendix-error-codes.md) — HTTP/WS/close jump table
+- [Appendix B — Offline checklist](appendix-offline-checklist.md) — air-gapped operator list
 - [docs/deployment.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/deployment.md) — reverse proxy, TLS, Kubernetes manifests
 - [docs/runbook.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/runbook.md) — symptom → cause → escape hatch
 - [docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md) — full `serve` flag reference

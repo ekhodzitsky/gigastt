@@ -528,6 +528,9 @@ WORKBOOK_REQUIRED_TOKENS = {
     "diarization=true": "speaker diarization recipe (chapter 03)",
     "hotwords-file": "hotword bias recipe (chapter 07)",
     "vad-min-silence-ms": "VAD endpointing ownership (chapter 04)",
+    "x86_64-pc-windows-msvc": "Windows install recipe (chapter 01)",
+    "payload_too_large": "error-code appendix coverage",
+    "GIGASTT_OFFLINE": "offline checklist / air-gapped guard",
 }
 
 

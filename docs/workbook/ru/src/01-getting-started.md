@@ -19,7 +19,7 @@ GigaAM v3, транскрибировать первый аудиофайл — 
 - Только для `cargo install` (сборка из исходников): Rust 1.88+ и `protoc` в
   `PATH` (`brew install protobuf` / `apt install protobuf-compiler`).
 
-Выберите **один** рецепт ниже — macOS, Linux, Docker или замкнутый контур, —
+Выберите **один** рецепт ниже — macOS, Linux, Windows, Docker или замкнутый контур, —
 затем один раз прочитайте [Выбор головы распознавания](#выбор-головы-распознавания)
 и [Дорогой первый запуск](#дорогой-первый-запуск).
 
@@ -94,6 +94,38 @@ gigastt transcribe recording.wav
 
 **Проверка:** `gigastt transcribe recording.wav` печатает распознанный текст в
 stdout, а `ls ~/.gigastt/models/` показывает файлы модели `v3_rnnt_*`.
+
+## Рецепт: Windows (готовый бинарь)
+
+Каждый релиз публикует tarball `x86_64-pc-windows-msvc` (CPU). PowerShell 5.1+
+/ Windows 10+ уже содержат `tar` и `curl`:
+
+```powershell
+$rel = Invoke-RestMethod https://api.github.com/repos/ekhodzitsky/gigastt/releases/latest
+$TAG = $rel.tag_name          # например v2.14.1
+$VER = $TAG.TrimStart('v')
+$asset = "gigastt-$VER-x86_64-pc-windows-msvc.tar.gz"
+$base = "https://github.com/ekhodzitsky/gigastt/releases/download/$TAG"
+
+Invoke-WebRequest "$base/$asset" -OutFile $asset
+Invoke-WebRequest "$base/$asset.sha256" -OutFile "$asset.sha256"
+# Опциональная проверка (файл хеша: "HASH  filename"):
+$expected = (Get-Content "$asset.sha256").Split()[0]
+$actual = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLower()
+if ($actual -ne $expected.ToLower()) { throw "SHA-256 mismatch" }
+
+tar xf $asset
+# Положите gigastt.exe в PATH или вызывайте по полному пути:
+.\gigastt.exe download --prequantized
+.\gigastt.exe transcribe recording.wav
+```
+
+Каталог моделей по умолчанию — `%USERPROFILE%\.gigastt\models\`. Первый
+`serve` слушает только loopback (`127.0.0.1:9876`), пока не передадите
+`--bind-all`.
+
+**Проверка:** `.\gigastt.exe transcribe recording.wav` печатает текст; после
+`.\gigastt.exe serve` отвечает `http://127.0.0.1:9876/health`.
 
 ## Рецепт: Docker
 

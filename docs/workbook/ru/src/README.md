@@ -23,10 +23,13 @@
 | Прод с метриками, апгрейдами, hot-reload модели | ~45 мин | [Развёртывание и эксплуатация](06-deployment-ops.md) |
 | Выбрать голову / INT8 / GPU / pool / punct / hotwords | ~20 мин | [Модели и бэкенды](07-models-and-backends.md) |
 | Метки спикеров на mono-встречах | (в гл. 3) | [Телефония — диаризация](03-telephony-voip.md#моно-запись-встречи--спикеры-через-диаризацию) |
+| Расшифровать HTTP/WS код ошибки | ~2 мин | [Приложение A — Коды ошибок](appendix-error-codes.md) |
+| Air-gapped / offline | ~30 мин | [Приложение B — Offline-чеклист](appendix-offline-checklist.md) |
+| Установка на Windows | ~10 мин | [Начало работы — Windows](01-getting-started.md#рецепт-windows-готовый-бинарь) |
 
 ## Главы
 
-1. [Начало работы](01-getting-started.md) — установка, загрузка модели,
+1. [Начало работы](01-getting-started.md) — установка (macOS/Linux/Windows/Docker/air-gap),
    первая транскрибация. **Новичок · ~5–15 мин**
 2. [CLI и пакетная обработка](02-cli-batch.md) — CLI, batch и watch.
    **Новичок · ~15–30 мин**
@@ -40,6 +43,11 @@
    апгрейды, admin reload. **Ops · ~45 мин**
 7. [Модели и бэкенды](07-models-and-backends.md) — головы, квантование,
    EP, пунктуация/ITN, hotwords. **Средний · ~20 мин**
+
+### Приложения
+
+- [A — Коды ошибок](appendix-error-codes.md) — jump table REST/WS/close
+- [B — Offline-чеклист](appendix-offline-checklist.md) — air-gapped операторский список
 
 [Английская версия](../../en/src/README.md) — каноническая; эта книга
 зеркалирует её глава в главу.

@@ -438,6 +438,10 @@ Reference material (do not duplicate — read here):
 - [docs/embedding-packaging.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/embedding-packaging.md) — onnxruntime static vs dynamic linking
 - [docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md) — `/health`, `/ready`, REST/WS/SSE reference
 - [docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md) — `serve` and `download` flags (lifecycle knobs used above)
+- [Appendix A — Error codes](appendix-error-codes.md) — HTTP/WS codes when the sidecar misbehaves
 
-A dedicated embedding & distribution guide (`docs/embedding.md`, covering
-topics like macOS notarization) is in progress.
+**macOS distribution note.** Shipping a notarized `.app` / Developer ID build
+is **out of band** for this workbook: use Apple's notarization tooling on your
+signed app + the sidecar or embedded framework you ship. The engine itself is
+an unsigned open-source binary from GitHub Releases — gate version with
+`/health` → `version`, not with code-signature assumptions.

@@ -9,3 +9,8 @@
 - [Desktop & embedded](05-desktop-embedded.md)
 - [Deployment & ops](06-deployment-ops.md)
 - [Models and backends](07-models-and-backends.md)
+
+---
+
+- [Appendix A — Error codes](appendix-error-codes.md)
+- [Appendix B — Offline checklist](appendix-offline-checklist.md)

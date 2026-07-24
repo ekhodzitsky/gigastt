@@ -19,8 +19,8 @@ you should not need any other document to get here.
 - Only for `cargo install` (build from source): Rust 1.88+ and `protoc` on
   `PATH` (`brew install protobuf` / `apt install protobuf-compiler`).
 
-Pick **one** recipe below — macOS, Linux, Docker, or air-gapped — then read
-[Choosing the recognition head](#choosing-the-recognition-head) and
+Pick **one** recipe below — macOS, Linux, Windows, Docker, or air-gapped — then
+read [Choosing the recognition head](#choosing-the-recognition-head) and
 [The expensive first run](#the-expensive-first-run) once.
 
 ## Recipe: macOS (Homebrew)
@@ -93,6 +93,38 @@ gigastt transcribe recording.wav
 
 **Verify:** `gigastt transcribe recording.wav` prints the recognized text on
 stdout, and `ls ~/.gigastt/models/` shows the `v3_rnnt_*` model files.
+
+## Recipe: Windows (prebuilt binary)
+
+Every release publishes `x86_64-pc-windows-msvc` tarballs (CPU). PowerShell
+5.1+ / Windows 10+ includes `tar` and `curl`:
+
+```powershell
+$rel = Invoke-RestMethod https://api.github.com/repos/ekhodzitsky/gigastt/releases/latest
+$TAG = $rel.tag_name          # e.g. v2.14.1
+$VER = $TAG.TrimStart('v')
+$asset = "gigastt-$VER-x86_64-pc-windows-msvc.tar.gz"
+$base = "https://github.com/ekhodzitsky/gigastt/releases/download/$TAG"
+
+Invoke-WebRequest "$base/$asset" -OutFile $asset
+Invoke-WebRequest "$base/$asset.sha256" -OutFile "$asset.sha256"
+# Optional integrity check (hash file is "HASH  filename"):
+$expected = (Get-Content "$asset.sha256").Split()[0]
+$actual = (Get-FileHash $asset -Algorithm SHA256).Hash.ToLower()
+if ($actual -ne $expected.ToLower()) { throw "SHA-256 mismatch" }
+
+tar xf $asset
+# Put gigastt.exe on PATH, or call it by full path:
+.\gigastt.exe download --prequantized
+.\gigastt.exe transcribe recording.wav
+```
+
+Model directory on Windows defaults under the user profile
+(`%USERPROFILE%\.gigastt\models\`). First `serve` still binds loopback only
+(`127.0.0.1:9876`) until you pass `--bind-all`.
+
+**Verify:** `.\gigastt.exe transcribe recording.wav` prints text; health after
+`.\gigastt.exe serve` answers at `http://127.0.0.1:9876/health`.
 
 ## Recipe: Docker
 

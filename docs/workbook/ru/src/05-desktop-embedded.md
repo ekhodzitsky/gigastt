@@ -448,6 +448,9 @@ cargo run -p gigastt-uniffi --bin uniffi-bindgen -- generate --library "$LIB" --
 - [docs/embedding-packaging.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/embedding-packaging.md) — статическая vs динамическая линковка onnxruntime
 - [docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md) — справочник `/health`, `/ready`, REST/WS/SSE
 - [docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md) — флаги `serve` и `download` (использованные выше ручки жизненного цикла)
+- [Приложение A — Коды ошибок](appendix-error-codes.md) — HTTP/WS, когда sidecar сбоит
 
-Отдельный гайд по встраиванию и дистрибуции (`docs/embedding.md`, включая
-темы вроде нотаризации macOS) находится в работе.
+**Заметка по дистрибуции macOS.** Нотаризация `.app` / Developer ID — **вне
+этой книги**: используйте tooling Apple для своего signed-приложения + sidecar
+или embedded framework. Движок из GitHub Releases — unsigned OSS-бинарь;
+версию гейть через `/health` → `version`, а не через code signature.

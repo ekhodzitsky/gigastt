@@ -24,10 +24,13 @@ minors.
 | Run production with metrics, upgrades, model hot-reload | ~45 min | [Deployment & ops](06-deployment-ops.md) |
 | Pick head / INT8 / GPU / pool size / punct / hotwords | ~20 min | [Models and backends](07-models-and-backends.md) |
 | Label speakers on mono meetings | (in ch.3) | [Telephony — diarization](03-telephony-voip.md#mono-meeting-recording--speakers-via-diarization) |
+| Decode an HTTP/WS error code | ~2 min | [Appendix A — Error codes](appendix-error-codes.md) |
+| Ship air-gapped / offline | ~30 min | [Appendix B — Offline checklist](appendix-offline-checklist.md) |
+| Install on Windows | ~10 min | [Getting started — Windows](01-getting-started.md#recipe-windows-prebuilt-binary) |
 
 ## Chapters
 
-1. [Getting started](01-getting-started.md) — install, download the model,
+1. [Getting started](01-getting-started.md) — install (macOS/Linux/Windows/Docker/air-gap),
    first transcription. **Beginner · ~5–15 min**
 2. [CLI and batch processing](02-cli-batch.md) — CLI, batch, and watch-mode
    recipes for audio files. **Beginner · ~15–30 min**
@@ -41,6 +44,11 @@ minors.
    monitoring, upgrades, admin reload. **Ops · ~45 min**
 7. [Models and backends](07-models-and-backends.md) — model variants,
    quantization, execution providers, punctuation/ITN, hotwords. **Intermediate · ~20 min**
+
+### Appendices
+
+- [A — Error codes](appendix-error-codes.md) — REST/WS/close code jump table
+- [B — Offline checklist](appendix-offline-checklist.md) — air-gapped operator list
 
 The [Russian version](../../ru/src/README.md) mirrors this book chapter by
 chapter.
