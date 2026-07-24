@@ -25,10 +25,11 @@ const ENC_DIM: usize = 768;
 /// Mel feature bins (`[1, N_MELS, T]`, channels-first).
 const N_MELS: usize = 64;
 
-/// Minimum fraction of a bucket the real mel must fill for the pad-up path to be
-/// trusted. Below this, the mask-free zero-padded encoder output diverges enough
-/// from the unpadded baseline that a borderline token can flip; clips that don't
-/// reach the floor fall back to the variable-length ort encoder.
+/// Minimum fraction of a bucket the real mel must fill for the **file-mode**
+/// pad-up path to be trusted. Below this, the mask-free zero-padded encoder
+/// output diverges enough from the unpadded baseline that a borderline token can
+/// flip; clips that don't reach the floor fall back to the variable-length ort
+/// encoder.
 ///
 /// Calibrated by the pad-parity experiment (mask-free pad-up): at >= 50% fill the
 /// padded ANE output stays at cosine >= 0.94 vs the ort baseline and WER tracks
@@ -41,6 +42,19 @@ const N_MELS: usize = 64;
 /// zero-pad effect. A future reader must NOT "fix" this floor assuming the
 /// encoder sees f32 input; the f16 round-trip is baked into the threshold.
 const FILL_FLOOR: f64 = 0.5;
+
+/// Fill floor for **streaming / low-latency** encoder calls.
+///
+/// Streaming windows are capped at ~2.5 s (≈249 mel frames), which underfills
+/// the smallest shipped bucket (512 → file-mode floor 256) at ~48.6%. The file
+/// floor would force every streaming window onto ort. A zero floor lets any
+/// window that fits under the max bucket pad into the smallest eligible bucket
+/// (typically 512) and run on ANE.
+///
+/// Streaming pad may underfill the bucket and is preferred for latency on Mac
+/// ANE builds over the correct-but-slower ort fallback. File-mode keeps
+/// [`FILL_FLOOR`] = 0.5 so the quality/cost tradeoff on long clips is unchanged.
+const STREAMING_FILL_FLOOR: f64 = 0.0;
 
 /// `Retained<MLModel>` is not auto-`Send`/`Sync` (it wraps an Objective-C
 /// pointer), but Apple documents `-[MLModel predictionFromFeatures:error:]` as
@@ -125,8 +139,9 @@ pub fn trim_time(out: &[f32], channels: usize, t_padded: usize, t_keep: usize) -
 }
 
 /// ANE-backed encoder session. Runs the encoder on the Neural Engine via a
-/// per-bucket fixed-shape package when a clip pads-up into a bucket at >=
-/// [`FILL_FLOOR`]; otherwise delegates to the ort encoder fallback.
+/// per-bucket fixed-shape package when a clip pads-up into a bucket at the
+/// active fill floor ([`FILL_FLOOR`] for file mode, [`STREAMING_FILL_FLOOR`] for
+/// streaming); otherwise delegates to the ort encoder fallback.
 pub struct AneEncoderSession {
     /// Available compiled bucket models, sorted ascending by `size`.
     buckets: Vec<BucketModel>,
@@ -153,15 +168,16 @@ impl AneEncoderSession {
             .find(|b| b.size == size)
             .map(|b| &b.model)
     }
-}
 
-impl RuntimeSession for AneEncoderSession {
     /// Encoder contract (mirrors the ort ONNX encoder, which emits two outputs):
     /// `inputs[0] = mel [1, 64, T] F32`, `inputs[1] = length [1]` (ignored; T is
     /// read from the mel shape, which is authoritative on this path). Returns
     /// `[encoded [1, 768, T'] F32, encoded_len [1] I64]` so the engine's decode
     /// loop reads `encoder_outputs[1]` for the frame count exactly as for ort.
-    fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
+    ///
+    /// `floor` is the pad fill floor: file mode uses [`FILL_FLOOR`], streaming
+    /// uses [`STREAMING_FILL_FLOOR`].
+    fn run_with_floor(&self, inputs: &[Tensor], floor: f64) -> Result<Vec<Tensor>, RuntimeError> {
         if inputs.is_empty() {
             return Err(RuntimeError::InvalidInputCount {
                 expected: 2,
@@ -182,7 +198,7 @@ impl RuntimeSession for AneEncoderSession {
         let t = dims[2];
 
         let sizes = self.bucket_sizes();
-        match select_bucket(t, &sizes, FILL_FLOOR) {
+        match select_bucket(t, &sizes, floor) {
             Some(n) => {
                 let model = self.model_for(n).ok_or_else(|| {
                     RuntimeError::InferenceFailed(format!("no compiled model for bucket {n}"))
@@ -206,6 +222,7 @@ impl RuntimeSession for AneEncoderSession {
                 tracing::debug!(
                     t,
                     bucket = n,
+                    floor,
                     t_real_prime,
                     t_padded_prime,
                     "ANE encoder path (bucketed pad-up)"
@@ -225,11 +242,26 @@ impl RuntimeSession for AneEncoderSession {
             None => {
                 tracing::debug!(
                     t,
+                    floor,
                     "ANE encoder path (ort fallback: no bucket within fill-floor)"
                 );
                 self.ort_fallback.run(inputs)
             }
         }
+    }
+}
+
+impl RuntimeSession for AneEncoderSession {
+    fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
+        self.run_with_floor(inputs, FILL_FLOOR)
+    }
+
+    fn run_low_latency(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
+        self.run_with_floor(inputs, STREAMING_FILL_FLOOR)
+    }
+
+    fn is_ane_encoder(&self) -> bool {
+        true
     }
 }
 
@@ -252,33 +284,66 @@ mod tests {
 
     #[test]
     fn test_select_bucket_fill_floor_cases() {
-        let buckets = [768usize, 1536, 3000];
-        // 400/768 = 52% -> smallest N>=400 meeting floor.
-        assert_eq!(select_bucket(400, &buckets, 0.5), Some(768));
-        // 200/768 = 26% < floor -> no bucket, fallback.
+        let buckets = [512usize, 768, 1536, 3000];
+        // 400/512 = 78% → smallest N≥400 meeting floor is 512.
+        assert_eq!(select_bucket(400, &buckets, 0.5), Some(512));
+        // 300/512 = 58.6% → 512.
+        assert_eq!(select_bucket(300, &buckets, 0.5), Some(512));
+        // 200/512 = 39% < floor → no bucket, fallback.
         assert_eq!(select_bucket(200, &buckets, 0.5), None);
-        // 800 > 768 so 768 fails N>=T; smallest N>=800 is 1536 (800/1536=52%).
+        // 600 > 512 so 512 fails N≥T; 600/768 = 78% → 768.
+        assert_eq!(select_bucket(600, &buckets, 0.5), Some(768));
+        // 800 > 768 so 768 fails N≥T; smallest N≥800 is 1536 (800/1536=52%).
         assert_eq!(select_bucket(800, &buckets, 0.5), Some(1536));
-        // 769 -> 1536 (769/1536 = 50.06% >= floor).
+        // 769 → 1536 (769/1536 = 50.06% ≥ floor).
         assert_eq!(select_bucket(769, &buckets, 0.5), Some(1536));
-        // 4000 > max bucket -> fallback.
+        // 4000 > max bucket → fallback.
         assert_eq!(select_bucket(4000, &buckets, 0.5), None);
         // Exact fit.
         assert_eq!(select_bucket(768, &buckets, 0.5), Some(768));
+        assert_eq!(select_bucket(512, &buckets, 0.5), Some(512));
     }
 
     #[test]
     fn test_select_bucket_fill_equal_to_floor_is_selected() {
-        // 384/768 = exactly 0.5 == floor -> the `>=` comparison must include the
+        // 384/768 = exactly 0.5 == floor → the `>=` comparison must include the
         // boundary, so the bucket is selected (not rejected to the ort fallback).
         assert_eq!(select_bucket(384, &[768], 0.5), Some(768));
+        // 256/512 = exactly 0.5.
+        assert_eq!(select_bucket(256, &[512], 0.5), Some(512));
     }
 
     #[test]
     fn test_select_bucket_unsorted_input() {
-        let buckets = [3000usize, 768, 1536];
-        assert_eq!(select_bucket(400, &buckets, 0.5), Some(768));
+        let buckets = [3000usize, 512, 768, 1536];
+        assert_eq!(select_bucket(300, &buckets, 0.5), Some(512));
+        assert_eq!(select_bucket(400, &buckets, 0.5), Some(512));
+        assert_eq!(select_bucket(600, &buckets, 0.5), Some(768));
         assert_eq!(select_bucket(800, &buckets, 0.5), Some(1536));
+    }
+
+    /// Streaming-sized windows (~249 mel frames @ 2.5 s) sit under the file-mode
+    /// 50% floor of bucket 512 but must select that bucket under the streaming
+    /// floor so live sessions can run on ANE.
+    #[test]
+    fn test_select_bucket_streaming_floor_accepts_underfilled_window() {
+        let buckets = [512usize, 768, 1536, 3000];
+        // ~2.5 s streaming window.
+        const T: usize = 249;
+        // File-mode floor still rejects (249/512 ≈ 48.6% < 0.5).
+        assert_eq!(
+            select_bucket(T, &buckets, FILL_FLOOR),
+            None,
+            "file-mode floor must still reject underfilled streaming-sized T"
+        );
+        // Streaming floor pads into the smallest eligible bucket.
+        assert_eq!(
+            select_bucket(T, &buckets, STREAMING_FILL_FLOOR),
+            Some(512),
+            "streaming floor must select bucket 512 for a 249-frame window"
+        );
+        // Over-max still rejected even with zero floor.
+        assert_eq!(select_bucket(4000, &buckets, STREAMING_FILL_FLOOR), None);
     }
 
     #[test]
@@ -315,34 +380,31 @@ mod tests {
         assert_eq!(back, mel);
     }
 
-    /// Streaming smoke (no model / no ANE hardware): an `AneEncoderSession` with
-    /// the production bucket ladder but NO compiled bucket models routes a
-    /// streaming-sized window through the ort fallback rather than the ANE path.
+    /// File-mode smoke (no model / no ANE hardware): an `AneEncoderSession` with
+    /// no compiled bucket models routes a streaming-sized window through the ort
+    /// fallback on the file-mode path (`run` / [`FILL_FLOOR`]), because 250 mel
+    /// frames underfill bucket 512 at the 0.5 floor.
     ///
-    /// The streaming path (`Engine::decode_window`) caps its window at
-    /// `STREAM_MAX_WINDOW_SAMPLES` = 2.5 s ⇒ ≤ 250 mel frames, which is below the
-    /// 50%-fill floor of the smallest shipped bucket (768 ⇒ floor 384). So
-    /// `select_bucket` returns `None` for every streaming window and `run`
-    /// delegates to the ort fallback session: streaming works on CPU with no
-    /// crash and no ANE benefit (the intended "ANE = file-mode" behavior). This
-    /// pins that routing without needing a real `.mlpackage` or the Neural Engine
-    /// by using a mock fallback session and asserting it was invoked.
+    /// Pins that routing without a real `.mlpackage` by using a mock fallback
+    /// session and asserting it was invoked.
     #[test]
-    fn test_streaming_window_routes_to_ort_fallback() {
+    fn test_file_mode_underfilled_window_routes_to_ort_fallback() {
         use crate::runtime::mock::MockSession;
 
         // Production buckets; none has a compiled model loaded here.
-        const SHIPPED_BUCKETS: &[usize] = &[768, 1536, 3000];
-        // A streaming-sized window: 250 mel frames (the 2.5 s window cap), well
-        // below the 384-frame fill floor of the 768 bucket.
+        const SHIPPED_BUCKETS: &[usize] = &[512, 768, 1536, 3000];
+        // A streaming-sized window: 250 mel frames (the 2.5 s window cap).
         const T: usize = 250;
 
-        // Sanity: confirm no shipped bucket accepts this window at the floor, so
-        // `run` MUST take the fallback branch.
+        // Sanity: file-mode floor rejects; streaming floor would accept 512.
         assert_eq!(
             select_bucket(T, SHIPPED_BUCKETS, FILL_FLOOR),
             None,
-            "a 250-frame streaming window must not select any shipped bucket"
+            "a 250-frame window must not select any shipped bucket at FILL_FLOOR"
+        );
+        assert_eq!(
+            select_bucket(T, SHIPPED_BUCKETS, STREAMING_FILL_FLOOR),
+            Some(512)
         );
 
         // Mock ort encoder fallback: accepts the [1,64,T] mel + [1] length pair
@@ -360,8 +422,9 @@ mod tests {
             ],
         );
 
-        // No bucket models -> every window falls back.
+        // No bucket models -> every window falls back (file-mode or streaming).
         let session = AneEncoderSession::new(Vec::new(), Box::new(fallback));
+        assert!(session.is_ane_encoder());
 
         let mel = Tensor::new(
             Shape::new(vec![1, N_MELS, T]),
