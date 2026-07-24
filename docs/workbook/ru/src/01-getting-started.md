@@ -58,7 +58,7 @@ $ gigastt transcribe recording.wav
 `aarch64-unknown-linux-gnu`:
 
 ```sh
-# Определить тег последнего релиза (или задайте TAG=v2.13.0 вручную):
+# Определить тег последнего релиза (или задайте TAG=v2.14.1 вручную):
 TAG=$(curl -fsSL https://api.github.com/repos/ekhodzitsky/gigastt/releases/latest \
       | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
 VER=${TAG#v}
@@ -131,7 +131,7 @@ curl -F file=@recording.wav http://127.0.0.1:9876/v1/transcribe
 **Проверка:** `/health` возвращает
 
 ```json
-{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}
+{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.14.1","punctuation":true,"itn":true}
 ```
 
 (поле `version` отражает скачанный образ), а POST возвращает JSON с

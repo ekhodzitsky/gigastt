@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   are refreshed; `NOTICE` attributes WeSpeaker (CC BY 4.0); privacy docs
   separate runtime vs build-time network; `scripts/check-docs-drift.py` also
   gates OpenAPI paths, SECURITY versions, and crate version pins.
+- **Workbook SOTA pass (EN+RU).** Pins and examples moved to 2.14.x; intro
+  persona matrix + time badges; recipes for admin reload, mono diarization,
+  punctuation/ITN/hotwords, and VAD endpointing ownership (2.14.1); drift gate
+  forbids previous-minor pins and required recipe tokens in the English book.
 
 ## [2.14.1] - 2026-07-24
 

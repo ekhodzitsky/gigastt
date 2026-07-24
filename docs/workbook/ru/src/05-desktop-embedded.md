@@ -199,8 +199,8 @@ Runtime — отдельный рантайм бандлить не нужно. 
    Connection-refused означает, что процесс мёртв или ещё не запущен, — а не
    что он завис.
 6. **Версионное рукопожатие по HTTP.** `GET /health` возвращает 200 в *обеих*
-   фазах — `{"status":"ok","model":"loading","version":"2.13.0"}` во время
-   bootstrap, затем `{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}`.
+   фазах — `{"status":"ok","model":"loading","version":"2.14.1"}` во время
+   bootstrap, затем `{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.14.1","punctuation":true,"itn":true}`.
    Гейт минимальной версии движка делайте по полю `version`, а не запуском
    `gigastt --version` подпроцессом.
 7. **Транскрибация.** Для live-частичных результатов откройте

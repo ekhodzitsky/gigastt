@@ -58,7 +58,7 @@ publishes tarballs for `x86_64-unknown-linux-gnu` and
 `aarch64-unknown-linux-gnu`:
 
 ```sh
-# Resolve the latest release tag (or set TAG=v2.13.0 by hand):
+# Resolve the latest release tag (or set TAG=v2.14.1 by hand):
 TAG=$(curl -fsSL https://api.github.com/repos/ekhodzitsky/gigastt/releases/latest \
       | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
 VER=${TAG#v}
@@ -130,7 +130,7 @@ curl -F file=@recording.wav http://127.0.0.1:9876/v1/transcribe
 **Verify:** `/health` returns
 
 ```json
-{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}
+{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.14.1","punctuation":true,"itn":true}
 ```
 
 (the `version` field reflects the image you pulled), and the POST returns a

@@ -34,8 +34,8 @@ Each tagged release publishes multi-arch images to GHCR — prefer pulling over
 building:
 
 ```sh
-docker pull ghcr.io/ekhodzitsky/gigastt:2.13.0        # CPU, linux/amd64 + linux/arm64
-docker pull ghcr.io/ekhodzitsky/gigastt:2.13.0-cuda   # CUDA, linux/amd64
+docker pull ghcr.io/ekhodzitsky/gigastt:2.14.1        # CPU, linux/amd64 + linux/arm64
+docker pull ghcr.io/ekhodzitsky/gigastt:2.14.1-cuda   # CUDA, linux/amd64
 ```
 
 Pin a concrete tag for reproducible deploys; `:latest` / `:cuda` float.
@@ -47,7 +47,7 @@ encoder) survives container replacement:
 docker run -d --name gigastt \
   -p 127.0.0.1:9876:9876 \
   -v gigastt-models:/home/gigastt/.gigastt/models \
-  ghcr.io/ekhodzitsky/gigastt:2.13.0
+  ghcr.io/ekhodzitsky/gigastt:2.14.1
 ```
 
 Notes:
@@ -67,7 +67,7 @@ Notes:
 - **Baked image** (zero cold start, +~850 MB): build locally with the model
   inside — `docker build --build-arg GIGASTT_BAKE_MODEL=1 -t gigastt:baked .`
 - **CUDA**: `docker run --gpus all -p 127.0.0.1:9876:9876
-  ghcr.io/ekhodzitsky/gigastt:2.13.0-cuda` (requires the NVIDIA Container
+  ghcr.io/ekhodzitsky/gigastt:2.14.1-cuda` (requires the NVIDIA Container
   Toolkit; the binary falls back to CPU when no GPU is present).
 
 **Verify:**
@@ -76,7 +76,7 @@ Notes:
 curl -s http://127.0.0.1:9876/ready
 # {"status":"ready","pool_available":2,"pool_total":2}
 curl -s http://127.0.0.1:9876/health
-# {"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}
+# {"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.14.1","punctuation":true,"itn":true}
 ```
 
 ### Air-gapped / offline installation
@@ -94,21 +94,21 @@ over (the why and the threat model:
 [docs/verifying-releases.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/verifying-releases.md)):
 
 ```sh
-gh release download v2.13.0 -R ekhodzitsky/gigastt \
-    -p 'gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz' \
-    -p 'gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz.sha256' \
-    -p 'gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz.minisig'
-sha256sum -c gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz.sha256
-minisign -Vm gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
-gh attestation verify gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz \
+gh release download v2.14.1 -R ekhodzitsky/gigastt \
+    -p 'gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz' \
+    -p 'gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz.sha256' \
+    -p 'gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz.minisig'
+sha256sum -c gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz.sha256
+minisign -Vm gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
+gh attestation verify gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz \
     --repo ekhodzitsky/gigastt
 ```
 
 On the target host:
 
 ```sh
-tar xf gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz
-cd gigastt-2.13.0-offline
+tar xf gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz
+cd gigastt-2.14.1-offline
 sudo ./install.sh    # verifies SHA256SUMS.txt, then installs binary + models + unit
 sudo systemctl enable --now gigastt
 ```
@@ -116,7 +116,7 @@ sudo systemctl enable --now gigastt
 Debian-family alternative:
 
 ```sh
-sudo dpkg -i gigastt_2.13.0_amd64.deb gigastt-model-int8_2.13.0_all.deb
+sudo dpkg -i gigastt_2.14.1_amd64.deb gigastt-model-int8_2.14.1_all.deb
 sudo systemctl enable --now gigastt
 ```
 
@@ -299,8 +299,8 @@ not weakening them:
   Minimum routine:
 
 ```sh
-minisign -Vm gigastt-2.13.0-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
-gh attestation verify gigastt-2.13.0-x86_64-unknown-linux-gnu.tar.gz \
+minisign -Vm gigastt-2.14.1-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
+gh attestation verify gigastt-2.14.1-x86_64-unknown-linux-gnu.tar.gz \
     --repo ekhodzitsky/gigastt
 ```
 
@@ -318,22 +318,56 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 # 403
 ```
 
+### Hot-reload the model without restart
+
+When you replace model files on disk (new INT8 encoder, switched head files,
+refreshed punct model) you can rebuild the engine **in place** without
+stopping `serve`:
+
+```sh
+# Must be called from loopback — non-loopback peers get 403 loopback_only
+# even with --bind-all.
+curl -s -X POST http://127.0.0.1:9876/v1/admin/reload
+# {"reloaded":true,"variant":"rnnt","encoder":"int8"}
+```
+
+The server rebuilds from the **boot recipe** (model dir, pool sizes, punct /
+ITN / VAD / hotwords), warms the new engine, then atomically swaps it in.
+In-flight requests finish on the old engine. A build failure leaves the
+previous model serving (`503 reload_failed`). Concurrent reloads return
+`409 reload_in_progress`. Full contract:
+[docs/api.md — Admin reload](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md#admin-reload).
+
+**Verify:**
+
+```sh
+curl -s -X POST http://127.0.0.1:9876/v1/admin/reload | tee /tmp/reload.json
+python3 -c "import json; d=json.load(open('/tmp/reload.json')); assert d['reloaded'] is True"
+# From a non-loopback bind (only if you deliberately opened one): expect 403.
+```
+
 ### Upgrades and rollback
 
 Pin what you deploy (image tag, deb version) so an upgrade is a deliberate,
 reversible step. The model directory is state: it persists across upgrades,
 the engine auto-detects the installed recognition head, and **no silent
-re-download happens** when you bump the binary.
-
-Docker:
+re-download happens** when you bump the binary. Prefer resolving the latest
+release when scripting installs:
 
 ```sh
-docker pull ghcr.io/ekhodzitsky/gigastt:2.13.1
+TAG=$(gh api repos/ekhodzitsky/gigastt/releases/latest -q .tag_name)   # e.g. v2.14.1
+VER=${TAG#v}
+```
+
+Docker (upgrade to the pin you chose — here `2.14.1`):
+
+```sh
+docker pull ghcr.io/ekhodzitsky/gigastt:2.14.1
 docker stop --time 15 gigastt && docker rm gigastt
 docker run -d --name gigastt \
   -p 127.0.0.1:9876:9876 \
   -v gigastt-models:/home/gigastt/.gigastt/models \
-  ghcr.io/ekhodzitsky/gigastt:2.13.1
+  ghcr.io/ekhodzitsky/gigastt:2.14.1
 ```
 
 `docker stop` sends `SIGTERM`; `--time 15` gives the drain window
@@ -344,7 +378,7 @@ Docker's default of 10 s races the drain. Clients receive `Final` +
 systemd / deb:
 
 ```sh
-sudo dpkg -i gigastt_2.13.1_amd64.deb
+sudo dpkg -i gigastt_2.14.1_amd64.deb
 sudo systemctl restart gigastt
 journalctl -u gigastt -f    # expect a clean drain, no "Drain window expired"
 ```
@@ -353,15 +387,15 @@ On Kubernetes the same rule applies from the orchestrator side:
 `terminationGracePeriodSeconds` ≥ `shutdown_drain_secs + 5` (full manifest:
 [docs/deployment.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/deployment.md#graceful-shutdown--session-caps)).
 
-**Rollback.** Re-deploy the previous tag or package — the on-disk model set
+**Rollback.** Re-deploy the **previous** tag or package — the on-disk model set
 is unchanged, so the old binary starts against the same files:
 
 ```sh
 docker run -d --name gigastt \
   -p 127.0.0.1:9876:9876 \
   -v gigastt-models:/home/gigastt/.gigastt/models \
-  ghcr.io/ekhodzitsky/gigastt:2.13.0
-# or: sudo dpkg -i gigastt_2.13.0_amd64.deb && sudo systemctl restart gigastt
+  ghcr.io/ekhodzitsky/gigastt:2.14.0
+# or: sudo dpkg -i gigastt_2.14.0_amd64.deb && sudo systemctl restart gigastt
 ```
 
 If a drain-related regression breaks your WebSocket clients after an upgrade,

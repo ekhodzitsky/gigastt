@@ -8,22 +8,39 @@ result → common pitfalls → links**.
 This book is a **cookbook, not a reference**. The canonical references stay in
 [`docs/`](../../../) — the workbook links to them instead of duplicating them.
 
+**Documented against gigastt 2.14.x.** Prefer resolving the latest release tag
+in install scripts (`gh api …/releases/latest`) rather than hard-coding older
+minors.
+
+## I want to…
+
+| Goal | Time | Chapter |
+|---|---|---|
+| First transcript on this machine | ~5–15 min | [Getting started](01-getting-started.md) |
+| Batch a folder / watch a drop box / async jobs | ~15–30 min | [CLI and batch processing](02-cli-batch.md) |
+| Transcribe PBX / Opus / raw telephony; stereo speakers | ~20 min | [Telephony & VoIP](03-telephony-voip.md) |
+| Live captions or a voice bot over WebSocket | ~30 min | [Streaming over WebSocket](04-streaming-ws.md) |
+| Ship a macOS / Electron / mobile app | ~30–60 min | [Desktop & embedded](05-desktop-embedded.md) |
+| Run production with metrics, upgrades, model hot-reload | ~45 min | [Deployment & ops](06-deployment-ops.md) |
+| Pick head / INT8 / GPU / pool size / punct / hotwords | ~20 min | [Models and backends](07-models-and-backends.md) |
+| Label speakers on mono meetings | (in ch.3) | [Telephony — diarization](03-telephony-voip.md#mono-meeting-recording--speakers-via-diarization) |
+
 ## Chapters
 
 1. [Getting started](01-getting-started.md) — install, download the model,
-   first transcription.
+   first transcription. **Beginner · ~5–15 min**
 2. [CLI and batch processing](02-cli-batch.md) — CLI, batch, and watch-mode
-   recipes for audio files.
-3. [Telephony & VoIP](03-telephony-voip.md) — G.711/G.722/Opus and PBX
-   recordings.
+   recipes for audio files. **Beginner · ~15–30 min**
+3. [Telephony & VoIP](03-telephony-voip.md) — G.711/G.722/Opus, PBX
+   recordings, stereo split, and diarization. **Intermediate · ~20 min**
 4. [Streaming over WebSocket](04-streaming-ws.md) — real-time transcription
-   over WebSocket.
+   over WebSocket (partials, VAD endpointing, session caps). **Intermediate · ~30 min**
 5. [Desktop & embedded](05-desktop-embedded.md) — Swift/SPM, sidecar,
-   Electron, UniFFI.
+   Electron, UniFFI. **Intermediate · ~30–60 min**
 6. [Deployment & ops](06-deployment-ops.md) — production deployment,
-   monitoring, and operations.
+   monitoring, upgrades, admin reload. **Ops · ~45 min**
 7. [Models and backends](07-models-and-backends.md) — model variants,
-   quantization, execution providers, alternative backends (in progress).
+   quantization, execution providers, punctuation/ITN, hotwords. **Intermediate · ~20 min**
 
 The [Russian version](../../ru/src/README.md) mirrors this book chapter by
 chapter.
@@ -90,5 +107,6 @@ Completed design/plan documents kept for archaeology in
   formats), update the chapter, the book `SUMMARY.md`, and the canonical
   references in the same PR — and keep the docs-drift gate green:
   `python3 scripts/check-docs-drift.py` (advisory in CI; it compares CLI
-  flags, WS error codes, audio formats, mdBook TOCs, EN/RU parity, and
-  relative links against the code).
+  flags, WS error codes, audio formats, mdBook TOCs, EN/RU parity,
+  relative links, OpenAPI/SECURITY/crate pins, and workbook version
+  currency + required recipe tokens against the code).

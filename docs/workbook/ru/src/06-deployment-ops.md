@@ -35,8 +35,8 @@
 предпочтительнее тянуть готовое, а не собирать:
 
 ```sh
-docker pull ghcr.io/ekhodzitsky/gigastt:2.13.0        # CPU, linux/amd64 + linux/arm64
-docker pull ghcr.io/ekhodzitsky/gigastt:2.13.0-cuda   # CUDA, linux/amd64
+docker pull ghcr.io/ekhodzitsky/gigastt:2.14.1        # CPU, linux/amd64 + linux/arm64
+docker pull ghcr.io/ekhodzitsky/gigastt:2.14.1-cuda   # CUDA, linux/amd64
 ```
 
 Закрепляйте конкретный тег для воспроизводимых развёртываний; `:latest` /
@@ -49,7 +49,7 @@ docker pull ghcr.io/ekhodzitsky/gigastt:2.13.0-cuda   # CUDA, linux/amd64
 docker run -d --name gigastt \
   -p 127.0.0.1:9876:9876 \
   -v gigastt-models:/home/gigastt/.gigastt/models \
-  ghcr.io/ekhodzitsky/gigastt:2.13.0
+  ghcr.io/ekhodzitsky/gigastt:2.14.1
 ```
 
 Примечания:
@@ -71,7 +71,7 @@ docker run -d --name gigastt \
   моделью внутри — `docker build --build-arg GIGASTT_BAKE_MODEL=1 -t
   gigastt:baked .`
 - **CUDA**: `docker run --gpus all -p 127.0.0.1:9876:9876
-  ghcr.io/ekhodzitsky/gigastt:2.13.0-cuda` (требуется NVIDIA Container
+  ghcr.io/ekhodzitsky/gigastt:2.14.1-cuda` (требуется NVIDIA Container
   Toolkit; при отсутствии GPU бинарник откатывается на CPU).
 
 **Проверить:**
@@ -80,7 +80,7 @@ docker run -d --name gigastt \
 curl -s http://127.0.0.1:9876/ready
 # {"status":"ready","pool_available":2,"pool_total":2}
 curl -s http://127.0.0.1:9876/health
-# {"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}
+# {"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.14.1","punctuation":true,"itn":true}
 ```
 
 ### Установка без сети (замкнутый контур)
@@ -98,21 +98,21 @@ tarball под каждую Linux-цель — бинарник + предква
 [docs/verifying-releases.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/verifying-releases.md)):
 
 ```sh
-gh release download v2.13.0 -R ekhodzitsky/gigastt \
-    -p 'gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz' \
-    -p 'gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz.sha256' \
-    -p 'gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz.minisig'
-sha256sum -c gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz.sha256
-minisign -Vm gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
-gh attestation verify gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz \
+gh release download v2.14.1 -R ekhodzitsky/gigastt \
+    -p 'gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz' \
+    -p 'gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz.sha256' \
+    -p 'gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz.minisig'
+sha256sum -c gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz.sha256
+minisign -Vm gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
+gh attestation verify gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz \
     --repo ekhodzitsky/gigastt
 ```
 
 На целевом хосте:
 
 ```sh
-tar xf gigastt-2.13.0-offline-x86_64-unknown-linux-gnu.tar.gz
-cd gigastt-2.13.0-offline
+tar xf gigastt-2.14.1-offline-x86_64-unknown-linux-gnu.tar.gz
+cd gigastt-2.14.1-offline
 sudo ./install.sh    # verifies SHA256SUMS.txt, then installs binary + models + unit
 sudo systemctl enable --now gigastt
 ```
@@ -120,7 +120,7 @@ sudo systemctl enable --now gigastt
 Альтернатива для Debian-семейства:
 
 ```sh
-sudo dpkg -i gigastt_2.13.0_amd64.deb gigastt-model-int8_2.13.0_all.deb
+sudo dpkg -i gigastt_2.14.1_amd64.deb gigastt-model-int8_2.14.1_all.deb
 sudo systemctl enable --now gigastt
 ```
 
@@ -308,8 +308,8 @@ curl -s http://127.0.0.1:9090/metrics | grep '^gigastt_pool_available'
   Минимальный ритуал:
 
 ```sh
-minisign -Vm gigastt-2.13.0-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
-gh attestation verify gigastt-2.13.0-x86_64-unknown-linux-gnu.tar.gz \
+minisign -Vm gigastt-2.14.1-x86_64-unknown-linux-gnu.tar.gz -p gigastt.pub
+gh attestation verify gigastt-2.14.1-x86_64-unknown-linux-gnu.tar.gz \
     --repo ekhodzitsky/gigastt
 ```
 
@@ -327,23 +327,56 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 # 403
 ```
 
+### Горячая перезагрузка модели без рестарта
+
+Когда вы заменили файлы модели на диске (новый INT8-энкодер, другая голова,
+обновлённая punct-модель), движок можно пересобрать **на месте**, не останавливая
+`serve`:
+
+```sh
+# Только с loopback — не-loopback клиенты получают 403 loopback_only
+# даже при --bind-all.
+curl -s -X POST http://127.0.0.1:9876/v1/admin/reload
+# {"reloaded":true,"variant":"rnnt","encoder":"int8"}
+```
+
+Сервер пересобирает engine по **boot-рецепту** (каталог моделей, размер пула,
+punct / ITN / VAD / hotwords), греет новый engine и атомарно подменяет его.
+Запросы в полёте дорабатывают на старом. Ошибка сборки оставляет прежнюю
+модель (`503 reload_failed`). Параллельные reload → `409 reload_in_progress`.
+Полный контракт:
+[docs/api.md — Admin reload](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md#admin-reload).
+
+**Проверка:**
+
+```sh
+curl -s -X POST http://127.0.0.1:9876/v1/admin/reload | tee /tmp/reload.json
+python3 -c "import json; d=json.load(open('/tmp/reload.json')); assert d['reloaded'] is True"
+# From a non-loopback bind (only if you deliberately opened one): expect 403.
+```
+
 ### Обновление и откат
 
 Закрепляйте то, что разворачиваете (тег образа, версию deb), чтобы обновление
 было осознанным и обратимым шагом. Каталог моделей — это состояние: он
 переживает обновления, движок сам определяет установленную голову
 распознавания, и **никакого молчаливого перекачивания** при смене бинарника
-не происходит.
-
-Docker:
+не происходит. В скриптах установки предпочтите резолв latest-тега:
 
 ```sh
-docker pull ghcr.io/ekhodzitsky/gigastt:2.13.1
+TAG=$(gh api repos/ekhodzitsky/gigastt/releases/latest -q .tag_name)   # e.g. v2.14.1
+VER=${TAG#v}
+```
+
+Docker (обновление до выбранного пина — здесь `2.14.1`):
+
+```sh
+docker pull ghcr.io/ekhodzitsky/gigastt:2.14.1
 docker stop --time 15 gigastt && docker rm gigastt
 docker run -d --name gigastt \
   -p 127.0.0.1:9876:9876 \
   -v gigastt-models:/home/gigastt/.gigastt/models \
-  ghcr.io/ekhodzitsky/gigastt:2.13.1
+  ghcr.io/ekhodzitsky/gigastt:2.14.1
 ```
 
 `docker stop` шлёт `SIGTERM`; `--time 15` даёт окну дренажа
@@ -355,7 +388,7 @@ docker run -d --name gigastt \
 systemd / deb:
 
 ```sh
-sudo dpkg -i gigastt_2.13.1_amd64.deb
+sudo dpkg -i gigastt_2.14.1_amd64.deb
 sudo systemctl restart gigastt
 journalctl -u gigastt -f    # expect a clean drain, no "Drain window expired"
 ```
@@ -364,15 +397,15 @@ journalctl -u gigastt -f    # expect a clean drain, no "Drain window expired"
 `terminationGracePeriodSeconds` ≥ `shutdown_drain_secs + 5` (полный манифест:
 [docs/deployment.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/deployment.md#graceful-shutdown--session-caps)).
 
-**Откат.** Разверните предыдущий тег или пакет — набор моделей на диске не
+**Откат.** Разверните **предыдущий** тег или пакет — набор моделей на диске не
 менялся, поэтому старый бинарник стартует на тех же файлах:
 
 ```sh
 docker run -d --name gigastt \
   -p 127.0.0.1:9876:9876 \
   -v gigastt-models:/home/gigastt/.gigastt/models \
-  ghcr.io/ekhodzitsky/gigastt:2.13.0
-# or: sudo dpkg -i gigastt_2.13.0_amd64.deb && sudo systemctl restart gigastt
+  ghcr.io/ekhodzitsky/gigastt:2.14.0
+# or: sudo dpkg -i gigastt_2.14.0_amd64.deb && sudo systemctl restart gigastt
 ```
 
 Если регрессия дренажа ломает ваших WebSocket-клиентов после обновления,

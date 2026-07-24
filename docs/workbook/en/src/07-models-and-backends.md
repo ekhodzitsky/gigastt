@@ -78,6 +78,49 @@ curl -s http://127.0.0.1:9876/v1/models
 # .id / .name reflect the loaded head; .encoder reports int8 vs fp32
 ```
 
+### Readable text: punctuation, ITN, and hotwords
+
+The default `rnnt` head emits bare lowercase. Readable Russian needs a
+post-pass (or the `e2e_rnnt` head, which bakes punctuation/casing/ITN in).
+
+| Knob | Default (`auto`) | Force on | Force off |
+|---|---|---|---|
+| `--punctuation` / `GIGASTT_PUNCTUATION` | on for `rnnt` when the RuPunct model is present | `on` (downloads model if missing) | `off` |
+| `--itn` / `GIGASTT_ITN` | on for `rnnt` | `on` | `off` |
+| REST / WS | server policy | `?punctuation=true` / `configure` | `?punctuation=false` |
+
+```sh
+# Explicit readable pipeline on the default head
+gigastt serve --punctuation on --itn on
+curl -s http://127.0.0.1:9876/health
+# "punctuation":true,"itn":true
+
+# Per-request override (409 punctuation_not_available if model missing and forced on)
+curl -s -X POST "http://127.0.0.1:9876/v1/transcribe?punctuation=true&itn=true" \
+  -H "Content-Type: application/octet-stream" --data-binary @clip.wav
+```
+
+**Hotword bias** lifts brand names and domain terms that the model otherwise
+misses. One phrase per line; optional built-in Russian brand/acronym lexicon:
+
+```sh
+cat > /tmp/hotwords.txt <<'EOF'
+гигачат
+сбер
+еком
+EOF
+
+gigastt serve --hotwords-file /tmp/hotwords.txt --hotwords-default \
+  --hotwords-boost 5.0
+# Same flags work on `transcribe` / `transcribe-batch` / `watch` offline.
+```
+
+**Verify:** transcribe a clip that says a listed brand; without the file the
+hypothesis often mangled the token, with hotwords the spelling matches the
+list. Boost too high can invent brands from noise — start at the default
+`5.0` and only raise if needed. Flags:
+[docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md).
+
 ### INT8 or FP32
 
 Short answer: **INT8, always, unless you are debugging the model itself.** The

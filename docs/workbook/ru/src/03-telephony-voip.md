@@ -169,6 +169,37 @@ curl -s -X POST "http://127.0.0.1:9876/v1/transcribe?channels=split" \
 Разделение каналов несовместимо с диаризацией: `channels=split&diarization=true`
 возвращает `400 conflicting_modes`.
 
+### Моно-запись встречи → спикеры через диаризацию
+
+Если есть **один моно-микс** (или dual-mono, который откатывается выше), а
+метки говорящих всё равно нужны — используйте ML-диаризацию, а не split каналов:
+
+| Режим | Вход | Как ставятся метки | Когда брать |
+|---|---|---|---|
+| `channels=split` / `--stereo-speakers` | Настоящее стерео, сторона = спикер | Индекс канала → `speaker_0` / `speaker_1` | Стереозаписи АТС |
+| `?diarization=true` / WS `configure` | Моно (или смешанное) | WeSpeaker + кластеризация polyvoice | Встречи, интервью, mono-микс |
+
+```sh
+# Speaker-модель качается обычным download
+# (отказ: gigastt download --skip-diarization)
+gigastt serve   # diarization в default features
+
+# Opt-in на запрос — plain /v1/transcribe метки speaker не ставит
+curl -s -X POST "http://127.0.0.1:9876/v1/transcribe?diarization=true" \
+  -H "Content-Type: application/octet-stream" --data-binary @meeting.wav \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(sorted({w.get('speaker') for w in d.get('words',[]) if 'speaker' in w}))"
+# например [0, 1], если разделили двух говорящих
+
+# Live: после ready, до первого audio-фрейма
+# {"type":"configure","diarization":true}
+```
+
+**Проверка:** `GET /v1/models` (или WS `ready`) показывает `"diarization": true`
+только если загружен `wespeaker_resnet34.onnx`. Без файла запрос успешен, но
+слов без `speaker`. Offline-диаризация сопоставляет mid слова с turn;
+streaming ставит последний turn на новые слова (грубее). Контракт:
+[docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md).
+
 ### RTP-дамп без контейнера
 
 RTP-захват, очищенный до полезной нагрузки, не имеет заголовка для сниффинга,

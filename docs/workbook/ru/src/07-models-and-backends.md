@@ -78,6 +78,48 @@ curl -s http://127.0.0.1:9876/v1/models
 # .id / .name отражают загруженную голову; .encoder показывает int8 или fp32
 ```
 
+### Читаемый текст: пунктуация, ITN и hotwords
+
+Дефолтная голова `rnnt` выдаёт голый lowercase. Читаемый русский — это
+пост-проход (или голова `e2e_rnnt`, где пунктуация/регистр/ITN уже внутри).
+
+| Кноб | Дефолт (`auto`) | Принудительно on | Принудительно off |
+|---|---|---|---|
+| `--punctuation` / `GIGASTT_PUNCTUATION` | on для `rnnt`, если есть RuPunct | `on` (докачает модель) | `off` |
+| `--itn` / `GIGASTT_ITN` | on для `rnnt` | `on` | `off` |
+| REST / WS | политика сервера | `?punctuation=true` / `configure` | `?punctuation=false` |
+
+```sh
+# Явный читаемый пайплайн на дефолтной голове
+gigastt serve --punctuation on --itn on
+curl -s http://127.0.0.1:9876/health
+# "punctuation":true,"itn":true
+
+# Переопределение на запрос (409 punctuation_not_available, если модели нет и force on)
+curl -s -X POST "http://127.0.0.1:9876/v1/transcribe?punctuation=true&itn=true" \
+  -H "Content-Type: application/octet-stream" --data-binary @clip.wav
+```
+
+**Hotword bias** поднимает бренды и доменные термины, которые модель иначе
+корежит. Одна фраза на строку; опционально встроенный русский lexicon брендов:
+
+```sh
+cat > /tmp/hotwords.txt <<'EOF'
+гигачат
+сбер
+еком
+EOF
+
+gigastt serve --hotwords-file /tmp/hotwords.txt --hotwords-default \
+  --hotwords-boost 5.0
+# Те же флаги работают на offline `transcribe` / `transcribe-batch` / `watch`.
+```
+
+**Проверка:** клип с брендом из списка — без файла гипотеза часто ломает
+токен, с hotwords написание совпадает. Слишком большой boost может «выдумывать»
+бренды из шума — начните с `5.0`. Флаги:
+[docs/cli.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/cli.md).
+
 ### INT8 или FP32
 
 Короткий ответ: **всегда INT8, если только вы не отлаживаете саму модель.**

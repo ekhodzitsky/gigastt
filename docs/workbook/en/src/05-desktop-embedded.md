@@ -196,8 +196,8 @@ gracefully.
    Connection-refused means the process is dead or not yet spawned — not that
    it is stuck.
 6. **Version handshake over HTTP.** `GET /health` returns 200 in *both*
-   phases — `{"status":"ok","model":"loading","version":"2.13.0"}` during
-   bootstrap, then `{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}`.
+   phases — `{"status":"ok","model":"loading","version":"2.14.1"}` during
+   bootstrap, then `{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.14.1","punctuation":true,"itn":true}`.
    Gate your minimum engine version on the `version` field instead of running
    `gigastt --version` in a subprocess.
 7. **Transcribe.** For live partial results open a WebSocket session on

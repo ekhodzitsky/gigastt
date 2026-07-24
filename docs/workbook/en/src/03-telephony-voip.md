@@ -167,6 +167,39 @@ fields and logs a `falling back to mono transcription` warning. Channel split
 is mutually exclusive with diarization: `channels=split&diarization=true`
 returns `400 conflicting_modes`.
 
+### Mono meeting recording → speakers via diarization
+
+When you have a **single mono mix** (or dual-mono that would fall back above)
+and still need speaker labels, use ML diarization instead of channel split:
+
+| Mode | Input | How labels are assigned | Pick when |
+|---|---|---|---|
+| `channels=split` / `--stereo-speakers` | True stereo, one party per channel | Channel index → `speaker_0` / `speaker_1` | PBX stereo recordings |
+| `?diarization=true` / WS `configure` | Mono (or mixed) | WeSpeaker embeddings + polyvoice clustering | Meetings, interviews, mixed mono |
+
+```sh
+# Speaker model is fetched with the default download path
+# (skip with: gigastt download --skip-diarization)
+gigastt serve   # default build includes the diarization feature
+
+# Opt-in per request — plain /v1/transcribe never attaches speaker labels
+curl -s -X POST "http://127.0.0.1:9876/v1/transcribe?diarization=true" \
+  -H "Content-Type: application/octet-stream" --data-binary @meeting.wav \
+  | python3 -c "import json,sys; d=json.load(sys.stdin); print(sorted({w.get('speaker') for w in d.get('words',[]) if 'speaker' in w}))"
+# e.g. [0, 1] when two speakers were separated
+
+# Live sessions: enable after ready, before the first audio frame
+# {"type":"configure","diarization":true}
+```
+
+**Verify:** `GET /v1/models` (or WS `ready`) shows `"diarization": true` only
+when `wespeaker_resnet34.onnx` is loaded. Without the model file, the request
+succeeds but words have no `speaker` field. Offline diarization matches each
+word's midpoint to a turn; streaming assigns the latest turn to new words
+(coarser). Full contract:
+[docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md)
+and the project README speaker row.
+
 ### An RTP dump without a container
 
 An RTP capture stripped to payload bytes has no header to sniff, so the codec

@@ -29,6 +29,9 @@ Nine axes, all stdlib-only (no third-party deps, no network):
      as current.
   9. Crate version pins: `gigastt-core = "X.Y"` in README*/architecture.md must
      match the workspace package major.minor.
+  10. Workbook currency: docs/workbook/** must not hard-code the previous minor
+      (X.(Y-1).*) when the workspace is X.Y.*; EN chapters must mention the
+      required recipe tokens (admin reload, diarization, hotwords, VAD silence).
 
 Exit code 0 when everything is in sync, 1 otherwise. Runs in seconds.
 """
@@ -518,6 +521,45 @@ def check_crate_pins() -> list[str]:
     return failures
 
 
+# Required recipe coverage in the English workbook (tokens must appear
+# somewhere under docs/workbook/en/src/). Keep the list short and load-bearing.
+WORKBOOK_REQUIRED_TOKENS = {
+    "/v1/admin/reload": "ops hot-reload recipe (chapter 06)",
+    "diarization=true": "speaker diarization recipe (chapter 03)",
+    "hotwords-file": "hotword bias recipe (chapter 07)",
+    "vad-min-silence-ms": "VAD endpointing ownership (chapter 04)",
+}
+
+
+def check_workbook_currency() -> list[str]:
+    failures: list[str] = []
+    major, minor, _patch = workspace_version()
+    workbook = ROOT / "docs" / "workbook"
+    if not workbook.is_dir():
+        return ["docs/workbook/ missing"]
+
+    # Forbid hard-coded previous-minor versions (e.g. 2.13.* when workspace is 2.14.*).
+    if minor > 0:
+        stale = re.compile(rf"\b{major}\.{minor - 1}\.\d+\b")
+        for path in sorted(workbook.rglob("*.md")):
+            text = path.read_text(encoding="utf-8")
+            hits = stale.findall(text)
+            if hits:
+                failures.append(
+                    f"{path.relative_to(ROOT)}: stale version pin(s) {sorted(set(hits))} "
+                    f"(workspace is {major}.{minor}.* — bump or use resolve-latest)"
+                )
+
+    # Required product recipes must stay documented in the EN book.
+    en_src = workbook / "en" / "src"
+    corpus = "\n".join(p.read_text(encoding="utf-8") for p in en_src.glob("*.md") if p.is_file())
+    for token, why in WORKBOOK_REQUIRED_TOKENS.items():
+        if token not in corpus:
+            failures.append(f"docs/workbook/en: missing required recipe token `{token}` ({why})")
+
+    return failures
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -539,6 +581,7 @@ def main() -> int:
     results.append(("OpenAPI paths + duration/format claims", check_openapi()))
     results.append(("SECURITY.md supported versions", check_security_versions()))
     results.append(("crate version pins (README/architecture)", check_crate_pins()))
+    results.append(("workbook currency + required recipes", check_workbook_currency()))
 
     failed = 0
     for name, failures in results:
