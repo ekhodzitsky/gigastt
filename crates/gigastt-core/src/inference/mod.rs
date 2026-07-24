@@ -187,13 +187,31 @@ const STREAM_DECODE_STRIDE_SAMPLES: usize = 16000 * 4 / 5;
 /// carries ~20–30s of useful context, so chunking above this costs no accuracy
 /// in the common case.
 const CHUNK_THRESHOLD_SAMPLES: usize = 16000 * 30;
-/// Length of each long-form decode window (samples @16kHz, 24s). Bounds the
-/// per-chunk encoder activation footprint.
-const CHUNK_WINDOW_SAMPLES: usize = 16000 * 24;
+/// Long-form decode window on ort / CoreML-EP / CUDA (samples @16kHz, 24s).
+/// Bounds per-chunk encoder activation memory; the ANE path uses a longer
+/// window via [`chunk_window_samples`].
+const CHUNK_WINDOW_SAMPLES_ORT: usize = 16000 * 24;
+/// Long-form decode window on the ANE encoder (samples @16kHz, 30s). Full chunks
+/// fill ANE bucket 3000 at ~99.97% (vs ~80% fill at 24s), recovering pad-up
+/// waste. Peak activation is free on-device; ort keeps the shorter window.
+const CHUNK_WINDOW_SAMPLES_ANE: usize = 16000 * 30;
 /// Overlap retained between consecutive long-form windows (samples @16kHz, 2s),
 /// so a word straddling a seam is decoded fully in at least one chunk. The
 /// stitch step de-dups words in the overlap region (see [`stitch_chunk_words`]).
 const CHUNK_OVERLAP_SAMPLES: usize = 16000 * 2;
+
+/// Select the long-form chunk window length for the active encoder backend.
+///
+/// ANE uses 30s so each full chunk nearly fills bucket 3000; every other
+/// backend keeps 24s to bound peak encoder activation memory on CPU/EP paths.
+/// Pure so the selection is unit-tested without a loaded model.
+pub(crate) fn chunk_window_samples(ane_encoder: bool) -> usize {
+    if ane_encoder {
+        CHUNK_WINDOW_SAMPLES_ANE
+    } else {
+        CHUNK_WINDOW_SAMPLES_ORT
+    }
+}
 
 /// Default number of session triplets in the pool.
 ///
@@ -916,6 +934,11 @@ pub struct Engine {
     vad_config: crate::vad::VadConfig,
     /// Whether the INT8 quantized encoder is in use.
     int8: bool,
+    /// True when pooled encoder sessions run on the ANE fixed-shape pad-up path.
+    /// Selects the 30s long-form chunk window (vs 24s for ort). Derived from
+    /// the loaded encoder session at boot, not from compile-time features alone,
+    /// so non-rnnt heads on an `ane`-feature binary still use the ort window.
+    ane_encoder: bool,
     /// Speaker encoder for diarization (None if model file is absent).
     ///
     /// Wrapped in `Arc` so per-session streaming pipelines can share the
@@ -1308,6 +1331,9 @@ impl Engine {
             }
         };
 
+        // Detect ANE from the loaded encoder session (not compile-time alone) so
+        // non-rnnt heads / injected factories keep the ort chunk window.
+        let ane_encoder = triplets.first().is_some_and(|t| t.encoder.is_ane_encoder());
         let (pool, batch_pool) = Self::split_triplets(triplets, batch_pool_size);
         let engine = Self {
             pool,
@@ -1321,6 +1347,7 @@ impl Engine {
             vad: None,
             vad_config: crate::vad::VadConfig::default(),
             int8: is_int8,
+            ane_encoder,
             #[cfg(feature = "diarization")]
             speaker_encoder,
         };
@@ -1860,6 +1887,7 @@ impl Engine {
             num_frames,
             &mut decoder_state,
             frame_offset,
+            true, // streaming: ANE low-latency pad floor when available
         )?;
 
         // Suppress words inside the already-emitted left context so a slid
@@ -2204,7 +2232,14 @@ impl Engine {
             tracing::info!("Extracted {} mel frames", num_frames);
             let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
             Ok(self
-                .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
+                .run_inference(
+                    triplet,
+                    &features,
+                    num_frames,
+                    &mut decoder_state,
+                    0,
+                    false, // file-mode fill floor
+                )
                 .map_err(|e| GigasttError::Inference { source: e.into() })?
                 .0)
         } else {
@@ -2251,32 +2286,35 @@ impl Engine {
     /// chunk's word timestamps by the chunk's absolute start, then stitch the
     /// per-chunk word lists with overlap de-dup via [`stitch_chunk_words`].
     ///
-    /// Peak encoder activation memory is bounded by [`CHUNK_WINDOW_SAMPLES`]
-    /// rather than the full file length. Chunk starts are aligned to encoder
-    /// frame boundaries (multiples of `HOP_LENGTH * ENCODER_SUBSAMPLING`) so the
-    /// per-chunk frame offset is exact, matching the streaming path's math.
+    /// Peak encoder activation memory is bounded by [`chunk_window_samples`]
+    /// (24s ort / 30s ANE) rather than the full file length. Chunk starts are
+    /// aligned to encoder frame boundaries (multiples of
+    /// `HOP_LENGTH * ENCODER_SUBSAMPLING`) so the per-chunk frame offset is
+    /// exact, matching the streaming path's math.
     fn transcribe_samples_chunked(
         &self,
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         let total = float_samples.len();
-        let stride = CHUNK_WINDOW_SAMPLES - CHUNK_OVERLAP_SAMPLES;
+        let window = chunk_window_samples(self.ane_encoder);
+        let stride = window - CHUNK_OVERLAP_SAMPLES;
         // Align stride to an encoder-frame boundary so each chunk's frame offset
         // is integral; otherwise the offset would drift by a sub-frame each hop.
         let frame_samples = HOP_LENGTH * ENCODER_SUBSAMPLING;
         let stride = (stride / frame_samples) * frame_samples;
         tracing::info!(
-            "Long-form chunked decode: {:.1}s in ~{}s windows ({}s overlap)",
+            "Long-form chunked decode: {:.1}s in ~{}s windows ({}s overlap, ane={})",
             total as f64 / 16000.0,
-            CHUNK_WINDOW_SAMPLES / 16000,
+            window / 16000,
             CHUNK_OVERLAP_SAMPLES / 16000,
+            self.ane_encoder,
         );
 
         let mut merged: Vec<WordInfo> = Vec::new();
         let mut start = 0usize;
         while start < total {
-            let end = (start + CHUNK_WINDOW_SAMPLES).min(total);
+            let end = (start + window).min(total);
             let chunk = &float_samples[start..end];
             let (features, num_frames) = self.features.compute(chunk);
             let frame_offset = start / frame_samples;
@@ -2288,6 +2326,7 @@ impl Engine {
                     num_frames,
                     &mut decoder_state,
                     frame_offset,
+                    false, // file-mode fill floor
                 )
                 .map_err(|e| GigasttError::Inference { source: e.into() })?;
 
@@ -2378,6 +2417,9 @@ impl Engine {
         }
     }
 
+    /// Run encoder + decode. `low_latency` selects the streaming encoder path
+    /// ([`RuntimeSession::run_low_latency`]) so ANE can pad underfilled short
+    /// windows; file mode keeps the calibrated 0.5 fill floor.
     fn run_inference(
         &self,
         triplet: &mut SessionTriplet,
@@ -2385,6 +2427,7 @@ impl Engine {
         num_frames: usize,
         decoder_state: &mut DecoderState,
         frame_offset: usize,
+        low_latency: bool,
     ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
         // Reuse the encoder input tensors: resize the signal tensor to the
         // current frame count and overwrite both buffers in place.
@@ -2398,10 +2441,17 @@ impl Engine {
             .context("encoder length tensor is not i64")?[0] = num_frames as i64;
 
         let enc_start = std::time::Instant::now();
-        let encoder_outputs = triplet
-            .encoder
-            .run(&triplet.encoder_inputs)
-            .context("Encoder inference failed")?;
+        let encoder_outputs = if low_latency {
+            triplet
+                .encoder
+                .run_low_latency(&triplet.encoder_inputs)
+                .context("Encoder inference failed")?
+        } else {
+            triplet
+                .encoder
+                .run(&triplet.encoder_inputs)
+                .context("Encoder inference failed")?
+        };
         tracing::info!(
             elapsed_ms = enc_start.elapsed().as_millis() as u64,
             "encoder_inference"
@@ -3120,8 +3170,19 @@ mod tests {
     fn test_chunk_constants_sane() {
         // Window > overlap (positive stride) and threshold ≥ window so the
         // single-pass path covers everything up to one full window.
-        assert!(CHUNK_WINDOW_SAMPLES > CHUNK_OVERLAP_SAMPLES);
-        assert!(CHUNK_THRESHOLD_SAMPLES >= CHUNK_WINDOW_SAMPLES);
+        assert!(CHUNK_WINDOW_SAMPLES_ORT > CHUNK_OVERLAP_SAMPLES);
+        assert!(CHUNK_WINDOW_SAMPLES_ANE > CHUNK_OVERLAP_SAMPLES);
+        assert!(CHUNK_THRESHOLD_SAMPLES >= CHUNK_WINDOW_SAMPLES_ORT);
+        assert!(CHUNK_THRESHOLD_SAMPLES >= CHUNK_WINDOW_SAMPLES_ANE);
+    }
+
+    #[test]
+    fn test_chunk_window_samples_backend_aware() {
+        // ort / non-ANE: 24s keeps peak encoder activation bounded.
+        assert_eq!(chunk_window_samples(false), 16000 * 24);
+        // ANE: 30s fills bucket 3000 at ~99.97%.
+        assert_eq!(chunk_window_samples(true), 16000 * 30);
+        assert!(chunk_window_samples(true) > chunk_window_samples(false));
     }
 
     #[test]
