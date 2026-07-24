@@ -12,6 +12,7 @@ info:
     - **Health & discovery**: `GET /health`, `GET /ready`, `GET /v1/models`
     - **File transcription**: `POST /v1/transcribe` — upload audio, receive full transcript
     - **Streaming transcription**: `POST /v1/transcribe/stream` — upload audio, receive SSE stream of partial/final segments
+    - **OpenAI-compatible**: `POST /v1/audio/transcriptions` — multipart `file` + `model` → `{"text":"..."}`
     - **Async jobs** (opt-in `--enable-jobs`): `POST /v1/jobs`, `GET/DELETE /v1/jobs/{id}`, result + SSE events
     - **Admin**: `POST /v1/admin/reload` — loopback-only model hot-reload
     - **WebSocket** (see `docs/asyncapi.yaml`): `GET /v1/ws`
@@ -485,6 +486,62 @@ paths:
           $ref: "#/components/responses/TooManyRequests"
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
+
+  /v1/audio/transcriptions:
+    post:
+      summary: OpenAI-compatible file transcription
+      description: |
+        Minimal OpenAI Audio Transcriptions compatible endpoint for clients that
+        speak that API shape (llama-swap, Hermes Agent, OpenAI SDKs with a custom
+        `base_url`). Multipart form with required `file` and optional `model`
+        (accepted for compatibility, ignored — the loaded engine is always used).
+        Returns `{"text":"..."}` only. Same audio formats and 30-minute cap as
+        `/v1/transcribe`. For words, segments, exports, diarization, or
+        telephony codecs, use `POST /v1/transcribe` instead.
+      operationId: createTranscription
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Audio file to transcribe.
+                model:
+                  type: string
+                  description: |
+                    Accepted for OpenAI client compatibility; ignored. Any string
+                    works (`whisper-1`, a local alias, or a gigastt model id).
+                  example: whisper-1
+      responses:
+        "200":
+          description: Transcription result (OpenAI minimal JSON)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [text]
+                properties:
+                  text:
+                    type: string
+                    description: Full recognized transcript text.
+                    example: "Привет, как дела?"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "422":
+          $ref: "#/components/responses/TranscriptionError"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+        "504":
+          $ref: "#/components/responses/GatewayTimeout"
 
   /v1/jobs:
     post:

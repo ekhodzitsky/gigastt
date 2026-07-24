@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **OpenAI-compatible `POST /v1/audio/transcriptions`.** Multipart form with
+  required `file` and optional `model` (accepted for client compatibility,
+  ignored — the loaded engine is always used) returns `{"text":"..."}`. Thin
+  alias over the same pipeline as `/v1/transcribe` for llama-swap, Hermes Agent,
+  and OpenAI SDKs pointed at a custom `base_url` (#214).
+
 ### Changed
 
 - **Documentation hygiene pass.** Supported versions in `SECURITY.md` track

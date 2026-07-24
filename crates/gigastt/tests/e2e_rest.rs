@@ -1481,3 +1481,109 @@ async fn test_transcribe_opus_files() {
 
     let _ = shutdown.send(());
 }
+
+// ---------------------------------------------------------------------------
+// OpenAI-compatible POST /v1/audio/transcriptions
+// ---------------------------------------------------------------------------
+
+/// Build a minimal multipart/form-data body (no reqwest multipart feature).
+fn openai_form(model: &str, filename: &str, file_bytes: &[u8]) -> (String, Vec<u8>) {
+    let boundary = "----gigasttE2EBoundary";
+    let mut body = Vec::new();
+    body.extend_from_slice(
+        format!(
+            "--{boundary}\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\n{model}\r\n"
+        )
+        .as_bytes(),
+    );
+    body.extend_from_slice(
+        format!(
+            "--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\n\
+             Content-Type: application/octet-stream\r\n\r\n"
+        )
+        .as_bytes(),
+    );
+    body.extend_from_slice(file_bytes);
+    body.extend_from_slice(b"\r\n");
+    body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+    (format!("multipart/form-data; boundary={boundary}"), body)
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_openai_transcriptions_returns_text_only() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let wav = common::generate_wav(2, 16000);
+    let (content_type, body) = openai_form("whisper-1", "clip.wav", &wav);
+
+    let resp = tokio::time::timeout(Duration::from_secs(30), async {
+        reqwest::Client::new()
+            .post(format!("http://127.0.0.1:{port}/v1/audio/transcriptions"))
+            .header("content-type", content_type)
+            .body(body)
+            .send()
+            .await
+            .expect("POST /v1/audio/transcriptions failed")
+    })
+    .await
+    .expect("POST /v1/audio/transcriptions timed out");
+
+    assert_eq!(resp.status(), 200);
+    let text = resp.text().await.expect("Expected text body");
+    let body: serde_json::Value = serde_json::from_str(&text).expect("Expected JSON body");
+    assert!(
+        body["text"].is_string(),
+        "\"text\" field should be a string, got: {:?}",
+        body["text"]
+    );
+    // OpenAI minimal shape: only `text` — no native `words` / `duration`.
+    let obj = body.as_object().expect("response must be a JSON object");
+    assert!(
+        !obj.contains_key("words"),
+        "OpenAI response must not include words: {obj:?}"
+    );
+    assert!(
+        !obj.contains_key("duration"),
+        "OpenAI response must not include duration: {obj:?}"
+    );
+    assert_eq!(
+        obj.keys().count(),
+        1,
+        "OpenAI response must contain only text: {obj:?}"
+    );
+
+    let _ = shutdown.send(());
+}
+
+#[ignore]
+#[tokio::test]
+async fn test_openai_transcriptions_missing_file_returns_400() {
+    let (port, shutdown) = common::start_server(&common::model_dir()).await;
+    let boundary = "----gigasttE2EBoundary";
+    let body = format!(
+        "--{boundary}\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-1\r\n\
+         --{boundary}--\r\n"
+    );
+
+    let resp = tokio::time::timeout(Duration::from_secs(10), async {
+        reqwest::Client::new()
+            .post(format!("http://127.0.0.1:{port}/v1/audio/transcriptions"))
+            .header(
+                "content-type",
+                format!("multipart/form-data; boundary={boundary}"),
+            )
+            .body(body)
+            .send()
+            .await
+            .expect("POST /v1/audio/transcriptions failed")
+    })
+    .await
+    .expect("POST /v1/audio/transcriptions timed out");
+
+    assert_eq!(resp.status(), 400);
+    let text = resp.text().await.expect("Expected text body");
+    let body: serde_json::Value = serde_json::from_str(&text).expect("Expected JSON body");
+    assert_eq!(body["code"], "missing_file");
+
+    let _ = shutdown.send(());
+}

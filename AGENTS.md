@@ -17,6 +17,7 @@ exposes:
 - **WebSocket** (`/v1/ws`) — streaming transcription with partial/final results
 - **REST** (`/v1/transcribe`) — file upload, full JSON response
 - **SSE** (`/v1/transcribe/stream`) — file upload, streaming Server-Sent Events
+- **OpenAI-compatible** (`/v1/audio/transcriptions`) — multipart `file` + `model` → `{"text":"..."}`
 - **CLI** — `serve`, `download`, `transcribe`, `quantize` commands
 
 The model (~850 MB FP32, ~225 MB INT8) auto-downloads from HuggingFace on first

@@ -16,6 +16,7 @@ fn metric_path_label(path: &str) -> &'static str {
         "/v1/models" => "/v1/models",
         "/v1/transcribe" => "/v1/transcribe",
         "/v1/transcribe/stream" => "/v1/transcribe/stream",
+        "/v1/audio/transcriptions" => "/v1/audio/transcriptions",
         "/v1/ws" => "/v1/ws",
         "/v1/admin/reload" => "/v1/admin/reload",
         "/metrics" => "/metrics",
@@ -179,6 +180,7 @@ mod tests {
             "/v1/models",
             "/v1/transcribe",
             "/v1/transcribe/stream",
+            "/v1/audio/transcriptions",
             "/v1/ws",
             "/metrics",
         ] {

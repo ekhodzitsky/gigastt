@@ -262,6 +262,7 @@ progress); the onnxruntime linking trade-offs are in
 | `/v1/models` | GET | Model info (encoder type, pool size, capabilities) |
 | `/v1/transcribe` | POST | File transcription, full JSON response or export format |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
+| `/v1/audio/transcriptions` | POST | OpenAI-compatible file transcription (`multipart` `file` + `model` → `{"text":"..."}`) |
 | `/v1/jobs` | POST | Submit an asynchronous transcription job (requires `--enable-jobs`) |
 | `/v1/jobs/{id}` | GET | Poll job status and progress |
 | `/v1/jobs/{id}` | DELETE | Cancel a queued or processing job |
@@ -282,12 +283,39 @@ curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
   -H "Content-Type: application/octet-stream" --data-binary @recording.wav
 # data: {"type":"partial","text":"привет как"}
 # data: {"type":"final","text":"Привет, как дела?","confidence":0.94}
+
+# OpenAI-compatible (llama-swap, Hermes Agent, OpenAI SDKs with custom base_url)
+curl -X POST http://127.0.0.1:9876/v1/audio/transcriptions \
+  -F model=whisper-1 \
+  -F file=@recording.wav
+# {"text":"Привет, как дела?"}
 ```
 
 The full-JSON response, SSE `final` events, and job results also carry an
 optional top-level `confidence` — the duration-weighted mean of
 `words[].confidence` (an average of per-word softmax scores, not a calibrated
 probability; omitted when there are no words).
+
+### OpenAI-compatible transcriptions
+
+`POST /v1/audio/transcriptions` is a thin compatibility layer over the same
+inference pipeline as `/v1/transcribe`, shaped for the
+[OpenAI Audio Transcriptions API](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create):
+
+| Input | Notes |
+|---|---|
+| `Content-Type` | `multipart/form-data` |
+| `file` | Required. Audio bytes (same formats as `/v1/transcribe`) |
+| `model` | Accepted for client compatibility; **ignored**. A single-head server always uses the loaded engine (`gigaam-v3-rnnt`, …). Pass any string (`whisper-1`, a local alias, or the real model id). |
+
+| Output | Notes |
+|---|---|
+| `{"text":"..."}` | Only field. No `words` / `duration` / export formats. |
+
+For word timestamps, segments, SRT/VTT, diarization, or telephony codecs, use
+`POST /v1/transcribe` instead. Point llama-swap / Hermes Agent `base_url` at
+`http://127.0.0.1:9876/v1` (path suffix `/audio/transcriptions` is appended by
+the client).
 
 ## Admin reload
 

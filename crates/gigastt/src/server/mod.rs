@@ -37,6 +37,7 @@ pub(crate) fn json_text(msg: &impl serde::Serialize) -> String {
 /// - `GET /health` — health check
 /// - `POST /v1/transcribe` — file transcription
 /// - `POST /v1/transcribe/stream` — SSE streaming transcription
+/// - `POST /v1/audio/transcriptions` — OpenAI-compatible file transcription
 /// - `GET /v1/ws` — WebSocket streaming protocol
 ///
 /// Runs until `Ctrl-C` is received.
@@ -525,6 +526,16 @@ pub async fn run_with_config_listener_reloadable(
             "/v1/transcribe/stream",
             options(|| async { StatusCode::NO_CONTENT }),
         )
+        // OpenAI-compatible alias for clients (llama-swap, Hermes Agent, SDKs
+        // with a custom base_url) that POST multipart `file` + `model`.
+        .route(
+            "/v1/audio/transcriptions",
+            post(http::openai_transcriptions),
+        )
+        .route(
+            "/v1/audio/transcriptions",
+            options(|| async { StatusCode::NO_CONTENT }),
+        )
         // /v1/ws is the canonical WebSocket path (versioned, aligned with REST).
         .route("/v1/ws", get(ws::ws_handler))
         .route("/v1/ws", options(|| async { StatusCode::NO_CONTENT }))
@@ -633,7 +644,7 @@ pub async fn run_with_config_listener_reloadable(
     tracing::info!("gigastt server listening on http://{addr}");
     tracing::info!("  WebSocket: ws://{addr}/v1/ws");
     tracing::info!(
-        "  REST API:  http://{addr}/health, /ready, /v1/transcribe, /v1/transcribe/stream"
+        "  REST API:  http://{addr}/health, /ready, /v1/transcribe, /v1/transcribe/stream, /v1/audio/transcriptions"
     );
     if config.origin_policy.allow_any {
         tracing::warn!(

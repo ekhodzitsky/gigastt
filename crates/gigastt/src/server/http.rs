@@ -1,7 +1,7 @@
 //! HTTP handlers for REST API endpoints.
 
 use axum::body::Bytes;
-use axum::extract::{Query, State};
+use axum::extract::{Multipart, Query, State};
 use axum::http::StatusCode;
 use axum::http::header;
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -174,6 +174,17 @@ pub struct TranscribeResponse {
     /// so existing clients that read `text` / `words` / `duration` are unaffected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub segments: Option<Vec<Segment>>,
+}
+
+/// OpenAI-compatible transcription response for `POST /v1/audio/transcriptions`.
+///
+/// Matches the minimal OpenAI Audio Transcriptions JSON shape used by
+/// llama-swap, Hermes Agent, and other clients that point `base_url` at a
+/// local STT server: only `{"text":"..."}` (no `words` / `duration`).
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OpenAITranscriptionResponse {
+    /// Full recognized transcript text.
+    pub text: String,
 }
 
 /// Query parameters for `/v1/transcribe` export formatting.
@@ -743,18 +754,14 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
     })
 }
 
-/// POST /v1/transcribe — upload audio file, get full transcript.
-///
-/// Accepts raw audio body. Supported formats: WAV (including G.711 A-law /
-/// μ-law and G.722 inside WAV), MP3, M4A/AAC, OGG, FLAC — plus headerless
-/// telephony streams when `?codec=pcmu|pcma|g722&sample_rate=N` is given.
-/// Max body size enforced by the axum `DefaultBodyLimit` layer configured
-/// from [`RuntimeLimits::body_limit_bytes`] (default 50 MiB).
-pub async fn transcribe(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<ExportParams>,
+/// Shared file-transcription pipeline used by `/v1/transcribe` and the
+/// OpenAI-compatible `/v1/audio/transcriptions` alias. Returns the engine
+/// result so each surface can shape its own response envelope.
+async fn run_file_transcription(
+    state: &AppState,
     body: Bytes,
-) -> Result<Response, ApiError> {
+    params: &ExportParams,
+) -> Result<gigastt_core::inference::TranscribeResult, ApiError> {
     if body.is_empty() {
         return Err(api_error(
             StatusCode::BAD_REQUEST,
@@ -791,7 +798,7 @@ pub async fn transcribe(
     // Raw telephony upload (`?codec=`): validate the codec/rate pair up front
     // so a malformed request 400s before a pool slot is reserved. The actual
     // decode happens inside the blocking closure below.
-    let raw_codec = resolve_raw_codec(&params)?;
+    let raw_codec = resolve_raw_codec(params)?;
 
     // Snapshot the current engine once at request start; a concurrent hot-reload
     // swaps the `ArcSwap`, but this request keeps the engine (and its pool) it
@@ -818,11 +825,11 @@ pub async fn transcribe(
             ));
         }
     }
-    let overrides = overrides_from_export_params(&params);
+    let overrides = overrides_from_export_params(params);
     if let Err(e) = engine.validate_overrides(&overrides) {
         return Err(api_error(StatusCode::CONFLICT, e.message(), e.code()));
     }
-    let hotwords = hotwords_from_export_params(&params);
+    let hotwords = hotwords_from_export_params(params);
     if let Some(ref hw) = hotwords
         && let Err(e) = engine.validate_hotwords(hw)
     {
@@ -940,29 +947,7 @@ pub async fn transcribe(
     }
 
     match result {
-        Ok(Ok(result)) => {
-            if let Some(rendered) = render_export_response(&result, &params)? {
-                Ok(rendered)
-            } else {
-                // Default JSON response. `?segments=true` adds a cue-grouped
-                // `segments` array (same boundaries as SRT/VTT) alongside the
-                // unchanged top-level `text` / `words` / `duration`; absent
-                // otherwise so existing clients see the exact same shape.
-                let segments = if params.segments.unwrap_or(false) {
-                    Some(gigastt_core::export::to_transcript_segments(&result.words))
-                } else {
-                    None
-                };
-                Ok(Json(TranscribeResponse {
-                    text: result.text,
-                    words: result.words,
-                    duration: result.duration_s,
-                    confidence: result.confidence,
-                    segments,
-                })
-                .into_response())
-            }
-        }
+        Ok(Ok(result)) => Ok(result),
         Ok(Err(e)) => {
             tracing::error!("Transcription error: {e}");
             Err(api_error(
@@ -983,6 +968,107 @@ pub async fn transcribe(
             ))
         }
     }
+}
+
+/// Parse an OpenAI-style multipart body for `POST /v1/audio/transcriptions`.
+///
+/// Requires a non-empty `file` field. Accepts (and ignores) `model` and any
+/// other OpenAI form fields (`language`, `prompt`, `response_format`, …) so
+/// clients that send the full OpenAI request shape keep working. A single-head
+/// server always runs the loaded engine regardless of the `model` string
+/// (llama-swap / Hermes often pass `whisper-1` or a local alias).
+async fn parse_openai_transcription_multipart(mut multipart: Multipart) -> Result<Bytes, ApiError> {
+    let mut file: Option<Bytes> = None;
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        api_error(
+            StatusCode::BAD_REQUEST,
+            &format!("Invalid multipart body: {e}"),
+            "invalid_multipart",
+        )
+    })? {
+        let name = field.name().unwrap_or("").to_string();
+        let data = field.bytes().await.map_err(|e| {
+            api_error(
+                StatusCode::BAD_REQUEST,
+                &format!("Failed to read multipart field: {e}"),
+                "invalid_multipart",
+            )
+        })?;
+        match name.as_str() {
+            "file" => file = Some(data),
+            // Accepted for OpenAI client compatibility; not used for routing.
+            "model" | "language" | "prompt" | "response_format" | "temperature" => {}
+            _ => {}
+        }
+    }
+    let file = file.ok_or_else(|| {
+        api_error(
+            StatusCode::BAD_REQUEST,
+            "Missing required form field: file",
+            "missing_file",
+        )
+    })?;
+    if file.is_empty() {
+        return Err(api_error(
+            StatusCode::BAD_REQUEST,
+            "Empty request body",
+            "empty_body",
+        ));
+    }
+    Ok(file)
+}
+
+/// POST /v1/transcribe — upload audio file, get full transcript.
+///
+/// Accepts raw audio body. Supported formats: WAV (including G.711 A-law /
+/// μ-law and G.722 inside WAV), MP3, M4A/AAC, OGG, FLAC — plus headerless
+/// telephony streams when `?codec=pcmu|pcma|g722&sample_rate=N` is given.
+/// Max body size enforced by the axum `DefaultBodyLimit` layer configured
+/// from [`RuntimeLimits::body_limit_bytes`] (default 50 MiB).
+pub async fn transcribe(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<ExportParams>,
+    body: Bytes,
+) -> Result<Response, ApiError> {
+    let result = run_file_transcription(&state, body, &params).await?;
+    if let Some(rendered) = render_export_response(&result, &params)? {
+        Ok(rendered)
+    } else {
+        // Default JSON response. `?segments=true` adds a cue-grouped
+        // `segments` array (same boundaries as SRT/VTT) alongside the
+        // unchanged top-level `text` / `words` / `duration`; absent
+        // otherwise so existing clients see the exact same shape.
+        let segments = if params.segments.unwrap_or(false) {
+            Some(gigastt_core::export::to_transcript_segments(&result.words))
+        } else {
+            None
+        };
+        Ok(Json(TranscribeResponse {
+            text: result.text,
+            words: result.words,
+            duration: result.duration_s,
+            confidence: result.confidence,
+            segments,
+        })
+        .into_response())
+    }
+}
+
+/// POST /v1/audio/transcriptions — OpenAI-compatible file transcription.
+///
+/// Minimal surface for clients that speak the OpenAI Audio Transcriptions API
+/// (llama-swap, Hermes Agent, OpenAI SDKs with a custom `base_url`):
+/// `multipart/form-data` with `file` (+ optional `model`) → `{"text":"..."}`.
+///
+/// Reuses the same inference pipeline as [`transcribe`]; does not expose
+/// export formats, segments, or word timestamps (use `/v1/transcribe` for those).
+pub async fn openai_transcriptions(
+    State(state): State<Arc<AppState>>,
+    multipart: Multipart,
+) -> Result<Json<OpenAITranscriptionResponse>, ApiError> {
+    let body = parse_openai_transcription_multipart(multipart).await?;
+    let result = run_file_transcription(&state, body, &ExportParams::default()).await?;
+    Ok(Json(OpenAITranscriptionResponse { text: result.text }))
 }
 
 /// POST /v1/transcribe/stream — upload audio file, get SSE stream of partial/final results.
@@ -1571,6 +1657,184 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["text"], "hello");
         assert_eq!(v["duration"], 1.5);
+    }
+
+    #[test]
+    fn test_openai_transcription_response_is_text_only() {
+        // OpenAI-compatible clients (llama-swap, Hermes) expect exactly
+        // `{"text":"..."}` — no words/duration fields from the native API.
+        let resp = OpenAITranscriptionResponse {
+            text: "привет".into(),
+        };
+        let v = serde_json::to_value(&resp).unwrap();
+        assert_eq!(v["text"], "привет");
+        let obj = v.as_object().unwrap();
+        assert_eq!(
+            obj.len(),
+            1,
+            "OpenAI response must contain only `text`: {obj:?}"
+        );
+    }
+
+    /// Build a minimal `multipart/form-data` body for OpenAI transcription tests.
+    fn openai_multipart_body(boundary: &str, fields: &[(&str, Option<&str>, &[u8])]) -> Vec<u8> {
+        // fields: (name, optional filename, value bytes)
+        let mut body = Vec::new();
+        for (name, filename, value) in fields {
+            body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+            match filename {
+                Some(fname) => {
+                    body.extend_from_slice(
+                        format!(
+                            "Content-Disposition: form-data; name=\"{name}\"; filename=\"{fname}\"\r\n\
+                             Content-Type: application/octet-stream\r\n\r\n"
+                        )
+                        .as_bytes(),
+                    );
+                }
+                None => {
+                    body.extend_from_slice(
+                        format!("Content-Disposition: form-data; name=\"{name}\"\r\n\r\n")
+                            .as_bytes(),
+                    );
+                }
+            }
+            body.extend_from_slice(value);
+            body.extend_from_slice(b"\r\n");
+        }
+        body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+        body
+    }
+
+    #[tokio::test]
+    async fn test_parse_openai_multipart_extracts_file_and_ignores_model() {
+        use axum::Router;
+        use axum::routing::post;
+
+        let app = Router::new().route(
+            "/t",
+            post(|multipart: Multipart| async move {
+                match parse_openai_transcription_multipart(multipart).await {
+                    Ok(bytes) => (StatusCode::OK, bytes).into_response(),
+                    Err(resp) => resp,
+                }
+            }),
+        );
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let boundary = "----gigasttTestBoundary";
+        let file_bytes = b"RIFF....fake-wav-payload";
+        let body = openai_multipart_body(
+            boundary,
+            &[
+                ("model", None, b"whisper-1"),
+                ("file", Some("clip.wav"), file_bytes),
+                ("language", None, b"ru"),
+            ],
+        );
+
+        let resp = reqwest::Client::new()
+            .post(format!("http://127.0.0.1:{port}/t"))
+            .header(
+                "content-type",
+                format!("multipart/form-data; boundary={boundary}"),
+            )
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), 200);
+        let got = resp.bytes().await.unwrap();
+        assert_eq!(&got[..], file_bytes);
+    }
+
+    #[tokio::test]
+    async fn test_parse_openai_multipart_missing_file_returns_400() {
+        use axum::Router;
+        use axum::routing::post;
+
+        let app = Router::new().route(
+            "/t",
+            post(|multipart: Multipart| async move {
+                match parse_openai_transcription_multipart(multipart).await {
+                    Ok(bytes) => (StatusCode::OK, bytes).into_response(),
+                    Err(resp) => resp,
+                }
+            }),
+        );
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let boundary = "----gigasttTestBoundary";
+        let body = openai_multipart_body(boundary, &[("model", None, b"whisper-1")]);
+
+        let resp = reqwest::Client::new()
+            .post(format!("http://127.0.0.1:{port}/t"))
+            .header(
+                "content-type",
+                format!("multipart/form-data; boundary={boundary}"),
+            )
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), 400);
+        let v: serde_json::Value = serde_json::from_str(&resp.text().await.unwrap()).unwrap();
+        assert_eq!(v["code"], "missing_file");
+    }
+
+    #[tokio::test]
+    async fn test_parse_openai_multipart_empty_file_returns_400() {
+        use axum::Router;
+        use axum::routing::post;
+
+        let app = Router::new().route(
+            "/t",
+            post(|multipart: Multipart| async move {
+                match parse_openai_transcription_multipart(multipart).await {
+                    Ok(bytes) => (StatusCode::OK, bytes).into_response(),
+                    Err(resp) => resp,
+                }
+            }),
+        );
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+
+        let boundary = "----gigasttTestBoundary";
+        let body = openai_multipart_body(
+            boundary,
+            &[
+                ("model", None, b"gigaam-v3-rnnt"),
+                ("file", Some("empty.wav"), b""),
+            ],
+        );
+
+        let resp = reqwest::Client::new()
+            .post(format!("http://127.0.0.1:{port}/t"))
+            .header(
+                "content-type",
+                format!("multipart/form-data; boundary={boundary}"),
+            )
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), 400);
+        let v: serde_json::Value = serde_json::from_str(&resp.text().await.unwrap()).unwrap();
+        assert_eq!(v["code"], "empty_body");
     }
 
     #[test]
