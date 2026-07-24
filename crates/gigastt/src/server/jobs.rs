@@ -647,11 +647,7 @@ impl JobExecution for RealJobExecutor {
                 return Err(anyhow::anyhow!("Requested model variant is not loaded"));
             }
         }
-        let overrides = gigastt_core::inference::TranscribeOverrides {
-            punctuation: params.punctuation,
-            itn: params.itn,
-            vad: params.vad,
-        };
+        let overrides = super::http::overrides_from_export_params(&params);
         if let Err(e) = engine.validate_overrides(&overrides) {
             return Err(anyhow::anyhow!("Invalid input: {}", e.message()));
         }

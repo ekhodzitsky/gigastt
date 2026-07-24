@@ -954,10 +954,12 @@ impl Engine {
     }
 
     /// Reject a [`TranscribeOverrides`] that turns a knob on without the backing
-    /// resource loaded. Call this *before* checking out a session so the request
-    /// fails fast (the REST layer maps the error to a `409`). Turning a knob off
-    /// (`Some(false)`) and ITN in either direction are always valid — ITN is pure
-    /// code with no model to load.
+    /// resource loaded, or that exceeds per-request hotword DoS limits. Call this
+    /// *before* checking out a session so the request fails fast (the REST layer
+    /// maps resource conflicts to `409` and limit violations to `400`). Turning a
+    /// knob off (`Some(false)`) and ITN in either direction are always valid —
+    /// ITN is pure code with no model to load. Hotwords need no model attachment
+    /// either: the biaser is built from the engine tokenizer at request time.
     ///
     /// # Errors
     ///
@@ -965,6 +967,10 @@ impl Engine {
     ///   attached.
     /// - [`OverrideError::PunctuationNotAvailable`] when `punctuation = Some(true)`
     ///   but no punctuator is attached.
+    /// - [`OverrideError::TooManyHotwords`] when more than
+    ///   [`MAX_HOTWORDS_PER_REQUEST`] phrases are supplied.
+    /// - [`OverrideError::HotwordPhraseTooLong`] when any phrase exceeds
+    ///   [`MAX_HOTWORD_PHRASE_CHARS`] Unicode scalar values.
     pub fn validate_overrides(&self, o: &TranscribeOverrides) -> Result<(), OverrideError> {
         if o.vad == Some(true) && self.vad.is_none() {
             return Err(OverrideError::VadNotLoaded);
@@ -972,7 +978,30 @@ impl Engine {
         if o.punctuation == Some(true) && self.punctuator.is_none() {
             return Err(OverrideError::PunctuationNotAvailable);
         }
+        if let Some(hw) = &o.hotwords {
+            if hw.phrases.len() > MAX_HOTWORDS_PER_REQUEST {
+                return Err(OverrideError::TooManyHotwords);
+            }
+            for phrase in &hw.phrases {
+                if phrase.chars().count() > MAX_HOTWORD_PHRASE_CHARS {
+                    return Err(OverrideError::HotwordPhraseTooLong);
+                }
+            }
+        }
         Ok(())
+    }
+
+    /// Build a temporary per-request [`bias::Biaser`] from a
+    /// [`HotwordOverride`]. Empty phrases force biasing off (`None`).
+    /// Unrepresentable phrases are dropped by [`Biaser::from_phrases`]; if none
+    /// survive, returns `None` (decode continues without biasing).
+    fn build_request_biaser(&self, hw: &HotwordOverride) -> Option<bias::Biaser> {
+        if hw.phrases.is_empty() {
+            return None;
+        }
+        let boost = hw.boost.unwrap_or(DEFAULT_HOTWORDS_BOOST);
+        let pairs: Vec<(String, f32)> = hw.phrases.iter().cloned().map(|p| (p, 1.0)).collect();
+        bias::Biaser::from_phrases(&self.tokenizer, &pairs, boost)
     }
 
     /// Enable or disable inverse text normalization (Russian number-words →
@@ -1854,12 +1883,15 @@ impl Engine {
         // The window overlaps the previous one, so persisting the LSTM state
         // would double-condition the prediction network — decode fresh.
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+        // Streaming always uses the engine boot biaser (per-request hotwords
+        // apply to file-transcription paths that carry TranscribeOverrides).
         let (all_words, endpoint) = self.run_inference(
             triplet,
             &state.mel_output[..],
             num_frames,
             &mut decoder_state,
             frame_offset,
+            self.biaser.as_ref(),
         )?;
 
         // Suppress words inside the already-emitted left context so a slid
@@ -2194,21 +2226,32 @@ impl Engine {
     /// inputs so encoder activation memory stays O(chunk), not O(file). Both
     /// paths produce the same `Vec<WordInfo>` shape. This is the no-VAD path and
     /// the per-region decode used by [`Engine::decode_speech_regions`].
+    ///
+    /// `biaser` is the effective hotword biaser for this call (engine boot
+    /// biaser, a temporary per-request biaser, or `None` when forced off).
     fn decode_words(
         &self,
         samples: &[f32],
         triplet: &mut SessionTriplet,
+        biaser: Option<&bias::Biaser>,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         if samples.len() <= CHUNK_THRESHOLD_SAMPLES {
             let (features, num_frames) = self.features.compute(samples);
             tracing::info!("Extracted {} mel frames", num_frames);
             let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
             Ok(self
-                .run_inference(triplet, &features, num_frames, &mut decoder_state, 0)
+                .run_inference(
+                    triplet,
+                    &features,
+                    num_frames,
+                    &mut decoder_state,
+                    0,
+                    biaser,
+                )
                 .map_err(|e| GigasttError::Inference { source: e.into() })?
                 .0)
         } else {
-            self.transcribe_samples_chunked(samples, triplet)
+            self.transcribe_samples_chunked(samples, triplet, biaser)
         }
     }
 
@@ -2222,6 +2265,7 @@ impl Engine {
         float_samples: &[f32],
         regions: &[(usize, usize)],
         triplet: &mut SessionTriplet,
+        biaser: Option<&bias::Biaser>,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         if regions.is_empty() {
             tracing::info!("VAD found no speech; skipping decode");
@@ -2238,7 +2282,7 @@ impl Engine {
             float_samples.len(),
             regions.len()
         );
-        let mut words = self.decode_words(&speech, triplet)?;
+        let mut words = self.decode_words(&speech, triplet, biaser)?;
         for w in &mut words {
             w.start = crate::vad::remap_compressed_seconds(w.start, regions, 16000.0);
             w.end = crate::vad::remap_compressed_seconds(w.end, regions, 16000.0);
@@ -2259,6 +2303,7 @@ impl Engine {
         &self,
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
+        biaser: Option<&bias::Biaser>,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         let total = float_samples.len();
         let stride = CHUNK_WINDOW_SAMPLES - CHUNK_OVERLAP_SAMPLES;
@@ -2288,6 +2333,7 @@ impl Engine {
                     num_frames,
                     &mut decoder_state,
                     frame_offset,
+                    biaser,
                 )
                 .map_err(|e| GigasttError::Inference { source: e.into() })?;
 
@@ -2312,22 +2358,39 @@ impl Engine {
     /// iff a VAD is attached). `vad = Some(true)` on a VAD-less engine can't
     /// reach here — callers should validate overrides first — but the
     /// `self.vad.is_some()` guard keeps this correct regardless.
+    ///
+    /// Hotword selection:
+    /// - `overrides.hotwords = None` → engine boot biaser
+    /// - `Some(empty)` → force biasing off
+    /// - `Some(phrases)` → temporary biaser built for this request only
     fn decode_words_for_samples(
         &self,
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
     ) -> Result<Vec<WordInfo>, GigasttError> {
+        // Build a temporary biaser only when the request supplies hotwords.
+        // Owned here so the `Option<&Biaser>` passed into decode stays valid
+        // for the whole call without cloning the engine's boot biaser.
+        let request_biaser = match &overrides.hotwords {
+            Some(hw) => self.build_request_biaser(hw),
+            None => None,
+        };
+        let biaser: Option<&bias::Biaser> = match &overrides.hotwords {
+            None => self.biaser.as_ref(),
+            Some(_) => request_biaser.as_ref(),
+        };
+
         let use_vad = self.vad.is_some() && overrides.vad.unwrap_or(true);
         match (use_vad, &self.vad) {
             (true, Some(vad)) => match vad.speech_regions(float_samples, &self.vad_config) {
-                Ok(regions) => self.decode_speech_regions(float_samples, &regions, triplet),
+                Ok(regions) => self.decode_speech_regions(float_samples, &regions, triplet, biaser),
                 Err(e) => {
                     tracing::warn!("VAD failed, decoding full audio: {e:#}");
-                    self.decode_words(float_samples, triplet)
+                    self.decode_words(float_samples, triplet, biaser)
                 }
             },
-            _ => self.decode_words(float_samples, triplet),
+            _ => self.decode_words(float_samples, triplet, biaser),
         }
     }
 
@@ -2385,6 +2448,7 @@ impl Engine {
         num_frames: usize,
         decoder_state: &mut DecoderState,
         frame_offset: usize,
+        biaser: Option<&bias::Biaser>,
     ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
         // Reuse the encoder input tensors: resize the signal tensor to the
         // current frame count and overwrite both buffers in place.
@@ -2450,7 +2514,7 @@ impl Engine {
             enc_len,
             self.tokenizer.blank_id(),
             decoder_state,
-            self.biaser.as_ref(),
+            biaser,
         )?;
         tracing::info!(
             elapsed_ms = dec_start.elapsed().as_millis() as u64,
@@ -2611,19 +2675,48 @@ pub struct TranscribeResult {
     pub confidence: Option<f32>,
 }
 
+/// Maximum number of hotword phrases accepted on a single request. Larger
+/// payloads are rejected by [`Engine::validate_overrides`] (mapped to HTTP 400).
+pub const MAX_HOTWORDS_PER_REQUEST: usize = 64;
+
+/// Maximum length of a single hotword phrase in Unicode scalar values (chars).
+/// Longer phrases are rejected by [`Engine::validate_overrides`] (HTTP 400).
+pub const MAX_HOTWORD_PHRASE_CHARS: usize = 64;
+
+/// Default additive logit boost when a per-request hotword override omits
+/// `boost` (matches the CLI `--hotwords-boost` default).
+pub const DEFAULT_HOTWORDS_BOOST: f32 = 5.0;
+
+/// Per-request hotword biasing override. Replaces the engine's boot-time
+/// biaser for a single file-transcription call.
+///
+/// Semantics when wrapped in [`TranscribeOverrides::hotwords`]:
+/// - `None` (field absent) → keep the engine boot biaser unchanged.
+/// - `Some(empty phrases)` → force biasing **off** for this request.
+/// - `Some(non-empty phrases)` → build a temporary [`bias::Biaser`] for this
+///   request only (engine boot biaser is not consulted).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct HotwordOverride {
+    /// Phrases to boost. Empty means force biasing off for the request.
+    pub phrases: Vec<String>,
+    /// Additive logit boost. `None` uses [`DEFAULT_HOTWORDS_BOOST`].
+    pub boost: Option<f32>,
+}
+
 /// Per-request overrides for the recognition post-processing knobs, letting a
-/// single loaded engine vary punctuation / ITN / VAD per file-transcription
-/// call instead of only at boot. `None` on a field means "use the engine's
-/// boot default", so a `TranscribeOverrides::default()` (all `None`) reproduces
-/// the pre-feature behaviour byte-for-byte.
+/// single loaded engine vary punctuation / ITN / VAD / hotwords per
+/// file-transcription call instead of only at boot. `None` on a field means
+/// "use the engine's boot default", so a `TranscribeOverrides::default()` (all
+/// `None`) reproduces the pre-feature behaviour byte-for-byte.
 ///
 /// A knob can only be turned *on* per-request if the underlying resource is
 /// loaded: `vad = Some(true)` requires a VAD to be attached, and
-/// `punctuation = Some(true)` requires a punctuator. Call
-/// [`Engine::validate_overrides`] before transcribing to reject impossible
-/// requests (mapped to `409` on the REST surface); turning a knob *off*
-/// (`Some(false)`) is always valid.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+/// `punctuation = Some(true)` requires a punctuator. Hotwords need no attached
+/// model (the biaser is built from the engine tokenizer) but are subject to
+/// DoS limits. Call [`Engine::validate_overrides`] before transcribing to reject
+/// impossible or oversized requests; turning a knob *off* (`Some(false)`) is
+/// always valid.
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct TranscribeOverrides {
     /// Override the punctuation / casing restoration pass. `Some(true)` forces
     /// it on (requires a punctuator), `Some(false)` skips it, `None` = engine
@@ -2637,30 +2730,41 @@ pub struct TranscribeOverrides {
     /// (requires a VAD to be attached), `Some(false)` decodes the whole buffer,
     /// `None` = engine default (VAD path iff a VAD is attached).
     pub vad: Option<bool>,
+    /// Per-request hotword biasing. `None` keeps the engine boot biaser;
+    /// `Some(empty)` forces biasing off; `Some(non-empty)` replaces the biaser
+    /// for this request only. Validated against
+    /// [`MAX_HOTWORDS_PER_REQUEST`] / [`MAX_HOTWORD_PHRASE_CHARS`].
+    pub hotwords: Option<HotwordOverride>,
 }
 
 /// Why a [`TranscribeOverrides`] was rejected: a knob was turned on per-request
-/// but the resource backing it isn't loaded. Carries a stable machine-readable
-/// [`code`](OverrideError::code) so the REST layer can surface a `409` with a
-/// consistent contract without re-deriving the string.
+/// without its resource loaded, or a DoS limit was exceeded. Carries a stable
+/// machine-readable [`code`](OverrideError::code) so the REST layer can surface
+/// a `409` (resource) or `400` (limits) with a consistent contract.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OverrideError {
     /// `vad = Some(true)` but no VAD is attached to the engine.
     VadNotLoaded,
     /// `punctuation = Some(true)` but no punctuator is attached to the engine.
     PunctuationNotAvailable,
+    /// More than [`MAX_HOTWORDS_PER_REQUEST`] phrases in the hotword override.
+    TooManyHotwords,
+    /// A hotword phrase exceeds [`MAX_HOTWORD_PHRASE_CHARS`] characters.
+    HotwordPhraseTooLong,
 }
 
 impl OverrideError {
-    /// Stable, machine-readable error code for the REST `409` payload.
+    /// Stable, machine-readable error code for the REST error payload.
     pub fn code(self) -> &'static str {
         match self {
             OverrideError::VadNotLoaded => "vad_not_loaded",
             OverrideError::PunctuationNotAvailable => "punctuation_not_available",
+            OverrideError::TooManyHotwords => "too_many_hotwords",
+            OverrideError::HotwordPhraseTooLong => "hotword_phrase_too_long",
         }
     }
 
-    /// Human-readable, non-sensitive message for the REST `409` payload.
+    /// Human-readable, non-sensitive message for the REST error payload.
     pub fn message(self) -> &'static str {
         match self {
             OverrideError::VadNotLoaded => {
@@ -2669,7 +2773,21 @@ impl OverrideError {
             OverrideError::PunctuationNotAvailable => {
                 "punctuation requested but no punctuation model is loaded"
             }
+            OverrideError::TooManyHotwords => "too many hotwords in request (max 64)",
+            OverrideError::HotwordPhraseTooLong => {
+                "hotword phrase exceeds max length (64 characters)"
+            }
         }
+    }
+
+    /// Whether this error is a client input problem (HTTP 400) rather than a
+    /// resource conflict (HTTP 409). Limit violations are 400; missing models
+    /// are 409.
+    pub fn is_bad_request(self) -> bool {
+        matches!(
+            self,
+            OverrideError::TooManyHotwords | OverrideError::HotwordPhraseTooLong
+        )
     }
 }
 
@@ -2764,24 +2882,45 @@ mod tests {
         assert_eq!(o.punctuation, None);
         assert_eq!(o.itn, None);
         assert_eq!(o.vad, None);
+        assert_eq!(o.hotwords, None);
+    }
+
+    #[test]
+    fn test_hotword_override_limits_constants() {
+        // Documented DoS caps used by validate_overrides and the REST 400 path.
+        assert_eq!(MAX_HOTWORDS_PER_REQUEST, 64);
+        assert_eq!(MAX_HOTWORD_PHRASE_CHARS, 64);
+        assert_eq!(DEFAULT_HOTWORDS_BOOST, 5.0);
     }
 
     #[test]
     fn test_override_error_codes_stable() {
-        // Stable machine-readable codes surfaced as the REST 409 `code`.
+        // Stable machine-readable codes surfaced as the REST error `code`.
         assert_eq!(OverrideError::VadNotLoaded.code(), "vad_not_loaded");
         assert_eq!(
             OverrideError::PunctuationNotAvailable.code(),
             "punctuation_not_available"
         );
+        assert_eq!(OverrideError::TooManyHotwords.code(), "too_many_hotwords");
+        assert_eq!(
+            OverrideError::HotwordPhraseTooLong.code(),
+            "hotword_phrase_too_long"
+        );
         // Messages are non-empty and don't leak internals.
         assert!(!OverrideError::VadNotLoaded.message().is_empty());
         assert!(!OverrideError::PunctuationNotAvailable.message().is_empty());
+        assert!(!OverrideError::TooManyHotwords.message().is_empty());
+        assert!(!OverrideError::HotwordPhraseTooLong.message().is_empty());
         // Display matches message().
         assert_eq!(
             OverrideError::VadNotLoaded.to_string(),
             OverrideError::VadNotLoaded.message()
         );
+        // Limit violations are client errors (400); missing models are 409.
+        assert!(!OverrideError::VadNotLoaded.is_bad_request());
+        assert!(!OverrideError::PunctuationNotAvailable.is_bad_request());
+        assert!(OverrideError::TooManyHotwords.is_bad_request());
+        assert!(OverrideError::HotwordPhraseTooLong.is_bad_request());
     }
 
     #[test]
@@ -5022,7 +5161,10 @@ mod tests {
 
         #[test]
         fn test_validate_overrides_truth_table() {
-            use crate::inference::{OverrideError, TranscribeOverrides};
+            use crate::inference::{
+                HotwordOverride, MAX_HOTWORD_PHRASE_CHARS, MAX_HOTWORDS_PER_REQUEST, OverrideError,
+                TranscribeOverrides,
+            };
 
             // The tiny mock engine loads with no VAD and no punctuator attached,
             // so any knob turned *on* per-request must be rejected, and any knob
@@ -5086,6 +5228,141 @@ mod tests {
                 }),
                 Ok(())
             );
+
+            // Hotwords need no attached model: empty force-off and a few phrases
+            // under the DoS caps are always accepted.
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    hotwords: Some(HotwordOverride {
+                        phrases: vec![],
+                        boost: None,
+                    }),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    hotwords: Some(HotwordOverride {
+                        phrases: vec!["сбер".into(), "тинькофф".into()],
+                        boost: Some(3.0),
+                    }),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+
+            // Exactly at the cap is OK; one over is rejected.
+            let at_cap: Vec<String> = (0..MAX_HOTWORDS_PER_REQUEST)
+                .map(|i| format!("w{i}"))
+                .collect();
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    hotwords: Some(HotwordOverride {
+                        phrases: at_cap,
+                        boost: None,
+                    }),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+            let over_cap: Vec<String> = (0..=MAX_HOTWORDS_PER_REQUEST)
+                .map(|i| format!("w{i}"))
+                .collect();
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    hotwords: Some(HotwordOverride {
+                        phrases: over_cap,
+                        boost: None,
+                    }),
+                    ..Default::default()
+                }),
+                Err(OverrideError::TooManyHotwords)
+            );
+
+            // Phrase length: exactly 64 chars OK; 65 rejected.
+            let ok_phrase: String = "а".repeat(MAX_HOTWORD_PHRASE_CHARS);
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    hotwords: Some(HotwordOverride {
+                        phrases: vec![ok_phrase],
+                        boost: None,
+                    }),
+                    ..Default::default()
+                }),
+                Ok(())
+            );
+            let long_phrase: String = "а".repeat(MAX_HOTWORD_PHRASE_CHARS + 1);
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides {
+                    hotwords: Some(HotwordOverride {
+                        phrases: vec![long_phrase],
+                        boost: None,
+                    }),
+                    ..Default::default()
+                }),
+                Err(OverrideError::HotwordPhraseTooLong)
+            );
+        }
+
+        #[test]
+        fn test_request_hotword_biaser_semantics() {
+            use crate::inference::{HotwordOverride, TranscribeOverrides};
+
+            // Pin the three-way hotword override contract without requiring a
+            // real speech utterance:
+            // - None → use engine boot biaser (build_request_biaser not used)
+            // - Some(empty) → force off (build_request_biaser returns None)
+            // - Some(phrases) → temporary Biaser when representable
+            let (engine, _tmp) = tiny_mock_engine();
+            // Mock vocab is "▁hi" + blank; "hi" encodes, unknown Cyrillic does not.
+            let engine = engine.with_hotwords(&[("hi".into(), 1.0)], 5.0);
+            assert!(engine.has_hotwords(), "boot biaser attached");
+
+            // Force-off: empty phrase list yields no temporary biaser.
+            let off = HotwordOverride {
+                phrases: vec![],
+                boost: None,
+            };
+            assert!(
+                engine.build_request_biaser(&off).is_none(),
+                "empty override forces biasing off"
+            );
+
+            // Representable phrase builds a temporary biaser.
+            let on = HotwordOverride {
+                phrases: vec!["hi".into()],
+                boost: Some(7.0),
+            };
+            let built = engine
+                .build_request_biaser(&on)
+                .expect("representable phrase should compile");
+            assert_eq!(built.phrase_count(), 1);
+
+            // Default boost path (None) still builds when phrases are present.
+            let default_boost = HotwordOverride {
+                phrases: vec!["hi".into()],
+                boost: None,
+            };
+            assert!(engine.build_request_biaser(&default_boost).is_some());
+
+            // Unrepresentable-only phrases → None (decode continues without bias).
+            let junk = HotwordOverride {
+                phrases: vec!["ъъъ".into()],
+                boost: None,
+            };
+            assert!(
+                engine.build_request_biaser(&junk).is_none(),
+                "unrepresentable phrases drop the temporary biaser"
+            );
+
+            // hotwords=None is always valid and leaves the boot biaser in place
+            // (has_hotwords stays true; decode path selects self.biaser).
+            assert_eq!(
+                engine.validate_overrides(&TranscribeOverrides::default()),
+                Ok(())
+            );
+            assert!(engine.has_hotwords());
         }
 
         #[test]
