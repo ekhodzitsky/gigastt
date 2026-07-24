@@ -271,24 +271,29 @@ pub(crate) fn parse_hotwords_query(raw: &str) -> Vec<String> {
 
 /// Build [`TranscribeOverrides`] from REST query params. Absent knob params
 /// leave the corresponding override field as `None` (engine boot default).
-/// `hotwords` is only set when the query key is present — even when empty —
-/// so `?hotwords=` can force biasing off.
 pub(crate) fn overrides_from_export_params(
     params: &ExportParams,
 ) -> gigastt_core::inference::TranscribeOverrides {
-    let hotwords = params.hotwords.as_ref().map(|raw| {
-        gigastt_core::inference::HotwordOverride {
-            phrases: parse_hotwords_query(raw),
-            // Boost only applies when hotwords is present; ignore alone.
-            boost: params.hotwords_boost,
-        }
-    });
     gigastt_core::inference::TranscribeOverrides {
         punctuation: params.punctuation,
         itn: params.itn,
         vad: params.vad,
-        hotwords,
     }
+}
+
+/// Build optional [`HotwordOverride`] from REST query params. `None` when the
+/// `hotwords` key is absent (engine boot biaser). `Some` when the key is
+/// present — even empty — so `?hotwords=` can force biasing off.
+pub(crate) fn hotwords_from_export_params(
+    params: &ExportParams,
+) -> Option<gigastt_core::inference::HotwordOverride> {
+    params.hotwords.as_ref().map(|raw| {
+        gigastt_core::inference::HotwordOverride::new(
+            parse_hotwords_query(raw),
+            // Boost only applies when hotwords is present; ignore alone.
+            params.hotwords_boost,
+        )
+    })
 }
 
 /// Render a transcription result into the requested export format.
@@ -815,13 +820,13 @@ pub async fn transcribe(
     }
     let overrides = overrides_from_export_params(&params);
     if let Err(e) = engine.validate_overrides(&overrides) {
-        // Limit violations (hotword DoS caps) → 400; missing resources → 409.
-        let status = if e.is_bad_request() {
-            StatusCode::BAD_REQUEST
-        } else {
-            StatusCode::CONFLICT
-        };
-        return Err(api_error(status, e.message(), e.code()));
+        return Err(api_error(StatusCode::CONFLICT, e.message(), e.code()));
+    }
+    let hotwords = hotwords_from_export_params(&params);
+    if let Some(ref hw) = hotwords
+        && let Err(e) = engine.validate_hotwords(hw)
+    {
+        return Err(api_error(StatusCode::BAD_REQUEST, e.message(), e.code()));
     }
 
     // Checkout a session triplet from the batch pool (blocks if none available)
@@ -873,15 +878,21 @@ pub async fn transcribe(
                 // Diarization is opt-in (`?diarization=true`): only then run the
                 // offline speaker pass. `body` is `axum::body::Bytes` (a
                 // `bytes::Bytes` re-export) so the decode shares the upload buffer.
-                engine.transcribe_bytes_shared_with_overrides_diarized(
+                engine.transcribe_bytes_shared_with_overrides_diarized_hotwords(
                     body,
                     &mut reservation,
                     &overrides,
+                    hotwords.as_ref(),
                 )
             } else {
                 // No diarization requested: byte-identical to the pre-existing
                 // zero-copy path. `overrides` is already validated above.
-                engine.transcribe_bytes_shared_with_overrides(body, &mut reservation, &overrides)
+                engine.transcribe_bytes_shared_with_overrides_hotwords(
+                    body,
+                    &mut reservation,
+                    &overrides,
+                    hotwords.as_ref(),
+                )
             }
         }));
         match r {
@@ -1627,11 +1638,8 @@ mod tests {
         );
 
         // Hotword DoS limit violations map to 400 (not 409).
-        for err in [
-            OverrideError::TooManyHotwords,
-            OverrideError::HotwordPhraseTooLong,
-        ] {
-            assert!(err.is_bad_request());
+        use gigastt_core::inference::HotwordError;
+        for err in [HotwordError::TooManyHotwords, HotwordError::PhraseTooLong] {
             let resp = api_error(StatusCode::BAD_REQUEST, err.message(), err.code());
             let (parts, body) = resp.into_parts();
             assert_eq!(parts.status, StatusCode::BAD_REQUEST);
@@ -2667,7 +2675,7 @@ mod tests {
     #[test]
     fn test_hotwords_query_param_parsing() {
         // Comma-separated phrases + optional boost deserialize from the query
-        // string and map to HotwordOverride via overrides_from_export_params.
+        // string and map to HotwordOverride via hotwords_from_export_params.
         let uri: axum::http::Uri =
             "http://x/?hotwords=%D1%81%D0%B1%D0%B5%D1%80,%D1%82%D0%B8%D0%BD%D1%8C%D0%BA%D0%BE%D1%84%D1%84&hotwords_boost=3.5"
                 .parse()
@@ -2676,25 +2684,21 @@ mod tests {
         assert_eq!(params.hotwords.as_deref(), Some("сбер,тинькофф"));
         assert_eq!(params.hotwords_boost, Some(3.5));
 
-        let overrides = overrides_from_export_params(&params);
-        let hw = overrides.hotwords.expect("hotwords present");
+        let hw = hotwords_from_export_params(&params).expect("hotwords present");
         assert_eq!(hw.phrases, vec!["сбер".to_string(), "тинькофф".to_string()]);
         assert_eq!(hw.boost, Some(3.5));
 
         // Absent hotwords → engine default (None), even if boost is set alone.
         let uri: axum::http::Uri = "http://x/?hotwords_boost=9".parse().unwrap();
         let Query(params): Query<ExportParams> = Query::try_from_uri(&uri).unwrap();
-        let overrides = overrides_from_export_params(&params);
-        assert!(overrides.hotwords.is_none());
+        assert!(hotwords_from_export_params(&params).is_none());
 
-        // Empty value forces biasing off (Some(empty phrases)).
+        // Empty key present → Some(empty) force-off.
         let uri: axum::http::Uri = "http://x/?hotwords=".parse().unwrap();
         let Query(params): Query<ExportParams> = Query::try_from_uri(&uri).unwrap();
-        let overrides = overrides_from_export_params(&params);
-        let hw = overrides.hotwords.expect("key present means override");
+        let hw = hotwords_from_export_params(&params).expect("key present means override");
         assert!(hw.phrases.is_empty());
 
-        // Whitespace / empty segments are trimmed out.
         assert_eq!(
             parse_hotwords_query(" сбер , , тинькофф "),
             vec!["сбер".to_string(), "тинькофф".to_string()]

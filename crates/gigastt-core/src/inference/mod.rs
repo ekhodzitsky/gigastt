@@ -954,12 +954,13 @@ impl Engine {
     }
 
     /// Reject a [`TranscribeOverrides`] that turns a knob on without the backing
-    /// resource loaded, or that exceeds per-request hotword DoS limits. Call this
-    /// *before* checking out a session so the request fails fast (the REST layer
-    /// maps resource conflicts to `409` and limit violations to `400`). Turning a
-    /// knob off (`Some(false)`) and ITN in either direction are always valid —
-    /// ITN is pure code with no model to load. Hotwords need no model attachment
-    /// either: the biaser is built from the engine tokenizer at request time.
+    /// resource loaded. Call this *before* checking out a session so the request
+    /// fails fast (the REST layer maps the error to a `409`). Turning a knob off
+    /// (`Some(false)`) and ITN in either direction are always valid — ITN is pure
+    /// code with no model to load.
+    ///
+    /// Hotword DoS limits are validated separately via
+    /// [`Engine::validate_hotwords`] so [`TranscribeOverrides`] stays `Copy` (semver).
     ///
     /// # Errors
     ///
@@ -967,10 +968,6 @@ impl Engine {
     ///   attached.
     /// - [`OverrideError::PunctuationNotAvailable`] when `punctuation = Some(true)`
     ///   but no punctuator is attached.
-    /// - [`OverrideError::TooManyHotwords`] when more than
-    ///   [`MAX_HOTWORDS_PER_REQUEST`] phrases are supplied.
-    /// - [`OverrideError::HotwordPhraseTooLong`] when any phrase exceeds
-    ///   [`MAX_HOTWORD_PHRASE_CHARS`] Unicode scalar values.
     pub fn validate_overrides(&self, o: &TranscribeOverrides) -> Result<(), OverrideError> {
         if o.vad == Some(true) && self.vad.is_none() {
             return Err(OverrideError::VadNotLoaded);
@@ -978,14 +975,25 @@ impl Engine {
         if o.punctuation == Some(true) && self.punctuator.is_none() {
             return Err(OverrideError::PunctuationNotAvailable);
         }
-        if let Some(hw) = &o.hotwords {
-            if hw.phrases.len() > MAX_HOTWORDS_PER_REQUEST {
-                return Err(OverrideError::TooManyHotwords);
-            }
-            for phrase in &hw.phrases {
-                if phrase.chars().count() > MAX_HOTWORD_PHRASE_CHARS {
-                    return Err(OverrideError::HotwordPhraseTooLong);
-                }
+        Ok(())
+    }
+
+    /// Reject a [`HotwordOverride`] that exceeds DoS limits. Call before checkout
+    /// so oversized requests fail fast (REST maps to HTTP 400).
+    ///
+    /// # Errors
+    ///
+    /// - [`HotwordError::TooManyHotwords`] when more than
+    ///   [`MAX_HOTWORDS_PER_REQUEST`] phrases are supplied.
+    /// - [`HotwordError::PhraseTooLong`] when any phrase exceeds
+    ///   [`MAX_HOTWORD_PHRASE_CHARS`] Unicode scalar values.
+    pub fn validate_hotwords(&self, hw: &HotwordOverride) -> Result<(), HotwordError> {
+        if hw.phrases.len() > MAX_HOTWORDS_PER_REQUEST {
+            return Err(HotwordError::TooManyHotwords);
+        }
+        for phrase in &hw.phrases {
+            if phrase.chars().count() > MAX_HOTWORD_PHRASE_CHARS {
+                return Err(HotwordError::PhraseTooLong);
             }
         }
         Ok(())
@@ -2002,11 +2010,25 @@ impl Engine {
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
     ) -> Result<TranscribeResult, GigasttError> {
+        self.transcribe_file_with_overrides_hotwords(path, triplet, overrides, None)
+    }
+
+    /// Like [`Engine::transcribe_file_with_overrides`] with optional per-request
+    /// [`HotwordOverride`] (semver-additive sibling so the no-hotwords signature
+    /// stays byte-stable).
+    #[cfg(feature = "file-decode")]
+    pub fn transcribe_file_with_overrides_hotwords(
+        &self,
+        path: &str,
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+        hotwords: Option<&HotwordOverride>,
+    ) -> Result<TranscribeResult, GigasttError> {
         let float_samples =
             audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
                 reason: format!("{e:#}"),
             })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, false)
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, hotwords, false)
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
@@ -2053,11 +2075,24 @@ impl Engine {
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
     ) -> Result<TranscribeResult, GigasttError> {
+        self.transcribe_bytes_shared_with_overrides_hotwords(data, triplet, overrides, None)
+    }
+
+    /// Like [`Engine::transcribe_bytes_shared_with_overrides`] with optional
+    /// per-request [`HotwordOverride`].
+    #[cfg(feature = "file-decode")]
+    pub fn transcribe_bytes_shared_with_overrides_hotwords(
+        &self,
+        data: bytes::Bytes,
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+        hotwords: Option<&HotwordOverride>,
+    ) -> Result<TranscribeResult, GigasttError> {
         let float_samples =
             audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
                 reason: format!("{e:#}"),
             })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, false)
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, hotwords, false)
     }
 
     /// Like [`Engine::transcribe_bytes_shared_with_overrides`], but also runs
@@ -2074,11 +2109,26 @@ impl Engine {
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
     ) -> Result<TranscribeResult, GigasttError> {
+        self.transcribe_bytes_shared_with_overrides_diarized_hotwords(
+            data, triplet, overrides, None,
+        )
+    }
+
+    /// Like [`Engine::transcribe_bytes_shared_with_overrides_diarized`] with
+    /// optional per-request [`HotwordOverride`].
+    #[cfg(feature = "file-decode")]
+    pub fn transcribe_bytes_shared_with_overrides_diarized_hotwords(
+        &self,
+        data: bytes::Bytes,
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+        hotwords: Option<&HotwordOverride>,
+    ) -> Result<TranscribeResult, GigasttError> {
         let float_samples =
             audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
                 reason: format!("{e:#}"),
             })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, true)
+        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, hotwords, true)
     }
 
     /// Transcribe a multi-channel recording with one speaker label per channel.
@@ -2109,7 +2159,8 @@ impl Engine {
         let mut per_channel = Vec::with_capacity(channels.len());
         let overrides = TranscribeOverrides::default();
         for channel_samples in channels {
-            let words = self.decode_words_for_samples(channel_samples, triplet, &overrides)?;
+            let words =
+                self.decode_words_for_samples(channel_samples, triplet, &overrides, None)?;
             let duration_s = channel_samples.len() as f64 / 16000.0;
             per_channel.push(TranscribeResult {
                 confidence: aggregate_confidence(&words),
@@ -2135,6 +2186,7 @@ impl Engine {
             float_samples,
             triplet,
             &TranscribeOverrides::default(),
+            None,
             false,
         )
     }
@@ -2151,6 +2203,7 @@ impl Engine {
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
+        hotwords: Option<&HotwordOverride>,
         diarize: bool,
     ) -> Result<TranscribeResult, GigasttError> {
         // `diarize` is opt-in per request: offline speaker diarization only runs
@@ -2163,7 +2216,8 @@ impl Engine {
         let duration_s = float_samples.len() as f64 / 16000.0;
 
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
-        let mut words = self.decode_words_for_samples(float_samples, triplet, overrides)?;
+        let mut words =
+            self.decode_words_for_samples(float_samples, triplet, overrides, hotwords)?;
 
         #[cfg(feature = "diarization")]
         if diarize && let Some(ref enc) = self.speaker_encoder {
@@ -2359,8 +2413,8 @@ impl Engine {
     /// reach here — callers should validate overrides first — but the
     /// `self.vad.is_some()` guard keeps this correct regardless.
     ///
-    /// Hotword selection:
-    /// - `overrides.hotwords = None` → engine boot biaser
+    /// Hotword selection via `hotwords`:
+    /// - `None` → engine boot biaser
     /// - `Some(empty)` → force biasing off
     /// - `Some(phrases)` → temporary biaser built for this request only
     fn decode_words_for_samples(
@@ -2368,15 +2422,16 @@ impl Engine {
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
+        hotwords: Option<&HotwordOverride>,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         // Build a temporary biaser only when the request supplies hotwords.
         // Owned here so the `Option<&Biaser>` passed into decode stays valid
         // for the whole call without cloning the engine's boot biaser.
-        let request_biaser = match &overrides.hotwords {
+        let request_biaser = match hotwords {
             Some(hw) => self.build_request_biaser(hw),
             None => None,
         };
-        let biaser: Option<&bias::Biaser> = match &overrides.hotwords {
+        let biaser: Option<&bias::Biaser> = match hotwords {
             None => self.biaser.as_ref(),
             Some(_) => request_biaser.as_ref(),
         };
@@ -2676,11 +2731,11 @@ pub struct TranscribeResult {
 }
 
 /// Maximum number of hotword phrases accepted on a single request. Larger
-/// payloads are rejected by [`Engine::validate_overrides`] (mapped to HTTP 400).
+/// payloads are rejected by [`Engine::validate_hotwords`] (mapped to HTTP 400).
 pub const MAX_HOTWORDS_PER_REQUEST: usize = 64;
 
 /// Maximum length of a single hotword phrase in Unicode scalar values (chars).
-/// Longer phrases are rejected by [`Engine::validate_overrides`] (HTTP 400).
+/// Longer phrases are rejected by [`Engine::validate_hotwords`] (HTTP 400).
 pub const MAX_HOTWORD_PHRASE_CHARS: usize = 64;
 
 /// Default additive logit boost when a per-request hotword override omits
@@ -2690,12 +2745,16 @@ pub const DEFAULT_HOTWORDS_BOOST: f32 = 5.0;
 /// Per-request hotword biasing override. Replaces the engine's boot-time
 /// biaser for a single file-transcription call.
 ///
-/// Semantics when wrapped in [`TranscribeOverrides::hotwords`]:
-/// - `None` (field absent) → keep the engine boot biaser unchanged.
+/// Semantics when passed to the hotwords parameter of file-transcription APIs:
+/// - `None` (argument absent) → keep the engine boot biaser unchanged.
 /// - `Some(empty phrases)` → force biasing **off** for this request.
 /// - `Some(non-empty phrases)` → build a temporary [`bias::Biaser`] for this
 ///   request only (engine boot biaser is not consulted).
+///
+/// Kept separate from [`TranscribeOverrides`] so that type remains `Copy`/`Eq`
+/// (semver-stable for external struct literals and trait bounds).
 #[derive(Debug, Clone, Default, PartialEq)]
+#[non_exhaustive]
 pub struct HotwordOverride {
     /// Phrases to boost. Empty means force biasing off for the request.
     pub phrases: Vec<String>,
@@ -2703,20 +2762,30 @@ pub struct HotwordOverride {
     pub boost: Option<f32>,
 }
 
+impl HotwordOverride {
+    /// Construct a hotword override (preferred over struct-literal from outside
+    /// this crate because the type is `#[non_exhaustive]`).
+    pub fn new(phrases: Vec<String>, boost: Option<f32>) -> Self {
+        Self { phrases, boost }
+    }
+}
+
 /// Per-request overrides for the recognition post-processing knobs, letting a
-/// single loaded engine vary punctuation / ITN / VAD / hotwords per
-/// file-transcription call instead of only at boot. `None` on a field means
-/// "use the engine's boot default", so a `TranscribeOverrides::default()` (all
-/// `None`) reproduces the pre-feature behaviour byte-for-byte.
+/// single loaded engine vary punctuation / ITN / VAD per file-transcription
+/// call instead of only at boot. `None` on a field means "use the engine's
+/// boot default", so a `TranscribeOverrides::default()` (all `None`) reproduces
+/// the pre-feature behaviour byte-for-byte.
 ///
 /// A knob can only be turned *on* per-request if the underlying resource is
 /// loaded: `vad = Some(true)` requires a VAD to be attached, and
-/// `punctuation = Some(true)` requires a punctuator. Hotwords need no attached
-/// model (the biaser is built from the engine tokenizer) but are subject to
-/// DoS limits. Call [`Engine::validate_overrides`] before transcribing to reject
-/// impossible or oversized requests; turning a knob *off* (`Some(false)`) is
-/// always valid.
-#[derive(Debug, Clone, Default, PartialEq)]
+/// `punctuation = Some(true)` requires a punctuator. Call
+/// [`Engine::validate_overrides`] before transcribing to reject impossible
+/// requests (mapped to `409` on the REST surface); turning a knob *off*
+/// (`Some(false)`) is always valid.
+///
+/// Per-request hotwords live on [`HotwordOverride`] (validated via
+/// [`Engine::validate_hotwords`]) so this struct stays `Copy`.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TranscribeOverrides {
     /// Override the punctuation / casing restoration pass. `Some(true)` forces
     /// it on (requires a punctuator), `Some(false)` skips it, `None` = engine
@@ -2730,41 +2799,30 @@ pub struct TranscribeOverrides {
     /// (requires a VAD to be attached), `Some(false)` decodes the whole buffer,
     /// `None` = engine default (VAD path iff a VAD is attached).
     pub vad: Option<bool>,
-    /// Per-request hotword biasing. `None` keeps the engine boot biaser;
-    /// `Some(empty)` forces biasing off; `Some(non-empty)` replaces the biaser
-    /// for this request only. Validated against
-    /// [`MAX_HOTWORDS_PER_REQUEST`] / [`MAX_HOTWORD_PHRASE_CHARS`].
-    pub hotwords: Option<HotwordOverride>,
 }
 
 /// Why a [`TranscribeOverrides`] was rejected: a knob was turned on per-request
-/// without its resource loaded, or a DoS limit was exceeded. Carries a stable
-/// machine-readable [`code`](OverrideError::code) so the REST layer can surface
-/// a `409` (resource) or `400` (limits) with a consistent contract.
+/// but the resource backing it isn't loaded. Carries a stable machine-readable
+/// [`code`](OverrideError::code) so the REST layer can surface a `409` with a
+/// consistent contract without re-deriving the string.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OverrideError {
     /// `vad = Some(true)` but no VAD is attached to the engine.
     VadNotLoaded,
     /// `punctuation = Some(true)` but no punctuator is attached to the engine.
     PunctuationNotAvailable,
-    /// More than [`MAX_HOTWORDS_PER_REQUEST`] phrases in the hotword override.
-    TooManyHotwords,
-    /// A hotword phrase exceeds [`MAX_HOTWORD_PHRASE_CHARS`] characters.
-    HotwordPhraseTooLong,
 }
 
 impl OverrideError {
-    /// Stable, machine-readable error code for the REST error payload.
+    /// Stable, machine-readable error code for the REST `409` payload.
     pub fn code(self) -> &'static str {
         match self {
             OverrideError::VadNotLoaded => "vad_not_loaded",
             OverrideError::PunctuationNotAvailable => "punctuation_not_available",
-            OverrideError::TooManyHotwords => "too_many_hotwords",
-            OverrideError::HotwordPhraseTooLong => "hotword_phrase_too_long",
         }
     }
 
-    /// Human-readable, non-sensitive message for the REST error payload.
+    /// Human-readable, non-sensitive message for the REST `409` payload.
     pub fn message(self) -> &'static str {
         match self {
             OverrideError::VadNotLoaded => {
@@ -2773,21 +2831,36 @@ impl OverrideError {
             OverrideError::PunctuationNotAvailable => {
                 "punctuation requested but no punctuation model is loaded"
             }
-            OverrideError::TooManyHotwords => "too many hotwords in request (max 64)",
-            OverrideError::HotwordPhraseTooLong => {
-                "hotword phrase exceeds max length (64 characters)"
-            }
+        }
+    }
+}
+
+/// Why a [`HotwordOverride`] was rejected (DoS limits). New type so
+/// [`OverrideError`] stays exhaustively matchable without a major bump.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum HotwordError {
+    /// More than [`MAX_HOTWORDS_PER_REQUEST`] phrases in the hotword override.
+    TooManyHotwords,
+    /// A hotword phrase exceeds [`MAX_HOTWORD_PHRASE_CHARS`] characters.
+    PhraseTooLong,
+}
+
+impl HotwordError {
+    /// Stable, machine-readable error code for the REST `400` payload.
+    pub fn code(self) -> &'static str {
+        match self {
+            HotwordError::TooManyHotwords => "too_many_hotwords",
+            HotwordError::PhraseTooLong => "hotword_phrase_too_long",
         }
     }
 
-    /// Whether this error is a client input problem (HTTP 400) rather than a
-    /// resource conflict (HTTP 409). Limit violations are 400; missing models
-    /// are 409.
-    pub fn is_bad_request(self) -> bool {
-        matches!(
-            self,
-            OverrideError::TooManyHotwords | OverrideError::HotwordPhraseTooLong
-        )
+    /// Human-readable, non-sensitive message for the REST `400` payload.
+    pub fn message(self) -> &'static str {
+        match self {
+            HotwordError::TooManyHotwords => "too many hotwords in request (max 64)",
+            HotwordError::PhraseTooLong => "hotword phrase exceeds max length (64 characters)",
+        }
     }
 }
 
@@ -2798,6 +2871,14 @@ impl std::fmt::Display for OverrideError {
 }
 
 impl std::error::Error for OverrideError {}
+
+impl std::fmt::Display for HotwordError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.message())
+    }
+}
+
+impl std::error::Error for HotwordError {}
 
 /// Merge per-channel [`TranscribeResult`]s into a single chronologically ordered
 /// result. Each channel is assigned a zero-based speaker label (`speaker_0`,
@@ -2882,7 +2963,6 @@ mod tests {
         assert_eq!(o.punctuation, None);
         assert_eq!(o.itn, None);
         assert_eq!(o.vad, None);
-        assert_eq!(o.hotwords, None);
     }
 
     #[test]
@@ -2895,32 +2975,29 @@ mod tests {
 
     #[test]
     fn test_override_error_codes_stable() {
+        use super::{HotwordError, OverrideError};
         // Stable machine-readable codes surfaced as the REST error `code`.
         assert_eq!(OverrideError::VadNotLoaded.code(), "vad_not_loaded");
         assert_eq!(
             OverrideError::PunctuationNotAvailable.code(),
             "punctuation_not_available"
         );
-        assert_eq!(OverrideError::TooManyHotwords.code(), "too_many_hotwords");
+        assert_eq!(HotwordError::TooManyHotwords.code(), "too_many_hotwords");
         assert_eq!(
-            OverrideError::HotwordPhraseTooLong.code(),
+            HotwordError::PhraseTooLong.code(),
             "hotword_phrase_too_long"
         );
         // Messages are non-empty and don't leak internals.
         assert!(!OverrideError::VadNotLoaded.message().is_empty());
         assert!(!OverrideError::PunctuationNotAvailable.message().is_empty());
-        assert!(!OverrideError::TooManyHotwords.message().is_empty());
-        assert!(!OverrideError::HotwordPhraseTooLong.message().is_empty());
+        assert!(!HotwordError::TooManyHotwords.message().is_empty());
+        assert!(!HotwordError::PhraseTooLong.message().is_empty());
         // Display matches message().
         assert_eq!(
             OverrideError::VadNotLoaded.to_string(),
             OverrideError::VadNotLoaded.message()
         );
         // Limit violations are client errors (400); missing models are 409.
-        assert!(!OverrideError::VadNotLoaded.is_bad_request());
-        assert!(!OverrideError::PunctuationNotAvailable.is_bad_request());
-        assert!(OverrideError::TooManyHotwords.is_bad_request());
-        assert!(OverrideError::HotwordPhraseTooLong.is_bad_request());
     }
 
     #[test]
@@ -5229,79 +5306,45 @@ mod tests {
                 Ok(())
             );
 
-            // Hotwords need no attached model: empty force-off and a few phrases
-            // under the DoS caps are always accepted.
+            // Hotword DoS limits live on validate_hotwords (separate from
+            // TranscribeOverrides so that type stays Copy/Eq).
+            use crate::inference::HotwordError;
             assert_eq!(
-                engine.validate_overrides(&TranscribeOverrides {
-                    hotwords: Some(HotwordOverride {
-                        phrases: vec![],
-                        boost: None,
-                    }),
-                    ..Default::default()
-                }),
+                engine.validate_hotwords(&HotwordOverride::new(vec![], None)),
                 Ok(())
             );
             assert_eq!(
-                engine.validate_overrides(&TranscribeOverrides {
-                    hotwords: Some(HotwordOverride {
-                        phrases: vec!["сбер".into(), "тинькофф".into()],
-                        boost: Some(3.0),
-                    }),
-                    ..Default::default()
-                }),
+                engine.validate_hotwords(&HotwordOverride::new(
+                    vec!["ok".into(), "fine".into()],
+                    Some(3.0),
+                )),
                 Ok(())
             );
 
-            // Exactly at the cap is OK; one over is rejected.
             let at_cap: Vec<String> = (0..MAX_HOTWORDS_PER_REQUEST)
                 .map(|i| format!("w{i}"))
                 .collect();
             assert_eq!(
-                engine.validate_overrides(&TranscribeOverrides {
-                    hotwords: Some(HotwordOverride {
-                        phrases: at_cap,
-                        boost: None,
-                    }),
-                    ..Default::default()
-                }),
+                engine.validate_hotwords(&HotwordOverride::new(at_cap, None)),
                 Ok(())
             );
             let over_cap: Vec<String> = (0..=MAX_HOTWORDS_PER_REQUEST)
                 .map(|i| format!("w{i}"))
                 .collect();
             assert_eq!(
-                engine.validate_overrides(&TranscribeOverrides {
-                    hotwords: Some(HotwordOverride {
-                        phrases: over_cap,
-                        boost: None,
-                    }),
-                    ..Default::default()
-                }),
-                Err(OverrideError::TooManyHotwords)
+                engine.validate_hotwords(&HotwordOverride::new(over_cap, None)),
+                Err(HotwordError::TooManyHotwords)
             );
 
-            // Phrase length: exactly 64 chars OK; 65 rejected.
             let ok_phrase: String = "а".repeat(MAX_HOTWORD_PHRASE_CHARS);
             assert_eq!(
-                engine.validate_overrides(&TranscribeOverrides {
-                    hotwords: Some(HotwordOverride {
-                        phrases: vec![ok_phrase],
-                        boost: None,
-                    }),
-                    ..Default::default()
-                }),
+                engine.validate_hotwords(&HotwordOverride::new(vec![ok_phrase], None)),
                 Ok(())
             );
             let long_phrase: String = "а".repeat(MAX_HOTWORD_PHRASE_CHARS + 1);
             assert_eq!(
-                engine.validate_overrides(&TranscribeOverrides {
-                    hotwords: Some(HotwordOverride {
-                        phrases: vec![long_phrase],
-                        boost: None,
-                    }),
-                    ..Default::default()
-                }),
-                Err(OverrideError::HotwordPhraseTooLong)
+                engine.validate_hotwords(&HotwordOverride::new(vec![long_phrase], None)),
+                Err(HotwordError::PhraseTooLong)
             );
         }
 
@@ -5320,37 +5363,25 @@ mod tests {
             assert!(engine.has_hotwords(), "boot biaser attached");
 
             // Force-off: empty phrase list yields no temporary biaser.
-            let off = HotwordOverride {
-                phrases: vec![],
-                boost: None,
-            };
+            let off = HotwordOverride::new(vec![], None);
             assert!(
                 engine.build_request_biaser(&off).is_none(),
                 "empty override forces biasing off"
             );
 
             // Representable phrase builds a temporary biaser.
-            let on = HotwordOverride {
-                phrases: vec!["hi".into()],
-                boost: Some(7.0),
-            };
+            let on = HotwordOverride::new(vec!["hi".into()], Some(7.0));
             let built = engine
                 .build_request_biaser(&on)
                 .expect("representable phrase should compile");
             assert_eq!(built.phrase_count(), 1);
 
             // Default boost path (None) still builds when phrases are present.
-            let default_boost = HotwordOverride {
-                phrases: vec!["hi".into()],
-                boost: None,
-            };
+            let default_boost = HotwordOverride::new(vec!["hi".into()], None);
             assert!(engine.build_request_biaser(&default_boost).is_some());
 
             // Unrepresentable-only phrases → None (decode continues without bias).
-            let junk = HotwordOverride {
-                phrases: vec!["ъъъ".into()],
-                boost: None,
-            };
+            let junk = HotwordOverride::new(vec!["яяяя".into()], None);
             assert!(
                 engine.build_request_biaser(&junk).is_none(),
                 "unrepresentable phrases drop the temporary biaser"
@@ -5385,6 +5416,7 @@ mod tests {
                         vad: Some(false),
                         ..Default::default()
                     },
+                    None,
                     false,
                 )
                 .expect("vad-off decode");
