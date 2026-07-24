@@ -7,18 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- **OpenAI-compatible `POST /v1/audio/transcriptions`.** Multipart form with
-  required `file` and optional `model` (accepted for client compatibility,
-  ignored — the loaded engine is always used). Supports OpenAI
-  `response_format` (`json` · `text` · `srt` · `vtt` · `verbose_json`),
-  `language` (echoed in verbose), `timestamp_granularities[]` (`word` /
-  `segment`), and `stream=true` (SSE: `transcript.text.delta` /
-  `transcript.text.done` / `[DONE]`, progressive chunked encoder path). Default
-  remains `{"text":"..."}`. Same pipeline as `/v1/transcribe` for llama-swap,
-  Hermes Agent, and OpenAI SDKs with a custom `base_url` (#214).
-
 ### Changed
 
 - **Documentation hygiene pass.** Supported versions in `SECURITY.md` track
@@ -37,6 +25,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   install recipe; appendices for error-code jump tables and offline checklists;
   closed the notarization open loop with an explicit out-of-band note; drift gate
   forbids previous-minor pins and required recipe tokens in the English book.
+
+## [2.14.3] - 2026-07-25
+
+### Added
+
+- **OpenAI-compatible `POST /v1/audio/transcriptions`.** Multipart form with
+  required `file` and optional `model` (accepted for client compatibility,
+  ignored — the loaded engine is always used). Supports OpenAI
+  `response_format` (`json` · `text` · `srt` · `vtt` · `verbose_json`),
+  `language` (echoed in verbose), `timestamp_granularities[]` (`word` /
+  `segment`), and `stream=true` (SSE: `transcript.text.delta` /
+  `transcript.text.done` / `[DONE]`, progressive chunked encoder path). Default
+  remains `{"text":"..."}`. Same pipeline as `/v1/transcribe` for llama-swap,
+  Hermes Agent, and OpenAI SDKs with a custom `base_url` (#214, #215).
 
 ## [2.14.2] - 2026-07-24
 
@@ -1949,7 +1951,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.2...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.3...HEAD
+[2.14.3]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.2...v2.14.3
 [2.14.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.1...v2.14.2
 [2.14.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.0...v2.14.1
 [2.14.0]: https://github.com/ekhodzitsky/gigastt/compare/v2.13.0...v2.14.0
