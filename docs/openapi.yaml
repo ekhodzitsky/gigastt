@@ -9,9 +9,12 @@ info:
 
     ## Endpoints
 
-    - **Health & discovery**: `GET /health`, `GET /v1/models`
+    - **Health & discovery**: `GET /health`, `GET /ready`, `GET /v1/models`
     - **File transcription**: `POST /v1/transcribe` — upload audio, receive full transcript
     - **Streaming transcription**: `POST /v1/transcribe/stream` — upload audio, receive SSE stream of partial/final segments
+    - **Async jobs** (opt-in `--enable-jobs`): `POST /v1/jobs`, `GET/DELETE /v1/jobs/{id}`, result + SSE events
+    - **Admin**: `POST /v1/admin/reload` — loopback-only model hot-reload
+    - **WebSocket** (see `docs/asyncapi.yaml`): `GET /v1/ws`
 
     Prometheus metrics are optional (behind `--metrics`) and exposed on a
     separate listener (default `127.0.0.1:9090`, override via `--metrics-listen`),
@@ -19,9 +22,11 @@ info:
 
     ## Audio Formats
 
-    Supported upload formats: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC.
-    All formats are decoded server-side via [symphonia](https://github.com/pdeljanov/Symphonia)
-    and resampled to 16 kHz mono.
+    Supported upload formats: WAV, MP3, M4A/AAC, OGG/Vorbis, OGG/Opus (`.opus`),
+    FLAC. Raw headerless telephony streams are accepted with
+    `?codec=pcmu|pcma|g722&sample_rate=N` (see the transcribe parameters).
+    Containers are decoded server-side via [symphonia](https://github.com/pdeljanov/Symphonia)
+    (Opus packets via pure-Rust `opus-rs`) and resampled to 16 kHz mono.
 
     ## Limits
 
@@ -31,7 +36,7 @@ info:
     - `--body-limit-bytes` (default 50 MiB) — max upload size
     - `--pool-size` (default 2) — concurrent inference sessions
     - `--rate-limit-per-minute` (default 0 = off) — per-IP token bucket
-    - File transcription cap: 10 minutes of audio
+    - File transcription cap: 30 minutes of audio
     - Pool saturation: REST returns `503 Service Unavailable` + `Retry-After: 30`
 
     ## Error Responses
@@ -94,7 +99,7 @@ paths:
                 status: ok
                 model: gigaam-v3-rnnt
                 variant: rnnt
-                version: "2.11.2"
+                version: "2.14.1"
                 punctuation: true
                 itn: true
 
@@ -146,7 +151,7 @@ paths:
                 id: gigaam-v3-rnnt
                 name: GigaAM v3 RNN-T
                 variant: rnnt
-                version: "2.11.2"
+                version: "2.14.1"
                 encoder: int8
                 vocab_size: 34
                 sample_rate: 16000
@@ -173,7 +178,8 @@ paths:
       summary: Transcribe audio file
       description: |
         Upload an audio file and receive a complete transcription.
-        Supports WAV, MP3, M4A/AAC, OGG/Vorbis, and FLAC.
+        Supports WAV, MP3, M4A/AAC, OGG/Vorbis, OGG/Opus (`.opus`), FLAC, and
+        raw telephony streams via `?codec=` / `?sample_rate=`.
 
         The default response is JSON. Alternative export formats are available
         via the `format` query parameter: `txt`, `srt`, `vtt`, `md`. Use
@@ -666,6 +672,80 @@ paths:
         "503":
           $ref: "#/components/responses/ServiceUnavailable"
 
+  /v1/admin/reload:
+    post:
+      summary: Hot-reload the inference engine
+      description: |
+        Rebuild the engine from the server's boot recipe (model dir, pool sizes,
+        punctuation / ITN / VAD / hotwords), warm it, then atomically swap it in.
+        On build or warmup failure the previous engine keeps serving.
+
+        **Loopback only.** The handler rejects non-loopback peers with
+        `403 loopback_only` even when `--bind-all` / `--cors-allow-any` is set.
+        Concurrent reloads return `409 reload_in_progress`. When the server was
+        started without a rebuild recipe (thin test entry points), the path
+        returns `503 reload_unsupported`.
+      operationId: reloadModel
+      responses:
+        "200":
+          description: Engine rebuilt and swapped
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reloaded, variant, encoder]
+                properties:
+                  reloaded:
+                    type: boolean
+                    example: true
+                  variant:
+                    type: string
+                    example: rnnt
+                  encoder:
+                    type: string
+                    description: Encoder precision of the newly loaded engine
+                    enum: [int8, fp32]
+                    example: int8
+              example:
+                reloaded: true
+                variant: rnnt
+                encoder: int8
+        "403":
+          description: Caller is not on loopback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Model reload is only available from loopback"
+                code: loopback_only
+        "409":
+          description: Another reload is already in progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "A model reload is already in progress"
+                code: reload_in_progress
+        "503":
+          description: Reload unsupported or rebuild failed (previous engine still serving)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                reload_unsupported:
+                  summary: No engine builder on this process
+                  value:
+                    error: "Model reload is not available on this server"
+                    code: reload_unsupported
+                reload_failed:
+                  summary: Build or warmup failed
+                  value:
+                    error: "Model reload failed; the previous model is still serving"
+                    code: reload_failed
+
 components:
   parameters:
     Format:
@@ -751,7 +831,7 @@ components:
           description: Recognition head in use
         version:
           type: string
-          example: "2.11.2"
+          example: "2.14.1"
           description: Server version (semver)
         punctuation:
           type: boolean
@@ -824,7 +904,7 @@ components:
           description: Recognition head in use
         version:
           type: string
-          example: "2.11.2"
+          example: "2.14.1"
         encoder:
           type: string
           enum: [fp32, int8]

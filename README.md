@@ -117,16 +117,17 @@ $ gigastt serve
 
 | Guide | Contents |
 |---|---|
+| **[Docs index](docs/README.md)** | Full map of guides under `docs/` |
 | **[Workbook](https://ekhodzitsky.github.io/gigastt/)** | Scenario-driven recipes (EN + RU): install → transcribe → stream → deploy |
-| **[API](docs/api.md)** | WebSocket protocol, REST + SSE, error codes, client examples (Python/Bun/Go/Kotlin) |
+| **[API](docs/api.md)** | WebSocket protocol, REST + SSE, jobs, admin reload, error codes, client examples |
 | **[Benchmarks](docs/benchmarks.md)** | WER / RTF / footprint vs 6 engines across 4 Russian domains, with caveats |
-| **[Architecture](docs/architecture.md)** | Pipeline, model, hardware acceleration, INT8 quantization, project layout |
+| **[Architecture](docs/architecture.md)** | Pipeline, crates, hardware acceleration, INT8 quantization, project layout |
 | **[Android / FFI](ANDROID.md)** | Embedding via the C-ABI on Android |
 | **[CLI](docs/cli.md)** · **[Deployment](docs/deployment.md)** · **[Security](SECURITY.md)** · **[Troubleshooting](docs/troubleshooting.md)** | Reference & ops |
 
 ## Requirements
 
-Rust **1.88+**, `protoc` on `PATH`. macOS 14+ (Apple Silicon, CoreML) or Linux x86_64 (optional NVIDIA CUDA 12+). ~1.5 GB disk, ~790 MB RAM at the default `--pool-size 2` (~400 MB single-session). The `gigastt-core` crate has no server dependencies — embed it directly: `gigastt-core = "2.11"`.
+Rust **1.88+**, `protoc` on `PATH`. macOS 14+ (Apple Silicon, CoreML) or Linux x86_64 (optional NVIDIA CUDA 12+). ~1.5 GB disk, ~790 MB RAM at the default `--pool-size 2` (~400 MB single-session). The `gigastt-core` crate has no server dependencies — embed it directly: `gigastt-core = "2.14"`.
 
 ## License
 

@@ -10,6 +10,11 @@ missions/
 .superpowers/
 .kimi/
 .gstack/
+# Local agent / IDE harness state (never ship)
+.agents/
+.grok/
+.claude/
+skills-lock.json
 *.profraw
 lcov.info
 lcov-*.info

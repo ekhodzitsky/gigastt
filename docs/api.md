@@ -212,8 +212,8 @@ Use the HTTP probes to drive client-side state machines — do not spawn
 - `GET /health` — **liveness**. Returns 200 as soon as the listener is up,
   including during first-run model download/quantization, when it is served by a
   minimal bootstrap responder:
-  `{"status":"ok","model":"loading","version":"2.13.0"}`. Once the engine is up:
-  `{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.13.0","punctuation":true,"itn":true}`.
+  `{"status":"ok","model":"loading","version":"2.14.1"}`. Once the engine is up:
+  `{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.14.1","punctuation":true,"itn":true}`.
   The `version` field is present in **both** phases — use it for version gates
   instead of executing the binary.
 - `GET /ready` — **readiness**. 200 `{"status":"ready","pool_available":N,"pool_total":M}`
@@ -260,6 +260,7 @@ progress); the onnxruntime linking trade-offs are in
 | `/v1/jobs/{id}/result` | GET | Fetch the finished transcription |
 | `/v1/jobs/{id}/events` | GET | SSE stream of progress / done / failed / cancelled |
 | `/v1/ws` | GET | WebSocket upgrade for real-time streaming |
+| `/v1/admin/reload` | POST | Hot-reload the inference engine from the boot recipe (loopback peers only — see [Admin reload](#admin-reload)) |
 | `/metrics` | GET | Prometheus metrics (enabled with `--metrics`). Served on the separate `--metrics-listen` port (default `127.0.0.1:9090`), not the main API port. |
 
 ```sh
@@ -279,6 +280,32 @@ The full-JSON response, SSE `final` events, and job results also carry an
 optional top-level `confidence` — the duration-weighted mean of
 `words[].confidence` (an average of per-word softmax scores, not a calibrated
 probability; omitted when there are no words).
+
+## Admin reload
+
+`POST /v1/admin/reload` rebuilds the inference engine from the server's boot
+recipe (model dir, pool sizes, punctuation / ITN / VAD / hotwords), runs
+warmup, then atomically swaps the live `Arc<Engine>`. In-flight requests keep
+the engine they started with; a failed rebuild leaves the previous model
+serving.
+
+**Security:** the handler accepts **loopback peers only** (`403 loopback_only`
+otherwise), even when `--bind-all` or `--cors-allow-any` is enabled. Concurrent
+reloads return `409 reload_in_progress`. Thin/test entry points without a
+rebuild recipe return `503 reload_unsupported`.
+
+```sh
+curl -X POST http://127.0.0.1:9876/v1/admin/reload
+# {"reloaded":true,"variant":"rnnt","encoder":"int8"}
+```
+
+| Status | Code | Meaning |
+|---|---|---|
+| 200 | — | Engine rebuilt and swapped (`reloaded`, `variant`, `encoder`) |
+| 403 | `loopback_only` | Caller is not on a loopback address |
+| 409 | `reload_in_progress` | Another reload is already running |
+| 503 | `reload_unsupported` | This process has no reload recipe |
+| 503 | `reload_failed` | Build or warmup failed; previous engine still serving |
 
 ## Asynchronous jobs
 

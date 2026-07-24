@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Docs drift gate: fail when documentation drifts away from the code.
 
-Six axes, all stdlib-only (no third-party deps, no network):
+Nine axes, all stdlib-only (no third-party deps, no network):
 
   1. CLI flags/envs: every clap flag + GIGASTT_* env in crates/gigastt/src/main.rs
      is documented in docs/cli.md, and cli.md names no flag/env that does not
@@ -22,6 +22,13 @@ Six axes, all stdlib-only (no third-party deps, no network):
   6. Relative links: every relative markdown link in docs/**, the root README*,
      and packaging/**/README* resolves to an existing file/directory, and
      #anchors resolve to a heading in the target file.
+  7. OpenAPI paths: every `paths:` key in docs/openapi.yaml is registered in
+     crates/gigastt/src/server/mod.rs (or is the separate metrics listener),
+     and OpenAPI must not claim a 10-minute file cap when audio.rs is 30 min.
+  8. SECURITY.md supported-version table marks the workspace Cargo.toml major.minor
+     as current.
+  9. Crate version pins: `gigastt-core = "X.Y"` in README*/architecture.md must
+     match the workspace package major.minor.
 
 Exit code 0 when everything is in sync, 1 otherwise. Runs in seconds.
 """
@@ -42,12 +49,21 @@ ROOT = Path(__file__).resolve().parent.parent
 
 MAIN_RS = ROOT / "crates/gigastt/src/main.rs"
 WS_RS = ROOT / "crates/gigastt/src/server/ws.rs"
+SERVER_MOD_RS = ROOT / "crates/gigastt/src/server/mod.rs"
 AUDIO_RS = ROOT / "crates/gigastt-core/src/inference/audio.rs"
+CARGO_TOML = ROOT / "Cargo.toml"
+SECURITY_MD = ROOT / "SECURITY.md"
+OPENAPI_YAML = ROOT / "docs/openapi.yaml"
 CLI_MD = ROOT / "docs/cli.md"
 API_MD = ROOT / "docs/api.md"
 ASYNCAPI_YAML = ROOT / "docs/asyncapi.yaml"
 ALLOWLIST = ROOT / "scripts/check-docs-drift.allowlist"
 WORKBOOK = ROOT / "docs/workbook"
+PIN_FILES = [
+    ROOT / "README.md",
+    ROOT / "README_RU.md",
+    ROOT / "docs/architecture.md",
+]
 
 # Canonical audio decode surface. The token list must match the
 # `// docs-drift: codecs` marker block in inference/audio.rs exactly; each
@@ -377,6 +393,131 @@ def check_links() -> list[str]:
     return failures
 
 
+def workspace_version() -> tuple[int, int, int]:
+    text = CARGO_TOML.read_text(encoding="utf-8")
+    m = re.search(r'(?m)^version\s*=\s*"(\d+)\.(\d+)\.(\d+)"', text)
+    if not m:
+        raise SystemExit("Cargo.toml: workspace version not found")
+    return int(m.group(1)), int(m.group(2)), int(m.group(3))
+
+
+def server_routes() -> set[str]:
+    """Collect string route paths from server/mod.rs `.route("…")` calls."""
+    text = SERVER_MOD_RS.read_text(encoding="utf-8")
+    return set(re.findall(r'\.route\(\s*"([^"]+)"', text))
+
+
+def openapi_paths() -> set[str]:
+    """Collect top-level OpenAPI path keys (lines like `  /health:` under paths:)."""
+    text = OPENAPI_YAML.read_text(encoding="utf-8")
+    # Only path keys under the paths: block — skip components and examples.
+    in_paths = False
+    found: set[str] = set()
+    for line in text.splitlines():
+        if re.match(r"^paths:\s*$", line):
+            in_paths = True
+            continue
+        if in_paths and re.match(r"^[A-Za-z]", line):
+            # next top-level key ends paths:
+            break
+        if in_paths:
+            m = re.match(r"^  (/[^:]+):\s*$", line)
+            if m:
+                found.add(m.group(1))
+    return found
+
+
+def check_openapi() -> list[str]:
+    failures: list[str] = []
+    if not OPENAPI_YAML.exists() or not SERVER_MOD_RS.exists():
+        failures.append("openapi.yaml or server/mod.rs missing")
+        return failures
+
+    routes = server_routes()
+    # Metrics is served on a separate listener; still a real HTTP path.
+    routes.add("/metrics")
+    # OpenAPI uses templated job paths; normalize server routes that use {id}.
+    # server/mod.rs already uses `/v1/jobs/{id}` style axum paths.
+    oas = openapi_paths()
+    for path in sorted(oas):
+        if path not in routes:
+            failures.append(
+                f"openapi.yaml: path `{path}` is not registered in server/mod.rs "
+                f"(known routes include {sorted(p for p in routes if p.startswith('/v1') or p in ('/health', '/ready', '/metrics'))})"
+            )
+
+    # Required product surfaces that must stay documented.
+    for required in (
+        "/health",
+        "/ready",
+        "/v1/models",
+        "/v1/transcribe",
+        "/v1/transcribe/stream",
+        "/v1/admin/reload",
+        "/v1/jobs",
+    ):
+        if required not in oas:
+            failures.append(f"openapi.yaml: missing required path `{required}`")
+
+    oas_text = OPENAPI_YAML.read_text(encoding="utf-8")
+    # audio.rs MAX_DURATION_S is 1800 (30 minutes). Forbid the old 10-minute claim.
+    if re.search(r"10\s+minutes?\s+of\s+audio", oas_text, re.IGNORECASE):
+        failures.append(
+            "openapi.yaml: claims a 10-minute audio cap; code uses MAX_DURATION_S=1800 (30 minutes)"
+        )
+    if not re.search(r"30\s+minutes?", oas_text):
+        failures.append("openapi.yaml: should state the 30-minute file transcription cap")
+
+    # Formats intro must mention Opus (full surface is in FORMATS gate for api/cli).
+    if not re.search(r"Opus", oas_text):
+        failures.append("openapi.yaml: audio formats description must mention Opus")
+
+    return failures
+
+
+def check_security_versions() -> list[str]:
+    failures: list[str] = []
+    if not SECURITY_MD.exists():
+        return ["SECURITY.md missing"]
+    major, minor, _patch = workspace_version()
+    current = f"{major}.{minor}.x"
+    text = SECURITY_MD.read_text(encoding="utf-8")
+    # Expect a table row like: | 2.14.x  | Yes (current)  |
+    if not re.search(rf"\|\s*{re.escape(current)}\s*\|\s*Yes\s*\(current\)", text):
+        failures.append(
+            f"SECURITY.md: supported-versions table must mark `{current}` as Yes (current) "
+            f"(workspace version is {major}.{minor}.*)"
+        )
+    return failures
+
+
+def check_crate_pins() -> list[str]:
+    failures: list[str] = []
+    major, minor, _patch = workspace_version()
+    expected = f'{major}.{minor}'
+    pin_re = re.compile(r'gigastt-core\s*=\s*"(\d+)\.(\d+)(?:\.\d+)?"')
+    for path in PIN_FILES:
+        if not path.exists():
+            failures.append(f"{path.relative_to(ROOT)}: missing")
+            continue
+        text = path.read_text(encoding="utf-8")
+        pins = pin_re.findall(text)
+        if not pins:
+            # architecture + README are expected to show an embed pin
+            if path.name in ("README.md", "README_RU.md", "architecture.md"):
+                failures.append(
+                    f"{path.relative_to(ROOT)}: expected a `gigastt-core = \"{expected}\"` pin"
+                )
+            continue
+        for maj_s, min_s in pins:
+            if int(maj_s) != major or int(min_s) != minor:
+                failures.append(
+                    f'{path.relative_to(ROOT)}: pin gigastt-core = "{maj_s}.{min_s}" '
+                    f'does not match workspace {expected} (use gigastt-core = "{expected}")'
+                )
+    return failures
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -395,6 +536,9 @@ def main() -> int:
     results.append(("mdBook SUMMARY + build", check_workbook(args.skip_mdbook)))
     results.append(("workbook EN/RU parity", check_parity()))
     results.append(("relative links", check_links()))
+    results.append(("OpenAPI paths + duration/format claims", check_openapi()))
+    results.append(("SECURITY.md supported versions", check_security_versions()))
+    results.append(("crate version pins (README/architecture)", check_crate_pins()))
 
     failed = 0
     for name, failures in results:

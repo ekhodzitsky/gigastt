@@ -117,7 +117,7 @@ They use synthetic data. Test naming convention: `test_<what>_<expected_behavior
 cargo run -- download
 
 # Run all e2e tests serially (single-threaded to avoid OOM)
-cargo test -p gigastt --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1
+cargo test -p gigastt --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit --test e2e_jobs --test e2e_cli --test e2e_admin_reload --test e2e_http_cov -- --ignored --test-threads=1
 ```
 
 | Test file | Coverage |
@@ -127,6 +127,10 @@ cargo test -p gigastt --test e2e_rest --test e2e_ws --test e2e_errors --test e2e
 | `tests/e2e_errors.rs` | Error paths: oversized body/frame, pool saturation, idle timeout |
 | `tests/e2e_shutdown.rs` | Graceful shutdown: WS final + close, SSE termination, max-session cap |
 | `tests/e2e_rate_limit.rs` | Per-IP rate limiter 429 behavior |
+| `tests/e2e_jobs.rs` | Async `/v1/jobs` queue (requires `--enable-jobs`) |
+| `tests/e2e_cli.rs` | CLI `transcribe` / batch / watch smoke |
+| `tests/e2e_admin_reload.rs` | Loopback `POST /v1/admin/reload` |
+| `tests/e2e_http_cov.rs` | Extra HTTP/export coverage |
 
 Shared helpers are in `tests/common/mod.rs` (server startup with shutdown handle,
 WAV generation, WebSocket connect, readiness polling).
@@ -349,18 +353,22 @@ requires listening on all interfaces. The non-Docker default is `127.0.0.1`.
 
 ## Environment Variables
 
-All CLI flags have corresponding env vars:
+Most CLI flags map to `GIGASTT_*` env vars (clap `env =`). Canonical flag
+reference: [`docs/cli.md`](docs/cli.md) (enforced by `scripts/check-docs-drift.py`).
 
-| Env var | CLI flag | Default |
+| Env var | CLI flag / notes | Default |
 |---|---|---|
-| `GIGASTT_ALLOW_BIND_ANY` | `--bind-all` | — |
+| `GIGASTT_ALLOW_BIND_ANY` | Opt-in for non-loopback bind (same intent as `--bind-all`; not a clap `env=`) | — |
+| `GIGASTT_OFFLINE` | Equivalent to global `--offline` | — |
 | `GIGASTT_IDLE_TIMEOUT_SECS` | `--idle-timeout-secs` | 300 |
 | `GIGASTT_WS_FRAME_MAX_BYTES` | `--ws-frame-max-bytes` | 524288 |
 | `GIGASTT_BODY_LIMIT_BYTES` | `--body-limit-bytes` | 52428800 |
 | `GIGASTT_RATE_LIMIT_PER_MINUTE` | `--rate-limit-per-minute` | 0 |
 | `GIGASTT_RATE_LIMIT_BURST` | `--rate-limit-burst` | 10 |
+| `GIGASTT_TRUST_PROXY` | `--trust-proxy` | false |
 | `GIGASTT_POOL_MIN_SIZE` | `--pool-min-size` | 1 |
 | `GIGASTT_BATCH_POOL_SIZE` | `--batch-pool-size` | 0 |
+| `GIGASTT_POOL_CHECKOUT_TIMEOUT_SECS` | `--pool-checkout-timeout-secs` | (see serve help) |
 | `GIGASTT_INFERENCE_TIMEOUT_SECS` | `--inference-timeout-secs` | 600 |
 | `GIGASTT_MAX_SESSION_SECS` | `--max-session-secs` | 3600 |
 | `GIGASTT_SHUTDOWN_DRAIN_SECS` | `--shutdown-drain-secs` | 10 |
@@ -376,11 +384,19 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_PUNCTUATION` | `--punctuation` | auto |
 | `GIGASTT_PUNCT_MODEL_DIR` | `--punct-model-dir` | `~/.gigastt/models/punct/` |
 | `GIGASTT_ITN` | `--itn` | auto |
-| `GIGASTT_FORMAT` | `transcribe --format` | `txt` (`txt,json` for `transcribe-batch` / `watch`) |
+| `GIGASTT_HOTWORDS_FILE` | `--hotwords-file` | — |
+| `GIGASTT_HOTWORDS_DEFAULT` | `--hotwords-default` | false |
+| `GIGASTT_HOTWORDS_BOOST` | `--hotwords-boost` | 5.0 |
+| `GIGASTT_VAD` | `--vad` | false |
+| `GIGASTT_VAD_THRESHOLD` | `--vad-threshold` | 0.5 |
+| `GIGASTT_VAD_MIN_SILENCE_MS` | `--vad-min-silence-ms` | (see serve help) |
+| `GIGASTT_VAD_MODEL_DIR` | `--vad-model-dir` | `~/.gigastt/models/vad/` |
+| `GIGASTT_ENCODER_INTRA_THREADS` | `--encoder-intra-threads` | auto |
+| `GIGASTT_FORMAT` | `transcribe --format` | `txt` (`txt,json` for batch / watch) |
 | `GIGASTT_OUTPUT` | `transcribe --output` | — |
-| `GIGASTT_MAX_CHARS_PER_LINE` | `transcribe --max-chars-per-line` | — |
-| `GIGASTT_MAX_WORDS_PER_LINE` | `transcribe --max-words-per-line` | — |
-| `GIGASTT_WORD_TIMESTAMPS` | `transcribe --word-timestamps` | false |
+| `GIGASTT_MAX_CHARS_PER_LINE` | `--max-chars-per-line` | — |
+| `GIGASTT_MAX_WORDS_PER_LINE` | `--max-words-per-line` | — |
+| `GIGASTT_WORD_TIMESTAMPS` | `--word-timestamps` | false |
 | `GIGASTT_BATCH_MOVE_TO` | `transcribe-batch / watch --move-to` | — |
 | `GIGASTT_BATCH_DELETE_SOURCE` | `transcribe-batch / watch --delete-source` | false |
 | `GIGASTT_BATCH_RETRIES` | `transcribe-batch / watch --retries` | 0 / 2 |
@@ -389,7 +405,11 @@ All CLI flags have corresponding env vars:
 | `GIGASTT_STEREO_SPEAKERS` | `--stereo-speakers` | false |
 | `GIGASTT_CODEC` | `transcribe --codec` | — |
 | `GIGASTT_SAMPLE_RATE` | `transcribe --sample-rate` | — |
-| `RUST_LOG` | — | `gigastt=info` |
+| `GIGASTT_BAKE_MODEL` | Docker build-arg only (bake model into image) | — |
+| `GIGASTT_SOAK_DURATION_SECS` | soak test duration (tests only) | 300 |
+| `RUST_LOG` | tracing filter | `gigastt=info` |
+
+`--pool-size` is CLI-only (no `GIGASTT_POOL_SIZE`); raise it when RAM allows.
 
 ## Useful Commands for Agents
 
@@ -416,6 +436,16 @@ cargo test -p gigastt --test e2e_ws -- --ignored test_ws_ready_message
 # Run with tracing at debug level
 RUST_LOG=gigastt=debug cargo run -- serve
 ```
+
+## Agent Skills
+
+- **rust-skills** ([leonardomso/rust-skills](https://github.com/leonardomso/rust-skills), v1.5.1) — 265 idiomatic Rust rules (ownership, errors, async, unsafe, API design, anti-patterns, …).
+  - Canonical install: [`.agents/skills/rust-skills/`](.agents/skills/rust-skills/) (`SKILL.md` + `rules/`).
+  - Wired for Claude Code and Grok via symlinks under `.claude/skills/` and `.grok/skills/`.
+  - Lockfile: [`skills-lock.json`](skills-lock.json). Restore/update:
+    `npx skills experimental_install` or `npx skills add leonardomso/rust-skills -y`.
+  - Use when writing, reviewing, or refactoring Rust (`/rust-skills`). Load only the
+    relevant `rules/<prefix>-*.md` files (progressive disclosure) — do not dump all 265 into context.
 
 ## Notes for AI Agents
 

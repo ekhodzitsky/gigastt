@@ -84,6 +84,12 @@ docker build -t gigastt . && docker run -p 9876:9876 gigastt
 $ gigastt transcribe recording.wav
 Привет, как дела?
 
+# Пакетная обработка папки (txt + json на файл, 2 воркера):
+$ gigastt transcribe-batch samples/ out/
+
+# Или watch: файлы, появившиеся в inbox/, распознаются и переносятся:
+$ gigastt watch inbox/ out/ --move-to inbox/done/
+
 # Или сервер — WebSocket + REST + SSE на одном порту (только loopback):
 $ gigastt serve
 # WebSocket  ws://127.0.0.1:9876/v1/ws
@@ -110,16 +116,17 @@ $ gigastt serve
 
 | Гайд | Содержание |
 |---|---|
+| **[Индекс docs](docs/README.md)** | Полная карта гайдов в `docs/` |
 | **[Книга рецептов](https://ekhodzitsky.github.io/gigastt/)** | Сценарные рецепты (EN + RU): установка → транскрибация → стриминг → деплой |
-| **[API](docs/api.md)** | WebSocket-протокол, REST + SSE, коды ошибок, клиенты (Python/Bun/Go/Kotlin) |
+| **[API](docs/api.md)** | WebSocket-протокол, REST + SSE, jobs, admin reload, коды ошибок, клиенты |
 | **[Benchmarks](docs/benchmarks.md)** | WER / RTF / footprint против 6 движков на 4 русских доменах, с оговорками |
-| **[Architecture](docs/architecture.md)** | Пайплайн, модель, аппаратное ускорение, INT8, структура проекта |
+| **[Architecture](docs/architecture.md)** | Пайплайн, crates, аппаратное ускорение, INT8, структура проекта |
 | **[Android / FFI](ANDROID.md)** | Встраивание через C-ABI на Android |
 | **[CLI](docs/cli.md)** · **[Deployment](docs/deployment.md)** · **[Security](SECURITY.md)** · **[Troubleshooting](docs/troubleshooting.md)** | Справочник и эксплуатация |
 
 ## Требования
 
-Rust **1.88+**, `protoc` в `PATH`. macOS 14+ (Apple Silicon, CoreML) или Linux x86_64 (опц. NVIDIA CUDA 12+). ~1.5 ГБ диска, ~790 МБ RAM при дефолтном `--pool-size 2` (~400 МБ на одну сессию). Крейт `gigastt-core` без серверных зависимостей: `gigastt-core = "2.11"`.
+Rust **1.88+**, `protoc` в `PATH`. macOS 14+ (Apple Silicon, CoreML) или Linux x86_64 (опц. NVIDIA CUDA 12+). ~1.5 ГБ диска, ~790 МБ RAM при дефолтном `--pool-size 2` (~400 МБ на одну сессию). Крейт `gigastt-core` без серверных зависимостей: `gigastt-core = "2.14"`.
 
 ## Лицензия
 

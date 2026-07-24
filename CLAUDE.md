@@ -19,7 +19,7 @@ cargo build --features cuda          # Linux x86_64 (CUDA 12+)
 cargo build --release                # Release build (LTO, stripped)
 cargo test --workspace               # Run all unit tests, CPU (no model required)
 cargo test --features coreml         # Same tests with CoreML EP enabled (macOS)
-cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1  # E2E tests (requires model)
+cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit --test e2e_jobs --test e2e_cli --test e2e_admin_reload --test e2e_http_cov -- --ignored --test-threads=1  # E2E tests (requires model)
 cargo test --test load_test -- --ignored           # Load tests (requires model, local only)
 cargo test --test soak_test -- --ignored           # Soak test (requires model, local only)
 cargo clippy             # Lint (no expected warnings)
@@ -148,7 +148,7 @@ Three-tier test architecture:
 **Unit tests** (no model required, run in CI on every PR):
 - Live in `#[cfg(test)] mod tests` at bottom of each file
 - Use synthetic data, test names: `test_<what>_<expected_behavior>`
-- 270+ unit tests across 3 crates
+- 600+ unit tests across the workspace (`cargo test --workspace --lib`)
 - `cargo test` — runs all unit tests
 
 **E2E tests** (require model ~850MB, run in CI on main push only):
@@ -156,9 +156,13 @@ Three-tier test architecture:
 - `tests/e2e_ws.rs` — WebSocket protocol tests (ready, audio, stop, configure, errors, concurrent)
 - `tests/e2e_errors.rs` — error path tests (oversized body/frame, pool saturation, idle timeout)
 - `tests/e2e_shutdown.rs` — graceful shutdown tests (WS final + close, SSE termination, max-session cap, shutdown under pool saturation)
-- `tests/e2e_rate_limit.rs` — per-IP rate limiter 429 behavior (v0.8.0+)
+- `tests/e2e_rate_limit.rs` — per-IP rate limiter 429 behavior
+- `tests/e2e_jobs.rs` — async `/v1/jobs` queue
+- `tests/e2e_cli.rs` — CLI transcribe / batch / watch smoke
+- `tests/e2e_admin_reload.rs` — loopback `POST /v1/admin/reload`
+- `tests/e2e_http_cov.rs` — extra HTTP/export coverage
 - `tests/common/mod.rs` — shared helpers (start_server with shutdown handle, WAV generation, WS connect)
-- `cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit -- --ignored --test-threads=1` — all e2e tests
+- `cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit --test e2e_jobs --test e2e_cli --test e2e_admin_reload --test e2e_http_cov -- --ignored --test-threads=1`
 
 **Load/soak tests** (require model, run locally + nightly CI via `.github/workflows/soak.yml`):
 - `tests/load_test.rs` — 3 load tests (concurrent WS, concurrent REST, burst connections)
@@ -222,7 +226,12 @@ cargo run -- quantize --model-dir ~/.gigastt/models
 Engine auto-detects and prefers INT8 if available; falls back to FP32.
 `gigastt serve` and `gigastt download` invoke the same pipeline automatically on first run unless `--skip-quantize` / `GIGASTT_SKIP_QUANTIZE=1` is set.
 
-## Known limitations (v0.9)
+## Agent Skills
+
+- **rust-skills** — 265 idiomatic Rust rules for write/review/refactor. Path: `.agents/skills/rust-skills/` (also `.claude/skills/rust-skills`). Invoke with `/rust-skills`; open only relevant `rules/` files. See [`AGENTS.md`](AGENTS.md) § Agent Skills.
+
+## Known limitations
 - CPU EP runs on any platform; CoreML EP requires macOS ARM64; CUDA EP requires Linux x86_64 with CUDA 12+
 - `protoc` must be on `PATH` at build time (in-tree ONNX quantization pipeline regenerates types via `prost-build`)
 - The model can be hot-reloaded after `serve` boot without a restart via the loopback-only `POST /v1/admin/reload` endpoint (rebuilds the engine from the boot recipe, warms it, then atomically swaps; keeps the old engine on failure). Replacing the model *files* on disk still requires that endpoint (or a restart) for the change to take effect.
+- Agent-facing setup and conventions: prefer [`AGENTS.md`](AGENTS.md) as the longer form; keep this file aligned when changing build/test commands.

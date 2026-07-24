@@ -52,6 +52,19 @@ Xiph.Org Foundation (https://datatracker.ietf.org/ipr/1524/), Microsoft
 Corporation (https://datatracker.ietf.org/ipr/1914/), Broadcom Corporation
 (https://datatracker.ietf.org/ipr/1526/).
 
+Speaker diarization model
+-------------------------
+
+When the `diarization` feature is enabled, gigastt downloads and runs
+`wespeaker_resnet34.onnx` from
+[onnx-community/wespeaker-voxceleb-resnet34-LM](https://huggingface.co/onnx-community/wespeaker-voxceleb-resnet34-LM)
+(WeSpeaker ResNet34 speaker embeddings, ONNX export). That model is licensed
+under **CC BY 4.0** and requires attribution when redistributed or used in
+products. The polyvoice clustering crate (Apache-2.0 / MIT) is a Rust
+dependency used only when the feature is compiled in. Diarization is opt-in at
+runtime (`?diarization=true` / WebSocket `Configure`); skip the download with
+`gigastt download --skip-diarization`.
+
 Benchmark data
 --------------
 

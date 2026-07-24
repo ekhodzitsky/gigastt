@@ -38,7 +38,7 @@ lives in `specs/plan.md`.
 | 16. Self-hosted nightly soak | P2 | ✅ v0.9.0 (`.github/workflows/soak.yml` runs 03:17 UTC, V1-09) |
 | 17. Per-IP rate limiting | P2 | ✅ v0.8.0 (initial) + v0.9.0 (math fix V1-06 + in-tree implementation dropping `tower_governor`) |
 | 18. `ort_err()` wrapper audit | P2 | ✅ v2.4.0 (obsolete — `ort_err()` removed by the runtime abstraction, PR #115; ort errors now cross the seam as typed `RuntimeError`) |
-| 19. Hot-reload model | P2 | ⏳ open |
+| 19. Hot-reload model | P2 | ✅ shipped (`POST /v1/admin/reload`, loopback-only; see `docs/api.md`) |
 | 20. TLS/auth deployment docs | P2 | ✅ v0.8.0 (`docs/deployment.md` Caddy/nginx) + v0.9.0 (`X-Forwarded-For` trust-boundary fix, V1-11) |
 | CUDA in release matrix | P0 addendum | partial — tarball intentionally absent (CUDA toolchain broken on GH runners, see release.yml comment); CUDA ships via the GHCR `:2.x-cuda` Docker image since v2.4.0 (amd64) |
 

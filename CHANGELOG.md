@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation hygiene pass.** Supported versions in `SECURITY.md` track
+  2.14.x / 2.13.x; README / architecture crate pins use `gigastt-core = "2.14"`;
+  OpenAPI matches the 30-minute audio cap, documents Opus + telephony codecs,
+  `/ready` / jobs / `POST /v1/admin/reload`, and example versions `2.14.1`;
+  `docs/api.md` adds an Admin reload section; `docs/architecture.md` reflects
+  the five-crate workspace and optional paths (diarization, jobs, hot-reload);
+  `docs/README.md` is a full docs map; AGENTS/CLAUDE e2e lists and env tables
+  are refreshed; `NOTICE` attributes WeSpeaker (CC BY 4.0); privacy docs
+  separate runtime vs build-time network; `scripts/check-docs-drift.py` also
+  gates OpenAPI paths, SECURITY versions, and crate version pins.
+
 ## [2.14.1] - 2026-07-24
 
 ### Fixed

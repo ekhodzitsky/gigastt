@@ -22,11 +22,15 @@ retained.
 
 ## Network traffic
 
-The only outbound network call gigastt makes is the one-time model download:
+### Runtime
+
+The only outbound network call a running gigastt process makes is the one-time
+model download (ASR heads, and optionally punctuation / VAD / speaker models):
 
 - Files are fetched from `huggingface.co` (`istupakov/gigaam-v3-onnx` for the
   `rnnt`/`e2e_rnnt` heads; `istupakov/gigaam-multilingual-ctc-onnx` and
-  `istupakov/gigaam-multilingual-large-ctc-onnx` for the `ml_ctc`/`ml_ctc_large` heads).
+  `istupakov/gigaam-multilingual-large-ctc-onnx` for the `ml_ctc`/`ml_ctc_large` heads;
+  plus optional punctuation, Silero VAD, and WeSpeaker diarization weights).
 - Each file is SHA-256 verified before use and written atomically to disk.
 - After the initial download, gigastt operates fully offline.
 - Audited: the HTTP client (`reqwest`) is referenced from exactly one module —
@@ -34,6 +38,14 @@ The only outbound network call gigastt makes is the one-time model download:
   that module funnels through a single download function. No other runtime
   code path opens outbound connections. `GIGASTT_OFFLINE=1` (or `--offline`)
   turns even that path into a fast, instructive error for air-gapped hosts.
+
+### Build time (not runtime)
+
+Building with the default `ort` features also downloads a prebuilt onnxruntime
+native library at **compile** time (verified by an embedded checksum, outside
+`Cargo.lock`). That is a developer/CI concern, not a runtime phone-home. Air-gapped
+builds use `ort` with `default-features = false` + `load-dynamic` (or a vendored
+onnxruntime); see [architecture.md](architecture.md).
 
 ## Server binding
 
