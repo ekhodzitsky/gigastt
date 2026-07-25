@@ -23,8 +23,8 @@ use super::state::{
 use super::tokenizer::{self, Tokenizer};
 use super::types::{
     DEFAULT_HOTWORDS_BOOST, HotwordError, HotwordOverride, MAX_HOTWORD_PHRASE_CHARS,
-    MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides, TranscribeResult,
-    merge_channel_results,
+    MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides, TranscribeRequest,
+    TranscribeResult, TranscribeSource, merge_channel_results,
 };
 use super::{ENCODER_SUBSAMPLING, HOP_LENGTH, N_FFT, N_MELS, SECONDS_PER_FRAME, now_timestamp};
 
@@ -1459,13 +1459,84 @@ impl Engine {
     ///
     /// Returns [`GigasttError::InvalidAudio`] if the file cannot be decoded, or
     /// [`GigasttError::Inference`] if the ONNX runtime fails.
+    /// Unified file-transcription entry point. Prefer this over the
+    /// combinatorial `transcribe_*` wrappers when building new call sites.
+    ///
+    /// Routes on [`TranscribeRequest::source`]:
+    /// - [`TranscribeSource::Path`] / [`TranscribeSource::Bytes`] — decode then
+    ///   mono pipeline (optional diarization)
+    /// - [`TranscribeSource::Samples`] — mono pipeline on pre-decoded audio
+    /// - [`TranscribeSource::Channels`] — per-channel decode + merge (diarization
+    ///   flag ignored; channel index is the speaker label)
+    pub fn transcribe_request(
+        &self,
+        req: TranscribeRequest<'_>,
+        triplet: &mut SessionTriplet,
+    ) -> Result<TranscribeResult, GigasttError> {
+        match req.source {
+            #[cfg(feature = "file-decode")]
+            TranscribeSource::Path(path) => {
+                let float_samples =
+                    audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
+                        reason: format!("{e:#}"),
+                    })?;
+                self.transcribe_samples_with_overrides(
+                    &float_samples,
+                    triplet,
+                    &req.overrides,
+                    req.hotwords,
+                    req.diarization,
+                )
+            }
+            #[cfg(feature = "file-decode")]
+            TranscribeSource::Bytes(data) => {
+                let float_samples = audio::decode_audio_bytes_shared(data).map_err(|e| {
+                    GigasttError::InvalidAudio {
+                        reason: format!("{e:#}"),
+                    }
+                })?;
+                self.transcribe_samples_with_overrides(
+                    &float_samples,
+                    triplet,
+                    &req.overrides,
+                    req.hotwords,
+                    req.diarization,
+                )
+            }
+            TranscribeSource::Samples(samples) => self.transcribe_samples_with_overrides(
+                samples,
+                triplet,
+                &req.overrides,
+                req.hotwords,
+                req.diarization,
+            ),
+            TranscribeSource::Channels(channels) => {
+                self.transcribe_channels_inner(channels, triplet, &req.overrides, req.hotwords)
+            }
+        }
+    }
+
+    /// Transcribe an audio file to text (supports WAV, MP3, M4A/AAC, OGG, FLAC).
+    ///
+    /// Decodes the file to mono 16kHz, runs the full encoder+decoder pipeline,
+    /// and returns the recognized text with word-level details and duration.
+    ///
+    /// Thin wrapper over [`Engine::transcribe_request`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GigasttError::InvalidAudio`] if the file cannot be decoded, or
+    /// [`GigasttError::Inference`] if the ONNX runtime fails.
     #[cfg(feature = "file-decode")]
     pub fn transcribe_file(
         &self,
         path: &str,
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
-        self.transcribe_file_with_overrides(path, triplet, &TranscribeOverrides::default())
+        self.transcribe_request(
+            TranscribeRequest::new(TranscribeSource::Path(path)),
+            triplet,
+        )
     }
 
     /// Like [`Engine::transcribe_file`] but applies per-request recognition-knob
@@ -1494,11 +1565,12 @@ impl Engine {
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
     ) -> Result<TranscribeResult, GigasttError> {
-        let float_samples =
-            audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
-                reason: format!("{e:#}"),
-            })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, hotwords, false)
+        self.transcribe_request(
+            TranscribeRequest::new(TranscribeSource::Path(path))
+                .with_overrides(*overrides)
+                .with_hotwords(hotwords),
+            triplet,
+        )
     }
 
     /// Transcribe audio from raw bytes in memory (no temp file needed).
@@ -1558,11 +1630,12 @@ impl Engine {
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
     ) -> Result<TranscribeResult, GigasttError> {
-        let float_samples =
-            audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
-                reason: format!("{e:#}"),
-            })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, hotwords, false)
+        self.transcribe_request(
+            TranscribeRequest::new(TranscribeSource::Bytes(data))
+                .with_overrides(*overrides)
+                .with_hotwords(hotwords),
+            triplet,
+        )
     }
 
     /// Like [`Engine::transcribe_bytes_shared_with_overrides`], but also runs
@@ -1594,11 +1667,13 @@ impl Engine {
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
     ) -> Result<TranscribeResult, GigasttError> {
-        let float_samples =
-            audio::decode_audio_bytes_shared(data).map_err(|e| GigasttError::InvalidAudio {
-                reason: format!("{e:#}"),
-            })?;
-        self.transcribe_samples_with_overrides(&float_samples, triplet, overrides, hotwords, true)
+        self.transcribe_request(
+            TranscribeRequest::new(TranscribeSource::Bytes(data))
+                .with_overrides(*overrides)
+                .with_hotwords(hotwords)
+                .with_diarization(true),
+            triplet,
+        )
     }
 
     /// Transcribe a multi-channel recording with one speaker label per channel.
@@ -1611,11 +1686,28 @@ impl Engine {
     ///
     /// Per-channel `text` fields are ignored: the merged transcript's text is
     /// rebuilt from the merged words after the final ITN/punctuation pass.
+    ///
+    /// Thin wrapper over [`Engine::transcribe_request`] with default overrides
+    /// and no hotwords.
     #[cfg(feature = "file-decode")]
     pub fn transcribe_channels(
         &self,
         channels: &[Vec<f32>],
         triplet: &mut SessionTriplet,
+    ) -> Result<TranscribeResult, GigasttError> {
+        self.transcribe_request(
+            TranscribeRequest::new(TranscribeSource::Channels(channels)),
+            triplet,
+        )
+    }
+
+    /// Per-channel decode + merge used by [`TranscribeSource::Channels`].
+    fn transcribe_channels_inner(
+        &self,
+        channels: &[Vec<f32>],
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+        hotwords: Option<&HotwordOverride>,
     ) -> Result<TranscribeResult, GigasttError> {
         if channels.is_empty() {
             return Ok(TranscribeResult {
@@ -1627,10 +1719,9 @@ impl Engine {
         }
 
         let mut per_channel = Vec::with_capacity(channels.len());
-        let overrides = TranscribeOverrides::default();
         for channel_samples in channels {
             let words =
-                self.decode_words_for_samples(channel_samples, triplet, &overrides, None)?;
+                self.decode_words_for_samples(channel_samples, triplet, overrides, hotwords)?;
             let duration_s = channel_samples.len() as f64 / 16000.0;
             per_channel.push(TranscribeResult {
                 confidence: aggregate_confidence(&words),
@@ -1641,26 +1732,30 @@ impl Engine {
         }
 
         let merged = merge_channel_results(per_channel);
-        Ok(self.finish_transcribe_result(merged.words, merged.duration_s, &overrides))
+        Ok(self.finish_transcribe_result(merged.words, merged.duration_s, overrides))
     }
 
     /// Run the full mel + encoder + RNN-T decode pipeline on an already-decoded
-    /// 16 kHz f32 sample buffer. Shared tail of [`Engine::transcribe_file`] and
-    /// [`Engine::transcribe_bytes_shared`].
+    /// 16 kHz f32 sample buffer. Shared tail of [`Engine::transcribe_request`]
+    /// for mono sources (and unit tests).
     fn transcribe_samples(
         &self,
         float_samples: &[f32],
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
-        self.transcribe_samples_with_overrides(
-            float_samples,
+        self.transcribe_request(
+            TranscribeRequest::new(TranscribeSource::Samples(float_samples)),
             triplet,
-            &TranscribeOverrides::default(),
-            None,
-            false,
         )
     }
 
+    /// Override-aware tail of the file-transcription pipeline. With
+    /// `TranscribeOverrides::default()` (all `None`) it is byte-for-byte the
+    /// engine-default path; each `Some(_)` field flips the corresponding
+    /// post-processing knob for this call only. `overrides` is assumed already
+    /// validated by [`Engine::validate_overrides`] — an on-request with the
+    /// resource missing degrades gracefully (VAD absent → whole-buffer decode)
+    /// rather than erroring here.
     /// Override-aware tail of the file-transcription pipeline. With
     /// `TranscribeOverrides::default()` (all `None`) it is byte-for-byte the
     /// engine-default path; each `Some(_)` field flips the corresponding

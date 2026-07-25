@@ -8,7 +8,7 @@ use axum::body::Bytes;
 use gigastt_core::error::GigasttError;
 use gigastt_core::inference::{
     Engine, HotwordOverride, OwnedReservation, SessionTriplet, TranscribeOverrides,
-    TranscribeResult,
+    TranscribeRequest, TranscribeResult, TranscribeSource,
 };
 
 /// Options for a single file-transcription run after request validation.
@@ -71,23 +71,24 @@ pub(crate) fn run_file_transcribe_blocking(
             tracing::warn!(
                 "channels=split requested but {reason} detected; falling back to mono transcription"
             );
-            engine.transcribe_bytes_shared(body, reservation)
+            engine.transcribe_request(
+                TranscribeRequest::new(TranscribeSource::Bytes(body)),
+                reservation,
+            )
         } else {
-            engine.transcribe_channels(&channels, reservation)
+            engine.transcribe_request(
+                TranscribeRequest::new(TranscribeSource::Channels(&channels)),
+                reservation,
+            )
         }
-    } else if opts.diarization {
-        engine.transcribe_bytes_shared_with_overrides_diarized_hotwords(
-            body,
-            reservation,
-            &opts.overrides,
-            opts.hotwords.as_ref(),
-        )
     } else {
-        engine.transcribe_bytes_shared_with_overrides_hotwords(
-            body,
+        // Mono path (optional diarization) via unified Engine request API.
+        engine.transcribe_request(
+            TranscribeRequest::new(TranscribeSource::Bytes(body))
+                .with_overrides(opts.overrides)
+                .with_hotwords(opts.hotwords.as_ref())
+                .with_diarization(opts.diarization),
             reservation,
-            &opts.overrides,
-            opts.hotwords.as_ref(),
         )
     }
 }

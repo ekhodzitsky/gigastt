@@ -206,3 +206,113 @@ pub fn merge_channel_results(per_channel: Vec<TranscribeResult>) -> TranscribeRe
         duration_s,
     }
 }
+
+/// Input audio for a single file-transcription request.
+///
+/// Prefer constructing a [`TranscribeRequest`] and calling
+/// [`crate::inference::Engine::transcribe_request`] instead of the combinatorial
+/// `transcribe_*_with_overrides_*` entry points (kept as thin wrappers).
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub enum TranscribeSource<'a> {
+    /// Filesystem path decoded via the file pipeline (WAV/MP3/M4A/OGG/FLAC/…).
+    #[cfg(feature = "file-decode")]
+    Path(&'a str),
+    /// Reference-counted byte buffer (zero-copy REST / jobs upload path).
+    #[cfg(feature = "file-decode")]
+    Bytes(bytes::Bytes),
+    /// Pre-decoded mono 16 kHz f32 samples.
+    Samples(&'a [f32]),
+    /// Pre-decoded per-channel 16 kHz mono samples (`channels=split` /
+    /// `--stereo-speakers`). Channel index becomes the speaker label;
+    /// [`TranscribeRequest::diarization`] is ignored for this source.
+    Channels(&'a [Vec<f32>]),
+}
+
+/// Unified file-transcription request (builder-friendly).
+///
+/// Collapses the combinatorial `transcribe_file` / `transcribe_bytes*` /
+/// `transcribe_channels` entry points into one path. Construct with
+/// [`TranscribeRequest::new`] and chain [`with_overrides`](Self::with_overrides)
+/// / [`with_hotwords`](Self::with_hotwords) / [`with_diarization`](Self::with_diarization).
+///
+/// Defaults match the historical plain methods: engine boot overrides, no
+/// per-request hotwords, diarization off.
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct TranscribeRequest<'a> {
+    /// Audio input (path, bytes, samples, or split channels).
+    pub source: TranscribeSource<'a>,
+    /// Per-request recognition knobs (`None` fields = engine boot default).
+    pub overrides: TranscribeOverrides,
+    /// Optional per-request hotword biaser override. See [`HotwordOverride`].
+    pub hotwords: Option<&'a HotwordOverride>,
+    /// When `true` and the source is mono samples/bytes/path, run offline
+    /// speaker diarization after decode (no-op without a loaded speaker
+    /// encoder / `diarization` feature). Ignored for
+    /// [`TranscribeSource::Channels`].
+    pub diarization: bool,
+}
+
+impl<'a> TranscribeRequest<'a> {
+    /// Build a request with default overrides, no hotwords, and diarization off.
+    pub fn new(source: TranscribeSource<'a>) -> Self {
+        Self {
+            source,
+            overrides: TranscribeOverrides::default(),
+            hotwords: None,
+            diarization: false,
+        }
+    }
+
+    /// Set per-request recognition-knob overrides.
+    pub fn with_overrides(mut self, overrides: TranscribeOverrides) -> Self {
+        self.overrides = overrides;
+        self
+    }
+
+    /// Set optional per-request hotword override.
+    pub fn with_hotwords(mut self, hotwords: Option<&'a HotwordOverride>) -> Self {
+        self.hotwords = hotwords;
+        self
+    }
+
+    /// Enable or disable offline speaker diarization for mono sources.
+    pub fn with_diarization(mut self, diarization: bool) -> Self {
+        self.diarization = diarization;
+        self
+    }
+}
+
+#[cfg(test)]
+mod request_tests {
+    use super::*;
+
+    #[test]
+    fn test_transcribe_request_builder_defaults() {
+        let samples: &[f32] = &[];
+        let req = TranscribeRequest::new(TranscribeSource::Samples(samples));
+        assert!(matches!(req.source, TranscribeSource::Samples(_)));
+        assert!(req.overrides.punctuation.is_none());
+        assert!(req.hotwords.is_none());
+        assert!(!req.diarization);
+    }
+
+    #[test]
+    fn test_transcribe_request_builder_chain() {
+        let samples: &[f32] = &[];
+        let hw = HotwordOverride::new(vec!["тест".into()], Some(3.0));
+        let req = TranscribeRequest::new(TranscribeSource::Samples(samples))
+            .with_overrides(TranscribeOverrides {
+                punctuation: Some(false),
+                itn: Some(true),
+                vad: Some(false),
+            })
+            .with_hotwords(Some(&hw))
+            .with_diarization(true);
+        assert_eq!(req.overrides.punctuation, Some(false));
+        assert_eq!(req.overrides.itn, Some(true));
+        assert!(req.hotwords.is_some());
+        assert!(req.diarization);
+    }
+}
