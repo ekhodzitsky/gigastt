@@ -2544,7 +2544,7 @@ mod tests {
         ));
         assert!(is_recoverable_packet_eof(&eof));
 
-        let other_io = SymError::IoError(IoError::new(ErrorKind::Other, "disk full"));
+        let other_io = SymError::IoError(IoError::other("disk full"));
         assert!(!is_recoverable_packet_eof(&other_io));
 
         let decode = SymError::DecodeError("bad page");
