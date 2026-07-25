@@ -1962,7 +1962,8 @@ _Release candidate for v0.9.0 — bundles five P0 fixes plus two supporting item
 - Multi-format audio support: WAV, MP3, M4A/AAC, OGG/Vorbis, FLAC (via symphonia).
 - 39 unit tests (tokenizer, features, decode, inference, protocol).
 
-[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.3...HEAD
+[Unreleased]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.4...HEAD
+[2.14.4]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.3...v2.14.4
 [2.14.3]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.2...v2.14.3
 [2.14.2]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.1...v2.14.2
 [2.14.1]: https://github.com/ekhodzitsky/gigastt/compare/v2.14.0...v2.14.1
