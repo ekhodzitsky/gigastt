@@ -119,7 +119,7 @@ pub struct ReadinessResponse {
 /// shutdown readiness remains the separate `/ready` probe (see [`readiness`]).
 ///
 /// During first-run model download / quantization the listener is served by a
-/// minimal bootstrap responder (see [`super::run_with_config_loading`]) that
+/// minimal bootstrap responder (see [`crate::server::run_with_config_loading`]) that
 /// reports `model: "loading"`; this handler only runs once the engine is ready.
 pub async fn health(State(state): State<Arc<AppState>>) -> Json<HealthResponse> {
     let engine = state.engine.load_full();

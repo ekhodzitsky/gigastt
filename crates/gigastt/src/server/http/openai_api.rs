@@ -32,7 +32,7 @@ use super::transcribe::{reserve_batch_slot, run_file_transcription};
 /// `transcript.text.delta` events, a final `transcript.text.done`, then
 /// `data: [DONE]`. Progressive deltas come from the real chunked encoder path.
 ///
-/// Reuses the same inference pipeline as [`transcribe`]. `model` is accepted
+/// Reuses the same inference pipeline as [`super::transcribe::transcribe`]. `model` is accepted
 /// and ignored (single loaded head). For diarization, telephony codecs, or
 /// native export knobs use `/v1/transcribe`.
 pub async fn openai_transcriptions(
