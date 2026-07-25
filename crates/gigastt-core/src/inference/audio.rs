@@ -575,6 +575,43 @@ fn opus_packet_frame_size(packet: &[u8]) -> Option<usize> {
     (size <= OPUS_MAX_PACKET_SAMPLES).then_some(size)
 }
 
+/// True when a demuxer `next_packet` failure is a recoverable end-of-stream.
+///
+/// Symphonia surfaces a missing Ogg EOS page as `IoError(UnexpectedEof)` rather
+/// than `Ok(None)`. Real-world producers (notably Android Telegram voice notes)
+/// often omit EOS; if any PCM has already been decoded, treat that EOF as a
+/// clean stream end so the upload still transcribes (see issue #217).
+#[cfg(feature = "file-decode")]
+fn is_recoverable_packet_eof(err: &symphonia::core::errors::Error) -> bool {
+    matches!(
+        err,
+        symphonia::core::errors::Error::IoError(ioe)
+            if ioe.kind() == std::io::ErrorKind::UnexpectedEof
+    )
+}
+
+/// Pull the next demux packet, treating UnexpectedEof after successful PCM as EOS.
+///
+/// Returns `Ok(Some(packet))` to decode, `Ok(None)` to end the loop, or `Err`
+/// for non-recoverable demux failures (and EOF with no audio yet).
+#[cfg(feature = "file-decode")]
+fn next_demux_packet(
+    format: &mut dyn FormatReader,
+    have_pcm: bool,
+) -> Result<Option<symphonia::core::packet::Packet>> {
+    match format.next_packet() {
+        Ok(Some(p)) => Ok(Some(p)),
+        Ok(None) => Ok(None),
+        Err(e) if is_recoverable_packet_eof(&e) && have_pcm => {
+            tracing::debug!(
+                "Demux UnexpectedEof after PCM already decoded; treating as end of stream"
+            );
+            Ok(None)
+        }
+        Err(e) => Err(anyhow::anyhow!("Error reading packet: {e}")),
+    }
+}
+
 /// Decode the packets of an Opus track (OGG container) to per-channel f32
 /// samples at 48 kHz.
 ///
@@ -602,10 +639,9 @@ fn decode_opus_channels(
     let mut per_channel: Vec<Vec<f32>> = (0..channels).map(|_| Vec::new()).collect();
     let mut pcm: Vec<f32> = Vec::new();
     loop {
-        let packet = match format.next_packet() {
-            Ok(Some(p)) => p,
-            Ok(None) => break,
-            Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+        let have_pcm = per_channel.first().is_some_and(|c| !c.is_empty());
+        let Some(packet) = next_demux_packet(format, have_pcm)? else {
+            break;
         };
         if packet.track_id != track_id {
             continue;
@@ -731,10 +767,9 @@ fn decode_audio_inner_channels<'s>(
             .collect();
 
         loop {
-            let packet = match format.next_packet() {
-                Ok(Some(p)) => p,
-                Ok(None) => break,
-                Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+            let have_pcm = per_channel.first().is_some_and(|c| !c.is_empty());
+            let Some(packet) = next_demux_packet(&mut *format, have_pcm)? else {
+                break;
             };
 
             if packet.track_id != track_id {
@@ -921,10 +956,9 @@ fn decode_audio_inner<'s>(
         };
 
         loop {
-            let packet = match format.next_packet() {
-                Ok(Some(p)) => p,
-                Ok(None) => break,
-                Err(e) => return Err(anyhow::anyhow!("Error reading packet: {e}")),
+            let have_pcm = !all_samples.is_empty();
+            let Some(packet) = next_demux_packet(&mut *format, have_pcm)? else {
+                break;
             };
 
             if packet.track_id != track_id {
@@ -2498,6 +2532,128 @@ mod tests {
     }
 
     // --- Opus (OGG container, pure-Rust opus-rs fallback decoder) ---
+
+    #[test]
+    fn test_is_recoverable_packet_eof_matches_unexpected_eof_only() {
+        use std::io::{Error as IoError, ErrorKind};
+        use symphonia::core::errors::Error as SymError;
+
+        let eof = SymError::IoError(IoError::new(
+            ErrorKind::UnexpectedEof,
+            "unexpected end of file",
+        ));
+        assert!(is_recoverable_packet_eof(&eof));
+
+        let other_io = SymError::IoError(IoError::new(ErrorKind::Other, "disk full"));
+        assert!(!is_recoverable_packet_eof(&other_io));
+
+        let decode = SymError::DecodeError("bad page");
+        assert!(!is_recoverable_packet_eof(&decode));
+
+        let unsupported = SymError::Unsupported("codec");
+        assert!(!is_recoverable_packet_eof(&unsupported));
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_opus_ogg_missing_eos_succeeds() {
+        // Telegram Android (and some MediaRecorder paths) write Ogg/Opus without
+        // the EOS flag on the final page. Symphonia then ends the demux with
+        // UnexpectedEof instead of Ok(None). Soft-EOF must still return audio
+        // (issue #217). Fixture is opus_tone.ogg with the EOS bit cleared and
+        // the page CRC recomputed.
+        let no_eos = include_bytes!("../../tests/fixtures/opus/opus_tone_no_eos.ogg");
+        let with_eos = include_bytes!("../../tests/fixtures/opus/opus_tone.ogg");
+        let decoded_no_eos = decode_audio_bytes(no_eos).expect("OGG/Opus without EOS must decode");
+        let decoded_with_eos =
+            decode_audio_bytes(with_eos).expect("OGG/Opus with EOS must still decode");
+        assert!(
+            !decoded_no_eos.is_empty(),
+            "missing-EOS stream must yield non-empty PCM"
+        );
+        // Same content; length must match the EOS sibling within a sample or two.
+        let delta = (decoded_no_eos.len() as i64 - decoded_with_eos.len() as i64).unsigned_abs();
+        assert!(
+            delta <= 2,
+            "no-EOS length {} diverged from with-EOS length {}",
+            decoded_no_eos.len(),
+            decoded_with_eos.len()
+        );
+        // Spot-check a stretch of samples (pre-skip / tone body) for identity.
+        let start = decoded_no_eos.len().min(decoded_with_eos.len()) / 4;
+        let end = start + 1000;
+        for (a, b) in decoded_no_eos[start..end]
+            .iter()
+            .zip(decoded_with_eos[start..end].iter())
+        {
+            assert!((a - b).abs() < f32::EPSILON);
+        }
+    }
+
+    #[test]
+    fn test_decode_audio_file_opus_missing_eos_matches_bytes() {
+        let no_eos = include_bytes!("../../tests/fixtures/opus/opus_tone_no_eos.ogg");
+        let mut tmp = tempfile::NamedTempFile::with_suffix(".ogg").expect("temp file");
+        std::io::Write::write_all(&mut tmp, no_eos).expect("write temp file");
+        let via_file = decode_audio_file(tmp.path().to_str().expect("utf-8 path"))
+            .expect("missing-EOS OGG/Opus file must decode");
+        let via_bytes = decode_audio_bytes(no_eos).expect("missing-EOS bytes must decode");
+        assert_eq!(via_file.len(), via_bytes.len());
+        for (a, b) in via_file.iter().zip(via_bytes.iter()) {
+            assert!((a - b).abs() < f32::EPSILON);
+        }
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_truncated_opus_headers_only_still_errors() {
+        // Truncate after OpusHead+OpusTags pages so demux may open the track but
+        // no audio packets arrive. Soft-EOF must NOT turn this into silence.
+        let full = include_bytes!("../../tests/fixtures/opus/opus_tone.ogg");
+        // First two Ogg pages only (~header); keep under 200 bytes of safety.
+        // Find end of page 1 (seq 1) more carefully: second page ends before first audio.
+        let mut pages = Vec::new();
+        let mut i = 0usize;
+        let data = full;
+        while i + 27 <= data.len() {
+            if &data[i..i + 4] != b"OggS" {
+                break;
+            }
+            let nseg = data[i + 26] as usize;
+            let body: usize = data[i + 27..i + 27 + nseg]
+                .iter()
+                .map(|&s| s as usize)
+                .sum();
+            let page_end = i + 27 + nseg + body;
+            pages.push(page_end);
+            i = page_end;
+            if pages.len() == 2 {
+                break;
+            }
+        }
+        assert!(pages.len() >= 2, "fixture must have header pages");
+        let headers_only = &data[..pages[1]];
+        let err = decode_audio_bytes(headers_only).expect_err("headers-only Opus must fail");
+        let msg = format!("{err:#}");
+        // Must not succeed with empty/near-empty PCM via soft-EOF.
+        assert!(
+            msg.contains("packet")
+                || msg.contains("end of file")
+                || msg.contains("audio")
+                || msg.contains("Decode")
+                || msg.contains("Unsupported")
+                || msg.contains("malformed")
+                || msg.contains("Opus")
+                || msg.contains("track")
+                || msg.contains("empty")
+                || msg.contains("No "),
+            "unexpected error for headers-only: {msg}"
+        );
+    }
+
+    #[test]
+    fn test_decode_audio_bytes_random_bytes_still_errors() {
+        let junk = [0u8; 64];
+        assert!(decode_audio_bytes(&junk).is_err());
+    }
 
     #[test]
     fn test_opus_packet_frame_size_toc_parsing() {

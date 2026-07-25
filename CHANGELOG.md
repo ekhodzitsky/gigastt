@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **OGG/Opus without an EOS page no longer fails demux** (Telegram Android
+  voice notes, some MediaRecorder captures). Symphonia surfaces a missing
+  end-of-stream flag as `IoError(UnexpectedEof)` instead of `Ok(None)`; after
+  any PCM has already been decoded we treat that as a clean stream end.
+  Headers-only / empty uploads still error. Fixes OpenAI
+  `/v1/audio/transcriptions` and `gigastt transcribe` for those files (#217).
+
 ### Changed
+
 
 - **Documentation hygiene pass.** Supported versions in `SECURITY.md` track
   2.14.x / 2.13.x; README / architecture crate pins use `gigastt-core = "2.14"`;
