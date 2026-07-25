@@ -22,11 +22,11 @@ pub struct TranscribeResult {
 }
 
 /// Maximum number of hotword phrases accepted on a single request. Larger
-/// payloads are rejected by [`Engine::validate_hotwords`] (mapped to HTTP 400).
+/// payloads are rejected by [`crate::inference::Engine::validate_hotwords`] (mapped to HTTP 400).
 pub const MAX_HOTWORDS_PER_REQUEST: usize = 64;
 
 /// Maximum length of a single hotword phrase in Unicode scalar values (chars).
-/// Longer phrases are rejected by [`Engine::validate_hotwords`] (HTTP 400).
+/// Longer phrases are rejected by [`crate::inference::Engine::validate_hotwords`] (HTTP 400).
 pub const MAX_HOTWORD_PHRASE_CHARS: usize = 64;
 
 /// Default additive logit boost when a per-request hotword override omits
@@ -70,12 +70,12 @@ impl HotwordOverride {
 /// A knob can only be turned *on* per-request if the underlying resource is
 /// loaded: `vad = Some(true)` requires a VAD to be attached, and
 /// `punctuation = Some(true)` requires a punctuator. Call
-/// [`Engine::validate_overrides`] before transcribing to reject impossible
+/// [`crate::inference::Engine::validate_overrides`] before transcribing to reject impossible
 /// requests (mapped to `409` on the REST surface); turning a knob *off*
 /// (`Some(false)`) is always valid.
 ///
 /// Per-request hotwords live on [`HotwordOverride`] (validated via
-/// [`Engine::validate_hotwords`]) so this struct stays `Copy`.
+/// [`crate::inference::Engine::validate_hotwords`]) so this struct stays `Copy`.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct TranscribeOverrides {
     /// Override the punctuation / casing restoration pass. `Some(true)` forces

@@ -2258,16 +2258,13 @@ impl TokenFormatter {
 mod tests {
     use super::*;
     #[cfg(feature = "diarization")]
-    use crate::inference::SharedExtractor;
+    use crate::inference::state::SPEAKER_EMBEDDING_DIM;
     use crate::inference::state::aggregate_confidence;
-    #[cfg(feature = "diarization")]
-    use crate::inference::state::{SPEAKER_EMBEDDING_DIM, SPEAKER_POOL_SIZE};
     use crate::inference::{
         DEFAULT_HOTWORDS_BOOST, DecoderState, EndpointMode, EndpointReason, FeatureExtractor,
-        HotwordError, HotwordOverride, MAX_HOTWORD_PHRASE_CHARS, MAX_HOTWORDS_PER_REQUEST,
-        OverrideError, OwnedReservation, PRED_HIDDEN, Pool, PoolError, PoolGuard, SessionPool,
-        SessionTriplet, StreamingState, TranscribeOverrides, TranscribeResult, TranscriptAssembler,
-        TranscriptSegment, WordInfo, merge_channel_results, now_timestamp,
+        MAX_HOTWORD_PHRASE_CHARS, MAX_HOTWORDS_PER_REQUEST, OwnedReservation, PRED_HIDDEN, Pool,
+        PoolError, TranscribeOverrides, TranscribeResult, TranscriptAssembler, TranscriptSegment,
+        WordInfo, merge_channel_results, now_timestamp,
     };
     #[cfg(feature = "diarization")]
     #[allow(deprecated)]

@@ -74,7 +74,7 @@ impl DecoderState {
 
 /// A recognized word with timing and confidence metadata.
 ///
-/// Produced by the RNN-T decoder during [`Engine::process_chunk`] or [`Engine::transcribe_file`].
+/// Produced by the RNN-T decoder during [`crate::inference::Engine::process_chunk`] or [`crate::inference::Engine::transcribe_file`].
 /// Timestamps are in seconds relative to the start of the audio stream.
 #[derive(Debug, Clone, Serialize)]
 #[non_exhaustive]
@@ -138,10 +138,10 @@ pub(crate) fn aggregate_confidence(words: &[WordInfo]) -> Option<f32> {
 
 /// Per-connection streaming state that persists across audio chunks.
 ///
-/// Created via [`Engine::create_state`]. Holds the decoder LSTM state, an audio
+/// Created via [`crate::inference::Engine::create_state`]. Holds the decoder LSTM state, an audio
 /// sample buffer for incomplete frames, and accumulated transcript text/words.
-/// Pass this to [`Engine::process_chunk`] for each incoming audio chunk and
-/// [`Engine::flush_state`] when the stream ends.
+/// Pass this to [`crate::inference::Engine::process_chunk`] for each incoming audio chunk and
+/// [`crate::inference::Engine::flush_state`] when the stream ends.
 #[non_exhaustive]
 pub struct StreamingState {
     /// Decoder LSTM hidden state (persisted across chunks).
