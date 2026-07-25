@@ -10,7 +10,7 @@ Nine axes, all stdlib-only (no third-party deps, no network):
      == the codes emitted by crates/gigastt/src/server/ws.rs (plus allowlisted
      doc-only entries).
   3. Audio formats: the canonical FORMATS list below == the `// docs-drift: codecs`
-     marker block in crates/gigastt-core/src/inference/audio.rs, and every format
+     marker block in crates/gigastt-core/src/inference/audio/decode.rs, and every format
      is named in docs/api.md and docs/cli.md. When adding a codec, update all
      three places (marker, FORMATS, docs) in the same commit.
   4. mdBook TOCs: every chapter file is listed in its book's SUMMARY.md, every
@@ -53,7 +53,8 @@ ROOT = Path(__file__).resolve().parent.parent
 MAIN_RS = ROOT / "crates/gigastt/src/main.rs"
 WS_RS = ROOT / "crates/gigastt/src/server/ws.rs"
 SERVER_MOD_RS = ROOT / "crates/gigastt/src/server/mod.rs"
-AUDIO_RS = ROOT / "crates/gigastt-core/src/inference/audio.rs"
+# Codec marker lives in the decode module after the audio/ feature split.
+AUDIO_RS = ROOT / "crates/gigastt-core/src/inference/audio/decode.rs"
 CARGO_TOML = ROOT / "Cargo.toml"
 SECURITY_MD = ROOT / "SECURITY.md"
 OPENAPI_YAML = ROOT / "docs/openapi.yaml"
@@ -69,7 +70,7 @@ PIN_FILES = [
 ]
 
 # Canonical audio decode surface. The token list must match the
-# `// docs-drift: codecs` marker block in inference/audio.rs exactly; each
+# `// docs-drift: codecs` marker block in inference/audio/decode.rs exactly; each
 # needle regex must appear in the named doc. Update this table, the marker,
 # and the docs together whenever a codec or container is added/removed.
 FORMATS = {
