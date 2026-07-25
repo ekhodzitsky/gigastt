@@ -1,6 +1,10 @@
 use anyhow::Context;
 use clap::{Args, Parser, Subcommand};
 use gigastt::batch;
+use gigastt::boot::{
+    EngineRecipe, ItnMode, PunctuationMode, ensure_int8_encoder, parse_itn_mode,
+    parse_punctuation_mode,
+};
 use gigastt::server;
 use gigastt::server::{OriginPolicy, RuntimeLimits, ServerConfig};
 use gigastt_core::export::{ExportFormat, RenderOpts};
@@ -790,30 +794,6 @@ fn build_server_config(
     }
 }
 
-fn log_rss() {
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(status) = std::fs::read_to_string("/proc/self/status")
-            && let Some(line) = status.lines().find(|l| l.starts_with("VmRSS:"))
-        {
-            tracing::info!("{}", line.trim());
-        }
-    }
-    // On macOS/other platforms, use `ps` as a simple cross-platform fallback
-    #[cfg(not(target_os = "linux"))]
-    {
-        if let Ok(output) = std::process::Command::new("ps")
-            .args(["-o", "rss=", "-p", &std::process::id().to_string()])
-            .output()
-            && let Ok(rss) = String::from_utf8_lossy(&output.stdout)
-                .trim()
-                .parse::<u64>()
-        {
-            tracing::info!(rss_mb = rss / 1024, "memory_after_load");
-        }
-    }
-}
-
 /// Guard non-loopback binds. Privacy-first default: the server will only
 /// listen on 127.0.0.1 / ::1 / localhost unless the operator opts in via
 /// `--bind-all` or `GIGASTT_ALLOW_BIND_ANY=1`. Mirrors the intent of Docker's
@@ -870,32 +850,6 @@ fn is_loopback_host(host: &str) -> bool {
     false
 }
 
-/// Resolve the encoder intra-op thread count when the operator left the flag /
-/// env unset. `requested == Some(v)` (an explicit flag/env value, including `1`)
-/// is honoured verbatim and only passes through the engine's oversubscription
-/// clamp downstream. `None` (unset) spreads the logical CPUs across the
-/// concurrently-running pool triplets: `max(1, logical_cpus / total_pool_slots)`,
-/// so a default install uses every core instead of one. `total_pool_slots` is the
-/// effective number of triplets that can run at once (serve: `pool_size +
-/// batch_pool_size`; offline transcribe: `1`).
-///
-/// Pure and total so the budgeting math is unit-tested without touching ORT or
-/// the real CPU count.
-fn resolve_encoder_intra_threads(
-    requested: Option<usize>,
-    total_pool_slots: usize,
-    logical_cpus: usize,
-) -> usize {
-    match requested {
-        Some(explicit) => explicit,
-        None => {
-            let slots = total_pool_slots.max(1);
-            let cpus = logical_cpus.max(1);
-            (cpus / slots).max(1)
-        }
-    }
-}
-
 /// clap value parser for `--model-variant`. Accepts `rnnt` / `e2e_rnnt` /
 /// `ml_ctc` / `ml_ctc_large` (case-insensitive); see [`ModelVariant::from_str`].
 fn parse_model_variant(s: &str) -> Result<ModelVariant, String> {
@@ -905,341 +859,6 @@ fn parse_model_variant(s: &str) -> Result<ModelVariant, String> {
 /// Parse the `download --progress` value (`human` | `json`).
 fn parse_progress_mode(s: &str) -> Result<ProgressMode, String> {
     s.parse()
-}
-
-/// Whether to run the optional punctuation / casing restoration pass.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum PunctuationMode {
-    /// Always attempt to load + apply the punct model.
-    On,
-    /// Never apply punctuation (pass-through bare output).
-    Off,
-    /// Decide from the active model variant: on for `rnnt` (bare output),
-    /// off for `e2e_rnnt` (punctuation already baked into the head).
-    Auto,
-}
-
-impl std::str::FromStr for PunctuationMode {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.trim().to_ascii_lowercase().as_str() {
-            "on" | "true" | "1" | "yes" => Ok(PunctuationMode::On),
-            "off" | "false" | "0" | "no" => Ok(PunctuationMode::Off),
-            "auto" => Ok(PunctuationMode::Auto),
-            other => Err(format!(
-                "unknown punctuation mode '{other}' (expected 'on', 'off', or 'auto')"
-            )),
-        }
-    }
-}
-
-/// clap value parser for `--punctuation`.
-fn parse_punctuation_mode(s: &str) -> Result<PunctuationMode, String> {
-    s.parse()
-}
-
-/// Whether to run the optional inverse text normalization pass
-/// (Russian number-words → digits). Mirrors [`PunctuationMode`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ItnMode {
-    /// Always apply ITN.
-    On,
-    /// Never apply ITN (pass-through number-words).
-    Off,
-    /// Decide from the active model variant: on for `rnnt` (spells numbers as
-    /// words), off for `e2e_rnnt` (ITN already baked into the head).
-    Auto,
-}
-
-impl std::str::FromStr for ItnMode {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.trim().to_ascii_lowercase().as_str() {
-            "on" | "true" | "1" | "yes" => Ok(ItnMode::On),
-            "off" | "false" | "0" | "no" => Ok(ItnMode::Off),
-            "auto" => Ok(ItnMode::Auto),
-            other => Err(format!(
-                "unknown ITN mode '{other}' (expected 'on', 'off', or 'auto')"
-            )),
-        }
-    }
-}
-
-/// clap value parser for `--itn`.
-fn parse_itn_mode(s: &str) -> Result<ItnMode, String> {
-    s.parse()
-}
-
-/// Resolve `--itn` against the active model variant: `auto` enables ITN only
-/// for the bare `rnnt` head (the `e2e_rnnt` head already digitizes numbers).
-fn resolve_itn(mode: ItnMode, variant: ModelVariant) -> bool {
-    match mode {
-        ItnMode::On => true,
-        ItnMode::Off => false,
-        ItnMode::Auto => variant == ModelVariant::Rnnt,
-    }
-}
-
-/// Resolve `--punctuation` against the active model variant and, when the pass
-/// should run, load the punctuation restorer from `punct_model_dir`.
-///
-/// Graceful fallback: when the punct model dir / files are absent or the model
-/// fails to load, a warning is logged once and `None` is returned so
-/// transcription proceeds with bare text — the punct pass is strictly optional
-/// and never blocks recognition.
-/// Resolve `--punctuation` against the active model variant: `auto` enables the
-/// pass only for the bare `rnnt` head (`e2e_rnnt` already punctuates).
-fn resolve_punctuation(mode: PunctuationMode, variant: ModelVariant) -> bool {
-    match mode {
-        PunctuationMode::On => true,
-        PunctuationMode::Off => false,
-        // e2e_rnnt already emits punctuation/casing, so only the bare rnnt head
-        // benefits from the restoration pass.
-        PunctuationMode::Auto => variant == ModelVariant::Rnnt,
-    }
-}
-
-fn maybe_load_punctuator(
-    mode: PunctuationMode,
-    punct_model_dir: &str,
-    variant: ModelVariant,
-) -> Option<gigastt_core::punctuation::Punctuator> {
-    if !resolve_punctuation(mode, variant) {
-        return None;
-    }
-    let factory = gigastt_core::cpu_factory();
-    match gigastt_core::punctuation::Punctuator::load_with_factory(
-        std::path::Path::new(punct_model_dir),
-        &*factory,
-    ) {
-        Ok(p) => {
-            tracing::info!("Punctuation restoration enabled (model dir: {punct_model_dir})");
-            Some(p)
-        }
-        Err(e) => {
-            tracing::warn!(
-                "Punctuation model unavailable at {punct_model_dir} ({e:#}); \
-                 continuing without punctuation restoration"
-            );
-            None
-        }
-    }
-}
-
-/// When the punctuation pass resolves to ENABLED and the punct model files are
-/// absent in `punct_model_dir`, auto-download them from the
-/// `ekhodzitsky/rupunct-small-onnx` HuggingFace repo so the pass works out of
-/// the box.
-///
-/// Graceful: a download failure is logged as a warning and swallowed — the
-/// subsequent [`maybe_load_punctuator`] call then falls back to bare text. The
-/// punct pass never blocks transcription.
-async fn maybe_download_punct_model(
-    mode: PunctuationMode,
-    punct_model_dir: &str,
-    variant: ModelVariant,
-) {
-    if !resolve_punctuation(mode, variant) {
-        return;
-    }
-    if let Err(e) = model::ensure_punct_model(punct_model_dir).await {
-        tracing::warn!(
-            "Punctuation model download failed for {punct_model_dir} ({e:#}); \
-             continuing without punctuation restoration"
-        );
-    }
-}
-
-/// Build a [`gigastt_core::vad::VadConfig`] from CLI overrides, falling back to
-/// the library defaults for any option left unset.
-fn build_vad_config(
-    threshold: Option<f32>,
-    min_silence_ms: Option<u32>,
-) -> gigastt_core::vad::VadConfig {
-    let mut cfg = gigastt_core::vad::VadConfig::default();
-    if let Some(t) = threshold {
-        cfg.threshold = t.clamp(0.0, 1.0);
-    }
-    if let Some(ms) = min_silence_ms {
-        cfg.min_silence_ms = ms;
-    }
-    cfg
-}
-
-/// Load the Silero VAD when `--vad` is set. Graceful: a missing or broken model
-/// logs a warning and returns `None`, so transcription proceeds without VAD
-/// (silence is not skipped; endpointing falls back to the decoder heuristic).
-fn maybe_load_vad(enabled: bool, vad_model_dir: &str) -> Option<gigastt_core::vad::SileroVad> {
-    if !enabled {
-        return None;
-    }
-    let path = std::path::Path::new(vad_model_dir).join(gigastt_core::vad::VAD_MODEL_FILE);
-    let factory = gigastt_core::cpu_factory();
-    match gigastt_core::vad::SileroVad::load_with_factory(&path, &*factory) {
-        Ok(v) => {
-            tracing::info!("VAD enabled (model dir: {vad_model_dir})");
-            Some(v)
-        }
-        Err(e) => {
-            tracing::warn!(
-                "VAD model unavailable at {vad_model_dir} ({e:#}); continuing without VAD"
-            );
-            None
-        }
-    }
-}
-
-/// When `--vad` is set and the Silero model is absent, auto-download it.
-/// Graceful: a download failure is logged and swallowed — [`maybe_load_vad`]
-/// then falls back to no VAD. VAD never blocks transcription.
-async fn maybe_download_vad_model(enabled: bool, vad_model_dir: &str) {
-    if !enabled {
-        return;
-    }
-    if let Err(e) = model::ensure_vad_model(vad_model_dir).await {
-        tracing::warn!(
-            "VAD model download failed for {vad_model_dir} ({e:#}); continuing without VAD"
-        );
-    }
-}
-
-/// Default additive logit boost for hotword continuation tokens when
-/// `--hotwords-boost` is unset.
-const DEFAULT_HOTWORDS_BOOST: f32 = 5.0;
-
-/// Parse a hotwords file: one phrase per line, optional `\t<weight>` suffix.
-/// Blank lines and `#`-prefixed comment lines are skipped. A malformed weight
-/// falls back to `1.0` (the phrase is still kept). Returns the `(phrase, weight)`
-/// pairs, or an error only when the file can't be read.
-fn parse_hotwords_file(path: &str) -> anyhow::Result<Vec<(String, f32)>> {
-    let content = std::fs::read_to_string(path)
-        .with_context(|| format!("failed to read hotwords file: {path}"))?;
-    let mut pairs = Vec::new();
-    for line in content.lines() {
-        let line = line.trim();
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let (phrase, weight) = match line.split_once('\t') {
-            Some((p, w)) => (p.trim(), w.trim().parse::<f32>().unwrap_or(1.0)),
-            None => (line, 1.0),
-        };
-        if !phrase.is_empty() {
-            pairs.push((phrase.to_string(), weight));
-        }
-    }
-    Ok(pairs)
-}
-
-/// Resolve the hotword pack from CLI options: phrases from `--hotwords-file`
-/// (if any) plus the built-in lexicon when `--hotwords-default` is set. Returns
-/// `None` when neither source yields any phrase (biasing stays off). A file read
-/// error is logged and treated as "no file phrases" so biasing never blocks
-/// transcription.
-fn resolve_hotwords(
-    hotwords_file: Option<&str>,
-    hotwords_default: bool,
-) -> Option<Vec<(String, f32)>> {
-    let mut pairs = Vec::new();
-    if let Some(path) = hotwords_file {
-        match parse_hotwords_file(path) {
-            Ok(p) => pairs.extend(p),
-            Err(e) => tracing::warn!("{e:#}; continuing without file hotwords"),
-        }
-    }
-    if hotwords_default {
-        pairs.extend(gigastt_core::lexicon::default_hotword_pairs());
-    }
-    if pairs.is_empty() { None } else { Some(pairs) }
-}
-
-/// Ensure the INT8 encoder exists for `variant`, producing it via the native
-/// Rust quantization pipeline if missing. Honoured by `serve` and `download`.
-/// First-time quantization takes ~2 minutes on the FP32 encoder.
-fn ensure_int8_encoder(variant: ModelVariant, model_dir: &str, skip: bool) -> anyhow::Result<()> {
-    let dir = std::path::Path::new(model_dir);
-    let int8_path = dir.join(variant.encoder_int8_file());
-    if int8_path.exists() {
-        return Ok(());
-    }
-    if skip {
-        tracing::info!(
-            "Skipping INT8 quantization (--skip-quantize). Engine will load the FP32 encoder."
-        );
-        return Ok(());
-    }
-    let input = dir.join(variant.encoder_file());
-    if !input.exists() {
-        anyhow::bail!(
-            "Cannot quantize: FP32 encoder not found at {}",
-            input.display()
-        );
-    }
-    tracing::info!("Quantizing encoder to INT8 (~2 min, one-time)…");
-    // Surface the ~2-minute pass as its own phase so a sidecar watching the
-    // NDJSON stream does not read it as a hang.
-    model::emit_progress_event(&model::ProgressEvent::Quantize {
-        file: variant.encoder_file().to_string(),
-    });
-    gigastt_core::quantize::quantize_model(&input, &int8_path)?;
-    tracing::info!("INT8 encoder saved to {}", int8_path.display());
-    Ok(())
-}
-
-/// Load the offline CLI engine (`transcribe`, `transcribe-batch`, `watch`):
-/// ensure the model, attach the punctuation / ITN / VAD / hotword chain, and
-/// size the session pool to `pool_size`. Kept as one helper so every offline
-/// command builds a byte-for-byte identical engine.
-#[allow(clippy::too_many_arguments)]
-async fn load_offline_engine(
-    model_dir: &str,
-    model_variant: Option<ModelVariant>,
-    punctuation: PunctuationMode,
-    punct_model_dir: &str,
-    itn: ItnMode,
-    hotwords_file: Option<&str>,
-    hotwords_default: bool,
-    hotwords_boost: Option<f32>,
-    vad: bool,
-    vad_threshold: Option<f32>,
-    vad_min_silence_ms: Option<u32>,
-    vad_model_dir: &str,
-    encoder_intra_threads: Option<usize>,
-    pool_size: usize,
-) -> anyhow::Result<inference::Engine> {
-    let resolved = model::ensure_model_variant(model_variant, model_dir).await?;
-    maybe_download_punct_model(punctuation, punct_model_dir, resolved).await;
-    maybe_download_vad_model(vad, vad_model_dir).await;
-    let punctuator = maybe_load_punctuator(punctuation, punct_model_dir, resolved);
-    let hotwords = resolve_hotwords(hotwords_file, hotwords_default);
-    let resolved_intra_threads = resolve_encoder_intra_threads(
-        encoder_intra_threads,
-        pool_size,
-        std::thread::available_parallelism()
-            .map(|n| n.get())
-            .unwrap_or(1),
-    );
-    let mut engine = inference::Engine::load_with_pools_threads_variant(
-        model_dir,
-        Some(resolved),
-        pool_size,
-        1,
-        0,
-        resolved_intra_threads,
-    )?
-    .with_punctuator(punctuator)
-    .with_itn(resolve_itn(itn, resolved))
-    .with_vad(
-        maybe_load_vad(vad, vad_model_dir),
-        build_vad_config(vad_threshold, vad_min_silence_ms),
-    );
-    if let Some(pairs) = hotwords {
-        engine = engine.with_hotwords(&pairs, hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST));
-    }
-    log_rss();
-    Ok(engine)
 }
 
 /// Build the synchronous transcribe closure injected into the batch / watch
@@ -1295,32 +914,6 @@ fn build_batch_options(
         concurrency: pool_size,
         retries,
     })
-}
-
-/// Log a concise summary of the active ANE (Core ML / Apple Neural Engine)
-/// encoder backend at startup. No-op outside `--features ane`.
-///
-/// ANE is rnnt-only and macOS-only: it engages only when the resolved head is
-/// `rnnt` (mirroring [`gigastt_core::production_factory`]'s variant gate); an
-/// `e2e_rnnt` model transparently stays on the ort encoder. When engaged it
-/// serves file-mode transcription by padding the mel window up to a fixed
-/// bucket; streaming / short windows below the fill floor fall back to the
-/// CPU/ort encoder (no ANE benefit, no crash).
-#[cfg(feature = "ane")]
-fn log_ane_backend(resolved: ModelVariant) {
-    if resolved == ModelVariant::Rnnt {
-        tracing::info!(
-            "ANE encoder backend active (Core ML / Apple Neural Engine, macOS ARM64): \
-             file-mode transcription pads up to fixed buckets; streaming / short windows \
-             below the fill floor fall back to the CPU/ort encoder"
-        );
-    } else {
-        tracing::info!(
-            "ANE encoder backend requested but the loaded head is {}; ANE is rnnt-only, \
-             so this model runs on the ort encoder",
-            resolved.as_str()
-        );
-    }
 }
 
 #[tokio::main]
@@ -1430,72 +1023,36 @@ async fn main() -> anyhow::Result<()> {
                 batch_pool_size,
             );
 
-            // The reusable engine build recipe, captured so BOTH first-run boot
-            // and `POST /v1/admin/reload` produce a byte-for-byte identical
-            // engine — including the punctuation / ITN / VAD / hotword chain a
-            // fresh `Engine::load_*` starts without. Synchronous (ONNX session
-            // load, quantization) so it can run on a blocking thread on either
-            // path; it re-detects the on-disk variant so a reload picks up a
-            // model swapped on disk between boot and reload.
+            // Shared recipe: first-run boot and `POST /v1/admin/reload` both
+            // build through `EngineRecipe::build_engine` so post-processors
+            // (punct / ITN / VAD / hotwords / endpoint mode) stay identical.
+            // Synchronous (ONNX session load, quantization) so it can run on a
+            // blocking thread; it re-detects the on-disk variant so a reload
+            // picks up a model swapped between boot and reload.
+            let recipe = EngineRecipe {
+                model_dir,
+                model_variant,
+                punctuation,
+                punct_model_dir,
+                itn,
+                hotwords_file,
+                hotwords_default,
+                hotwords_boost,
+                vad,
+                vad_threshold,
+                vad_min_silence_ms,
+                vad_model_dir,
+                encoder_intra_threads,
+                pool_size,
+                pool_min_size,
+                batch_pool_size,
+                quantize: true,
+                skip_quantize,
+                endpoint_mode: Some(endpoint_mode),
+            };
             let build_engine: server::EngineBuilder = {
-                let model_dir = model_dir.clone();
-                let punct_model_dir = punct_model_dir.clone();
-                let vad_model_dir = vad_model_dir.clone();
-                let hotwords_file = hotwords_file.clone();
-                let endpoint_mode = endpoint_mode.clone();
-                std::sync::Arc::new(move || -> anyhow::Result<inference::Engine> {
-                    // Honor the explicit --model-variant when set; otherwise
-                    // detect what is present on disk. Reload never downloads, so
-                    // if the requested variant's files are absent the engine load
-                    // will fail with a clear error — the operator asked for a
-                    // variant that isn't there.
-                    let resolved = model_variant
-                        .or_else(|| {
-                            model::ModelVariant::detect_in_dir(std::path::Path::new(&model_dir))
-                        })
-                        .unwrap_or_default();
-                    ensure_int8_encoder(resolved, &model_dir, skip_quantize)?;
-                    let punctuator = maybe_load_punctuator(punctuation, &punct_model_dir, resolved);
-                    let hotwords = resolve_hotwords(hotwords_file.as_deref(), hotwords_default);
-                    // Resolve the intra-op default from the effective number of
-                    // concurrently-running triplets when the operator didn't set
-                    // it. The engine still clamps `pool_size * threads` below the
-                    // logical CPU count.
-                    let resolved_intra_threads = resolve_encoder_intra_threads(
-                        encoder_intra_threads,
-                        pool_size + batch_pool_size,
-                        std::thread::available_parallelism()
-                            .map(|n| n.get())
-                            .unwrap_or(1),
-                    );
-                    let mode = inference::EndpointMode::parse_token(&endpoint_mode)
-                        .unwrap_or(inference::EndpointMode::Auto);
-                    let mut engine = inference::Engine::load_with_pools_threads_variant(
-                        &model_dir,
-                        Some(resolved),
-                        pool_size,
-                        pool_min_size,
-                        batch_pool_size,
-                        resolved_intra_threads,
-                    )?
-                    .with_punctuator(punctuator)
-                    .with_itn(resolve_itn(itn, resolved))
-                    .with_vad(
-                        maybe_load_vad(vad, &vad_model_dir),
-                        build_vad_config(vad_threshold, vad_min_silence_ms),
-                    )
-                    .with_endpoint_mode(mode);
-                    if let Some(pairs) = hotwords {
-                        engine = engine.with_hotwords(
-                            &pairs,
-                            hotwords_boost.unwrap_or(DEFAULT_HOTWORDS_BOOST),
-                        );
-                    }
-                    #[cfg(feature = "ane")]
-                    log_ane_backend(resolved);
-                    log_rss();
-                    Ok(engine)
-                })
+                let recipe = recipe.clone();
+                std::sync::Arc::new(move || recipe.build_engine())
             };
 
             // Build the engine in the background while a minimal bootstrap
@@ -1506,9 +1063,9 @@ async fn main() -> anyhow::Result<()> {
             // runs on a blocking thread so the bootstrap responder stays snappy.
             let boot_builder = build_engine.clone();
             let load = async move {
-                let resolved = model::ensure_model_variant(model_variant, &model_dir).await?;
-                maybe_download_punct_model(punctuation, &punct_model_dir, resolved).await;
-                maybe_download_vad_model(vad, &vad_model_dir).await;
+                let resolved =
+                    model::ensure_model_variant(recipe.model_variant, &recipe.model_dir).await?;
+                recipe.ensure_side_assets(resolved).await;
                 tokio::task::spawn_blocking(move || boot_builder())
                     .await
                     .context("engine load task panicked")?
@@ -1664,22 +1221,23 @@ async fn main() -> anyhow::Result<()> {
             // Single-triplet pool for offline file transcription; when the
             // thread count is unset it defaults to every logical CPU (one
             // running triplet), else the explicit value is used as-is.
-            let engine = load_offline_engine(
-                &model_dir,
+            let engine = EngineRecipe::offline(
+                model_dir,
                 model_variant,
                 punctuation,
-                &punct_model_dir,
+                punct_model_dir,
                 itn,
-                hotwords_file.as_deref(),
+                hotwords_file,
                 hotwords_default,
                 hotwords_boost,
                 vad,
                 vad_threshold,
                 vad_min_silence_ms,
-                &vad_model_dir,
+                vad_model_dir,
                 encoder_intra_threads,
                 1,
             )
+            .load_offline_engine()
             .await?;
             let mut guard = engine.pool.checkout().await?;
             let result = if let Some(codec_name) = codec.as_deref() {
@@ -1749,22 +1307,23 @@ async fn main() -> anyhow::Result<()> {
             engine: eng,
             output: out,
         } => {
-            let engine = load_offline_engine(
-                &eng.model_dir,
+            let engine = EngineRecipe::offline(
+                eng.model_dir,
                 eng.model_variant,
                 eng.punctuation,
-                &eng.punct_model_dir,
+                eng.punct_model_dir,
                 eng.itn,
-                eng.hotwords_file.as_deref(),
+                eng.hotwords_file,
                 eng.hotwords_default,
                 eng.hotwords_boost,
                 eng.vad,
                 eng.vad_threshold,
                 eng.vad_min_silence_ms,
-                &eng.vad_model_dir,
+                eng.vad_model_dir,
                 eng.encoder_intra_threads,
                 eng.pool_size,
             )
+            .load_offline_engine()
             .await?;
             let opts = build_batch_options(
                 &input_dir,
@@ -1801,22 +1360,23 @@ async fn main() -> anyhow::Result<()> {
             poll_interval_ms,
             settle_polls,
         } => {
-            let engine = load_offline_engine(
-                &eng.model_dir,
+            let engine = EngineRecipe::offline(
+                eng.model_dir,
                 eng.model_variant,
                 eng.punctuation,
-                &eng.punct_model_dir,
+                eng.punct_model_dir,
                 eng.itn,
-                eng.hotwords_file.as_deref(),
+                eng.hotwords_file,
                 eng.hotwords_default,
                 eng.hotwords_boost,
                 eng.vad,
                 eng.vad_threshold,
                 eng.vad_min_silence_ms,
-                &eng.vad_model_dir,
+                eng.vad_model_dir,
                 eng.encoder_intra_threads,
                 eng.pool_size,
             )
+            .load_offline_engine()
             .await?;
             let opts = batch::WatchOptions {
                 batch: build_batch_options(
@@ -2069,28 +1629,6 @@ mod tests {
     }
 
     #[test]
-    fn test_resolve_encoder_intra_threads_defaults_by_pool() {
-        // Unset → logical CPUs spread across the concurrently-running triplets.
-        assert_eq!(resolve_encoder_intra_threads(None, 2, 10), 5);
-        assert_eq!(resolve_encoder_intra_threads(None, 1, 10), 10);
-        // Never drop below one thread, even on a single-core box or a pool that
-        // is wider than the CPU count.
-        assert_eq!(resolve_encoder_intra_threads(None, 1, 1), 1);
-        assert_eq!(resolve_encoder_intra_threads(None, 8, 4), 1);
-        // A zero slot count (defensive) still yields at least one thread.
-        assert_eq!(resolve_encoder_intra_threads(None, 0, 10), 10);
-    }
-
-    #[test]
-    fn test_resolve_encoder_intra_threads_explicit_passthrough() {
-        // An explicit value (including 1) is honoured verbatim; the engine's own
-        // clamp still applies downstream.
-        assert_eq!(resolve_encoder_intra_threads(Some(1), 2, 10), 1);
-        assert_eq!(resolve_encoder_intra_threads(Some(4), 2, 10), 4);
-        assert_eq!(resolve_encoder_intra_threads(Some(16), 1, 4), 16);
-    }
-
-    #[test]
     fn test_cli_serve_model_variant_override() {
         let cli = Cli::parse_from(["gigastt", "serve", "--model-variant", "e2e_rnnt"]);
         match cli.command {
@@ -2308,24 +1846,6 @@ mod tests {
     }
 
     #[test]
-    fn test_punctuation_mode_from_str() {
-        use std::str::FromStr;
-        assert_eq!(
-            PunctuationMode::from_str("on").unwrap(),
-            PunctuationMode::On
-        );
-        assert_eq!(
-            PunctuationMode::from_str("OFF").unwrap(),
-            PunctuationMode::Off
-        );
-        assert_eq!(
-            PunctuationMode::from_str(" auto ").unwrap(),
-            PunctuationMode::Auto
-        );
-        assert!(PunctuationMode::from_str("maybe").is_err());
-    }
-
-    #[test]
     fn test_cli_serve_punctuation_defaults_auto() {
         let cli = Cli::parse_from(["gigastt", "serve"]);
         match cli.command {
@@ -2376,25 +1896,6 @@ mod tests {
     }
 
     #[test]
-    fn test_itn_mode_from_str() {
-        use std::str::FromStr;
-        assert_eq!(ItnMode::from_str("on").unwrap(), ItnMode::On);
-        assert_eq!(ItnMode::from_str("OFF").unwrap(), ItnMode::Off);
-        assert_eq!(ItnMode::from_str(" auto ").unwrap(), ItnMode::Auto);
-        assert!(ItnMode::from_str("maybe").is_err());
-    }
-
-    #[test]
-    fn test_resolve_itn_auto_per_variant() {
-        // auto → on for the bare rnnt head, off for the already-ITN e2e head.
-        assert!(resolve_itn(ItnMode::Auto, ModelVariant::Rnnt));
-        assert!(!resolve_itn(ItnMode::Auto, ModelVariant::E2eRnnt));
-        // on/off override the variant.
-        assert!(resolve_itn(ItnMode::On, ModelVariant::E2eRnnt));
-        assert!(!resolve_itn(ItnMode::Off, ModelVariant::Rnnt));
-    }
-
-    #[test]
     fn test_cli_serve_itn_defaults_auto() {
         let cli = Cli::parse_from(["gigastt", "serve"]);
         match cli.command {
@@ -2410,40 +1911,6 @@ mod tests {
             Commands::Transcribe { itn, .. } => assert_eq!(itn, ItnMode::On),
             _ => panic!("expected Transcribe"),
         }
-    }
-
-    #[test]
-    fn test_maybe_load_punctuator_off_skips_load() {
-        // `off` must never touch the filesystem / model dir.
-        assert!(
-            maybe_load_punctuator(PunctuationMode::Off, "/nonexistent", ModelVariant::Rnnt)
-                .is_none()
-        );
-    }
-
-    #[test]
-    fn test_maybe_load_punctuator_auto_e2e_skips_load() {
-        // `auto` + e2e_rnnt → punctuation disabled (head already punctuates),
-        // so no load is attempted even if the dir is missing.
-        assert!(
-            maybe_load_punctuator(PunctuationMode::Auto, "/nonexistent", ModelVariant::E2eRnnt)
-                .is_none()
-        );
-    }
-
-    #[test]
-    fn test_maybe_load_punctuator_missing_model_falls_back_to_none() {
-        // `on` + missing model dir → graceful fallback to None (warn, no panic).
-        let tmp = tempfile::tempdir().unwrap();
-        let missing = tmp.path().join("absent");
-        assert!(
-            maybe_load_punctuator(
-                PunctuationMode::On,
-                missing.to_str().unwrap(),
-                ModelVariant::Rnnt
-            )
-            .is_none()
-        );
     }
 
     #[test]
@@ -2513,55 +1980,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_hotwords_file_lines_and_weights() {
-        let tmp = tempfile::NamedTempFile::new().unwrap();
-        std::fs::write(
-            tmp.path(),
-            b"# comment\n\nsynergy\nyoutube\t2.5\n  spaced  \nbadweight\tnope\n",
-        )
-        .unwrap();
-        let pairs = parse_hotwords_file(tmp.path().to_str().unwrap()).unwrap();
-        assert_eq!(
-            pairs,
-            vec![
-                ("synergy".to_string(), 1.0),
-                ("youtube".to_string(), 2.5),
-                ("spaced".to_string(), 1.0),
-                ("badweight".to_string(), 1.0), // malformed weight → 1.0, phrase kept
-            ]
-        );
-    }
-
-    #[test]
-    fn test_resolve_hotwords_none_when_unset() {
-        assert!(resolve_hotwords(None, false).is_none());
-    }
-
-    #[test]
-    fn test_resolve_hotwords_default_pack_only() {
-        let pairs = resolve_hotwords(None, true).expect("default pack present");
-        assert_eq!(pairs.len(), gigastt_core::lexicon::DEFAULT_HOTWORDS.len());
-    }
-
-    #[test]
-    fn test_resolve_hotwords_file_plus_default() {
-        let tmp = tempfile::NamedTempFile::new().unwrap();
-        std::fs::write(tmp.path(), "мойбренд\n").unwrap();
-        let pairs = resolve_hotwords(tmp.path().to_str().unwrap().into(), true).unwrap();
-        assert_eq!(
-            pairs.len(),
-            1 + gigastt_core::lexicon::DEFAULT_HOTWORDS.len()
-        );
-        assert_eq!(pairs[0].0, "мойбренд");
-    }
-
-    #[test]
-    fn test_resolve_hotwords_missing_file_is_graceful() {
-        // Missing file → warning + treated as no file phrases (None here).
-        assert!(resolve_hotwords(Some("/nonexistent/hw.txt"), false).is_none());
-    }
-
-    #[test]
     fn test_cli_serve_with_metrics() {
         let cli = Cli::parse_from(["gigastt", "serve", "--metrics"]);
         match cli.command {
@@ -2603,47 +2021,6 @@ mod tests {
     fn test_is_loopback_host_ipv6_bracketed() {
         assert!(is_loopback_host("[::1]"));
         assert!(!is_loopback_host("[2001:db8::1]"));
-    }
-
-    #[test]
-    fn test_ensure_int8_encoder_already_exists() {
-        let tmp = tempfile::tempdir().unwrap();
-        let int8_path = tmp.path().join("v3_rnnt_encoder_int8.onnx");
-        std::fs::write(&int8_path, b"fake").unwrap();
-        ensure_int8_encoder(ModelVariant::Rnnt, tmp.path().to_str().unwrap(), false).unwrap();
-    }
-
-    #[test]
-    fn test_ensure_int8_encoder_skip_flag() {
-        let tmp = tempfile::tempdir().unwrap();
-        ensure_int8_encoder(ModelVariant::Rnnt, tmp.path().to_str().unwrap(), true).unwrap();
-    }
-
-    #[test]
-    fn test_ensure_int8_encoder_missing_input() {
-        let tmp = tempfile::tempdir().unwrap();
-        let err = ensure_int8_encoder(ModelVariant::Rnnt, tmp.path().to_str().unwrap(), false)
-            .unwrap_err();
-        let msg = format!("{err}");
-        assert!(msg.contains("Cannot quantize"), "unexpected error: {msg}");
-    }
-
-    #[test]
-    fn test_ensure_int8_encoder_e2e_targets_e2e_encoder_name() {
-        // With the e2e variant, the FP32 input it looks for is the e2e encoder;
-        // an rnnt encoder in the dir must NOT satisfy it.
-        let tmp = tempfile::tempdir().unwrap();
-        std::fs::write(tmp.path().join("v3_rnnt_encoder.onnx"), b"rnnt").unwrap();
-        let err = ensure_int8_encoder(ModelVariant::E2eRnnt, tmp.path().to_str().unwrap(), false)
-            .unwrap_err();
-        assert!(format!("{err}").contains("Cannot quantize"));
-    }
-
-    #[test]
-    fn test_log_rss_does_not_panic() {
-        // Simply exercise the function on the current platform.
-        // On Linux it reads /proc/self/status; on macOS it spawns ps.
-        log_rss();
     }
 
     #[test]
@@ -2912,84 +2289,6 @@ mod tests {
             ModelVariant::E2eRnnt
         );
         assert!(parse_model_variant("whisper").is_err());
-    }
-
-    #[test]
-    fn test_parse_punctuation_mode_value_parser() {
-        assert_eq!(parse_punctuation_mode("on").unwrap(), PunctuationMode::On);
-        assert_eq!(
-            parse_punctuation_mode("auto").unwrap(),
-            PunctuationMode::Auto
-        );
-        assert!(parse_punctuation_mode("garbage").is_err());
-    }
-
-    #[test]
-    fn test_parse_itn_mode_value_parser() {
-        assert_eq!(parse_itn_mode("off").unwrap(), ItnMode::Off);
-        assert_eq!(parse_itn_mode("auto").unwrap(), ItnMode::Auto);
-        assert!(parse_itn_mode("garbage").is_err());
-    }
-
-    #[test]
-    fn test_resolve_punctuation_per_variant() {
-        // auto → on for bare rnnt, off for the already-punctuated e2e head.
-        assert!(resolve_punctuation(
-            PunctuationMode::Auto,
-            ModelVariant::Rnnt
-        ));
-        assert!(!resolve_punctuation(
-            PunctuationMode::Auto,
-            ModelVariant::E2eRnnt
-        ));
-        // on/off override the variant.
-        assert!(resolve_punctuation(
-            PunctuationMode::On,
-            ModelVariant::E2eRnnt
-        ));
-        assert!(!resolve_punctuation(
-            PunctuationMode::Off,
-            ModelVariant::Rnnt
-        ));
-    }
-
-    #[test]
-    fn test_build_vad_config_defaults_when_unset() {
-        // Both overrides None → library defaults pass through untouched.
-        let cfg = build_vad_config(None, None);
-        let default = gigastt_core::vad::VadConfig::default();
-        assert_eq!(cfg.threshold, default.threshold);
-        assert_eq!(cfg.min_silence_ms, default.min_silence_ms);
-        assert_eq!(cfg.min_speech_ms, default.min_speech_ms);
-        assert_eq!(cfg.speech_pad_ms, default.speech_pad_ms);
-    }
-
-    #[test]
-    fn test_build_vad_config_applies_overrides() {
-        let cfg = build_vad_config(Some(0.75), Some(1200));
-        assert_eq!(cfg.threshold, 0.75);
-        assert_eq!(cfg.min_silence_ms, 1200);
-    }
-
-    #[test]
-    fn test_build_vad_config_clamps_threshold() {
-        // Out-of-range thresholds clamp into [0, 1].
-        assert_eq!(build_vad_config(Some(5.0), None).threshold, 1.0);
-        assert_eq!(build_vad_config(Some(-3.0), None).threshold, 0.0);
-    }
-
-    #[test]
-    fn test_maybe_load_vad_disabled_skips_load() {
-        // Disabled → never touches the filesystem, returns None.
-        assert!(maybe_load_vad(false, "/nonexistent").is_none());
-    }
-
-    #[test]
-    fn test_maybe_load_vad_missing_model_falls_back_to_none() {
-        // Enabled but model absent → graceful warn + None (no panic).
-        let tmp = tempfile::tempdir().unwrap();
-        let dir = tmp.path().join("absent");
-        assert!(maybe_load_vad(true, dir.to_str().unwrap()).is_none());
     }
 
     #[test]
