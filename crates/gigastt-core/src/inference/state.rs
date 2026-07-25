@@ -2,51 +2,12 @@
 
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "diarization")]
-use polyvoice::streaming::StreamingPipeline;
-// `EmbeddingError`, `EmbeddingExtractor`, and `FbankOnnxExtractor` were
-// deprecated in polyvoice 0.7.0 in favour of the v1.0 `polyvoice::embedder`
-// `Embedder` trait. We keep them because our per-session diarization path,
-// `StreamingPipeline`, is itself bound on the legacy `EmbeddingExtractor` trait
-// (`impl<V, E> StreamingPipeline<V, E> where E: EmbeddingExtractor`) — polyvoice
-// has not yet wired the new `Embedder` into streaming, and suppresses these same
-// warnings crate-wide for that reason. Mirror it here; migrate once the streaming
-// pipeline accepts `Embedder`.
-#[cfg(feature = "diarization")]
-#[allow(deprecated)]
-use polyvoice::{
-    DiarizationConfig as DiaConfig, EmbeddingError, EmbeddingExtractor, EnergyVad,
-    FbankOnnxExtractor,
-};
-
 use super::PRED_HIDDEN;
 use super::audio;
+#[cfg(feature = "diarization")]
+use super::diarization::StreamingDiarizationState;
 use super::features::MelSpectrogram;
 use super::now_timestamp;
-
-#[cfg(feature = "diarization")]
-pub(crate) const SPEAKER_EMBEDDING_DIM: usize = 256;
-#[cfg(feature = "diarization")]
-pub(crate) const SPEAKER_POOL_SIZE: usize = 4;
-
-/// Adapter that lets a single shared [`FbankOnnxExtractor`] back the
-/// per-session [`StreamingPipeline`]s, which take ownership of their extractor.
-/// The ONNX session pool inside the extractor is shared across sessions via `Arc`.
-#[cfg(feature = "diarization")]
-#[allow(deprecated)] // legacy FbankOnnxExtractor — see import note above
-pub struct SharedExtractor(pub(crate) std::sync::Arc<FbankOnnxExtractor>);
-
-#[cfg(feature = "diarization")]
-#[allow(deprecated)] // legacy EmbeddingExtractor trait — see import note above
-impl EmbeddingExtractor for SharedExtractor {
-    fn extract(&self, samples: &[f32], config: &DiaConfig) -> Result<Vec<f32>, EmbeddingError> {
-        self.0.extract(samples, config)
-    }
-
-    fn embedding_dim(&self) -> usize {
-        self.0.embedding_dim()
-    }
-}
 
 #[non_exhaustive]
 pub struct DecoderState {
@@ -189,7 +150,7 @@ pub struct StreamingState {
     pub endpoint_mode: EndpointMode,
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
-    pub diarization_state: Option<StreamingPipeline<EnergyVad, SharedExtractor>>,
+    pub diarization_state: Option<StreamingDiarizationState>,
 }
 
 /// Audio feature extraction pipeline.

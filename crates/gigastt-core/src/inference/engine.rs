@@ -29,20 +29,7 @@ use super::types::{
 use super::{ENCODER_SUBSAMPLING, HOP_LENGTH, N_FFT, N_MELS, SECONDS_PER_FRAME, now_timestamp};
 
 #[cfg(feature = "diarization")]
-use super::state::{SPEAKER_EMBEDDING_DIM, SPEAKER_POOL_SIZE, SharedExtractor};
-#[cfg(feature = "diarization")]
-#[allow(deprecated)]
-use polyvoice::FbankOnnxExtractor;
-#[cfg(feature = "diarization")]
-use polyvoice::streaming::StreamingPipeline;
-#[cfg(feature = "diarization")]
-use polyvoice::{ClusterConfig, DiarizationConfig as DiaConfig, EnergyVad, Pipeline, VadConfig};
-
-#[cfg(feature = "diarization")]
-#[allow(deprecated)] // legacy FbankOnnxExtractor — see import note above
-fn load_speaker_encoder(model_path: &Path, pool_size: usize) -> anyhow::Result<FbankOnnxExtractor> {
-    FbankOnnxExtractor::new(model_path, SPEAKER_EMBEDDING_DIM, pool_size)
-}
+use super::diarization::{self, SpeakerEncoder};
 
 /// Total physical RAM in bytes, or `0` if it can't be determined (in which case
 /// the pool RAM cap is a no-op). macOS: `sysctl HW_MEMSIZE`; Linux/other unix:
@@ -339,8 +326,7 @@ pub struct Engine {
     /// Wrapped in `Arc` so per-session streaming pipelines can share the
     /// underlying ONNX session pool without each owning their own copy.
     #[cfg(feature = "diarization")]
-    #[allow(deprecated)] // legacy FbankOnnxExtractor — see import note above
-    pub speaker_encoder: Option<std::sync::Arc<FbankOnnxExtractor>>,
+    pub speaker_encoder: Option<SpeakerEncoder>,
 }
 
 impl Engine {
@@ -777,26 +763,7 @@ impl Engine {
         );
 
         #[cfg(feature = "diarization")]
-        let speaker_encoder = {
-            let model_path = model_dir.join("wespeaker_resnet34.onnx");
-            if model_path.exists() {
-                match load_speaker_encoder(&model_path, SPEAKER_POOL_SIZE) {
-                    Ok(enc) => {
-                        tracing::info!("Speaker encoder loaded (diarization available)");
-                        Some(std::sync::Arc::new(enc))
-                    }
-                    Err(e) => {
-                        tracing::warn!(
-                            "Speaker encoder not loaded, diarization unavailable: {e:#}"
-                        );
-                        None
-                    }
-                }
-            } else {
-                tracing::warn!("wespeaker_resnet34.onnx not found, diarization unavailable");
-                None
-            }
-        };
+        let speaker_encoder = diarization::try_load_speaker_encoder(model_dir);
 
         // Detect ANE from the loaded encoder session (not compile-time alone) so
         // non-rnnt heads / injected factories keep the ort chunk window.
@@ -1171,25 +1138,7 @@ impl Engine {
     pub fn create_state(&self, diarization_enabled: bool) -> StreamingState {
         #[cfg(feature = "diarization")]
         let diarization_state = match (diarization_enabled, &self.speaker_encoder) {
-            (true, Some(enc)) => {
-                let config = DiaConfig {
-                    cluster: ClusterConfig {
-                        threshold: 0.5,
-                        ..ClusterConfig::default()
-                    },
-                    ..DiaConfig::default()
-                };
-                let vad_config = VadConfig::default();
-                let vad = EnergyVad::new(-40.0, 16000, vad_config.frame_size);
-                let extractor = SharedExtractor(std::sync::Arc::clone(enc));
-                match StreamingPipeline::new(vad, extractor, config, vad_config) {
-                    Ok(pipeline) => Some(pipeline),
-                    Err(e) => {
-                        tracing::warn!("Failed to initialize streaming diarization: {e:#}");
-                        None
-                    }
-                }
-            }
+            (true, Some(enc)) => diarization::open_streaming(enc),
             _ => None,
         };
 
@@ -1254,10 +1203,8 @@ impl Engine {
         // Diarization tracks speakers continuously, so feed every chunk's audio
         // even when this chunk doesn't trigger a decode (see the stride gate).
         #[cfg(feature = "diarization")]
-        if let Some(dia) = state.diarization_state.as_mut()
-            && let Err(e) = dia.feed(samples)
-        {
-            tracing::warn!("Diarization feed failed: {e:#}");
+        if let Some(dia) = state.diarization_state.as_mut() {
+            diarization::feed_chunk(dia, samples);
         }
 
         // Sliding-window streaming: accumulate audio; the encoder re-runs on the
@@ -1436,9 +1383,8 @@ impl Engine {
 
         #[cfg(feature = "diarization")]
         if let Some(dia) = state.diarization_state.as_mut()
-            && let Some(turn) = dia.turns().last()
+            && let Some(speaker) = diarization::last_turn_speaker(dia)
         {
-            let speaker = turn.speaker.0;
             for w in &mut tail {
                 w.speaker = Some(speaker);
             }
@@ -1744,28 +1690,11 @@ impl Engine {
             self.decode_words_for_samples(float_samples, triplet, overrides, hotwords)?;
 
         #[cfg(feature = "diarization")]
-        if diarize && let Some(ref enc) = self.speaker_encoder {
-            let config = DiaConfig::default();
-            let vad_config = VadConfig::default();
-            let pipeline = Pipeline::new(config, vad_config);
-            let mut vad = EnergyVad::new(-40.0, 16000, vad_config.frame_size);
-            match pipeline.run(float_samples, enc.as_ref(), &mut vad) {
-                Ok(dia_result) => {
-                    for word in &mut words {
-                        let mid = (word.start + word.end) / 2.0;
-                        if let Some(turn) = dia_result
-                            .turns
-                            .iter()
-                            .find(|t| t.time.start <= mid && t.time.end >= mid)
-                        {
-                            word.speaker = Some(turn.speaker.0);
-                        }
-                    }
-                }
-                Err(e) => {
-                    tracing::warn!("Offline diarization failed: {e:#}");
-                }
-            }
+        if diarize
+            && let Some(ref enc) = self.speaker_encoder
+            && let Some(turns) = diarization::run_offline(enc, float_samples)
+        {
+            diarization::assign_speakers_by_midpoint(&turns, &mut words);
         }
 
         let result = self.finish_transcribe_result(words, duration_s, overrides);
@@ -2258,7 +2187,8 @@ impl TokenFormatter {
 mod tests {
     use super::*;
     #[cfg(feature = "diarization")]
-    use crate::inference::state::SPEAKER_EMBEDDING_DIM;
+    #[cfg(feature = "diarization")]
+    use crate::inference::diarization::SPEAKER_EMBEDDING_DIM;
     use crate::inference::state::aggregate_confidence;
     use crate::inference::{
         DEFAULT_HOTWORDS_BOOST, DecoderState, EndpointMode, EndpointReason, FeatureExtractor,
@@ -2268,7 +2198,7 @@ mod tests {
     };
     #[cfg(feature = "diarization")]
     #[allow(deprecated)]
-    use polyvoice::EmbeddingExtractor;
+    use polyvoice::{DiarizationConfig as DiaConfig, EmbeddingExtractor};
 
     #[test]
     fn test_transcribe_overrides_default_all_none() {
@@ -3803,7 +3733,7 @@ vocab = "pack_vocab.txt"
     #[test]
     fn test_load_speaker_encoder_missing_model_errors() {
         let missing = Path::new("/nonexistent/gigastt-test/wespeaker_resnet34.onnx");
-        let result = load_speaker_encoder(missing, 1);
+        let result = diarization::load_speaker_encoder(missing, 1);
         assert!(
             result.is_err(),
             "a missing WeSpeaker model must surface as Err, not panic or Ok"
@@ -3817,7 +3747,8 @@ vocab = "pack_vocab.txt"
     fn test_speaker_encoder_accepts_waveform_audio() {
         let model_path =
             Path::new(&crate::model::default_model_dir()).join("wespeaker_resnet34.onnx");
-        let encoder = load_speaker_encoder(&model_path, 1).expect("speaker encoder should load");
+        let encoder =
+            diarization::load_speaker_encoder(&model_path, 1).expect("speaker encoder should load");
         let samples: Vec<f32> = (0..24_000)
             .map(|i| {
                 let phase = std::f32::consts::TAU * 220.0 * i as f32 / 16_000.0;

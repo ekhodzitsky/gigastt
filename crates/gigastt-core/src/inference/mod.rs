@@ -6,6 +6,10 @@ pub mod audio;
 mod bias;
 mod ctc;
 mod decode;
+/// Speaker diarization (polyvoice). Feature-gated; see module docs for why the
+/// deprecated polyvoice embedder surface is contained here rather than migrated.
+#[cfg(feature = "diarization")]
+mod diarization;
 mod engine;
 mod features;
 mod pool;
@@ -28,8 +32,10 @@ compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.
 
 pub use engine::Engine;
 pub use pool::{OwnedReservation, Pool, PoolError, PoolGuard, SessionPool, SessionTriplet};
+// Diarization adapter/types: all `#[allow(deprecated)]` polyvoice usage lives in
+// `diarization` — see that module's docs for the migration blocker.
 #[cfg(feature = "diarization")]
-pub use state::SharedExtractor;
+pub use diarization::{SharedExtractor, SpeakerEncoder, StreamingDiarizationState};
 pub use state::{
     DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
     TranscriptAssembler, TranscriptSegment, WordInfo,
