@@ -719,55 +719,22 @@ impl JobExecution for RealJobExecutor {
             let engine_for_inference = engine.clone();
             let body_for_inference = body.clone();
             let span = tracing::Span::current();
+            let file_opts = super::file_transcribe::FileTranscribeOpts {
+                overrides,
+                hotwords,
+                split_channels: params.channels.as_deref() == Some("split"),
+                diarization: params.diarization == Some(true),
+                raw_codec: None,
+            };
             let handle = tokio::task::spawn_blocking(move || {
                 let _enter = span.enter();
                 let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    if params.channels.as_deref() == Some("split") {
-                        let channels =
-                            gigastt_core::inference::audio::decode_audio_bytes_shared_channels(
-                                body_for_inference.clone(),
-                            )
-                            .map_err(|e| {
-                                gigastt_core::error::GigasttError::InvalidAudio {
-                                    reason: format!("{e:#}"),
-                                }
-                            })?;
-                        let fallback_reason = match channels.len() {
-                            0 => Some("no channels"),
-                            1 => Some("mono audio"),
-                            2 if gigastt_core::inference::audio::is_dual_mono(&channels) => {
-                                Some("dual-mono audio")
-                            }
-                            n if n > 2 => Some("more than two channels"),
-                            _ => None,
-                        };
-                        if let Some(reason) = fallback_reason {
-                            tracing::warn!(
-                                "channels=split requested but {reason} detected; falling back to mono transcription"
-                            );
-                            engine_for_inference
-                                .transcribe_bytes_shared(body_for_inference, &mut reservation)
-                        } else {
-                            engine_for_inference.transcribe_channels(&channels, &mut reservation)
-                        }
-                    } else if params.diarization == Some(true) {
-                        // Diarization is opt-in (`?diarization=true`): only then run
-                        // the offline speaker pass, matching the sync REST path.
-                        engine_for_inference
-                            .transcribe_bytes_shared_with_overrides_diarized_hotwords(
-                                body_for_inference,
-                                &mut reservation,
-                                &overrides,
-                                hotwords.as_ref(),
-                            )
-                    } else {
-                        engine_for_inference.transcribe_bytes_shared_with_overrides_hotwords(
-                            body_for_inference,
-                            &mut reservation,
-                            &overrides,
-                            hotwords.as_ref(),
-                        )
-                    }
+                    super::file_transcribe::run_file_transcribe_blocking(
+                        &engine_for_inference,
+                        body_for_inference,
+                        &mut reservation,
+                        &file_opts,
+                    )
                 }));
                 match r {
                     Ok(result) => result,
@@ -789,7 +756,8 @@ impl JobExecution for RealJobExecutor {
                 )
                 .await
                 {
-                    Ok(r) => r.map_err(|e| anyhow::anyhow!("spawn_blocking join error: {e}"))?
+                    Ok(r) => r
+                        .map_err(|e| anyhow::anyhow!("spawn_blocking join error: {e}"))?
                         .map_err(anyhow::Error::from),
                     Err(_) => Err(anyhow::anyhow!("inference_timeout")),
                 }

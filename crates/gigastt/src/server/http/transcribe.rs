@@ -76,23 +76,8 @@ pub(super) fn resolve_raw_codec(
     Ok(Some((codec, sample_rate)))
 }
 
-/// Decode a raw telephony byte stream and re-wrap it as an in-memory PCM16
-/// WAV, so every downstream engine path (mono, `channels=split`, diarized)
-/// works unchanged. Runs inside the blocking inference closure; errors map to
-/// the same 422 as container decode failures.
-pub(super) fn raw_codec_to_wav(
-    body: &[u8],
-    codec: gigastt_core::inference::audio::TelephonyCodec,
-    sample_rate: u32,
-) -> Result<Bytes, gigastt_core::error::GigasttError> {
-    let samples = gigastt_core::inference::audio::decode_telephony_raw(body, codec, sample_rate)
-        .map_err(|e| gigastt_core::error::GigasttError::InvalidAudio {
-            reason: format!("{e:#}"),
-        })?;
-    Ok(Bytes::from(
-        gigastt_core::inference::audio::encode_wav_pcm16(&samples, 16000),
-    ))
-}
+#[cfg(test)]
+pub(super) use super::super::file_transcribe::raw_codec_to_wav;
 
 /// Check out a session triplet from the engine's batch pool with the configured
 /// timeout and record the pool metrics, returning an owned reservation whose
@@ -233,63 +218,26 @@ pub(super) async fn run_file_transcription(
     let mut reservation =
         reserve_batch_slot(&engine, &limits, state.metrics_registry.as_ref()).await?;
 
+    let file_opts = super::super::file_transcribe::FileTranscribeOpts {
+        overrides,
+        hotwords,
+        split_channels,
+        diarization: request_diarization,
+        raw_codec,
+    };
+
     let inference_start = std::time::Instant::now();
     let span = tracing::Span::current();
     let handle = tokio::task::spawn_blocking(move || {
         let _enter = span.enter();
         // catch_unwind ensures triplet is returned to pool even on panic
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            // Raw telephony upload: decode the headerless byte stream and
-            // re-wrap it as an in-memory WAV so every downstream path (mono,
-            // channels=split, diarized) works unchanged.
-            let body = match raw_codec {
-                Some((codec, rate)) => raw_codec_to_wav(&body, codec, rate)?,
-                None => body,
-            };
-            if split_channels {
-                let channels = gigastt_core::inference::audio::decode_audio_bytes_shared_channels(
-                    body.clone(),
-                )
-                .map_err(|e| gigastt_core::error::GigasttError::InvalidAudio {
-                    reason: format!("{e:#}"),
-                })?;
-                let fallback_reason = match channels.len() {
-                    0 => Some("no channels"),
-                    1 => Some("mono audio"),
-                    2 if gigastt_core::inference::audio::is_dual_mono(&channels) => {
-                        Some("dual-mono audio")
-                    }
-                    n if n > 2 => Some("more than two channels"),
-                    _ => None,
-                };
-                if let Some(reason) = fallback_reason {
-                    tracing::warn!(
-                        "channels=split requested but {reason} detected; falling back to mono transcription"
-                    );
-                    engine.transcribe_bytes_shared(body, &mut reservation)
-                } else {
-                    engine.transcribe_channels(&channels, &mut reservation)
-                }
-            } else if request_diarization {
-                // Diarization is opt-in (`?diarization=true`): only then run the
-                // offline speaker pass. `body` is `axum::body::Bytes` (a
-                // `bytes::Bytes` re-export) so the decode shares the upload buffer.
-                engine.transcribe_bytes_shared_with_overrides_diarized_hotwords(
-                    body,
-                    &mut reservation,
-                    &overrides,
-                    hotwords.as_ref(),
-                )
-            } else {
-                // No diarization requested: byte-identical to the pre-existing
-                // zero-copy path. `overrides` is already validated above.
-                engine.transcribe_bytes_shared_with_overrides_hotwords(
-                    body,
-                    &mut reservation,
-                    &overrides,
-                    hotwords.as_ref(),
-                )
-            }
+            super::super::file_transcribe::run_file_transcribe_blocking(
+                &engine,
+                body,
+                &mut reservation,
+                &file_opts,
+            )
         }));
         match r {
             Ok(inference_result) => inference_result,

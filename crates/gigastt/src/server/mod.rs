@@ -4,6 +4,7 @@
 
 mod bootstrap;
 pub mod config;
+mod file_transcribe;
 pub mod http;
 pub mod jobs;
 pub mod metrics;
