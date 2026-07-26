@@ -17,25 +17,6 @@ Reproducible benchmark comparing **gigastt** against popular open-source ASR eng
 - **WER** (Word Error Rate) — lower is better. Computed after symmetric text normalization applied identically to the reference and the hypothesis for every engine.
 - **RTF** (Real-Time Factor) — `processing_time / audio_duration`. Lower is better; < 1.0 means faster than real-time.
 
-## Edge / Raspberry Pi (RTF + RSS + cold-start + TTFP)
-
-For on-device edge boards (Pi 4/5, etc.) use the dedicated harness — not the full
-cross-engine WER suite:
-
-```sh
-# From repo root (64-bit OS, gigastt binary + model already present)
-./scripts/bench_edge_pi.sh --storage-label microSD --variants rnnt \
-  --output benchmark/results_edge_pi4.json
-
-# Optional streaming TTFP:
-pip install 'websockets>=12'
-python3 benchmark/bench_edge.py --variants rnnt,ml_ctc --storage-label usb-ssd
-```
-
-Protocol, result tables, and what *not* to claim before hardware runs:
-[`specs/edge-raspberry-pi-roadmap.md`](../specs/edge-raspberry-pi-roadmap.md) ·
-[`docs/benchmarks.md` § Edge](../docs/benchmarks.md#edge--raspberry-pi-hardware-measurements).
-
 ## Methodology
 
 ### Timing

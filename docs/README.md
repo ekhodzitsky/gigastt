@@ -22,7 +22,6 @@ onboarding lives in the bilingual workbook on GitHub Pages.
 | **[AsyncAPI](asyncapi.yaml)** | Machine-readable WebSocket schema (`/v1/ws`) |
 | **[Benchmarks](benchmarks.md)** | WER / RTF / footprint methodology and tables |
 | **[Held-out datasets roadmap](../specs/held-out-datasets-roadmap.md)** | Public RU sets beyond Golos/OpenSTT (CV, FLEURS, RuLS, SOVA, Podlodka, ToneWebinars) |
-| **[Edge / Raspberry Pi roadmap](../specs/edge-raspberry-pi-roadmap.md)** | Pi 4/5 measurements (RTF, RSS, cold-start, TTFP), edge profile, speed work |
 | **[Embedding & packaging](embedding-packaging.md)** | Static vs `ort-load-dynamic`, wheel/AAR notes |
 
 ## Operations
@@ -49,7 +48,6 @@ onboarding lives in the bilingual workbook on GitHub Pages.
 - [`specs/prod-readiness-v1.0.md`](../specs/prod-readiness-v1.0.md) — production readiness tracker
 - [`specs/todo.md`](../specs/todo.md) — historical critique follow-ups
 - [`specs/held-out-datasets-roadmap.md`](../specs/held-out-datasets-roadmap.md) — extra public benchmark sets (one-by-one)
-- [`specs/edge-raspberry-pi-roadmap.md`](../specs/edge-raspberry-pi-roadmap.md) — Raspberry Pi / edge evidence + speed roadmap
 - [`CHANGELOG.md`](../CHANGELOG.md) — release notes
 - [`SECURITY.md`](../SECURITY.md) — vulnerability reporting + supported versions
 - [`NOTICE`](../NOTICE) — third-party notices (opus, WeSpeaker, benchmark data)

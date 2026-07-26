@@ -55,7 +55,6 @@ WER (%) на четырёх русских доменах, меньше — лу
 - **По пиковой RAM при дефолтном `--pool-size 2` (790 МБ) проигрывает** Vosk 0.54 (560 МБ) и T-one greedy (672 МБ); конкурентна только одна сессия (~400 МБ) — для экономии ставьте `--pool-size 1`.
 - **Стриминг — буферизованный/чанковый** поверх офлайн RNN-T, не нативно-стримящая акустическая модель; ~0.78 с до первого partial — не заявка на минимальную задержку.
 - **Пересечение с обучающими данными** — GigaAM v3 обучена в основном на Golos; Golos / OpenSTT — in-distribution upper bound. **Held-out** (CV / FLEURS / RuLS / SOVA / Podlodka / ToneWebinars) — второй столбец; см. [Benchmarks](docs/benchmarks.md#held-out--additional-public-sets--wer--95-ci).
-- **Raspberry Pi / edge** — arm64 Linux (включая Pi 4/5) поддерживается multi-arch образом GHCR и aarch64-сборками, но **опубликованные RTF / RSS / TTFP пока только с M1**. На Pi 4 ориентир: «батч — да, real-time — не измерен», пока не заполнена edge-таблица. Протокол и харнесс: [roadmap](specs/edge-raspberry-pi-roadmap.md) · [Benchmarks § Edge](docs/benchmarks.md#edge--raspberry-pi-hardware-measurements).
 
 ## Установка
 

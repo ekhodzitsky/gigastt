@@ -63,19 +63,6 @@ Prep: [`benchmark/README.md`](../benchmark/README.md#datasets).
 | 6 | ToneWebinars | **done** — 13.02 / 14.87 / **8.33** (n=1000) |
 | 7 | Phone-sim (optional) | optional |
 
-## Edge / Raspberry Pi (2026-07-26)
-
-Full plan: [`specs/edge-raspberry-pi-roadmap.md`](edge-raspberry-pi-roadmap.md).
-Harness: `benchmark/bench_edge.py` · `scripts/bench_edge_pi.sh`.
-Docs stub: [`docs/benchmarks.md` § Edge](../docs/benchmarks.md#edge--raspberry-pi-hardware-measurements).
-
-| Lane | Status |
-|------|--------|
-| P0 Evidence (protocol, harness, Pi numbers in docs) | **in_progress** — protocol+harness done; **hardware run blocked** |
-| P1 Edge profile + install docs | todo (after P0 numbers) |
-| P2 XNNPACK / ml_ctc edge / adaptive chunks | todo (only if P0 justifies) |
-| P3 Distillation / small model product bet | deferred |
-
 ## Next-up: v1.0 plan
 
 All new findings from the 2026-04-18 review are catalogued in

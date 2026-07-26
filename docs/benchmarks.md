@@ -276,59 +276,6 @@ Full 3-engine table (gigastt · Vosk 0.54 · faster-whisper L3) is above. Status
 Full queue, prep scripts, protocol, and definition of done:
 [`specs/held-out-datasets-roadmap.md`](../specs/held-out-datasets-roadmap.md).
 
-## Edge / Raspberry Pi (hardware measurements)
-
-All tables above are **Apple M1, CPU EP**. Raspberry Pi 4/5 numbers are a separate
-track: arm64 Linux, Cortex-A72 (Pi 4) / A76 (Pi 5), no CoreML/CUDA.
-
-**Status:** protocol + harness ready; **device numbers not filled yet** (need a real
-board run). Do not treat extrapolated “~0.4–0.8 RTF on Pi 4” as measured fact.
-
-Roadmap: [`specs/edge-raspberry-pi-roadmap.md`](../specs/edge-raspberry-pi-roadmap.md).  
-Harness: [`benchmark/bench_edge.py`](../benchmark/bench_edge.py) ·
-wrapper [`scripts/bench_edge_pi.sh`](../scripts/bench_edge_pi.sh).
-
-### Protocol (summary)
-
-| Setting | Value |
-|---|---|
-| OS | Raspberry Pi OS **64-bit** (or other aarch64 Linux) |
-| Binary | GHCR multi-arch image or aarch64 release tarball (prefer over on-device `cargo install`) |
-| Pool | `--pool-size 1` |
-| Heads | `rnnt` INT8 (default accuracy) and, when installed, `ml_ctc` INT8 (edge speed candidate) |
-| Post-process | `--punctuation off --itn off` for the speed/RSS path |
-| Audio | in-tree `crates/gigastt/tests/fixtures/golos_00.wav` … `golos_04.wav` (RTF); `golos_00.wav` (TTFP) |
-| Storage label | `microSD` / `usb-ssd` / `nvme` / `unknown` (same board, two runs when comparing) |
-
-```sh
-# On the Pi, after model download:
-./scripts/bench_edge_pi.sh \
-  --storage-label microSD \
-  --variants rnnt,ml_ctc \
-  --output benchmark/results_edge_pi4.json
-# Optional TTFP needs: pip install 'websockets>=12'
-```
-
-### Results table (fill after hardware run)
-
-| Board | RAM | Storage | Head | RTF mean | Peak RSS (pool 1) | Cold-start | TTFP | Date / notes |
-|---|--:|---|---|--:|--:|--:|--:|---|
-| Raspberry Pi 4 Model B | 4 GB | microSD | `rnnt` INT8 | — | — | — | — | *unmeasured* |
-| Raspberry Pi 4 Model B | 4 GB | usb-ssd | `rnnt` INT8 | — | — | — | — | *unmeasured* |
-| Raspberry Pi 4 Model B | 8 GB | microSD | `rnnt` INT8 | — | — | — | — | *unmeasured* |
-| Raspberry Pi 4 Model B | *any* | *any* | `ml_ctc` INT8 | — | — | — | — | *unmeasured* |
-| Raspberry Pi 5 | *any* | *any* | `rnnt` INT8 | — | — | — | — | *optional* |
-
-**How to interpret once filled:** RTF &lt; 1.0 means file transcription is faster than
-real-time (batch-friendly). Continuous live dictation wants comfortable headroom
-(rule of thumb: RTF ≲ 0.5), not just RTF &lt; 1. Streaming TTFP is buffered/chunked
-over offline decode — same caveat as the M1 TTFP section above.
-
-**Product framing (until numbers exist):** arm64 **runs**; batch quality is the
-strong story; real-time on Pi 4 is **unproven**. Vosk small remains the safer
-default for tight real-time command UIs on Pi 4; Vosk 0.54 is a different
-(heavier) model than “Vosk small”.
-
 ## Reproduce
 
 ```sh
@@ -340,10 +287,3 @@ python benchmark.py --runners gigastt --dataset golos_crowd_1k --max-samples 0 -
 New competitor runners (Vosk 0.54, faster-whisper-turbo, T-one) live under
 [`benchmark/runners/`](../benchmark/runners/); each gracefully skips if its optional
 dependency/model is absent. T-one beam+LM needs the 5.5 GB KenLM (`BENCHMARK_TONE_KENLM`).
-
-Edge / Pi smoke (no full WER suite):
-
-```sh
-python3 benchmark/bench_edge.py --variants rnnt --storage-label unknown \
-  --output benchmark/results_edge.json
-```

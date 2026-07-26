@@ -55,7 +55,6 @@ Where rivals win, and when not to reach for gigastt:
 - **Peak RAM at the default `--pool-size 2` (790 MB) loses** to Vosk 0.54 (560 MB) and T-one greedy (672 MB); single-session (~400 MB) is competitive — drop to `--pool-size 1` for the lean profile.
 - **Streaming is buffered/chunked** over an offline RNN-T, not a natively streaming acoustic model; ~0.78 s TTFP is not a lowest-latency claim.
 - **Training-data overlap** — GigaAM v3 is trained heavily on Golos; Golos / OpenSTT numbers are best-case in-distribution upper bounds. **Held-out** public sets (CV / FLEURS / RuLS / SOVA / Podlodka / ToneWebinars) give a second column — see [Benchmarks](docs/benchmarks.md#held-out--additional-public-sets--wer--95-ci).
-- **Raspberry Pi / edge** — arm64 Linux (including Pi 4/5) is supported via the multi-arch GHCR image and aarch64 builds, but **published RTF / RSS / TTFP are still M1-only**. Treat Pi 4 as “batch OK, real-time unmeasured” until the edge table is filled. Protocol + harness: [Edge / Raspberry Pi roadmap](specs/edge-raspberry-pi-roadmap.md) · [Benchmarks § Edge](docs/benchmarks.md#edge--raspberry-pi-hardware-measurements).
 
 ## Install
 
