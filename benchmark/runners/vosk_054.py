@@ -18,7 +18,6 @@ False and the suite skips Vosk 0.54.
 import os
 import time
 import urllib.request
-import wave
 import zipfile
 from pathlib import Path
 
@@ -34,7 +33,8 @@ class Vosk054Runner:
 
     @property
     def cache_config(self) -> str:
-        return self.model_name
+        # Bump when decode/load path changes (float WAV / MP3 support).
+        return f"{self.model_name}:audio-load-v2"
 
     def is_available(self) -> bool:
         try:
@@ -76,15 +76,52 @@ class Vosk054Runner:
             )
         return self._recognizer
 
-    def transcribe(self, wav_path: str) -> tuple[str, float]:
+    def _load_mono_16k(self, path: str):
+        """Load any common audio file as float32 mono @ 16 kHz.
+
+        The old path used ``wave`` (PCM16 WAV only). Held-out sets ship MP3
+        (Common Voice) and IEEE-float WAV (FLEURS), so we decode via
+        ``soundfile`` with an ``av`` fallback for containers soundfile skips.
+        """
         import numpy as np
 
+        try:
+            import soundfile as sf
+
+            data, sr = sf.read(path, dtype="float32", always_2d=True)
+            samples = data.mean(axis=1)
+        except Exception:
+            import av
+
+            container = av.open(path)
+            resampler = av.audio.resampler.AudioResampler(
+                format="flt", layout="mono", rate=16000
+            )
+            chunks = []
+            for frame in container.decode(audio=0):
+                for out in resampler.resample(frame):
+                    chunks.append(out.to_ndarray().reshape(-1))
+            # flush
+            for out in resampler.resample(None):
+                chunks.append(out.to_ndarray().reshape(-1))
+            if not chunks:
+                raise ValueError(f"no audio decoded from {path}")
+            samples = np.concatenate(chunks).astype(np.float32)
+            sr = 16000
+
+        if sr != 16000:
+            # linear resample (good enough for WER smoke; avoids extra deps)
+            import numpy as np
+
+            n_out = int(round(len(samples) * 16000 / sr))
+            x_old = np.linspace(0.0, 1.0, num=len(samples), endpoint=False)
+            x_new = np.linspace(0.0, 1.0, num=n_out, endpoint=False)
+            samples = np.interp(x_new, x_old, samples).astype(np.float32)
+        return samples
+
+    def transcribe(self, wav_path: str) -> tuple[str, float]:
         recognizer = self._load()
-        with wave.open(wav_path, "rb") as wf:
-            if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getframerate() != 16000:
-                raise ValueError("vosk-0.54 runner expects 16kHz mono 16-bit WAV")
-            frames = wf.readframes(wf.getnframes())
-        samples = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+        samples = self._load_mono_16k(wav_path)
         start = time.perf_counter()
         stream = recognizer.create_stream()
         stream.accept_waveform(16000, samples)

@@ -45,6 +45,37 @@ lives in `specs/plan.md`.
 Also shipped alongside (2026-04-14 advisory): `rustls-webpki` 0.103.10→0.103.12 closing RUSTSEC-2026-0098/99 in v0.5.3.
 2026-04-21 patch series (v0.9.1 / v0.9.2): CI-only fixes so the v0.9.0 release tarballs could actually publish — `protoc` provisioning on every cargo-build job, minisign non-interactive passphrase via stdin. No source changes.
 
+## Benchmark trust (2026-07-25 → 2026-07-26)
+
+Held-out / additional **public** Russian datasets for WER beyond Golos + OpenSTT.
+Full 3-engine table (gigastt · Vosk 0.54 · faster-whisper L3) in
+[`docs/benchmarks.md`](../docs/benchmarks.md#held-out--additional-public-sets--wer--95-ci).
+Protocol and queue: [`specs/held-out-datasets-roadmap.md`](held-out-datasets-roadmap.md).
+Prep: [`benchmark/README.md`](../benchmark/README.md#datasets).
+
+| # | Dataset | Status (WER %: gigastt / Vosk / FW) |
+|---|---------|-------------------------------------|
+| 1 | Common Voice RU | **done** — **2.63** / 6.10 / 5.22 (n=1000) |
+| 2 | FLEURS `ru_ru` | **done** — 5.26 / 6.14 / **3.84** (n=775) |
+| 3 | RuLS | **done** — **4.21** / 9.18 / 9.65 (n=1000) |
+| 4 | SOVA RuDevices | **done** — 10.30 / **6.28** / 14.79 (n=1000) |
+| 5 | Podlodka Speech | **partial** — 7.33 / 9.96 / 7.27 (n=67 only) |
+| 6 | ToneWebinars | **done** — 13.02 / 14.87 / **8.33** (n=1000) |
+| 7 | Phone-sim (optional) | optional |
+
+## Edge / Raspberry Pi (2026-07-26)
+
+Full plan: [`specs/edge-raspberry-pi-roadmap.md`](edge-raspberry-pi-roadmap.md).
+Harness: `benchmark/bench_edge.py` · `scripts/bench_edge_pi.sh`.
+Docs stub: [`docs/benchmarks.md` § Edge](../docs/benchmarks.md#edge--raspberry-pi-hardware-measurements).
+
+| Lane | Status |
+|------|--------|
+| P0 Evidence (protocol, harness, Pi numbers in docs) | **in_progress** — protocol+harness done; **hardware run blocked** |
+| P1 Edge profile + install docs | todo (after P0 numbers) |
+| P2 XNNPACK / ml_ctc edge / adaptive chunks | todo (only if P0 justifies) |
+| P3 Distillation / small model product bet | deferred |
+
 ## Next-up: v1.0 plan
 
 All new findings from the 2026-04-18 review are catalogued in

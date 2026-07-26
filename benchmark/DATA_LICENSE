@@ -24,6 +24,55 @@ corresponding `results_full/golos_*.json`.
 - License: Sber Public License (Attribution / NonCommercial / ShareAlike)
            https://github.com/sberdevices/golos/blob/master/license/en_us.pdf
 
+Common Voice (Russian)
+----------------------
+Files: `manifests/common_voice_ru.json`, and corresponding
+`results_full/common_voice_ru_*.json`.
+- Source:  Mozilla Common Voice contributors (Corpus 21.0 RU via community
+           HF mirror `artyomboyko/common_voice_21_0_ru`; official
+           `mozilla-foundation/common_voice_*` Hub repos are empty since
+           Oct 2025 — see Mozilla Data Collective)
+- License: CC0-1.0
+           https://creativecommons.org/publicdomain/zero/1.0/
+
+FLEURS (Russian and multilingual)
+---------------------------------
+Files: `manifests/fleurs_*.json` (e.g. `fleurs_ru.json`, `fleurs_kk.json`),
+and corresponding `results_full/fleurs_*.json`.
+- Source:  https://huggingface.co/datasets/google/fleurs
+- Paper:   Conneau et al., "FLEURS", 2022
+- License: CC BY 4.0
+           https://creativecommons.org/licenses/by/4.0/
+
+LibriSpeech (English, multilingual heads)
+-----------------------------------------
+Files: `manifests/librispeech_test_clean.json`, and corresponding
+`results_full/librispeech_*.json`.
+- Source:  https://www.openslr.org/12/
+- License: CC BY 4.0 (LibriSpeech)
+
+Russian LibriSpeech (RuLS)
+--------------------------
+Files: `manifests/ruls.json`, `results_full/ruls_*.json`.
+- Source:  OpenSLR SLR96 / HF `istupakov/russian_librispeech`
+- License: Public Domain in the USA (LibriVox-derived)
+           https://www.openslr.org/96/
+
+SOVA RuDevices / Podlodka
+-------------------------
+Files: `manifests/sova_rudevices.json`, `manifests/podlodka.json`, and
+matching `results_full/*`.
+- Source:  HF `bond005/sova_rudevices`, `bond005/podlodka_speech`
+- License: see the respective Hugging Face dataset cards
+
+ToneWebinars
+------------
+Files: `manifests/tone_webinars.json`, and corresponding
+`results_full/tone_webinars_*.json`.
+- Source:  https://huggingface.co/datasets/Vikhrmodels/ToneWebinars
+           (derived from ZeroAgency/shkolkovo-bobr.video-webinars-audio)
+- License: Apache-2.0
+
 Commercial use of these transcripts is governed by the upstream licenses above,
 NOT by the MIT license.
 

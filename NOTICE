@@ -70,10 +70,20 @@ Benchmark data
 
 Benchmark data under `benchmark/` — the manifest reference transcripts and the
 `reference` / `hypothesis` fields in `benchmark/results_full/` — is NOT
-MIT-licensed and retains its upstream non-commercial licenses (see
-`benchmark/DATA_LICENSE`):
+MIT-licensed and retains upstream licenses (see `benchmark/DATA_LICENSE`):
 
 - Open STT — by snakers4 — CC BY-NC 4.0
   https://github.com/snakers4/open_stt
 - Golos — by SberDevices — Sber Public License (non-commercial / share-alike)
   https://github.com/sberdevices/golos
+- Common Voice RU — Mozilla Common Voice contributors — CC0-1.0
+  (Corpus 21.0 via community mirror `artyomboyko/common_voice_21_0_ru`)
+- FLEURS — Conneau et al. / Google — CC BY 4.0
+  https://huggingface.co/datasets/google/fleurs
+- Russian LibriSpeech (RuLS) — OpenSLR SLR96 / LibriVox — Public Domain (USA)
+  https://www.openslr.org/96/
+- SOVA RuDevices / Podlodka Speech — see HF cards
+  `bond005/sova_rudevices`, `bond005/podlodka_speech`
+- ToneWebinars — Vikhrmodels (from ZeroAgency/shkolkovo-bobr.video-webinars-audio)
+  — Apache-2.0
+  https://huggingface.co/datasets/Vikhrmodels/ToneWebinars

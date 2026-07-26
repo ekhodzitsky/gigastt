@@ -1,216 +1,153 @@
 #!/usr/bin/env python3
-"""Prepare a fixed 1000-sample Common Voice Russian test slice for benchmarking.
+"""Prepare a fixed Common Voice Russian test slice for benchmarking.
 
 Dataset provenance:
   - Name: Mozilla Common Voice (Russian / ru)
-  - Locale: ru
   - Split: test
-  - Source: https://huggingface.co/datasets/mozilla-foundation/common_voice_16_1
-  - Project page: https://commonvoice.mozilla.org/ru
   - License: CC0-1.0 (public domain dedication)
   - Attribution: Mozilla Common Voice contributors
+  - Project: https://commonvoice.mozilla.org/ru
 
-This script streams the Common Voice 16.1 Russian ``test`` split, writes the
-selected samples as 16 kHz mono PCM16 WAV files, and emits a manifest in the
-standard format used by ``benchmark/benchmark.py``.
+**Hub note (2025-10+).** Official ``mozilla-foundation/common_voice_*`` datasets
+on Hugging Face are empty; Common Voice is distributed via
+[Mozilla Data Collective](https://datacollective.mozillafoundation.org/).
+This script defaults to a community mirror that still hosts Corpus **21.0**
+Russian on the Hub:
 
-The deterministic slice is built with ``random.seed(42)`` so the same 1000
-samples are chosen on every run.
+  - https://huggingface.co/datasets/artyomboyko/common_voice_21_0_ru
+
+Override ``--dataset-id`` / ``--config`` when you have a preferred source.
+Audio is written with ``Audio(decode=False)`` (raw container bytes) so
+``torchcodec`` is not required; gigastt/symphonia decode MP3/WAV at eval time.
+
+Deterministic slice: ``random.seed(seed)``.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
 import random
 import sys
-import wave
 from pathlib import Path
-
-import numpy as np
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Prepare Common Voice Russian benchmark slice"
-    )
-    parser.add_argument(
+    p = argparse.ArgumentParser(description="Prepare Common Voice Russian benchmark slice")
+    p.add_argument(
         "--output-dir",
         type=Path,
         default=Path("~/.gigastt/benchmarks/common_voice_ru").expanduser(),
-        help="Directory to write WAV files to",
+        help="Directory to write audio files to",
     )
-    parser.add_argument(
+    p.add_argument(
         "--manifest-path",
         type=Path,
-        default=Path(__file__).parent.parent
-        / "benchmark/manifests/common_voice_ru.json",
+        default=Path(__file__).parent.parent / "benchmark/manifests/common_voice_ru.json",
         help="Path to write the manifest JSON file",
     )
-    parser.add_argument(
-        "--slice-size",
-        type=int,
-        default=1000,
-        help="Number of samples to include in the manifest",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=42,
-        help="Random seed for deterministic sample selection",
-    )
-    parser.add_argument(
+    p.add_argument("--slice-size", type=int, default=1000, help="Samples in the manifest")
+    p.add_argument("--seed", type=int, default=42, help="Random seed for deterministic selection")
+    p.add_argument(
         "--dataset-id",
         type=str,
-        default="mozilla-foundation/common_voice_16_1",
-        help="Hugging Face dataset id to load",
+        default="artyomboyko/common_voice_21_0_ru",
+        help="Hugging Face dataset id (default: CV 21.0 RU community mirror)",
     )
-    parser.add_argument(
+    p.add_argument(
         "--config",
         type=str,
-        default="ru",
-        help="Dataset config/locale to load",
+        default="",
+        help="Dataset config/locale (empty = single-config dataset, e.g. the default mirror)",
     )
-    parser.add_argument(
-        "--streaming",
-        action="store_true",
-        default=True,
-        help="Stream the dataset (default, low memory footprint)",
+    p.add_argument(
+        "--split",
+        type=str,
+        default="test",
+        help="Dataset split",
     )
-    parser.add_argument(
-        "--no-streaming",
-        dest="streaming",
-        action="store_false",
-        help="Download the full split before sampling",
+    p.add_argument(
+        "--max-scan",
+        type=int,
+        default=0,
+        help="Stop after this many usable rows (0 = full split). Useful for smoke tests.",
     )
-    return parser.parse_args()
-
-
-def write_wav(path: Path, samples: np.ndarray, sample_rate: int = 16000) -> None:
-    """Write a 16 kHz mono PCM16 WAV file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    if samples.ndim > 1:
-        samples = samples.mean(axis=1)
-
-    # datasets decodes to float32 in [-1.0, 1.0]; scale to int16.
-    samples = np.clip(samples, -1.0, 1.0)
-    pcm = (samples * 32767.0).astype(np.int16)
-
-    with wave.open(str(path), "wb") as wav:
-        wav.setnchannels(1)
-        wav.setsampwidth(2)
-        wav.setframerate(sample_rate)
-        wav.writeframes(pcm.tobytes())
-
-
-def load_common_voice_ru_test(dataset_id: str = "mozilla-foundation/common_voice_16_1",
-                              config: str = "ru",
-                              streaming: bool = True):
-    """Return the requested Common Voice Russian test split.
-
-    The default follows the task spec (Common Voice 16.1 ``ru``). Pass a
-    different ``dataset_id`` if a newer release is required.
-    """
-    from datasets import load_dataset, Audio
-
-    ds = load_dataset(
-        dataset_id,
-        config,
-        split="test",
-        streaming=streaming,
-    )
-    ds = ds.cast_column("audio", Audio(sampling_rate=16000))
-    return ds
+    return p.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    from datasets import Audio, load_dataset
 
-    print(f"Loading {args.dataset_id} ({args.config}) test split ...")
-    ds = load_common_voice_ru_test(
-        dataset_id=args.dataset_id,
-        config=args.config,
-        streaming=args.streaming,
-    )
+    print(f"Loading {args.dataset_id} {args.config or '(default config)'} {args.split} ...")
+    load_kw: dict = {"path": args.dataset_id, "split": args.split, "streaming": True}
+    # datasets API: load_dataset(path, name=config, ...)
+    if args.config:
+        ds = load_dataset(args.dataset_id, args.config, split=args.split, streaming=True)
+    else:
+        ds = load_dataset(args.dataset_id, split=args.split, streaming=True)
+    ds = ds.cast_column("audio", Audio(decode=False))
 
-    # First pass: collect metadata for samples with non-empty references.
-    print("Collecting metadata ...")
-    candidates = []
-    for idx, row in enumerate(ds):
-        ref = (row.get("sentence") or "").strip()
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    written: list[tuple[str, str]] = []
+    for i, row in enumerate(ds):
+        ref = (row.get("sentence") or row.get("transcription") or "").strip()
         if not ref:
             continue
-        candidates.append((idx, ref))
-        if (idx + 1) % 500 == 0:
-            print(f"  scanned {idx + 1} rows, {len(candidates)} candidates")
+        audio = row["audio"]
+        data = audio.get("bytes") if isinstance(audio, dict) else None
+        if not data:
+            continue
+        path_hint = (audio.get("path") if isinstance(audio, dict) else None) or f"{i}.mp3"
+        name = Path(path_hint).name
+        if not name.lower().endswith((".mp3", ".wav", ".flac", ".ogg", ".m4a")):
+            name = f"{i:05d}.mp3"
+        # avoid clobber if names collide across rows
+        out = args.output_dir / name
+        if out.exists() and out.stat().st_size != len(data):
+            name = f"{i:05d}_{name}"
+            out = args.output_dir / name
+        out.write_bytes(data)
+        written.append((name, ref))
+        if len(written) % 200 == 0:
+            print(f"  wrote {len(written)}")
+        if args.max_scan and len(written) >= args.max_scan:
+            break
 
-    total_available = len(candidates)
-    print(f"Total candidates with non-empty references: {total_available}")
-
-    if total_available == 0:
+    total = len(written)
+    print(f"Total with audio + reference: {total}")
+    if total == 0:
         print("No usable samples found.", file=sys.stderr)
         return 1
 
-    slice_size = min(args.slice_size, total_available)
-    if slice_size < args.slice_size:
-        print(
-            f"Warning: requested {args.slice_size} samples but only "
-            f"{total_available} available; using {slice_size}.",
-            file=sys.stderr,
-        )
-
+    n = min(args.slice_size, total)
     rng = random.Random(args.seed)
-    selected = rng.sample(candidates, slice_size)
-    selected_indices = {idx for idx, _ in selected}
-    selected_refs = {idx: ref for idx, ref in selected}
-
-    # Second pass: materialize the selected samples.
-    args.output_dir.mkdir(parents=True, exist_ok=True)
-    samples = []
-    processed = 0
-
-    print(f"Extracting {slice_size} selected samples ...")
-    for idx, row in enumerate(ds):
-        if idx not in selected_indices:
-            continue
-
-        audio = row["audio"]
-        array = np.asarray(audio["array"])
-        sample_rate = int(audio["sampling_rate"])
-        duration = len(array) / sample_rate if sample_rate > 0 else 0.0
-
-        wav_name = f"{idx:05d}.wav"
-        wav_path = args.output_dir / wav_name
-        write_wav(wav_path, array, sample_rate=sample_rate)
-
-        samples.append(
-            {
-                "filename": wav_name,
-                "reference": selected_refs[idx],
-                "duration": round(duration, 3),
-            }
-        )
-        processed += 1
-        if processed % 100 == 0 or processed == slice_size:
-            print(f"  wrote {processed}/{slice_size} ({wav_name})")
+    selected = written if n == total else rng.sample(written, n)
+    samples = [{"filename": f, "reference": r} for f, r in selected]
 
     manifest = {
         "dataset": "common_voice_ru",
         "audio_root": "~/.gigastt/benchmarks/common_voice_ru",
         "slice_seed": args.seed,
-        "slice_size": slice_size,
-        "total_available": total_available,
+        "slice_size": n,
+        "total_available": total,
+        "language": "ru",
         "license": "CC0-1.0",
-        "source": "https://huggingface.co/datasets/mozilla-foundation/common_voice_16_1",
+        "source": f"https://huggingface.co/datasets/{args.dataset_id}",
+        "upstream": "Mozilla Common Voice (community HF mirror; official Hub datasets empty since Oct 2025)",
         "attribution": "Mozilla Common Voice contributors",
+        "fleurs_config": args.config or None,
         "samples": samples,
     }
+    # drop null
+    if manifest["fleurs_config"] is None:
+        del manifest["fleurs_config"]
 
     args.manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with open(args.manifest_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
 
-    print(f"Wrote {processed} WAV files to {args.output_dir}")
-    print(f"Manifest: {args.manifest_path}")
+    print(f"Selected {n}/{total}; manifest: {args.manifest_path}")
     return 0
 
 

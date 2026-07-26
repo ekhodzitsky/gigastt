@@ -21,9 +21,9 @@ gigastt turns any machine into a private Russian speech-recognition server — o
 |---|---|---|---|
 | No cloud, no keys — runtime is 100% local. MIT engine on MIT weights, commercial-ready. | One static binary, a C-ABI FFI for mobile, or the `gigastt-core` crate — with incremental WebSocket partials, no Python. | Most accurate on 3 of 4 Russian domains: far-field 4.08%, phone 18.50%, YouTube 10.91%; statistical tie on clean read. | ~225 MB INT8 model, RTF ~0.10 (~10× real-time on CPU), 0.94 s cold-start. |
 
-**WER** clean 3.55% / far-field 4.08% / phone 18.50% / YouTube 10.91%  ·  **RTF** ~0.10  ·  **Model** ~225 MB INT8  ·  **Cold-start** 0.94 s  ·  **RAM** ~400 MB single / 790 MB pool-2  ·  **Streaming** first partial ~0.78 s
+**WER** clean 3.55% / far-field 4.08% / phone 18.50% / YouTube 10.91%  ·  **held-out** CV **2.63%** (beats Vosk+FW) · FLEURS 5.26% (FW 3.84 leads) · RuLS **4.21%** (beats Vosk+FW) · SOVA device: Vosk ahead  · ToneWebinars: FW 8.33 leads (gigastt 13.0)  ·  **RTF** ~0.10  ·  **Model** ~225 MB INT8  ·  **Cold-start** 0.94 s  ·  **RAM** ~400 MB single / 790 MB pool-2  ·  **Streaming** first partial ~0.78 s
 
-> GigaAM v3 `rnnt` head, INT8, Apple M1 CPU, 1000 samples/domain, failures = 100% WER, 95% bootstrap CIs. Every competitor is measured like-for-like through the [same harness](docs/benchmarks.md), manifests, and normalization.
+> GigaAM v3 `rnnt` head, INT8, Apple M1 CPU, 1000 samples/domain (FLEURS n=775), failures = 100% WER, 95% bootstrap CIs. Every competitor is measured like-for-like through the [same harness](docs/benchmarks.md), manifests, and normalization.
 
 ## How it compares
 
@@ -54,7 +54,8 @@ Where rivals win, and when not to reach for gigastt:
 - **Not the speed leader** — Vosk (RTF ~0.03) and T-one (~0.06) are faster; gigastt (~0.10) is comfortably real-time, not the fastest.
 - **Peak RAM at the default `--pool-size 2` (790 MB) loses** to Vosk 0.54 (560 MB) and T-one greedy (672 MB); single-session (~400 MB) is competitive — drop to `--pool-size 1` for the lean profile.
 - **Streaming is buffered/chunked** over an offline RNN-T, not a natively streaming acoustic model; ~0.78 s TTFP is not a lowest-latency claim.
-- **Training-data overlap** — GigaAM v3 is trained heavily on Golos; the Golos / OpenSTT benchmark slices likely overlap its training distribution, so these are best-case in-distribution upper bounds, not WER on unseen data.
+- **Training-data overlap** — GigaAM v3 is trained heavily on Golos; Golos / OpenSTT numbers are best-case in-distribution upper bounds. **Held-out** public sets (CV / FLEURS / RuLS / SOVA / Podlodka / ToneWebinars) give a second column — see [Benchmarks](docs/benchmarks.md#held-out--additional-public-sets--wer--95-ci).
+- **Raspberry Pi / edge** — arm64 Linux (including Pi 4/5) is supported via the multi-arch GHCR image and aarch64 builds, but **published RTF / RSS / TTFP are still M1-only**. Treat Pi 4 as “batch OK, real-time unmeasured” until the edge table is filled. Protocol + harness: [Edge / Raspberry Pi roadmap](specs/edge-raspberry-pi-roadmap.md) · [Benchmarks § Edge](docs/benchmarks.md#edge--raspberry-pi-hardware-measurements).
 
 ## Install
 

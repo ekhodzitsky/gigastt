@@ -41,6 +41,54 @@ locally available (clean read `golos_crowd_1k`, far-field `golos_farfield`); the
 phone / YouTube sets were not on hand. Their Kazakh / Kyrgyz / Uzbek accuracy is not
 measured here (no reference set).
 
+## Held-out / additional public sets — WER % (95% CI)
+
+Same harness and machine (Apple M1, CPU, `rnnt` INT8). These are **not** the
+Golos/OpenSTT slices above (still may overlap train mixes in general — see the
+contamination caveat). Protocol:
+[`specs/held-out-datasets-roadmap.md`](../specs/held-out-datasets-roadmap.md).
+Prep commands and per-dataset notes:
+[`benchmark/README.md` § Datasets](../benchmark/README.md#datasets).
+
+### Comparison (lower is better)
+
+| Dataset | Domain | n | **gigastt** | Vosk 0.54 | faster-whisper L3 |
+|---|---|--:|--:|--:|--:|
+| Common Voice RU (CV 21.0, seed=42) | crowd read | 1000 | **2.63 (2.2–3.2)** | 6.10 (5.4–6.9) | 5.22 (4.5–5.9) |
+| FLEURS `ru_ru` test (full) | clean read | 775 | 5.26 (4.7–5.8) | 6.14 (5.6–6.8) | **3.84 (3.4–4.3)** |
+| RuLS (OpenSLR 96 / HF mirror) | audiobook | 1000 | **4.21 (3.8–4.6)** | 9.18 (8.6–9.7) | 9.65 (9.0–10.2) |
+| SOVA RuDevices | device / command | 1000 | 10.30 (9.4–11.2) | **6.28 (5.5–7.0)** | 14.79 (13.6–16.1) |
+| Podlodka Speech (train, full) | podcast / conversational | 67 | **7.33 (5.6–9.2)** | 9.96 (8.0–12.0) | 7.27 (5.9–8.9) |
+| ToneWebinars (val, seed=42) | webinar / lecture | 1000 | 13.02 (12.3–13.8) | 14.87 (14.2–15.6) | **8.33 (7.7–9.0)** |
+
+RTF (M1 CPU): gigastt ~0.04–0.09 · Vosk ~0.04–0.05 · faster-whisper ~0.7–1.3.
+
+**Takeaways**
+
+- **vs Vosk 0.54:** gigastt wins on CV, FLEURS, RuLS, Podlodka, ToneWebinars;
+  **loses on SOVA device/command** (10.30 vs 6.28) — Zipformer/command domain.
+- **vs faster-whisper Large-v3:** gigastt ahead on **CV** (2.63 vs 5.22), **RuLS**
+  (4.21 vs 9.65), and **SOVA** (10.30 vs 14.79); **FLEURS** and **ToneWebinars**
+  Whisper leads (3.84 vs 5.26; 8.33 vs 13.02); **Podlodka** is a statistical tie
+  (7.33 vs 7.27, wide CI). Domain-dependent — Whisper stronger on long lecture speech.
+- Podlodka n=67 is thin (HF only ~87 utts total); CI is wide.
+- ToneWebinars: validation slice of first 2500 RU rows, seed=42 → n=1000; ~7.1 h audio;
+  mostly Russian webinar segments (Cyrillic majority filter).
+
+### Provenance
+
+| Dataset | License | Prep | Artifacts |
+|---|---|---|---|
+| Common Voice RU | CC0-1.0 | `scripts/prepare_common_voice_ru.py` (mirror `artyomboyko/common_voice_21_0_ru`) | `results_full/common_voice_ru_{gigastt,vosk054,baselines}.json` |
+| FLEURS `ru_ru` | CC BY 4.0 | `scripts/prepare_fleurs.py --config ru_ru` | `results_full/fleurs_ru_{gigastt,vosk054,baselines}.json` |
+| RuLS | Public Domain (USA) / LibriVox | HF `istupakov/russian_librispeech` test (seed=42) | `results_full/ruls_{gigastt,vosk054,faster_whisper}.json` |
+| SOVA RuDevices | see HF card | HF `bond005/sova_rudevices` (seed=42, n=1000 of 5k+) | `results_full/sova_rudevices_{gigastt,vosk054,faster_whisper}.json` |
+| Podlodka | see HF card | HF `bond005/podlodka_speech` train (n=67 = full train) | `results_full/podlodka_{gigastt,vosk054,faster_whisper}.json` |
+| ToneWebinars | Apache-2.0 | `scripts/prepare_tone_webinars.py` (val, max-scan 2500, seed=42 → n=1000) | `results_full/tone_webinars_{gigastt,vosk054,faster_whisper}.json` |
+
+Manifests under `benchmark/manifests/`. License notes:
+[`benchmark/DATA_LICENSE`](../benchmark/DATA_LICENSE).
+
 > The pre-v2.3 default was the `e2e_rnnt` head (clean read 8.60%, far-field 5.90,
 > phone 19.28, YouTube 11.35); the `rnnt` head above more than halves clean-read WER
 > and edges the others. Both heads share the encoder — `rnnt` emits bare lowercase
@@ -211,6 +259,76 @@ cross-engine Python harness so they line up with the table above.
 | Peak RSS (default `--pool-size 2`) | 790 MB (single session ~400 MB) |
 | INT8 encoder | 844 MB → 215 MB (**3.9×**), ~0% WER degradation |
 
+## Held-out queue
+
+Full 3-engine table (gigastt · Vosk 0.54 · faster-whisper L3) is above. Status:
+
+| # | Status | Dataset | Domain |
+|---|--------|---------|--------|
+| 1 | **done** (+ FW) | Mozilla Common Voice RU | clean / crowd read |
+| 2 | **done** (+ FW) | FLEURS `ru_ru` (WER) | clean read |
+| 3 | **done** (+ FW) | Russian LibriSpeech (RuLS) | audiobook |
+| 4 | **done** (+ FW) | SOVA RuDevices | device / command |
+| 5 | **partial** (n=67 only, + FW) | Podlodka Speech | conversational |
+| 6 | **done** (+ FW) | ToneWebinars | webinar / lecture |
+| 7 | optional | Phone-sim on a held-out set | telephony proxy |
+
+Full queue, prep scripts, protocol, and definition of done:
+[`specs/held-out-datasets-roadmap.md`](../specs/held-out-datasets-roadmap.md).
+
+## Edge / Raspberry Pi (hardware measurements)
+
+All tables above are **Apple M1, CPU EP**. Raspberry Pi 4/5 numbers are a separate
+track: arm64 Linux, Cortex-A72 (Pi 4) / A76 (Pi 5), no CoreML/CUDA.
+
+**Status:** protocol + harness ready; **device numbers not filled yet** (need a real
+board run). Do not treat extrapolated “~0.4–0.8 RTF on Pi 4” as measured fact.
+
+Roadmap: [`specs/edge-raspberry-pi-roadmap.md`](../specs/edge-raspberry-pi-roadmap.md).  
+Harness: [`benchmark/bench_edge.py`](../benchmark/bench_edge.py) ·
+wrapper [`scripts/bench_edge_pi.sh`](../scripts/bench_edge_pi.sh).
+
+### Protocol (summary)
+
+| Setting | Value |
+|---|---|
+| OS | Raspberry Pi OS **64-bit** (or other aarch64 Linux) |
+| Binary | GHCR multi-arch image or aarch64 release tarball (prefer over on-device `cargo install`) |
+| Pool | `--pool-size 1` |
+| Heads | `rnnt` INT8 (default accuracy) and, when installed, `ml_ctc` INT8 (edge speed candidate) |
+| Post-process | `--punctuation off --itn off` for the speed/RSS path |
+| Audio | in-tree `crates/gigastt/tests/fixtures/golos_00.wav` … `golos_04.wav` (RTF); `golos_00.wav` (TTFP) |
+| Storage label | `microSD` / `usb-ssd` / `nvme` / `unknown` (same board, two runs when comparing) |
+
+```sh
+# On the Pi, after model download:
+./scripts/bench_edge_pi.sh \
+  --storage-label microSD \
+  --variants rnnt,ml_ctc \
+  --output benchmark/results_edge_pi4.json
+# Optional TTFP needs: pip install 'websockets>=12'
+```
+
+### Results table (fill after hardware run)
+
+| Board | RAM | Storage | Head | RTF mean | Peak RSS (pool 1) | Cold-start | TTFP | Date / notes |
+|---|--:|---|---|--:|--:|--:|--:|---|
+| Raspberry Pi 4 Model B | 4 GB | microSD | `rnnt` INT8 | — | — | — | — | *unmeasured* |
+| Raspberry Pi 4 Model B | 4 GB | usb-ssd | `rnnt` INT8 | — | — | — | — | *unmeasured* |
+| Raspberry Pi 4 Model B | 8 GB | microSD | `rnnt` INT8 | — | — | — | — | *unmeasured* |
+| Raspberry Pi 4 Model B | *any* | *any* | `ml_ctc` INT8 | — | — | — | — | *unmeasured* |
+| Raspberry Pi 5 | *any* | *any* | `rnnt` INT8 | — | — | — | — | *optional* |
+
+**How to interpret once filled:** RTF &lt; 1.0 means file transcription is faster than
+real-time (batch-friendly). Continuous live dictation wants comfortable headroom
+(rule of thumb: RTF ≲ 0.5), not just RTF &lt; 1. Streaming TTFP is buffered/chunked
+over offline decode — same caveat as the M1 TTFP section above.
+
+**Product framing (until numbers exist):** arm64 **runs**; batch quality is the
+strong story; real-time on Pi 4 is **unproven**. Vosk small remains the safer
+default for tight real-time command UIs on Pi 4; Vosk 0.54 is a different
+(heavier) model than “Vosk small”.
+
 ## Reproduce
 
 ```sh
@@ -222,3 +340,10 @@ python benchmark.py --runners gigastt --dataset golos_crowd_1k --max-samples 0 -
 New competitor runners (Vosk 0.54, faster-whisper-turbo, T-one) live under
 [`benchmark/runners/`](../benchmark/runners/); each gracefully skips if its optional
 dependency/model is absent. T-one beam+LM needs the 5.5 GB KenLM (`BENCHMARK_TONE_KENLM`).
+
+Edge / Pi smoke (no full WER suite):
+
+```sh
+python3 benchmark/bench_edge.py --variants rnnt --storage-label unknown \
+  --output benchmark/results_edge.json
+```

@@ -9,12 +9,32 @@ Reproducible benchmark comparing **gigastt** against popular open-source ASR eng
 | gigastt | ONNX Runtime / Rust | Russian | Built from source or `cargo install` |
 | whisper.cpp | GGML / C++ | Multilingual | Auto-downloaded on first run |
 | faster-whisper | CTranslate2 / Python | Multilingual | `pip install faster-whisper` |
-| Vosk | Kaldi / C++ | Russian | `pip install vosk` (model auto-downloaded) |
+| Vosk 0.42 | Kaldi / C++ | Russian | `pip install vosk` (model auto-downloaded) |
+| Vosk 0.54 | Zipformer2 / sherpa-onnx | Russian | `pip install sherpa-onnx` (model auto-downloaded) |
 
 ## Metrics
 
 - **WER** (Word Error Rate) — lower is better. Computed after symmetric text normalization applied identically to the reference and the hypothesis for every engine.
 - **RTF** (Real-Time Factor) — `processing_time / audio_duration`. Lower is better; < 1.0 means faster than real-time.
+
+## Edge / Raspberry Pi (RTF + RSS + cold-start + TTFP)
+
+For on-device edge boards (Pi 4/5, etc.) use the dedicated harness — not the full
+cross-engine WER suite:
+
+```sh
+# From repo root (64-bit OS, gigastt binary + model already present)
+./scripts/bench_edge_pi.sh --storage-label microSD --variants rnnt \
+  --output benchmark/results_edge_pi4.json
+
+# Optional streaming TTFP:
+pip install 'websockets>=12'
+python3 benchmark/bench_edge.py --variants rnnt,ml_ctc --storage-label usb-ssd
+```
+
+Protocol, result tables, and what *not* to claim before hardware runs:
+[`specs/edge-raspberry-pi-roadmap.md`](../specs/edge-raspberry-pi-roadmap.md) ·
+[`docs/benchmarks.md` § Edge](../docs/benchmarks.md#edge--raspberry-pi-hardware-measurements).
 
 ## Methodology
 
@@ -162,7 +182,49 @@ GIGASTT_BENCHMARK_MAX_SAMPLES=100 docker-compose up
 
 ## Datasets
 
-The benchmark supports multiple Russian speech datasets. Use `--dataset <name>` to select one (default: `golos_crowd`).
+The benchmark supports multiple Russian speech datasets. Use `--dataset <name>` to
+select one (default: `golos_crowd`). Committed manifests live under
+`benchmark/manifests/`; audio is downloaded under `~/.gigastt/benchmarks/`.
+
+### Headline matrix (Golos + OpenSTT)
+
+These are the four domains in the main README / [`docs/benchmarks.md`](../docs/benchmarks.md)
+accuracy table. Treat them as **in-distribution upper bounds** for GigaAM (contamination
+caveat in that doc).
+
+### Held-out / additional public sets
+
+Second column outside Golos/OpenSTT. Full numbers, CIs, and takeaways:
+[`docs/benchmarks.md` § Held-out](../docs/benchmarks.md#held-out--additional-public-sets--wer--95-ci).
+Protocol and queue: [`specs/held-out-datasets-roadmap.md`](../specs/held-out-datasets-roadmap.md).
+Licenses: [`DATA_LICENSE`](DATA_LICENSE).
+
+| Manifest | Domain | n | Prep script | Engines published (2026-07) |
+|---|---|--:|---|---|
+| `common_voice_ru` | crowd read | 1000 | `scripts/prepare_common_voice_ru.py` | gigastt · Vosk 0.54 · FW L3 |
+| `fleurs_ru` | clean read | 775 | `scripts/prepare_fleurs.py --config ru_ru` | gigastt · Vosk 0.54 · FW L3 |
+| `ruls` | audiobook | 1000 | `scripts/prepare_rulslib.py` | gigastt · Vosk 0.54 · FW L3 |
+| `sova_rudevices` | device / command | 1000 | HF `bond005/sova_rudevices` (seed=42; manifest committed) | gigastt · Vosk 0.54 · FW L3 |
+| `podlodka` | podcast | 67 | `scripts/prepare_podlodka.py` | gigastt · Vosk 0.54 · FW L3 |
+| `tone_webinars` | webinar / lecture | 1000 | `scripts/prepare_tone_webinars.py` | gigastt · Vosk 0.54 · FW L3 |
+
+Reproduce a held-out set (Apple M1 CPU numbers in the docs):
+
+```bash
+# 1) Prepare audio + committed manifest (one-time; needs HF network)
+python ../scripts/prepare_tone_webinars.py   # or prepare_* for other sets
+
+# 2) Run engines (Vosk 0.54 CLI id is vosk-0.54 → vosk_0_54)
+python benchmark.py --dataset tone_webinars --runners gigastt --max-samples 0 \
+  --output results_full/tone_webinars_gigastt.json
+python benchmark.py --dataset tone_webinars --runners vosk-0.54 --max-samples 0 \
+  --output results_full/tone_webinars_vosk054.json
+python benchmark.py --dataset tone_webinars --runners faster_whisper --max-samples 0 \
+  --output results_full/tone_webinars_faster_whisper.json
+```
+
+`results_full/` is gitignored (large per-sample JSON); published WER/CI/RTF live in
+`docs/benchmarks.md`. Re-run and compare if you need local artifacts.
 
 ### Golos crowd
 
@@ -208,26 +270,6 @@ Run the benchmark on the farfield slice:
 python benchmark.py --dataset golos_farfield --max-samples 0
 ```
 
-### Common Voice Russian
-
-An alternative benchmark slice can be prepared from **Mozilla Common Voice** Russian (`ru`) test split.
-
-- **Source:** Mozilla Common Voice contributors
-- **Dataset:** https://huggingface.co/datasets/mozilla-foundation/common_voice_16_1
-- **Project page:** https://commonvoice.mozilla.org/ru
-- **License:** CC0-1.0
-
-```bash
-# Prepare a deterministic 1000-sample slice (one-time)
-python ../scripts/prepare_common_voice_ru.py
-```
-
-Run the benchmark on the Common Voice slice:
-
-```bash
-python benchmark.py --dataset common_voice_ru --max-samples 0
-```
-
 ### OpenSTT phone calls
 
 An **OpenSTT** `asr_calls_2_val` validation slice (1 000 manually-annotated phone-call samples).
@@ -267,19 +309,91 @@ Run the benchmark on the OpenSTT YouTube slice:
 python benchmark.py --dataset openstt_youtube --max-samples 0
 ```
 
-### Common Voice Russian
+### Common Voice Russian (held-out)
 
-An alternative benchmark slice can be prepared from **Mozilla Common Voice** Russian (`ru`) test split.
+Deterministic 1000-sample slice (`seed=42`) of **Mozilla Common Voice** Russian
+Corpus **21.0** test audio.
 
-- **Source:** Mozilla Common Voice contributors
-- **Dataset:** https://huggingface.co/datasets/mozilla-foundation/common_voice_16_1
+- **Source:** Mozilla Common Voice contributors via community HF mirror
+  `artyomboyko/common_voice_21_0_ru` (official Hub `mozilla-foundation/common_voice_*`
+  repos have been empty since Oct 2025 — see Mozilla Data Collective)
 - **Project page:** https://commonvoice.mozilla.org/ru
 - **License:** CC0-1.0
+- **Published WER (M1 CPU):** gigastt **2.63%** · FW 5.22 · Vosk 0.54 6.10
 
 ```bash
 # Prepare a deterministic 1000-sample slice (one-time).
-# Hugging Face may require accepting the dataset terms or setting HF_TOKEN.
 python ../scripts/prepare_common_voice_ru.py
+python benchmark.py --dataset common_voice_ru --runners gigastt --max-samples 0
+```
+
+### FLEURS Russian (held-out)
+
+Full FLEURS `ru_ru` test split (n=775).
+
+- **Source:** https://huggingface.co/datasets/google/fleurs
+- **License:** CC BY 4.0
+- **Published WER (M1 CPU):** FW **3.84%** · gigastt 5.26 · Vosk 0.54 6.14
+
+```bash
+python ../scripts/prepare_fleurs.py --config ru_ru
+python benchmark.py --dataset fleurs_ru --runners faster_whisper --max-samples 0
+```
+
+### Russian LibriSpeech / RuLS (held-out)
+
+Audiobook read speech (OpenSLR SLR96 / HF mirror), n=1000 of test (`seed=42`).
+
+- **Source:** https://www.openslr.org/96/ · HF `istupakov/russian_librispeech`
+- **License:** Public Domain (USA) / LibriVox-derived
+- **Published WER (M1 CPU):** gigastt **4.21%** · Vosk 9.18 · FW 9.65
+
+```bash
+python ../scripts/prepare_rulslib.py
+python benchmark.py --dataset ruls --runners gigastt --max-samples 0
+```
+
+### SOVA RuDevices (held-out)
+
+Device / short-command Russian speech, n=1000 (`seed=42`) of HF `bond005/sova_rudevices`.
+
+- **Source:** https://huggingface.co/datasets/bond005/sova_rudevices
+- **License:** see HF card
+- **Published WER (M1 CPU):** Vosk 0.54 **6.28%** · gigastt 10.30 · FW 14.79
+
+Manifest is committed; audio under `~/.gigastt/benchmarks/sova_rudevices/`.
+
+```bash
+python benchmark.py --dataset sova_rudevices --runners vosk-0.54 --max-samples 0
+```
+
+### Podlodka Speech (held-out, thin)
+
+Podcast / conversational; HF train split is small (n=67 = full train used).
+
+- **Source:** https://huggingface.co/datasets/bond005/podlodka_speech
+- **License:** see HF card
+- **Published WER (M1 CPU):** gigastt 7.33 · FW 7.27 · Vosk 9.96 (wide CI)
+
+```bash
+python ../scripts/prepare_podlodka.py --split train --slice-size 1000
+python benchmark.py --dataset podlodka --runners gigastt --max-samples 0
+```
+
+### ToneWebinars (held-out)
+
+Webinar / lecture conversational Russian. Validation split streamed; first 2500
+usable RU rows (Cyrillic majority), then `seed=42` → n=1000 (~7.1 h audio).
+
+- **Source:** https://huggingface.co/datasets/Vikhrmodels/ToneWebinars
+  (from ZeroAgency/shkolkovo-bobr.video-webinars-audio)
+- **License:** Apache-2.0
+- **Published WER (M1 CPU):** FW **8.33%** · gigastt 13.02 · Vosk 0.54 14.87
+
+```bash
+python ../scripts/prepare_tone_webinars.py --split validation --slice-size 1000 --seed 42 --max-scan 2500
+python benchmark.py --dataset tone_webinars --runners faster_whisper --max-samples 0 \
+  --output results_full/tone_webinars_faster_whisper.json
 ```
 
 Run the benchmark on the Common Voice slice:
