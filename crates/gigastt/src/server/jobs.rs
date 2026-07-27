@@ -634,6 +634,8 @@ impl JobExecution for RealJobExecutor {
 
         const TARGET_SAMPLE_RATE: f64 = 16_000.0;
         let total_seconds = samples.len() as f64 / TARGET_SAMPLE_RATE;
+        // Only the duration was needed here; the engine re-decodes from `body`.
+        drop(samples);
         let _ = store
             .update(id, Box::new(move |j| j.total_seconds = total_seconds))
             .await;

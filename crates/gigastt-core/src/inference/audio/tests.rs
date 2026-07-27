@@ -1441,3 +1441,183 @@ fn test_encode_wav_pcm16_clamps_and_sanitizes() {
     assert!(decoded[2].abs() < 1e-3, "NaN must become silence");
     assert!((decoded[3] - 0.5).abs() < 1e-3);
 }
+
+// --- streaming resample equivalence (whole-buffer reference) ---
+
+/// PCM16 samples of a committed 16 kHz mono WAV fixture, used as a real-signal
+/// input for the streaming-resample equivalence tests.
+fn fixture_tone_pcm() -> Vec<i16> {
+    let wav = include_bytes!("../../../tests/fixtures/telephony/tone_src.wav");
+    let data = super::telephony::find_riff_chunk(wav, b"data").expect("fixture data chunk");
+    data.chunks_exact(2)
+        .map(|b| i16::from_le_bytes([b[0], b[1]]))
+        .collect()
+}
+
+/// Linear sine sweep, PCM16. Sweeping across the whole band is the adversarial
+/// case for a resampler seam: any FIR-history reset shows up as a spike.
+fn sweep_pcm(rate: u32, seconds: f32) -> Vec<i16> {
+    let n = (rate as f32 * seconds) as usize;
+    (0..n)
+        .map(|i| {
+            let t = i as f32 / rate as f32;
+            let f = 50.0 + (0.45 * rate as f32 - 50.0) * (t / seconds);
+            (0.8 * (std::f32::consts::PI * f * t).sin() * 32000.0) as i16
+        })
+        .collect()
+}
+
+/// Assert the streaming path agrees with a whole-buffer `resample()` of the
+/// same decoded signal: same length within one sample, max per-sample delta
+/// below 1e-4.
+fn assert_matches_whole_buffer(streamed: &[f32], reference: &[f32], what: &str) {
+    let len_diff = streamed.len().abs_diff(reference.len());
+    assert!(
+        len_diff <= 1,
+        "{what}: length diverged, streaming {} vs whole-buffer {}",
+        streamed.len(),
+        reference.len()
+    );
+    let cmp = streamed.len().min(reference.len());
+    assert!(cmp > 0, "{what}: nothing to compare");
+    let mut max_diff = 0.0f32;
+    let mut max_at = 0usize;
+    for i in 0..cmp {
+        let d = (streamed[i] - reference[i]).abs();
+        if d > max_diff {
+            max_diff = d;
+            max_at = i;
+        }
+    }
+    assert!(
+        max_diff <= 1e-4,
+        "{what}: max |streaming - whole-buffer| = {max_diff} at sample {max_at}"
+    );
+}
+
+/// Decoding the same PCM twice — once with a 16 kHz header (passthrough, so
+/// the result is exactly what the decoder produced) and once with a `rate`
+/// header (the streaming resample path) — must agree with running the
+/// passthrough result through the whole-buffer `resample()`.
+fn check_mono_equivalence(pcm: &[i16], rate: u32, what: &str) {
+    let at_source = decode_audio_bytes(&make_wav_bytes(pcm, 16000)).unwrap();
+    let reference = resample(&at_source, SampleRate(rate), SampleRate(16000)).unwrap();
+    let streamed = decode_audio_bytes(&make_wav_bytes(pcm, rate)).unwrap();
+    assert_matches_whole_buffer(&streamed, &reference, what);
+}
+
+fn check_stereo_equivalence(left: &[i16], right: &[i16], rate: u32, what: &str) {
+    // Mono-mix path.
+    let mixed_at_source = decode_audio_bytes(&make_stereo_wav_bytes(left, right, 16000)).unwrap();
+    let mixed_reference = resample(&mixed_at_source, SampleRate(rate), SampleRate(16000)).unwrap();
+    let mixed_streamed = decode_audio_bytes(&make_stereo_wav_bytes(left, right, rate)).unwrap();
+    assert_matches_whole_buffer(&mixed_streamed, &mixed_reference, &format!("{what} mixed"));
+
+    // Split-channel path.
+    let split_at_source =
+        decode_audio_bytes_shared_channels(Bytes::from(make_stereo_wav_bytes(left, right, 16000)))
+            .unwrap();
+    let split_streamed =
+        decode_audio_bytes_shared_channels(Bytes::from(make_stereo_wav_bytes(left, right, rate)))
+            .unwrap();
+    assert_eq!(split_streamed.len(), split_at_source.len());
+    for (c, (streamed, source)) in split_streamed.iter().zip(&split_at_source).enumerate() {
+        let reference = resample(source, SampleRate(rate), SampleRate(16000)).unwrap();
+        assert_matches_whole_buffer(streamed, &reference, &format!("{what} channel {c}"));
+    }
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_streaming_decode_matches_whole_buffer_resample_48k() {
+    let pcm = sweep_pcm(48_000, 2.5);
+    check_mono_equivalence(&pcm, 48_000, "48k sweep mono");
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_streaming_decode_matches_whole_buffer_resample_44k1() {
+    let pcm = sweep_pcm(44_100, 2.5);
+    check_mono_equivalence(&pcm, 44_100, "44.1k sweep mono");
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_streaming_decode_matches_whole_buffer_resample_stereo_48k() {
+    let left = sweep_pcm(48_000, 2.5);
+    let right: Vec<i16> = left.iter().rev().copied().collect();
+    check_stereo_equivalence(&left, &right, 48_000, "48k sweep stereo");
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_streaming_decode_matches_whole_buffer_resample_stereo_44k1() {
+    let left = sweep_pcm(44_100, 2.5);
+    let right: Vec<i16> = left.iter().rev().copied().collect();
+    check_stereo_equivalence(&left, &right, 44_100, "44.1k sweep stereo");
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_streaming_decode_matches_whole_buffer_resample_fixture() {
+    let pcm = fixture_tone_pcm();
+    assert!(
+        pcm.len() >= super::resample::RESAMPLE_STAGING_FRAMES,
+        "fixture must span at least one staging flush, got {} samples",
+        pcm.len()
+    );
+    check_mono_equivalence(&pcm, 48_000, "fixture 48k");
+    check_mono_equivalence(&pcm, 44_100, "fixture 44.1k");
+}
+
+#[test]
+fn test_streaming_decode_16k_input_is_bit_identical() {
+    // A 16 kHz source must never reach the resampler: every sample stays the
+    // raw PCM16 conversion and the frame count is preserved exactly.
+    let pcm = fixture_tone_pcm();
+    let mono = decode_audio_bytes(&make_wav_bytes(&pcm, 16000)).unwrap();
+    assert_eq!(mono.len(), pcm.len());
+    for (i, (&raw, &got)) in pcm.iter().zip(&mono).enumerate() {
+        let expected = f32::from(raw) / 32768.0;
+        assert_eq!(
+            got.to_bits(),
+            expected.to_bits(),
+            "sample {i} was filtered: {got} vs {expected}"
+        );
+    }
+
+    let right: Vec<i16> = pcm.iter().rev().copied().collect();
+    let channels =
+        decode_audio_bytes_shared_channels(Bytes::from(make_stereo_wav_bytes(&pcm, &right, 16000)))
+            .unwrap();
+    assert_eq!(channels.len(), 2);
+    for (c, raw) in [&pcm, &right].iter().enumerate() {
+        assert_eq!(channels[c].len(), raw.len());
+        for (i, (&r, &got)) in raw.iter().zip(&channels[c]).enumerate() {
+            let expected = f32::from(r) / 32768.0;
+            assert_eq!(
+                got.to_bits(),
+                expected.to_bits(),
+                "channel {c} sample {i} was filtered: {got} vs {expected}"
+            );
+        }
+    }
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_telephony_raw_streaming_matches_whole_buffer_resample() {
+    // 8 kHz G.711 upsamples to 16 kHz through the same staged path.
+    let pcm = sweep_pcm(8_000, 2.5);
+    let mut encoder = audio_codec::pcmu::PcmuEncoder::new();
+    let encoded = audio_codec::Encoder::encode(&mut encoder, &pcm);
+    let mut decoder = audio_codec::pcmu::PcmuDecoder::new();
+    let round_tripped = audio_codec::Decoder::decode(&mut decoder, &encoded);
+    let at_source: Vec<f32> = round_tripped
+        .iter()
+        .map(|&s| f32::from(s) / 32768.0)
+        .collect();
+    let reference = resample(&at_source, SampleRate(8_000), SampleRate(16_000)).unwrap();
+    let streamed = decode_telephony_raw(&encoded, TelephonyCodec::Pcmu, 8_000).unwrap();
+    assert_matches_whole_buffer(&streamed, &reference, "pcmu 8k");
+}

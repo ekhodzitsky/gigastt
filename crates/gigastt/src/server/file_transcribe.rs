@@ -68,6 +68,9 @@ pub(crate) fn run_file_transcribe_blocking(
             _ => None,
         };
         if let Some(reason) = fallback_reason {
+            // The mono path re-decodes from `body`; release the split channels
+            // first so both copies are never resident at once.
+            drop(channels);
             tracing::warn!(
                 "channels=split requested but {reason} detected; falling back to mono transcription"
             );

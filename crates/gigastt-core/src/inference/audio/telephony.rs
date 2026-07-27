@@ -10,7 +10,7 @@ use super::MAX_DURATION_S;
 #[cfg(feature = "file-decode")]
 use super::max_decode_samples;
 #[cfg(feature = "file-decode")]
-use super::resample::{SampleRate, resample};
+use super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
 
 /// WAV format tags for ITU-T G.722 ADPCM. Symphonia's RIFF demuxer maps them
 /// to `CODEC_TYPE_NULL` and there is no decoder for it, so G.722-in-WAV (what
@@ -231,12 +231,15 @@ pub fn decode_telephony_raw(
             "Audio file too long ({observed_s:.0}s). Maximum supported: {MAX_DURATION_S:.0}s."
         );
     }
-    let mut samples: Vec<f32> = pcm.iter().map(|&s| f32::from(s) / 32768.0).collect();
-    if rate != 16000 {
-        samples =
-            resample(&samples, SampleRate(rate), SampleRate(16000)).context("Resampling failed")?;
+    // Convert and resample in staged chunks so the full-length source-rate
+    // f32 buffer is never materialized alongside the 16 kHz output.
+    let mut acc = ResampleTo16k::new(SampleRate(rate), Some(pcm.len()));
+    for piece in pcm.chunks(RESAMPLE_STAGING_FRAMES) {
+        acc.stage()
+            .extend(piece.iter().map(|&s| f32::from(s) / 32768.0));
+        acc.flush_full()?;
     }
-    Ok(samples)
+    acc.finish()
 }
 
 /// Wrap mono f32 samples in a PCM16 RIFF/WAVE container. Lets raw-codec

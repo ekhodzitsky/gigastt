@@ -27,7 +27,7 @@ use super::max_decode_samples;
 #[cfg(feature = "file-decode")]
 use super::opus::{decode_opus_channels, next_demux_packet};
 #[cfg(feature = "file-decode")]
-use super::resample::{SampleRate, resample};
+use super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
 #[cfg(feature = "file-decode")]
 use super::telephony::{sniffs_as_g722_wav, try_decode_g722_wav};
 
@@ -301,24 +301,44 @@ fn decode_audio_inner_channels<'s>(
 
     tracing::info!("Audio ({source_label}): {sample_rate}Hz, {channels}ch (split)");
 
+    // Each channel is an independent stream, so each gets its own staging
+    // buffer and cached resampler; none of them ever holds more than one
+    // chunk of source-rate audio.
+    let hint = match n_frames_hint {
+        Some(n) if n > 0 && n <= max_samples as u64 => Some(n as usize),
+        _ => None,
+    };
+    // Source-rate frame count of the first channel, tracked separately because
+    // the accumulators now hold 16 kHz samples while the duration cap is
+    // expressed in source-rate frames.
+    let mut source_frames: usize = 0;
+
     // Symphonia demuxes OGG/Opus but ships no Opus decoder, so Opus packets
     // go through the `opus-rs` fallback and rejoin the shared resample tail.
-    let mut per_channel: Vec<Vec<f32>> = if audio_params.codec == CODEC_ID_OPUS {
-        decode_opus_channels(&mut *format, track_id, channels, max_samples)?
+    let acc: Vec<ResampleTo16k> = if audio_params.codec == CODEC_ID_OPUS {
+        let decoded = decode_opus_channels(&mut *format, track_id, channels, max_samples)?;
+        source_frames = decoded.first().map(|v| v.len()).unwrap_or(0);
+        let mut acc = Vec::with_capacity(decoded.len());
+        for samples in decoded {
+            let mut chan = ResampleTo16k::new(SampleRate(sample_rate), Some(samples.len()));
+            for piece in samples.chunks(RESAMPLE_STAGING_FRAMES) {
+                chan.stage().extend_from_slice(piece);
+                chan.flush_full()?;
+            }
+            acc.push(chan);
+        }
+        acc
     } else {
         let mut decoder = symphonia::default::get_codecs()
             .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
             .context("Unsupported audio codec")?;
 
-        let mut per_channel: Vec<Vec<f32>> = (0..channels)
-            .map(|_| match n_frames_hint {
-                Some(n) if n > 0 && n <= max_samples as u64 => Vec::with_capacity(n as usize),
-                _ => Vec::new(),
-            })
+        let mut acc: Vec<ResampleTo16k> = (0..channels)
+            .map(|_| ResampleTo16k::new(SampleRate(sample_rate), hint))
             .collect();
 
         loop {
-            let have_pcm = per_channel.first().is_some_and(|c| !c.is_empty());
+            let have_pcm = source_frames > 0;
             let Some(packet) = next_demux_packet(&mut *format, have_pcm)? else {
                 break;
             };
@@ -332,8 +352,10 @@ fn decode_audio_inner_channels<'s>(
             let num_frames = decoded.frames();
             let ch = spec.channels().count();
 
-            if ch > per_channel.len() {
-                per_channel.resize_with(ch, Vec::new);
+            if ch > acc.len() {
+                // A channel that appears mid-stream starts from this packet,
+                // so it gets no length hint.
+                acc.resize_with(ch, || ResampleTo16k::new(SampleRate(sample_rate), None));
             }
 
             if ch > 1 {
@@ -341,50 +363,53 @@ fn decode_audio_inner_channels<'s>(
                 decoded.copy_to_vec_interleaved(&mut interleaved);
                 for frame in 0..num_frames {
                     for c in 0..ch {
-                        per_channel[c].push(interleaved[frame * ch + c]);
+                        acc[c].stage().push(interleaved[frame * ch + c]);
                     }
                 }
-            } else if !per_channel.is_empty() {
-                let offset = per_channel[0].len();
-                per_channel[0].resize(offset + num_frames, 0.0);
-                decoded.copy_to_slice_interleaved(&mut per_channel[0][offset..]);
+            } else if !acc.is_empty() {
+                let stage = acc[0].stage();
+                let offset = stage.len();
+                stage.resize(offset + num_frames, 0.0);
+                decoded.copy_to_slice_interleaved(&mut stage[offset..]);
+            }
+            // Both branches above grow the first channel by `num_frames`; the
+            // `ch <= 1` branch is skipped entirely when there is no channel.
+            if !acc.is_empty() {
+                source_frames += num_frames;
             }
 
-            if per_channel.first().map(|v| v.len()).unwrap_or(0) > max_samples {
-                let observed_s =
-                    per_channel.first().map(|v| v.len()).unwrap_or(0) as f64 / sample_rate as f64;
+            if source_frames > max_samples {
+                let observed_s = source_frames as f64 / sample_rate as f64;
                 anyhow::bail!(
                     "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
                     observed_s
                 );
             }
+
+            for chan in &mut acc {
+                chan.flush_full()?;
+            }
         }
 
-        per_channel
+        acc
     };
 
-    let duration_s = per_channel
-        .first()
-        .map(|v| v.len() as f64 / sample_rate as f64)
-        .unwrap_or(0.0);
+    let duration_s = source_frames as f64 / sample_rate as f64;
     tracing::info!(
         "Decoded {} channel(s), first channel {} samples at {}Hz ({:.1}s)",
-        per_channel.len(),
-        per_channel.first().map(|v| v.len()).unwrap_or(0),
+        acc.len(),
+        source_frames,
         sample_rate,
         duration_s
     );
 
+    let channel_count = acc.len();
+    let per_channel = acc
+        .into_iter()
+        .map(ResampleTo16k::finish)
+        .collect::<Result<Vec<_>>>()?;
     if sample_rate != 16000 {
-        per_channel = per_channel
-            .into_iter()
-            .map(|ch| {
-                resample(&ch, SampleRate(sample_rate), SampleRate(16000))
-                    .context("Resampling failed")
-            })
-            .collect::<Result<Vec<_>>>()?;
-        let channels = per_channel.len();
-        tracing::info!("Resampled {channels} channel(s) to 16kHz");
+        tracing::info!("Resampled {channel_count} channel(s) to 16kHz");
     }
 
     Ok(per_channel)
@@ -394,9 +419,6 @@ fn decode_audio_inner_channels<'s>(
 pub fn mix_channels_to_mono(channels: &[Vec<f32>]) -> Vec<f32> {
     if channels.is_empty() {
         return Vec::new();
-    }
-    if channels.len() == 1 {
-        return channels[0].clone();
     }
     let n = channels.iter().map(|c| c.len()).min().unwrap_or(0);
     (0..n)
@@ -490,24 +512,42 @@ fn decode_audio_inner<'s>(
     // is bounded by the same budget.
     let max_samples: usize = max_decode_samples(sample_rate);
 
+    // Decoded packets are staged at the source rate and drained to 16 kHz as
+    // they fill, so peak memory is O(one staging chunk) instead of O(file).
+    let mut acc = ResampleTo16k::new(
+        SampleRate(sample_rate),
+        match n_frames_hint {
+            Some(n) if n > 0 && n <= max_samples as u64 => Some(n as usize),
+            _ => None,
+        },
+    );
+    // Source-rate frame count, tracked separately because the accumulator now
+    // holds 16 kHz samples while the duration cap is expressed in source-rate
+    // frames.
+    let mut source_frames: usize = 0;
+
     // Symphonia demuxes OGG/Opus but ships no Opus decoder, so Opus packets
     // go through the `opus-rs` fallback (mono mix included) and rejoin the
     // shared duration-log / resample tail.
-    let mut all_samples: Vec<f32> = if audio_params.codec == CODEC_ID_OPUS {
-        let per_channel = decode_opus_channels(&mut *format, track_id, channels, max_samples)?;
-        mix_channels_to_mono(&per_channel)
+    if audio_params.codec == CODEC_ID_OPUS {
+        let mono = mix_channels_to_mono(&decode_opus_channels(
+            &mut *format,
+            track_id,
+            channels,
+            max_samples,
+        )?);
+        source_frames = mono.len();
+        for piece in mono.chunks(RESAMPLE_STAGING_FRAMES) {
+            acc.stage().extend_from_slice(piece);
+            acc.flush_full()?;
+        }
     } else {
         let mut decoder = symphonia::default::get_codecs()
             .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
             .context("Unsupported audio codec")?;
 
-        let mut all_samples: Vec<f32> = match n_frames_hint {
-            Some(n) if n > 0 && n <= max_samples as u64 => Vec::with_capacity(n as usize),
-            _ => Vec::new(),
-        };
-
         loop {
-            let have_pcm = !all_samples.is_empty();
+            let have_pcm = source_frames > 0;
             let Some(packet) = next_demux_packet(&mut *format, have_pcm)? else {
                 break;
             };
@@ -525,47 +565,48 @@ fn decode_audio_inner<'s>(
             if ch > 1 {
                 let mut interleaved: Vec<f32> = Vec::with_capacity(num_frames * ch);
                 decoded.copy_to_vec_interleaved(&mut interleaved);
+                let stage = acc.stage();
                 for frame in 0..num_frames {
                     let mut sum = 0.0_f32;
                     for c in 0..ch {
                         sum += interleaved[frame * ch + c];
                     }
-                    all_samples.push(sum / ch as f32);
+                    stage.push(sum / ch as f32);
                 }
             } else {
-                let offset = all_samples.len();
-                all_samples.resize(offset + num_frames, 0.0);
-                decoded.copy_to_slice_interleaved(&mut all_samples[offset..]);
+                let stage = acc.stage();
+                let offset = stage.len();
+                stage.resize(offset + num_frames, 0.0);
+                decoded.copy_to_slice_interleaved(&mut stage[offset..]);
             }
+            source_frames += num_frames;
 
             // Incremental duration cap: abort before the next packet is decoded
             // if the accumulated buffer already exceeds the duration budget.
             // This prevents a crafted upload from allocating hundreds of MiB of
             // PCM before the post-loop guard gets a chance to run.
-            if all_samples.len() > max_samples {
-                let observed_s = all_samples.len() as f64 / sample_rate as f64;
+            if source_frames > max_samples {
+                let observed_s = source_frames as f64 / sample_rate as f64;
                 anyhow::bail!(
                     "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
                     observed_s
                 );
             }
+
+            acc.flush_full()?;
         }
+    }
 
-        all_samples
-    };
-
-    let duration_s = all_samples.len() as f64 / sample_rate as f64;
+    let duration_s = source_frames as f64 / sample_rate as f64;
     tracing::info!(
         "Decoded {} samples at {}Hz ({:.1}s)",
-        all_samples.len(),
+        source_frames,
         sample_rate,
         duration_s
     );
 
-    // Resample to 16kHz if needed
+    let all_samples = acc.finish()?;
     if sample_rate != 16000 {
-        all_samples = resample(&all_samples, SampleRate(sample_rate), SampleRate(16000))
-            .context("Resampling failed")?;
         tracing::info!("Resampled to 16kHz: {} samples", all_samples.len());
     }
 
