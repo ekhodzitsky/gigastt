@@ -197,9 +197,18 @@ pub(super) const RESAMPLE_STAGING_FRAMES: usize = super::MAX_DECODE_SAMPLE_RATE 
 /// version produced. At any other rate the staging buffer is capped at
 /// [`RESAMPLE_STAGING_FRAMES`] source-rate samples and drained through
 /// [`resample_with_cache`], whose FIR history and fractional phase carry
-/// across flushes — the concatenated output therefore matches a single
-/// whole-buffer [`resample`] call while peak memory stays O(one chunk)
-/// instead of O(file).
+/// across flushes, so peak memory stays O(one chunk) instead of O(file) and no
+/// seam appears at a flush boundary.
+///
+/// Against a single whole-buffer [`resample`] call the concatenated output is
+/// bit-identical at integer ratios (48/32/8 kHz, where `1/ratio` is exact in
+/// f64). At a non-integer ratio the two separate slowly as the input grows,
+/// because [`resample`] runs rubato's fractional-position accumulator over the
+/// whole file in one pass and loses sub-sample resolution as it grows, while
+/// this path restarts it near zero every flush. The staged path is the more
+/// accurate of the two — it stays phase-locked to an analytic tone at every
+/// length while the whole-buffer reference walks; see the long-input test in
+/// `tests.rs` for the measured bounds.
 #[cfg(feature = "file-decode")]
 pub(super) struct ResampleTo16k {
     from_rate: SampleRate,
