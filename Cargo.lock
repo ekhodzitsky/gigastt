@@ -853,15 +853,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-queue"
-version = "0.3.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f58bbc28f91df819d0aa2a2c00cd19754769c2fad90579b3592b1c9ba7a3115"
-dependencies = [
- "crossbeam-utils",
-]
-
-[[package]]
 name = "crossbeam-utils"
 version = "0.8.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2970,13 +2961,11 @@ dependencies = [
 
 [[package]]
 name = "polyvoice"
-version = "0.9.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "784a0072485637ee46b60ec3c555bfc49c2d6b604139ca816bfdbfe59411e634"
+checksum = "51156feb158b33666f0a1d0aadb70761566c676cef9d214fc6cd6d5c2c1eb01e"
 dependencies = [
  "anyhow",
- "crossbeam-queue",
- "fastrand",
  "hound",
  "ndarray",
  "ort",
