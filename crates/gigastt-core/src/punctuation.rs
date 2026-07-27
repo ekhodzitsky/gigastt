@@ -27,6 +27,7 @@
 //! `b105da023474d98aa13ba18953ae67b04b17bd0595034bc06030c17536893933`.
 
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use anyhow::{Context, Result};
 use parking_lot::Mutex;
@@ -44,6 +45,26 @@ pub const PUNCT_MODEL_FILE: &str = "rupunct_small_int8.onnx";
 pub const PUNCT_TOKENIZER_FILE: &str = "tokenizer.json";
 /// Basename of the model config JSON (carries `id2label`) inside the punct model dir.
 pub const PUNCT_CONFIG_FILE: &str = "config.json";
+
+/// Whitespace words labelled in one model run.
+///
+/// The exported RUPunct graph is fully dynamic but its position-embedding table
+/// has 2048 rows, so a single run over a whole long transcript overflows the
+/// embedding and fails the entire pass. 250 Russian words are roughly 600–900
+/// WordPiece subtokens, which leaves a wide margin under that ceiling.
+const WINDOW_WORDS: usize = 250;
+
+/// Words shared by neighbouring windows; must be even and below [`WINDOW_WORDS`].
+///
+/// Each window keeps only the labels of its middle and drops half of the overlap
+/// on either side, so (except at the very start / end of the transcript) every
+/// word is labelled from a window in which it has real left and right context.
+const WINDOW_OVERLAP_WORDS: usize = 40;
+
+/// Hard ceiling on subtokens submitted in one run, kept below the model's 2048
+/// position rows. A window whose lexis still encodes above this is halved until
+/// it fits.
+const MAX_WINDOW_SUBTOKENS: usize = 2000;
 
 /// Apply Python `str.capitalize()` semantics to a token: first character
 /// uppercased, every following character lowercased. Operates over Unicode
@@ -141,6 +162,105 @@ fn first_subword_labels(
     labels
 }
 
+/// Byte spans of the whitespace-separated words of `text`, in order.
+///
+/// Same split as [`str::split_whitespace`], but each word keeps its byte range so
+/// a run of words can be sliced back out of the original string. The slice of a
+/// window spanning every word is the input string itself, which is what keeps a
+/// single-window transcript byte-identical to the un-windowed path.
+fn word_spans(text: &str) -> Vec<(usize, usize)> {
+    let mut spans = Vec::new();
+    let mut start: Option<usize> = None;
+    for (i, c) in text.char_indices() {
+        if c.is_whitespace() {
+            if let Some(s) = start.take() {
+                spans.push((s, i));
+            }
+        } else if start.is_none() {
+            start = Some(i);
+        }
+    }
+    if let Some(s) = start {
+        spans.push((s, text.len()));
+    }
+    spans
+}
+
+/// One model window: the words encoded together (`start..end`) and the sub-range
+/// whose labels are kept (`keep_start..keep_end`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Window {
+    start: usize,
+    end: usize,
+    keep_start: usize,
+    keep_end: usize,
+}
+
+/// Tile `num_words` words with overlapping windows of at most [`WINDOW_WORDS`].
+///
+/// Windows advance by `WINDOW_WORDS - WINDOW_OVERLAP_WORDS` and the kept ranges
+/// cut each overlap in half, so the kept ranges tile `0..num_words` with no gap
+/// and no repeat while every window still sees `WINDOW_OVERLAP_WORDS / 2` words
+/// of context beyond what it labels.
+fn plan_windows(num_words: usize) -> Vec<Window> {
+    if num_words == 0 {
+        return Vec::new();
+    }
+    if num_words <= WINDOW_WORDS {
+        return vec![Window {
+            start: 0,
+            end: num_words,
+            keep_start: 0,
+            keep_end: num_words,
+        }];
+    }
+
+    let stride = WINDOW_WORDS - WINDOW_OVERLAP_WORDS;
+    let half = WINDOW_OVERLAP_WORDS / 2;
+    let mut windows = Vec::new();
+    let mut start = 0usize;
+    loop {
+        let end = (start + WINDOW_WORDS).min(num_words);
+        let is_last = end == num_words;
+        windows.push(Window {
+            start,
+            end,
+            keep_start: if start == 0 { 0 } else { start + half },
+            keep_end: if is_last { num_words } else { end - half },
+        });
+        if is_last {
+            break;
+        }
+        start += stride;
+    }
+    windows
+}
+
+/// Merge the per-window label vectors into one label per word.
+///
+/// `per_window[i]` holds a label for every word of `windows[i]` (word `start + j`
+/// is at index `j`), or `None` when that window's inference failed. Words only a
+/// failed window covered stay `None` and are rendered unchanged.
+fn splice_window_labels(
+    windows: &[Window],
+    per_window: &[Option<Vec<usize>>],
+    num_words: usize,
+) -> Vec<Option<usize>> {
+    let mut merged = vec![None; num_words];
+    for (window, labels) in windows.iter().zip(per_window.iter()) {
+        let Some(labels) = labels else { continue };
+        let keep_end = window.keep_end.min(num_words);
+        let keep_start = window.keep_start.min(keep_end);
+        let Some(base) = keep_start.checked_sub(window.start) else {
+            continue;
+        };
+        for (offset, slot) in merged[keep_start..keep_end].iter_mut().enumerate() {
+            *slot = labels.get(base + offset).copied();
+        }
+    }
+    merged
+}
+
 /// Argmax over the last `num_labels`-sized window of a logits row.
 fn argmax(row: &[f32]) -> usize {
     let mut best = 0usize;
@@ -166,6 +286,8 @@ pub struct Punctuator {
     tokenizer: Tokenizer,
     /// `id2label[i]` is the label name for logit index `i`.
     id2label: Vec<String>,
+    /// Windows whose inference failed since load — see [`Punctuator::failed_windows`].
+    failed_windows: AtomicU64,
 }
 
 impl Punctuator {
@@ -220,7 +342,18 @@ impl Punctuator {
             session: Mutex::new(session),
             tokenizer,
             id2label,
+            failed_windows: AtomicU64::new(0),
         })
+    }
+
+    /// Number of windows whose inference has failed since this model was loaded.
+    ///
+    /// [`restore`](Self::restore) degrades quietly by contract — the words of a
+    /// failed window come back bare — so this counter, together with the `warn!`
+    /// it logs, is how a caller notices that punctuation was applied only
+    /// partially (or not at all).
+    pub fn failed_windows(&self) -> u64 {
+        self.failed_windows.load(Ordering::Relaxed)
     }
 
     /// Restore punctuation + capitalization on a space-separated transcript.
@@ -228,6 +361,11 @@ impl Punctuator {
     /// Replicates RUPunct's pipeline: encode the text, run the BERT token
     /// classifier, take each word's first-subtoken label, apply [`process_token`],
     /// and join with single spaces (trimmed).
+    ///
+    /// A transcript of more than a couple hundred words is labelled in
+    /// overlapping windows — the model's position table would otherwise overflow
+    /// and cost the whole transcript its punctuation. Anything that fits in one
+    /// window takes the same single encode + single run it always did.
     ///
     /// Never fails: on empty input or any internal error it returns the input
     /// text unchanged (the error is logged at `warn`). This keeps the punct pass
@@ -249,15 +387,107 @@ impl Punctuator {
     fn restore_inner(&self, text: &str) -> Result<String> {
         // Whitespace words: the decoder output is space-separated, so this is
         // the word granularity the labels are aggregated to.
-        let words: Vec<&str> = text.split_whitespace().collect();
-        if words.is_empty() {
+        let spans = word_spans(text);
+        if spans.is_empty() {
             return Ok(text.to_string());
         }
 
+        // A transcript longer than one window is labelled window by window: one
+        // encode + one run each, so no sequence can outgrow the model's position
+        // table. A transcript that fits in one window takes exactly the single
+        // encode + single run it always did.
+        let windows = plan_windows(spans.len());
+        let mut per_window: Vec<Option<Vec<usize>>> = Vec::with_capacity(windows.len());
+        let mut first_error: Option<anyhow::Error> = None;
+        for window in &windows {
+            match self.label_word_range(text, &spans, window.start, window.end) {
+                Ok(labels) => per_window.push(Some(labels)),
+                Err(e) => {
+                    if first_error.is_none() {
+                        first_error = Some(e);
+                    }
+                    per_window.push(None);
+                }
+            }
+        }
+
+        let failed = per_window.iter().filter(|labels| labels.is_none()).count();
+        if failed > 0 {
+            self.failed_windows
+                .fetch_add(failed as u64, Ordering::Relaxed);
+        }
+        if failed == windows.len() {
+            // Nothing could be labelled: keep the un-windowed contract and let
+            // `restore` log and hand back the input text untouched.
+            return Err(
+                first_error.unwrap_or_else(|| anyhow::anyhow!("punct model produced no labels"))
+            );
+        }
+        if failed > 0 {
+            let detail = first_error.map_or_else(String::new, |e| format!("{e:#}"));
+            tracing::warn!(
+                "Punctuation restore: {failed} of {} windows failed, their words stay bare: {detail}",
+                windows.len()
+            );
+        }
+
+        let label_ids = splice_window_labels(&windows, &per_window, spans.len());
+        let mut out = String::new();
+        for (&(from, to), lid) in spans.iter().zip(label_ids.iter()) {
+            let word = &text[from..to];
+            // A word whose window failed keeps `LOWER_O`, i.e. comes back bare.
+            let label = lid
+                .and_then(|lid| self.id2label.get(lid))
+                .map(String::as_str)
+                .unwrap_or("LOWER_O");
+            let processed = process_token(word, label);
+            if !out.is_empty() {
+                out.push(' ');
+            }
+            out.push_str(&processed);
+        }
+        Ok(out.trim().to_string())
+    }
+
+    /// Label the words `start..end`, returning one label id per word of the range.
+    ///
+    /// One encode + one run, unless the range encodes above
+    /// [`MAX_WINDOW_SUBTOKENS`] — then it is halved and each half labelled
+    /// separately, so no sequence longer than the model's position table is ever
+    /// submitted.
+    fn label_word_range(
+        &self,
+        text: &str,
+        spans: &[(usize, usize)],
+        start: usize,
+        end: usize,
+    ) -> Result<Vec<usize>> {
+        if start >= end || end > spans.len() {
+            anyhow::bail!(
+                "invalid word window {start}..{end} over {} words",
+                spans.len()
+            );
+        }
+        let chunk = &text[spans[start].0..spans[end - 1].1];
+
         let encoding = self
             .tokenizer
-            .encode(text, true)
+            .encode(chunk, true)
             .map_err(|e| anyhow::anyhow!("tokenizer encode failed: {e}"))?;
+
+        let seq = encoding.get_ids().len();
+        if seq > MAX_WINDOW_SUBTOKENS {
+            let num_words = end - start;
+            if num_words < 2 {
+                anyhow::bail!(
+                    "a single word encodes to {seq} subtokens (max {MAX_WINDOW_SUBTOKENS})"
+                );
+            }
+            let mid = start + num_words / 2;
+            let mut labels = self.label_word_range(text, spans, start, mid)?;
+            labels.extend(self.label_word_range(text, spans, mid, end)?);
+            return Ok(labels);
+        }
 
         let ids: Vec<i64> = encoding.get_ids().iter().map(|&i| i as i64).collect();
         let mask: Vec<i64> = encoding
@@ -265,7 +495,6 @@ impl Punctuator {
             .iter()
             .map(|&m| m as i64)
             .collect();
-        let seq = ids.len();
         let token_type_ids = vec![0i64; seq];
 
         let input_ids = Tensor::new(Shape::new(vec![1, seq]), TensorData::I64(ids))?;
@@ -303,23 +532,11 @@ impl Punctuator {
                 .collect()
         };
 
-        let label_ids =
-            first_subword_labels(encoding.get_word_ids(), &argmax_per_token, words.len());
-
-        let mut out = String::new();
-        for (word, &lid) in words.iter().zip(label_ids.iter()) {
-            let label = self
-                .id2label
-                .get(lid)
-                .map(String::as_str)
-                .unwrap_or("LOWER_O");
-            let processed = process_token(word, label);
-            if !out.is_empty() {
-                out.push(' ');
-            }
-            out.push_str(&processed);
-        }
-        Ok(out.trim().to_string())
+        Ok(first_subword_labels(
+            encoding.get_word_ids(),
+            &argmax_per_token,
+            end - start,
+        ))
     }
 }
 
@@ -357,7 +574,10 @@ fn load_id2label(config_path: &Path) -> Result<Vec<String>> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
+    use crate::runtime::{RuntimeError, factory::Runtime};
 
     #[test]
     fn test_capitalize_python_semantics() {
@@ -539,6 +759,409 @@ mod tests {
         // Index 1 missing → non-contiguous.
         std::fs::write(&cfg, r#"{"id2label": {"0": "A", "2": "C"}}"#).unwrap();
         assert!(load_id2label(&cfg).is_err());
+    }
+
+    #[test]
+    fn test_word_spans_match_split_whitespace() {
+        let text = "привет\tмир\n\nвот   так";
+        let spans = word_spans(text);
+        let words: Vec<&str> = spans.iter().map(|&(a, b)| &text[a..b]).collect();
+        assert_eq!(words, text.split_whitespace().collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn test_word_spans_empty_and_whitespace_only() {
+        assert!(word_spans("").is_empty());
+        assert!(word_spans("  \n\t ").is_empty());
+    }
+
+    /// Backward-compat gate (structural half): any transcript short enough for
+    /// one window is planned as a single window covering every word, and that
+    /// window's slice is the input string itself — so the model is handed
+    /// byte-for-byte what the un-windowed implementation handed it.
+    #[test]
+    fn test_short_text_is_one_window_over_the_whole_input() {
+        let mut cases: Vec<String> = SHORT_FIXTURE_GOLDENS
+            .iter()
+            .map(|(input, _)| (*input).to_string())
+            .collect();
+        cases.push("одно".to_string());
+        cases.push(
+            (0..WINDOW_WORDS)
+                .map(|i| format!("w{i}"))
+                .collect::<Vec<_>>()
+                .join(" "),
+        );
+
+        for text in &cases {
+            let spans = word_spans(text);
+            let windows = plan_windows(spans.len());
+            assert_eq!(windows.len(), 1, "{} words", spans.len());
+            assert_eq!(
+                windows[0],
+                Window {
+                    start: 0,
+                    end: spans.len(),
+                    keep_start: 0,
+                    keep_end: spans.len(),
+                }
+            );
+            let slice = &text[spans[0].0..spans[spans.len() - 1].1];
+            assert_eq!(
+                slice, text,
+                "the single window must encode the input verbatim"
+            );
+        }
+    }
+
+    #[test]
+    fn test_plan_windows_empty_input_has_no_windows() {
+        assert!(plan_windows(0).is_empty());
+    }
+
+    /// The kept ranges must tile `0..num_words` exactly: no word labelled twice,
+    /// none left out, and every window small enough for the model.
+    #[test]
+    fn test_plan_windows_keep_ranges_tile_without_gap_or_overlap() {
+        for num_words in [1, 2, 249, 250, 251, 600, 5000, 20_000] {
+            let windows = plan_windows(num_words);
+            let mut next = 0usize;
+            for w in &windows {
+                assert!(w.end - w.start <= WINDOW_WORDS, "{num_words}: {w:?}");
+                assert!(w.start <= w.keep_start && w.keep_end <= w.end, "{w:?}");
+                assert!(w.keep_start < w.keep_end, "{w:?}");
+                assert_eq!(w.keep_start, next, "{num_words}: gap/overlap at {w:?}");
+                next = w.keep_end;
+            }
+            assert_eq!(next, num_words, "{num_words} words not fully covered");
+        }
+    }
+
+    /// Every kept word except at the transcript's own edges must sit at least
+    /// half an overlap away from its window's borders, i.e. be labelled with
+    /// real left and right context.
+    #[test]
+    fn test_plan_windows_interior_words_keep_context_on_both_sides() {
+        let num_words = 5000;
+        let windows = plan_windows(num_words);
+        assert!(windows.len() > 1);
+        let half = WINDOW_OVERLAP_WORDS / 2;
+        for w in &windows {
+            if w.start > 0 {
+                assert!(w.keep_start - w.start >= half, "{w:?}");
+            }
+            if w.end < num_words {
+                assert!(w.end - w.keep_end >= half, "{w:?}");
+            }
+        }
+    }
+
+    /// Pure split/splice round-trip on a synthetic 5000-word transcript, with no
+    /// model involved: each window is "labelled" with the global index of every
+    /// word it covers, so the spliced result proves that each word kept exactly
+    /// one label, from a window that actually covered it, at its own position.
+    #[test]
+    fn test_splice_window_labels_round_trips_5000_words() {
+        let words: Vec<String> = (0..5000).map(|i| format!("w{i}")).collect();
+        let text = words.join(" ");
+        let spans = word_spans(&text);
+        assert_eq!(spans.len(), 5000);
+
+        let windows = plan_windows(spans.len());
+        let per_window: Vec<Option<Vec<usize>>> = windows
+            .iter()
+            .map(|w| Some((w.start..w.end).collect()))
+            .collect();
+
+        let merged = splice_window_labels(&windows, &per_window, spans.len());
+        let expected: Vec<Option<usize>> = (0..5000).map(Some).collect();
+        assert_eq!(merged, expected, "zero lost, duplicated or reordered words");
+
+        // The word list the assembler walks is still the original one, in order.
+        let round_tripped: Vec<&str> = spans.iter().map(|&(a, b)| &text[a..b]).collect();
+        assert_eq!(round_tripped, words);
+    }
+
+    #[test]
+    fn test_splice_window_labels_failed_window_leaves_its_words_unlabelled() {
+        let windows = plan_windows(600);
+        assert_eq!(windows.len(), 3);
+        let mut per_window: Vec<Option<Vec<usize>>> = windows
+            .iter()
+            .map(|w| Some((w.start..w.end).map(|_| 7usize).collect()))
+            .collect();
+        per_window[1] = None;
+
+        let merged = splice_window_labels(&windows, &per_window, 600);
+        for (i, label) in merged.iter().enumerate() {
+            let bare = i >= windows[1].keep_start && i < windows[1].keep_end;
+            assert_eq!(*label, if bare { None } else { Some(7) }, "word {i}");
+        }
+    }
+
+    /// A tokenizer whose WordPiece vocab only knows `a` / `##a`, so an N-char
+    /// word explodes into N subtokens. Used to drive a window past the subtoken
+    /// ceiling without a real model.
+    const SPLITTING_TOKENIZER_JSON: &str = r###"{
+        "version": "1.0",
+        "truncation": null,
+        "padding": null,
+        "added_tokens": [],
+        "normalizer": null,
+        "pre_tokenizer": {"type": "Whitespace"},
+        "post_processor": null,
+        "decoder": null,
+        "model": {
+            "type": "WordPiece",
+            "unk_token": "[UNK]",
+            "continuing_subword_prefix": "##",
+            "max_input_chars_per_word": 200,
+            "vocab": {"[UNK]": 0, "a": 1, "##a": 2}
+        }
+    }"###;
+
+    /// Stand-in for the ONNX punct session: answers with `[1, seq, num_labels]`
+    /// logits whose argmax is `label` on every token, records the sequence length
+    /// of every run, and can fail one chosen run. Lets the windowing path be
+    /// exercised with no model on disk.
+    #[derive(Clone)]
+    struct StubSession {
+        num_labels: usize,
+        label: usize,
+        fail_on_call: Option<usize>,
+        seqs: Arc<Mutex<Vec<usize>>>,
+    }
+
+    impl RuntimeSession for StubSession {
+        fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
+            let dims = inputs[0].shape().dims().to_vec();
+            assert_eq!(dims.len(), 2, "punct inputs are [1, seq]");
+            let seq = dims[1];
+            let call = {
+                let mut seqs = self.seqs.lock();
+                seqs.push(seq);
+                seqs.len() - 1
+            };
+            if self.fail_on_call == Some(call) {
+                return Err(RuntimeError::InferenceFailed("stub window failure".into()));
+            }
+            let mut logits = vec![0.0f32; seq * self.num_labels];
+            for t in 0..seq {
+                logits[t * self.num_labels + self.label] = 1.0;
+            }
+            Ok(vec![Tensor::new_checked(
+                Shape::new(vec![1, seq, self.num_labels]),
+                TensorData::F32(logits),
+            )])
+        }
+    }
+
+    impl RuntimeFactory for StubSession {
+        fn create(&self, _intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError> {
+            Ok(Box::new(self.clone()))
+        }
+        fn cpu_fallback(&self) -> Box<dyn RuntimeFactory> {
+            Box::new(self.clone())
+        }
+    }
+
+    impl Runtime for StubSession {
+        fn load_session(
+            &self,
+            _model_path: &Path,
+            _is_encoder: bool,
+        ) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
+            Ok(Box::new(self.clone()))
+        }
+    }
+
+    /// Punctuator over a temp-dir tokenizer + label map, with the ONNX session
+    /// replaced by [`StubSession`]. Returns the punctuator and the shared log of
+    /// per-run sequence lengths.
+    fn stub_punctuator(
+        tokenizer_json: &str,
+        labels: &[&str],
+        label: usize,
+        fail_on_call: Option<usize>,
+    ) -> (Punctuator, Arc<Mutex<Vec<usize>>>) {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let entries: Vec<String> = labels
+            .iter()
+            .enumerate()
+            .map(|(i, l)| format!("\"{i}\": \"{l}\""))
+            .collect();
+        std::fs::write(
+            tmp.path().join(PUNCT_CONFIG_FILE),
+            format!("{{\"id2label\": {{{}}}}}", entries.join(", ")),
+        )
+        .unwrap();
+        std::fs::write(tmp.path().join(PUNCT_TOKENIZER_FILE), tokenizer_json).unwrap();
+
+        let seqs = Arc::new(Mutex::new(Vec::new()));
+        let stub = StubSession {
+            num_labels: labels.len(),
+            label,
+            fail_on_call,
+            seqs: Arc::clone(&seqs),
+        };
+        let punct = match Punctuator::load_with_factory(tmp.path(), &stub) {
+            Ok(p) => p,
+            Err(e) => panic!("stub punctuator load failed: {e:#}"),
+        };
+        (punct, seqs)
+    }
+
+    /// A transcript far longer than one window comes back with every word
+    /// labelled, in order, one run per planned window.
+    #[test]
+    fn test_restore_long_text_labels_every_word_one_run_per_window() {
+        let words: Vec<String> = (0..5000).map(|i| format!("w{i}")).collect();
+        let text = words.join(" ");
+        let (punct, seqs) =
+            stub_punctuator(MINIMAL_TOKENIZER_JSON, &["LOWER_O", "UPPER_O"], 1, None);
+
+        let out = punct.restore(&text);
+
+        let expected: Vec<String> = words.iter().map(|w| capitalize(w)).collect();
+        assert_eq!(out, expected.join(" "));
+        let seqs = seqs.lock();
+        assert_eq!(seqs.len(), plan_windows(5000).len());
+        assert!(seqs.iter().all(|&s| s <= WINDOW_WORDS), "{seqs:?}");
+        assert_eq!(punct.failed_windows(), 0);
+    }
+
+    /// A window whose lexis blows past the subtoken ceiling is split until every
+    /// submitted sequence fits the model's position table.
+    #[test]
+    fn test_restore_splits_a_window_over_the_subtoken_ceiling() {
+        // 250 words × 40 subtokens ≈ 10k subtokens in one window.
+        let word = "a".repeat(40);
+        let text = vec![word.as_str(); WINDOW_WORDS].join(" ");
+        let (punct, seqs) =
+            stub_punctuator(SPLITTING_TOKENIZER_JSON, &["LOWER_O", "UPPER_O"], 1, None);
+
+        let out = punct.restore(&text);
+
+        assert_eq!(
+            out,
+            vec![capitalize(&word); WINDOW_WORDS].join(" "),
+            "every word must still be labelled"
+        );
+        let seqs = seqs.lock();
+        assert!(seqs.len() > 1, "the oversized window must have been split");
+        assert!(
+            seqs.iter().all(|&s| s <= MAX_WINDOW_SUBTOKENS),
+            "a run exceeded the ceiling: {seqs:?}"
+        );
+    }
+
+    /// One failing window must not cost the rest of the transcript its
+    /// punctuation — only its own words come back bare, and the failure is
+    /// counted instead of vanishing.
+    #[test]
+    fn test_restore_partial_window_failure_only_bares_that_window() {
+        let words: Vec<String> = (0..600).map(|i| format!("w{i}")).collect();
+        let text = words.join(" ");
+        let windows = plan_windows(600);
+        assert_eq!(windows.len(), 3);
+        let (punct, _seqs) = stub_punctuator(
+            MINIMAL_TOKENIZER_JSON,
+            &["LOWER_O", "UPPER_O"],
+            1,
+            Some(1), // the middle window's run fails
+        );
+
+        let out = punct.restore(&text);
+
+        let got: Vec<&str> = out.split(' ').collect();
+        assert_eq!(got.len(), words.len());
+        for (i, word) in words.iter().enumerate() {
+            let bare = i >= windows[1].keep_start && i < windows[1].keep_end;
+            let expected = if bare { word.clone() } else { capitalize(word) };
+            assert_eq!(got[i], expected, "word {i}");
+        }
+        assert_eq!(punct.failed_windows(), 1);
+    }
+
+    /// When nothing can be labelled the un-windowed contract stands: the input
+    /// comes back untouched (original whitespace included) and the failure is
+    /// counted.
+    #[test]
+    fn test_restore_returns_input_unchanged_when_every_window_fails() {
+        let text = "  привет   мир  ";
+        let (punct, _seqs) = stub_punctuator(MINIMAL_TOKENIZER_JSON, &["LOWER_O"], 0, Some(0));
+
+        assert_eq!(punct.restore(text), text);
+        assert_eq!(punct.failed_windows(), 1);
+    }
+
+    /// Short transcripts (one window each) paired with the output captured from
+    /// the single-run implementation that preceded windowing.
+    const SHORT_FIXTURE_GOLDENS: &[(&str, &str)] = &[
+        (
+            "привет меня зовут анна сколько будет стоить шестьдесят тысяч тенге",
+            "Привет меня зовут Анна, Сколько будет стоить шестьдесят тысяч тенге.",
+        ),
+        (
+            "здравствуйте я хотел бы узнать когда открывается магазин и сколько стоит доставка до города",
+            "Здравствуйте, Я хотел бы узнать, когда открывается магазин и сколько стоит доставка до города.",
+        ),
+        ("нет спасибо не надо", "Нет, Спасибо. Не надо."),
+        (
+            "он сказал что завтра будет дождь а послезавтра выпадет снег и станет холодно",
+            "Он сказал, что завтра будет дождь, а послезавтра выпадет снег и станет холодно.",
+        ),
+        (
+            "один два три четыре пять шесть семь восемь девять десять",
+            "Один — два, три, четыре, пять, шесть, семь, восемь, девять, десять.",
+        ),
+    ];
+
+    /// Backward-compat gate (model half): a transcript that fits in one window
+    /// must come back byte-identical to the pre-windowing output.
+    #[test]
+    #[ignore = "requires punct model at ~/.gigastt/models/punct"]
+    fn test_restore_short_fixtures_match_unwindowed_output() {
+        let dir = default_punct_model_dir();
+        let punct = Punctuator::load(Path::new(&dir)).expect("load punct model");
+        for (input, expected) in SHORT_FIXTURE_GOLDENS {
+            assert_eq!(&punct.restore(input), expected);
+        }
+        assert_eq!(punct.failed_windows(), 0);
+    }
+
+    /// A 20 000-word transcript — several times the model's position table —
+    /// must come back punctuated and cased end to end, with every word intact.
+    /// Before windowing this returned the input verbatim.
+    #[test]
+    #[ignore = "requires punct model at ~/.gigastt/models/punct"]
+    fn test_restore_very_long_transcript_is_punctuated() {
+        let dir = default_punct_model_dir();
+        let punct = Punctuator::load(Path::new(&dir)).expect("load punct model");
+        let sentence = "сегодня мы обсудим важный вопрос который волнует многих наших слушателей";
+        let text = std::iter::repeat_n(sentence, 2000)
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert_eq!(text.split_whitespace().count(), 20_000);
+
+        let out = punct.restore(&text);
+
+        assert_ne!(out, text, "a 20k-word transcript must not come back bare");
+        assert_eq!(
+            out.split_whitespace().count(),
+            20_000,
+            "no word may be lost or duplicated"
+        );
+        assert_eq!(punct.failed_windows(), 0);
+        let tail: String = out
+            .split_whitespace()
+            .skip(15_000)
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert!(
+            tail.contains('.') && tail.chars().any(char::is_uppercase),
+            "punctuation and casing must reach the end of the transcript"
+        );
     }
 
     /// End-to-end on the real ONNX model (model-gated, like other model tests).
