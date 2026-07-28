@@ -169,6 +169,15 @@ Three-tier test architecture:
 - `tests/soak_test.rs` — 1 soak test (continuous WS cycling, configurable via `GIGASTT_SOAK_DURATION_SECS`)
 - `cargo test --test load_test -- --ignored` / `cargo test --test soak_test -- --ignored`
 
+**Long-form quality tests** (require model + the RuLS corpus, local-only — the corpus is a ~9 GB
+OpenSLR download that does not fit the CI cache budget, so these never run in CI):
+- `tests/longform_quality.rs` — stitch cost of the chunked long-form path against a length-matched
+  segment baseline, plus the encoder-length degradation curve. Both skip loudly when the corpus is
+  absent; they never substitute another corpus.
+- `python3 scripts/prepare_rulslib.py` to fetch the corpus, then
+  `cargo test --release -p gigastt --test longform_quality -- --ignored --test-threads=1`
+- Default ceiling +2.0 pp on the stitch cost; override with `GIGASTT_LONGFORM_MAX_STITCH_PP`.
+
 **Benchmark suite:**
 - `tests/benchmark.rs` — WER evaluation on Golos fixtures (custom harness, `harness = false`)
 
