@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Punctuation restoration no longer silently gives up on long transcripts.**
+  Restoration ran a single tokenizer pass over the whole transcript against a
+  2048-position model and swallowed the resulting runtime error, so any recording
+  longer than roughly 9–12 minutes of Russian speech came back completely
+  unpunctuated and lowercase with HTTP 200. Restoration now runs over overlapping
+  ~250-word windows, keeping each window's middle labels; transcripts that already
+  fit in one window are byte-identical to before.
+
 ## [2.15.0] - 2026-07-27
 
 ### Added
