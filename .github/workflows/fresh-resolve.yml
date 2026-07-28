@@ -79,13 +79,19 @@ jobs:
           cargo new --lib "$scratch"
           printf '\n[workspace]\n' >> "$scratch/Cargo.toml"
 
-          # All three published Rust artifacts funnel through gigastt-core, but
-          # each pulls a different slice: gigastt-core (default features) is the
-          # `cargo add gigastt-core` surface, gigastt-ffi exercises the lean
-          # default-features=false path, and gigastt drags in the full server
-          # stack that `cargo install gigastt` builds. Resolving all three in one
-          # scratch crate re-resolves the union in a single `cargo check` and
-          # costs no measurable extra time (check is metadata-only).
+          # All three published Rust artifacts funnel through gigastt-core, and
+          # adding them together resolves the union of what they pull: the
+          # `cargo add gigastt-core` surface plus the full server stack that
+          # `cargo install gigastt` builds. Costs no measurable extra time over
+          # a single crate (check is metadata-only).
+          #
+          # Note what this does NOT model: Cargo unifies features across the
+          # three, so gigastt-core is built with default features on and the
+          # lean `default-features = false` path gigastt-ffi declares is not
+          # exercised here. This models a consumer that uses all three, which is
+          # the resolution most likely to break; a lean-only consumer would need
+          # its own scratch crate. The `lean_build` test in ci.yml covers that
+          # feature set against the workspace lockfile.
           cargo add --manifest-path "$scratch/Cargo.toml" --path "$GITHUB_WORKSPACE/crates/gigastt-core"
           cargo add --manifest-path "$scratch/Cargo.toml" --path "$GITHUB_WORKSPACE/crates/gigastt-ffi"
           cargo add --manifest-path "$scratch/Cargo.toml" --path "$GITHUB_WORKSPACE/crates/gigastt"
