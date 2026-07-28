@@ -1643,8 +1643,11 @@ fn test_streaming_decode_matches_whole_buffer_resample_stereo_44k1() {
 /// length and keep the strict per-sample gate.
 ///
 /// Costs ~50 s in a debug build, which is why one duration is covered rather
-/// than a sweep; 300 s is the shortest that reaches the regime.
+/// than a sweep; 300 s is the shortest that reaches the regime. That cost is
+/// also why it is `#[ignore]`d: PR CI runs `cargo test --workspace --lib` and
+/// stays fast, while the main-push lane runs this by name.
 #[test]
+#[ignore = "~50 s in debug; long-duration numeric gate, run on main push"]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_streaming_decode_long_44k1_input_holds_phase_better_than_whole_buffer() {
     // A whole number of cycles per one-second analysis window, so the phase

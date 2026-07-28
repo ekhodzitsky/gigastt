@@ -183,6 +183,12 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace --lib --bins
+      # Long-duration resampler equivalence gate (~50 s in debug): the staged
+      # decode path must not drift more than a whole-buffer resample over 300 s
+      # of 44.1 kHz audio. Too slow for every PR, so it runs on main push only.
+      - name: Long-duration resampler numeric gate
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: cargo test -p gigastt-core --lib -- --ignored streaming_decode_long_44k1
       - name: Lean embedded build (no tokio/reqwest/symphonia)
         run: |
           cargo build -p gigastt-core --no-default-features
