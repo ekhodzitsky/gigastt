@@ -2763,6 +2763,126 @@ mod tests {
         assert_eq!(texts, vec!["keep", "b_seam", "b_late"]);
     }
 
+    // ---- Seam invariants --------------------------------------------------
+    //
+    // `stitch_chunk_words` cuts on `start` alone: the earlier chunk keeps
+    // `start <= seam_s`, the later chunk keeps `start > seam_s`. There is no
+    // text matching across the boundary, so the *interval* of a word is
+    // irrelevant to the decision. The tests below pin what that cut does in the
+    // cases the happy-path tests above skip — including the two lossy ones.
+    // They are characterisation tests: they describe today's behaviour so a
+    // change to the seam policy shows up as a diff, not as a silent shift in
+    // long-form WER.
+    //
+    // Every word below sits within ±0.05s of the seam (or inside a 200ms gap
+    // around it, for the silence control), so nudging the seam past that margin
+    // flips at least one assertion. That is the check that these tests pin the
+    // predicate rather than passing for any cut point.
+
+    #[test]
+    fn test_stitch_straddling_word_duplicated_across_seam() {
+        // Invariant pinned: a word whose interval straddles the seam is emitted
+        // TWICE when the two chunks disagree about its start across the cut —
+        // the earlier chunk's copy starts before the seam (kept) and the later
+        // chunk's copy starts after it (also kept). The stitch has no way to
+        // notice they are the same word. This is the duplicate half of the
+        // long-form seam cost.
+        let chunk_a = vec![word("на", 22.0, 22.32), word("мосту", 22.96, 23.36)];
+        let chunk_b = vec![word("мосту", 23.04, 23.44), word("стоял", 24.0, 24.4)];
+        let out = stitch_chunk_words(chunk_a, chunk_b, 23.0);
+        let texts: Vec<&str> = out.iter().map(|w| w.word.as_str()).collect();
+        assert_eq!(
+            texts,
+            vec!["на", "мосту", "мосту", "стоял"],
+            "a straddling word whose copies land on opposite sides of the seam is duplicated"
+        );
+    }
+
+    #[test]
+    fn test_stitch_straddling_word_deleted_at_seam() {
+        // Invariant pinned: the mirror-image case deletes the word outright.
+        // The earlier chunk placed its start just past the seam (dropped as
+        // "tail past the seam") while the later chunk placed it just before
+        // (dropped as "belongs to the earlier chunk"), so neither copy
+        // survives. This is the deletion half of the long-form seam cost, and
+        // it is the failure mode a text-matching stitch would have to fix.
+        let chunk_a = vec![word("на", 22.0, 22.32), word("мосту", 23.04, 23.44)];
+        let chunk_b = vec![word("мосту", 22.96, 23.36), word("стоял", 24.0, 24.4)];
+        let out = stitch_chunk_words(chunk_a, chunk_b, 23.0);
+        let texts: Vec<&str> = out.iter().map(|w| w.word.as_str()).collect();
+        assert_eq!(
+            texts,
+            vec!["на", "стоял"],
+            "a straddling word can vanish entirely: dropped by both sides of the seam"
+        );
+    }
+
+    #[test]
+    fn test_stitch_word_exactly_on_seam_kept_from_earlier_chunk() {
+        // Invariant pinned: `start == seam_s` is an inclusive boundary for the
+        // earlier chunk (`<=`) and an exclusive one for the later chunk (`>`),
+        // so a word that both chunks place exactly on the seam survives once,
+        // from the earlier chunk. Confidence tags which copy won: flipping the
+        // predicate to `<` / `>=` would keep B's copy instead, same text.
+        let chunk_a = vec![WordInfo::new("шов", 23.0, 23.4, 0.5, None)];
+        let chunk_b = vec![
+            WordInfo::new("шов", 23.0, 23.4, 0.9, None),
+            word("после", 24.0, 24.4),
+        ];
+        let out = stitch_chunk_words(chunk_a, chunk_b, 23.0);
+        let texts: Vec<&str> = out.iter().map(|w| w.word.as_str()).collect();
+        assert_eq!(
+            texts,
+            vec!["шов", "после"],
+            "no duplicate exactly on the seam"
+        );
+        assert_eq!(
+            out[0].confidence, 0.5,
+            "the surviving copy comes from the earlier chunk"
+        );
+    }
+
+    #[test]
+    fn test_stitch_empty_next_chunk_still_trims_tail_past_seam() {
+        // Invariant pinned: the tail trim runs unconditionally, so a chunk that
+        // decodes to nothing (silence, or a chunk the decoder emitted no tokens
+        // for) still deletes whatever the previous chunk decoded past the seam.
+        // The empty chunk is not a no-op.
+        let chunk_a = vec![word("до", 22.0, 22.4), word("хвост", 23.04, 23.44)];
+        let out = stitch_chunk_words(chunk_a, Vec::new(), 23.0);
+        let texts: Vec<&str> = out.iter().map(|w| w.word.as_str()).collect();
+        assert_eq!(
+            texts,
+            vec!["до"],
+            "an empty chunk still drops the earlier chunk's post-seam tail"
+        );
+    }
+
+    #[test]
+    fn test_stitch_silence_at_seam_loses_nothing() {
+        // Lossless-gap CONTROL — read this before "fixing" it. When the seam
+        // falls inside a silent gap (no word interval touches it), the stitch
+        // must stay lossless and duplicate-free for any reasonable seam
+        // placement. That robustness is the invariant this test pins, so it is
+        // DELIBERATELY insensitive to a ±60ms seam nudge: the gap here is 200ms
+        // wide and ±60ms stays inside it, leaving the output unchanged. The
+        // tolerance is intentional — do NOT tighten the fixture to make it react
+        // to small nudges; that would delete the property being guarded.
+        //
+        // It is not vacuous: mutating the seam by +150ms moves the cut out of
+        // the gap and reddens this test (it drops "после"). The other seam tests
+        // in this block already pin the ±60ms / inclusive-boundary sensitivity;
+        // this one pins the complementary claim that silence absorbs jitter.
+        let chunk_a = vec![word("перед", 22.6, 22.9)];
+        let chunk_b = vec![word("после", 23.1, 23.5), word("конец", 24.0, 24.4)];
+        let out = stitch_chunk_words(chunk_a, chunk_b, 23.0);
+        let texts: Vec<&str> = out.iter().map(|w| w.word.as_str()).collect();
+        assert_eq!(texts, vec!["перед", "после", "конец"]);
+        for w in out.windows(2) {
+            assert!(w[0].start <= w[1].start, "not monotonic: {:?}", out);
+        }
+    }
+
     #[test]
     fn test_stitch_timestamp_offset_math() {
         // The chunked path offsets a chunk's frame indices by
