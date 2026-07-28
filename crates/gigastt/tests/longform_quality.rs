@@ -22,48 +22,73 @@
 //!    segments of one audiobook chapter, one narrator, one channel, in their
 //!    original order (see [`continuous_corpus`]). Never a shuffle of unrelated
 //!    utterances.
-//! 2. **Baseline.** The control decodes the *same* buffer in blocks of the same
-//!    length as a chunk window (24 s), cut only at segment boundaries so no word
-//!    is ever split. Both sides then see ~24 s of encoder input, and the
-//!    difference between them is attributable to the stitch and only to the
-//!    stitch.
+//! 2. **Baseline.** The control decodes the *same* buffer in blocks sized to the
+//!    24 s chunk window — held to `[18, 30]` s so their encoder-input length
+//!    clusters near the window instead of scattering — cut only at segment
+//!    boundaries so no word is ever split. An item whose utterance boundaries
+//!    admit no in-band tiling is dropped from *both* paths rather than scored
+//!    against a mismatched baseline. Both sides then see ~24 s of encoder input,
+//!    and the difference between them is attributable to the stitch and only to
+//!    the stitch.
 //!
-//! [`test_longform_stitch_cost`] reports three numbers — chunked WER, segment
-//! baseline WER, and their delta — plus the deletion / substitution / insertion
-//! split behind each. [`test_encoder_length_degradation_curve`] records the
-//! effect that made the old baseline invalid, as a standing measurement.
+//! [`test_longform_stitch_cost`] reports chunked WER, segment baseline WER, their
+//! delta, the deletion / substitution / insertion split behind each, and the
+//! achieved baseline block-length distribution — so the residual encoder-length
+//! confound is shown, not hidden. [`test_encoder_length_degradation_curve`]
+//! records the effect that made the old per-clip baseline invalid, as a standing
+//! measurement.
 //!
 //! # Measured on this machine
 //!
 //! 2026-07-28, Apple M1 Pro (macOS 25.1, arm64), `--release`, default CPU
-//! execution provider, INT8 `e2e_rnnt` encoder, corpus
-//! `~/.gigastt/benchmarks/ruls` (RuLS / OpenSLR 96, Russian LibriVox):
+//! execution provider, INT8 `rnnt` encoder (the head auto-detected on disk; each
+//! test prints the head it actually loaded, so this line cannot silently drift
+//! from the run). Corpus `~/.gigastt/benchmarks/ruls` (RuLS / OpenSLR 96): a
+//! single LibriVox reading of Pushkin's «Поэмы» — one narrator, one book,
+//! audiobook-read Russian *verse*, spread over 11 chapter sources. The stitch
+//! cost below is the cost on clean single-speaker read speech and nothing else;
+//! it does not carry to spontaneous, conversational, multi-speaker, far-field, or
+//! noisy audio.
 //!
-//! [`test_longform_stitch_cost`], 23 continuous runs, 32.2 min, ~73 seams:
+//! WER here is verbatim / naive normalization (lowercase + `ё`→`е` +
+//! `[a-zа-я0-9]`), so the absolute percentages are **not** comparable to the
+//! ITN-normalized figures in `docs/benchmarks.md`. The stitch cost is a
+//! *difference* between two decodes scored the same way, so it is
+//! normalization-independent regardless.
 //!
-//! | | WER | errors (del / sub / ins) | ref words |
+//! [`test_longform_stitch_cost`], 14 of 23 intake runs scored (9 dropped for
+//! lacking an in-band baseline tiling), 21.5 min, 50 seams, 52 baseline blocks
+//! (length 18.3 / 24.8 / 29.8 s min/median/max — clustered on the 24 s window):
+//!
+//! | | WER (naive-norm) | errors (del / sub / ins) | ref words |
 //! |---|---|---|---|
-//! | chunked path | 3.40% | 125 (8 / 110 / 7) | 3672 |
-//! | 24 s-segment baseline | 3.40% | 125 (10 / 108 / 7) | 3672 |
-//! | **stitch cost** | **+0.00 pp** | | |
+//! | chunked path | 3.23% | 81 (8 / 70 / 3) | 2510 |
+//! | 24 s-segment baseline | 3.35% | 84 (9 / 71 / 4) | 2510 |
+//! | **stitch cost** | **−0.12 pp** | | |
 //!
-//! The two paths are not the same decode — 18 of 23 items differ textually, the
-//! error mix differs, and per-item deltas scatter between −1.63 and +1.83 pp.
-//! They just cost the same in total. One error is 0.027 pp here, so the headline
-//! is precise to about ±0.03 pp, and the per-item scatter is the sampling noise
-//! a ceiling has to clear: +1.0 pp is a reasonable first
+//! Controlling the baseline block length moved the headline off the +0.00 pp an
+//! uncontrolled baseline reported, to −0.12 pp: length-matched, the chunked path
+//! is marginally *better* than cutting the same buffer into 24 s blocks, so the
+//! stitch still costs nothing — it does not lose to a clean-cut control. The two
+//! paths remain different decodes (11 of 14 differ textually, the error mix
+//! differs, per-item deltas scatter between −1.63 and +1.83 pp); they just cost
+//! the same in total. One error is ~0.04 pp on this ref-word count, so the
+//! headline is precise to about ±0.04 pp, and the ±1.8 pp per-item scatter is the
+//! sampling noise a ceiling has to clear — hence the generous +2.0 pp default
 //! `GIGASTT_LONGFORM_MAX_STITCH_PP`.
 //!
 //! [`test_encoder_length_degradation_curve`], 2 continuous runs pooled, one
-//! encoder Run per point: WER 6.25% at 10 s → 2.21% at 30 s → 4.76% at 59 s →
-//! 7.69% at 120 s, with word retention flat at 98–102% throughout. Real speech
-//! degrades with length, but by substituting, not by dropping words. The golos
-//! concatenation over the same lengths collapses instead — retention 100% at
-//! 9 s, 77% at 62 s, 9% at 92 s — which is the whole reason a per-clip control
+//! encoder Run per point: one-pass WER 6.25% at 10 s → 2.21% at 30 s → 4.76% at
+//! 59 s → 7.69% at 120 s, with word retention flat at ~98–102% throughout. Real
+//! speech degrades with length, but by substituting, not by dropping words. The
+//! golos concatenation over the same lengths collapses instead — retention 100%
+//! at 9 s, 77% at 62 s, 9% at 92 s — which is the whole reason a per-clip control
 //! on that fixture mis-attributes tens of points to the stitch.
 //!
-//! Re-measure before pinning `GIGASTT_LONGFORM_MAX_STITCH_PP` in CI: the
-//! numbers are model-, encoder- (INT8 vs FP32) and EP-specific.
+//! Re-measure before pinning a tighter `GIGASTT_LONGFORM_MAX_STITCH_PP` in CI:
+//! the numbers are model-, encoder- (INT8 vs FP32) and EP-specific. On an ANE
+//! build the chunked window is 30 s, not 24 s (see [`CHUNK_WINDOW_S`]); these
+//! numbers are the CPU/ort path.
 //!
 //! # Running
 //!
@@ -88,8 +113,10 @@
 //!   item takes the chunked path).
 //! - `GIGASTT_LONGFORM_MAX_ITEMS` — cap the item count for a fast smoke run
 //!   (default: all).
-//! - `GIGASTT_LONGFORM_MAX_STITCH_PP` — opt-in gate: fail when the stitch cost
-//!   exceeds this many WER points.
+//! - `GIGASTT_LONGFORM_MAX_STITCH_PP` — stitch-cost ceiling, in WER points: the
+//!   gate fails when the cost exceeds it. Defaults to +2.0 pp (generous but real
+//!   — above the worst single-item stitch, well below any genuine regression);
+//!   set it lower to tighten, or very high to observe without gating.
 
 mod common;
 
@@ -102,17 +129,52 @@ use std::path::{Path, PathBuf};
 /// Sample rate of the whole pipeline; every decoded buffer is at this rate.
 const SAMPLE_RATE: usize = 16000;
 
-/// The engine's long-form window geometry (`chunk_window_samples` and
-/// `CHUNK_OVERLAP_SAMPLES` in `crates/gigastt-core/src/inference/engine.rs`).
-/// Mirrored here to size the baseline blocks and to print where seams land;
-/// nothing asserts on it, so a retuned engine cannot break these tests.
+/// The engine's long-form chunk window (`chunk_window_samples` in
+/// `crates/gigastt-core/src/inference/engine.rs`), mirrored here only to print
+/// where seams land. The engine picks the true window at runtime from the loaded
+/// encoder: 24 s on the ort/CPU path, 30 s on the ANE encoder. This mirror
+/// follows the build's `ane` feature and is only a build-time upper bound — an
+/// ANE binary can still fall back to the 24 s window at runtime (non-rnnt head,
+/// missing ANE package). Every number recorded above was measured on the default
+/// CPU path, where the window is 24 s. Nothing asserts on this constant, so a
+/// mismatch only changes the printed seam estimate, never a pass/fail.
+#[cfg(feature = "ane")]
+const CHUNK_WINDOW_S: f64 = 30.0;
+#[cfg(not(feature = "ane"))]
 const CHUNK_WINDOW_S: f64 = 24.0;
+
+/// Long-form overlap between adjacent chunks (`CHUNK_OVERLAP_SAMPLES`).
 const CHUNK_OVERLAP_S: f64 = 2.0;
 
 /// Inputs at or below this take one encoder Run over the whole buffer
 /// (`CHUNK_THRESHOLD_SAMPLES`). Baseline blocks stay under it by construction,
 /// so every baseline decode is a genuine single pass.
 const SINGLE_PASS_MAX_S: f64 = 30.0;
+
+/// Target length for a baseline block: the 24 s ort/CPU long-form window.
+///
+/// Held separately from [`CHUNK_WINDOW_S`] because a baseline block must stay a
+/// single encoder pass (`<= SINGLE_PASS_MAX_S`), which leaves no room to target
+/// the ANE path's 30 s window — so the single-pass baseline is a CPU/ort
+/// comparison, matching the path these numbers were measured on. Both windows
+/// coincide at 24 s on the default build.
+const BASELINE_BLOCK_TARGET_S: f64 = 24.0;
+
+/// Baseline blocks are held inside `[BASELINE_BLOCK_MIN_S, BASELINE_BLOCK_MAX_S]`
+/// — the 24 s target ±6 s — so their encoder-input length clusters near the chunk
+/// window instead of scattering from a few seconds up to the single-pass cap. A
+/// shorter encoder input can decode differently, so an unconstrained tail block
+/// would hand the baseline a length it never shares with the chunked path and
+/// blur the stitch cost this file exists to isolate. The floor is the load-bearing
+/// bound; the ceiling equals the single-pass threshold — a baseline block must
+/// stay a single encoder pass — and is safe there because a block's length is an
+/// exact integer sample count that the `EPS`-bounded planner never lets exceed
+/// 30 s, with the `<= SINGLE_PASS_MAX_S` assert in the loop as a loud backstop.
+/// Coarse-grained items (two utterances already over 30 s, no single one inside
+/// the band) admit no tiling here and are dropped, not scored on a mismatched
+/// baseline; the run reports how many.
+const BASELINE_BLOCK_MIN_S: f64 = 18.0;
+const BASELINE_BLOCK_MAX_S: f64 = 30.0;
 
 /// Half-width of the window used to measure how quiet a baseline cut is.
 const BOUNDARY_PROBE_S: f64 = 0.15;
@@ -565,20 +627,35 @@ fn decode_single_encoder_pass(
 // ---------------------------------------------------------------------------
 
 /// Split `durations` into consecutive blocks whose lengths sit as close to
-/// `target` as possible, with no block longer than `cap`.
+/// `target` as possible, with every block length inside `[min_len, max_len]`.
 ///
 /// Exact (a small dynamic program over segment boundaries) rather than greedy,
 /// because a greedy pack lands systematically *below* the target — and a shorter
 /// encoder input decodes better, which would silently inflate the stitch cost
-/// this baseline exists to isolate.
+/// this baseline exists to isolate. The `min_len` floor is what stops a leftover
+/// tail from decoding as an easy ten-second block; the `max_len` ceiling keeps
+/// every block a single encoder pass.
 ///
-/// Returns block boundaries as `[start, end)` index pairs, or `None` when a
-/// single segment already exceeds `cap`.
-fn plan_blocks(durations: &[f64], target: f64, cap: f64) -> Option<Vec<(usize, usize)>> {
+/// Returns block boundaries as `[start, end)` index pairs, or `None` when no
+/// tiling keeps every block inside the band — e.g. a single segment already
+/// exceeds `max_len`, or a residual can never reach `min_len`. The caller drops
+/// such an item rather than scoring it against a mismatched baseline.
+fn plan_blocks(
+    durations: &[f64],
+    target: f64,
+    min_len: f64,
+    max_len: f64,
+) -> Option<Vec<(usize, usize)>> {
     let n = durations.len();
     if n == 0 {
         return Some(Vec::new());
     }
+    // Tiny slack so a block whose segments sum to exactly `min_len` / `max_len`
+    // in exact arithmetic is not rejected by floating-point drift. At 1e-6 s it is
+    // ~0.016 of a sample: a block whose true (integer-sample) length is one sample
+    // over `max_len` still measures more than `EPS` past it and is rejected, so a
+    // block can never round its way past the single-pass threshold.
+    const EPS: f64 = 1e-6;
     let mut best = vec![f64::INFINITY; n + 1];
     let mut prev = vec![usize::MAX; n + 1];
     best[0] = 0.0;
@@ -586,8 +663,11 @@ fn plan_blocks(durations: &[f64], target: f64, cap: f64) -> Option<Vec<(usize, u
         let mut len = 0.0;
         for start in (0..end).rev() {
             len += durations[start];
-            if len > cap {
-                break;
+            if len > max_len + EPS {
+                break; // every smaller `start` only makes the block longer
+            }
+            if len + EPS < min_len {
+                continue; // too short; a larger block (smaller `start`) may qualify
             }
             if best[start].is_finite() {
                 let deviation = len - target;
@@ -698,22 +778,37 @@ fn test_longform_stitch_cost() {
         items.truncate(max);
     }
 
-    let total_secs: f64 = items.iter().map(Item::seconds).sum();
-    let stride = CHUNK_WINDOW_S - CHUNK_OVERLAP_S;
-    let seams: usize = items
-        .iter()
-        .map(|i| ((i.seconds() - CHUNK_WINDOW_S) / stride).ceil().max(0.0) as usize)
-        .sum();
+    // Corpus composition, self-reported so the provenance cannot drift from what
+    // actually ran. RuLS (OpenSLR 96) is LibriVox-derived; this slice is one
+    // author — Pushkin's «Поэмы» — read aloud, so every item is clean,
+    // single-speaker, audiobook Russian *verse*. The stitch cost measured here is
+    // the cost on that material and nothing else: it does not carry to
+    // spontaneous, conversational, multi-speaker, far-field, or noisy audio.
+    let sources: std::collections::BTreeSet<&str> =
+        items.iter().map(|i| i.source.as_str()).collect();
+    let intake_secs: f64 = items.iter().map(Item::seconds).sum();
     eprintln!(
-        "  corpus: {} continuous run(s) of consecutive RuLS utterances, {:.1} min total, \
-         ~{seams} chunk seam(s)",
+        "  corpus: RuLS (Russian LibriVox / OpenSLR 96), audiobook-read Russian verse — \
+         one narrator, one book (Pushkin «Поэмы»)"
+    );
+    eprintln!(
+        "  intake: {} continuous run(s) across {} chapter source(s), {:.1} min total; clean \
+         single-speaker read speech only — does NOT generalize to spontaneous, conversational, \
+         multi-speaker, far-field, or noisy audio",
         items.len(),
-        total_secs / 60.0
+        sources.len(),
+        intake_secs / 60.0
     );
 
     let engine = load_engine();
+    eprintln!(
+        "  model head (loaded at runtime): {} encoder ({})",
+        engine.variant().as_str(),
+        if engine.is_int8() { "INT8" } else { "FP32" }
+    );
     let mut guard = engine.pool.checkout_blocking().expect("pool checkout");
 
+    let stride = CHUNK_WINDOW_S - CHUNK_OVERLAP_S;
     let mut ref_words = 0usize;
     let mut chunked_errors = Errors::default();
     let mut baseline_errors = Errors::default();
@@ -723,10 +818,13 @@ fn test_longform_stitch_cost() {
     let mut loudest_cut = 0.0f64;
     let mut cuts = 0usize;
     let mut identical = 0usize;
+    let mut scored = 0usize;
+    let mut dropped = 0usize;
+    let mut seams = 0usize;
+    let mut kept_secs = 0.0f64;
+    let mut block_lengths: Vec<f64> = Vec::new();
 
     for item in &items {
-        let reference = item.reference();
-        let buffer = item.samples();
         assert!(
             item.seconds() > SINGLE_PASS_MAX_S,
             "{} is {:.1}s — it would take the single-pass branch, not the chunked one",
@@ -734,18 +832,38 @@ fn test_longform_stitch_cost() {
             item.seconds()
         );
 
+        // Plan the word-safe baseline blocks first, so an item whose utterance
+        // boundaries admit no tiling inside the length band is dropped from BOTH
+        // paths — the two aggregates always cover exactly the same audio.
+        let durations: Vec<f64> = item.segments.iter().map(Segment::seconds).collect();
+        let Some(blocks) = plan_blocks(
+            &durations,
+            BASELINE_BLOCK_TARGET_S,
+            BASELINE_BLOCK_MIN_S,
+            BASELINE_BLOCK_MAX_S,
+        ) else {
+            dropped += 1;
+            eprintln!(
+                "  DROP {:<32} {:6.1}s — no word-safe baseline block in [{:.0}, {:.0}]s fits its \
+                 utterance boundaries",
+                item.label(),
+                item.seconds(),
+                BASELINE_BLOCK_MIN_S,
+                BASELINE_BLOCK_MAX_S,
+            );
+            continue;
+        };
+        for (start, end) in &blocks {
+            block_lengths.push(durations[*start..*end].iter().sum());
+        }
+
+        let reference = item.reference();
+        let buffer = item.samples();
+
         // --- chunked path ---------------------------------------------------
         let chunked = normalize_for_wer_naive(&decode_via_file(&engine, &buffer, &mut guard));
 
         // --- segment baseline -----------------------------------------------
-        let durations: Vec<f64> = item.segments.iter().map(Segment::seconds).collect();
-        let Some(blocks) = plan_blocks(&durations, CHUNK_WINDOW_S, SINGLE_PASS_MAX_S) else {
-            panic!(
-                "{}: a single utterance exceeds the {SINGLE_PASS_MAX_S}s single-pass threshold, \
-                 so no word-safe baseline block fits",
-                item.label()
-            );
-        };
         for level in boundary_levels(item, &blocks) {
             quietest = quietest.min(level);
             loudest_cut = loudest_cut.max(level);
@@ -792,9 +910,17 @@ fn test_longform_stitch_cost() {
         baseline_hyp_words += baseline.len();
         chunked_errors += ce;
         baseline_errors += be;
+        scored += 1;
+        kept_secs += item.seconds();
+        seams += ((item.seconds() - CHUNK_WINDOW_S) / stride).ceil().max(0.0) as usize;
     }
 
     assert!(ref_words > 0, "empty reference");
+    assert!(
+        scored > 0,
+        "every one of {} intake item(s) was dropped for lacking a word-safe baseline tiling",
+        items.len()
+    );
     let chunked_wer = wer_pct(chunked_errors.total(), ref_words);
     let baseline_wer = wer_pct(baseline_errors.total(), ref_words);
     let stitch_pp = chunked_wer - baseline_wer;
@@ -815,8 +941,7 @@ fn test_longform_stitch_cost() {
     );
     eprintln!("  stitch cost       {stitch_pp:+6.2} pp");
     eprintln!(
-        "  identical output  {identical}/{} item(s) decoded word-for-word the same on both paths",
-        items.len()
+        "  identical output  {identical}/{scored} scored item(s) decoded word-for-word the same on both paths"
     );
     if cuts > 0 {
         eprintln!(
@@ -825,14 +950,43 @@ fn test_longform_stitch_cost() {
         );
     }
 
-    println!(
-        "\n| corpus | length | seams | chunked WER | 24s-segment baseline WER | stitch cost |"
+    eprintln!(
+        "  scored / dropped  {scored} scored, {dropped} dropped of {} intake item(s)",
+        items.len()
     );
-    println!("|--------|--------|-------|-------------|--------------------------|-------------|");
+
+    // The residual encoder-length confound, shown rather than hidden: how tightly
+    // the baseline blocks actually clustered around the chunk window. The chunked
+    // path always encodes ~24 s; the closer this spread sits to 24 s, the less a
+    // shorter-input advantage can be hiding inside the baseline WER.
+    block_lengths.sort_by(|a, b| a.partial_cmp(b).expect("no NaN block length"));
+    let (bmin, bmed, bmax) = block_length_stats(&block_lengths);
+    eprintln!(
+        "  baseline blocks   {} block(s), length min {bmin:.1}s / median {bmed:.1}s / max {bmax:.1}s \
+         (target {:.0}s, band [{:.0}, {:.0}]s)",
+        block_lengths.len(),
+        BASELINE_BLOCK_TARGET_S,
+        BASELINE_BLOCK_MIN_S,
+        BASELINE_BLOCK_MAX_S,
+    );
+
+    // WER below is VERBATIM / naive normalization (lowercase + `ё`→`е` +
+    // `[a-zа-я0-9]`), NOT the ITN-normalized WER `docs/benchmarks.md` reports. The
+    // stitch cost is a difference between two decodes scored the same way, so it is
+    // normalization-independent; the absolute percentages are not, and must not be
+    // compared against that document's figures.
     println!(
-        "| RuLS continuous runs ×{} | {:.1} min | {seams} | {chunked_wer:.2}% | {baseline_wer:.2}% | {stitch_pp:+.2} pp |",
-        items.len(),
-        total_secs / 60.0,
+        "\n(WER columns are verbatim / naive-norm — not comparable to docs/benchmarks.md ITN-normalized WER.)"
+    );
+    println!(
+        "\n| corpus | scored length | seams | chunked WER (naive-norm) | 24s-segment baseline WER (naive-norm) | stitch cost | baseline block s (min/med/max) |"
+    );
+    println!(
+        "|--------|---------------|-------|--------------------------|---------------------------------------|-------------|--------------------------------|"
+    );
+    println!(
+        "| RuLS Pushkin verse ×{scored} run(s) | {:.1} min | {seams} | {chunked_wer:.2}% | {baseline_wer:.2}% | {stitch_pp:+.2} pp | {bmin:.1}/{bmed:.1}/{bmax:.1} |",
+        kept_secs / 60.0,
     );
 
     // A stitch that ate half the transcript would still score plausibly on a
@@ -843,15 +997,37 @@ fn test_longform_stitch_cost() {
          the stitch lost most of the audio"
     );
 
-    if let Some(max_pp) = std::env::var("GIGASTT_LONGFORM_MAX_STITCH_PP")
+    // Default gate: generous but real. The worst single-item stitch measured on
+    // this corpus was +1.83 pp (per-item spread −1.63..+1.83 pp), so +2.0 pp clears
+    // the sampling scatter of any one item while still catching a genuine
+    // regression — a broken stitch drops words wholesale and blows past this by
+    // tens of points. Override with GIGASTT_LONGFORM_MAX_STITCH_PP to tighten, or
+    // set a large value to observe without gating.
+    const DEFAULT_MAX_STITCH_PP: f64 = 2.0;
+    let max_pp = std::env::var("GIGASTT_LONGFORM_MAX_STITCH_PP")
         .ok()
         .and_then(|s| s.parse::<f64>().ok())
-    {
-        assert!(
-            stitch_pp <= max_pp,
-            "stitch cost {stitch_pp:+.2} pp exceeds the configured ceiling {max_pp:.2} pp"
-        );
+        .unwrap_or(DEFAULT_MAX_STITCH_PP);
+    assert!(
+        stitch_pp <= max_pp,
+        "stitch cost {stitch_pp:+.2} pp exceeds the ceiling {max_pp:.2} pp"
+    );
+}
+
+/// Min, median and max of a sorted, non-empty slice of block lengths; zeros for
+/// an empty slice (no scored item ever produces one, but the report must not
+/// panic if a future filter leaves it empty).
+fn block_length_stats(sorted: &[f64]) -> (f64, f64, f64) {
+    if sorted.is_empty() {
+        return (0.0, 0.0, 0.0);
     }
+    let mid = sorted.len() / 2;
+    let median = if sorted.len().is_multiple_of(2) {
+        (sorted[mid - 1] + sorted[mid]) / 2.0
+    } else {
+        sorted[mid]
+    };
+    (sorted[0], median, sorted[sorted.len() - 1])
 }
 
 // ---------------------------------------------------------------------------
@@ -900,6 +1076,11 @@ fn test_encoder_length_degradation_curve() {
     );
 
     let engine = load_engine();
+    eprintln!(
+        "  model head (loaded at runtime): {} encoder ({})",
+        engine.variant().as_str(),
+        if engine.is_int8() { "INT8" } else { "FP32" }
+    );
     let mut guard = engine.pool.checkout_blocking().expect("pool checkout");
 
     let mut rows = Vec::new();
@@ -916,10 +1097,13 @@ fn test_encoder_length_degradation_curve() {
     }
 
     println!(
-        "\n| corpus | input length | ref words | one-pass hyp words | retention | one-pass WER | file-path WER |"
+        "\n(WER columns are verbatim / naive-norm — not comparable to docs/benchmarks.md ITN-normalized WER.)"
     );
     println!(
-        "|--------|--------------|-----------|--------------------|-----------|--------------|---------------|"
+        "\n| corpus | input length | ref words | one-pass hyp words | retention | one-pass WER (naive-norm) | file-path WER (naive-norm) |"
+    );
+    println!(
+        "|--------|--------------|-----------|--------------------|-----------|---------------------------|----------------------------|"
     );
     for row in &rows {
         println!("{row}");
@@ -980,6 +1164,12 @@ fn curve_rows(
         let mut file_errors = 0usize;
         let mut total_secs = 0.0f64;
         let mut measured = 0usize;
+        // The file entry point branches per item on that item's achieved prefix
+        // length, so a row pooling items on both sides of the 30 s threshold is
+        // genuinely mixed. Count the branch each decode actually took rather than
+        // labelling the whole row from its mean length.
+        let mut single_pass_decodes = 0usize;
+        let mut chunked_decodes = 0usize;
 
         for (item, (count, secs)) in items.iter().zip(&prefixes) {
             if *count == 0 {
@@ -1004,6 +1194,11 @@ fn curve_rows(
             file_errors += word_errors(&reference, &file_hyp).total();
             total_secs += secs;
             measured += 1;
+            if *secs <= SINGLE_PASS_MAX_S {
+                single_pass_decodes += 1;
+            } else {
+                chunked_decodes += 1;
+            }
         }
         if measured == 0 || ref_words == 0 {
             continue;
@@ -1013,12 +1208,13 @@ fn curve_rows(
         let one_pass_wer = wer_pct(one_pass_errors, ref_words);
         let file_wer = wer_pct(file_errors, ref_words);
         let retention = one_pass_words as f64 / ref_words as f64 * 100.0;
-        // The file entry point is a single encoder pass only up to the 30 s
-        // threshold; past it, it chunks. Mark which branch produced the number.
-        let file_cell = if secs <= SINGLE_PASS_MAX_S {
-            format!("{file_wer:.2}% (single pass)")
-        } else {
-            format!("{file_wer:.2}% (chunked)")
+        // Label the file-path cell by the branch each pooled decode actually took,
+        // so a row straddling the 30 s threshold reads as mixed instead of pinning
+        // itself to whichever side the mean happened to fall on.
+        let file_cell = match (single_pass_decodes, chunked_decodes) {
+            (_, 0) => format!("{file_wer:.2}% (single pass)"),
+            (0, _) => format!("{file_wer:.2}% (chunked)"),
+            (s, c) => format!("{file_wer:.2}% (mixed: {s} single-pass / {c} chunked)"),
         };
 
         eprintln!(
@@ -1050,7 +1246,7 @@ fn test_split_indexed_name_parses_ruls_layout() {
 #[test]
 fn test_plan_blocks_stays_under_cap_and_covers_everything() {
     let durations = vec![7.0; 20];
-    let blocks = plan_blocks(&durations, 24.0, 30.0).expect("plannable");
+    let blocks = plan_blocks(&durations, 24.0, 18.0, 30.0).expect("plannable");
     assert_eq!(blocks.first().map(|b| b.0), Some(0));
     assert_eq!(blocks.last().map(|b| b.1), Some(20));
     for w in blocks.windows(2) {
@@ -1067,7 +1263,7 @@ fn test_plan_blocks_targets_the_window_length() {
     // Greedy packing of 7s segments under a 24s target yields 21s blocks; the
     // dynamic program should prefer 28s ones, which sit closer to 24.
     let durations = vec![7.0; 8];
-    let blocks = plan_blocks(&durations, 24.0, 30.0).expect("plannable");
+    let blocks = plan_blocks(&durations, 24.0, 18.0, 30.0).expect("plannable");
     let lengths: Vec<f64> = blocks
         .iter()
         .map(|(s, e)| durations[*s..*e].iter().sum())
@@ -1080,8 +1276,36 @@ fn test_plan_blocks_targets_the_window_length() {
 }
 
 #[test]
+fn test_plan_blocks_enforces_the_min_floor() {
+    // 10s segments: a block must be >= 18s (two segments) and <= 30s (three), so
+    // the planner can never leave a lone 10s tail — the short-block confound the
+    // floor exists to prevent. 70s tiles as 20 + 20 + 30 (all inside the band).
+    let durations = vec![10.0; 7];
+    let blocks = plan_blocks(&durations, 24.0, 18.0, 30.0).expect("plannable");
+    assert_eq!(
+        blocks.last().map(|b| b.1),
+        Some(7),
+        "must cover every segment"
+    );
+    for (start, end) in &blocks {
+        let len: f64 = durations[*start..*end].iter().sum();
+        assert!(
+            (18.0..=30.0).contains(&len),
+            "block of {len}s escaped the [18, 30]s band"
+        );
+    }
+}
+
+#[test]
 fn test_plan_blocks_rejects_an_unsplittable_segment() {
-    assert!(plan_blocks(&[45.0], 24.0, 30.0).is_none());
+    assert!(plan_blocks(&[45.0], 24.0, 18.0, 30.0).is_none());
+}
+
+#[test]
+fn test_plan_blocks_rejects_when_a_residual_cannot_reach_the_floor() {
+    // A lone 12s segment is below the 18s floor and cannot be merged with anything,
+    // so no in-band tiling exists and the item must be dropped rather than scored.
+    assert!(plan_blocks(&[24.0, 12.0], 24.0, 18.0, 30.0).is_none());
 }
 
 #[test]
