@@ -4,6 +4,7 @@ mod decode;
 mod opus;
 mod pcm;
 mod resample;
+mod stream;
 mod telephony;
 
 #[cfg(test)]
@@ -27,7 +28,7 @@ pub(crate) use super::{HOP_LENGTH, N_FFT};
 pub(crate) const MAX_BUFFER_SAMPLES: usize = 16000 * 5; // 5 seconds at 16kHz
 /// Hard upper bound on file-transcription audio length (seconds). Long-form
 /// inputs are decoded in bounded overlapping chunks (see
-/// `Engine::transcribe_samples_chunked`), so peak encoder memory is O(chunk)
+/// `Engine::decode_words_streaming`), so peak encoder memory is O(chunk)
 /// regardless of file length; this cap bounds the fully decoded PCM buffer
 /// instead. 30 minutes ≈ the largest uncompressed PCM16@16kHz upload the
 /// default 50 MiB body limit admits (~27 min), and bounds the decoded f32
@@ -78,6 +79,10 @@ pub(crate) use pcm::{consume_audio_buffer, prepare_audio_buffer};
 pub use pcm::{parse_pcm16_with_carry, parse_pcm16_with_carry_into};
 
 pub use resample::{SampleRate, resample, resample_with_cache};
+
+// Long-form window source. Crate-internal: the file-decode loop is the only
+// consumer today, and the streaming source lands behind the same trait.
+pub(crate) use stream::{PcmWindows, SliceWindows, WindowSpec};
 
 pub use telephony::TelephonyCodec;
 #[cfg(feature = "file-decode")]

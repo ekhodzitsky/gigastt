@@ -12,6 +12,7 @@ use crate::runtime::production_factory_variant;
 use crate::runtime::tensor::{Shape, Tensor, TensorData, TensorDataView};
 
 use super::audio;
+use super::audio::{PcmWindows, SliceWindows, WindowSpec};
 use super::bias;
 use super::ctc;
 use super::decode;
@@ -258,6 +259,18 @@ pub(crate) fn chunk_window_samples(ane_encoder: bool) -> usize {
     } else {
         CHUNK_WINDOW_SAMPLES_ORT
     }
+}
+
+/// Long-form window geometry for the active encoder backend: the single-pass
+/// ceiling, the backend's window length, and the fixed inter-window overlap.
+/// Free-standing (like [`chunk_window_samples`]) so the geometry is unit-tested
+/// without a loaded model.
+pub(crate) fn window_spec(ane_encoder: bool) -> WindowSpec {
+    WindowSpec::new(
+        CHUNK_THRESHOLD_SAMPLES,
+        chunk_window_samples(ane_encoder),
+        CHUNK_OVERLAP_SAMPLES,
+    )
 }
 
 /// Default number of session triplets in the pool.
@@ -1916,7 +1929,8 @@ impl Engine {
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
     ) -> Result<Vec<WordInfo>, GigasttError> {
-        if samples.len() <= CHUNK_THRESHOLD_SAMPLES {
+        let spec = window_spec(self.ane_encoder);
+        if spec.is_single_pass(samples.len()) {
             let (features, num_frames) = self.features.compute(samples);
             tracing::info!("Extracted {} mel frames", num_frames);
             let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
@@ -1933,7 +1947,14 @@ impl Engine {
                 .map_err(|e| GigasttError::Inference { source: e.into() })?
                 .0)
         } else {
-            self.transcribe_samples_chunked(samples, triplet, biaser)
+            tracing::info!(
+                "Long-form chunked decode: {:.1}s in ~{}s windows ({}s overlap, ane={})",
+                samples.len() as f64 / 16000.0,
+                spec.window() / 16000,
+                spec.overlap() / 16000,
+                self.ane_encoder,
+            );
+            self.decode_words_streaming(&mut SliceWindows::new(samples, spec), triplet, biaser)
         }
     }
 
@@ -1972,43 +1993,32 @@ impl Engine {
         Ok(words)
     }
 
-    /// Long-form decode: split `float_samples` into overlapping windows, encode
-    /// and decode each independently with a fresh [`DecoderState`], offset each
+    /// Long-form decode: pull overlapping windows from `windows`, encode and
+    /// decode each independently with a fresh [`DecoderState`], offset each
     /// chunk's word timestamps by the chunk's absolute start, then stitch the
     /// per-chunk word lists with overlap de-dup via [`stitch_chunk_words`].
     ///
-    /// Peak encoder activation memory is bounded by [`chunk_window_samples`]
-    /// (24s ort / 30s ANE) rather than the full file length. Chunk starts are
-    /// aligned to encoder frame boundaries (multiples of
-    /// `HOP_LENGTH * ENCODER_SUBSAMPLING`) so the per-chunk frame offset is
-    /// exact, matching the streaming path's math.
-    fn transcribe_samples_chunked(
+    /// Peak encoder activation memory is bounded by the source's window length
+    /// (24s ort / 30s ANE, see [`chunk_window_samples`]) rather than the full
+    /// file length. Window starts are aligned to encoder frame boundaries
+    /// (multiples of `HOP_LENGTH * ENCODER_SUBSAMPLING`) so the per-chunk frame
+    /// offset is exact, matching the streaming path's math.
+    ///
+    /// Takes the PCM as a [`PcmWindows`] source rather than a `&[f32]`, so the
+    /// loop makes no assumption that the whole file is in memory.
+    fn decode_words_streaming(
         &self,
-        float_samples: &[f32],
+        windows: &mut dyn PcmWindows,
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
     ) -> Result<Vec<WordInfo>, GigasttError> {
-        let total = float_samples.len();
-        let window = chunk_window_samples(self.ane_encoder);
-        let stride = window - CHUNK_OVERLAP_SAMPLES;
-        // Align stride to an encoder-frame boundary so each chunk's frame offset
-        // is integral; otherwise the offset would drift by a sub-frame each hop.
+        let overlap = windows.spec().overlap();
         let frame_samples = HOP_LENGTH * ENCODER_SUBSAMPLING;
-        let stride = (stride / frame_samples) * frame_samples;
-        tracing::info!(
-            "Long-form chunked decode: {:.1}s in ~{}s windows ({}s overlap, ane={})",
-            total as f64 / 16000.0,
-            window / 16000,
-            CHUNK_OVERLAP_SAMPLES / 16000,
-            self.ane_encoder,
-        );
 
         let mut merged: Vec<WordInfo> = Vec::new();
-        let mut start = 0usize;
-        while start < total {
-            let end = (start + window).min(total);
-            let chunk = &float_samples[start..end];
-            let (features, num_frames) = self.features.compute(chunk);
+        while let Some(window) = windows.next_window()? {
+            let start = window.start_sample;
+            let (features, num_frames) = self.features.compute(window.samples);
             let frame_offset = start / frame_samples;
             let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
             let (chunk_words, _endpoint) = self
@@ -2025,13 +2035,8 @@ impl Engine {
 
             // Seam between the previous chunk's window and this one falls at the
             // midpoint of their overlap region, in absolute seconds.
-            let overlap_mid_s = (start as f64 + CHUNK_OVERLAP_SAMPLES as f64 / 2.0) / 16000.0;
+            let overlap_mid_s = (start as f64 + overlap as f64 / 2.0) / 16000.0;
             merged = stitch_chunk_words(merged, chunk_words, overlap_mid_s);
-
-            if end == total {
-                break;
-            }
-            start += stride;
         }
         Ok(merged)
     }
@@ -2274,8 +2279,11 @@ pub(crate) fn stitch_chunk_words(
     }
     // Drop the earlier chunk's tail that reaches past the seam — those words are
     // re-decoded by `next` with more right context, so prefer the later chunk
-    // for the back half of the overlap.
-    merged.retain(|w| w.start <= seam_s);
+    // for the back half of the overlap. `merged` is monotonic in `start`, so the
+    // words to drop are exactly a suffix: binary-search the seam and truncate.
+    // (`retain` would rescan every word merged so far on every chunk — O(chunks
+    // × words) — for a policy that only ever trims the tail.)
+    merged.truncate(merged.partition_point(|w| w.start <= seam_s));
     merged.extend(next.into_iter().filter(|w| w.start > seam_s));
     merged
 }
@@ -2884,6 +2892,29 @@ mod tests {
     }
 
     #[test]
+    fn test_stitch_truncate_matches_retain_predicate() {
+        // `stitch_chunk_words` trims the earlier chunk with
+        // `partition_point` + `truncate` instead of `retain` (which rescanned
+        // every merged word on every chunk). On the monotonic-in-`start` lists
+        // the chunked loop actually produces, the two are the same predicate —
+        // sweep seams on and between every word boundary to show it.
+        let merged: Vec<WordInfo> = (0..40)
+            .map(|i| word(&format!("w{i}"), i as f64 * 0.5, i as f64 * 0.5 + 0.3))
+            .collect();
+        for step in 0..=80 {
+            let seam_s = step as f64 * 0.25;
+            let mut expected = merged.clone();
+            expected.retain(|w| w.start <= seam_s);
+            let got = stitch_chunk_words(merged.clone(), Vec::new(), seam_s);
+            assert_eq!(
+                got.iter().map(|w| w.word.as_str()).collect::<Vec<_>>(),
+                expected.iter().map(|w| w.word.as_str()).collect::<Vec<_>>(),
+                "diverged at seam {seam_s}"
+            );
+        }
+    }
+
+    #[test]
     fn test_stitch_timestamp_offset_math() {
         // The chunked path offsets a chunk's frame indices by
         // start_samples / (HOP_LENGTH * ENCODER_SUBSAMPLING). Verify that a word
@@ -2916,6 +2947,24 @@ mod tests {
         assert!(CHUNK_WINDOW_SAMPLES_ANE > CHUNK_OVERLAP_SAMPLES);
         assert!(CHUNK_THRESHOLD_SAMPLES >= CHUNK_WINDOW_SAMPLES_ORT);
         assert!(CHUNK_THRESHOLD_SAMPLES >= CHUNK_WINDOW_SAMPLES_ANE);
+    }
+
+    #[test]
+    fn test_window_spec_reproduces_legacy_chunk_geometry() {
+        // The long-form loop used to derive its own window/stride and read the
+        // overlap straight off `CHUNK_OVERLAP_SAMPLES`; it now takes all three
+        // from the spec. Any divergence here moves every seam, so pin it.
+        let frame_samples = HOP_LENGTH * ENCODER_SUBSAMPLING;
+        for ane in [false, true] {
+            let window = chunk_window_samples(ane);
+            let legacy_stride = ((window - CHUNK_OVERLAP_SAMPLES) / frame_samples) * frame_samples;
+            let spec = window_spec(ane);
+            assert_eq!(spec.window(), window, "window (ane={ane})");
+            assert_eq!(spec.stride(), legacy_stride, "stride (ane={ane})");
+            assert_eq!(spec.overlap(), CHUNK_OVERLAP_SAMPLES, "overlap (ane={ane})");
+            assert!(spec.is_single_pass(CHUNK_THRESHOLD_SAMPLES));
+            assert!(!spec.is_single_pass(CHUNK_THRESHOLD_SAMPLES + 1));
+        }
     }
 
     #[test]

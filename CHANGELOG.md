@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rubato's fractional phase bounded instead of letting it accumulate over millions of
   samples. All public decode signatures are unchanged.
 
+- Long-form file decode pulls its overlapping windows from an internal window
+  source instead of indexing one whole-file buffer, and trims the merged word
+  list by binary search instead of rescanning it once per window. Window
+  geometry, seam policy and decoded output are unchanged (verified
+  bit-identical, including word timestamps, across both decode branches).
+
 ### Fixed
 
 - **`ort` is pinned to exactly `2.0.0-rc.12`.** The previous requirement was a caret, so

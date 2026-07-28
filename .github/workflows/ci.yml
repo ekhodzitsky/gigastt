@@ -543,7 +543,7 @@ jobs:
               - 'docs/**'
               - 'crates/gigastt/src/main.rs'
               - 'crates/gigastt/src/server/ws.rs'
-              - 'crates/gigastt-core/src/inference/audio.rs'
+              - 'crates/gigastt-core/src/inference/audio/**'
               - 'scripts/check-docs-drift.py'
               - 'scripts/check-docs-drift.allowlist'
               - 'README*.md'
