@@ -66,7 +66,7 @@ ane = ["dep:tar", "dep:objc2", "dep:objc2-core-ml", "dep:objc2-foundation", "dep
 __internals = []
 
 [dependencies]
-ort = "2.0.0-rc.12"
+ort = "=2.0.0-rc.12"
 candle-core = { version = "0.11", optional = true }
 candle-nn = { version = "0.11", optional = true }
 safetensors = { version = "0.8", optional = true }

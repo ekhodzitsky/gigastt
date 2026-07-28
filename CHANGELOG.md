@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`ort` is pinned to exactly `2.0.0-rc.12`.** The previous requirement was a caret, so
+  any dependency resolution without this repository's `Cargo.lock` picked up
+  `2.0.0-rc.13` (published 2026-07-28), where the `CoreML` / `CUDA` / `NNAPI` execution
+  providers moved behind `ort`'s own Cargo features. `gigastt-core` then failed to compile
+  with six `E0433` errors — affecting a fresh `cargo install gigastt`, any downstream
+  `cargo add`, and `cargo-semver-checks`' isolated rustdoc build. Workspace builds were
+  shielded by the lockfile; new consumers were not. Adopting rc.13 is a separate change
+  that has to gate the provider arms per feature.
+
 - **Punctuation restoration no longer silently gives up on long transcripts.**
   Restoration ran a single tokenizer pass over the whole transcript against a
   2048-position model and swallowed the resulting runtime error, so any recording
