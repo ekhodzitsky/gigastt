@@ -33,6 +33,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a wall-clock extrapolation that assumed a fixed RTF of 0.1; it now advances
   from the engine's real per-window processed-sample count. The SSE `progress`
   event shape is unchanged (additive-only).
+- **`ort` moved to exactly `2.0.0-rc.13`.** rc.13 relocated the `CoreML` / `CUDA` /
+  `NNAPI` execution providers behind `ort`'s own Cargo features, so the provider
+  match arms are now gated per feature — a default (CPU) build never names a
+  feature-gated type. The pin stays exact (`=`) so a future rc cannot arrive
+  unannounced. On macOS the CoreML EP behaviour is unchanged (MLProgram format,
+  static input shapes).
+  - **The CoreML compiled-model cache is recompiled once after this upgrade.**
+    The cache (`~/.gigastt/models/coreml_cache/`) is now scoped by ONNX Runtime
+    version (`coreml_cache/ort-<minor>/`), because a bundle compiled by one ONNX
+    Runtime is not loadable by another — loading a stale one made the CoreML EP
+    fail at prediction time and fall back to CPU silently on every run. After the
+    upgrade the first transcription recompiles the graph (a few seconds, a
+    one-time cost); subsequent runs are fast again. The pre-upgrade cache is left
+    on disk; `gigastt cache-gc` now reclaims stale CoreML caches (it previously
+    pruned only `optimized_cache/`).
 
 - **File decode resamples incrementally instead of in one whole-buffer pass.**
   Decoded packets now drain through a stateful resampler in ~1 s staged chunks, so

@@ -13,7 +13,12 @@
 mod cache;
 mod manifest;
 
-pub use cache::{DedupeReport, OptimizedCachePruneReport, dedupe_model_dir, prune_optimized_cache};
+#[cfg(feature = "coreml")]
+pub(crate) use cache::coreml_cache_dir;
+pub use cache::{
+    CoremlCachePruneReport, DedupeReport, OptimizedCachePruneReport, dedupe_model_dir,
+    prune_coreml_cache, prune_optimized_cache,
+};
 pub use manifest::{MANIFEST_FILE, ManifestFiles, ModelManifest};
 
 #[cfg(feature = "net")]

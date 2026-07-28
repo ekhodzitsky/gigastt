@@ -36,7 +36,7 @@ impl OrtExecutionProvider {
     /// Returns the execution-provider list to register when loading a session.
     ///
     /// `model_path` is used to derive provider-specific cache directories (e.g.
-    /// CoreML's `coreml_cache/` next to the model).
+    /// CoreML's version-scoped `coreml_cache/ort-<minor>/` next to the model).
     pub(crate) fn execution_providers(
         self,
         model_path: &Path,
@@ -52,10 +52,15 @@ impl OrtExecutionProvider {
             Self::Cpu => vec![ort::ep::CPU::default().build()],
             #[cfg(feature = "coreml")]
             Self::CoreML => {
-                let cache_dir = model_path
-                    .parent()
-                    .map(|p| p.join("coreml_cache"))
-                    .unwrap_or_else(|| PathBuf::from("coreml_cache"));
+                // Version-scoped: `coreml_cache/ort-<minor>/`. The CoreML EP keys
+                // its compiled bundles by graph hash only, so an ORT upgrade would
+                // otherwise load a bundle a different ONNX Runtime compiled and
+                // fail into a silent CPU fallback. Scoping by ORT version makes the
+                // upgrade miss the stale entry and recompile once (self-healing).
+                let cache_dir = match model_path.parent() {
+                    Some(p) => crate::model::coreml_cache_dir(p),
+                    None => crate::model::coreml_cache_dir(Path::new(".")),
+                };
                 let coreml_ep = ort::ep::CoreML::default()
                     .with_model_format(ort::ep::coreml::ModelFormat::MLProgram)
                     .with_static_input_shapes(true)

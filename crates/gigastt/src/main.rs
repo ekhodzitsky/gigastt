@@ -548,9 +548,10 @@ enum Commands {
         force: bool,
     },
 
-    /// Prune stale ONNX Runtime optimized graphs (and optionally hardlink
-    /// exact duplicate files) under the model directory. Reclaims disk on
-    /// multi-head / FP32-polluted installs without changing accuracy.
+    /// Prune stale ONNX Runtime optimized graphs and stale CoreML compiled-model
+    /// caches (and optionally hardlink exact duplicate files) under the model
+    /// directory. Reclaims disk on multi-head / FP32-polluted installs and after
+    /// an ONNX Runtime upgrade, without changing accuracy.
     CacheGc {
         /// Model directory
         #[arg(long, default_value_t = model::default_model_dir())]
@@ -1294,6 +1295,21 @@ async fn main() -> anyhow::Result<()> {
                 prune.freed_bytes as f64 / (1024.0 * 1024.0),
             );
             for p in &prune.removed {
+                println!("  - {}", p.display());
+            }
+            let coreml = model::prune_coreml_cache(dir, dry_run)?;
+            println!(
+                "coreml_cache: kept {}, removed {} stale ({} {:.1} MiB)",
+                if coreml.kept.is_some() {
+                    "current"
+                } else {
+                    "none"
+                },
+                coreml.removed.len(),
+                action,
+                coreml.freed_bytes as f64 / (1024.0 * 1024.0),
+            );
+            for p in &coreml.removed {
                 println!("  - {}", p.display());
             }
             if dedupe {
