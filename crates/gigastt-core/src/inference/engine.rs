@@ -1588,10 +1588,11 @@ impl Engine {
             #[cfg(feature = "file-decode")]
             TranscribeSource::Bytes(data) => {
                 if self.stream_eligible(&req.overrides, req.diarization) {
-                    let windows = audio::FileWindows::from_bytes(data, window_spec(self.ane_encoder))
-                        .map_err(|e| GigasttError::InvalidAudio {
-                            reason: format!("{e:#}"),
-                        })?;
+                    let windows =
+                        audio::FileWindows::from_bytes(data, window_spec(self.ane_encoder))
+                            .map_err(|e| GigasttError::InvalidAudio {
+                                reason: format!("{e:#}"),
+                            })?;
                     self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords)
                 } else {
                     let float_samples = audio::decode_audio_bytes_shared(data).map_err(|e| {

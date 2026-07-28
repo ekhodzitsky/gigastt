@@ -856,9 +856,8 @@ mod file_windows_tests {
         let spec = ort_spec();
         let src = signal(10_000, 0.7);
         let wav = encode_wav_pcm16(&src, 16000);
-        let got = window_seq(
-            FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open"),
-        );
+        let got =
+            window_seq(FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open"));
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].0, 0);
         assert_eq!(got[0].1.len(), 10_000);
@@ -870,8 +869,7 @@ mod file_windows_tests {
         let n = 700_000; // chunked
         let src = signal(n, 1.3);
         let wav = encode_wav_pcm16(&src, 16000);
-        let mut fw =
-            FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open");
+        let mut fw = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open");
         while fw.next_window().expect("window").is_some() {}
         assert_eq!(fw.total_16k_samples(), n);
     }
