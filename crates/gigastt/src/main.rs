@@ -359,8 +359,16 @@ enum Commands {
         #[arg(long, env = "GIGASTT_JOBS_MAX")]
         jobs_max: Option<usize>,
 
-        /// Maximum retry attempts for a job that hits inference_timeout or panics
-        /// [default: 3]. Env: GIGASTT_JOBS_RETRY.
+        /// Maximum total bytes of buffered job uploads kept in memory across the
+        /// queue (queued + processing). Bounds RAM independently of --jobs-max,
+        /// which counts jobs but not their size; a submission over budget gets
+        /// 429 + Retry-After [default: 536870912 = 512 MiB].
+        /// Env: GIGASTT_JOBS_MAX_BYTES.
+        #[arg(long, env = "GIGASTT_JOBS_MAX_BYTES")]
+        jobs_max_bytes: Option<usize>,
+
+        /// Maximum retry attempts for a job that panics [default: 3].
+        /// Env: GIGASTT_JOBS_RETRY.
         #[arg(long, env = "GIGASTT_JOBS_RETRY")]
         jobs_retry: Option<u32>,
 
@@ -763,6 +771,7 @@ fn build_limits(
     jobs_enabled: Option<bool>,
     jobs_ttl_secs: Option<u64>,
     jobs_max: Option<usize>,
+    jobs_max_bytes: Option<usize>,
     jobs_retry: Option<u32>,
 ) -> anyhow::Result<RuntimeLimits> {
     let mut limits = if let Some(path) = config_path {
@@ -808,6 +817,9 @@ fn build_limits(
     }
     if let Some(v) = jobs_max {
         limits.jobs_max = v;
+    }
+    if let Some(v) = jobs_max_bytes {
+        limits.jobs_max_bytes = v;
     }
     if let Some(v) = jobs_retry {
         limits.jobs_retry = v;
@@ -1022,6 +1034,7 @@ async fn main() -> anyhow::Result<()> {
             enable_jobs,
             jobs_ttl_secs,
             jobs_max,
+            jobs_max_bytes,
             jobs_retry,
             encoder_intra_threads,
             bind_all,
@@ -1074,6 +1087,7 @@ async fn main() -> anyhow::Result<()> {
                 Some(enable_jobs),
                 jobs_ttl_secs,
                 jobs_max,
+                jobs_max_bytes,
                 jobs_retry,
             )?;
             let metrics_listen =
@@ -2191,6 +2205,7 @@ mod tests {
     fn test_build_limits_defaults_when_no_config() {
         let limits = build_limits(
             None, None, None, None, None, None, None, None, None, None, None, None, None, None,
+            None,
         )
         .unwrap();
         assert_eq!(limits.idle_timeout_secs, 300);
@@ -2213,12 +2228,14 @@ mod tests {
             Some(true),
             Some(7200),
             Some(50),
+            Some(2 * 1024 * 1024),
             Some(5),
         )
         .unwrap();
         assert!(limits.jobs_enabled);
         assert_eq!(limits.jobs_ttl_secs, 7200);
         assert_eq!(limits.jobs_max, 50);
+        assert_eq!(limits.jobs_max_bytes, 2 * 1024 * 1024);
         assert_eq!(limits.jobs_retry, 5);
     }
 
@@ -2232,6 +2249,8 @@ mod tests {
             "7200",
             "--jobs-max",
             "50",
+            "--jobs-max-bytes",
+            "1048576",
             "--jobs-retry",
             "5",
         ]);
@@ -2240,12 +2259,14 @@ mod tests {
                 enable_jobs,
                 jobs_ttl_secs,
                 jobs_max,
+                jobs_max_bytes,
                 jobs_retry,
                 ..
             } => {
                 assert!(enable_jobs);
                 assert_eq!(jobs_ttl_secs, Some(7200));
                 assert_eq!(jobs_max, Some(50));
+                assert_eq!(jobs_max_bytes, Some(1048576));
                 assert_eq!(jobs_retry, Some(5));
             }
             _ => panic!("expected Serve"),
@@ -2289,6 +2310,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         assert_eq!(limits.idle_timeout_secs, 600);
@@ -2308,6 +2330,7 @@ mod tests {
         std::fs::write(tmp.path(), b"idle_timeout_secs = 123\n").unwrap();
         let limits = build_limits(
             Some(tmp.path().to_str().unwrap()),
+            None,
             None,
             None,
             None,
@@ -2345,6 +2368,7 @@ mod tests {
             None,
             None,
             None,
+            None,
         );
         assert!(result.is_err());
     }
@@ -2358,6 +2382,7 @@ mod tests {
             None,
             Some(30),
             Some(0),
+            None,
             None,
             None,
             None,
@@ -2381,6 +2406,7 @@ mod tests {
             None,
             Some(0),
             Some(0),
+            None,
             None,
             None,
             None,

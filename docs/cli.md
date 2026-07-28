@@ -127,8 +127,13 @@ gigastt serve [OPTIONS]
                                 [default: 3600]. Env: GIGASTT_JOBS_TTL_SECS.
   --jobs-max <N>                Max jobs kept in memory; POST /v1/jobs returns 429 when
                                 full [default: 100]. Env: GIGASTT_JOBS_MAX.
-  --jobs-retry <N>              Max retries for a job on inference_timeout or panic
-                                [default: 3]. Env: GIGASTT_JOBS_RETRY.
+  --jobs-max-bytes <N>          Max total bytes of buffered job uploads kept in memory;
+                                bounds RAM independently of --jobs-max, a submission over
+                                budget returns 429 [default: 536870912 = 512 MiB].
+                                Env: GIGASTT_JOBS_MAX_BYTES.
+  --jobs-retry <N>              Max retries for a job that panics (a deterministic
+                                inference_timeout is not retried) [default: 3].
+                                Env: GIGASTT_JOBS_RETRY.
   --inference-timeout-secs <N>  Per-request inference timeout; a run exceeding it returns
                                 inference_timeout (REST 504 / WS close). 0 disables
                                 [default: 600]. Env: GIGASTT_INFERENCE_TIMEOUT_SECS.

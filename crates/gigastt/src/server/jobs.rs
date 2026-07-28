@@ -223,6 +223,25 @@ impl InMemoryJobStore {
             queue.retain(|x| x != &id);
         }
     }
+
+    /// Total bytes of buffered uploads currently resident across all jobs.
+    /// Terminal jobs release their body (`Bytes::new()`), so this is the live
+    /// upload footprint — the quantity `jobs_max_bytes` bounds. O(jobs), and
+    /// `jobs_max` already caps the count, so this is a short walk.
+    fn resident_body_bytes(jobs: &HashMap<String, Job>) -> usize {
+        jobs.values().map(|j| j.body.len()).sum()
+    }
+
+    /// Whether the store is at capacity by count OR by resident upload bytes.
+    /// Folding the byte budget in here means an over-budget queue produces the
+    /// exact same 429 + `Retry-After` backpressure as a count-full one, with no
+    /// new error type. Bounds live upload RAM to `jobs_max_bytes` plus at most
+    /// one `body_limit_bytes` (the job that crosses the line is admitted, the
+    /// next is refused), mirroring how the count cap admits exactly `jobs_max`.
+    fn at_capacity(&self, jobs: &HashMap<String, Job>) -> bool {
+        jobs.len() >= self.limits.jobs_max
+            || Self::resident_body_bytes(jobs) >= self.limits.jobs_max_bytes
+    }
 }
 
 impl JobStore for InMemoryJobStore {
@@ -231,7 +250,10 @@ impl JobStore for InMemoryJobStore {
             let mut jobs = self.jobs.lock();
             let mut queue = self.queue.lock();
             self.evict_expired_locked(&mut jobs, &mut queue);
-            if jobs.len() >= self.limits.jobs_max {
+            // Race backstop behind the `is_full` gate in `submit_job` (which
+            // returns 429 + Retry-After): rejects on either the count or the
+            // byte budget so two concurrent submits can't both slip past the gate.
+            if self.at_capacity(&jobs) {
                 return Err(anyhow::anyhow!("job store is full"));
             }
             let id = job.id.clone();
@@ -296,7 +318,7 @@ impl JobStore for InMemoryJobStore {
             let mut jobs = self.jobs.lock();
             let mut queue = self.queue.lock();
             self.evict_expired_locked(&mut jobs, &mut queue);
-            jobs.len() >= self.limits.jobs_max
+            self.at_capacity(&jobs)
         })
     }
 }
@@ -572,8 +594,16 @@ pub(crate) async fn broadcast_event(store: &dyn JobStore, id: &str, event: JobEv
 }
 
 fn is_retryable_error(e: &anyhow::Error) -> bool {
+    // Only a panic in the inference thread is transient: the triplet is
+    // recovered via catch_unwind and the same input may well succeed on a fresh
+    // worker, so it is worth another attempt.
+    //
+    // An `inference_timeout` is deliberately NOT retryable. A file that is too
+    // slow for the limit will be exactly as slow next time, so retrying it just
+    // burns (max_retries + 1) × the timeout on a job that can never pass while
+    // the rest of the queue waits behind it. Fail it once instead.
     let s = format!("{e:#}");
-    s.contains("inference_timeout") || s.contains("panicked")
+    s.contains("panicked")
 }
 
 fn sanitize_job_error(e: &anyhow::Error) -> String {
@@ -616,26 +646,48 @@ impl JobExecution for RealJobExecutor {
         let engine = self.engine.load_full();
         let limits = self.limits.load();
 
-        // Decode audio (blocking) once to estimate duration for progress.
-        // Wrap the decoder in catch_unwind so a malformed file cannot be
-        // retried as a transient inference panic.
-        let samples = tokio::task::spawn_blocking({
+        // Size the progress bar from the container header when it declares a
+        // duration (WAV / FLAC / M4A / OGG do). A probe reads O(header) bytes
+        // and decodes nothing, so we skip the full O(T) decode this used to run
+        // purely to throw the samples away — the engine re-decodes `body` for
+        // the actual transcript below. That eliminates one wasted full decode
+        // per job: its wall time and its transient f32 buffer (measured ~0.9 s
+        // and ~73 MB on a 20-min 48 kHz file). Peak RSS is roughly unchanged —
+        // the old pre-decode buffer was already freed before the engine decode,
+        // so the two never coexisted — but the redundant CPU pass is gone.
+        const TARGET_SAMPLE_RATE: f64 = 16_000.0;
+        let probed = tokio::task::spawn_blocking({
             let body = body.clone();
-            move || {
-                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    gigastt_core::inference::audio::decode_audio_bytes_shared(body)
-                }))
-            }
+            move || gigastt_core::inference::audio::probe_duration_bytes(body)
         })
         .await
-        .map_err(|e| anyhow::anyhow!("audio decode task panicked: {e}"))?
-        .map_err(|_| anyhow::anyhow!("Invalid audio: decoder panicked"))?
-        .map_err(|e| anyhow::anyhow!("Invalid audio: {e:#}"))?;
+        .map_err(|e| anyhow::anyhow!("audio probe task panicked: {e}"))?
+        .ok()
+        .flatten();
 
-        const TARGET_SAMPLE_RATE: f64 = 16_000.0;
-        let total_seconds = samples.len() as f64 / TARGET_SAMPLE_RATE;
-        // Only the duration was needed here; the engine re-decodes from `body`.
-        drop(samples);
+        let total_seconds = match probed {
+            Some(seconds) => seconds,
+            None => {
+                // The header declares no usable duration (often a raw MP3
+                // stream): fall back to the full decode so the job keeps its
+                // progress bar. Wrap the decoder in catch_unwind so a malformed
+                // file cannot be retried as a transient inference panic; the
+                // samples are only used for their count and then dropped.
+                let samples = tokio::task::spawn_blocking({
+                    let body = body.clone();
+                    move || {
+                        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                            gigastt_core::inference::audio::decode_audio_bytes_shared(body)
+                        }))
+                    }
+                })
+                .await
+                .map_err(|e| anyhow::anyhow!("audio decode task panicked: {e}"))?
+                .map_err(|_| anyhow::anyhow!("Invalid audio: decoder panicked"))?
+                .map_err(|e| anyhow::anyhow!("Invalid audio: {e:#}"))?;
+                samples.len() as f64 / TARGET_SAMPLE_RATE
+            }
+        };
         let _ = store
             .update(id, Box::new(move |j| j.total_seconds = total_seconds))
             .await;
@@ -873,6 +925,70 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_store_byte_budget_backpressures_under_count_limit() {
+        // Count limit is generous (10) but the byte budget is tiny: a store
+        // holding one upload already at/over the byte budget must report full
+        // and reject the next submission, even though it holds 1 << 10 jobs.
+        let limits = RuntimeLimits {
+            jobs_max: 10,
+            jobs_max_bytes: 8,
+            ..test_limits()
+        };
+        let store = InMemoryJobStore::new(limits);
+        // First upload (11 bytes) is admitted: like the count cap admitting the
+        // Nth job, the budget is checked against the bytes already resident (0).
+        store
+            .create(Job::queued(
+                Bytes::from_static(b"audio-bytes"),
+                ExportParams::default(),
+            ))
+            .await
+            .unwrap();
+        // 11 resident bytes now exceed the 8-byte budget, so the store is full
+        // by bytes despite being far below jobs_max, and the next create fails.
+        assert!(store.is_full().await);
+        let result = store
+            .create(Job::queued(
+                Bytes::from_static(b"more"),
+                ExportParams::default(),
+            ))
+            .await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_store_byte_budget_released_when_job_terminal() {
+        // A terminal job releases its body, so those bytes stop counting against
+        // the budget and the queue accepts new work again.
+        let limits = RuntimeLimits {
+            jobs_max: 10,
+            jobs_max_bytes: 8,
+            ..test_limits()
+        };
+        let store = InMemoryJobStore::new(limits);
+        let id = store
+            .create(Job::queued(
+                Bytes::from_static(b"audio-bytes"),
+                ExportParams::default(),
+            ))
+            .await
+            .unwrap();
+        assert!(store.is_full().await);
+        // Release the body the way the worker does at a terminal state.
+        store
+            .update(
+                &id,
+                Box::new(|j| {
+                    j.status = JobStatus::Done;
+                    j.body = Bytes::new();
+                }),
+            )
+            .await
+            .unwrap();
+        assert!(!store.is_full().await);
+    }
+
+    #[tokio::test]
     async fn test_store_is_full_evicts_expired() {
         let limits = RuntimeLimits {
             jobs_ttl_secs: 1,
@@ -1021,10 +1137,12 @@ mod tests {
         };
         let store: Arc<dyn JobStore> = Arc::new(InMemoryJobStore::new(limits));
         let executor = MockExecutor {
+            // Panic is the retryable failure class (inference_timeout is not),
+            // so the retry path is exercised with a panic marker.
             results: Arc::new(Mutex::new(vec![
-                Err(anyhow::anyhow!("inference_timeout")),
-                Err(anyhow::anyhow!("inference_timeout")),
-                Err(anyhow::anyhow!("inference_timeout")),
+                Err(anyhow::anyhow!("worker thread panicked")),
+                Err(anyhow::anyhow!("worker thread panicked")),
+                Err(anyhow::anyhow!("worker thread panicked")),
             ])),
             delay_ms: 0,
         };
@@ -1139,10 +1257,12 @@ mod tests {
 
     #[test]
     fn test_is_retryable_error_recognizes_transient_failures() {
-        assert!(is_retryable_error(&anyhow::anyhow!("inference_timeout")));
+        // A panic is transient — a fresh worker may succeed. An inference_timeout
+        // is deterministic, so it is NOT retryable. A decode error never is.
         assert!(is_retryable_error(&anyhow::anyhow!(
             "worker thread panicked"
         )));
+        assert!(!is_retryable_error(&anyhow::anyhow!("inference_timeout")));
         assert!(!is_retryable_error(&anyhow::anyhow!("Invalid audio")));
     }
 
@@ -1282,6 +1402,53 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_queue_timeout_fails_once() {
+        // A deterministic inference_timeout must fail on its first and only
+        // attempt — even with retry budget to spare — so a too-slow file can't
+        // burn (max_retries + 1) × the timeout while the queue waits.
+        let store: Arc<dyn JobStore> = Arc::new(InMemoryJobStore::new(test_limits()));
+        let executor = MockExecutor {
+            // Second result is queued but must never be consumed: no retry.
+            results: Arc::new(Mutex::new(vec![
+                Err(anyhow::anyhow!("inference_timeout")),
+                ok_result(),
+            ])),
+            delay_ms: 0,
+        };
+        // Generous retry budget (3) — the point is that timeout ignores it.
+        let queue = JobQueue::new(
+            store.clone(),
+            1,
+            3,
+            tokio_util::sync::CancellationToken::new(),
+        );
+        queue.spawn(executor);
+
+        let id = store
+            .create(Job::queued(
+                Bytes::from_static(b"x"),
+                ExportParams::default(),
+            ))
+            .await
+            .unwrap();
+
+        for _ in 0..50 {
+            let job = store.get(&id).await.unwrap().unwrap();
+            if matches!(job.status, JobStatus::Failed) {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+
+        let job = store.get(&id).await.unwrap().unwrap();
+        assert!(matches!(job.status, JobStatus::Failed));
+        assert_eq!(
+            job.attempts, 1,
+            "inference_timeout must fail once, not retry"
+        );
+    }
+
+    #[tokio::test]
     async fn test_queue_retry_boundary_exhausted_after_max_retries() {
         // max_retries=1 means one retry is allowed: attempts 1 (retry), 2 (fail).
         let limits = RuntimeLimits {
@@ -1290,9 +1457,11 @@ mod tests {
         };
         let store: Arc<dyn JobStore> = Arc::new(InMemoryJobStore::new(limits));
         let executor = MockExecutor {
+            // Retry path is exercised with a panic marker (the retryable class);
+            // inference_timeout is deterministic and fails once.
             results: Arc::new(Mutex::new(vec![
-                Err(anyhow::anyhow!("inference_timeout")),
-                Err(anyhow::anyhow!("inference_timeout")),
+                Err(anyhow::anyhow!("worker thread panicked")),
+                Err(anyhow::anyhow!("worker thread panicked")),
             ])),
             delay_ms: 0,
         };
@@ -1389,7 +1558,9 @@ mod tests {
             _params: ExportParams,
         ) -> anyhow::Result<gigastt_core::inference::TranscribeResult> {
             self.lens.lock().push(body.len());
-            Err(anyhow::anyhow!("inference_timeout"))
+            // Retryable failure class, so the body must survive to the next
+            // attempt and only be released at the terminal state.
+            Err(anyhow::anyhow!("worker thread panicked"))
         }
     }
 

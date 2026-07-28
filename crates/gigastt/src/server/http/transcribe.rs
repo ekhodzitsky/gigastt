@@ -228,7 +228,11 @@ pub(super) async fn run_file_transcription(
 
     let inference_start = std::time::Instant::now();
     let span = tracing::Span::current();
-    let handle = tokio::task::spawn_blocking(move || {
+    // Route through the shared TaskTracker (like the WS / SSE paths) so a
+    // SIGTERM drain can wait for an in-flight REST transcription up to
+    // `--shutdown-drain-secs`; a bare `tokio::task::spawn_blocking` is untracked
+    // and would be abandoned on shutdown, cutting the response mid-run.
+    let handle = state.tracker.spawn_blocking(move || {
         let _enter = span.enter();
         // catch_unwind ensures triplet is returned to pool even on panic
         let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

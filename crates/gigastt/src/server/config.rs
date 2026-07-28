@@ -146,8 +146,16 @@ pub struct RuntimeLimits {
     /// Maximum number of jobs kept in memory (queued + finished). When full,
     /// POST /v1/jobs returns 429 + Retry-After. Default: 100.
     pub jobs_max: usize,
-    /// Maximum retry attempts for a job that hits inference_timeout or panics.
-    /// Default: 3.
+    /// Maximum total bytes of buffered uploads held across all in-memory jobs
+    /// (queued + processing; a terminal job releases its body). The count cap
+    /// (`jobs_max`) alone can't bound RAM — each queued job holds its full
+    /// upload as `Bytes`, so `jobs_max` × `body_limit_bytes` (default 100 × 50
+    /// MiB ≈ 5 GiB) could sit in memory while the queue is "not full" by count.
+    /// A submission that would push the live total over this budget gets the
+    /// same 429 + `Retry-After` backpressure as a count-full queue. Default:
+    /// 512 MiB.
+    pub jobs_max_bytes: usize,
+    /// Maximum retry attempts for a job that panics. Default: 3.
     pub jobs_retry: u32,
 }
 
@@ -166,6 +174,7 @@ impl Default for RuntimeLimits {
             jobs_enabled: false,
             jobs_ttl_secs: 3600,
             jobs_max: 100,
+            jobs_max_bytes: 512 * 1024 * 1024,
             jobs_retry: 3,
         }
     }
@@ -201,7 +210,9 @@ pub struct RuntimeLimitsConfig {
     pub jobs_ttl_secs: u64,
     /// Maximum number of jobs kept in memory.
     pub jobs_max: usize,
-    /// Maximum retry attempts for inference-timeout / panic.
+    /// Maximum total bytes of buffered job uploads kept in memory.
+    pub jobs_max_bytes: usize,
+    /// Maximum retry attempts for a panicking job.
     pub jobs_retry: u32,
 }
 
@@ -221,6 +232,7 @@ impl Default for RuntimeLimitsConfig {
             jobs_enabled: d.jobs_enabled,
             jobs_ttl_secs: d.jobs_ttl_secs,
             jobs_max: d.jobs_max,
+            jobs_max_bytes: d.jobs_max_bytes,
             jobs_retry: d.jobs_retry,
         }
     }
@@ -241,6 +253,7 @@ impl From<RuntimeLimitsConfig> for RuntimeLimits {
             jobs_enabled: cfg.jobs_enabled,
             jobs_ttl_secs: cfg.jobs_ttl_secs,
             jobs_max: cfg.jobs_max,
+            jobs_max_bytes: cfg.jobs_max_bytes,
             jobs_retry: cfg.jobs_retry,
         }
     }
@@ -332,6 +345,7 @@ mod tests {
         assert!(!limits.jobs_enabled);
         assert_eq!(limits.jobs_ttl_secs, 3600);
         assert_eq!(limits.jobs_max, 100);
+        assert_eq!(limits.jobs_max_bytes, 512 * 1024 * 1024);
         assert_eq!(limits.jobs_retry, 3);
     }
 

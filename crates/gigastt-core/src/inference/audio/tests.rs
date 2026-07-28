@@ -307,6 +307,46 @@ fn test_decode_audio_bytes_wav() {
     assert!((samples.len() as i64 - 16000).unsigned_abs() <= 100);
 }
 
+#[test]
+fn test_probe_duration_wav_reports_declared_seconds() {
+    // A WAV header declares its frame count, so the probe returns the duration
+    // without decoding a single packet.
+    let wav = make_wav_bytes(&vec![0i16; 16000], 16000); // exactly 1.0 s
+    let probed = probe_duration_bytes(Bytes::from(wav)).unwrap();
+    assert!(
+        matches!(probed, Some(s) if (s - 1.0).abs() < 1e-6),
+        "expected ~1.0 s, got {probed:?}"
+    );
+}
+
+#[test]
+fn test_probe_duration_agrees_with_decoded_length() {
+    // The probe's declared duration must match the decoded sample count: the
+    // job executor uses the two interchangeably to size the progress bar, so a
+    // divergence would move the bar when the probe fast-path kicks in.
+    let wav = make_wav_bytes(&vec![0i16; 24000], 16000); // 1.5 s at 16 kHz
+    let probed = probe_duration_bytes(Bytes::from(wav.clone()))
+        .unwrap()
+        .expect("WAV declares its duration");
+    let decoded_s = decode_audio_bytes_shared(Bytes::from(wav)).unwrap().len() as f64 / 16_000.0;
+    assert!(
+        (probed - decoded_s).abs() < 1e-3,
+        "probe {probed} vs decode {decoded_s}"
+    );
+}
+
+#[test]
+fn test_probe_duration_non_container_does_not_claim_duration() {
+    // Bytes that are not a supported container must not panic and must never
+    // report a duration — the caller falls back to a real decode, which
+    // surfaces the proper "invalid audio" error.
+    let r = probe_duration_bytes(Bytes::from_static(b"definitely not audio"));
+    assert!(
+        r.is_err() || matches!(r, Ok(None)),
+        "garbage bytes must be Err or Ok(None), got {r:?}"
+    );
+}
+
 // --- BytesMediaSource tests ---
 
 use std::io::{Read, Seek, SeekFrom};

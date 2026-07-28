@@ -70,7 +70,7 @@ pub(crate) use decode::BytesMediaSource;
 #[cfg(feature = "file-decode")]
 pub use decode::{
     decode_audio_bytes, decode_audio_bytes_shared, decode_audio_bytes_shared_channels,
-    decode_audio_file, load_audio_channels,
+    decode_audio_file, load_audio_channels, probe_duration_bytes, probe_duration_file,
 };
 pub use decode::{is_dual_mono, mix_channels_to_mono};
 
