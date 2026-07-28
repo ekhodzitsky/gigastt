@@ -20,6 +20,14 @@
 //! diff /tmp/base.txt /tmp/head.txt
 //! ```
 //!
+//! Give each side its own `CARGO_TARGET_DIR`. Cargo's freshness check is
+//! mtime-based, so two trees sharing one target directory can silently re-run
+//! the binary built from the *other* tree — which yields a perfect match for
+//! entirely the wrong reason, in the one probe whose whole job is to detect a
+//! silent no-op. If you must share a target dir, check provenance before
+//! believing the result: `tail -2 target/release/deps/longform_digest-*.d`
+//! should name the `CARGO_MANIFEST_DIR` you think you measured.
+//!
 //! The digest covers the transcript text, the word count, and every word's text
 //! plus the **bit patterns** of its start/end timestamps, so a timestamp that
 //! moves by a single ULP changes it.
