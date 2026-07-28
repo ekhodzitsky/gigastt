@@ -176,7 +176,7 @@ pub fn prune_optimized_cache(model_dir: &Path, dry_run: bool) -> Result<Optimize
 /// build under `model_dir/coreml_cache/`.
 ///
 /// Keeps only the current version dir (`ort-<minor>/`, see
-/// [`coreml_cache_dir`]); removes every other subdirectory — sibling `ort-*`
+/// `coreml_cache_dir`); removes every other subdirectory — sibling `ort-*`
 /// dirs from other ORT versions and legacy hash dirs written directly under
 /// `coreml_cache/` before the cache was version-scoped. Stray files are left
 /// alone (mirrors [`prune_optimized_cache`]). Not feature-gated: a CPU build may
