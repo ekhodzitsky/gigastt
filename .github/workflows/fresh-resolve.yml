@@ -1,0 +1,93 @@
+name: Fresh Dependency Resolution
+
+# Builds gigastt the way a brand-new consumer does — `cargo add gigastt-core`,
+# `cargo add gigastt-ffi`, `cargo install gigastt` — from a fresh resolution
+# with no Cargo.lock to shield us.
+#
+# Why this exists: every other build in the repo either inherits the workspace
+# Cargo.lock or passes --locked (ci.yml's `msrv` and `publish-dry-run` both do),
+# so a dependency that publishes a caret-compatible but source-INcompatible
+# release slips past all of them and only breaks at a user's `cargo install`.
+# That is exactly what happened on 2026-07-28: ort 2.0.0-rc.13 moved the CoreML
+# / CUDA / NNAPI providers behind its own Cargo features, our manifest declared
+# a caret (`ort = "2.0.0-rc.12"`, which Cargo reads as `^` and accepts rc.13),
+# and the published release stopped compiling for anyone without our lockfile.
+# It surfaced only by luck — a red Semver Checks job on an unrelated PR, because
+# cargo-semver-checks happens to build rustdoc in a throwaway out-of-workspace
+# crate. This job makes that coverage deliberate instead of accidental.
+#
+# Triggers are intentionally narrow. This job can go red with NO change from us
+# — purely because a dependency published a new version — so it must never gate
+# unrelated PRs. It runs:
+#   - on every main push (catch a loosened pin the moment it lands),
+#   - nightly (catch the ecosystem moving between our commits — the rc.13 case),
+#   - on PRs only when they touch a manifest or the lockfile (catch a pin being
+#     re-loosened at review time, before merge), via the native paths filter so
+#     unrelated PRs don't even start it.
+on:
+  push:
+    branches: [main]
+  schedule:
+    # 05:37 UTC — off-peak, and a skewed minute distinct from the nightly soak
+    # (03:17) so the two don't contend for a runner slot.
+    - cron: '37 5 * * *'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/Cargo.toml'
+      - 'Cargo.lock'
+      - '.github/workflows/fresh-resolve.yml'
+
+concurrency:
+  group: fresh-resolve-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fresh-resolve:
+    runs-on: ubuntu-latest
+    name: Fresh Dependency Resolution
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      # build.rs regenerates the ONNX prost types via prost-build, which shells
+      # out to protoc — the fresh `cargo check` compiles and runs that build
+      # script, so protoc must be present just like every other build job.
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+
+      # Deliberately NO Swatinem/rust-cache here. This is the one job whose whole
+      # purpose is to see the registry exactly as a brand-new user would; a warm
+      # cache is precisely the footgun the `msrv` job in ci.yml carries a note
+      # about ("a warm cargo cache can mask a too-new dependency"). A cold
+      # registry costs ~a minute of index/download time and buys certainty that
+      # the resolution is current. (Cargo's sparse index would refresh regardless,
+      # so a registry-only cache would in fact be safe — add one here if CI
+      # minutes ever become the constraint.)
+
+      - name: Resolve published crates from scratch (no workspace lockfile)
+        run: |
+          set -euxo pipefail
+          # An out-of-tree crate carrying its own [workspace] table is what makes
+          # Cargo ignore our Cargo.lock and re-resolve every dependency from the
+          # live registry — exactly as a downstream `cargo add gigastt-core`
+          # would. Both properties are load-bearing: $RUNNER_TEMP is outside the
+          # checkout, and the appended [workspace] makes the scratch crate its
+          # own workspace root.
+          scratch="$RUNNER_TEMP/freshresolve"
+          rm -rf "$scratch"
+          cargo new --lib "$scratch"
+          printf '\n[workspace]\n' >> "$scratch/Cargo.toml"
+
+          # All three published Rust artifacts funnel through gigastt-core, but
+          # each pulls a different slice: gigastt-core (default features) is the
+          # `cargo add gigastt-core` surface, gigastt-ffi exercises the lean
+          # default-features=false path, and gigastt drags in the full server
+          # stack that `cargo install gigastt` builds. Resolving all three in one
+          # scratch crate re-resolves the union in a single `cargo check` and
+          # costs no measurable extra time (check is metadata-only).
+          cargo add --manifest-path "$scratch/Cargo.toml" --path "$GITHUB_WORKSPACE/crates/gigastt-core"
+          cargo add --manifest-path "$scratch/Cargo.toml" --path "$GITHUB_WORKSPACE/crates/gigastt-ffi"
+          cargo add --manifest-path "$scratch/Cargo.toml" --path "$GITHUB_WORKSPACE/crates/gigastt"
+
+          cargo check --manifest-path "$scratch/Cargo.toml"
