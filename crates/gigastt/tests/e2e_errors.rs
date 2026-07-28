@@ -390,3 +390,168 @@ async fn test_ws_idle_timeout() {
 
     let _ = shutdown.send(());
 }
+
+// ─── Cooperative cancellation / no-progress watchdog ────────────────────────
+
+/// A run that makes no progress within `inference_timeout_secs` returns 504 AND
+/// releases its pooled triplet within roughly one window — the whole point of
+/// the change. With a single pool slot and a 1 s no-progress budget, a long
+/// file trips the watchdog before its first ~24 s encoder window completes; the
+/// follow-up request must then acquire the slot in far less time than the full
+/// file would take to decode, proving the timed-out run was actually cancelled
+/// rather than left wedged.
+#[ignore = "requires the GigaAM model (~850MB)"]
+#[tokio::test]
+async fn test_inference_watchdog_frees_pool_slot_within_one_window() {
+    let model_dir = common::model_dir();
+    let limits = gigastt::server::RuntimeLimits {
+        inference_timeout_secs: 1,
+        ..Default::default()
+    };
+    let (port, shutdown) = common::start_server_with_pool_and_limits(&model_dir, 1, limits).await;
+
+    // ~5 minutes of audio: a full decode is tens of seconds, so if the slot were
+    // NOT freed on timeout the follow-up would block far past one window. 16 kHz
+    // keeps the body ~9.6 MB, under the 50 MiB limit.
+    let long = common::generate_wav(300, 16000);
+    let short = common::generate_wav(1, 16000);
+    let client = reqwest::Client::new();
+
+    let resp = client
+        .post(format!("http://127.0.0.1:{port}/v1/transcribe"))
+        .body(long)
+        .send()
+        .await
+        .expect("long request");
+    assert_eq!(
+        resp.status().as_u16(),
+        504,
+        "a stalled run must trip the no-progress watchdog with 504"
+    );
+
+    // Measure how long the single freed slot takes to serve a fresh request.
+    let reclaim_start = std::time::Instant::now();
+    let resp2 = tokio::time::timeout(
+        Duration::from_secs(20),
+        client
+            .post(format!("http://127.0.0.1:{port}/v1/transcribe"))
+            .body(short)
+            .send(),
+    )
+    .await
+    .expect("follow-up returned before the test timeout")
+    .expect("follow-up request");
+    let reclaimed = reclaim_start.elapsed();
+    assert!(
+        resp2.status().is_success(),
+        "follow-up must get the freed slot, got {}",
+        resp2.status()
+    );
+    assert!(
+        reclaimed < Duration::from_secs(15),
+        "slot should free within ~one window; follow-up took {reclaimed:?}"
+    );
+    eprintln!("pool slot reclaimed + short decode in {reclaimed:?}");
+
+    let _ = shutdown.send(());
+}
+
+/// `DELETE /v1/jobs/{id}` on a processing job frees its triplet in bounded time:
+/// with a single job worker, a queued follow-up job can only run once the
+/// cancelled one releases the slot. If cancellation reached the engine, the
+/// follow-up completes in far less time than the cancelled job's full decode.
+#[ignore = "requires the GigaAM model (~850MB)"]
+#[tokio::test]
+async fn test_delete_job_frees_triplet_in_bounded_time() {
+    let model_dir = common::model_dir();
+    let (port, shutdown) = common::start_server_with_jobs(&model_dir, 1).await;
+    let client = reqwest::Client::new();
+
+    // Submit a long job and wait until it is Processing (holding the only slot).
+    let long = common::generate_wav(300, 16000);
+    let submit_text = client
+        .post(format!("http://127.0.0.1:{port}/v1/jobs"))
+        .body(long)
+        .send()
+        .await
+        .expect("submit long job")
+        .text()
+        .await
+        .expect("submit response body");
+    let submit: serde_json::Value =
+        serde_json::from_str(&submit_text).expect("submit response json");
+    let id = submit["job_id"].as_str().expect("job_id").to_string();
+
+    let mut processing = false;
+    for _ in 0..100 {
+        let status_text = client
+            .get(format!("http://127.0.0.1:{port}/v1/jobs/{id}"))
+            .send()
+            .await
+            .expect("poll job")
+            .text()
+            .await
+            .expect("status body");
+        let status: serde_json::Value = serde_json::from_str(&status_text).expect("status json");
+        if status["status"] == "processing" {
+            processing = true;
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    assert!(processing, "long job must reach processing");
+
+    // Cancel it, then time how long a fresh short job takes to finish — it can
+    // only start once the cancelled run releases its triplet.
+    let del = client
+        .delete(format!("http://127.0.0.1:{port}/v1/jobs/{id}"))
+        .send()
+        .await
+        .expect("delete job");
+    assert_eq!(del.status().as_u16(), 204, "cancel returns 204");
+
+    let reclaim_start = std::time::Instant::now();
+    let short = common::generate_wav(2, 16000);
+    let submit2_text = client
+        .post(format!("http://127.0.0.1:{port}/v1/jobs"))
+        .body(short)
+        .send()
+        .await
+        .expect("submit short job")
+        .text()
+        .await
+        .expect("submit2 body");
+    let submit2: serde_json::Value = serde_json::from_str(&submit2_text).expect("submit2 json");
+    let id2 = submit2["job_id"].as_str().expect("job_id2").to_string();
+
+    let mut done = false;
+    for _ in 0..200 {
+        let status_text = client
+            .get(format!("http://127.0.0.1:{port}/v1/jobs/{id2}"))
+            .send()
+            .await
+            .expect("poll job2")
+            .text()
+            .await
+            .expect("status2 body");
+        let status: serde_json::Value = serde_json::from_str(&status_text).expect("status2 json");
+        match status["status"].as_str() {
+            Some("done") => {
+                done = true;
+                break;
+            }
+            Some("failed") => panic!("follow-up job failed: {status:?}"),
+            _ => {}
+        }
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    let reclaimed = reclaim_start.elapsed();
+    assert!(done, "follow-up job must complete once the slot is freed");
+    assert!(
+        reclaimed < Duration::from_secs(15),
+        "DELETE must free the triplet promptly; follow-up took {reclaimed:?}"
+    );
+    eprintln!("triplet freed + follow-up job done in {reclaimed:?}");
+
+    let _ = shutdown.send(());
+}

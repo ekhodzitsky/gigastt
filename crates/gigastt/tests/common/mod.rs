@@ -219,6 +219,42 @@ pub async fn start_server_with_limits(
     (port, shutdown_tx)
 }
 
+/// Start the server with both an explicit session-pool size and custom
+/// `RuntimeLimits`. Used by the cancellation / watchdog e2e tests that need a
+/// single deterministic pool slot *and* a short `inference_timeout_secs`.
+pub async fn start_server_with_pool_and_limits(
+    model_dir: &str,
+    pool_size: usize,
+    limits: gigastt::server::RuntimeLimits,
+) -> (u16, oneshot::Sender<()>) {
+    let (port, listener) = free_port().await;
+    let (shutdown_tx, shutdown_rx) = oneshot::channel();
+
+    let engine = gigastt::inference::Engine::load_with_pool_size(model_dir, pool_size).unwrap();
+    let config = gigastt::server::ServerConfig {
+        port,
+        host: "127.0.0.1".into(),
+        origin_policy: gigastt::server::OriginPolicy::loopback_only(),
+        limits,
+        metrics_enabled: false,
+        metrics_listen: gigastt::server::config::default_metrics_listen(),
+        trust_proxy: false,
+        config_path: None,
+        // Batch pool falls back to the interactive pool, so `pool_size` is the
+        // single effective slot the `/v1/transcribe` batch path draws from.
+        batch_pool_size: 0,
+    };
+    tokio::spawn(gigastt::server::run_with_config_listener(
+        engine,
+        config,
+        Some(shutdown_rx),
+        listener,
+    ));
+
+    wait_for_ready(port, Duration::from_secs(30)).await;
+    (port, shutdown_tx)
+}
+
 /// Start the server with the asynchronous `/v1/jobs` API enabled. Uses a
 /// dedicated batch pool of size `batch_pool_size` (minimum 1) so job workers do
 /// not contend with the interactive pool used by WebSocket / synchronous REST.

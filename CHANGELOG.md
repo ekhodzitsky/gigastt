@@ -7,7 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Cooperative cancellation reaches the running transcription.** A client
+  disconnect or shutdown on `POST /v1/transcribe`, and `DELETE /v1/jobs/{id}` on
+  an in-flight job, now flip an abort flag that the engine's per-window decode
+  loop — and the VAD scan — observe at the next window boundary, releasing the
+  pooled session within one window instead of transcribing the rest of the file
+  into a result that is thrown away. Adds a `GigasttError::Cancelled` variant
+  (additive; the enum is `#[non_exhaustive]`).
+
 ### Changed
+
+- **`--inference-timeout-secs` is now a no-progress watchdog, not a total
+  wall-clock cap.** The deadline resets every time a decode window completes, so
+  a long file that keeps making progress no longer trips it — previously the
+  600 s default was a hidden ceiling on audio duration (roughly `timeout ÷ RTF`,
+  about 100 minutes at RTF 0.1). The flag name, the default (600 s), and the
+  `inference_timeout` error code are unchanged, and a short file that genuinely
+  hangs still trips at the same moment; on a trip the run is aborted so its
+  pooled triplet is freed within one window rather than staying wedged for the
+  rest of the file.
+
+- **`/v1/jobs` progress reflects audio actually decoded.** The progress bar was
+  a wall-clock extrapolation that assumed a fixed RTF of 0.1; it now advances
+  from the engine's real per-window processed-sample count. The SSE `progress`
+  event shape is unchanged (additive-only).
 
 - **File decode resamples incrementally instead of in one whole-buffer pass.**
   Decoded packets now drain through a stateful resampler in ~1 s staged chunks, so

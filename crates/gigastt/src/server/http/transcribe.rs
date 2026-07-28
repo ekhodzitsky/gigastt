@@ -7,6 +7,7 @@ use axum::response::{IntoResponse, Json, Response};
 use serde::Serialize;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64};
 
 use super::super::config::RuntimeLimits;
 use super::super::metrics::MetricsRegistry;
@@ -218,13 +219,29 @@ pub(super) async fn run_file_transcription(
     let mut reservation =
         reserve_batch_slot(&engine, &limits, state.metrics_registry.as_ref()).await?;
 
+    // Cooperative cancellation + real-progress plumbing, shared with the jobs
+    // path. `abort` lets a client disconnect, a fired shutdown, or the
+    // no-progress watchdog stop the detached ONNX run at its next window;
+    // `progress` carries per-window processed-sample counts back to the watchdog
+    // so a long file that keeps advancing never trips the timeout.
+    let abort = Arc::new(AtomicBool::new(false));
+    let progress = Arc::new(AtomicU64::new(0));
+
     let file_opts = super::super::file_transcribe::FileTranscribeOpts {
         overrides,
         hotwords,
         split_channels,
         diarization: request_diarization,
         raw_codec,
+        abort: Some(abort.clone()),
+        progress: Some(progress.clone()),
     };
+
+    // A client disconnect drops this handler future before it returns, dropping
+    // the guard and flipping `abort`; the detached blocking run then cancels at
+    // its next window and returns the triplet. On the normal return path the
+    // guard fires after the result is already in hand, so it is a harmless no-op.
+    let _abort_guard = super::super::file_transcribe::AbortOnDrop(abort.clone());
 
     let inference_start = std::time::Instant::now();
     let span = tracing::Span::current();
@@ -255,28 +272,33 @@ pub(super) async fn run_file_transcription(
         // reservation dropped here automatically returns the triplet to the pool
     });
 
-    // Guard the blocking ONNX run with the per-request inference timeout
-    // (`0` disables). `spawn_blocking` can't be cancelled, so the detached task
-    // keeps the triplet and returns the slot to the pool only when the run
-    // finishes; the client gets a typed `inference_timeout` (504) immediately.
+    // The per-request inference timeout is now a no-progress watchdog: the
+    // deadline resets whenever a window completes, so a long file streaming
+    // steady progress never trips it, while a genuinely stalled run still trips
+    // at the same moment and returns a typed `inference_timeout` (504). On a
+    // trip — and on shutdown — the watchdog flips `abort`, so the detached run
+    // releases its triplet within one window instead of staying wedged for the
+    // whole file. `0` disables the watchdog (shutdown still cancels).
     let inference_timeout_secs = limits.inference_timeout_secs;
-    let result = if inference_timeout_secs == 0 {
-        handle.await
-    } else {
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(inference_timeout_secs),
-            handle,
-        )
-        .await
-        {
-            Ok(r) => r,
-            Err(_elapsed) => {
-                if let Some(ref reg) = state.metrics_registry {
-                    reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
-                }
-                tracing::error!("REST inference exceeded {inference_timeout_secs}s — aborting");
-                return Err(api_inference_timeout_error());
+    let outcome = super::super::file_transcribe::await_transcription_watchdog(
+        handle,
+        &progress,
+        &abort,
+        inference_timeout_secs,
+        &state.shutdown,
+    )
+    .await;
+
+    let result = match outcome {
+        super::super::file_transcribe::WatchdogOutcome::Joined(r) => r,
+        super::super::file_transcribe::WatchdogOutcome::TimedOut => {
+            if let Some(ref reg) = state.metrics_registry {
+                reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
             }
+            tracing::error!(
+                "REST inference made no progress for {inference_timeout_secs}s — aborting"
+            );
+            return Err(api_inference_timeout_error());
         }
     };
     if let Some(ref reg) = state.metrics_registry {
@@ -289,6 +311,16 @@ pub(super) async fn run_file_transcription(
 
     match result {
         Ok(Ok(result)) => Ok(result),
+        Ok(Err(gigastt_core::error::GigasttError::Cancelled)) => {
+            // Reached only when a shutdown cancelled the run while the client was
+            // still connected (a disconnect drops this future before here). Be
+            // honest that the server is going away rather than faking success.
+            Err(api_error(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Server is shutting down",
+                "cancelled",
+            ))
+        }
         Ok(Err(e)) => {
             tracing::error!("Transcription error: {e}");
             Err(api_error(

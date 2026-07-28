@@ -185,10 +185,37 @@ impl SileroVad {
     /// Speech probability for every non-overlapping 512-sample window of
     /// `samples` (the trailing partial window, if any, is included zero-padded).
     pub fn frame_probs(&self, samples: &[f32]) -> Result<Vec<f32>> {
+        self.frame_probs_with_abort(samples, None)
+    }
+
+    /// Like [`SileroVad::frame_probs`] but polls `abort` while scanning so a
+    /// VAD pass over a whole long file can bail out cooperatively (a
+    /// no-progress inference watchdog or a client cancellation flips the flag).
+    /// Returns an error — which the caller maps to
+    /// [`GigasttError::Cancelled`](crate::error::GigasttError::Cancelled) — when
+    /// `abort` fires. With `abort = None` it is byte-for-byte `frame_probs`.
+    pub(crate) fn frame_probs_with_abort(
+        &self,
+        samples: &[f32],
+        abort: Option<&dyn Fn() -> bool>,
+    ) -> Result<Vec<f32>> {
         let mut state = [0.0f32; VAD_STATE_LEN];
         let mut probs = Vec::with_capacity(samples.len() / VAD_FRAME_SAMPLES + 1);
         let mut i = 0;
+        let mut since_check = 0usize;
         while i < samples.len() {
+            // Poll the abort flag roughly every ~2 s of audio (64 × 512
+            // samples) rather than once per 32 ms frame: interruptible on a
+            // multi-minute scan without an atomic load in the inner loop.
+            if let Some(abort) = abort {
+                since_check += 1;
+                if since_check >= 64 {
+                    since_check = 0;
+                    if abort() {
+                        anyhow::bail!("cancelled");
+                    }
+                }
+            }
             let end = (i + VAD_FRAME_SAMPLES).min(samples.len());
             probs.push(self.run_frame(&samples[i..end], &mut state)?);
             i = end;
@@ -201,7 +228,19 @@ impl SileroVad {
     ///
     /// Empty when no frame clears `cfg.threshold`.
     pub fn speech_regions(&self, samples: &[f32], cfg: &VadConfig) -> Result<Vec<(usize, usize)>> {
-        let probs = self.frame_probs(samples)?;
+        self.speech_regions_with_abort(samples, cfg, None)
+    }
+
+    /// Like [`SileroVad::speech_regions`] but threads an `abort` poll into the
+    /// underlying frame scan. With `abort = None` it is byte-for-byte
+    /// `speech_regions`.
+    pub(crate) fn speech_regions_with_abort(
+        &self,
+        samples: &[f32],
+        cfg: &VadConfig,
+        abort: Option<&dyn Fn() -> bool>,
+    ) -> Result<Vec<(usize, usize)>> {
+        let probs = self.frame_probs_with_abort(samples, abort)?;
         Ok(regions_from_probs(
             &probs,
             VAD_FRAME_SAMPLES,

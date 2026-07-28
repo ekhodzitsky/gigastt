@@ -403,7 +403,11 @@ pub async fn run_with_config_listener_reloadable(
             max_retries,
             shutdown_root.clone(),
         );
-        let executor = jobs::RealJobExecutor::new(engine_swap.clone(), limits_swap.clone());
+        let executor = jobs::RealJobExecutor::new(
+            engine_swap.clone(),
+            limits_swap.clone(),
+            shutdown_root.clone(),
+        );
         queue.spawn(executor);
         tracing::info!(
             concurrency,

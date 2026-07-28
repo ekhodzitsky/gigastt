@@ -1,6 +1,8 @@
 //! File-transcription result types and per-request overrides.
 
 use serde::Serialize;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64};
 
 use super::state::{WordInfo, aggregate_confidence};
 
@@ -252,6 +254,21 @@ pub struct TranscribeRequest<'a> {
     /// encoder / `diarization` feature). Ignored for
     /// [`TranscribeSource::Channels`].
     pub diarization: bool,
+    /// Optional cooperative-cancellation flag. When set and flipped to `true`
+    /// by another thread (client disconnect, `DELETE /v1/jobs/{id}`, shutdown,
+    /// or the no-progress inference watchdog), the decode loop observes it at a
+    /// window boundary and returns
+    /// [`GigasttError::Cancelled`](crate::error::GigasttError::Cancelled),
+    /// releasing the pooled session within one window instead of running to
+    /// completion. `None` (the default) is the historical, non-cancellable
+    /// behaviour.
+    pub abort: Option<Arc<AtomicBool>>,
+    /// Optional progress sink. When set, the long-form decode stores the number
+    /// of 16 kHz samples processed so far (monotonically increasing, ending at
+    /// the decoded length) after each window completes. A server watchdog reads
+    /// it both to reset its no-progress deadline and to drive a real per-window
+    /// job progress bar. `None` (the default) reports nothing.
+    pub progress: Option<Arc<AtomicU64>>,
 }
 
 impl<'a> TranscribeRequest<'a> {
@@ -262,6 +279,8 @@ impl<'a> TranscribeRequest<'a> {
             overrides: TranscribeOverrides::default(),
             hotwords: None,
             diarization: false,
+            abort: None,
+            progress: None,
         }
     }
 
@@ -280,6 +299,22 @@ impl<'a> TranscribeRequest<'a> {
     /// Enable or disable offline speaker diarization for mono sources.
     pub fn with_diarization(mut self, diarization: bool) -> Self {
         self.diarization = diarization;
+        self
+    }
+
+    /// Attach a cooperative-cancellation flag. Flipping the shared
+    /// [`AtomicBool`] to `true` from another thread makes the decode return
+    /// [`GigasttError::Cancelled`](crate::error::GigasttError::Cancelled) at the
+    /// next window boundary. `None` restores the non-cancellable default.
+    pub fn with_abort(mut self, abort: Option<Arc<AtomicBool>>) -> Self {
+        self.abort = abort;
+        self
+    }
+
+    /// Attach a progress sink that receives the cumulative count of processed
+    /// 16 kHz samples after each long-form window. `None` reports nothing.
+    pub fn with_progress(mut self, progress: Option<Arc<AtomicU64>>) -> Self {
+        self.progress = progress;
         self
     }
 }

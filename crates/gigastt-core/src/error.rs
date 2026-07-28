@@ -115,6 +115,14 @@ pub enum GigasttError {
     /// Invalid user-supplied parameter or option (not audio-specific).
     #[error("invalid input: {message}")]
     InvalidInput { message: String },
+    /// The run was cancelled cooperatively before it finished (client
+    /// disconnect, `DELETE /v1/jobs/{id}`, a fired shutdown signal, or the
+    /// no-progress inference watchdog). The decode loop observes the abort
+    /// signal at a window boundary and returns this so the pooled session is
+    /// released promptly instead of running to completion. Additive: the enum
+    /// is `#[non_exhaustive]`.
+    #[error("cancelled")]
+    Cancelled,
 }
 
 impl GigasttError {
@@ -129,6 +137,7 @@ impl GigasttError {
             GigasttError::InvalidAudio { .. } => "invalid_audio",
             GigasttError::Io(_) => "io_error",
             GigasttError::InvalidInput { .. } => "invalid_input",
+            GigasttError::Cancelled => "cancelled",
         }
     }
 }
@@ -186,6 +195,12 @@ mod tests {
             .code(),
             "invalid_input"
         );
+        assert_eq!(GigasttError::Cancelled.code(), "cancelled");
+    }
+
+    #[test]
+    fn test_cancelled_display() {
+        assert_eq!(GigasttError::Cancelled.to_string(), "cancelled");
     }
 
     #[test]

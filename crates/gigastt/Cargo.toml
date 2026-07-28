@@ -78,6 +78,9 @@ uuid = { version = "1", features = ["v7"] }
 
 [dev-dependencies]
 tempfile = "3"
+# `test-util` (paused clock) is test-only; it unifies with the production tokio
+# dependency's features only when building tests, keeping it out of the binary.
+tokio = { version = "1", features = ["test-util", "macros", "rt-multi-thread"] }
 tokio-tungstenite = "0.30"
 proptest = "1"
 reqwest = { version = "0.13", features = ["stream"] }

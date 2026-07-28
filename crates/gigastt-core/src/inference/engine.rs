@@ -32,6 +32,48 @@ use super::{ENCODER_SUBSAMPLING, HOP_LENGTH, N_FFT, N_MELS, SECONDS_PER_FRAME, n
 #[cfg(feature = "diarization")]
 use super::diarization::{self, LazySpeakerEncoder};
 
+/// Cooperative-run hooks threaded through the decode call chain.
+///
+/// Both fields are `None` on the historical path, in which case every decode
+/// function behaves byte-for-byte as before — the hooks are only ever consulted
+/// through `if let Some(_)` guards, adding no work when absent. `abort` is
+/// polled at window boundaries so a cancelled run releases its pooled session
+/// within one window; `on_progress` receives the cumulative count of processed
+/// 16 kHz samples after each long-form window so a server watchdog can reset its
+/// no-progress deadline and drive a real progress bar.
+#[derive(Clone, Copy, Default)]
+struct DecodeControls<'a> {
+    abort: Option<&'a dyn Fn() -> bool>,
+    on_progress: Option<&'a dyn Fn(u64)>,
+}
+
+impl DecodeControls<'_> {
+    /// True once the caller has requested cancellation.
+    #[inline]
+    fn aborted(&self) -> bool {
+        self.abort.is_some_and(|a| a())
+    }
+
+    /// Report cumulative processed 16 kHz samples, if a sink is attached.
+    #[inline]
+    fn report(&self, processed_16k_samples: u64) {
+        if let Some(on_progress) = self.on_progress {
+            on_progress(processed_16k_samples);
+        }
+    }
+
+    /// Drop the progress sink but keep the abort hook. Used for the
+    /// `channels=split` path, where each channel restarts the sample clock and a
+    /// shared monotonic progress counter would go backwards.
+    #[inline]
+    fn abort_only(&self) -> Self {
+        Self {
+            abort: self.abort,
+            on_progress: None,
+        }
+    }
+}
+
 /// Parse a cgroup memory limit file body (`memory.max` v2 or
 /// `memory.limit_in_bytes` v1). Returns `None` for missing/unbounded/`max`.
 /// Pure so unit tests can feed strings without a real cgroup mount.
@@ -1562,6 +1604,25 @@ impl Engine {
         req: TranscribeRequest<'_>,
         triplet: &mut SessionTriplet,
     ) -> Result<TranscribeResult, GigasttError> {
+        use std::sync::atomic::Ordering::Relaxed;
+        // Bridge the request's shared cancellation / progress handles into the
+        // lightweight closures the decode chain consults. Both own a clone of
+        // the `Arc`, so they outlive the borrow of `req` and stay valid for the
+        // whole call. Absent handles leave `ctl` all-`None`, and every decode
+        // function then runs its historical, byte-identical path.
+        let abort_fn: Option<Box<dyn Fn() -> bool>> = req.abort.as_ref().map(|flag| {
+            let flag = flag.clone();
+            Box::new(move || flag.load(Relaxed)) as Box<dyn Fn() -> bool>
+        });
+        let progress_fn: Option<Box<dyn Fn(u64)>> = req.progress.as_ref().map(|counter| {
+            let counter = counter.clone();
+            Box::new(move |n: u64| counter.store(n, Relaxed)) as Box<dyn Fn(u64)>
+        });
+        let ctl = DecodeControls {
+            abort: abort_fn.as_deref(),
+            on_progress: progress_fn.as_deref(),
+        };
+
         match req.source {
             #[cfg(feature = "file-decode")]
             TranscribeSource::Path(path) => {
@@ -1570,7 +1631,7 @@ impl Engine {
                         .map_err(|e| GigasttError::InvalidAudio {
                             reason: format!("{e:#}"),
                         })?;
-                    self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords)
+                    self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords, ctl)
                 } else {
                     let float_samples =
                         audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
@@ -1582,6 +1643,7 @@ impl Engine {
                         &req.overrides,
                         req.hotwords,
                         req.diarization,
+                        ctl,
                     )
                 }
             }
@@ -1593,7 +1655,7 @@ impl Engine {
                             .map_err(|e| GigasttError::InvalidAudio {
                                 reason: format!("{e:#}"),
                             })?;
-                    self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords)
+                    self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords, ctl)
                 } else {
                     let float_samples = audio::decode_audio_bytes_shared(data).map_err(|e| {
                         GigasttError::InvalidAudio {
@@ -1606,6 +1668,7 @@ impl Engine {
                         &req.overrides,
                         req.hotwords,
                         req.diarization,
+                        ctl,
                     )
                 }
             }
@@ -1615,10 +1678,15 @@ impl Engine {
                 &req.overrides,
                 req.hotwords,
                 req.diarization,
+                ctl,
             ),
-            TranscribeSource::Channels(channels) => {
-                self.transcribe_channels_inner(channels, triplet, &req.overrides, req.hotwords)
-            }
+            TranscribeSource::Channels(channels) => self.transcribe_channels_inner(
+                channels,
+                triplet,
+                &req.overrides,
+                req.hotwords,
+                ctl.abort_only(),
+            ),
         }
     }
 
@@ -1654,6 +1722,7 @@ impl Engine {
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
+        ctl: DecodeControls,
     ) -> Result<TranscribeResult, GigasttError> {
         let wall_start = std::time::Instant::now();
 
@@ -1668,7 +1737,7 @@ impl Engine {
             Some(_) => request_biaser.as_ref(),
         };
 
-        let words = self.decode_words_streaming(&mut windows, triplet, biaser)?;
+        let words = self.decode_words_streaming(&mut windows, triplet, biaser, ctl)?;
         // Exact once every window is consumed (the loop above drains to EOF).
         let duration_s = windows.total_16k_samples() as f64 / 16000.0;
         let result = self.finish_transcribe_result(words, duration_s, overrides);
@@ -1881,6 +1950,7 @@ impl Engine {
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
+        ctl: DecodeControls,
     ) -> Result<TranscribeResult, GigasttError> {
         if channels.is_empty() {
             return Ok(TranscribeResult {
@@ -1894,7 +1964,7 @@ impl Engine {
         let mut per_channel = Vec::with_capacity(channels.len());
         for channel_samples in channels {
             let words =
-                self.decode_words_for_samples(channel_samples, triplet, overrides, hotwords)?;
+                self.decode_words_for_samples(channel_samples, triplet, overrides, hotwords, ctl)?;
             let duration_s = channel_samples.len() as f64 / 16000.0;
             per_channel.push(TranscribeResult {
                 confidence: aggregate_confidence(&words),
@@ -1943,6 +2013,7 @@ impl Engine {
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
         diarize: bool,
+        ctl: DecodeControls,
     ) -> Result<TranscribeResult, GigasttError> {
         // `diarize` is opt-in per request: offline speaker diarization only runs
         // when the caller asked for it (REST `?diarization=true`). A plain
@@ -1955,7 +2026,7 @@ impl Engine {
 
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
         let mut words =
-            self.decode_words_for_samples(float_samples, triplet, overrides, hotwords)?;
+            self.decode_words_for_samples(float_samples, triplet, overrides, hotwords, ctl)?;
 
         #[cfg(feature = "diarization")]
         if diarize
@@ -2012,13 +2083,20 @@ impl Engine {
         samples: &[f32],
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
+        ctl: DecodeControls,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         let spec = window_spec(self.ane_encoder);
         if spec.is_single_pass(samples.len()) {
+            // A single-pass decode is one encoder Run with no window loop to
+            // check between, so honour cancellation before starting it. The
+            // caller's watchdog treats this whole clip as one "window".
+            if ctl.aborted() {
+                return Err(GigasttError::Cancelled);
+            }
             let (features, num_frames) = self.features.compute(samples);
             tracing::info!("Extracted {} mel frames", num_frames);
             let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
-            Ok(self
+            let words = self
                 .run_inference(
                     triplet,
                     &features,
@@ -2029,7 +2107,9 @@ impl Engine {
                     biaser,
                 )
                 .map_err(|e| GigasttError::Inference { source: e.into() })?
-                .0)
+                .0;
+            ctl.report(samples.len() as u64);
+            Ok(words)
         } else {
             tracing::info!(
                 "Long-form chunked decode: {:.1}s in ~{}s windows ({}s overlap, ane={})",
@@ -2038,7 +2118,7 @@ impl Engine {
                 spec.overlap() / 16000,
                 self.ane_encoder,
             );
-            self.decode_words_streaming(&mut SliceWindows::new(samples, spec), triplet, biaser)
+            self.decode_words_streaming(&mut SliceWindows::new(samples, spec), triplet, biaser, ctl)
         }
     }
 
@@ -2053,6 +2133,7 @@ impl Engine {
         regions: &[(usize, usize)],
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
+        ctl: DecodeControls,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         if regions.is_empty() {
             tracing::info!("VAD found no speech; skipping decode");
@@ -2069,7 +2150,7 @@ impl Engine {
             float_samples.len(),
             regions.len()
         );
-        let mut words = self.decode_words(&speech, triplet, biaser)?;
+        let mut words = self.decode_words(&speech, triplet, biaser, ctl)?;
         for w in &mut words {
             w.start = crate::vad::remap_compressed_seconds(w.start, regions, 16000.0);
             w.end = crate::vad::remap_compressed_seconds(w.end, regions, 16000.0);
@@ -2095,13 +2176,25 @@ impl Engine {
         windows: &mut dyn PcmWindows,
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
+        ctl: DecodeControls,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         let overlap = windows.spec().overlap();
         let frame_samples = HOP_LENGTH * ENCODER_SUBSAMPLING;
 
         let mut merged: Vec<WordInfo> = Vec::new();
         while let Some(window) = windows.next_window()? {
+            // Cooperative cancellation checkpoint: a flipped abort flag ends the
+            // run at this window boundary, so a cancelled request (client
+            // disconnect, `DELETE /v1/jobs/{id}`, shutdown, or the no-progress
+            // watchdog) frees its pooled session within one window instead of
+            // decoding the rest of the file.
+            if ctl.aborted() {
+                return Err(GigasttError::Cancelled);
+            }
             let start = window.start_sample;
+            // Window ends advance monotonically, so this doubles as the
+            // cumulative processed-sample count reported below.
+            let win_end = start + window.samples.len();
             let (features, num_frames) = self.features.compute(window.samples);
             let frame_offset = start / frame_samples;
             let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
@@ -2121,6 +2214,11 @@ impl Engine {
             // midpoint of their overlap region, in absolute seconds.
             let overlap_mid_s = (start as f64 + overlap as f64 / 2.0) / 16000.0;
             merged = stitch_chunk_words(merged, chunk_words, overlap_mid_s);
+
+            // A completed window is one unit of real progress: it resets the
+            // server's no-progress deadline and advances a job's bar by the
+            // seconds of audio just decoded (`win_end / 16000`).
+            ctl.report(win_end as u64);
         }
         Ok(merged)
     }
@@ -2144,6 +2242,7 @@ impl Engine {
         triplet: &mut SessionTriplet,
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
+        ctl: DecodeControls,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         // Build a temporary biaser only when the request supplies hotwords.
         // Owned here so the `Option<&Biaser>` passed into decode stays valid
@@ -2159,23 +2258,33 @@ impl Engine {
 
         let use_vad = self.vad.is_some() && overrides.vad.unwrap_or(true);
         match (use_vad, &self.vad) {
-            (true, Some(vad)) => match vad.speech_regions(float_samples, &self.vad_config) {
-                Ok(regions) if regions.is_empty() => {
-                    // Tone / continuous speech can yield zero regions on a bad
-                    // threshold; fall back to fixed-window / full decode rather
-                    // than returning an empty transcript (lab T-045).
-                    tracing::warn!(
-                        "VAD found no speech regions; falling back to full/chunked decode"
-                    );
-                    self.decode_words(float_samples, triplet, biaser)
+            (true, Some(vad)) => {
+                match vad.speech_regions_with_abort(float_samples, &self.vad_config, ctl.abort) {
+                    Ok(regions) if regions.is_empty() => {
+                        // Tone / continuous speech can yield zero regions on a bad
+                        // threshold; fall back to fixed-window / full decode rather
+                        // than returning an empty transcript (lab T-045).
+                        tracing::warn!(
+                            "VAD found no speech regions; falling back to full/chunked decode"
+                        );
+                        self.decode_words(float_samples, triplet, biaser, ctl)
+                    }
+                    Ok(regions) => {
+                        self.decode_speech_regions(float_samples, &regions, triplet, biaser, ctl)
+                    }
+                    Err(e) => {
+                        // A flipped abort flag stops the VAD scan too; surface it
+                        // as cancellation instead of silently re-decoding the whole
+                        // file, which would ignore the cancel and keep the triplet.
+                        if ctl.aborted() {
+                            return Err(GigasttError::Cancelled);
+                        }
+                        tracing::warn!("VAD failed, decoding full audio: {e:#}");
+                        self.decode_words(float_samples, triplet, biaser, ctl)
+                    }
                 }
-                Ok(regions) => self.decode_speech_regions(float_samples, &regions, triplet, biaser),
-                Err(e) => {
-                    tracing::warn!("VAD failed, decoding full audio: {e:#}");
-                    self.decode_words(float_samples, triplet, biaser)
-                }
-            },
-            _ => self.decode_words(float_samples, triplet, biaser),
+            }
+            _ => self.decode_words(float_samples, triplet, biaser, ctl),
         }
     }
 
@@ -5342,6 +5451,7 @@ vocab = "pack_vocab.txt"
                     },
                     None,
                     false,
+                    super::super::DecodeControls::default(),
                 )
                 .expect("vad-off decode");
             assert_eq!(baseline.text, with_vad_off.text);

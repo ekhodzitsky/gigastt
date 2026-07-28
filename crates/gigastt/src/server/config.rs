@@ -130,12 +130,20 @@ pub struct RuntimeLimits {
     /// long for a free session triplet before returning 503 / `timeout`.
     /// The `Retry-After` hint echoes the same value. Default: 30.
     pub pool_checkout_timeout_secs: u64,
-    /// Per-request inference timeout (seconds). A `spawn_blocking` ONNX run
-    /// exceeding this returns a typed `inference_timeout` to the client so a
-    /// hung run can't block it indefinitely. `0` disables the timeout.
-    /// Default: 600 — generous enough to transcribe a worst-case in-spec
-    /// 10-minute (600 s audio) file on the CPU EP without tripping, while
-    /// still bounding a genuinely wedged run.
+    /// Per-request **no-progress** inference watchdog (seconds). The deadline
+    /// resets every time a decode window completes, so a file that keeps making
+    /// progress never trips — only a run that stalls for this many seconds
+    /// without finishing a window returns a typed `inference_timeout` (504 on
+    /// REST, a job failure on `/v1/jobs`). On a trip the run's abort flag is
+    /// flipped, so the pooled triplet is released within one window instead of
+    /// staying wedged for the rest of the file. `0` disables the watchdog.
+    /// Default: 600.
+    ///
+    /// This was a *total* wall-clock cap in earlier releases; the flag name,
+    /// the default, and the `inference_timeout` error code are unchanged, and a
+    /// short file that genuinely hangs still trips at the same moment — but the
+    /// hidden ceiling on audio duration (roughly `timeout ÷ RTF`) is gone, so
+    /// long files are no longer capped by this limit.
     pub inference_timeout_secs: u64,
     /// Whether the asynchronous `/v1/jobs` API is enabled. Off by default so
     /// existing single-user installs see no change.

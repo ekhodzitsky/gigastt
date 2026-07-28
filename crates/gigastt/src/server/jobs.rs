@@ -12,6 +12,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use parking_lot::Mutex;
 
@@ -128,6 +129,12 @@ pub struct Job {
     pub error: Option<String>,
     /// Active SSE listeners.
     pub event_channels: Vec<tokio::sync::mpsc::UnboundedSender<JobEvent>>,
+    /// Cooperative-cancellation flag for the in-flight run. The executor sets it
+    /// when it begins inference; `DELETE /v1/jobs/{id}` flips it so the engine
+    /// releases its pooled triplet within one window instead of transcribing the
+    /// whole file. `None` while queued and after a terminal state. Purely
+    /// in-memory (never serialized): it is a live handle, not job metadata.
+    pub abort: Option<Arc<AtomicBool>>,
 }
 
 /// Upper bound on simultaneous SSE listeners per job. Dead channels are
@@ -153,6 +160,7 @@ impl Job {
             result: None,
             error: None,
             event_channels: Vec::new(),
+            abort: None,
         }
     }
 
@@ -623,15 +631,24 @@ fn sanitize_job_error(e: &anyhow::Error) -> String {
 pub struct RealJobExecutor {
     engine: Arc<ArcSwap<gigastt_core::inference::Engine>>,
     limits: Arc<ArcSwap<RuntimeLimits>>,
+    /// Server shutdown signal. A fired token flips the per-run abort flag so an
+    /// in-flight job releases its triplet at the next window during a drain.
+    shutdown: tokio_util::sync::CancellationToken,
 }
 
 impl RealJobExecutor {
-    /// Create an executor bound to the live engine and runtime limits.
+    /// Create an executor bound to the live engine, runtime limits, and the
+    /// server shutdown token.
     pub fn new(
         engine: Arc<ArcSwap<gigastt_core::inference::Engine>>,
         limits: Arc<ArcSwap<RuntimeLimits>>,
+        shutdown: tokio_util::sync::CancellationToken,
     ) -> Self {
-        Self { engine, limits }
+        Self {
+            engine,
+            limits,
+            shutdown,
+        }
     }
 }
 
@@ -712,16 +729,41 @@ impl JobExecution for RealJobExecutor {
             return Err(anyhow::anyhow!("Invalid input: {}", e.message()));
         }
 
-        // Timer-based progress updater. Assumes RTF ≈ 0.1 (10 s audio / 1 s wall).
+        // Cooperative cancellation + real progress. `abort` is flipped by
+        // `DELETE /v1/jobs/{id}` or a shutdown drain; `progress` carries the
+        // engine's cumulative processed 16 kHz sample count out of the blocking
+        // decode. Register `abort` on the job so the cancel handler can reach it.
+        let abort = Arc::new(AtomicBool::new(false));
+        let progress = Arc::new(AtomicU64::new(0));
+        let _ = store
+            .update(id, {
+                let abort = abort.clone();
+                Box::new(move |j| {
+                    // Honour a cancel that raced in between the worker marking
+                    // this job Processing and this registration: seed the flag
+                    // from the current status so the run still stops at its first
+                    // window instead of ignoring the already-recorded cancel.
+                    if matches!(j.status, JobStatus::Cancelled) {
+                        abort.store(true, Ordering::Relaxed);
+                    }
+                    j.abort = Some(abort);
+                })
+            })
+            .await;
+        let shutdown = self.shutdown.clone();
+
+        // Real per-window progress updater: mirrors the engine's processed-sample
+        // count into the store and SSE stream every 500 ms. No RTF guess — the
+        // bar tracks audio actually decoded, monotonically. Same interval and
+        // `JobEvent` shape as before, so the SSE wire contract is unchanged.
         let progress_cancel = tokio_util::sync::CancellationToken::new();
         let progress_handle = {
             let store = store.clone();
             let id = id.to_string();
             let cancel = progress_cancel.clone();
             let total = total_seconds;
+            let progress = progress.clone();
             tokio::spawn(async move {
-                let start = std::time::Instant::now();
-                let rtf = 0.1_f64;
                 let mut interval = tokio::time::interval(std::time::Duration::from_millis(500));
                 interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
                 loop {
@@ -729,12 +771,12 @@ impl JobExecution for RealJobExecutor {
                     if cancel.is_cancelled() {
                         break;
                     }
-                    let elapsed = start.elapsed().as_secs_f64();
-                    let processed = (elapsed / rtf).min(total);
+                    let processed =
+                        (progress.load(Ordering::Relaxed) as f64 / TARGET_SAMPLE_RATE).min(total);
                     let percent = if total > 0.0 {
                         ((processed / total) * 100.0) as u32
                     } else {
-                        100
+                        0
                     };
                     let _ = store
                         .update(&id, Box::new(move |j| j.processed_seconds = processed))
@@ -748,9 +790,6 @@ impl JobExecution for RealJobExecutor {
                         },
                     )
                     .await;
-                    if processed >= total {
-                        break;
-                    }
                 }
             })
         };
@@ -779,6 +818,8 @@ impl JobExecution for RealJobExecutor {
                 split_channels: params.channels.as_deref() == Some("split"),
                 diarization: params.diarization == Some(true),
                 raw_codec: None,
+                abort: Some(abort.clone()),
+                progress: Some(progress.clone()),
             };
             let handle = tokio::task::spawn_blocking(move || {
                 let _enter = span.enter();
@@ -798,22 +839,25 @@ impl JobExecution for RealJobExecutor {
                 }
             });
 
-            if inference_timeout_secs == 0 {
-                handle
-                    .await
+            // The inference timeout is a no-progress watchdog (shared with the
+            // REST path): the deadline resets on each completed window, so a long
+            // file making steady progress never trips, while a genuinely stalled
+            // run still fails with the deterministic `inference_timeout` marker.
+            // A fired shutdown also flips `abort`, freeing the triplet mid-drain.
+            match super::file_transcribe::await_transcription_watchdog(
+                handle,
+                &progress,
+                &abort,
+                inference_timeout_secs,
+                &shutdown,
+            )
+            .await
+            {
+                super::file_transcribe::WatchdogOutcome::Joined(r) => r
                     .map_err(|e| anyhow::anyhow!("spawn_blocking join error: {e}"))?
-                    .map_err(anyhow::Error::from)
-            } else {
-                match tokio::time::timeout(
-                    std::time::Duration::from_secs(inference_timeout_secs),
-                    handle,
-                )
-                .await
-                {
-                    Ok(r) => r
-                        .map_err(|e| anyhow::anyhow!("spawn_blocking join error: {e}"))?
-                        .map_err(anyhow::Error::from),
-                    Err(_) => Err(anyhow::anyhow!("inference_timeout")),
+                    .map_err(anyhow::Error::from),
+                super::file_transcribe::WatchdogOutcome::TimedOut => {
+                    Err(anyhow::anyhow!("inference_timeout"))
                 }
             }
         }
