@@ -83,6 +83,11 @@ pub use resample::{SampleRate, resample, resample_with_cache};
 // Long-form window source. Crate-internal: the file-decode loop is the only
 // consumer today, and the streaming source lands behind the same trait.
 pub(crate) use stream::{PcmWindows, SliceWindows, WindowSpec};
+// Streaming container-backed window source: keeps peak audio memory O(one
+// window) regardless of file duration. `Engine::transcribe_request` pulls
+// windows from it; the public `decode_audio_*` functions drain it flat.
+#[cfg(feature = "file-decode")]
+pub(crate) use stream::FileWindows;
 
 pub use telephony::TelephonyCodec;
 #[cfg(feature = "file-decode")]

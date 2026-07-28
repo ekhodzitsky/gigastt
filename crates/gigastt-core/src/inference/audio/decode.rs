@@ -29,7 +29,7 @@ use super::opus::{decode_opus_channels, next_demux_packet};
 #[cfg(feature = "file-decode")]
 use super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
 #[cfg(feature = "file-decode")]
-use super::telephony::{sniffs_as_g722_wav, try_decode_g722_wav};
+use super::stream::FileWindows;
 
 /// A [`MediaSource`] that borrows its data from a reference-counted [`Bytes`]
 /// buffer instead of cloning into a `Vec<u8>`.
@@ -138,39 +138,11 @@ impl MediaSource for BytesMediaSource {
 /// ```
 #[cfg(feature = "file-decode")]
 pub fn decode_audio_file(path: &str) -> Result<Vec<f32>> {
-    // G.722-in-WAV (format tag 0x0064) has no symphonia decoder: sniff the
-    // first chunk headers, and only when they declare G.722 read the file
-    // fully and decode it here. Other inputs stream through symphonia as
-    // before, so plain WAVs keep their from-disk memory profile.
-    if sniffs_as_g722_wav(path)? {
-        let bytes =
-            std::fs::read(path).with_context(|| format!("Failed to read audio file: {path}"))?;
-        if let Some(result) = try_decode_g722_wav(&bytes) {
-            return result;
-        }
-    }
-
-    let file =
-        std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
-    let mss = MediaSourceStream::new(Box::new(file), Default::default());
-
-    let mut hint = Hint::new();
-    if let Some(ext) = std::path::Path::new(path)
-        .extension()
-        .and_then(|e| e.to_str())
-    {
-        hint.with_extension(ext);
-    }
-
-    let source_label = format!(
-        "format={}",
-        std::path::Path::new(path)
-            .extension()
-            .unwrap_or_default()
-            .to_string_lossy()
-    );
-
-    decode_audio_inner(mss, hint, &source_label)
+    // Flat drain of the windowed decoder: byte-identical to the whole-buffer
+    // decode it replaced, including the G.722-in-WAV telephony sniff. Callers
+    // that want peak memory independent of duration go through
+    // `Engine::transcribe_request`, which pulls windows instead of draining.
+    FileWindows::decode_file(path)
 }
 
 /// Decode audio from raw bytes in memory (no temp file needed).
@@ -214,15 +186,8 @@ pub fn decode_audio_bytes(data: &[u8]) -> Result<Vec<f32>> {
 /// ```
 #[cfg(feature = "file-decode")]
 pub fn decode_audio_bytes_shared(data: Bytes) -> Result<Vec<f32>> {
-    // G.722-in-WAV (format tag 0x0064) has no symphonia decoder; detect it
-    // before the generic probe and decode via the telephony fallback.
-    if let Some(result) = try_decode_g722_wav(&data) {
-        return result;
-    }
-    let source = BytesMediaSource::new(data);
-    let mss = MediaSourceStream::new(Box::new(source), Default::default());
-    let hint = Hint::new();
-    decode_audio_inner(mss, hint, "bytes")
+    // Flat drain of the windowed decoder (G.722 telephony sniff included).
+    FileWindows::decode_bytes(data)
 }
 
 /// Read an audio container's declared duration (seconds) from its header
@@ -544,153 +509,4 @@ fn normalized_correlation(a: &[f32], b: &[f32]) -> f64 {
         return 0.0;
     }
     cov / denom
-}
-
-/// Shared decode logic: probe → format → decode → mono mix → duration check → resample.
-#[cfg(feature = "file-decode")]
-fn decode_audio_inner<'s>(
-    mss: MediaSourceStream<'s>,
-    hint: Hint,
-    source_label: &str,
-) -> Result<Vec<f32>> {
-    let mut format = symphonia::default::get_probe()
-        .probe(
-            &hint,
-            mss,
-            FormatOptions::default(),
-            MetadataOptions::default(),
-        )
-        .context("Unsupported audio format")?;
-
-    let track = format
-        .default_track(TrackType::Audio)
-        .context("No audio track found")?;
-    let track_id = track.id;
-    let audio_params = track
-        .codec_params
-        .as_ref()
-        .and_then(|p| p.audio())
-        .context("No audio codec parameters")?;
-    let sample_rate = audio_params.sample_rate.context("Unknown sample rate")?;
-    if sample_rate == 0 || sample_rate > MAX_SAMPLE_RATE {
-        anyhow::bail!("Unsupported sample rate: {sample_rate}Hz");
-    }
-    let channels = audio_params
-        .channels
-        .as_ref()
-        .map(|c| c.count())
-        .unwrap_or(1);
-    // Some formats (WAV, FLAC) publish the total frame count in the track;
-    // reserve up-front to avoid `Vec` reallocation thrash for large uploads.
-    // Streaming codecs (MP3) leave this as None and we fall back to the
-    // default growth strategy.
-    let n_frames_hint = track.num_frames;
-
-    tracing::info!("Audio ({source_label}): {sample_rate}Hz, {channels}ch");
-
-    // Sample budget from a CLAMPED rate (header `sample_rate` capped at
-    // MAX_DECODE_SAMPLE_RATE), so a crafted header cannot inflate the duration
-    // cap or the capacity hint. Computed before the capacity match so the hint
-    // is bounded by the same budget.
-    let max_samples: usize = max_decode_samples(sample_rate);
-
-    // Decoded packets are staged at the source rate and drained to 16 kHz as
-    // they fill, so peak memory is O(one staging chunk) instead of O(file).
-    let mut acc = ResampleTo16k::new(
-        SampleRate(sample_rate),
-        match n_frames_hint {
-            Some(n) if n > 0 && n <= max_samples as u64 => Some(n as usize),
-            _ => None,
-        },
-    );
-    // Source-rate frame count, tracked separately because the accumulator now
-    // holds 16 kHz samples while the duration cap is expressed in source-rate
-    // frames.
-    let mut source_frames: usize = 0;
-
-    // Symphonia demuxes OGG/Opus but ships no Opus decoder, so Opus packets
-    // go through the `opus-rs` fallback (mono mix included) and rejoin the
-    // shared duration-log / resample tail.
-    if audio_params.codec == CODEC_ID_OPUS {
-        let mono = mix_channels_to_mono(&decode_opus_channels(
-            &mut *format,
-            track_id,
-            channels,
-            max_samples,
-        )?);
-        source_frames = mono.len();
-        for piece in mono.chunks(RESAMPLE_STAGING_FRAMES) {
-            acc.stage().extend_from_slice(piece);
-            acc.flush_full()?;
-        }
-    } else {
-        let mut decoder = symphonia::default::get_codecs()
-            .make_audio_decoder(audio_params, &AudioDecoderOptions::default())
-            .context("Unsupported audio codec")?;
-
-        loop {
-            let have_pcm = source_frames > 0;
-            let Some(packet) = next_demux_packet(&mut *format, have_pcm)? else {
-                break;
-            };
-
-            if packet.track_id != track_id {
-                continue;
-            }
-
-            let decoded = decoder.decode(&packet).context("Decode error")?;
-            let spec = decoded.spec().clone();
-            let num_frames = decoded.frames();
-            let ch = spec.channels().count();
-
-            // Mix to mono if multi-channel
-            if ch > 1 {
-                let mut interleaved: Vec<f32> = Vec::with_capacity(num_frames * ch);
-                decoded.copy_to_vec_interleaved(&mut interleaved);
-                let stage = acc.stage();
-                for frame in 0..num_frames {
-                    let mut sum = 0.0_f32;
-                    for c in 0..ch {
-                        sum += interleaved[frame * ch + c];
-                    }
-                    stage.push(sum / ch as f32);
-                }
-            } else {
-                let stage = acc.stage();
-                let offset = stage.len();
-                stage.resize(offset + num_frames, 0.0);
-                decoded.copy_to_slice_interleaved(&mut stage[offset..]);
-            }
-            source_frames += num_frames;
-
-            // Incremental duration cap: abort before the next packet is decoded
-            // if the accumulated buffer already exceeds the duration budget.
-            // This prevents a crafted upload from allocating hundreds of MiB of
-            // PCM before the post-loop guard gets a chance to run.
-            if source_frames > max_samples {
-                let observed_s = source_frames as f64 / sample_rate as f64;
-                anyhow::bail!(
-                    "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
-                    observed_s
-                );
-            }
-
-            acc.flush_full()?;
-        }
-    }
-
-    let duration_s = source_frames as f64 / sample_rate as f64;
-    tracing::info!(
-        "Decoded {} samples at {}Hz ({:.1}s)",
-        source_frames,
-        sample_rate,
-        duration_s
-    );
-
-    let all_samples = acc.finish()?;
-    if sample_rate != 16000 {
-        tracing::info!("Resampled to 16kHz: {} samples", all_samples.len());
-    }
-
-    Ok(all_samples)
 }

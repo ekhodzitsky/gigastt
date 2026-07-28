@@ -274,6 +274,40 @@ impl ResampleTo16k {
         Ok(self.out)
     }
 
+    /// Move the 16 kHz samples produced so far into `dst`, leaving the
+    /// accumulator ready to keep decoding.
+    ///
+    /// For a resampling rate these are the samples already flushed to `out` (the
+    /// partial staging chunk stays until it fills or [`Self::finish_into`] runs);
+    /// for the 16 kHz passthrough the staged samples ARE the output, so they move
+    /// directly. The windowed streaming source calls this after every packet so
+    /// peak memory stays O(one window) rather than O(file); the flat
+    /// [`Self::finish`] path never touches it. The concatenation of every
+    /// `drain_ready_into` plus a final [`Self::finish_into`] is byte-identical to
+    /// one [`Self::finish`], because the staged chunk sequence — and therefore
+    /// every cached-resampler call — is unchanged.
+    pub(super) fn drain_ready_into(&mut self, dst: &mut Vec<f32>) {
+        let ready = if self.from_rate.0 == 16_000 {
+            &mut self.stage
+        } else {
+            &mut self.out
+        };
+        dst.append(ready);
+    }
+
+    /// Flush any staged remainder through the resampler and move all remaining
+    /// 16 kHz output into `dst`. The streaming counterpart of [`Self::finish`];
+    /// idempotent once drained, so an end-of-stream poll may call it repeatedly.
+    pub(super) fn finish_into(&mut self, dst: &mut Vec<f32>) -> Result<()> {
+        if self.from_rate.0 == 16_000 {
+            dst.append(&mut self.stage);
+            return Ok(());
+        }
+        self.drain()?;
+        dst.append(&mut self.out);
+        Ok(())
+    }
+
     fn drain(&mut self) -> Result<()> {
         if self.stage.is_empty() {
             return Ok(());

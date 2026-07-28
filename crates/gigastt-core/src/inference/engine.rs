@@ -1565,32 +1565,48 @@ impl Engine {
         match req.source {
             #[cfg(feature = "file-decode")]
             TranscribeSource::Path(path) => {
-                let float_samples =
-                    audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
-                        reason: format!("{e:#}"),
-                    })?;
-                self.transcribe_samples_with_overrides(
-                    &float_samples,
-                    triplet,
-                    &req.overrides,
-                    req.hotwords,
-                    req.diarization,
-                )
+                if self.stream_eligible(&req.overrides, req.diarization) {
+                    let windows = audio::FileWindows::open(path, window_spec(self.ane_encoder))
+                        .map_err(|e| GigasttError::InvalidAudio {
+                            reason: format!("{e:#}"),
+                        })?;
+                    self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords)
+                } else {
+                    let float_samples =
+                        audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
+                            reason: format!("{e:#}"),
+                        })?;
+                    self.transcribe_samples_with_overrides(
+                        &float_samples,
+                        triplet,
+                        &req.overrides,
+                        req.hotwords,
+                        req.diarization,
+                    )
+                }
             }
             #[cfg(feature = "file-decode")]
             TranscribeSource::Bytes(data) => {
-                let float_samples = audio::decode_audio_bytes_shared(data).map_err(|e| {
-                    GigasttError::InvalidAudio {
-                        reason: format!("{e:#}"),
-                    }
-                })?;
-                self.transcribe_samples_with_overrides(
-                    &float_samples,
-                    triplet,
-                    &req.overrides,
-                    req.hotwords,
-                    req.diarization,
-                )
+                if self.stream_eligible(&req.overrides, req.diarization) {
+                    let windows = audio::FileWindows::from_bytes(data, window_spec(self.ane_encoder))
+                        .map_err(|e| GigasttError::InvalidAudio {
+                            reason: format!("{e:#}"),
+                        })?;
+                    self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords)
+                } else {
+                    let float_samples = audio::decode_audio_bytes_shared(data).map_err(|e| {
+                        GigasttError::InvalidAudio {
+                            reason: format!("{e:#}"),
+                        }
+                    })?;
+                    self.transcribe_samples_with_overrides(
+                        &float_samples,
+                        triplet,
+                        &req.overrides,
+                        req.hotwords,
+                        req.diarization,
+                    )
+                }
             }
             TranscribeSource::Samples(samples) => self.transcribe_samples_with_overrides(
                 samples,
@@ -1603,6 +1619,73 @@ impl Engine {
                 self.transcribe_channels_inner(channels, triplet, &req.overrides, req.hotwords)
             }
         }
+    }
+
+    /// True when a `Path` / `Bytes` request can be served by the windowed
+    /// streaming decode, whose peak audio memory is O(one window) rather than
+    /// O(file).
+    ///
+    /// VAD scans the whole 16 kHz buffer for speech regions and diarization
+    /// embeds the whole buffer; neither can run against a stream that is never
+    /// fully resident, so both fall back to the whole-buffer decode. `diarize`
+    /// only matters with the `diarization` feature compiled in.
+    #[cfg(feature = "file-decode")]
+    fn stream_eligible(&self, overrides: &TranscribeOverrides, diarize: bool) -> bool {
+        let use_vad = self.vad.is_some() && overrides.vad.unwrap_or(true);
+        let will_diarize = cfg!(feature = "diarization") && diarize;
+        !use_vad && !will_diarize
+    }
+
+    /// Mono file-transcription tail that pulls windows straight from the
+    /// container instead of decoding the whole file first.
+    ///
+    /// Equivalent to [`Engine::transcribe_samples_with_overrides`] on the
+    /// no-VAD, no-diarization path: [`FileWindows`](audio::FileWindows) yields
+    /// exactly the geometry [`SliceWindows`] would over the fully-decoded buffer
+    /// (one window for a single-pass-length stream, overlapping windows beyond),
+    /// so [`Engine::decode_words_streaming`] produces the same words — but peak
+    /// audio memory no longer scales with duration. The duration cap and its
+    /// exact error string are enforced inside the decode as before.
+    #[cfg(feature = "file-decode")]
+    fn transcribe_stream_mono(
+        &self,
+        mut windows: audio::FileWindows,
+        triplet: &mut SessionTriplet,
+        overrides: &TranscribeOverrides,
+        hotwords: Option<&HotwordOverride>,
+    ) -> Result<TranscribeResult, GigasttError> {
+        let wall_start = std::time::Instant::now();
+
+        // Hotword biaser selection, mirroring `decode_words_for_samples`:
+        // engine boot biaser, a temporary per-request biaser, or off.
+        let request_biaser = match hotwords {
+            Some(hw) => self.build_request_biaser(hw),
+            None => None,
+        };
+        let biaser: Option<&bias::Biaser> = match hotwords {
+            None => self.biaser.as_ref(),
+            Some(_) => request_biaser.as_ref(),
+        };
+
+        let words = self.decode_words_streaming(&mut windows, triplet, biaser)?;
+        // Exact once every window is consumed (the loop above drains to EOF).
+        let duration_s = windows.total_16k_samples() as f64 / 16000.0;
+        let result = self.finish_transcribe_result(words, duration_s, overrides);
+
+        let wall_s = wall_start.elapsed().as_secs_f64();
+        let rtf = if duration_s > 0.0 {
+            wall_s / duration_s
+        } else {
+            0.0
+        };
+        tracing::info!(
+            audio_s = format_args!("{duration_s:.2}"),
+            wall_s = format_args!("{wall_s:.2}"),
+            rtf = format_args!("{rtf:.3}"),
+            "transcribe complete (streaming windows)"
+        );
+
+        Ok(result)
     }
 
     /// Transcribe an audio file to text (supports WAV, MP3, M4A/AAC, OGG, FLAC).
