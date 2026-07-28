@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **File decode resamples incrementally instead of in one whole-buffer pass.**
+  Decoded packets now drain through a stateful resampler in ~1 s staged chunks, so
+  peak RSS no longer carries three full-length copies of the source-rate audio.
+  Measured decode-only peak RSS for a 20-minute 48 kHz stereo WAV: **706 MiB → 82 MiB
+  (8.6×)**, with decode wall time slightly improved. Output is bit-identical for
+  48 kHz sources and numerically tighter at 44.1 kHz, where the staged resampler keeps
+  rubato's fractional phase bounded instead of letting it accumulate over millions of
+  samples. All public decode signatures are unchanged.
+
 ### Fixed
 
 - **`ort` is pinned to exactly `2.0.0-rc.12`.** The previous requirement was a caret, so
