@@ -1371,7 +1371,7 @@ async fn main() -> anyhow::Result<()> {
             let mut guard = engine.pool.checkout().await?;
             let result = if let Some(codec_name) = codec.as_deref() {
                 // Raw headerless telephony input: decode via the codec tables
-                // and re-wrap as an in-memory WAV, bypassing container sniffing.
+                // straight to mono 16 kHz f32 and hand the samples to the engine.
                 let telephony_codec = inference::audio::TelephonyCodec::from_name(codec_name)
                     .ok_or_else(|| {
                         anyhow::anyhow!(
@@ -1387,9 +1387,31 @@ async fn main() -> anyhow::Result<()> {
                     .map_err(|e| anyhow::anyhow!("{e}"))?;
                 let raw = std::fs::read(&file)
                     .with_context(|| format!("Failed to open audio file: {file}"))?;
-                let samples = inference::audio::decode_telephony_raw(&raw, telephony_codec, rate)?;
-                let wav = inference::audio::encode_wav_pcm16(&samples, 16000);
-                engine.transcribe_bytes(&wav, &mut guard)
+                let mut samples =
+                    inference::audio::decode_telephony_raw(&raw, telephony_codec, rate)?;
+                // NOT a no-op: preserve transcript byte-identity. The former path
+                // encoded these samples into an in-memory WAV and let the engine
+                // decode it back, which snapped every value to 16-bit PCM. Passing
+                // the raw f32 straight through would change the transcript (measured:
+                // 153 token edits on a 9-minute call), so reproduce that quantization
+                // in place — clamp to [-1, 1], round via 32767, normalise via 32768,
+                // matching `encode_wav_pcm16` and the PCM decode path. Whether
+                // full-precision f32 is better is an open WER question tracked in
+                // roadmap/ (telephony precision); do not silently drop this snap.
+                for s in samples.iter_mut() {
+                    let v = if s.is_finite() {
+                        s.clamp(-1.0, 1.0)
+                    } else {
+                        0.0
+                    };
+                    *s = (v * 32767.0).round() as i16 as f32 / 32768.0;
+                }
+                engine.transcribe_request(
+                    inference::TranscribeRequest::new(inference::TranscribeSource::Samples(
+                        &samples,
+                    )),
+                    &mut guard,
+                )
             } else if stereo_speakers {
                 let channels = inference::audio::load_audio_channels(&file)?;
                 let fallback_reason = match channels.len() {
