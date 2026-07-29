@@ -37,7 +37,16 @@ info:
     - `--body-limit-bytes` (default 50 MiB) — max upload size
     - `--pool-size` (default 2) — concurrent inference sessions
     - `--rate-limit-per-minute` (default 0 = off) — per-IP token bucket
-    - File transcription cap: 30 minutes of audio
+    - `--max-audio-secs` (env `GIGASTT_MAX_AUDIO_SECS`, default 0 = unlimited) —
+      optional cap on decoded audio duration; longer uploads return
+      `413 Payload Too Large` with code `audio_too_long`. The default file
+      transcription path has no duration limit of its own: long files decode
+      and transcribe in bounded windows, so peak memory stays roughly constant
+      regardless of length. VAD segmentation, speaker diarization,
+      `channels=split`, and telephony/Opus decoding hold the whole decoded
+      buffer in memory and always enforce a fixed ~30-minute safety ceiling on
+      those paths, independent of `--max-audio-secs`, returning the same
+      `audio_too_long` code
     - Pool saturation: REST returns `503 Service Unavailable` + `Retry-After: 30`
 
     ## Error Responses
@@ -57,6 +66,7 @@ info:
     |--------|------|---------|
     | 400 | `empty_body` | Request body is empty |
     | 413 | `payload_too_large` | Body exceeds `--body-limit-bytes` |
+    | 413 | `audio_too_long` | Decoded audio exceeds `--max-audio-secs`, or a whole-buffer path (VAD/diarization/`channels=split`/telephony) hit its ~30-minute safety ceiling |
     | 422 | `transcription_error` | Audio decoded but inference failed |
     | 422 | `invalid_audio` | Audio could not be decoded |
     | 429 | `rate_limited` | Per-IP rate limit exceeded |
@@ -191,8 +201,16 @@ paths:
         with `format=md` it switches Markdown to `### [mm:ss]` segment headers.
         `txt` / `srt` / `vtt` ignore `segments` (already flat / cue-based).
 
-        The entire file is processed in a single inference session.
-        Max audio duration: 30 minutes.
+        Long files are decoded and transcribed in bounded overlapping windows,
+        not as a single inference session, so peak memory stays roughly
+        constant regardless of file length — there is no default duration
+        limit. Start the server with `--max-audio-secs <N>` (env
+        `GIGASTT_MAX_AUDIO_SECS`) to reject audio longer than `N` seconds with
+        `413 Payload Too Large` and code `audio_too_long`; the default (`0`)
+        is unlimited. VAD segmentation, speaker diarization, `channels=split`,
+        and telephony/Opus decoding hold the whole decoded buffer in memory
+        and always enforce a fixed ~30-minute safety ceiling on those paths,
+        independent of `--max-audio-secs`.
       operationId: transcribeFile
       parameters:
         - name: format
@@ -496,7 +514,8 @@ paths:
         `base_url`). Multipart form with required `file` and optional
         `model` / `response_format` / `language` / `timestamp_granularities[]`.
         `model` is accepted for compatibility and ignored (loaded engine always
-        used). Same audio formats and 30-minute cap as `/v1/transcribe`.
+        used). Same audio formats and duration limits as `/v1/transcribe` (no
+        default cap; see `--max-audio-secs`).
 
         `response_format`: `json` (default, `{"text"}`) · `text` · `srt` · `vtt`
         · `verbose_json` (Whisper-style: `task`, `language`, `duration`, `text`,
@@ -1347,14 +1366,26 @@ components:
             code: empty_body
 
     PayloadTooLarge:
-      description: Request body too large
+      description: |
+        Request body exceeds `--body-limit-bytes`, or decoded audio exceeds a
+        configured duration limit (`--max-audio-secs`, or the fixed
+        ~30-minute safety ceiling on whole-buffer paths: VAD, diarization,
+        `channels=split`, telephony/Opus).
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
-          example:
-            error: "Request body exceeds the configured size limit"
-            code: payload_too_large
+          examples:
+            payload_too_large:
+              summary: Body exceeds --body-limit-bytes
+              value:
+                error: "Request body exceeds the configured size limit"
+                code: payload_too_large
+            audio_too_long:
+              summary: Decoded audio exceeds a configured duration limit
+              value:
+                error: "Audio file too long. Maximum supported: 1800s."
+                code: audio_too_long
 
     TranscriptionError:
       description: Transcription failed

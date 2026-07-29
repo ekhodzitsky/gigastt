@@ -311,6 +311,7 @@ pub(super) async fn run_file_transcription(
         abort: Some(abort.clone()),
         progress: Some(progress.clone()),
         diarization_outcome: diar_sink,
+        max_audio_secs: limits.max_audio_secs_opt(),
     };
 
     // A client disconnect drops this handler future before it returns, dropping
@@ -395,6 +396,16 @@ pub(super) async fn run_file_transcription(
                 StatusCode::SERVICE_UNAVAILABLE,
                 "Server is shutting down",
                 "cancelled",
+            ))
+        }
+        Ok(Err(e)) if matches!(&e, gigastt_core::error::GigasttError::AudioTooLong { .. }) => {
+            // Distinct from the generic decode failure below: a client must be
+            // able to tell "too long" (raise `--max-audio-secs` or split) from
+            // "corrupt". 413 + `audio_too_long`, with the observed/limit seconds.
+            Err(api_error(
+                StatusCode::PAYLOAD_TOO_LARGE,
+                &e.to_string(),
+                e.code(),
             ))
         }
         Ok(Err(e)) => {

@@ -6,11 +6,11 @@ use anyhow::Context;
 use anyhow::Result;
 
 #[cfg(feature = "file-decode")]
-use super::MAX_DURATION_S;
-#[cfg(feature = "file-decode")]
-use super::max_decode_samples;
-#[cfg(feature = "file-decode")]
 use super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
+#[cfg(feature = "file-decode")]
+use super::{
+    WHOLE_BUFFER_MAX_AUDIO_SECS, audio_too_long_err, resolve_budget, whole_buffer_limit_secs,
+};
 
 /// WAV format tags for ITU-T G.722 ADPCM. Symphonia's RIFF demuxer maps them
 /// to `CODEC_TYPE_NULL` and there is no decoder for it, so G.722-in-WAV (what
@@ -115,7 +115,10 @@ pub(super) fn sniffs_as_g722_wav(path: &str) -> Result<bool> {
 /// it IS G.722-in-WAV but malformed, so the error names the real problem
 /// instead of surfacing as a generic "unsupported codec".
 #[cfg(feature = "file-decode")]
-pub(crate) fn try_decode_g722_wav(data: &[u8]) -> Option<Result<Vec<f32>>> {
+pub(crate) fn try_decode_g722_wav(
+    data: &[u8],
+    max_audio_secs: Option<f64>,
+) -> Option<Result<Vec<f32>>> {
     if sniff_wav_g722_tag(data) != Some(true) {
         return None;
     }
@@ -123,14 +126,14 @@ pub(crate) fn try_decode_g722_wav(data: &[u8]) -> Option<Result<Vec<f32>>> {
         Some(p) if !p.is_empty() => p,
         _ => return Some(Err(anyhow::anyhow!("G.722 WAV has no data chunk"))),
     };
-    // Duration cap, same budget as container decodes: two PCM16 samples per
-    // encoded byte at the native 16 kHz rate.
+    // G.722-in-WAV decodes eagerly to the whole 16 kHz buffer (two PCM16 samples
+    // per encoded byte), so it is bounded by the whole-buffer safety ceiling even
+    // when the caller left the streaming budget unbounded.
     let num_samples = payload.len().saturating_mul(2);
-    if num_samples > max_decode_samples(16000) {
-        let observed_s = num_samples as f64 / 16000.0;
-        return Some(Err(anyhow::anyhow!(
-            "Audio file too long ({observed_s:.0}s). Maximum supported: {MAX_DURATION_S:.0}s."
-        )));
+    let (max_samples, limit_secs) =
+        resolve_budget(Some(whole_buffer_limit_secs(max_audio_secs)), 16000);
+    if num_samples > max_samples {
+        return Some(Err(audio_too_long_err(num_samples, 16000, limit_secs)));
     }
     let mut decoder = audio_codec::g722::G722Decoder::new();
     let pcm = audio_codec::Decoder::decode(&mut decoder, payload);
@@ -190,7 +193,7 @@ impl TelephonyCodec {
 ///
 /// `sample_rate` is the declared rate of the input (see
 /// [`TelephonyCodec::validate_sample_rate`]); G.722 ignores it and always
-/// decodes to its native 16 kHz. The duration cap matches container decodes
+/// decodes to its native 16 kHz. The whole-buffer safety ceiling matches container decodes
 /// (`MAX_DURATION_S`), evaluated on the decoded sample count before the f32
 /// buffer is allocated.
 #[cfg(feature = "file-decode")]
@@ -225,11 +228,9 @@ pub fn decode_telephony_raw(
             (audio_codec::Decoder::decode(&mut decoder, data), 16000)
         }
     };
-    if pcm.len() > max_decode_samples(rate) {
-        let observed_s = pcm.len() as f64 / rate as f64;
-        anyhow::bail!(
-            "Audio file too long ({observed_s:.0}s). Maximum supported: {MAX_DURATION_S:.0}s."
-        );
+    let (max_samples, limit_secs) = resolve_budget(Some(WHOLE_BUFFER_MAX_AUDIO_SECS), rate);
+    if pcm.len() > max_samples {
+        return Err(audio_too_long_err(pcm.len(), rate, limit_secs));
     }
     // Convert and resample in staged chunks so the full-length source-rate
     // f32 buffer is never materialized alongside the 16 kHz output.

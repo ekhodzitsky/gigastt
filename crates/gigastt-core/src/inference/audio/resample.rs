@@ -181,12 +181,12 @@ pub fn resample_with_cache(
 
 /// Source-rate samples staged before each streaming resample flush.
 ///
-/// One second at the highest rate the decode budget admits: big enough that
-/// the cached resampler — whose capacity freezes on its first call — never has
-/// to split a later chunk, small enough that the staged copy stays a few
-/// hundred KiB no matter how long the file is.
+/// One second at 48 kHz: big enough that the cached resampler — whose capacity
+/// freezes on its first call — never has to split a later chunk, small enough
+/// that the staged copy stays a few hundred KiB no matter how long the file is.
+/// This is a resample-granularity constant, unrelated to any length limit.
 #[cfg(feature = "file-decode")]
-pub(super) const RESAMPLE_STAGING_FRAMES: usize = super::MAX_DECODE_SAMPLE_RATE as usize;
+pub(super) const RESAMPLE_STAGING_FRAMES: usize = 48_000;
 
 /// Decoded-sample accumulator that resamples to 16 kHz while the file decodes.
 ///

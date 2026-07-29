@@ -123,6 +123,21 @@ pub enum GigasttError {
     /// is `#[non_exhaustive]`.
     #[error("cancelled")]
     Cancelled,
+    /// The audio exceeded a duration limit and was rejected before it could
+    /// exhaust memory. `observed_secs` is how long the decoded input turned out
+    /// to be; `limit_secs` is the ceiling that fired. Two sources trip this: the
+    /// opt-in `--max-audio-secs` (default `0` = unlimited), and the fixed safety
+    /// ceiling that the whole-buffer paths (VAD, diarization, `channels=split`,
+    /// telephony / Opus) keep because they must materialize the entire decoded
+    /// buffer in RAM. The default streaming file path is O(one window) and has
+    /// no length limit. Additive: the enum is `#[non_exhaustive]`.
+    #[error("audio too long: {observed_secs:.0}s exceeds the maximum of {limit_secs:.0}s")]
+    AudioTooLong {
+        /// Observed decoded audio length, in seconds.
+        observed_secs: f64,
+        /// The limit that fired, in seconds.
+        limit_secs: f64,
+    },
 }
 
 impl GigasttError {
@@ -138,6 +153,7 @@ impl GigasttError {
             GigasttError::Io(_) => "io_error",
             GigasttError::InvalidInput { .. } => "invalid_input",
             GigasttError::Cancelled => "cancelled",
+            GigasttError::AudioTooLong { .. } => "audio_too_long",
         }
     }
 }
@@ -196,11 +212,48 @@ mod tests {
             "invalid_input"
         );
         assert_eq!(GigasttError::Cancelled.code(), "cancelled");
+        assert_eq!(
+            GigasttError::AudioTooLong {
+                observed_secs: 4000.0,
+                limit_secs: 1800.0,
+            }
+            .code(),
+            "audio_too_long"
+        );
     }
 
     #[test]
     fn test_cancelled_display() {
         assert_eq!(GigasttError::Cancelled.to_string(), "cancelled");
+    }
+
+    #[test]
+    fn test_audio_too_long_display_rounds_seconds() {
+        let e = GigasttError::AudioTooLong {
+            observed_secs: 3661.4,
+            limit_secs: 1800.0,
+        };
+        assert_eq!(
+            e.to_string(),
+            "audio too long: 3661s exceeds the maximum of 1800s"
+        );
+    }
+
+    #[test]
+    fn test_audio_too_long_survives_anyhow_downcast() {
+        // The decode layer bails through `anyhow`; the engine seam downcasts the
+        // typed variant back out. This guards that round-trip.
+        let err: anyhow::Error = GigasttError::AudioTooLong {
+            observed_secs: 5000.0,
+            limit_secs: 1800.0,
+        }
+        .into();
+        match err.downcast::<GigasttError>() {
+            Ok(GigasttError::AudioTooLong { limit_secs, .. }) => {
+                assert_eq!(limit_secs, 1800.0);
+            }
+            other => panic!("expected AudioTooLong, got {other:?}"),
+        }
     }
 
     #[test]

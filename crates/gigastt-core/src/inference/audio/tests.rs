@@ -477,22 +477,39 @@ fn test_parse_pcm16_empty() {
 }
 
 #[test]
-fn test_decode_duration_cap_pure() {
-    // Pure cap math (testable without realizing a multi-minute PCM buffer):
-    // the sample budget scales with the clamped rate and the duration cap.
-    let budget_16k = max_decode_samples(16000);
-    // 30-min cap at 16kHz => 1800 * 16000 samples.
-    assert_eq!(budget_16k, 1800 * 16000);
-    // 12 minutes (the old reject point) is comfortably under budget.
-    assert!(12 * 60 * 16000 < budget_16k, "12-minute file must pass");
-    // >30 min is over budget and would be rejected.
-    assert!(
-        (30 * 60 + 1) * 16000 > budget_16k,
-        ">30min must exceed budget"
+fn test_sample_budget_pure() {
+    // No caller limit means unbounded — the streaming path is O(one window),
+    // so a file of any length transcribes.
+    assert_eq!(max_samples_for_secs(None, 16000), usize::MAX);
+    assert_eq!(max_samples_for_secs(Some(0.0), 16000), usize::MAX);
+    assert_eq!(max_samples_for_secs(Some(-5.0), 16000), usize::MAX);
+
+    // A finite limit scales linearly with the UNCLAMPED source rate — the fix
+    // for the old 48 kHz clamp that made a 96 kHz file expire at half its
+    // stated seconds. 1800 s at 96 kHz is twice the 48 kHz budget, not equal.
+    assert_eq!(max_samples_for_secs(Some(1800.0), 16000), 1800 * 16000);
+    assert_eq!(max_samples_for_secs(Some(1800.0), 96_000), 1800 * 96_000);
+    assert_eq!(
+        max_samples_for_secs(Some(1800.0), 192_000),
+        4 * max_samples_for_secs(Some(1800.0), 48_000),
     );
-    // Header rate is clamped: a crafted 192kHz header can't inflate the
-    // budget past the 48kHz ceiling.
-    assert_eq!(max_decode_samples(192_000), max_decode_samples(48_000));
+}
+
+#[test]
+fn test_whole_buffer_limit_clamps_but_only_downward() {
+    // The whole-buffer ceiling is the default when the operator sets nothing.
+    assert_eq!(whole_buffer_limit_secs(None), WHOLE_BUFFER_MAX_AUDIO_SECS);
+    assert_eq!(
+        whole_buffer_limit_secs(Some(0.0)),
+        WHOLE_BUFFER_MAX_AUDIO_SECS
+    );
+    // A smaller operator limit lowers it.
+    assert_eq!(whole_buffer_limit_secs(Some(300.0)), 300.0);
+    // A larger operator limit cannot raise it above the ceiling.
+    assert_eq!(
+        whole_buffer_limit_secs(Some(10_000.0)),
+        WHOLE_BUFFER_MAX_AUDIO_SECS
+    );
 }
 
 // --- SampleRate tests ---
@@ -947,7 +964,7 @@ fn test_resample_with_cache_reuses_across_chunk_sizes() {
 #[test]
 fn test_decode_rejects_adversarial_sample_rate() {
     // A crafted header with an out-of-range sample rate must be rejected
-    // before it can scale the duration cap or trigger an oversized
+    // before it can scale the length budget or trigger an oversized
     // reservation — and must never panic.
     let silence: Vec<i16> = vec![0; 16]; // tiny payload — the header is the attack
     // Just above the ceiling: a well-formed header that the clamp must reject.
@@ -1208,14 +1225,14 @@ fn test_decode_audio_bytes_g722_wav_fallback() {
 #[test]
 fn test_try_decode_g722_wav_malformed_inputs() {
     // Not RIFF at all → None (falls through to symphonia).
-    assert!(try_decode_g722_wav(b"not a wave file").is_none());
+    assert!(try_decode_g722_wav(b"not a wave file", None).is_none());
     // PCM WAV → None (symphonia handles it).
     let pcm_wav = make_wav_bytes(&[0i16; 32], 16000);
-    assert!(try_decode_g722_wav(&pcm_wav).is_none());
+    assert!(try_decode_g722_wav(&pcm_wav, None).is_none());
     // G.722 tag but no data chunk → Some(Err), not a panic or silent None.
     let mut header_only = make_compressed_wav(0x0064, 16000, 8000, &[]);
     header_only.truncate(38); // strip the data chunk header + payload
-    let result = try_decode_g722_wav(&header_only);
+    let result = try_decode_g722_wav(&header_only, None);
     assert!(
         matches!(result, Some(Err(_))),
         "expected Some(Err), got {result:?}"
@@ -1225,7 +1242,7 @@ fn test_try_decode_g722_wav_malformed_inputs() {
     let encoded = audio_codec::Encoder::encode(&mut enc, &[0i16; 320]);
     let mut wav = make_compressed_wav(0x0064, 16000, 8000, &encoded);
     wav.truncate(wav.len() - 3);
-    let result = try_decode_g722_wav(&wav);
+    let result = try_decode_g722_wav(&wav, None);
     assert!(
         matches!(result, Some(Ok(_))),
         "truncated data must not panic"

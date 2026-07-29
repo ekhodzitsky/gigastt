@@ -311,6 +311,15 @@ pub struct TranscribeRequest<'a> {
     /// returning an all-empty-speaker transcript silently. `None` (the default)
     /// records nothing, reproducing the historical behaviour.
     pub diarization_outcome: Option<Arc<OnceLock<DiarizationOutcome>>>,
+    /// Optional opt-in maximum decoded audio length, in seconds. `None` (the
+    /// default) leaves the streaming file path unbounded — a file of any length
+    /// transcribes with O(one window) peak memory. When `Some(secs)`, audio
+    /// longer than `secs` is rejected with
+    /// [`GigasttError::AudioTooLong`](crate::error::GigasttError::AudioTooLong).
+    /// The whole-buffer paths (VAD, diarization, `channels=split`, telephony /
+    /// Opus) additionally clamp to a fixed safety ceiling regardless of this
+    /// value, so they refuse rather than exhaust memory.
+    pub max_audio_secs: Option<f64>,
 }
 
 impl<'a> TranscribeRequest<'a> {
@@ -324,6 +333,7 @@ impl<'a> TranscribeRequest<'a> {
             abort: None,
             progress: None,
             diarization_outcome: None,
+            max_audio_secs: None,
         }
     }
 
@@ -368,6 +378,14 @@ impl<'a> TranscribeRequest<'a> {
         sink: Option<Arc<OnceLock<DiarizationOutcome>>>,
     ) -> Self {
         self.diarization_outcome = sink;
+        self
+    }
+
+    /// Set an opt-in maximum decoded audio length in seconds. `None` (the
+    /// default) leaves the streaming path unbounded; the whole-buffer paths keep
+    /// their fixed safety ceiling either way.
+    pub fn with_max_audio_secs(mut self, max_audio_secs: Option<f64>) -> Self {
+        self.max_audio_secs = max_audio_secs;
         self
     }
 }

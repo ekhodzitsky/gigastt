@@ -1623,20 +1623,25 @@ impl Engine {
             on_progress: progress_fn.as_deref(),
         };
 
+        // Opt-in operator length limit (`--max-audio-secs`); `None` = unlimited.
+        // The streaming path honors it verbatim; the whole-buffer decoders clamp
+        // it down to their fixed safety ceiling.
+        let max_audio_secs = req.max_audio_secs;
+
         match req.source {
             #[cfg(feature = "file-decode")]
             TranscribeSource::Path(path) => {
                 if self.stream_eligible(&req.overrides, req.diarization) {
-                    let windows = audio::FileWindows::open(path, window_spec(self.ane_encoder))
-                        .map_err(|e| GigasttError::InvalidAudio {
-                            reason: format!("{e:#}"),
-                        })?;
+                    let windows = audio::FileWindows::open(
+                        path,
+                        window_spec(self.ane_encoder),
+                        max_audio_secs,
+                    )
+                    .map_err(audio::decode_error)?;
                     self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords, ctl)
                 } else {
-                    let float_samples =
-                        audio::decode_audio_file(path).map_err(|e| GigasttError::InvalidAudio {
-                            reason: format!("{e:#}"),
-                        })?;
+                    let float_samples = audio::decode_audio_file_bounded(path, max_audio_secs)
+                        .map_err(audio::decode_error)?;
                     self.transcribe_samples_with_overrides(
                         &float_samples,
                         triplet,
@@ -1651,18 +1656,17 @@ impl Engine {
             #[cfg(feature = "file-decode")]
             TranscribeSource::Bytes(data) => {
                 if self.stream_eligible(&req.overrides, req.diarization) {
-                    let windows =
-                        audio::FileWindows::from_bytes(data, window_spec(self.ane_encoder))
-                            .map_err(|e| GigasttError::InvalidAudio {
-                                reason: format!("{e:#}"),
-                            })?;
+                    let windows = audio::FileWindows::from_bytes(
+                        data,
+                        window_spec(self.ane_encoder),
+                        max_audio_secs,
+                    )
+                    .map_err(audio::decode_error)?;
                     self.transcribe_stream_mono(windows, triplet, &req.overrides, req.hotwords, ctl)
                 } else {
-                    let float_samples = audio::decode_audio_bytes_shared(data).map_err(|e| {
-                        GigasttError::InvalidAudio {
-                            reason: format!("{e:#}"),
-                        }
-                    })?;
+                    let float_samples =
+                        audio::decode_audio_bytes_shared_bounded(data, max_audio_secs)
+                            .map_err(audio::decode_error)?;
                     self.transcribe_samples_with_overrides(
                         &float_samples,
                         triplet,

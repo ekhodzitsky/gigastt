@@ -24,7 +24,8 @@ Nine axes, all stdlib-only (no third-party deps, no network):
      #anchors resolve to a heading in the target file.
   7. OpenAPI paths: every `paths:` key in docs/openapi.yaml is registered in
      crates/gigastt/src/server/mod.rs (or is the separate metrics listener),
-     and OpenAPI must not claim a 10-minute file cap when audio.rs is 30 min.
+     and OpenAPI must not resurrect a stale unconditional duration-cap claim
+     now that the default file-transcription path has no duration limit.
   8. SECURITY.md supported-version table marks the workspace Cargo.toml major.minor
      as current.
   9. Crate version pins: `gigastt-core = "X.Y"` in README*/architecture.md must
@@ -464,13 +465,19 @@ def check_openapi() -> list[str]:
             failures.append(f"openapi.yaml: missing required path `{required}`")
 
     oas_text = OPENAPI_YAML.read_text(encoding="utf-8")
-    # audio.rs MAX_DURATION_S is 1800 (30 minutes). Forbid the old 10-minute claim.
-    if re.search(r"10\s+minutes?\s+of\s+audio", oas_text, re.IGNORECASE):
-        failures.append(
-            "openapi.yaml: claims a 10-minute audio cap; code uses MAX_DURATION_S=1800 (30 minutes)"
-        )
-    if not re.search(r"30\s+minutes?", oas_text):
-        failures.append("openapi.yaml: should state the 30-minute file transcription cap")
+    # The default file-transcription path has no duration cap: long files decode
+    # in bounded windows. Forbid a stale unconditional cap claim creeping back in;
+    # the ~30-minute safety ceiling on whole-buffer paths (VAD/diarization/
+    # channels=split/telephony) is a separate, correctly-scoped statement.
+    for stale in (
+        r"File transcription cap:\s*30\s+minutes?",
+        r"Max audio duration:\s*30\s+minutes?",
+    ):
+        if re.search(stale, oas_text, re.IGNORECASE):
+            failures.append(
+                f"openapi.yaml: stale unconditional duration-cap claim matching {stale!r}; "
+                "the default file-transcription path no longer has a duration limit"
+            )
 
     # Formats intro must mention Opus (full surface is in FORMATS gate for api/cli).
     if not re.search(r"Opus", oas_text):

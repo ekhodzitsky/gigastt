@@ -101,13 +101,17 @@ pub async fn transcribe_stream(
     // bump and `decode_audio_bytes_shared` reads the upload buffer in place. On a
     // decode error the early `?` return drops `reservation`, returning the
     // triplet to the pool.
+    // SSE materializes the whole buffer before chunking, so it is a whole-buffer
+    // path: bounded by the operator `--max-audio-secs` (or the fixed safety
+    // ceiling when unset), consistent with the single-shot REST path.
+    let max_audio_secs = limits.max_audio_secs_opt();
     let samples = tokio::task::spawn_blocking(move || {
         // catch_unwind mirrors the REST handler: a panic inside the blocking
         // decode (e.g. a crafted container that trips an upstream arithmetic
         // panic) is absorbed and surfaced as a normal decode error instead of a
         // `JoinError`, so the SSE path returns a clean 422 rather than a 500.
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            gigastt_core::inference::audio::decode_audio_bytes_shared(body)
+            gigastt_core::inference::audio::decode_audio_bytes_shared_bounded(body, max_audio_secs)
         })) {
             Ok(inner) => inner,
             Err(_) => {
@@ -126,6 +130,13 @@ pub async fn transcribe_stream(
         )
     })?
     .map_err(|e| {
+        // "Too long" is distinct from "corrupt": answer 413 `audio_too_long`
+        // with the observed/limit seconds instead of the generic 422.
+        if let Some(g @ gigastt_core::error::GigasttError::AudioTooLong { .. }) =
+            e.downcast_ref::<gigastt_core::error::GigasttError>()
+        {
+            return api_error(StatusCode::PAYLOAD_TOO_LARGE, &g.to_string(), g.code());
+        }
         tracing::error!("Audio decode error: {e:#}");
         api_error(
             StatusCode::UNPROCESSABLE_ENTITY,

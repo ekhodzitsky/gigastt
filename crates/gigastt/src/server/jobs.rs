@@ -615,6 +615,19 @@ fn is_retryable_error(e: &anyhow::Error) -> bool {
 }
 
 fn sanitize_job_error(e: &anyhow::Error) -> String {
+    // Preserve the typed length rejection so a client can tell "too long" (raise
+    // `--max-audio-secs` or split) from "corrupt" — the same distinction the REST
+    // path answers with 413. The blocking result reaches us via
+    // `anyhow::Error::from`, so the concrete variant survives the downcast.
+    if let Some(gigastt_core::error::GigasttError::AudioTooLong {
+        observed_secs,
+        limit_secs,
+    }) = e.downcast_ref::<gigastt_core::error::GigasttError>()
+    {
+        return format!(
+            "Audio too long: {observed_secs:.0}s exceeds the maximum of {limit_secs:.0}s."
+        );
+    }
     let msg = format!("{e:#}");
     if msg.contains("inference_timeout") {
         "Inference timed out.".into()
@@ -824,6 +837,7 @@ impl JobExecution for RealJobExecutor {
                 // the sync path once diarization is requested; it is not wired to
                 // a notice here (out of scope) and keeps its current behaviour.
                 diarization_outcome: None,
+                max_audio_secs: limits.max_audio_secs_opt(),
             };
             let handle = tokio::task::spawn_blocking(move || {
                 let _enter = span.enter();
@@ -1300,6 +1314,17 @@ mod tests {
         assert_eq!(
             sanitize_job_error(&anyhow::anyhow!("some internal onnx path /foo/bar")),
             "Transcription failed."
+        );
+        // A typed AudioTooLong (arrives via `anyhow::Error::from`) surfaces the
+        // observed/limit seconds so a client can tell "too long" from "corrupt".
+        let too_long: anyhow::Error = gigastt_core::error::GigasttError::AudioTooLong {
+            observed_secs: 4000.0,
+            limit_secs: 1800.0,
+        }
+        .into();
+        assert_eq!(
+            sanitize_job_error(&too_long),
+            "Audio too long: 4000s exceeds the maximum of 1800s."
         );
     }
 

@@ -41,7 +41,9 @@ use super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
 #[cfg(feature = "file-decode")]
 use super::telephony::{sniffs_as_g722_wav, try_decode_g722_wav};
 #[cfg(feature = "file-decode")]
-use super::{MAX_DURATION_S, MAX_SAMPLE_RATE, max_decode_samples};
+use super::{
+    MAX_SAMPLE_RATE, audio_too_long_err, decode_error, resolve_budget, whole_buffer_limit_secs,
+};
 
 /// Samples per encoder output frame (`HOP_LENGTH * ENCODER_SUBSAMPLING`,
 /// 640 @16 kHz). Window starts are multiples of this so each window's frame
@@ -188,13 +190,19 @@ enum Source {
         format: Box<dyn FormatReader>,
         decoder: Box<dyn AudioDecoder>,
         track_id: u32,
-        /// Source (container) sample rate — the units the duration cap counts.
+        /// Source (container) sample rate — the units the length budget counts.
         sample_rate: u32,
         /// Running SOURCE-rate frame count, tracked separately from the 16 kHz
-        /// accumulator because the duration cap is expressed in source frames.
+        /// accumulator because the length budget is expressed in source frames.
         source_frames: usize,
-        /// Source-rate frame budget from a clamped rate (see [`max_decode_samples`]).
+        /// Source-rate frame budget. `usize::MAX` when the caller imposed no
+        /// limit — the streaming path is O(one window), so length is unbounded
+        /// by default; the flat drain and the whole-buffer callers pass a finite
+        /// budget (see [`max_samples_for_secs`]).
         max_samples: usize,
+        /// The seconds limit `max_samples` was derived from, echoed verbatim in
+        /// [`AudioTooLong`](crate::error::GigasttError::AudioTooLong) on a trip.
+        limit_secs: f64,
         /// Boxed: it carries the heavyweight rubato FIR state, so keeping it
         /// behind a pointer keeps the `Streaming` variant small.
         resampler: Box<ResampleTo16k>,
@@ -248,11 +256,11 @@ pub(crate) struct FileWindows {
 impl FileWindows {
     /// Open a file for windowed decode. Mirrors `decode_audio_file`'s probe/hint
     /// setup, including the G.722-in-WAV telephony sniff.
-    pub(crate) fn open(path: &str, spec: WindowSpec) -> Result<Self> {
+    pub(crate) fn open(path: &str, spec: WindowSpec, max_audio_secs: Option<f64>) -> Result<Self> {
         if sniffs_as_g722_wav(path)? {
             let bytes = std::fs::read(path)
                 .with_context(|| format!("Failed to read audio file: {path}"))?;
-            if let Some(result) = try_decode_g722_wav(&bytes) {
+            if let Some(result) = try_decode_g722_wav(&bytes, max_audio_secs) {
                 return Ok(Self::eager(result?, spec));
             }
         }
@@ -266,18 +274,22 @@ impl FileWindows {
         {
             hint.with_extension(ext);
         }
-        Self::from_mss(mss, hint, spec)
+        Self::from_mss(mss, hint, spec, max_audio_secs)
     }
 
     /// Open a shared [`Bytes`] buffer for windowed decode. `BytesMediaSource` is
     /// seekable, so the isomp4 demuxer's trailing-`moov` seek works; no spool.
-    pub(crate) fn from_bytes(data: Bytes, spec: WindowSpec) -> Result<Self> {
-        if let Some(result) = try_decode_g722_wav(&data) {
+    pub(crate) fn from_bytes(
+        data: Bytes,
+        spec: WindowSpec,
+        max_audio_secs: Option<f64>,
+    ) -> Result<Self> {
+        if let Some(result) = try_decode_g722_wav(&data, max_audio_secs) {
             return Ok(Self::eager(result?, spec));
         }
         let source = BytesMediaSource::new(data);
         let mss = MediaSourceStream::new(Box::new(source), Default::default());
-        Self::from_mss(mss, Hint::new(), spec)
+        Self::from_mss(mss, Hint::new(), spec, max_audio_secs)
     }
 
     /// Probe the container and either set up the streaming decoder or, for Opus /
@@ -285,7 +297,12 @@ impl FileWindows {
     /// copied out (and the non-Opus decoder built) inside one borrow scope so the
     /// `FormatReader` is free to move or be driven afterwards — the same shape as
     /// the whole-buffer `decode_audio_inner`.
-    fn from_mss(mss: MediaSourceStream<'static>, hint: Hint, spec: WindowSpec) -> Result<Self> {
+    fn from_mss(
+        mss: MediaSourceStream<'static>,
+        hint: Hint,
+        spec: WindowSpec,
+        max_audio_secs: Option<f64>,
+    ) -> Result<Self> {
         let mut format = symphonia::default::get_probe()
             .probe(
                 &hint,
@@ -329,15 +346,21 @@ impl FileWindows {
             (track_id, sample_rate, channels, decoder_opt)
         };
 
-        let max_samples = max_decode_samples(sample_rate);
+        let (max_samples, limit_secs) = resolve_budget(max_audio_secs, sample_rate);
 
         match decoder_opt {
             None => {
+                // Opus is accumulated whole-buffer (the fallback decoder does not
+                // stream), so it must stay under the whole-buffer safety ceiling
+                // even when the caller left the streaming budget unbounded.
+                let (opus_max, opus_limit) =
+                    resolve_budget(Some(whole_buffer_limit_secs(max_audio_secs)), sample_rate);
                 let mono = mix_channels_to_mono(&decode_opus_channels(
                     &mut *format,
                     track_id,
                     channels,
-                    max_samples,
+                    opus_max,
+                    opus_limit,
                 )?);
                 let mut resampler = ResampleTo16k::new(SampleRate(sample_rate), None);
                 for piece in mono.chunks(RESAMPLE_STAGING_FRAMES) {
@@ -359,6 +382,7 @@ impl FileWindows {
                         sample_rate,
                         source_frames: 0,
                         max_samples,
+                        limit_secs,
                         // No length hint: the windowed path never materializes the
                         // whole 16 kHz stream, so it must not reserve for it.
                         resampler: Box::new(ResampleTo16k::new(SampleRate(sample_rate), None)),
@@ -411,18 +435,19 @@ impl FileWindows {
     }
 
     /// Flat-decode a file to 16 kHz mono. The window geometry is irrelevant to
-    /// `drain_to_vec`, so a sentinel spec is used.
-    pub(crate) fn decode_file(path: &str) -> Result<Vec<f32>> {
-        Self::open(path, WindowSpec::flat())?.drain_to_vec()
+    /// `drain_to_vec`, so a sentinel spec is used. `max_audio_secs` is the
+    /// whole-buffer length budget (this drain materializes the entire stream).
+    pub(crate) fn decode_file(path: &str, max_audio_secs: Option<f64>) -> Result<Vec<f32>> {
+        Self::open(path, WindowSpec::flat(), max_audio_secs)?.drain_to_vec()
     }
 
     /// Flat-decode a shared byte buffer to 16 kHz mono.
-    pub(crate) fn decode_bytes(data: Bytes) -> Result<Vec<f32>> {
-        Self::from_bytes(data, WindowSpec::flat())?.drain_to_vec()
+    pub(crate) fn decode_bytes(data: Bytes, max_audio_secs: Option<f64>) -> Result<Vec<f32>> {
+        Self::from_bytes(data, WindowSpec::flat(), max_audio_secs)?.drain_to_vec()
     }
 
     /// Decode until `decoded_16k_total >= target` (or EOF), appending 16 kHz
-    /// samples to `buf`. Enforces the source-rate duration cap incrementally with
+    /// samples to `buf`. Enforces the source-rate length budget incrementally with
     /// the exact same error string as the whole-buffer path.
     fn fill_to(&mut self, target: usize) -> Result<()> {
         let Source::Streaming {
@@ -432,6 +457,7 @@ impl FileWindows {
             sample_rate,
             source_frames,
             max_samples,
+            limit_secs,
             resampler,
             interleaved,
         } = &mut self.src
@@ -476,11 +502,11 @@ impl FileWindows {
             *source_frames += num_frames;
 
             if *source_frames > *max_samples {
-                let observed_s = *source_frames as f64 / *sample_rate as f64;
-                anyhow::bail!(
-                    "Audio file too long ({:.0}s). Maximum supported: {MAX_DURATION_S:.0}s.",
-                    observed_s
-                );
+                return Err(audio_too_long_err(
+                    *source_frames,
+                    *sample_rate,
+                    *limit_secs,
+                ));
             }
 
             resampler.flush_full()?;
@@ -530,10 +556,7 @@ impl PcmWindows for FileWindows {
         } else {
             self.next_start + self.spec.window() + 1
         };
-        self.fill_to(target)
-            .map_err(|e| GigasttError::InvalidAudio {
-                reason: format!("{e:#}"),
-            })?;
+        self.fill_to(target).map_err(decode_error)?;
 
         let avail_end = self.decoded_16k_total;
         let start = self.next_start;
@@ -809,7 +832,7 @@ mod file_windows_tests {
         for &n in &[1usize, 8_000, 480_000, 480_001, 560_000, 900_000] {
             let src = signal(n, 1.0);
             let wav = encode_wav_pcm16(&src, 16000);
-            let flat = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec)
+            let flat = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None)
                 .expect("open flat")
                 .drain_to_vec()
                 .expect("drain");
@@ -817,7 +840,8 @@ mod file_windows_tests {
             // is exact.
             assert_eq!(flat.len(), n, "passthrough length changed at n={n}");
             let got = window_seq(
-                FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open windows"),
+                FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None)
+                    .expect("open windows"),
             );
             assert_eq!(got, expected_seq(&flat, spec), "geometry mismatch at n={n}");
         }
@@ -833,7 +857,7 @@ mod file_windows_tests {
         let left = signal(n, 0.3);
         let right = signal(n, 2.1);
         let wav = stereo_wav_pcm16(&left, &right, 48_000);
-        let flat = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec)
+        let flat = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None)
             .expect("open flat")
             .drain_to_vec()
             .expect("drain");
@@ -843,7 +867,8 @@ mod file_windows_tests {
             flat.len()
         );
         let got = window_seq(
-            FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open windows"),
+            FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None)
+                .expect("open windows"),
         );
         // Incremental resample + windowing is byte-identical to whole-buffer
         // resample + SliceWindows: the staged chunk sequence is the same either
@@ -856,8 +881,9 @@ mod file_windows_tests {
         let spec = ort_spec();
         let src = signal(10_000, 0.7);
         let wav = encode_wav_pcm16(&src, 16000);
-        let got =
-            window_seq(FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open"));
+        let got = window_seq(
+            FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None).expect("open"),
+        );
         assert_eq!(got.len(), 1);
         assert_eq!(got[0].0, 0);
         assert_eq!(got[0].1.len(), 10_000);
@@ -869,7 +895,8 @@ mod file_windows_tests {
         let n = 700_000; // chunked
         let src = signal(n, 1.3);
         let wav = encode_wav_pcm16(&src, 16000);
-        let mut fw = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec).expect("open");
+        let mut fw =
+            FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None).expect("open");
         while fw.next_window().expect("window").is_some() {}
         assert_eq!(fw.total_16k_samples(), n);
     }
@@ -935,9 +962,9 @@ mod file_windows_tests {
         // grows with duration) for a same-build A/B against the default windowed
         // path (peak bounded by one window).
         let total = if std::env::var("GIGASTT_PEAK_MODE").as_deref() == Ok("drain") {
-            FileWindows::decode_file(p).expect("drain").len()
+            FileWindows::decode_file(p, None).expect("drain").len()
         } else {
-            let mut fw = FileWindows::open(p, ort_spec()).expect("open temp wav");
+            let mut fw = FileWindows::open(p, ort_spec(), None).expect("open temp wav");
             let mut counted = 0usize;
             while let Some(win) = fw.next_window().expect("window") {
                 counted += win.samples.len();

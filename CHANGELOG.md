@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Opt-in `--max-audio-secs` duration cap for file transcription.** New CLI
+  flag (env `GIGASTT_MAX_AUDIO_SECS`, default `0` = unlimited) rejects audio
+  whose decoded duration exceeds `N` seconds with `413 Payload Too Large` and
+  the new machine-readable error code `audio_too_long`, checked before any
+  inference runs.
+
 - **Cooperative cancellation reaches the running transcription.** A client
   disconnect or shutdown on `POST /v1/transcribe`, and `DELETE /v1/jobs/{id}` on
   an in-flight job, now flip an abort flag that the engine's per-window decode
@@ -17,7 +23,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   into a result that is thrown away. Adds a `GigasttError::Cancelled` variant
   (additive; the enum is `#[non_exhaustive]`).
 
+### Removed
+
+- **The 30-minute (1800 s) duration cap on the default file-transcription
+  path.** File decode streams through bounded windows regardless of length,
+  so peak memory stays roughly constant — files of any length now transcribe
+  fine. The paths that still need the whole decoded buffer in memory (VAD
+  segmentation, speaker diarization, `channels=split`, and telephony/Opus
+  decoding) keep the ~30-minute safety ceiling to avoid OOM, surfaced as the
+  same `audio_too_long` code introduced above.
+
 ### Changed
+
+- **CLI contract change: `gigastt transcribe-batch` no longer fails on long
+  files.** Running `transcribe-batch` over a corpus that includes files
+  longer than 30 minutes now exits `0` instead of `1`, because those files
+  are no longer rejected by the default file-transcription path.
 
 - **`--inference-timeout-secs` is now a no-progress watchdog, not a total
   wall-clock cap.** The deadline resets every time a decode window completes, so

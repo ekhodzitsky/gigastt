@@ -458,6 +458,15 @@ enum Commands {
         #[arg(long, env = "GIGASTT_INFERENCE_TIMEOUT_SECS")]
         inference_timeout_secs: Option<u64>,
 
+        /// Maximum decoded audio length in seconds for file transcription.
+        /// `0` (default) means no limit — a file of any length transcribes,
+        /// since the default path decodes in bounded windows. Audio longer than
+        /// a positive value is rejected with HTTP 413 `audio_too_long`. The
+        /// whole-buffer paths (VAD, diarization, `channels=split`, telephony)
+        /// keep a ~30-minute safety ceiling regardless [default: 0].
+        #[arg(long, env = "GIGASTT_MAX_AUDIO_SECS")]
+        max_audio_secs: Option<u64>,
+
         /// Skip the automatic INT8 quantization step after download.
         /// Default behaviour is to quantize the encoder (~2 min, one-time)
         /// so the pool loads the 210 MB INT8 encoder instead of the 844 MB
@@ -1052,6 +1061,7 @@ async fn main() -> anyhow::Result<()> {
             shutdown_drain_secs,
             pool_checkout_timeout_secs,
             inference_timeout_secs,
+            max_audio_secs,
             skip_quantize,
             trust_proxy,
             config,
@@ -1074,7 +1084,7 @@ async fn main() -> anyhow::Result<()> {
                 );
             }
             ensure_bind_allowed(&host, bind_all)?;
-            let limits = build_limits(
+            let mut limits = build_limits(
                 config.as_deref(),
                 idle_timeout_secs,
                 ws_frame_max_bytes,
@@ -1091,6 +1101,11 @@ async fn main() -> anyhow::Result<()> {
                 jobs_max_bytes,
                 jobs_retry,
             )?;
+            // `--max-audio-secs` overrides the config-file value with the same
+            // precedence as every other runtime limit; `0` (default) = unlimited.
+            if let Some(v) = max_audio_secs {
+                limits.max_audio_secs = v;
+            }
             let metrics_listen =
                 metrics_listen.unwrap_or_else(server::config::default_metrics_listen);
             ensure_metrics_bind_allowed(metrics, &metrics_listen, bind_all)?;

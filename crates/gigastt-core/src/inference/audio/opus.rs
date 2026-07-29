@@ -6,7 +6,7 @@ use anyhow::Result;
 use symphonia::core::formats::FormatReader;
 
 #[cfg(feature = "file-decode")]
-use super::MAX_DURATION_S;
+use super::audio_too_long_err;
 
 /// Maximum decoded samples per channel for one Opus packet: 120 ms at 48 kHz
 /// (RFC 6716 §3.2.5). A packet claiming more is malformed.
@@ -96,14 +96,16 @@ pub(super) fn next_demux_packet(
 /// 16 kHz like for every other format. Only mono and stereo are supported,
 /// which covers Telegram voice notes, browser MediaRecorder captures, and
 /// `.opus` files; multistream (>2ch) OGG/Opus is rejected. `max_samples` is
-/// the per-channel duration budget, enforced incrementally as in the
-/// symphonia decode loops.
+/// the per-channel (48 kHz) sample budget, enforced incrementally as in the
+/// symphonia decode loops; `limit_secs` is the seconds figure reported on a
+/// trip.
 #[cfg(feature = "file-decode")]
 pub(super) fn decode_opus_channels(
     format: &mut dyn FormatReader,
     track_id: u32,
     channels: usize,
     max_samples: usize,
+    limit_secs: f64,
 ) -> Result<Vec<Vec<f32>>> {
     if !(1..=2).contains(&channels) {
         anyhow::bail!("Opus with {channels} channels is not supported (mono/stereo only)");
@@ -136,13 +138,10 @@ pub(super) fn decode_opus_channels(
                 }
             }
         }
-        // Incremental duration cap, same as the symphonia decode loops.
+        // Incremental length budget, same as the symphonia decode loops.
         let decoded_len = per_channel.first().map(|v| v.len()).unwrap_or(0);
         if decoded_len > max_samples {
-            let observed_s = decoded_len as f64 / 48_000.0;
-            anyhow::bail!(
-                "Audio file too long ({observed_s:.0}s). Maximum supported: {MAX_DURATION_S:.0}s."
-            );
+            return Err(audio_too_long_err(decoded_len, 48_000, limit_secs));
         }
     }
     Ok(per_channel)
