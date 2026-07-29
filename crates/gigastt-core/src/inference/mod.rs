@@ -41,9 +41,9 @@ pub use state::{
     TranscriptAssembler, TranscriptSegment, WordInfo,
 };
 pub use types::{
-    DEFAULT_HOTWORDS_BOOST, HotwordError, HotwordOverride, MAX_HOTWORD_PHRASE_CHARS,
-    MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides, TranscribeRequest,
-    TranscribeResult, TranscribeSource, merge_channel_results,
+    DEFAULT_HOTWORDS_BOOST, DiarizationOutcome, HotwordError, HotwordOverride,
+    MAX_HOTWORD_PHRASE_CHARS, MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides,
+    TranscribeRequest, TranscribeResult, TranscribeSource, merge_channel_results,
 };
 
 /// Number of mel frequency bins used for spectrogram features.

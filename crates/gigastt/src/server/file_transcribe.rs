@@ -31,6 +31,13 @@ pub(crate) struct FileTranscribeOpts {
     /// count of processed 16 kHz samples. The server watchdog reads it to reset
     /// its no-progress deadline and to drive a real job progress bar.
     pub progress: Option<Arc<AtomicU64>>,
+    /// Write-once sink for the offline-diarization outcome. When set (with
+    /// `diarization = true`), the engine records why speakers were or were not
+    /// labeled so a surface can turn a `?diarization=true` request that produced
+    /// no labels into a capability notice instead of an all-empty-speaker
+    /// transcript. `None` records nothing.
+    pub diarization_outcome:
+        Option<Arc<std::sync::OnceLock<gigastt_core::inference::DiarizationOutcome>>>,
 }
 
 /// Sets a shared abort flag when dropped. Held in the REST handler's async
@@ -180,6 +187,7 @@ pub(crate) fn run_file_transcribe_blocking(
                 .with_overrides(opts.overrides)
                 .with_hotwords(opts.hotwords.as_ref())
                 .with_diarization(opts.diarization)
+                .with_diarization_outcome(opts.diarization_outcome.clone())
                 .with_abort(opts.abort.clone())
                 .with_progress(opts.progress.clone()),
             reservation,

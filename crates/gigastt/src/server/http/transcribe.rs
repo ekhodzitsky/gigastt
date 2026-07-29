@@ -6,13 +6,13 @@ use axum::http::StatusCode;
 use axum::response::{IntoResponse, Json, Response};
 use serde::Serialize;
 use std::str::FromStr;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::sync::{Arc, OnceLock};
 
 use super::super::config::RuntimeLimits;
 use super::super::metrics::MetricsRegistry;
 use gigastt_core::export::Segment;
-use gigastt_core::inference::Engine;
+use gigastt_core::inference::{DiarizationOutcome, Engine};
 
 use super::error::{
     ApiError, api_error, api_inference_timeout_error, api_pool_closed_error, api_timeout_error,
@@ -42,6 +42,80 @@ pub struct TranscribeResponse {
     /// so existing clients that read `text` / `words` / `duration` are unaffected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub segments: Option<Vec<Segment>>,
+    /// Present only when `?diarization=true` was requested and speakers could
+    /// **not** be labeled — the transcript is still complete, but the client
+    /// would otherwise see empty speaker fields with no explanation. Additive:
+    /// absent when diarization was not requested or succeeded, so existing
+    /// clients see the exact same shape.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diarization: Option<DiarizationNotice>,
+}
+
+/// Capability notice attached to a transcription response when a
+/// `?diarization=true` request produced no speaker labels. Makes the reason
+/// visible to the client instead of returning an all-empty-speaker transcript
+/// with HTTP 200 and no explanation.
+#[derive(Serialize)]
+pub struct DiarizationNotice {
+    /// Always `"unavailable"` — the notice only appears when diarization was
+    /// requested and did not label speakers.
+    pub status: &'static str,
+    /// Machine-readable cause: `"duration_ceiling"`, `"no_speaker_model"`, or
+    /// `"pipeline_error"`.
+    pub reason: &'static str,
+    /// Human-readable, non-sensitive explanation.
+    pub message: String,
+    /// Length of the submitted audio in seconds — present only for the duration
+    /// ceiling, so the client can see what was too long.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_seconds: Option<f64>,
+    /// The clusterer's single-pass ceiling in seconds — present only for the
+    /// duration ceiling.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ceiling_seconds: Option<f64>,
+}
+
+/// Map a [`DiarizationOutcome`] to the client-facing [`DiarizationNotice`].
+///
+/// `Applied` (and any future success) yields `None` — no notice, so a
+/// successful or unrequested diarization leaves the response shape untouched.
+/// Every declined case carries a distinct `reason`, and the duration ceiling
+/// also carries the input and ceiling seconds.
+fn diarization_notice(outcome: DiarizationOutcome) -> Option<DiarizationNotice> {
+    match outcome {
+        DiarizationOutcome::Applied => None,
+        DiarizationOutcome::NoSpeakerModel => Some(DiarizationNotice {
+            status: "unavailable",
+            reason: "no_speaker_model",
+            message: "diarization was requested but no speaker model is loaded".to_string(),
+            input_seconds: None,
+            ceiling_seconds: None,
+        }),
+        DiarizationOutcome::DurationCeiling {
+            input_secs,
+            ceiling_secs,
+        } => Some(DiarizationNotice {
+            status: "unavailable",
+            reason: "duration_ceiling",
+            message: format!(
+                "diarization skipped: input {input_secs:.0}s exceeds the {ceiling_secs:.0}s \
+                 single-pass limit; the transcript is complete but has no speaker labels"
+            ),
+            input_seconds: Some(input_secs),
+            ceiling_seconds: Some(ceiling_secs),
+        }),
+        DiarizationOutcome::Failed => Some(DiarizationNotice {
+            status: "unavailable",
+            reason: "pipeline_error",
+            message: "diarization failed; the transcript is complete but has no speaker labels"
+                .to_string(),
+            input_seconds: None,
+            ceiling_seconds: None,
+        }),
+        // `DiarizationOutcome` is `#[non_exhaustive]`; a future variant should
+        // add its own notice above. Until then, prefer silence over a wrong one.
+        _ => None,
+    }
 }
 
 /// Resolve the `?codec=` / `?sample_rate=` query pair into a raw-decode recipe.
@@ -136,6 +210,7 @@ pub(super) async fn run_file_transcription(
     state: &AppState,
     body: Bytes,
     params: &ExportParams,
+    diar_sink: Option<Arc<OnceLock<DiarizationOutcome>>>,
 ) -> Result<gigastt_core::inference::TranscribeResult, ApiError> {
     if body.is_empty() {
         return Err(api_error(
@@ -235,6 +310,7 @@ pub(super) async fn run_file_transcription(
         raw_codec,
         abort: Some(abort.clone()),
         progress: Some(progress.clone()),
+        diarization_outcome: diar_sink,
     };
 
     // A client disconnect drops this handler future before it returns, dropping
@@ -355,8 +431,15 @@ pub async fn transcribe(
     Query(params): Query<ExportParams>,
     body: Bytes,
 ) -> Result<Response, ApiError> {
-    let result = run_file_transcription(&state, body, &params).await?;
+    // Only sink the diarization outcome when diarization was requested, so a
+    // `?diarization=true` request that produces no speaker labels can be turned
+    // into a visible notice instead of an all-empty-speaker transcript.
+    let diar_sink: Option<Arc<OnceLock<DiarizationOutcome>>> =
+        (params.diarization == Some(true)).then(|| Arc::new(OnceLock::new()));
+    let result = run_file_transcription(&state, body, &params, diar_sink.clone()).await?;
     if let Some(rendered) = render_export_response(&result, &params)? {
+        // Export formats (SRT/VTT/TSV/plain text) have no field for a capability
+        // notice; it surfaces on the JSON path below.
         Ok(rendered)
     } else {
         // Default JSON response. `?segments=true` adds a cue-grouped
@@ -368,13 +451,89 @@ pub async fn transcribe(
         } else {
             None
         };
+        // Attach a diarization notice only when diarization was requested and
+        // declined (ceiling / no model / pipeline error); `Applied` and the
+        // not-requested case leave the field absent.
+        let diarization = diar_sink
+            .as_ref()
+            .and_then(|sink| sink.get().copied())
+            .and_then(diarization_notice);
         Ok(Json(TranscribeResponse {
             text: result.text,
             words: result.words,
             duration: result.duration_s,
             confidence: result.confidence,
             segments,
+            diarization,
         })
         .into_response())
+    }
+}
+
+#[cfg(test)]
+mod diarization_notice_tests {
+    use super::*;
+
+    #[test]
+    fn test_applied_yields_no_notice() {
+        // A successful diarization needs no notice: speakers ride on the words.
+        assert!(diarization_notice(DiarizationOutcome::Applied).is_none());
+    }
+
+    #[test]
+    fn test_duration_ceiling_carries_numbers_and_reason() {
+        let notice = diarization_notice(DiarizationOutcome::DurationCeiling {
+            input_secs: 5400.0,
+            ceiling_secs: 3600.0,
+        })
+        .expect("a declined ceiling must produce a notice");
+        assert_eq!(notice.status, "unavailable");
+        assert_eq!(notice.reason, "duration_ceiling");
+        assert_eq!(notice.input_seconds, Some(5400.0));
+        assert_eq!(notice.ceiling_seconds, Some(3600.0));
+
+        // The wire JSON carries both numbers and the machine-readable reason.
+        let json = serde_json::to_value(&notice).expect("serialize");
+        assert_eq!(json["reason"], "duration_ceiling");
+        assert_eq!(json["input_seconds"], 5400.0);
+        assert_eq!(json["ceiling_seconds"], 3600.0);
+    }
+
+    #[test]
+    fn test_no_speaker_model_reason_without_numbers() {
+        let notice = diarization_notice(DiarizationOutcome::NoSpeakerModel).expect("notice");
+        assert_eq!(notice.reason, "no_speaker_model");
+        assert!(notice.input_seconds.is_none());
+        assert!(notice.ceiling_seconds.is_none());
+        // `skip_serializing_if` keeps the number fields out of the JSON entirely.
+        let json = serde_json::to_value(&notice).expect("serialize");
+        assert!(json.get("input_seconds").is_none());
+        assert!(json.get("ceiling_seconds").is_none());
+    }
+
+    #[test]
+    fn test_failed_maps_to_pipeline_error() {
+        let notice = diarization_notice(DiarizationOutcome::Failed).expect("notice");
+        assert_eq!(notice.reason, "pipeline_error");
+        assert!(notice.input_seconds.is_none());
+    }
+
+    #[test]
+    fn test_response_omits_diarization_field_when_absent() {
+        // The default (not-requested / succeeded) response must be byte-shape
+        // compatible: no `diarization` key at all.
+        let resp = TranscribeResponse {
+            text: "hi".to_string(),
+            words: Vec::new(),
+            duration: 1.0,
+            confidence: None,
+            segments: None,
+            diarization: None,
+        };
+        let json = serde_json::to_value(&resp).expect("serialize");
+        assert!(
+            json.get("diarization").is_none(),
+            "diarization must be omitted when there is no notice"
+        );
     }
 }

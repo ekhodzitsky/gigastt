@@ -40,8 +40,10 @@ use parking_lot::Mutex;
 use polyvoice::streaming::StreamingPipeline;
 use polyvoice::{
     ClusterConfig, DiarizationConfig as DiaConfig, EmbeddingError, EmbeddingExtractor, EnergyVad,
-    FbankOnnxExtractor, Pipeline, VadConfig,
+    FbankOnnxExtractor, Pipeline, PipelineError, VadConfig,
 };
+
+use super::DiarizationOutcome;
 
 /// WeSpeaker ResNet34 embedding dimension.
 pub(crate) const SPEAKER_EMBEDDING_DIM: usize = 256;
@@ -203,28 +205,52 @@ pub struct LabeledTurn {
 
 /// Run offline diarization over `samples` (16 kHz mono f32).
 ///
-/// Returns `None` on pipeline failure (already logged). Empty input yields
-/// `Some(vec![])`.
-pub fn run_offline(encoder: &SpeakerEncoder, samples: &[f32]) -> Option<Vec<LabeledTurn>> {
+/// `Ok(turns)` on success (empty input yields `Ok(vec![])`). On failure the
+/// error is *classified* so the caller can tell the client why no speakers were
+/// produced instead of degrading silently:
+/// - [`DiarizationOutcome::DurationCeiling`] when the clusterer refuses the
+///   buffer for exceeding its single-pass duration limit — carrying the real
+///   input and ceiling seconds polyvoice reported — and
+/// - [`DiarizationOutcome::Failed`] for any other pipeline error (still logged).
+pub fn run_offline(
+    encoder: &SpeakerEncoder,
+    samples: &[f32],
+) -> Result<Vec<LabeledTurn>, DiarizationOutcome> {
     let config = DiaConfig::default();
     let vad_config = VadConfig::default();
     let pipeline = Pipeline::new(config, vad_config);
     let mut vad = EnergyVad::new(-40.0, 16000, vad_config.frame_size);
     match pipeline.run(samples, encoder.as_ref(), &mut vad) {
-        Ok(dia_result) => Some(
-            dia_result
-                .turns
-                .into_iter()
-                .map(|t| LabeledTurn {
-                    start: t.time.start,
-                    end: t.time.end,
-                    speaker: t.speaker.0,
-                })
-                .collect(),
-        ),
-        Err(e) => {
-            tracing::warn!("Offline diarization failed: {e:#}");
-            None
+        Ok(dia_result) => Ok(dia_result
+            .turns
+            .into_iter()
+            .map(|t| LabeledTurn {
+                start: t.time.start,
+                end: t.time.end,
+                speaker: t.speaker.0,
+            })
+            .collect()),
+        Err(e) => Err(classify_offline_error(e)),
+    }
+}
+
+/// Map a polyvoice [`PipelineError`] to the client-facing [`DiarizationOutcome`].
+///
+/// The duration ceiling is surfaced with the real numbers polyvoice reported;
+/// every other failure is logged and collapsed to
+/// [`DiarizationOutcome::Failed`].
+fn classify_offline_error(e: PipelineError) -> DiarizationOutcome {
+    match e {
+        PipelineError::AudioTooLong {
+            actual_secs,
+            max_secs,
+        } => DiarizationOutcome::DurationCeiling {
+            input_secs: actual_secs as f64,
+            ceiling_secs: max_secs as f64,
+        },
+        other => {
+            tracing::warn!("Offline diarization failed: {other:#}");
+            DiarizationOutcome::Failed
         }
     }
 }
@@ -242,6 +268,33 @@ pub fn assign_speakers_by_midpoint(turns: &[LabeledTurn], words: &mut [super::Wo
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // A duration-ceiling refusal must surface the *real* numbers polyvoice
+    // reported (not a re-derived guess) so the client sees both the input and
+    // the ceiling. This is the sole case that carries numbers.
+    #[test]
+    fn test_classify_offline_error_duration_ceiling_carries_numbers() {
+        let outcome = classify_offline_error(PipelineError::AudioTooLong {
+            actual_secs: 5400.0,
+            max_secs: 3600.0,
+        });
+        assert_eq!(
+            outcome,
+            DiarizationOutcome::DurationCeiling {
+                input_secs: 5400.0,
+                ceiling_secs: 3600.0,
+            }
+        );
+    }
+
+    // Every other pipeline error collapses to `Failed` (logged, no numbers).
+    #[test]
+    fn test_classify_offline_error_other_is_failed() {
+        assert_eq!(
+            classify_offline_error(PipelineError::NoSpeech),
+            DiarizationOutcome::Failed
+        );
+    }
 
     // Model-free guard for the WeSpeaker rank-3 fbank fix: `load_speaker_encoder`
     // must stay wired to polyvoice's `FbankOnnxExtractor` (rank-3 fbank input) via

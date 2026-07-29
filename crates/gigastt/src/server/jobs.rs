@@ -820,6 +820,10 @@ impl JobExecution for RealJobExecutor {
                 raw_codec: None,
                 abort: Some(abort.clone()),
                 progress: Some(progress.clone()),
+                // The async jobs surface has the same silent-degradation shape as
+                // the sync path once diarization is requested; it is not wired to
+                // a notice here (out of scope) and keeps its current behaviour.
+                diarization_outcome: None,
             };
             let handle = tokio::task::spawn_blocking(move || {
                 let _enter = span.enter();

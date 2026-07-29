@@ -180,6 +180,9 @@ pub async fn get_job_result(
             duration: result.duration_s,
             confidence: result.confidence,
             segments,
+            // The async jobs surface does not yet carry a diarization outcome
+            // (see `FileTranscribeOpts::diarization_outcome`), so no notice here.
+            diarization: None,
         })
         .into_response())
     }

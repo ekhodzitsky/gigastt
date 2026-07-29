@@ -43,7 +43,8 @@ pub async fn openai_transcriptions(
     if req.options.stream {
         return openai_transcriptions_stream(state, req.file).await;
     }
-    let result = run_file_transcription(&state, req.file, &ExportParams::default()).await?;
+    // The OpenAI-compatible alias does not expose diarization, so no outcome sink.
+    let result = run_file_transcription(&state, req.file, &ExportParams::default(), None).await?;
     Ok(super::super::openai::render_openai_response(
         &result,
         &req.options,

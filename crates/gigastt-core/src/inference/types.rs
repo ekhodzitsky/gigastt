@@ -1,8 +1,8 @@
 //! File-transcription result types and per-request overrides.
 
 use serde::Serialize;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::sync::{Arc, OnceLock};
 
 use super::state::{WordInfo, aggregate_confidence};
 
@@ -209,6 +209,41 @@ pub fn merge_channel_results(per_channel: Vec<TranscribeResult>) -> TranscribeRe
     }
 }
 
+/// Outcome of an offline speaker-diarization attempt for a file-transcription
+/// request.
+///
+/// Recorded into the caller-supplied [`TranscribeRequest::diarization_outcome`]
+/// sink so a `?diarization=true` request that ends up with no speaker labels can
+/// be surfaced *with a reason* instead of returning an all-empty-speaker
+/// transcript silently (HTTP 200 today). The sink is written only when
+/// diarization was requested; a plain transcript leaves it untouched.
+///
+/// A new variant is additive: the enum is `#[non_exhaustive]`, and downstream
+/// mappers already need a catch-all arm.
+#[derive(Debug, Clone, Copy, PartialEq)]
+#[non_exhaustive]
+pub enum DiarizationOutcome {
+    /// Speaker turns were produced and each word labeled.
+    Applied,
+    /// Requested, but no speaker encoder is available — the model file is
+    /// absent or failed to load, or this build lacks the `diarization` feature.
+    /// Server capability is advertised on `/health` and the WebSocket `Ready`
+    /// message; this reports it per request.
+    NoSpeakerModel,
+    /// The clusterer refused the input because it exceeds the maximum duration
+    /// it can process in a single global pass. Both fields are seconds of audio,
+    /// as reported by the clusterer (not re-derived here).
+    DurationCeiling {
+        /// Length of the submitted audio.
+        input_secs: f64,
+        /// The clusterer's single-pass ceiling.
+        ceiling_secs: f64,
+    },
+    /// Attempted but the diarization pipeline failed for another reason (already
+    /// logged); no numbers to report.
+    Failed,
+}
+
 /// Input audio for a single file-transcription request.
 ///
 /// Prefer constructing a [`TranscribeRequest`] and calling
@@ -269,6 +304,13 @@ pub struct TranscribeRequest<'a> {
     /// it both to reset its no-progress deadline and to drive a real per-window
     /// job progress bar. `None` (the default) reports nothing.
     pub progress: Option<Arc<AtomicU64>>,
+    /// Optional write-once sink for the offline speaker-diarization outcome.
+    /// When set and [`diarization`](Self::diarization) is true, the engine
+    /// records why speakers were or were not labeled ([`DiarizationOutcome`])
+    /// so the caller can surface a capability notice on the response instead of
+    /// returning an all-empty-speaker transcript silently. `None` (the default)
+    /// records nothing, reproducing the historical behaviour.
+    pub diarization_outcome: Option<Arc<OnceLock<DiarizationOutcome>>>,
 }
 
 impl<'a> TranscribeRequest<'a> {
@@ -281,6 +323,7 @@ impl<'a> TranscribeRequest<'a> {
             diarization: false,
             abort: None,
             progress: None,
+            diarization_outcome: None,
         }
     }
 
@@ -315,6 +358,16 @@ impl<'a> TranscribeRequest<'a> {
     /// 16 kHz samples after each long-form window. `None` reports nothing.
     pub fn with_progress(mut self, progress: Option<Arc<AtomicU64>>) -> Self {
         self.progress = progress;
+        self
+    }
+
+    /// Attach a write-once sink that receives the offline-diarization
+    /// [`DiarizationOutcome`] for this request. `None` records nothing.
+    pub fn with_diarization_outcome(
+        mut self,
+        sink: Option<Arc<OnceLock<DiarizationOutcome>>>,
+    ) -> Self {
+        self.diarization_outcome = sink;
         self
     }
 }

@@ -23,9 +23,9 @@ use super::state::{
 };
 use super::tokenizer::{self, Tokenizer};
 use super::types::{
-    DEFAULT_HOTWORDS_BOOST, HotwordError, HotwordOverride, MAX_HOTWORD_PHRASE_CHARS,
-    MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides, TranscribeRequest,
-    TranscribeResult, TranscribeSource, merge_channel_results,
+    DEFAULT_HOTWORDS_BOOST, DiarizationOutcome, HotwordError, HotwordOverride,
+    MAX_HOTWORD_PHRASE_CHARS, MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides,
+    TranscribeRequest, TranscribeResult, TranscribeSource, merge_channel_results,
 };
 use super::{ENCODER_SUBSAMPLING, HOP_LENGTH, N_FFT, N_MELS, SECONDS_PER_FRAME, now_timestamp};
 
@@ -1643,6 +1643,7 @@ impl Engine {
                         &req.overrides,
                         req.hotwords,
                         req.diarization,
+                        req.diarization_outcome.as_deref(),
                         ctl,
                     )
                 }
@@ -1668,6 +1669,7 @@ impl Engine {
                         &req.overrides,
                         req.hotwords,
                         req.diarization,
+                        req.diarization_outcome.as_deref(),
                         ctl,
                     )
                 }
@@ -1678,6 +1680,7 @@ impl Engine {
                 &req.overrides,
                 req.hotwords,
                 req.diarization,
+                req.diarization_outcome.as_deref(),
                 ctl,
             ),
             TranscribeSource::Channels(channels) => self.transcribe_channels_inner(
@@ -2006,6 +2009,7 @@ impl Engine {
     /// validated by [`Engine::validate_overrides`] — an on-request with the
     /// resource missing degrades gracefully (VAD absent → whole-buffer decode)
     /// rather than erroring here.
+    #[allow(clippy::too_many_arguments)] // overrides + diarization sink + controls; bundle later if it grows again
     fn transcribe_samples_with_overrides(
         &self,
         float_samples: &[f32],
@@ -2013,14 +2017,13 @@ impl Engine {
         overrides: &TranscribeOverrides,
         hotwords: Option<&HotwordOverride>,
         diarize: bool,
+        diar_sink: Option<&std::sync::OnceLock<DiarizationOutcome>>,
         ctl: DecodeControls,
     ) -> Result<TranscribeResult, GigasttError> {
         // `diarize` is opt-in per request: offline speaker diarization only runs
         // when the caller asked for it (REST `?diarization=true`). A plain
         // transcript — and the `channels=split` dual-mono fallback — must carry no
         // speaker labels, so the default paths pass `false`.
-        #[cfg(not(feature = "diarization"))]
-        let _ = diarize;
         let wall_start = std::time::Instant::now();
         let duration_s = float_samples.len() as f64 / 16000.0;
 
@@ -2028,15 +2031,34 @@ impl Engine {
         let mut words =
             self.decode_words_for_samples(float_samples, triplet, overrides, hotwords, ctl)?;
 
+        // Record *why* speakers were or were not labeled into the caller's sink
+        // so a `?diarization=true` request that produced no labels can be
+        // surfaced with a reason instead of an all-empty-speaker transcript.
         #[cfg(feature = "diarization")]
-        if diarize
-            && let Some(enc) = self
+        if diarize {
+            let outcome = match self
                 .speaker_encoder
                 .as_ref()
                 .and_then(|lazy| lazy.get_or_load())
-            && let Some(turns) = diarization::run_offline(&enc, float_samples)
-        {
-            diarization::assign_speakers_by_midpoint(&turns, &mut words);
+            {
+                None => DiarizationOutcome::NoSpeakerModel,
+                Some(enc) => match diarization::run_offline(&enc, float_samples) {
+                    Ok(turns) => {
+                        diarization::assign_speakers_by_midpoint(&turns, &mut words);
+                        DiarizationOutcome::Applied
+                    }
+                    Err(declined) => declined,
+                },
+            };
+            if let Some(sink) = diar_sink {
+                let _ = sink.set(outcome);
+            }
+        }
+        // A build compiled without the `diarization` feature can never label
+        // speakers; report that per request rather than silently dropping the flag.
+        #[cfg(not(feature = "diarization"))]
+        if diarize && let Some(sink) = diar_sink {
+            let _ = sink.set(DiarizationOutcome::NoSpeakerModel);
         }
 
         let result = self.finish_transcribe_result(words, duration_s, overrides);
@@ -5451,11 +5473,40 @@ vocab = "pack_vocab.txt"
                     },
                     None,
                     false,
+                    None,
                     super::super::DecodeControls::default(),
                 )
                 .expect("vad-off decode");
             assert_eq!(baseline.text, with_vad_off.text);
             assert_eq!(baseline.words.len(), with_vad_off.words.len());
+        }
+
+        #[test]
+        fn test_diarization_requested_without_speaker_model_records_notice() {
+            use crate::inference::{DiarizationOutcome, TranscribeRequest, TranscribeSource};
+            use std::sync::{Arc, OnceLock};
+
+            // A `?diarization=true` request against an engine with no speaker
+            // model must record `NoSpeakerModel` in the outcome sink so the
+            // server can surface it, instead of silently returning an
+            // all-empty-speaker transcript. Model-free: the tiny mock engine
+            // never ships a WeSpeaker model, and a build without the
+            // `diarization` feature reports the same outcome via the same sink.
+            let (engine, _tmp) = tiny_mock_engine();
+            let mut guard = engine.pool.checkout_blocking().expect("checkout");
+            let samples = vec![0.0f32; 100];
+            let sink: Arc<OnceLock<DiarizationOutcome>> = Arc::new(OnceLock::new());
+            let req = TranscribeRequest::new(TranscribeSource::Samples(&samples))
+                .with_diarization(true)
+                .with_diarization_outcome(Some(sink.clone()));
+            engine
+                .transcribe_request(req, &mut guard)
+                .expect("decode should succeed");
+            assert_eq!(
+                sink.get().copied(),
+                Some(DiarizationOutcome::NoSpeakerModel),
+                "diarization requested without a model must be reported, not silent"
+            );
         }
 
         #[test]

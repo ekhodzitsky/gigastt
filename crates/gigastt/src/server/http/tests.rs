@@ -46,6 +46,7 @@ fn test_transcribe_response_serialization() {
         duration: 1.5,
         confidence: None,
         segments: None,
+        diarization: None,
     };
     let json = serde_json::to_string(&resp).unwrap();
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -1034,6 +1035,7 @@ fn test_transcribe_response_omits_segments_when_none() {
         duration: 1.5,
         confidence: None,
         segments: None,
+        diarization: None,
     };
     let v = serde_json::to_value(&resp).unwrap();
     assert!(v.get("segments").is_none());
@@ -1052,6 +1054,7 @@ fn test_transcribe_response_confidence_present_only_when_some() {
         duration: 1.5,
         confidence: Some(0.87),
         segments: None,
+        diarization: None,
     };
     let v = serde_json::to_value(&with).unwrap();
     let c = v["confidence"].as_f64().expect("numeric confidence");
@@ -1063,6 +1066,7 @@ fn test_transcribe_response_confidence_present_only_when_some() {
         duration: 0.0,
         confidence: None,
         segments: None,
+        diarization: None,
     };
     let v = serde_json::to_value(&without).unwrap();
     assert!(v.get("confidence").is_none());
@@ -1082,6 +1086,7 @@ fn test_transcribe_response_includes_segments_when_present() {
         duration: 1.0,
         confidence: None,
         segments: Some(to_segments(&words, 80, 14)),
+        diarization: None,
     };
     let v = serde_json::to_value(&resp).unwrap();
     let segments = v["segments"].as_array().unwrap();
