@@ -125,6 +125,12 @@ gigastt serve [OPTIONS]
                                 disabled). Env: GIGASTT_ENABLE_JOBS.
   --jobs-ttl-secs <N>           TTL for finished/failed/cancelled jobs before eviction
                                 [default: 3600]. Env: GIGASTT_JOBS_TTL_SECS.
+  --max-audio-secs <N>          Reject audio longer than N seconds on every path; 0 leaves
+                                the streaming file path unlimited [default: 0]. Paths that
+                                still need the whole buffer (VAD, diarization,
+                                channels=split, telephony) keep their own 1800 s ceiling
+                                regardless. Over the limit returns 413 audio_too_long.
+                                Env: GIGASTT_MAX_AUDIO_SECS.
   --jobs-max <N>                Max jobs kept in memory; POST /v1/jobs returns 429 when
                                 full [default: 100]. Env: GIGASTT_JOBS_MAX.
   --jobs-max-bytes <N>          Max total bytes of buffered job uploads kept in memory;
