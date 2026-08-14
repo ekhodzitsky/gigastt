@@ -2924,9 +2924,9 @@ dependencies = [
 
 [[package]]
 name = "polyvoice"
-version = "0.12.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "819bba4acf4c69f16a0478730e29fc6e0d2d5203f9d24f8aafe0819e7fd22afd"
+checksum = "641c28a7011e831ca8139f5c40ac4324b7ac466a9d9f9edac3df74c0f49a283f"
 dependencies = [
  "anyhow",
  "hound",

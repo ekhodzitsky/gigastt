@@ -92,7 +92,7 @@ audio-codec = { version = "0.3", default-features = false, optional = true }
 opus-rs = { version = "0.1", optional = true }
 bytes = "1"
 gigastt-quantize = { version = "2.17.0", path = "../gigastt-quantize", optional = true }
-polyvoice = { version = "0.12.0", features = ["onnx"], optional = true }
+polyvoice = { version = "0.14.0", features = ["onnx"], optional = true }
 parking_lot = "0.12"
 libc = "0.2"
 tar = { version = "0.4", optional = true }
