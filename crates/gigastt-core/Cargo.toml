@@ -85,7 +85,7 @@ symphonia = { version = "0.6", features = ["aac", "isomp4", "mkv", "mp3", "ogg",
 # Telephony codecs (G.711 A/μ-law tables, G.722 ADPCM) for RTP dumps and
 # Asterisk-style raw captures. `default-features = false` drops the opus
 # feature so we do not pull a second Opus implementation next to opus-rs.
-audio-codec = { version = "0.3", default-features = false, optional = true }
+audio-codec = { version = "0.4", default-features = false, optional = true }
 # Pure-Rust Opus decoder (libopus port, BSD-3-Clause). Symphonia demuxes
 # OGG/Opus containers but ships no Opus decoder, so packets are decoded with
 # this crate (decoder only — the encoder is not used).

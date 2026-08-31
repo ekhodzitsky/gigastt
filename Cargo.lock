@@ -182,12 +182,12 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-codec"
-version = "0.3.40"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1affd3ba1faa8ae5c47c98f6c5e36eb321f4cb4567d7a7e1a8f3452fe40d57a"
+checksum = "81c2b027ac91f3fb0c9c001e43538ea4523c7c3e2bc3feb4f380abac07604490"
 dependencies = [
- "anyhow",
  "g729-sys",
+ "libm",
 ]
 
 [[package]]
@@ -1320,12 +1320,9 @@ dependencies = [
 
 [[package]]
 name = "g729-sys"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c0115766e9b2dcbc585946d207299fe2fce9bf0b8d4ba0d3592c6e0f66fe116"
-dependencies = [
- "anyhow",
-]
+checksum = "582ee481959b69a3557c190d4c038fb8c1ff2319be9ef84ea9c98faeffebbf98"
 
 [[package]]
 name = "gemm"
