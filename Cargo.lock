@@ -1664,7 +1664,7 @@ dependencies = [
  "reqwest",
  "rubato",
  "rustfft",
- "ryf",
+ "ryf 0.7.2",
  "safetensors 0.8.0",
  "serde",
  "serde_json",
@@ -1814,12 +1814,6 @@ name = "hmac-sha256"
 version = "1.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec9d92d097f4749b64e8cc33d924d9f40a2d4eb91402b458014b781f5733d60f"
-
-[[package]]
-name = "hound"
-version = "3.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62adaabb884c94955b19907d60019f4e145d091c75345379e70d1ee696f7854f"
 
 [[package]]
 name = "http"
@@ -2922,15 +2916,15 @@ dependencies = [
 
 [[package]]
 name = "polyvoice"
-version = "0.18.0"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7de72d6f3051f7197768f40b6622af6c7d2ac62bb3bb401178e41f4bb3531e94"
+checksum = "670555990e904cd53ac77a54c1e9e71ee372687f9caf893f3016732005240283"
 dependencies = [
  "anyhow",
- "hound",
  "ndarray",
  "ort",
  "realfft",
+ "ryf 0.3.2",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
@@ -3568,6 +3562,12 @@ dependencies = [
  "tempfile",
  "wait-timeout",
 ]
+
+[[package]]
+name = "ryf"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11e6d16ce08a661ff9d22b1303115cf61b40bfd7de8d1d17c7302d1a2b05d93e"
 
 [[package]]
 name = "ryf"
