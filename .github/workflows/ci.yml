@@ -770,7 +770,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # MSRV floor: polyvoice 0.18 (rten-simd) declares rust-version 1.94.
-      - uses: dtolnay/rust-toolchain@1.94
+      - uses: dtolnay/rust-toolchain@1.120
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
       - uses: Swatinem/rust-cache@v2
