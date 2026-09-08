@@ -769,7 +769,9 @@ jobs:
     name: MSRV (1.94)
     steps:
       - uses: actions/checkout@v7
-      # MSRV floor: polyvoice 0.18 (rten-simd) declares rust-version 1.94.
+      # MSRV floor: polyvoice (rten-simd) declares rust-version 1.94. The
+      # toolchain tag is the pin — Dependabot must not bump it (see
+      # dependabot.yml ignore).
       - uses: dtolnay/rust-toolchain@1.94
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler

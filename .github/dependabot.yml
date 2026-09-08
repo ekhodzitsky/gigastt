@@ -57,3 +57,8 @@ updates:
     commit-message:
       prefix: ci
       include: scope
+    # dtolnay/rust-toolchain@1.94 in the MSRV job is a deliberate pin
+    # (the tag selects the toolchain that proves the MSRV floor), not a
+    # stale action version — never bump it.
+    ignore:
+      - dependency-name: 'dtolnay/rust-toolchain'
