@@ -36,6 +36,8 @@ fn test_cli_cache_gc_parsing() {
         "/tmp/models",
         "--dry-run",
         "--dedupe",
+        "--optimized-cache-dir",
+        "/var/cache/gigastt",
     ])
     .expect("parse cache-gc");
     match cli.command {
@@ -43,10 +45,56 @@ fn test_cli_cache_gc_parsing() {
             model_dir,
             dry_run,
             dedupe,
+            optimized_cache_dir,
         } => {
             assert_eq!(model_dir, "/tmp/models");
             assert!(dry_run);
             assert!(dedupe);
+            assert_eq!(optimized_cache_dir.as_deref(), Some("/var/cache/gigastt"));
+        }
+        _ => panic!("expected CacheGc"),
+    }
+}
+
+#[test]
+fn test_cli_cache_gc_optimized_cache_dir_defaults_to_none() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    let _restore = EnvRestore(
+        "GIGASTT_OPTIMIZED_CACHE_DIR",
+        std::env::var("GIGASTT_OPTIMIZED_CACHE_DIR").ok(),
+    );
+    unsafe {
+        std::env::remove_var("GIGASTT_OPTIMIZED_CACHE_DIR");
+    }
+    let cli = Cli::try_parse_from(["gigastt", "cache-gc"]).expect("parse cache-gc");
+    match cli.command {
+        Commands::CacheGc {
+            optimized_cache_dir,
+            ..
+        } => {
+            assert_eq!(optimized_cache_dir, None);
+        }
+        _ => panic!("expected CacheGc"),
+    }
+}
+
+#[test]
+fn test_cli_cache_gc_optimized_cache_dir_env_var() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    let _restore = EnvRestore(
+        "GIGASTT_OPTIMIZED_CACHE_DIR",
+        std::env::var("GIGASTT_OPTIMIZED_CACHE_DIR").ok(),
+    );
+    unsafe {
+        std::env::set_var("GIGASTT_OPTIMIZED_CACHE_DIR", "/var/cache/gigastt");
+    }
+    let cli = Cli::try_parse_from(["gigastt", "cache-gc"]).expect("parse cache-gc");
+    match cli.command {
+        Commands::CacheGc {
+            optimized_cache_dir,
+            ..
+        } => {
+            assert_eq!(optimized_cache_dir.as_deref(), Some("/var/cache/gigastt"));
         }
         _ => panic!("expected CacheGc"),
     }

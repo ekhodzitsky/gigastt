@@ -147,6 +147,15 @@ pub(crate) struct ServeArgs {
     #[arg(long, env = "GIGASTT_VAD_MODEL_DIR", default_value_t = model::default_vad_model_dir())]
     pub(crate) vad_model_dir: String,
 
+    /// Directory for the CPU encoder's ORT optimized-graph cache
+    /// (`*_optimized.ort`). Defaults to `<model-dir>/optimized_cache`; set this
+    /// (e.g. to a systemd `CacheDirectory`) when the model directory is
+    /// read-only. An unwritable cache dir is skipped with a warning instead of
+    /// failing boot. No effect on CoreML / CUDA builds. Env:
+    /// GIGASTT_OPTIMIZED_CACHE_DIR.
+    #[arg(long, env = "GIGASTT_OPTIMIZED_CACHE_DIR", value_name = "PATH")]
+    pub(crate) optimized_cache_dir: Option<String>,
+
     /// Streaming utterance-end policy for WebSocket sessions.
     /// `auto` (default): VAD silence if `--vad`, else decoder blank-run (~0.6 s).
     /// `assistant`: only VAD silence ends utterances (use with `--vad`); blank-run
@@ -443,6 +452,7 @@ pub(crate) async fn run_serve(
         stream_max_window_secs: Some(args.stream_max_window_secs),
         stream_stable_prefix: args.stream_stable_prefix,
         file_window_concurrency: args.file_window_concurrency.max(1),
+        optimized_cache_dir: args.optimized_cache_dir,
     };
     let build_engine: server::EngineBuilder = {
         let recipe = recipe.clone();

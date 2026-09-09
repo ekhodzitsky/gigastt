@@ -119,11 +119,22 @@ pub struct DedupeReport {
 ///
 /// With `dry_run`, reports what would be deleted without removing files.
 pub fn prune_optimized_cache(model_dir: &Path, dry_run: bool) -> Result<OptimizedCachePruneReport> {
+    prune_optimized_cache_dir(&model_dir.join("optimized_cache"), model_dir, dry_run)
+}
+
+/// Like [`prune_optimized_cache`], but prunes an explicit cache directory
+/// instead of the default `model_dir/optimized_cache` — for installs where
+/// the cache was relocated via `--optimized-cache-dir`. Keep names are still
+/// resolved from the installed heads under `model_dir`.
+pub fn prune_optimized_cache_dir(
+    cache_dir: &Path,
+    model_dir: &Path,
+    dry_run: bool,
+) -> Result<OptimizedCachePruneReport> {
     let mut report = OptimizedCachePruneReport {
         dry_run,
         ..Default::default()
     };
-    let cache_dir = model_dir.join("optimized_cache");
     if !cache_dir.is_dir() {
         return Ok(report);
     }
@@ -150,7 +161,7 @@ pub fn prune_optimized_cache(model_dir: &Path, dry_run: bool) -> Result<Optimize
         return Ok(report);
     }
 
-    for entry in std::fs::read_dir(&cache_dir)
+    for entry in std::fs::read_dir(cache_dir)
         .with_context(|| format!("failed to read optimized_cache at {}", cache_dir.display()))?
     {
         let entry = entry.context("failed to read optimized_cache entry")?;

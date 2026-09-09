@@ -42,6 +42,53 @@ fn test_cli_serve_profile_edge_defaults_pool_and_vad_flags() {
 }
 
 #[test]
+fn test_cli_serve_optimized_cache_dir_flag_and_env() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    let _restore = EnvRestore(
+        "GIGASTT_OPTIMIZED_CACHE_DIR",
+        std::env::var("GIGASTT_OPTIMIZED_CACHE_DIR").ok(),
+    );
+    unsafe {
+        std::env::remove_var("GIGASTT_OPTIMIZED_CACHE_DIR");
+    }
+    // Unset → None: the engine keeps `<model-dir>/optimized_cache`.
+    let cli = Cli::parse_from(["gigastt", "serve"]);
+    match cli.command {
+        Commands::Serve(ServeArgs {
+            optimized_cache_dir,
+            ..
+        }) => assert_eq!(optimized_cache_dir, None),
+        _ => panic!("expected Serve"),
+    }
+    // Explicit flag wins.
+    let cli = Cli::parse_from([
+        "gigastt",
+        "serve",
+        "--optimized-cache-dir",
+        "/var/cache/gigastt",
+    ]);
+    match cli.command {
+        Commands::Serve(ServeArgs {
+            optimized_cache_dir,
+            ..
+        }) => assert_eq!(optimized_cache_dir.as_deref(), Some("/var/cache/gigastt")),
+        _ => panic!("expected Serve"),
+    }
+    // Env var fallback.
+    unsafe {
+        std::env::set_var("GIGASTT_OPTIMIZED_CACHE_DIR", "/tmp/gigastt-cache");
+    }
+    let cli = Cli::parse_from(["gigastt", "serve"]);
+    match cli.command {
+        Commands::Serve(ServeArgs {
+            optimized_cache_dir,
+            ..
+        }) => assert_eq!(optimized_cache_dir.as_deref(), Some("/tmp/gigastt-cache")),
+        _ => panic!("expected Serve"),
+    }
+}
+
+#[test]
 fn test_cli_serve_encoder_intra_threads_default() {
     // Unset → None, so the default resolves from the pool size at load time.
     let _guard = ENV_LOCK.lock().unwrap();

@@ -31,6 +31,14 @@ gigastt serve [OPTIONS]
   --port <PORT>             Listen port [default: 9876]
   --host <HOST>             Bind address [default: 127.0.0.1]
   --model-dir <DIR>         Model directory [default: ~/.gigastt/models]
+  --optimized-cache-dir <PATH>  ORT optimized-graph cache directory
+                            [default: <model-dir>/optimized_cache]. Where the
+                            CPU encoder writes/reads its *_optimized.ort graphs.
+                            If the directory cannot be created or is not
+                            writable, the server logs a warning and starts
+                            without the cache (slower cold start, higher
+                            per-session RAM) instead of failing.
+                            Env: GIGASTT_OPTIMIZED_CACHE_DIR.
   --model-variant <V>       Recognition head: rnnt | e2e_rnnt | ml_ctc | ml_ctc_large.
                             Omit to use the model already installed; fresh installs
                             default to rnnt (lower WER, no punctuation). e2e_rnnt keeps
@@ -343,10 +351,17 @@ gigastt quantize [OPTIONS]          # packaging only (needs local FP32 source)
 
 gigastt cache-gc [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]
+  --optimized-cache-dir <PATH>  ORT optimized-graph cache directory to prune
+                         [default: <model-dir>/optimized_cache]. Pass the same
+                         path `serve` uses (e.g. /var/cache/gigastt under the
+                         shipped systemd unit) so stale *_optimized.ort graphs
+                         are pruned from the right place.
+                         Env: GIGASTT_OPTIMIZED_CACHE_DIR.
   --dry-run              Report reclaimable files without deleting / hardlinking
   --dedupe               Also hardlink content-identical files (SHA-256 groups)
 
-  Removes optimized_cache/*_optimized.{ort,onnx} graphs that no installed head
+  Removes optimized_cache/ (or --optimized-cache-dir) *_optimized.{ort,onnx}
+  graphs that no installed head
   can load, keeping the graph for the preferred encoder of every head whose
   weights are present in the directory (INT8 preferred). Also prunes stale
   CoreML compiled-model caches under coreml_cache/: keeps only the current

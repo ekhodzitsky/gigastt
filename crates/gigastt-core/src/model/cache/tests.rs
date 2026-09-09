@@ -196,6 +196,33 @@ fn test_prune_optimized_cache_no_head_leaves_cache() {
 }
 
 #[test]
+fn test_prune_optimized_cache_dir_prunes_explicit_dir() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    // Active rnnt INT8 install with a relocated cache (e.g. systemd
+    // CacheDirectory) outside the model dir.
+    for f in ModelVariant::Rnnt.prequantized_files() {
+        write_file(&dir.join(f), b"stub");
+    }
+    let cache = tmp.path().join("relocated_cache");
+    let keep = cache.join("v3_rnnt_encoder_int8_optimized.ort");
+    let zombie = cache.join("v3_e2e_rnnt_encoder_int8_optimized.ort");
+    write_file(&keep, &[1u8; 100]);
+    write_file(&zombie, &[2u8; 200]);
+
+    let report = prune_optimized_cache_dir(&cache, dir, false).unwrap();
+    assert_eq!(report.kept, vec![keep.clone()]);
+    assert_eq!(report.removed, vec![zombie.clone()]);
+    assert!(keep.exists());
+    assert!(!zombie.exists());
+
+    // A missing explicit cache dir is a no-op, same as the default path.
+    let report = prune_optimized_cache_dir(&tmp.path().join("absent"), dir, false).unwrap();
+    assert!(report.kept.is_empty());
+    assert!(report.removed.is_empty());
+}
+
+#[test]
 fn test_prune_coreml_cache_keeps_current_version_drops_stale() {
     let tmp = tempfile::tempdir().unwrap();
     let dir = tmp.path();

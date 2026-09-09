@@ -275,6 +275,19 @@ pub(crate) fn production_factory_variant(
     model_dir: &Path,
     variant: Option<crate::model::ModelVariant>,
 ) -> Box<dyn RuntimeFactory> {
+    production_factory_variant_with_cache(model_dir, variant, None)
+}
+
+/// Like [`production_factory_variant`], with an optional override for the CPU
+/// encoder's ORT optimized-graph cache directory. `None` keeps the default
+/// `<model_dir>/optimized_cache`; `Some(dir)` relocates it (e.g. a writable
+/// `CacheDirectory` when the model dir is read-only under systemd
+/// `ProtectSystem=strict`).
+pub(crate) fn production_factory_variant_with_cache(
+    model_dir: &Path,
+    variant: Option<crate::model::ModelVariant>,
+    optimized_cache_dir: Option<PathBuf>,
+) -> Box<dyn RuntimeFactory> {
     let backend = select_backend(variant);
     // The Candle/ANE backends are rnnt-only (34-token char vocab,
     // `EncoderConfig::v3_rnnt()`); for any other head they would produce wrong
@@ -307,11 +320,13 @@ pub(crate) fn production_factory_variant(
         // Remeasure the pool-1→2 RSS after ORT upgrades. Safe no-op if unused.
         let prepacked = std::sync::Arc::new(ort::session::builder::PrepackedWeights::new());
         OrtFactory::cpu()
-            .with_optimized_cache_dir(model_dir.join("optimized_cache"))
+            .with_optimized_cache_dir(
+                optimized_cache_dir.unwrap_or_else(|| model_dir.join("optimized_cache")),
+            )
             .with_prepacked_weights(prepacked)
     };
     #[cfg(any(feature = "coreml", feature = "cuda"))]
-    let _ = model_dir;
+    let _ = (model_dir, optimized_cache_dir);
     Box::new(factory)
 }
 

@@ -125,6 +125,10 @@ pub struct EngineRecipe {
     /// Max pooled triplets one file decode may hold for overlapping-window
     /// parallelism. `1` keeps the serial loop (default).
     pub file_window_concurrency: usize,
+    /// Override for the CPU encoder's ORT optimized-graph cache directory
+    /// (serve `--optimized-cache-dir`). `None` keeps the default
+    /// `<model_dir>/optimized_cache`.
+    pub optimized_cache_dir: Option<String>,
 }
 
 impl EngineRecipe {
@@ -170,6 +174,7 @@ impl EngineRecipe {
             stream_max_window_secs: None,
             stream_stable_prefix: false,
             file_window_concurrency: 1,
+            optimized_cache_dir: None,
         }
     }
 
@@ -227,13 +232,16 @@ impl EngineRecipe {
                 .map(|n| n.get())
                 .unwrap_or(1),
         );
-        let mut engine = inference::Engine::load_with_pools_threads_variant(
+        let mut engine = inference::Engine::load_with_pools_threads_variant_cache(
             &self.model_dir,
             Some(resolved),
             self.pool_size,
             self.pool_min_size,
             self.batch_pool_size,
             resolved_intra_threads,
+            self.optimized_cache_dir
+                .as_deref()
+                .map(std::path::PathBuf::from),
         )?
         .with_punctuator(punctuator)
         .with_itn(resolve_itn(self.itn, resolved))

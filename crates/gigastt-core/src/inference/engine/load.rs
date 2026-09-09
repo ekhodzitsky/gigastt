@@ -94,6 +94,32 @@ impl Engine {
         batch_pool_size: usize,
         encoder_intra_threads: usize,
     ) -> Result<Self, GigasttError> {
+        Self::load_with_pools_threads_variant_cache(
+            model_dir,
+            variant,
+            pool_size,
+            min_size,
+            batch_pool_size,
+            encoder_intra_threads,
+            None,
+        )
+    }
+
+    /// Like [`Engine::load_with_pools_threads_variant`], with an optional
+    /// override for the CPU encoder's ORT optimized-graph cache directory.
+    /// `None` keeps the default `<model_dir>/optimized_cache`; `Some(dir)`
+    /// relocates the cache (e.g. a writable cache directory when the model
+    /// dir is read-only). Ignored by the CoreML / CUDA / candle builds.
+    #[allow(clippy::too_many_arguments)]
+    pub fn load_with_pools_threads_variant_cache(
+        model_dir: &str,
+        variant: Option<ModelVariant>,
+        pool_size: usize,
+        min_size: usize,
+        batch_pool_size: usize,
+        encoder_intra_threads: usize,
+        optimized_cache_dir: Option<PathBuf>,
+    ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
         // Resolve the head once, up front: an explicit `variant` wins, else
         // manifest.toml architecture, else detect from disk (rnnt precedence).
@@ -117,7 +143,8 @@ impl Engine {
         let encoder_intra_threads =
             Self::clamp_encoder_intra_threads(pool_size, encoder_intra_threads, logical_cpus);
 
-        let factory = production_factory_variant(dir, Some(variant));
+        let factory =
+            production_factory_variant_with_cache(dir, Some(variant), optimized_cache_dir);
         Self::load_with_factory(
             dir,
             Some(variant),

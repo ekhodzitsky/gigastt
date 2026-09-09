@@ -79,6 +79,40 @@ fn optimized_cache_path(cache_dir: &Path, model_path: &Path) -> std::path::PathB
     cache_dir.join(basename)
 }
 
+/// Decide whether the ORT optimized-graph cache under `cache_dir` is usable:
+/// the directory must be creatable and writable. Read-only model installs
+/// (e.g. systemd `ProtectSystem=strict` with models under `/usr/share`) make
+/// either step fail with `EROFS`; boot must degrade to a cache-less load
+/// (slower cold start, higher per-session RAM) instead of failing, so both
+/// failures only warn and return `None`. Writability is probed by creating
+/// and deleting a temp file — an existing-but-read-only dir passes
+/// `create_dir_all` yet still cannot hold the cache.
+fn usable_optimized_cache_dir(cache_dir: &Path) -> Option<std::path::PathBuf> {
+    if let Err(e) = std::fs::create_dir_all(cache_dir) {
+        tracing::warn!(
+            path = %cache_dir.display(),
+            error = %e,
+            "encoder: optimized graph cache directory cannot be created; loading source model without the cache"
+        );
+        return None;
+    }
+    let probe = cache_dir.join(format!(".write-probe-{}", std::process::id()));
+    match std::fs::File::create(&probe) {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            Some(cache_dir.to_path_buf())
+        }
+        Err(e) => {
+            tracing::warn!(
+                path = %cache_dir.display(),
+                error = %e,
+                "encoder: optimized graph cache directory is not writable; loading source model without the cache"
+            );
+            None
+        }
+    }
+}
+
 impl OrtRuntime {
     /// Assemble the session builder with prepacked weights, execution
     /// providers, and (CPU-only) thread counts. Cheap: no model parsing
@@ -206,10 +240,12 @@ impl Runtime for OrtRuntime {
 
         if self.provider.is_cpu()
             && is_encoder
-            && let Some(cache_dir) = &self.optimized_cache_dir
+            && let Some(cache_dir) = self
+                .optimized_cache_dir
+                .as_deref()
+                .and_then(usable_optimized_cache_dir)
         {
-            std::fs::create_dir_all(cache_dir).map_err(|e| load_failed(model_path, e))?;
-            let cache_path = optimized_cache_path(cache_dir, model_path);
+            let cache_path = optimized_cache_path(&cache_dir, model_path);
             tracing::info!(
                 path = %cache_path.display(),
                 "encoder: loading source model and refreshing optimized graph cache"
@@ -326,5 +362,49 @@ mod tests {
             optimized_cache_path(cache_dir, encoder),
             Path::new("/models/optimized_cache/v3_rnnt_encoder_int8_optimized.ort")
         );
+    }
+
+    #[test]
+    fn test_usable_optimized_cache_dir_creates_and_returns_dir() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("optimized_cache");
+        assert!(!cache_dir.exists());
+        assert_eq!(
+            usable_optimized_cache_dir(&cache_dir),
+            Some(cache_dir.clone())
+        );
+        assert!(cache_dir.is_dir());
+        // The write probe must not leave files behind.
+        assert_eq!(std::fs::read_dir(&cache_dir).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn test_usable_optimized_cache_dir_uncreatable_returns_none() {
+        let tmp = tempfile::tempdir().unwrap();
+        // A path under a regular file fails `create_dir_all` (ENOTDIR) on
+        // every platform and privilege level — no reliance on permissions.
+        let blocker = tmp.path().join("blocker");
+        write_file(&blocker, b"not a dir");
+        let cache_dir = blocker.join("optimized_cache");
+        assert_eq!(usable_optimized_cache_dir(&cache_dir), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_usable_optimized_cache_dir_read_only_returns_none() {
+        // Root bypasses directory write permission bits, so the probe would
+        // succeed and this test cannot exercise the read-only path.
+        if unsafe { libc::geteuid() } == 0 {
+            return;
+        }
+        use std::os::unix::fs::PermissionsExt;
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("optimized_cache");
+        std::fs::create_dir_all(&cache_dir).unwrap();
+        std::fs::set_permissions(&cache_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
+        // An existing-but-read-only dir passes `create_dir_all` yet cannot
+        // hold the cache: the write probe must degrade to `None`.
+        assert_eq!(usable_optimized_cache_dir(&cache_dir), None);
+        std::fs::set_permissions(&cache_dir, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
 }

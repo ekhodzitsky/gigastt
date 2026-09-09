@@ -30,9 +30,19 @@ pub(crate) fn run_quantize(model_dir: String, force: bool) -> anyhow::Result<()>
 }
 
 /// Prune optimized/CoreML caches and optionally content-hash-dedupe the model dir.
-pub(crate) fn run_cache_gc(model_dir: String, dry_run: bool, dedupe: bool) -> anyhow::Result<()> {
+pub(crate) fn run_cache_gc(
+    model_dir: String,
+    dry_run: bool,
+    dedupe: bool,
+    optimized_cache_dir: Option<String>,
+) -> anyhow::Result<()> {
     let dir = std::path::Path::new(&model_dir);
-    let prune = model::prune_optimized_cache(dir, dry_run)?;
+    let prune = match optimized_cache_dir {
+        Some(cache_dir) => {
+            model::prune_optimized_cache_dir(std::path::Path::new(&cache_dir), dir, dry_run)?
+        }
+        None => model::prune_optimized_cache(dir, dry_run)?,
+    };
     let action = if dry_run { "would free" } else { "freed" };
     println!(
         "optimized_cache: kept {} graph(s), removed {} ({} {:.1} MiB)",
@@ -192,7 +202,32 @@ mod tests {
     #[test]
     fn test_run_cache_gc_empty_dir_is_ok() {
         let tmp = tempfile::tempdir().expect("tempdir");
-        run_cache_gc(tmp.path().display().to_string(), true, true).expect("empty dry-run");
-        run_cache_gc(tmp.path().display().to_string(), false, false).expect("empty prune");
+        run_cache_gc(tmp.path().display().to_string(), true, true, None).expect("empty dry-run");
+        run_cache_gc(tmp.path().display().to_string(), false, false, None).expect("empty prune");
+    }
+
+    #[test]
+    fn test_run_cache_gc_prunes_explicit_optimized_cache_dir() {
+        let tmp = tempfile::tempdir().expect("tempdir");
+        let model_dir = tmp.path().join("models");
+        // rnnt INT8 stub so the prune has a keep-name.
+        std::fs::create_dir_all(&model_dir).unwrap();
+        std::fs::write(model_dir.join("v3_rnnt_encoder_int8.onnx"), b"int8").unwrap();
+        let cache_dir = tmp.path().join("elsewhere");
+        std::fs::create_dir_all(&cache_dir).unwrap();
+        let keep = cache_dir.join("v3_rnnt_encoder_int8_optimized.ort");
+        let zombie = cache_dir.join("v3_e2e_rnnt_encoder_int8_optimized.ort");
+        std::fs::write(&keep, b"keep").unwrap();
+        std::fs::write(&zombie, b"zombie").unwrap();
+
+        run_cache_gc(
+            model_dir.display().to_string(),
+            false,
+            false,
+            Some(cache_dir.display().to_string()),
+        )
+        .expect("prune explicit cache dir");
+        assert!(keep.exists());
+        assert!(!zombie.exists());
     }
 }

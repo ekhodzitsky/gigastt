@@ -4,8 +4,9 @@
 # (see packaging/offline/ and docs/deployment.md, "Air-gapped / offline
 # installation").
 #
-# Compatibility: every directive below is available in systemd 241 or older,
-# so the unit works on Astra Linux, RED OS and ALT without modification.
+# Compatibility: every directive below is available in systemd 241 or older
+# (CacheDirectory since 235), so the unit works on Astra Linux, RED OS and
+# ALT without modification.
 # Do NOT add directives introduced after 241 (e.g. ProtectProc, ProtectClock,
 # ProtectHostname, RestrictSUIDSGID) — they break on those targets.
 
@@ -26,7 +27,10 @@ EnvironmentFile=-/etc/gigastt/gigastt.env
 # Model and punctuation-model directories are passed explicitly: the gigastt
 # user has no $HOME, so the default ~/.gigastt/models lookup would not work.
 # Both directories are read-only at runtime (all models are pre-installed);
-# gigastt never writes to them once the files are present.
+# gigastt never writes to them once the files are present. The ORT
+# optimized-graph cache is the one write the CPU encoder needs — it is
+# redirected to /var/cache/gigastt via --optimized-cache-dir and
+# CacheDirectory below, keeping the model dir genuinely read-only.
 #
 # The server binds 127.0.0.1:9876 by default (loopback only). Do NOT add
 # --bind-all here; expose the API through a reverse proxy instead
@@ -34,13 +38,20 @@ EnvironmentFile=-/etc/gigastt/gigastt.env
 # with `systemctl edit gigastt` instead of editing this file.
 ExecStart=/usr/bin/gigastt serve \
     --model-dir /usr/share/gigastt/models \
-    --punct-model-dir /usr/share/gigastt/models/punct
+    --punct-model-dir /usr/share/gigastt/models/punct \
+    --optimized-cache-dir /var/cache/gigastt
+
+# Writable scratch for the ORT optimized-graph cache (systemd 235+): systemd
+# creates /var/cache/gigastt owned by the gigastt user and keeps it writable
+# despite ProtectSystem=strict below.
+CacheDirectory=gigastt
 
 Restart=on-failure
 RestartSec=5
 
-# Hardening. The server needs no capabilities, no writable filesystem (models
-# are pre-installed, logs go to the journal), and no devices/kernel knobs.
+# Hardening. The server needs no capabilities, no writable filesystem beyond
+# the CacheDirectory above (models are pre-installed, logs go to the
+# journal), and no devices/kernel knobs.
 NoNewPrivileges=true
 CapabilityBoundingSet=
 ProtectSystem=strict

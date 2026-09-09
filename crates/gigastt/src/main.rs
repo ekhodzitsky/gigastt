@@ -113,6 +113,13 @@ enum Commands {
         /// (SHA-256 groups). Off by default — optimized_cache prune always runs.
         #[arg(long, default_value_t = false)]
         dedupe: bool,
+
+        /// Directory of the ORT optimized-graph cache to prune. Defaults to
+        /// `<model-dir>/optimized_cache`; set this when the cache was
+        /// relocated via `serve --optimized-cache-dir`. Env:
+        /// GIGASTT_OPTIMIZED_CACHE_DIR.
+        #[arg(long, env = "GIGASTT_OPTIMIZED_CACHE_DIR", value_name = "PATH")]
+        optimized_cache_dir: Option<String>,
     },
 
     /// Transcribe an audio file (offline)
@@ -386,8 +393,9 @@ async fn main() -> anyhow::Result<()> {
             model_dir,
             dry_run,
             dedupe,
+            optimized_cache_dir,
         } => {
-            run_cache_gc(model_dir, dry_run, dedupe)?;
+            run_cache_gc(model_dir, dry_run, dedupe, optimized_cache_dir)?;
         }
         Commands::Transcribe {
             file,

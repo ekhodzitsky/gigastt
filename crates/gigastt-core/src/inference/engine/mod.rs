@@ -1,13 +1,13 @@
 //! ONNX Runtime inference engine for GigaAM v3.
 
 use anyhow::Context;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::error::GigasttError;
 use crate::model::ModelVariant;
 #[allow(unused_imports)]
 use crate::runtime::factory::RuntimeFactory;
-use crate::runtime::production_factory_variant;
+use crate::runtime::production_factory_variant_with_cache;
 use crate::runtime::tensor::{Shape, TensorDataView};
 
 use super::audio;

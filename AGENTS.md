@@ -440,6 +440,7 @@ reference: [`docs/cli.md`](docs/cli.md) (enforced by `scripts/check-docs-drift.p
 | `GIGASTT_METRICS` | `--metrics` | false |
 | `GIGASTT_METRICS_LISTEN` | `--metrics-listen` | 127.0.0.1:9090 |
 | `GIGASTT_MODEL_VARIANT` | `--model-variant` | rnnt (fresh installs) |
+| `GIGASTT_OPTIMIZED_CACHE_DIR` | `--optimized-cache-dir` (also on `cache-gc`) | `<model-dir>/optimized_cache` |
 | `GIGASTT_PUNCTUATION` | `--punctuation` | auto |
 | `GIGASTT_PUNCT_MODEL_DIR` | `--punct-model-dir` | `~/.gigastt/models/punct/` |
 | `GIGASTT_ITN` | `--itn` | auto |

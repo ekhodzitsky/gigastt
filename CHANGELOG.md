@@ -13,6 +13,26 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+### Added
+
+- **`--optimized-cache-dir <PATH>`** (env `GIGASTT_OPTIMIZED_CACHE_DIR`) on
+  `serve` and `cache-gc`: where the CPU encoder writes/reads the ORT
+  optimized-graph cache (`*_optimized.ort`). Default unchanged:
+  `<model-dir>/optimized_cache`. `cache-gc` prunes the directory given here.
+
+### Fixed
+
+- **Boot failure with a read-only model directory** (#336). The shipped
+  systemd unit installs models under `/usr/share/gigastt/models` with
+  `ProtectSystem=strict`, but the CPU encoder load path wrote the ORT
+  optimized-graph cache into `<model-dir>/optimized_cache` and a failed
+  `create_dir_all` was fatal — the service restart-looped with EROFS. The
+  unit now sets `CacheDirectory=gigastt` and passes
+  `--optimized-cache-dir /var/cache/gigastt`, and the loader degrades
+  gracefully: when the cache directory cannot be created or is not writable,
+  the server logs a warning and starts without the cache (slower cold start,
+  higher per-session RAM) instead of failing.
+
 ## [2.21.0] - 2026-09-06
 
 ### Added
