@@ -109,7 +109,7 @@ impl Engine {
     /// override for the CPU encoder's ORT optimized-graph cache directory.
     /// `None` keeps the default `<model_dir>/optimized_cache`; `Some(dir)`
     /// relocates the cache (e.g. a writable cache directory when the model
-    /// dir is read-only). Ignored by the CoreML / CUDA / candle builds.
+    /// dir is read-only). Only used by the CPU ort backend.
     #[allow(clippy::too_many_arguments)]
     pub fn load_with_pools_threads_variant_cache(
         model_dir: &str,

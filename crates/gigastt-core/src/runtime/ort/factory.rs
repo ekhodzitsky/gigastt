@@ -224,7 +224,7 @@ pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
 /// disk-cache layout used by the engine before the runtime abstraction.
 ///
 /// Public, stable 1-arg form: selects the backend from the variant detected on
-/// disk. The engine calls the crate-internal `production_factory_variant`
+/// disk. The engine calls the crate-internal `production_factory_variant_with_cache`
 /// instead, passing the head it has already resolved so an explicit
 /// `--model-variant` is honored.
 pub fn production_factory(model_dir: &Path) -> Box<dyn RuntimeFactory> {

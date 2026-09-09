@@ -364,10 +364,14 @@ FP32 ONNX as source). `gigastt cache-gc` drops stale ORT optimized graphs.
 
 Under the shipped systemd unit the ORT optimized-graph cache
 (`*_optimized.ort`, written by the CPU encoder on first load) lives in
-`/var/cache/gigastt` (systemd `CacheDirectory=gigastt` + `--optimized-cache-dir`),
-not in the model directory — `/usr/share/gigastt/models` stays read-only
-under `ProtectSystem=strict`. Pass `--optimized-cache-dir` (env
-`GIGASTT_OPTIMIZED_CACHE_DIR`) to relocate it. Read-only model dirs are
+`/var/cache/gigastt` (systemd `CacheDirectory=gigastt` plus the unit's
+`Environment=GIGASTT_OPTIMIZED_CACHE_DIR=/var/cache/gigastt`), not in the
+model directory — `/usr/share/gigastt/models` stays read-only under
+`ProtectSystem=strict`. To relocate it under systemd, set
+`GIGASTT_OPTIMIZED_CACHE_DIR` in `/etc/gigastt/gigastt.env` (the
+`EnvironmentFile=` is processed after the unit's `Environment=` and wins);
+outside systemd, pass `--optimized-cache-dir` (env
+`GIGASTT_OPTIMIZED_CACHE_DIR`). Read-only model dirs are
 supported either way: if the cache directory cannot be created or is not
 writable, the server logs a warning and starts without the cache (slower
 cold start, higher per-session RAM) instead of failing. When relocating the

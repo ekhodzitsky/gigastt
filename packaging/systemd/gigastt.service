@@ -29,8 +29,9 @@ EnvironmentFile=-/etc/gigastt/gigastt.env
 # Both directories are read-only at runtime (all models are pre-installed);
 # gigastt never writes to them once the files are present. The ORT
 # optimized-graph cache is the one write the CPU encoder needs — it is
-# redirected to /var/cache/gigastt via --optimized-cache-dir and
-# CacheDirectory below, keeping the model dir genuinely read-only.
+# redirected to /var/cache/gigastt via CacheDirectory and
+# GIGASTT_OPTIMIZED_CACHE_DIR below, keeping the model dir genuinely
+# read-only.
 #
 # The server binds 127.0.0.1:9876 by default (loopback only). Do NOT add
 # --bind-all here; expose the API through a reverse proxy instead
@@ -38,13 +39,18 @@ EnvironmentFile=-/etc/gigastt/gigastt.env
 # with `systemctl edit gigastt` instead of editing this file.
 ExecStart=/usr/bin/gigastt serve \
     --model-dir /usr/share/gigastt/models \
-    --punct-model-dir /usr/share/gigastt/models/punct \
-    --optimized-cache-dir /var/cache/gigastt
+    --punct-model-dir /usr/share/gigastt/models/punct
 
 # Writable scratch for the ORT optimized-graph cache (systemd 235+): systemd
 # creates /var/cache/gigastt owned by the gigastt user and keeps it writable
 # despite ProtectSystem=strict below.
 CacheDirectory=gigastt
+# Point the cache there via the env var, not an ExecStart flag: a CLI flag
+# beats the env var in clap, which would make the documented
+# GIGASTT_OPTIMIZED_CACHE_DIR override in /etc/gigastt/gigastt.env a silent
+# no-op. Per systemd.exec(5), EnvironmentFile= is processed after
+# Environment=, so the env file overrides this default.
+Environment=GIGASTT_OPTIMIZED_CACHE_DIR=/var/cache/gigastt
 
 Restart=on-failure
 RestartSec=5

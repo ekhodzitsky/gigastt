@@ -71,6 +71,7 @@ Inside the bundle, `install.sh` re-verifies every binary/model payload file
 | Models | `/usr/share/gigastt/models/` (+ `models/punct/`) |
 | systemd unit | `/etc/systemd/system/gigastt.service` |
 | Env overrides | `/etc/gigastt/gigastt.env` |
+| ORT optimized-graph cache | `/var/cache/gigastt/` (systemd `CacheDirectory=`) |
 | Service account | `gigastt` (system user, nologin) |
 
 The unit binds `127.0.0.1:9876` (loopback only), restarts on failure, and

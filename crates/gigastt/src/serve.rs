@@ -151,7 +151,7 @@ pub(crate) struct ServeArgs {
     /// (`*_optimized.ort`). Defaults to `<model-dir>/optimized_cache`; set this
     /// (e.g. to a systemd `CacheDirectory`) when the model directory is
     /// read-only. An unwritable cache dir is skipped with a warning instead of
-    /// failing boot. No effect on CoreML / CUDA builds. Env:
+    /// failing boot. Only used by the CPU ort backend. Env:
     /// GIGASTT_OPTIMIZED_CACHE_DIR.
     #[arg(long, env = "GIGASTT_OPTIMIZED_CACHE_DIR", value_name = "PATH")]
     pub(crate) optimized_cache_dir: Option<String>,

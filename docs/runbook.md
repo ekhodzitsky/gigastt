@@ -11,6 +11,7 @@ Operator-facing guidance for gigastt in production: graceful shutdown, session c
 | SIGTERM takes 30+ seconds to exit | In-flight spawn_blocking inferences can't be cancelled mid-chunk | Wait or lower `GIGASTT_SHUTDOWN_DRAIN_SECS`; process will still finish the current chunk |
 | `Close(1008 Policy Violation)` unexpected | session-duration cap fired | Double check `max_session_secs` is set high enough for your use case |
 | `Close(1001 Going Away)` seen by clients | Expected on SIGTERM — not a bug | None — clients should reconnect |
+| WARN `optimized graph cache directory cannot be created / is not writable` | Cache dir missing or unwritable (e.g. read-only model dir) | Service still works — see [ORT cache warnings](#ort-optimized-graph-cache-warnings) |
 | REST `503` `timeout` / WS error `timeout` (`retry_after_ms`) | Pool saturated — every triplet busy | Raise `--pool-size`; isolate batch with `--batch-pool-size`; see [Pool exhaustion](#pool-exhaustion--backpressure) |
 | `inference_timeout` (REST `504` / WS close) | A run made no progress for `--inference-timeout-secs` (default 600 s) | Not a length limit — the deadline resets on every decode window, so long files never trip it. Investigate a wedged ONNX run |
 | Server won't start, model errors | Missing / corrupt model files | See [Model download failures](#model-download-failures) |
@@ -126,6 +127,28 @@ within one window, so a hung run no longer wedges a slot until restart.
    inputs are legitimately long.
 3. If saturation is steady, scale `--pool-size` (watch RSS and single-job RTF)
    or add replicas.
+
+## ORT optimized-graph cache warnings
+
+The CPU encoder writes an ORT optimized-graph cache (`*_optimized.ort`,
+~224 MiB) to `--optimized-cache-dir` (default `<model-dir>/optimized_cache`;
+`/var/cache/gigastt` under the shipped systemd unit).
+
+**Symptoms** — WARN lines in the journal (once per engine load):
+- `optimized graph cache directory cannot be created; loading source model without the cache (slower cold start, higher per-session RAM)`
+- `optimized graph cache directory is not writable; loading source model without the cache (slower cold start, higher per-session RAM)`
+- `optimized graph cache write failed; retrying without the cache (slower cold start, higher per-session RAM)` — the directory is writable but the cache *file* write failed (stale root-owned `*_optimized.ort`, ENOSPC mid-write).
+
+**Effect** — the service starts and transcribes correctly either way; only
+cold start is slower (the graph is re-optimized on every boot) and
+per-session RAM is higher (no shared memory-mapped weights).
+
+**Fix** — point `GIGASTT_OPTIMIZED_CACHE_DIR` at a writable directory
+(under systemd, set it in `/etc/gigastt/gigastt.env` — the `EnvironmentFile=`
+overrides the unit's built-in `Environment=` default) or fix
+ownership/permissions on the existing one (e.g.
+`chown -R gigastt:gigastt /var/cache/gigastt`, removing a stale root-owned
+`*_optimized.ort` if present).
 
 ## Model download failures
 
