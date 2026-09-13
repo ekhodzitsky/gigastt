@@ -21,6 +21,8 @@ pub struct OrtRuntime {
     /// times at every boot. Admin reload builds a fresh `OrtRuntime`, so
     /// re-probing on reload is preserved.
     usable_cache_dir: OnceLock<Option<std::path::PathBuf>>,
+    /// Keep pool triplets from optimizing the same encoder concurrently.
+    cache_load: parking_lot::Mutex<()>,
 }
 
 impl OrtRuntime {
@@ -36,6 +38,7 @@ impl OrtRuntime {
             prepacked,
             optimized_cache_dir,
             usable_cache_dir: OnceLock::new(),
+            cache_load: parking_lot::Mutex::new(()),
         }
     }
 }
@@ -84,6 +87,36 @@ fn optimized_cache_path(cache_dir: &Path, model_path: &Path) -> std::path::PathB
     let basename = crate::model::optimized_cache_basename(model_path)
         .unwrap_or_else(|| "encoder_optimized.ort".into());
     cache_dir.join(basename)
+}
+
+/// Stage beside the destination so rename publishes a complete graph atomically.
+/// Exclusive creation also separates writers in different runtimes/processes.
+struct PendingCache(std::path::PathBuf);
+
+impl PendingCache {
+    fn new(cache_path: &Path) -> std::io::Result<Self> {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static NEXT_ID: AtomicU64 = AtomicU64::new(0);
+
+        loop {
+            let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+            let mut path = cache_path.as_os_str().to_owned();
+            path.push(format!(".partial.{}.{id}", std::process::id()));
+            let path = std::path::PathBuf::from(path);
+            match std::fs::File::create_new(&path) {
+                Ok(_) => return Ok(Self(path)),
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(e) => return Err(e),
+            }
+        }
+    }
+}
+
+impl Drop for PendingCache {
+    fn drop(&mut self) {
+        // Best effort on errors/unwind; after publication the path is absent.
+        let _ = std::fs::remove_file(&self.0);
+    }
 }
 
 /// Decide whether the ORT optimized-graph cache under `cache_dir` is usable:
@@ -163,8 +196,7 @@ impl OrtRuntime {
     /// boot exists, load the session from it and skip both re-optimizing the
     /// source model and re-serializing the cache (~224 MiB write per boot).
     /// Returns `None` when the fast path does not apply or the cached graph
-    /// fails to load (the broken entry is deleted so the next boot rewrites
-    /// it cleanly).
+    /// fails to load (the source load replaces the broken entry atomically).
     ///
     /// The cache is an ORT flatbuffer model (`.ort`), loaded with
     /// `session.use_memory_mapped_ort_model` +
@@ -215,15 +247,11 @@ impl OrtRuntime {
                 tracing::warn!(
                     path = %cache_path.display(),
                     error = %e,
-                    "encoder: optimized graph cache failed to load; deleting it and falling back to the source model"
+                    "encoder: optimized graph cache failed to load; falling back to the source model"
                 );
-                if let Err(rm) = std::fs::remove_file(&cache_path) {
-                    tracing::warn!(
-                        path = %cache_path.display(),
-                        error = %rm,
-                        "encoder: failed to delete broken optimized graph cache"
-                    );
-                }
+                // Another runtime/process may have replaced this path since
+                // our failed read. Only replace it with a complete new graph;
+                // deleting here could unlink that writer's valid cache.
                 None
             }
         }
@@ -236,6 +264,11 @@ impl Runtime for OrtRuntime {
         model_path: &Path,
         is_encoder: bool,
     ) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
+        // Check freshness under the same gate as publication. Waiting pool
+        // triplets reuse the first writer's graph instead of re-optimizing it.
+        let _cache_guard =
+            (is_encoder && self.provider.is_cpu() && self.optimized_cache_dir.is_some())
+                .then(|| self.cache_load.lock());
         if is_encoder && let Some(result) = self.try_load_cached_encoder(model_path) {
             let session = result?;
             return Ok(Box::new(OrtSession {
@@ -265,13 +298,27 @@ impl Runtime for OrtRuntime {
             None
         };
 
-        if let Some(cache_path) = cache_path.as_ref() {
+        let pending_cache = cache_path.as_ref().and_then(|path| {
+            match PendingCache::new(path) {
+                Ok(pending) => Some(pending),
+                Err(e) => {
+                    tracing::warn!(
+                        path = %path.display(),
+                        error = %e,
+                        "encoder: cannot stage optimized graph cache; loading source model without the cache"
+                    );
+                    None
+                }
+            }
+        });
+
+        if let Some(pending) = pending_cache.as_ref() {
             tracing::info!(
-                path = %cache_path.display(),
+                path = %pending.0.display(),
                 "encoder: loading source model and refreshing optimized graph cache"
             );
             builder = builder
-                .with_optimized_model_path(cache_path)
+                .with_optimized_model_path(&pending.0)
                 .map_err(|e| load_failed(model_path, e))?;
             // Persist the optimized graph in ORT flatbuffer format so the
             // next boot can memory-map it (see `try_load_cached_encoder`).
@@ -281,13 +328,24 @@ impl Runtime for OrtRuntime {
         }
 
         let session = match builder.commit_from_file(model_path) {
-            Ok(session) => session,
+            Ok(session) => {
+                if let (Some(pending), Some(cache_path)) = (&pending_cache, &cache_path)
+                    && let Err(e) = std::fs::rename(&pending.0, cache_path)
+                {
+                    tracing::warn!(
+                        path = %cache_path.display(),
+                        error = %e,
+                        "encoder: cannot publish optimized graph cache; keeping the source model session"
+                    );
+                }
+                session
+            }
             Err(e) => {
-                let Some(cache_path) = cache_path.as_ref() else {
+                let Some(pending) = pending_cache.as_ref() else {
                     return Err(load_failed(model_path, e));
                 };
                 tracing::warn!(
-                    path = %cache_path.display(),
+                    path = %pending.0.display(),
                     error = %e,
                     "encoder: optimized graph cache write failed; retrying without the cache (slower cold start, higher per-session RAM)"
                 );
@@ -341,6 +399,144 @@ mod tests {
         }
         let mut f = std::fs::File::create(path).unwrap();
         f.write_all(bytes).unwrap();
+    }
+
+    fn write_identity_model(path: &Path) {
+        // ONNX IR 8, opset 13: Identity(x: float[1]) -> y: float[1].
+        write_file(path, b"\x08\x08\x3a\x40\x0a\x10\x0a\x01x\x12\x01y\x22\x08Identity\x12\x0acache-test\x5a\x0f\x0a\x01x\x12\x0a\x0a\x08\x08\x01\x12\x04\x0a\x02\x08\x01\x62\x0f\x0a\x01y\x12\x0a\x0a\x08\x08\x01\x12\x04\x0a\x02\x08\x01\x42\x02\x10\x0d");
+    }
+
+    fn cached_runtime(cache_dir: &Path) -> OrtRuntime {
+        OrtRuntime::new(1, OrtExecutionProvider::Cpu, None, Some(cache_dir.into()))
+    }
+
+    #[test]
+    fn test_pending_cache_is_private_and_cleans_up_failed_writes() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache = tmp.path().join("encoder_optimized.ort");
+        write_file(&cache, b"previous graph");
+        let first = PendingCache::new(&cache).unwrap();
+        let second = PendingCache::new(&cache).unwrap();
+        assert_ne!(first.0, second.0);
+        write_file(&first.0, b"incomplete write");
+        assert_eq!(std::fs::read(&cache).unwrap(), b"previous graph");
+        assert_eq!(std::fs::metadata(&second.0).unwrap().len(), 0);
+
+        drop(first);
+        drop(second);
+
+        assert_eq!(std::fs::read(&cache).unwrap(), b"previous graph");
+        assert_eq!(std::fs::read_dir(tmp.path()).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn test_cache_invalid_source_leaves_no_partial_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let model = tmp.path().join("encoder.onnx");
+        let cache_dir = tmp.path().join("cache");
+        write_file(&model, b"invalid ONNX");
+        assert!(
+            cached_runtime(&cache_dir)
+                .load_session(&model, true)
+                .is_err()
+        );
+        assert_eq!(std::fs::read_dir(&cache_dir).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn test_cache_broken_graph_is_replaced_on_source_load() {
+        let tmp = tempfile::tempdir().unwrap();
+        let model = tmp.path().join("encoder.onnx");
+        let cache_dir = tmp.path().join("cache");
+        let cache = optimized_cache_path(&cache_dir, &model);
+        write_identity_model(&model);
+        write_file(&cache, b"invalid ORT");
+        let runtime = cached_runtime(&cache_dir);
+        assert!(runtime.try_load_cached_encoder(&model).is_none());
+        // A failed reader must not delete a path another process can replace.
+        assert_eq!(std::fs::read(&cache).unwrap(), b"invalid ORT");
+        drop(runtime.load_session(&model, true).unwrap());
+        assert!(runtime.try_load_cached_encoder(&model).unwrap().is_ok());
+        assert_eq!(std::fs::read_dir(&cache_dir).unwrap().count(), 1);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_cache_refresh_replaces_file_without_truncating_readers() {
+        use std::os::unix::fs::MetadataExt;
+
+        let tmp = tempfile::tempdir().unwrap();
+        let model = tmp.path().join("encoder.onnx");
+        let cache_dir = tmp.path().join("cache");
+        let cache = optimized_cache_path(&cache_dir, &model);
+        write_identity_model(&model);
+        let runtime = cached_runtime(&cache_dir);
+        drop(runtime.load_session(&model, true).unwrap());
+        let reader = std::fs::File::open(&cache).unwrap();
+        reader.set_modified(SystemTime::UNIX_EPOCH).unwrap();
+
+        drop(runtime.load_session(&model, true).unwrap());
+
+        assert_ne!(
+            reader.metadata().unwrap().ino(),
+            std::fs::metadata(&cache).unwrap().ino()
+        );
+        assert!(runtime.try_load_cached_encoder(&model).unwrap().is_ok());
+        assert_eq!(std::fs::read_dir(&cache_dir).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn test_cache_concurrent_cold_loads_leave_reusable_graph() {
+        let tmp = tempfile::tempdir().unwrap();
+        let model = tmp.path().join("encoder.onnx");
+        let cache_dir = tmp.path().join("cache");
+        write_identity_model(&model);
+        let runtime = cached_runtime(&cache_dir);
+        let barrier = std::sync::Barrier::new(4);
+        std::thread::scope(|scope| {
+            let handles: Vec<_> = (0..4)
+                .map(|_| {
+                    scope.spawn(|| {
+                        barrier.wait();
+                        runtime.load_session(&model, true).unwrap()
+                    })
+                })
+                .collect();
+            for handle in handles {
+                let session = handle.join().unwrap();
+                let input = Tensor::new_checked(
+                    crate::runtime::tensor::Shape::new(vec![1]),
+                    crate::runtime::tensor::TensorData::F32(vec![42.0]),
+                );
+                assert_eq!(
+                    session.run(std::slice::from_ref(&input)).unwrap(),
+                    vec![input]
+                );
+            }
+        });
+        assert!(
+            cached_runtime(&cache_dir)
+                .try_load_cached_encoder(&model)
+                .unwrap()
+                .is_ok()
+        );
+        assert_eq!(std::fs::read_dir(&cache_dir).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn test_cache_publication_failure_keeps_loaded_session() {
+        let tmp = tempfile::tempdir().unwrap();
+        let model = tmp.path().join("encoder.onnx");
+        let cache_dir = tmp.path().join("cache");
+        write_identity_model(&model);
+        // A directory at the destination makes publication fail on every OS.
+        std::fs::create_dir_all(optimized_cache_path(&cache_dir, &model)).unwrap();
+        assert!(
+            cached_runtime(&cache_dir)
+                .load_session(&model, true)
+                .is_ok()
+        );
+        assert_eq!(std::fs::read_dir(&cache_dir).unwrap().count(), 1);
     }
 
     #[test]
