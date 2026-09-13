@@ -308,6 +308,9 @@ inference pipeline as `/v1/transcribe`, shaped for the
 [OpenAI Audio Transcriptions API](https://developers.openai.com/api/reference/resources/audio/subresources/transcriptions/methods/create)
 (llama-swap, Hermes Agent, OpenAI SDKs with a custom `base_url`).
 
+For OpenClaw voice notes, see the [local audio integration guide](integrations/openclaw.md),
+including audio-specific credentials, private-network settings, and verification.
+
 | Input | Notes |
 |---|---|
 | `Content-Type` | `multipart/form-data` |
