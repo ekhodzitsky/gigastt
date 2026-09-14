@@ -188,12 +188,16 @@ pub async fn transcribe_stream(
     // handled by the per-chunk cancellation check.
     let cancel = state.shutdown.clone();
     let tracker = state.tracker.clone();
+    let (abort, finished) =
+        super::super::file_transcribe::stream_abort(&tx, cancel.clone(), &tracker);
     let span = tracing::Span::current();
     tracker.spawn_blocking(move || {
+        let _finished = finished;
         let _enter = span.enter();
         // catch_unwind ensures the triplet is returned to the pool even on panic.
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let mut stream_state = engine.create_state(false);
+            stream_state.abort = Some(abort.clone());
             let mut chunks = chunks;
 
             // Fixed-size chunks (STREAM_CHUNK_SAMPLES), last one short — so the
@@ -233,6 +237,9 @@ pub async fn transcribe_stream(
                         }
                     }
                     Err(e) => {
+                        if let Some(partial) = engine.flush_state(&mut stream_state) {
+                            let _ = tx.blocking_send(Ok(partial));
+                        }
                         let _ = tx.blocking_send(Err(StreamError {
                             code: e.code(),
                             message: "Transcription failed. Please check audio format.".into(),

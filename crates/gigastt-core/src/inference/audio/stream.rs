@@ -199,6 +199,10 @@ pub(crate) struct PcmWindow<'a> {
 
 /// A source of overlapping decode windows.
 pub(crate) trait PcmWindows {
+    /// Convert a provisional hypothesis to the input timeline (VAD sources
+    /// remove silence before decoding). Plain sources already use that clock.
+    fn remap_words(&self, _words: &mut [crate::inference::WordInfo]) {}
+
     /// The window geometry this source yields.
     fn spec(&self) -> WindowSpec;
 

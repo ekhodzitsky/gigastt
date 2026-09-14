@@ -42,7 +42,7 @@ pub use pool::{OwnedReservation, Pool, PoolError, PoolGuard, SessionPool, Sessio
 pub use diarization::{SharedExtractor, SpeakerEncoder, StreamingDiarizationState};
 pub use state::{
     DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
-    TranscriptAssembler, TranscriptSegment, WordInfo,
+    TranscriptAssembler, TranscriptSegment, TranscriptSnapshot, WordInfo,
 };
 pub use types::{
     DEFAULT_HOTWORDS_BOOST, DiarizationOutcome, HotwordError, HotwordOverride,

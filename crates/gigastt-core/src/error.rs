@@ -118,7 +118,7 @@ pub enum GigasttError {
     /// The run was cancelled cooperatively before it finished (client
     /// disconnect, `DELETE /v1/jobs/{id}`, a fired shutdown signal, or the
     /// no-progress inference watchdog). The decode loop observes the abort
-    /// signal at a window boundary and returns this so the pooled session is
+    /// signal between tokens/frames and returns this so the pooled session is
     /// released promptly instead of running to completion. Additive: the enum
     /// is `#[non_exhaustive]`.
     #[error("cancelled")]

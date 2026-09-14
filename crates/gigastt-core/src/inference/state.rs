@@ -105,6 +105,12 @@ pub(crate) fn aggregate_confidence(words: &[WordInfo]) -> Option<f32> {
 /// [`crate::inference::Engine::flush_state`] when the stream ends.
 #[non_exhaustive]
 pub struct StreamingState {
+    /// Cooperative cancellation for this stream. Once set, create a new state
+    /// to start another stream; a failed state cannot resume decoding.
+    pub abort: Option<std::sync::Arc<std::sync::atomic::AtomicBool>>,
+    /// Optional snapshot readable while a blocking decode owns this state.
+    pub partial: Option<std::sync::Arc<TranscriptSnapshot>>,
+    pub(crate) failed: bool,
     /// Decoder LSTM hidden state (persisted across chunks).
     pub decoder: DecoderState,
     /// Leftover audio samples that didn't fill a complete frame.
@@ -159,6 +165,47 @@ pub struct StreamingState {
     /// Diarization state (present only when diarization is enabled).
     #[cfg(feature = "diarization")]
     pub diarization_state: Option<StreamingDiarizationState>,
+}
+
+impl StreamingState {
+    /// Whether cooperative cancellation has made this stream terminal.
+    pub fn is_failed(&self) -> bool {
+        self.failed
+    }
+
+    pub(crate) fn abort_requested(&self) -> bool {
+        self.failed
+            || self
+                .abort
+                .as_ref()
+                .is_some_and(|flag| flag.load(std::sync::atomic::Ordering::Relaxed))
+    }
+}
+
+/// Last readable transcript, shared with the caller of a blocking decode.
+/// Updated after each file window, streaming hypothesis, or interrupted decode.
+/// A snapshot is provisional and never represents successful completion.
+#[derive(Debug, Default)]
+pub struct TranscriptSnapshot(parking_lot::Mutex<Option<TranscriptSegment>>);
+
+impl TranscriptSnapshot {
+    /// Read the latest snapshot, including after cancellation or timeout.
+    pub fn get(&self) -> Option<TranscriptSegment> {
+        self.0.lock().clone()
+    }
+
+    pub(crate) fn store(&self, mut segment: TranscriptSegment) {
+        segment.is_final = false;
+        segment.speech_final = false;
+        segment.endpoint_reason = None;
+        *self.0.lock() = Some(segment);
+    }
+
+    pub(crate) fn store_words(&self, words: &[WordInfo]) {
+        let mut assembler = TranscriptAssembler::new();
+        assembler.append(words.to_vec());
+        self.store(assembler.partial(now_timestamp()));
+    }
 }
 
 /// Audio feature extraction pipeline.

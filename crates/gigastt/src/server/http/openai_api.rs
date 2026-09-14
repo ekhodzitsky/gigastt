@@ -109,8 +109,11 @@ async fn openai_transcriptions_stream(
 
     let cancel = state.shutdown.clone();
     let tracker = state.tracker.clone();
+    let (abort, finished) =
+        super::super::file_transcribe::stream_abort(&tx, cancel.clone(), &tracker);
     let span = tracing::Span::current();
     tracker.spawn_blocking(move || {
+        let _finished = finished;
         let _enter = span.enter();
         use super::super::openai::{OpenAIStreamAssembler, sse_delta_payload, sse_done_payload};
 
@@ -118,6 +121,7 @@ async fn openai_transcriptions_stream(
 
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let mut stream_state = engine.create_state(false);
+            stream_state.abort = Some(abort.clone());
             let mut asm = OpenAIStreamAssembler::new();
             let mut chunks = chunks;
 

@@ -14,6 +14,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 mod frames;
+mod incoming;
 use frames::{
     FrameOutcome, flush_and_final, handle_binary_frame, handle_configure_message,
     handle_stop_message, send_server_message,
@@ -195,7 +196,11 @@ async fn handle_ws_inner(
     cancel: tokio_util::sync::CancellationToken,
     metrics: Option<Arc<super::metrics::MetricsRegistry>>,
 ) -> Result<()> {
-    let (mut sink, mut source) = socket.split();
+    let (mut sink, source) = socket.split();
+    let abort = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let _abort_guard = super::file_transcribe::AbortOnDrop(abort.clone());
+    let mut incoming = incoming::Incoming::new(source, abort.clone());
+    let partial = Arc::new(gigastt_core::inference::TranscriptSnapshot::default());
     tracing::info!("Client connected: {peer}");
 
     #[cfg(feature = "diarization")]
@@ -209,13 +214,16 @@ async fn handle_ws_inner(
         version: gigastt_core::protocol::PROTOCOL_VERSION.into(),
         supported_rates: SUPPORTED_RATES.to_vec(),
         diarization: diarization_available,
-        min_protocol_version: None,
+        min_protocol_version: Some(gigastt_core::protocol::MIN_PROTOCOL_VERSION.into()),
         max_session_secs: limits.max_session_secs,
         idle_timeout_secs: limits.idle_timeout_secs,
     };
     send_server_message(&mut sink, &ready).await?;
 
-    let mut state_opt = Some(engine.create_state(false));
+    let mut stream_state = engine.create_state(false);
+    stream_state.abort = Some(abort.clone());
+    stream_state.partial = Some(partial.clone());
+    let mut state_opt = Some(stream_state);
     let mut reservation = Some(reservation);
     let mut client_sample_rate: u32 = DEFAULT_SAMPLE_RATE;
     let mut audio_received = false;
@@ -249,6 +257,14 @@ async fn handle_ws_inner(
     ping_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
     let mut unanswered_pings: u32 = 0;
 
+    let control = frames::StreamControl {
+        abort: &abort,
+        partial: &partial,
+        shutdown: &cancel,
+        disconnected: &incoming.closed,
+        timeout_secs: limits.inference_timeout_secs,
+        deadline: session_deadline,
+    };
     let result: Result<()> = loop {
         // Fast-path deadline / cancel check: if a client streams frames
         // continuously (e.g. 20 ms silence every 100 ms) the `source.next()`
@@ -361,7 +377,7 @@ async fn handle_ws_inner(
                 continue;
             }
 
-            maybe_msg = tokio::time::timeout(idle_timeout, source.next()) => {
+            maybe_msg = tokio::time::timeout(idle_timeout, incoming.rx.recv()) => {
                 let msg = match maybe_msg {
                     Ok(Some(Ok(msg))) => msg,
                     Ok(Some(Err(e))) => break Err(e.into()),
@@ -405,8 +421,8 @@ async fn handle_ws_inner(
                             peer,
                             data,
                             &mut pcm_decode_buf,
-                            limits.inference_timeout_secs,
                             metrics.as_ref(),
+                            &control,
                         )
                         .await
                     }
@@ -445,6 +461,7 @@ async fn handle_ws_inner(
                                 &mut state_opt,
                                 &mut reservation,
                                 peer,
+                                &control,
                             )
                             .await
                         }

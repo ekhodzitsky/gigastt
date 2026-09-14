@@ -2,7 +2,8 @@ use super::*;
 
 #[test]
 fn test_protocol_version_constant() {
-    assert_eq!(PROTOCOL_VERSION, "1.0");
+    assert_eq!(PROTOCOL_VERSION, "1.1");
+    assert_eq!(MIN_PROTOCOL_VERSION, "1.0");
 }
 
 #[test]
@@ -13,14 +14,14 @@ fn test_ready_serialization_includes_version() {
         version: PROTOCOL_VERSION.into(),
         supported_rates: vec![],
         diarization: false,
-        min_protocol_version: Some(PROTOCOL_VERSION.into()),
+        min_protocol_version: Some(MIN_PROTOCOL_VERSION.into()),
         max_session_secs: 3600,
         idle_timeout_secs: 300,
     };
     let json = serde_json::to_string(&msg).unwrap();
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
     assert_eq!(v["type"], "ready");
-    assert_eq!(v["version"], "1.0");
+    assert_eq!(v["version"], "1.1");
     assert_eq!(v["model"], "test-model");
     assert_eq!(v["sample_rate"], 48000);
     assert_eq!(v["min_protocol_version"], "1.0");

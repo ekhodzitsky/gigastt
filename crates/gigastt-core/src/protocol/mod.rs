@@ -3,7 +3,9 @@
 use serde::{Deserialize, Serialize};
 
 /// Current WebSocket protocol version (semver-lite: major.minor).
-pub const PROTOCOL_VERSION: &str = "1.0";
+pub const PROTOCOL_VERSION: &str = "1.1";
+/// Oldest accepted client version; cancellation uses additive error semantics.
+pub const MIN_PROTOCOL_VERSION: &str = "1.0";
 
 /// Server → Client messages.
 #[derive(Debug, Serialize)]

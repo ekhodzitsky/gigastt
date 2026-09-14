@@ -15,7 +15,11 @@ impl Engine {
         frame_offset: usize,
         low_latency: bool,
         biaser: Option<&bias::Biaser>,
+        abort: Option<&(dyn Fn() -> bool + Sync)>,
     ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
+        if abort.is_some_and(|abort| abort()) {
+            return Ok((Vec::new(), false));
+        }
         // Reuse the encoder input tensors: resize the signal tensor to the
         // current frame count and overwrite both buffers in place.
         triplet.encoder_inputs[0].resize_to(Shape::new(vec![1, N_MELS, num_frames]));
@@ -68,18 +72,20 @@ impl Engine {
                 .as_f32()
                 .context("CTC log_probs tensor is not f32")?;
             let tokens = match biaser {
-                Some(b) => ctc::ctc_prefix_beam_decode(
+                Some(b) => ctc::ctc_prefix_beam_decode_with_abort(
                     log_probs,
                     enc_len,
                     self.tokenizer.vocab_size(),
                     self.tokenizer.blank_id(),
                     b,
+                    abort,
                 ),
-                None => ctc::ctc_greedy_decode(
+                None => ctc::ctc_greedy_decode_with_abort(
                     log_probs,
                     enc_len,
                     self.tokenizer.vocab_size(),
                     self.tokenizer.blank_id(),
+                    abort,
                 ),
             };
             let words = ctc::ctc_tokens_to_words(&self.tokenizer, &tokens, frame_offset);
@@ -104,6 +110,7 @@ impl Engine {
             self.tokenizer.blank_id(),
             decoder_state,
             biaser,
+            abort,
         )?;
         tracing::info!(
             elapsed_ms = dec_start.elapsed().as_millis() as u64,

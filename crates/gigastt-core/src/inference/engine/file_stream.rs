@@ -44,7 +44,7 @@ impl Engine {
                 vad,
                 &self.vad_config,
                 window_spec(self.ane_encoder, self.variant.is_ctc()),
-                ctl.abort,
+                ctl.abort.map(|a| a as &dyn Fn() -> bool),
             );
             let mut words = self.decode_words_streaming(&mut windows, triplet, biaser, ctl)?;
             if !windows.needs_fallback() {

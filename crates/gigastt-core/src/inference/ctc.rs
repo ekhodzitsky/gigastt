@@ -15,7 +15,7 @@ use super::decode::{TokenInfo, argmax_with_confidence};
 use super::tokenizer::{Tokenizer, WORD_BOUNDARY};
 use super::{SECONDS_PER_FRAME, WordInfo};
 
-/// Hypotheses kept per frame by [`ctc_prefix_beam_decode`].
+/// Hypotheses kept per frame by [`ctc_prefix_beam_decode_with_abort`].
 ///
 /// Small on purpose: the vocabulary is 71 classes and biasing needs breadth
 /// only where a hotword competes with what the model heard, not everywhere.
@@ -85,14 +85,26 @@ impl Hypothesis {
 /// it was granted (see [`Biaser::score_token`]), so only a phrase the audio
 /// actually supports keeps its advantage.
 ///
-/// Arguments match [`ctc_greedy_decode`]; `log_probs` is likewise the raw
+/// Arguments match [`ctc_greedy_decode_with_abort`]; `log_probs` is likewise the raw
 /// encoder output, normalized per frame here.
+#[cfg(test)]
 pub(crate) fn ctc_prefix_beam_decode(
     log_probs: &[f32],
     t_len: usize,
     vocab: usize,
     blank_id: usize,
     biaser: &Biaser,
+) -> Vec<TokenInfo> {
+    ctc_prefix_beam_decode_with_abort(log_probs, t_len, vocab, blank_id, biaser, None)
+}
+
+pub(crate) fn ctc_prefix_beam_decode_with_abort(
+    log_probs: &[f32],
+    t_len: usize,
+    vocab: usize,
+    blank_id: usize,
+    biaser: &Biaser,
+    abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Vec<TokenInfo> {
     if vocab == 0 {
         return Vec::new();
@@ -115,6 +127,9 @@ pub(crate) fn ctc_prefix_beam_decode(
     let mut candidates: Vec<usize> = Vec::new();
 
     for t in 0..usable {
+        if abort.is_some_and(|abort| abort()) {
+            break;
+        }
         log_softmax(&log_probs[t * vocab..(t + 1) * vocab], &mut lp);
 
         // Candidates: the most likely classes this frame, plus every token that
@@ -298,11 +313,22 @@ fn top_k_into(lp: &[f32], k: usize, out: &mut Vec<usize>) {
 ///   is larger.
 /// - `vocab`: class count (71 for GigaAM Multilingual).
 /// - `blank_id`: CTC blank (70 = `vocab - 1`).
+#[cfg(test)]
 pub(crate) fn ctc_greedy_decode(
     log_probs: &[f32],
     t_len: usize,
     vocab: usize,
     blank_id: usize,
+) -> Vec<TokenInfo> {
+    ctc_greedy_decode_with_abort(log_probs, t_len, vocab, blank_id, None)
+}
+
+pub(crate) fn ctc_greedy_decode_with_abort(
+    log_probs: &[f32],
+    t_len: usize,
+    vocab: usize,
+    blank_id: usize,
+    abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Vec<TokenInfo> {
     if vocab == 0 {
         return Vec::new();
@@ -311,6 +337,9 @@ pub(crate) fn ctc_greedy_decode(
     let mut out = Vec::new();
     let mut prev: Option<usize> = None;
     for t in 0..usable {
+        if abort.is_some_and(|abort| abort()) {
+            break;
+        }
         let row = &log_probs[t * vocab..(t + 1) * vocab];
         let (id, confidence) = argmax_with_confidence(row, blank_id);
         // Collapse: skip a frame whose argmax equals the previous frame's argmax
@@ -338,7 +367,7 @@ pub(crate) fn ctc_greedy_decode(
 /// marker at `vocab[0]` (mirroring the RNN-T vocab), NOT a literal `' '`. Words
 /// split on that marker; every other token is a single character concatenated
 /// into the current word. The blank token never appears here (it is dropped in
-/// [`ctc_greedy_decode`]).
+/// [`ctc_greedy_decode_with_abort`]).
 pub(crate) fn ctc_tokens_to_words(
     tokenizer: &Tokenizer,
     tokens: &[TokenInfo],

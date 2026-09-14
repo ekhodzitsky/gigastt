@@ -1,5 +1,26 @@
 use super::*;
 
+#[test]
+fn test_abort_between_ctc_frames_keeps_prefix() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let lp = logits(&[0, 1, 0, 1], 3);
+    let biaser = Biaser::from_sequences(vec![vec![99]], 3.0).unwrap();
+    for beam in [false, true] {
+        let checks = AtomicUsize::new(0);
+        let abort = || checks.fetch_add(1, Ordering::Relaxed) >= 2;
+        let tokens = if beam {
+            ctc_prefix_beam_decode_with_abort(&lp, 4, 3, 2, &biaser, Some(&abort))
+        } else {
+            ctc_greedy_decode_with_abort(&lp, 4, 3, 2, Some(&abort))
+        };
+        assert_eq!(
+            tokens.iter().map(|t| t.token_id).collect::<Vec<_>>(),
+            vec![0, 1]
+        );
+        assert!(tokens.iter().all(|t| t.frame_index < 2));
+    }
+}
+
 /// Build a `[t, vocab]` row-major log-prob buffer where frame `t` argmaxes to
 /// `ids[t]`.
 fn logits(ids: &[usize], vocab: usize) -> Vec<f32> {

@@ -21,6 +21,100 @@ pub(super) enum FrameOutcome {
 
 pub(super) type WsSink = futures_util::stream::SplitSink<WebSocket, WsMessage>;
 
+pub(super) struct StreamControl<'a> {
+    pub abort: &'a Arc<std::sync::atomic::AtomicBool>,
+    pub partial: &'a gigastt_core::inference::TranscriptSnapshot,
+    pub shutdown: &'a tokio_util::sync::CancellationToken,
+    pub disconnected: &'a tokio_util::sync::CancellationToken,
+    pub timeout_secs: u64,
+    pub deadline: tokio::time::Instant,
+}
+
+#[derive(Debug, PartialEq)]
+enum StreamAbort {
+    Cancelled,
+    Shutdown,
+    Timeout,
+    SessionLimit,
+}
+
+async fn await_decode<T>(
+    mut handle: tokio::task::JoinHandle<T>,
+    control: &StreamControl<'_>,
+) -> Result<Result<T, tokio::task::JoinError>, StreamAbort> {
+    let timeout = async {
+        if control.timeout_secs == 0 {
+            std::future::pending::<()>().await;
+        } else {
+            tokio::time::sleep(std::time::Duration::from_secs(control.timeout_secs)).await;
+        }
+    };
+    let reason = tokio::select! {
+        biased;
+        _ = control.shutdown.cancelled() => StreamAbort::Shutdown,
+        _ = control.disconnected.cancelled() => StreamAbort::Cancelled,
+        _ = tokio::time::sleep_until(control.deadline) => StreamAbort::SessionLimit,
+        joined = &mut handle => return Ok(joined),
+        _ = timeout => StreamAbort::Timeout,
+    };
+    // The encoder Run itself cannot be interrupted. Its owner publishes the
+    // interrupted hypothesis and returns the triplet at the next decode step.
+    control
+        .abort
+        .store(true, std::sync::atomic::Ordering::Relaxed);
+    Err(reason)
+}
+
+async fn send_abort(
+    sink: &mut WsSink,
+    control: &StreamControl<'_>,
+    reason: StreamAbort,
+) -> Result<()> {
+    let partial = control.partial.get();
+    if let Some(segment) = &partial {
+        send_server_message(sink, &ServerMessage::Partial(segment.clone())).await?;
+    }
+    let message = match reason {
+        StreamAbort::Timeout => "Inference timed out.",
+        StreamAbort::SessionLimit => "Maximum session duration exceeded",
+        _ => "Transcription cancelled.",
+    };
+    let error = match reason {
+        StreamAbort::Timeout => ServerMessage::Error {
+            code: "inference_timeout".into(),
+            message: message.into(),
+            retry_after_ms: None,
+        },
+        StreamAbort::SessionLimit => ServerMessage::Error {
+            code: "max_session_duration_exceeded".into(),
+            message: message.into(),
+            retry_after_ms: None,
+        },
+        _ => ServerMessage::Error {
+            code: "cancelled".into(),
+            message: message.into(),
+            retry_after_ms: None,
+        },
+    };
+    send_server_message(sink, &error).await?;
+    if matches!(reason, StreamAbort::Shutdown | StreamAbort::SessionLimit) {
+        let mut segment =
+            partial.unwrap_or_else(gigastt_core::inference::TranscriptSegment::empty_final);
+        segment.is_final = true;
+        send_server_message(sink, &ServerMessage::Final(segment)).await?;
+    }
+    sink.send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
+        code: if reason == StreamAbort::SessionLimit {
+            1008
+        } else {
+            1001
+        },
+        reason: message.into(),
+    })))
+    .await?;
+    Ok(())
+}
+
 /// Send a serialized ServerMessage over the WebSocket sink. `?`-friendly so
 /// handlers can delegate error propagation without duplicating the sink dance.
 pub(super) async fn send_server_message(sink: &mut WsSink, msg: &ServerMessage) -> Result<()> {
@@ -51,8 +145,8 @@ pub(super) async fn handle_binary_frame(
     peer: SocketAddr,
     data: axum::body::Bytes,
     pcm_decode_buf: &mut Vec<f32>,
-    inference_timeout_secs: u64,
     metrics: Option<&Arc<super::super::metrics::MetricsRegistry>>,
+    control: &StreamControl<'_>,
 ) -> Result<FrameOutcome> {
     if data.is_empty() {
         *empty_frame_count += 1;
@@ -131,39 +225,16 @@ pub(super) async fn handle_binary_frame(
         (r, state, reservation)
     });
 
-    // Guard the blocking ONNX run with the per-request inference timeout
-    // (`0` disables). `spawn_blocking` can't be cancelled, so on timeout the
-    // detached task keeps the triplet + streaming state and returns the slot
-    // to the pool only when the run eventually finishes. The session has lost
-    // them, so we close it with a typed `inference_timeout`.
-    let join_result = if inference_timeout_secs == 0 {
-        handle.await
-    } else {
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(inference_timeout_secs),
-            handle,
-        )
-        .await
-        {
-            Ok(jr) => jr,
-            Err(_elapsed) => {
-                if let Some(reg) = metrics {
-                    reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
-                }
-                tracing::error!(
-                    "WS inference exceeded {inference_timeout_secs}s for {peer} — closing session"
-                );
-                send_server_message(
-                    sink,
-                    &ServerMessage::Error {
-                        message: "Inference timed out.".into(),
-                        code: "inference_timeout".into(),
-                        retry_after_ms: None,
-                    },
-                )
-                .await?;
-                return Ok(FrameOutcome::Break);
+    let join_result = match await_decode(handle, control).await {
+        Ok(joined) => joined,
+        Err(reason) => {
+            if reason == StreamAbort::Timeout
+                && let Some(reg) = metrics
+            {
+                reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
             }
+            send_abort(sink, control, reason).await?;
+            return Ok(FrameOutcome::Break);
         }
     };
 
@@ -184,6 +255,10 @@ pub(super) async fn handle_binary_frame(
         Ok((Ok(Err(e)), state_back, reservation_back)) => {
             *reservation = Some(reservation_back);
             *state_opt = Some(state_back);
+            if matches!(e, gigastt_core::error::GigasttError::Cancelled) {
+                send_abort(sink, control, StreamAbort::Cancelled).await?;
+                return Ok(FrameOutcome::Break);
+            }
             tracing::error!("Inference error for {peer}: {e:#}");
             send_server_message(
                 sink,
@@ -211,6 +286,8 @@ pub(super) async fn handle_binary_frame(
             let mut fresh = engine.create_state(false);
             fresh.punctuation = state_back.punctuation;
             fresh.itn = state_back.itn;
+            fresh.abort = state_back.abort;
+            fresh.partial = state_back.partial;
             *state_opt = Some(fresh);
             send_server_message(
                 sink,
@@ -267,12 +344,14 @@ pub(super) async fn handle_configure_message(
     }
     if let Some(ref ver) = protocol_version
         && ver != gigastt_core::protocol::PROTOCOL_VERSION
+        && ver != gigastt_core::protocol::MIN_PROTOCOL_VERSION
     {
         send_server_message(
             sink,
             &ServerMessage::Error {
                 message: format!(
-                    "Unsupported protocol version: {ver}. Supported: {}",
+                    "Unsupported protocol version: {ver}. Supported: {} through {}",
+                    gigastt_core::protocol::MIN_PROTOCOL_VERSION,
                     gigastt_core::protocol::PROTOCOL_VERSION
                 ),
                 code: "unsupported_protocol_version".into(),
@@ -310,6 +389,8 @@ pub(super) async fn handle_configure_message(
             new_state.punctuation = old.punctuation;
             new_state.itn = old.itn;
             new_state.endpoint_mode = old.endpoint_mode;
+            new_state.abort = old.abort.clone();
+            new_state.partial = old.partial.clone();
         }
         *state_opt = Some(new_state);
     }
@@ -379,6 +460,7 @@ pub(super) async fn handle_stop_message(
     state_opt: &mut Option<gigastt_core::inference::StreamingState>,
     reservation: &mut Option<gigastt_core::inference::OwnedReservation<SessionTriplet>>,
     peer: SocketAddr,
+    control: &StreamControl<'_>,
 ) -> Result<FrameOutcome> {
     tracing::info!("Stop received from {peer}, finalizing");
     let Some(state) = state_opt.take() else {
@@ -405,7 +487,14 @@ pub(super) async fn handle_stop_message(
         (r, reservation)
     });
 
-    let flush_seg = match handle.await {
+    let joined = match await_decode(handle, control).await {
+        Ok(joined) => joined,
+        Err(reason) => {
+            send_abort(sink, control, reason).await?;
+            return Ok(FrameOutcome::Break);
+        }
+    };
+    let flush_seg = match joined {
         Ok((Ok(seg), reservation_back)) => {
             // Drop after the join so the pool slot is held for the duration of
             // the final decode (same lifetime as the pre-offload path).
@@ -427,6 +516,10 @@ pub(super) async fn handle_stop_message(
         }
     };
 
+    if control.abort.load(std::sync::atomic::Ordering::Relaxed) {
+        send_abort(sink, control, StreamAbort::Cancelled).await?;
+        return Ok(FrameOutcome::Break);
+    }
     let final_msg = if let Some(seg) = flush_seg {
         ServerMessage::Final(seg)
     } else {
@@ -453,4 +546,63 @@ pub(super) async fn flush_and_final(
         None => ServerMessage::Final(gigastt_core::inference::TranscriptSegment::empty_final()),
     };
     send_server_message(sink, &final_msg).await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use tokio_util::sync::CancellationToken;
+
+    #[tokio::test(start_paused = true)]
+    async fn test_stream_abort_sources_stop_in_flight_work() {
+        for expected in [
+            StreamAbort::Timeout,
+            StreamAbort::Shutdown,
+            StreamAbort::Cancelled,
+            StreamAbort::SessionLimit,
+        ] {
+            let abort = Arc::new(AtomicBool::new(false));
+            let partial = gigastt_core::inference::TranscriptSnapshot::default();
+            let shutdown = CancellationToken::new();
+            let disconnected = CancellationToken::new();
+            let (tx, rx) = tokio::sync::oneshot::channel();
+            let flag = abort.clone();
+            let handle = tokio::spawn(async move {
+                while !flag.load(Ordering::Relaxed) {
+                    tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+                }
+                let _ = tx.send(());
+            });
+            if expected == StreamAbort::Shutdown {
+                shutdown.cancel();
+            }
+            if expected == StreamAbort::Cancelled {
+                disconnected.cancel();
+            }
+            let control = StreamControl {
+                abort: &abort,
+                partial: &partial,
+                shutdown: &shutdown,
+                disconnected: &disconnected,
+                timeout_secs: if expected == StreamAbort::Timeout {
+                    1
+                } else {
+                    0
+                },
+                deadline: tokio::time::Instant::now()
+                    + std::time::Duration::from_secs(if expected == StreamAbort::SessionLimit {
+                        1
+                    } else {
+                        3600
+                    }),
+            };
+            assert_eq!(await_decode(handle, &control).await.unwrap_err(), expected);
+            assert!(abort.load(Ordering::Relaxed));
+            tokio::time::timeout(std::time::Duration::from_secs(1), rx)
+                .await
+                .unwrap()
+                .unwrap();
+        }
+    }
 }

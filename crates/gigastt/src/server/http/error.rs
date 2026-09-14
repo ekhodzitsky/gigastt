@@ -65,13 +65,20 @@ impl From<Box<Response>> for ApiError {
 }
 
 pub(super) fn api_error(status: StatusCode, msg: &str, code: &str) -> ApiError {
-    ApiError::from_response(
-        (
-            status,
-            Json(serde_json::json!({"error": msg, "code": code})),
-        )
-            .into_response(),
-    )
+    api_error_with_partial(status, msg, code, None)
+}
+
+pub(super) fn api_error_with_partial(
+    status: StatusCode,
+    msg: &str,
+    code: &str,
+    partial: Option<gigastt_core::inference::TranscriptSegment>,
+) -> ApiError {
+    let mut body = serde_json::json!({"error": msg, "code": code});
+    if let Some(partial) = partial {
+        body["partial"] = serde_json::json!(partial);
+    }
+    ApiError::from_response((status, Json(body)).into_response())
 }
 
 /// 503 response for pool-saturation backpressure: carries both the standard
@@ -118,10 +125,13 @@ pub(super) fn api_pool_closed_error() -> ApiError {
 /// so there is no `Retry-After` — retrying the same payload would time out
 /// again. Extracted (mirroring [`api_timeout_error`]) so the status + code can
 /// be asserted without a model.
-pub(super) fn api_inference_timeout_error() -> ApiError {
-    api_error(
+pub(super) fn api_inference_timeout_error(
+    partial: Option<gigastt_core::inference::TranscriptSegment>,
+) -> ApiError {
+    api_error_with_partial(
         StatusCode::GATEWAY_TIMEOUT,
         "Inference timed out.",
         "inference_timeout",
+        partial,
     )
 }

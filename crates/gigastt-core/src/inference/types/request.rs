@@ -69,12 +69,14 @@ pub struct TranscribeRequest<'a> {
     /// Optional cooperative-cancellation flag. When set and flipped to `true`
     /// by another thread (client disconnect, `DELETE /v1/jobs/{id}`, shutdown,
     /// or the no-progress inference watchdog), the decode loop observes it at a
-    /// window boundary and returns
+    /// token/frame boundary and returns
     /// [`GigasttError::Cancelled`](crate::error::GigasttError::Cancelled),
-    /// releasing the pooled session within one window instead of running to
-    /// completion. `None` (the default) is the historical, non-cancellable
+    /// releasing the pooled session after the current runtime call instead of
+    /// running to completion. `None` (the default) is the historical, non-cancellable
     /// behaviour.
     pub abort: Option<Arc<AtomicBool>>,
+    /// Optional readable partial, retained when the request returns Cancelled.
+    pub partial: Option<Arc<crate::inference::TranscriptSnapshot>>,
     /// Optional progress sink. When set, the long-form decode stores the number
     /// of 16 kHz samples processed so far (monotonically increasing, ending at
     /// the decoded length) after each window completes. A server watchdog reads
@@ -111,6 +113,7 @@ impl<'a> TranscribeRequest<'a> {
             hotwords: None,
             diarization: false,
             abort: None,
+            partial: None,
             progress: None,
             diarization_outcome: None,
             max_audio_secs: None,
@@ -138,9 +141,19 @@ impl<'a> TranscribeRequest<'a> {
     /// Attach a cooperative-cancellation flag. Flipping the shared
     /// [`AtomicBool`] to `true` from another thread makes the decode return
     /// [`GigasttError::Cancelled`](crate::error::GigasttError::Cancelled) at the
-    /// next window boundary. `None` restores the non-cancellable default.
+    /// next decode step. A native encoder call must return first. `None`
+    /// restores the non-cancellable default.
     pub fn with_abort(mut self, abort: Option<Arc<AtomicBool>>) -> Self {
         self.abort = abort;
+        self
+    }
+
+    /// Attach a sink for provisional text, including the interrupted window.
+    pub fn with_partial(
+        mut self,
+        partial: Option<Arc<crate::inference::TranscriptSnapshot>>,
+    ) -> Self {
+        self.partial = partial;
         self
     }
 

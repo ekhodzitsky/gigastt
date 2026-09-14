@@ -143,6 +143,7 @@ fn test_decode_words_honours_abort_before_single_pass() {
     let (engine, _tmp) = test_support::rnnt_engine();
     let mut guard = engine.pool.checkout_blocking().expect("checkout");
     let aborted = DecodeControls {
+        on_partial: None,
         abort: Some(&|| true),
         on_progress: None,
     };

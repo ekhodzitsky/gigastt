@@ -1,5 +1,56 @@
 use super::*;
 
+#[test]
+fn test_abort_between_tokens_keeps_decoded_prefix() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let checks = AtomicUsize::new(0);
+    let abort = || checks.fetch_add(1, Ordering::Relaxed) >= 3;
+    let mut backend = FakeBackend::new(vec![0; 100], 2, 1);
+    let encoded = Tensor::new_checked(
+        Shape::new(vec![1, ENC_DIM, 2]),
+        TensorData::F32(vec![0.0; ENC_DIM * 2]),
+    );
+    let result = greedy_decode_impl_with_abort(
+        &mut backend,
+        &encoded.view(),
+        2,
+        1,
+        &mut DecoderState::new(1),
+        None,
+        Some(&abort),
+    )
+    .unwrap();
+    assert_eq!(result.tokens.len(), 3);
+    assert_eq!(backend.joiner_calls, 3);
+    assert!(result.tokens.iter().all(|t| t.frame_index == 0));
+    assert!(!result.endpoint_detected);
+}
+
+#[test]
+fn test_abort_during_blank_run_stops_cached_decode() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let checks = AtomicUsize::new(0);
+    let abort = || checks.fetch_add(1, Ordering::Relaxed) >= 3;
+    let mut backend = FakeBackend::new(vec![], 2, 1);
+    let encoded = Tensor::new_checked(
+        Shape::new(vec![1, ENC_DIM, 50]),
+        TensorData::F32(vec![0.0; ENC_DIM * 50]),
+    );
+    let result = greedy_decode_impl_with_abort(
+        &mut backend,
+        &encoded.view(),
+        50,
+        1,
+        &mut DecoderState::new(1),
+        None,
+        Some(&abort),
+    )
+    .unwrap();
+    assert!(result.tokens.is_empty());
+    assert_eq!(backend.joiner_calls, 3);
+    assert_eq!(backend.decoder_calls, 1);
+}
+
 // --- extract_encoder_frame tests ---
 
 #[test]

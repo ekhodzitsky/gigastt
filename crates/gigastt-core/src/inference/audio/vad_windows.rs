@@ -151,6 +151,13 @@ impl<'a> VadWindows<'a> {
 }
 
 impl PcmWindows for VadWindows<'_> {
+    fn remap_words(&self, words: &mut [crate::inference::WordInfo]) {
+        for word in words {
+            word.start = crate::vad::remap_compressed_seconds(word.start, self.regions(), 16000.0);
+            word.end = crate::vad::remap_compressed_seconds(word.end, self.regions(), 16000.0);
+        }
+    }
+
     fn spec(&self) -> WindowSpec {
         self.cursor.spec()
     }

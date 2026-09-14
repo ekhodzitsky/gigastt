@@ -213,13 +213,14 @@ pub async fn cancel_job(
                 if matches!(j.status, JobStatus::Queued | JobStatus::Processing) {
                     j.status = JobStatus::Cancelled;
                     // Flip the in-flight run's abort flag (set by the executor
-                    // while Processing) so the engine stops at its next window
+                    // while Processing) so the engine stops at its next decode step
                     // and releases its pooled triplet in bounded time, rather
                     // than transcribing the rest of the file into a result the
                     // worker will discard. `None` for a still-queued job.
                     if let Some(abort) = &j.abort {
                         abort.store(true, std::sync::atomic::Ordering::Relaxed);
                     }
+                    j.body = axum::body::Bytes::new();
                 }
             }),
         )

@@ -8,6 +8,80 @@ mod common;
 use futures_util::StreamExt;
 use std::time::Duration;
 
+#[ignore = "requires model"]
+#[tokio::test]
+async fn test_job_cancel_processing_keeps_readable_partial() {
+    let (port, shutdown) = common::start_server_with_jobs(&common::model_dir(), 1).await;
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .unwrap();
+    let clip = gigastt::inference::audio::decode_audio_file(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/golos_00.wav"
+    ))
+    .unwrap();
+    let audio = clip.repeat(50);
+    let body = gigastt::inference::audio::encode_wav_pcm16(&audio, 16000);
+    let response = client
+        .post(format!("http://127.0.0.1:{port}/v1/jobs"))
+        .body(body)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 202);
+    let submitted: serde_json::Value = response.json().await.unwrap();
+    let id = submitted["job_id"].as_str().unwrap();
+    let url = format!("http://127.0.0.1:{port}/v1/jobs/{id}");
+    let first_word = tokio::time::timeout(Duration::from_secs(60), async {
+        loop {
+            let status: serde_json::Value =
+                client.get(&url).send().await.unwrap().json().await.unwrap();
+            assert!(
+                !matches!(status["status"].as_str(), Some("done" | "failed")),
+                "job ended before cancellation: {status}"
+            );
+            if let Some(text) = status["partial"]["text"].as_str()
+                && let Some(word) = text.split_whitespace().next()
+            {
+                break word.to_owned();
+            }
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+    })
+    .await
+    .expect("processing job must publish a nonempty partial");
+    assert_eq!(client.delete(&url).send().await.unwrap().status(), 204);
+    // A subsequent transcription shares the only triplet: success verifies
+    // that the cancelled decode relinquished it without finishing the file.
+    let response = client
+        .post(format!("http://127.0.0.1:{port}/v1/transcribe"))
+        .body(common::generate_wav(1, 16000))
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 200);
+    let status: serde_json::Value = client.get(&url).send().await.unwrap().json().await.unwrap();
+    assert_eq!(status["status"], "cancelled");
+    assert!(
+        status["partial"]["text"]
+            .as_str()
+            .unwrap()
+            .starts_with(&first_word)
+    );
+    assert_eq!(status["partial"]["is_final"], false);
+    assert_eq!(
+        client
+            .get(format!("{url}/result"))
+            .send()
+            .await
+            .unwrap()
+            .status(),
+        409
+    );
+    let _ = shutdown.send(());
+}
+
 /// POST /v1/jobs returns 404 when the feature is not enabled.
 #[ignore = "requires model"]
 #[tokio::test]

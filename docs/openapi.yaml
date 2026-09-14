@@ -1436,6 +1436,29 @@ components:
           type: string
           example: "Transcription failed."
           description: Sanitized error message for failed jobs
+        partial:
+          $ref: "#/components/schemas/PartialTranscript"
+
+    PartialTranscript:
+      type: object
+      description: |
+        Last provisional transcript, retained after cancellation or failure.
+        May include an incomplete last word and lacks final post-processing.
+      required: [text, words, is_final, timestamp]
+      properties:
+        text:
+          type: string
+        words:
+          type: array
+          items:
+            $ref: "#/components/schemas/WordInfo"
+        is_final:
+          type: boolean
+          enum: [false]
+        timestamp:
+          type: number
+        confidence:
+          type: number
 
     JobEvent:
       type: object
@@ -1523,6 +1546,8 @@ components:
           type: string
           example: payload_too_large
           description: Machine-readable error code
+        partial:
+          $ref: "#/components/schemas/PartialTranscript"
         retry_after_ms:
           type: integer
           example: 30000

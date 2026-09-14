@@ -8,6 +8,7 @@ pub(super) fn word(text: &str, start: f64, end: f64) -> WordInfo {
 }
 
 mod backends;
+mod cancellation;
 mod load;
 mod mock;
 mod paths;

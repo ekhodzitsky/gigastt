@@ -103,10 +103,12 @@ impl JobExecution for RealJobExecutor {
         // engine's cumulative processed 16 kHz sample count out of the blocking
         // decode. Register `abort` on the job so the cancel handler can reach it.
         let abort = Arc::new(AtomicBool::new(false));
+        let partial = Arc::new(gigastt_core::inference::TranscriptSnapshot::default());
         let progress = Arc::new(AtomicU64::new(0));
         let _ = store
             .update(id, {
                 let abort = abort.clone();
+                let partial = partial.clone();
                 Box::new(move |j| {
                     // Honour a cancel that raced in between the worker marking
                     // this job Processing and this registration: seed the flag
@@ -116,6 +118,7 @@ impl JobExecution for RealJobExecutor {
                         abort.store(true, Ordering::Relaxed);
                     }
                     j.abort = Some(abort);
+                    j.partial = Some(partial);
                 })
             })
             .await;
@@ -195,6 +198,7 @@ impl JobExecution for RealJobExecutor {
                 diarization: params.diarization == Some(true),
                 raw_codec: None,
                 abort: Some(abort.clone()),
+                partial: Some(partial.clone()),
                 progress: Some(progress.clone()),
                 // Same sink the synchronous endpoint uses, so an async job that
                 // produces no speaker labels can say why instead of returning a

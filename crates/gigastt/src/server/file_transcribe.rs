@@ -23,10 +23,11 @@ pub(crate) struct FileTranscribeOpts {
     /// When set, decode the body as a raw telephony stream and re-wrap as WAV
     /// before the engine path. REST-only today; jobs do not expose `?codec=`.
     pub raw_codec: Option<(gigastt_core::inference::audio::TelephonyCodec, u32)>,
-    /// Cooperative-cancellation flag threaded into the engine's per-window
+    /// Cooperative-cancellation flag threaded into the engine's token/frame
     /// decode loop. Flipping it (client disconnect, `DELETE /v1/jobs/{id}`,
-    /// shutdown, or the no-progress watchdog) ends the run at the next window.
+    /// shutdown, or the no-progress watchdog) ends the run at the next decode step.
     pub abort: Option<Arc<AtomicBool>>,
+    pub partial: Option<Arc<gigastt_core::inference::TranscriptSnapshot>>,
     /// Progress sink the engine advances after each window with the cumulative
     /// count of processed 16 kHz samples. The server watchdog reads it to reset
     /// its no-progress deadline and to drive a real job progress bar.
@@ -47,7 +48,7 @@ pub(crate) struct FileTranscribeOpts {
 /// Sets a shared abort flag when dropped. Held in the REST handler's async
 /// scope so that a client disconnect — which drops the handler future before it
 /// returns — flips the flag, and the detached blocking decode observes it at the
-/// next window boundary and releases its pooled triplet. On the normal return
+/// next decode step and releases its pooled triplet. On the normal return
 /// path the flag is set after the result is already in hand, so it is a no-op.
 pub(crate) struct AbortOnDrop(pub Arc<AtomicBool>);
 
@@ -57,12 +58,36 @@ impl Drop for AbortOnDrop {
     }
 }
 
+/// Link a blocking SSE producer to shutdown and receiver disconnect. Dropping
+/// the returned guard after the producer finishes also retires the watcher.
+pub(crate) fn stream_abort<T: Send + 'static>(
+    tx: &tokio::sync::mpsc::Sender<T>,
+    shutdown: tokio_util::sync::CancellationToken,
+    tracker: &tokio_util::task::TaskTracker,
+) -> (Arc<AtomicBool>, tokio_util::sync::DropGuard) {
+    let abort = Arc::new(AtomicBool::new(false));
+    let flag = abort.clone();
+    let finished = tokio_util::sync::CancellationToken::new();
+    let complete = finished.clone();
+    let tx = tx.clone();
+    tracker.spawn(async move {
+        tokio::select! {
+            biased;
+            _ = complete.cancelled() => return,
+            _ = shutdown.cancelled() => {},
+            _ = tx.closed() => {},
+        }
+        flag.store(true, Ordering::Relaxed);
+    });
+    (abort, finished.drop_guard())
+}
+
 /// Outcome of awaiting a blocking transcription under the no-progress watchdog.
 pub(crate) enum WatchdogOutcome<T> {
     /// The blocking task finished; carries the raw join result.
     Joined(Result<T, tokio::task::JoinError>),
     /// No window completed within the inference timeout. `abort` was set so the
-    /// run cancels at its next window boundary and frees the triplet.
+    /// run cancels at its next decode step and frees the triplet.
     TimedOut,
 }
 
@@ -176,6 +201,7 @@ pub(crate) fn run_file_transcribe_blocking(
             engine.transcribe_request(
                 TranscribeRequest::new(TranscribeSource::Bytes(body))
                     .with_abort(opts.abort.clone())
+                    .with_partial(opts.partial.clone())
                     .with_progress(opts.progress.clone())
                     .with_max_audio_secs(opts.max_audio_secs),
                 reservation,
@@ -193,6 +219,7 @@ pub(crate) fn run_file_transcribe_blocking(
             engine.transcribe_request(
                 TranscribeRequest::new(TranscribeSource::Channels(&channels))
                     .with_abort(opts.abort.clone())
+                    .with_partial(opts.partial.clone())
                     .with_max_audio_secs(opts.max_audio_secs),
                 reservation,
             )
@@ -205,6 +232,7 @@ pub(crate) fn run_file_transcribe_blocking(
                 .with_overrides(opts.overrides)
                 .with_hotwords(opts.hotwords.as_ref())
                 .with_abort(opts.abort.clone())
+                .with_partial(opts.partial.clone())
                 .with_max_audio_secs(opts.max_audio_secs),
                 reservation,
             )
@@ -218,6 +246,7 @@ pub(crate) fn run_file_transcribe_blocking(
                 .with_diarization(opts.diarization)
                 .with_diarization_outcome(opts.diarization_outcome.clone())
                 .with_abort(opts.abort.clone())
+                .with_partial(opts.partial.clone())
                 .with_progress(opts.progress.clone())
                 .with_max_audio_secs(opts.max_audio_secs),
             reservation,

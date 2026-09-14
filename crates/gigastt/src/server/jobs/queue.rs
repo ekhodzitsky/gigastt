@@ -120,8 +120,10 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                 .update(
                     &id,
                     Box::new(|j| {
-                        j.status = JobStatus::Processing;
-                        j.attempts += 1;
+                        if j.status == JobStatus::Queued {
+                            j.status = JobStatus::Processing;
+                            j.attempts += 1;
+                        }
                     }),
                 )
                 .await;
@@ -137,7 +139,7 @@ impl<E: JobExecution + 'static> JobWorker<E> {
 
             let store = self.store.clone();
             let body = match self.store.get(&id).await {
-                Ok(Some(job)) => job.body,
+                Ok(Some(job)) if job.status == JobStatus::Processing => job.body,
                 _ => {
                     drop(permit);
                     continue;
@@ -157,7 +159,7 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                 .await;
             drop(permit);
 
-            // If the job was cancelled while running, discard the result.
+            // The executor's snapshot remains readable even when cancelled.
             let cancelled = self
                 .store
                 .get(&id)
@@ -167,6 +169,16 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                 .map(|j| matches!(j.status, JobStatus::Cancelled))
                 .unwrap_or(false);
             if cancelled {
+                let _ = self
+                    .store
+                    .update(
+                        &id,
+                        Box::new(|j| {
+                            j.body = Bytes::new();
+                            j.abort = None;
+                        }),
+                    )
+                    .await;
                 continue;
             }
 
@@ -178,7 +190,14 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                         .update(
                             &id,
                             Box::new(move |j| {
+                                if j.status == JobStatus::Cancelled {
+                                    j.body = Bytes::new();
+                                    j.abort = None;
+                                    return;
+                                }
                                 j.status = JobStatus::Done;
+                                j.abort = None;
+                                j.partial = None;
                                 j.result = Some(res);
                                 j.processed_seconds = total;
                                 // Release the upload: a terminal job never needs
@@ -210,7 +229,9 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                             .update(
                                 &id,
                                 Box::new(|j| {
-                                    j.status = JobStatus::Queued;
+                                    if j.status != JobStatus::Cancelled {
+                                        j.status = JobStatus::Queued;
+                                    }
                                 }),
                             )
                             .await;
@@ -233,8 +254,11 @@ impl<E: JobExecution + 'static> JobWorker<E> {
                                 Box::new({
                                     let sanitized = sanitized.clone();
                                     move |j| {
-                                        j.status = JobStatus::Failed;
-                                        j.error = Some(sanitized);
+                                        if j.status != JobStatus::Cancelled {
+                                            j.status = JobStatus::Failed;
+                                            j.error = Some(sanitized);
+                                        }
+                                        j.abort = None;
                                         // Same release as the Done path: a
                                         // failed job is terminal and no longer
                                         // needs its upload.
@@ -257,7 +281,14 @@ impl<E: JobExecution + 'static> JobWorker<E> {
 /// stream ends naturally.
 pub(crate) async fn broadcast_event(store: &dyn JobStore, id: &str, event: JobEvent) {
     let channels = match store.get(id).await {
-        Ok(Some(job)) => job.event_channels,
+        Ok(Some(job)) => {
+            // A cancellation may win between execution and terminal update.
+            // Never announce a conflicting terminal state to subscribers.
+            if job.status == JobStatus::Cancelled && !matches!(event, JobEvent::Cancelled) {
+                return;
+            }
+            job.event_channels
+        }
         _ => return,
     };
     let terminal = event.is_terminal();
@@ -297,6 +328,9 @@ pub(crate) fn sanitize_job_error(e: &anyhow::Error) -> String {
     // `anyhow::Error::from`, so the concrete variant survives the downcast.
     if let Some(err) = e.downcast_ref::<gigastt_core::error::GigasttError>() {
         match err {
+            gigastt_core::error::GigasttError::Cancelled => {
+                return "Transcription cancelled.".into();
+            }
             gigastt_core::error::GigasttError::AudioTooLong {
                 observed_secs,
                 limit_secs,

@@ -14,18 +14,28 @@ impl Engine {
         // the `Arc`, so they outlive the borrow of `req` and stay valid for the
         // whole call. Absent handles leave `ctl` all-`None`, and every decode
         // function then runs its historical, byte-identical path.
-        let abort_fn: Option<Box<dyn Fn() -> bool>> = req.abort.as_ref().map(|flag| {
+        let abort_fn: Option<Box<dyn Fn() -> bool + Sync>> = req.abort.as_ref().map(|flag| {
             let flag = flag.clone();
-            Box::new(move || flag.load(Relaxed)) as Box<dyn Fn() -> bool>
+            Box::new(move || flag.load(Relaxed)) as Box<dyn Fn() -> bool + Sync>
         });
         let progress_fn: Option<Box<dyn Fn(u64)>> = req.progress.as_ref().map(|counter| {
             let counter = counter.clone();
             Box::new(move |n: u64| counter.store(n, Relaxed)) as Box<dyn Fn(u64)>
         });
+        let partial_fn = |words: &[WordInfo]| {
+            if let Some(partial) = &req.partial {
+                partial.store_words(words);
+            }
+        };
         let ctl = DecodeControls {
             abort: abort_fn.as_deref(),
             on_progress: progress_fn.as_deref(),
+            on_partial: req
+                .partial
+                .as_ref()
+                .map(|_| &partial_fn as &dyn Fn(&[WordInfo])),
         };
+        ctl.check_abort()?;
 
         // Opt-in operator length limit (`--max-audio-secs`); `None` = unlimited.
         // The streaming path honors it verbatim; the whole-buffer decoders clamp

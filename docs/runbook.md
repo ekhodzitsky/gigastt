@@ -8,7 +8,7 @@ Operator-facing guidance for gigastt in production: graceful shutdown, session c
 |---|---|---|
 | Clients lose `Final` on deploy | Drain window too short: check `shutdown_drain_secs` vs your orchestrator's grace period | Increase `GIGASTT_SHUTDOWN_DRAIN_SECS` OR disable WS tracking via `--shutdown-drain-secs 0` (clamped to 1 s) |
 | Clients receive spurious `max_session_duration_exceeded` | Legitimate long sessions | Raise `GIGASTT_MAX_SESSION_SECS` (default 3600) or set `0` to disable |
-| SIGTERM takes 30+ seconds to exit | In-flight spawn_blocking inferences can't be cancelled mid-chunk | Wait or lower `GIGASTT_SHUTDOWN_DRAIN_SECS`; process will still finish the current chunk |
+| SIGTERM takes 30+ seconds to exit | A native encoder call may still be running | Cancellation is checked before encoding and between decode steps; an encoder call already in progress must return first |
 | `Close(1008 Policy Violation)` unexpected | session-duration cap fired | Double check `max_session_secs` is set high enough for your use case |
 | `Close(1001 Going Away)` seen by clients | Expected on SIGTERM — not a bug | None — clients should reconnect |
 | WARN `optimized graph cache directory cannot be created / is not writable` | Cache dir missing or unwritable (e.g. read-only model dir) | Service still works — see [ORT cache warnings](#ort-optimized-graph-cache-warnings) |
@@ -22,8 +22,8 @@ Operator-facing guidance for gigastt in production: graceful shutdown, session c
 When the server receives `SIGTERM` (or the `run_with_shutdown` oneshot fires):
 
 1. A process-wide `CancellationToken` is cancelled.
-2. Every live `handle_ws_inner` session sees `cancel.cancelled()` in its `biased;` select loop, flushes its streaming state, emits a (possibly empty) `Final`, and closes with `Close(1001 Going Away)`.
-3. SSE `/v1/transcribe/stream` tasks check the token between chunks and drop the channel sender, which terminates the SSE stream from the client's perspective.
+2. Every live WebSocket session observes shutdown even while waiting for a blocking decode. An in-flight run receives the shared abort flag; the client receives its last available `Partial`, a `cancelled` error, `Final`, and `Close(1001 Going Away)`. Idle sessions flush and close as before.
+3. SSE producers also link shutdown and receiver disconnect to their decode abort flag. Cancellation ends the stream; any partial already received remains usable.
 4. After `axum::serve` returns, the main task waits up to `shutdown_drain_secs` seconds for the `TaskTracker` to report all tracked WS / SSE futures complete.
 5. If the drain window expires with tracked tasks still running, a WARN is emitted (`Drain window expired with tracked tasks still running`) and the process exits anyway.
 
@@ -52,7 +52,9 @@ On cap expiry the server sends:
 2. A best-effort `Final` frame (empty if no text accumulated).
 3. `Close(1008 Policy Violation)`.
 
-Overshoot ≤ 500 ms in the common case — a chunk that was already in flight when the deadline expired finishes first, then the loop hits the deadline branch on the next iteration.
+The session deadline is also observed while decoding and finalizing. It closes
+the client connection and requests cooperative cancellation without waiting for
+the current encoder call to return.
 
 ### Rollback: disable the session cap
 
@@ -87,14 +89,34 @@ retry another replica. See [Pool checkout timeout](#pool-checkout-timeout-queue-
 A wedged inference run is bounded by `--inference-timeout-secs` (default 600):
 the client gets `inference_timeout` (REST `504`, WS error + close).
 
-This is a **no-progress watchdog, not a total wall-clock cap**. The deadline
+For REST and jobs, this is a **no-progress watchdog**. The deadline
 resets every time a decode window completes, so a file that keeps making
 progress never trips it no matter how long it is — do not raise this value
 "for long files". Audio length is governed by `--max-audio-secs` (default
 `0` = unlimited) instead.
 
-On a trip the run's abort flag is flipped and the pooled triplet is released
-within one window, so a hung run no longer wedges a slot until restart.
+WebSocket applies the timeout to each chunk decode and the Stop/finalize decode.
+On timeout, disconnect, job DELETE, or shutdown, the same per-run abort flag
+is observed before encoding and between RNN-T tokens or CTC frames (including
+beam search). The blocking worker returns its triplet when it observes abort.
+
+**Mid-encoder abort is unsupported.** No runtime termination hook is used;
+a native encoder call already in progress must return before the flag can be
+observed. A wedged native call can therefore retain its slot after the client
+has received the timeout. There is no fixed cancellation-latency guarantee.
+
+The latest provisional text survives interruption. REST errors may include
+`partial`; WebSocket sends its last available `partial` before an error when
+the socket remains writable; jobs retain `partial` in their status response,
+including after a late blocking worker finishes. Cancelled jobs stay cancelled,
+and timeout failures are not retried. See [cancellation semantics](api.md).
+
+For embedded Rust callers, attach a `TranscriptSnapshot` with
+`TranscribeRequest::with_partial` or `StreamingState.partial`, alongside the
+shared `AtomicBool` abort flag. After `GigasttError::Cancelled`, the snapshot
+and streaming assembler remain readable. `StreamingState::is_failed()` is
+true and further feed/finalize calls cannot restart decoding; create a fresh
+state for a new stream.
 
 **Knobs**
 - `--pool-size N` — total triplets (more concurrency, more RAM, and a small

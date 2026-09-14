@@ -1,6 +1,23 @@
 use super::*;
 
 #[tokio::test]
+async fn test_timeout_error_keeps_partial_without_reporting_success() {
+    let mut assembler = gigastt_core::inference::TranscriptAssembler::new();
+    assembler.append(vec![gigastt_core::inference::WordInfo::new(
+        "readable", 0.0, 0.5, 0.9, None,
+    )]);
+    let response = api_inference_timeout_error(Some(assembler.partial(1.0)));
+    assert_eq!(response.status(), StatusCode::GATEWAY_TIMEOUT);
+    let bytes = axum::body::to_bytes(response.into_body(), 4096)
+        .await
+        .unwrap();
+    let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(body["code"], "inference_timeout");
+    assert_eq!(body["partial"]["text"], "readable");
+    assert_eq!(body["partial"]["is_final"], false);
+}
+
+#[tokio::test]
 async fn test_api_error_basic() {
     let resp = api_error(StatusCode::BAD_REQUEST, "bad request", "bad_request");
     let (parts, body) = resp.into_parts();
@@ -96,7 +113,7 @@ async fn test_api_pool_closed_error_no_retry() {
 
 #[tokio::test]
 async fn test_api_inference_timeout_error_is_504() {
-    let resp = api_inference_timeout_error();
+    let resp = api_inference_timeout_error(None);
     let (parts, body) = resp.into_parts();
     assert_eq!(parts.status, StatusCode::GATEWAY_TIMEOUT);
     // A wedged run would just time out again, so no Retry-After hint.
@@ -110,7 +127,7 @@ async fn test_api_inference_timeout_error_is_504() {
 async fn test_api_inference_timeout_error_body_message() {
     // The 504 inference-timeout body should not leak internals, just the
     // stable code + a sanitized message.
-    let resp = api_inference_timeout_error();
+    let resp = api_inference_timeout_error(None);
     let bytes = axum::body::to_bytes(resp.into_body(), 1024).await.unwrap();
     let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(v["code"], "inference_timeout");

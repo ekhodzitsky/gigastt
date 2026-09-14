@@ -33,7 +33,9 @@ Client                            Server
 ```
 
 **Versioning.** Protocol messages are discriminated by the `type` field; the
-current version is `1.0`, reported in `ready.version`. New fields are additive
+current version is `1.1`, reported in `ready.version`; `ready.min_protocol_version`
+is `1.0`, and clients configuring `1.0` remain supported. Version 1.1 adds
+cooperative cancellation with retained partial text. New fields are additive
 only — never removed or renamed — so clients must ignore fields they do not
 know. A client may announce its version via `configure.protocol_version`; an
 unsupported value is rejected with `unsupported_protocol_version`.
@@ -49,7 +51,8 @@ Sent immediately after the WebSocket handshake, before any audio is accepted.
   "type": "ready",
   "model": "gigaam-v3-rnnt",
   "sample_rate": 48000,
-  "version": "1.0",
+  "version": "1.1",
+  "min_protocol_version": "1.0",
   "supported_rates": [8000, 16000, 24000, 44100, 48000],
   "diarization": false,
   "max_session_secs": 3600,
@@ -200,6 +203,7 @@ frame). The same enum is declared in [`docs/asyncapi.yaml`](asyncapi.yaml).
 | `max_session_duration_exceeded` | ends (close 1008) | Wall-clock session cap `--max-session-secs` (default 3600 s) hit; a `final` is flushed before the close |
 | `policy_violation` | ends (close 1008) | Empty-frame spam (over 1000 empty binary frames) |
 | `inference_timeout` | ends | One inference run exceeded `--inference-timeout-secs` (default 600 s) |
+| `cancelled` | ends | In-flight decoding was cancelled by disconnect or shutdown; the last available `partial` is sent first when the socket is writable |
 | `inference_error` | continues | Inference failed on the last chunk (bad audio format, etc.); the session state is intact |
 | `inference_panic` | continues, state reset | Inference panicked; the decoder state was reset, so earlier audio context is lost — already-received `final`s remain valid |
 | `configure_too_late` | continues | `configure` arrived after the first audio frame; previous settings kept |
@@ -434,6 +438,20 @@ Cancel a queued or processing job:
 curl -X DELETE http://127.0.0.1:9876/v1/jobs/{job_id}
 ```
 
+Cancellation keeps provisional text readable in the optional `partial` field
+of `GET /v1/jobs/{job_id}`. It has the existing transcript-segment shape
+(`text`, `words`, `is_final: false`, `timestamp`, optional `confidence`).
+The field appears once a decode has published a snapshot and remains available
+after cancellation or failure, until the job expires. It may advance once more
+as the interrupted decode returns. The status stays `cancelled` after DELETE;
+an inference timeout or shutdown during execution produces `failed` and is not
+retried. `/result` still requires `done` and returns 409 for an interrupted job.
+
+The core polls cancellation between RNN-T tokens and CTC frames, including CTC
+beam search. A native encoder call already in progress must finish first.
+Partials are provisional raw recognition: their last word can be incomplete,
+and final punctuation, ITN, and offline diarization may not have run.
+
 Subscribe to SSE events:
 
 ```sh
@@ -456,8 +474,8 @@ Queue behavior is controlled by:
   kept before eviction.
 - `--jobs-max` (default 100) — maximum number of jobs kept in memory; when full,
   `POST /v1/jobs` returns `429 queue_full` with `Retry-After`.
-- `--jobs-retry` (default 3) — maximum retry attempts for jobs that hit an
-  inference timeout or worker panic.
+- `--jobs-retry` (default 3) — maximum retry attempts after a worker panic.
+  Cancellation and inference timeout are never retried.
 
 The default `rnnt` head emits bare lowercase; punctuation, casing, and Russian ITN are
 applied per server configuration (`--punctuation` / `--itn`). The `e2e_rnnt` head bakes
@@ -742,6 +760,14 @@ mid-job.
 | 503 | `pool_closed` | Server is shutting down, pool closed to new checkouts |
 | 503 | `cancelled` | The run was aborted cooperatively — client disconnect, `DELETE /v1/jobs/{id}`, or shutdown |
 | 504 | `inference_timeout` | A single run exceeded `--inference-timeout-secs` (default 600). No `Retry-After`: the slot was free, the run itself timed out, so retrying the same payload would time out again |
+
+REST `cancelled` and `inference_timeout` errors include an optional `partial`
+transcript segment when one was available at response time. The HTTP status
+and `code` still indicate failure. On WebSocket, an interrupted decode sends
+the last available existing `partial` message before the error and close;
+shutdown and session-limit paths also preserve their terminal `final` envelope.
+Keep the text already received when handling these errors. A disconnected
+socket cannot receive a final snapshot.
 
 ```
 HTTP/1.1 503 Service Unavailable

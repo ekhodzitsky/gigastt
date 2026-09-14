@@ -300,6 +300,7 @@ pub(super) async fn run_file_transcription(
     // `progress` carries per-window processed-sample counts back to the watchdog
     // so a long file that keeps advancing never trips the timeout.
     let abort = Arc::new(AtomicBool::new(false));
+    let partial = Arc::new(gigastt_core::inference::TranscriptSnapshot::default());
     let progress = Arc::new(AtomicU64::new(0));
 
     let file_opts = super::super::file_transcribe::FileTranscribeOpts {
@@ -309,6 +310,7 @@ pub(super) async fn run_file_transcription(
         diarization: request_diarization,
         raw_codec,
         abort: Some(abort.clone()),
+        partial: Some(partial.clone()),
         progress: Some(progress.clone()),
         diarization_outcome: diar_sink,
         max_audio_secs: limits.max_audio_secs_opt(),
@@ -316,7 +318,7 @@ pub(super) async fn run_file_transcription(
 
     // A client disconnect drops this handler future before it returns, dropping
     // the guard and flipping `abort`; the detached blocking run then cancels at
-    // its next window and returns the triplet. On the normal return path the
+    // its next decode step and returns the triplet. On the normal return path the
     // guard fires after the result is already in hand, so it is a harmless no-op.
     let _abort_guard = super::super::file_transcribe::AbortOnDrop(abort.clone());
 
@@ -354,7 +356,7 @@ pub(super) async fn run_file_transcription(
     // steady progress never trips it, while a genuinely stalled run still trips
     // at the same moment and returns a typed `inference_timeout` (504). On a
     // trip — and on shutdown — the watchdog flips `abort`, so the detached run
-    // releases its triplet within one window instead of staying wedged for the
+    // releases its triplet after the current runtime call instead of staying wedged for the
     // whole file. `0` disables the watchdog (shutdown still cancels).
     let inference_timeout_secs = limits.inference_timeout_secs;
     let outcome = super::super::file_transcribe::await_transcription_watchdog(
@@ -375,7 +377,7 @@ pub(super) async fn run_file_transcription(
             tracing::error!(
                 "REST inference made no progress for {inference_timeout_secs}s — aborting"
             );
-            return Err(api_inference_timeout_error());
+            return Err(api_inference_timeout_error(partial.get()));
         }
     };
     if let Some(ref reg) = state.metrics_registry {
@@ -392,10 +394,11 @@ pub(super) async fn run_file_transcription(
             // Reached only when a shutdown cancelled the run while the client was
             // still connected (a disconnect drops this future before here). Be
             // honest that the server is going away rather than faking success.
-            Err(api_error(
+            Err(super::error::api_error_with_partial(
                 StatusCode::SERVICE_UNAVAILABLE,
                 "Server is shutting down",
                 "cancelled",
+                partial.get(),
             ))
         }
         Ok(Err(e)) if matches!(&e, gigastt_core::error::GigasttError::AudioTooLong { .. }) => {

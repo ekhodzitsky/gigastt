@@ -83,6 +83,9 @@ pub struct JobStatusResponse {
     pub percent: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Last provisional text, retained after cancellation or failure.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub partial: Option<gigastt_core::inference::TranscriptSegment>,
 }
 
 /// Build a public status view from a stored job.
@@ -98,6 +101,7 @@ pub(crate) fn job_status_response(job: &Job) -> JobStatusResponse {
         processed_seconds: job.processed_seconds,
         percent,
         error: job.error.clone(),
+        partial: job.partial.as_ref().and_then(|partial| partial.get()),
     }
 }
 
@@ -131,10 +135,13 @@ pub struct Job {
     pub event_channels: Vec<tokio::sync::mpsc::UnboundedSender<JobEvent>>,
     /// Cooperative-cancellation flag for the in-flight run. The executor sets it
     /// when it begins inference; `DELETE /v1/jobs/{id}` flips it so the engine
-    /// releases its pooled triplet within one window instead of transcribing the
+    /// releases its pooled triplet after the current runtime call instead of transcribing the
     /// whole file. `None` while queued and after a terminal state. Purely
     /// in-memory (never serialized): it is a live handle, not job metadata.
     pub abort: Option<Arc<AtomicBool>>,
+    /// Shared with a blocking run, so late cancellation can still publish its
+    /// final partial after the watchdog has already returned to the worker.
+    pub partial: Option<Arc<gigastt_core::inference::TranscriptSnapshot>>,
 }
 
 /// Upper bound on simultaneous SSE listeners per job. Dead channels are
@@ -162,6 +169,7 @@ impl Job {
             error: None,
             event_channels: Vec::new(),
             abort: None,
+            partial: None,
         }
     }
 

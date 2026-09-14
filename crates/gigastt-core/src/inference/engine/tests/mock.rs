@@ -779,6 +779,9 @@ fn bare_state(
     ctx: usize,
 ) -> crate::inference::StreamingState {
     crate::inference::StreamingState {
+        abort: None,
+        partial: None,
+        failed: false,
         decoder: crate::inference::DecoderState::new(1),
         audio_buffer: vec![0.0; buf_len],
         assembler: {

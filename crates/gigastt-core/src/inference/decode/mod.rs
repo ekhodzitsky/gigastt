@@ -305,6 +305,7 @@ impl DecodeBackend for OrtBackend<'_> {
 /// is added to the joiner logits of token-ids that extend an active hotword
 /// prefix, before the argmax. `None` ⇒ the decode is byte-for-byte identical to
 /// the un-biased path (zero regression risk when no hotwords are configured).
+#[allow(clippy::too_many_arguments)]
 pub fn greedy_decode(
     decoder: &dyn RuntimeSession,
     joiner: &dyn RuntimeSession,
@@ -313,9 +314,18 @@ pub fn greedy_decode(
     blank_id: usize,
     state: &mut DecoderState,
     biaser: Option<&Biaser>,
+    abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<DecodeResult> {
     let mut backend = OrtBackend { decoder, joiner };
-    greedy_decode_impl(&mut backend, encoded, encoded_len, blank_id, state, biaser)
+    greedy_decode_impl_with_abort(
+        &mut backend,
+        encoded,
+        encoded_len,
+        blank_id,
+        state,
+        biaser,
+        abort,
+    )
 }
 
 /// Pick the next token from joiner logits, optionally applying hotword bias.
@@ -379,6 +389,7 @@ fn commit_non_blank(
 
 /// Backend-generic greedy decode loop. Identical behaviour to the production
 /// path; extracted so unit tests can drive it with a stub [`DecodeBackend`].
+#[cfg(test)]
 fn greedy_decode_impl<B: DecodeBackend>(
     backend: &mut B,
     encoded: &TensorView<'_>, // [1, 768, enc_len] — channels-first
@@ -386,6 +397,20 @@ fn greedy_decode_impl<B: DecodeBackend>(
     blank_id: usize,
     state: &mut DecoderState,
     biaser: Option<&Biaser>,
+) -> Result<DecodeResult> {
+    greedy_decode_impl_with_abort(backend, encoded, encoded_len, blank_id, state, biaser, None)
+}
+
+/// Cancellation returns the tokens decoded so far; the engine publishes them
+/// before returning its typed cancellation error. Never interrupt a runtime Run.
+fn greedy_decode_impl_with_abort<B: DecodeBackend>(
+    backend: &mut B,
+    encoded: &TensorView<'_>,
+    encoded_len: usize,
+    blank_id: usize,
+    state: &mut DecoderState,
+    biaser: Option<&Biaser>,
+    abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<DecodeResult> {
     let encoded = encoded
         .data()
@@ -433,7 +458,7 @@ fn greedy_decode_impl<B: DecodeBackend>(
         ENC_DIM * encoded_len
     );
 
-    for t in 0..encoded_len {
+    'frames: for t in 0..encoded_len {
         let mut tokens_this_step = 0;
         // Per-frame biasing budget, spent only by picks the boost actually
         // flipped. Reset here so a hotword resumes on the next frame.
@@ -442,6 +467,10 @@ fn greedy_decode_impl<B: DecodeBackend>(
         extract_encoder_frame(encoded, encoded_len, t, &mut enc_frame);
 
         loop {
+            if abort.is_some_and(|abort| abort()) {
+                endpoint_detected = false;
+                break 'frames;
+            }
             // === DECODER CALL (skip if in blank run) ===
             // During a blank run, prev_token/h/c are unchanged (state mutation
             // at the end of this loop is only reached for non-blank tokens).

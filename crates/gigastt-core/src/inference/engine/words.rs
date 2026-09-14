@@ -10,6 +10,24 @@ struct OwnedPcmWindow {
     samples: Vec<f32>,
 }
 
+struct WindowDecode {
+    words: Vec<WordInfo>,
+    completed: bool,
+}
+
+fn publish_window(
+    windows: &dyn PcmWindows,
+    ctl: DecodeControls<'_>,
+    words: &[WordInfo],
+) -> Result<(), GigasttError> {
+    if ctl.on_partial.is_some() {
+        let mut original = words.to_vec();
+        windows.remap_words(&mut original);
+        ctl.publish(&original);
+    }
+    ctl.check_abort()
+}
+
 impl From<&PcmWindow<'_>> for OwnedPcmWindow {
     fn from(window: &PcmWindow<'_>) -> Self {
         Self {
@@ -56,8 +74,18 @@ fn stitch_report(
     overlap: usize,
     ctl: DecodeControls<'_>,
 ) -> Vec<WordInfo> {
-    let merged = stitch_chunk_words(merged, words, overlap_mid_seconds(start_sample, overlap));
-    ctl.report((start_sample + n_samples) as u64);
+    // An abort before any new word must not trim the preceding window's tail.
+    let extends_previous = words
+        .last()
+        .is_some_and(|word| merged.last().is_none_or(|previous| word.end > previous.end));
+    let merged = if ctl.aborted() && !extends_previous {
+        merged
+    } else {
+        stitch_chunk_words(merged, words, overlap_mid_seconds(start_sample, overlap))
+    };
+    if !ctl.aborted() {
+        ctl.report((start_sample + n_samples) as u64);
+    }
     merged
 }
 
@@ -97,9 +125,12 @@ impl Engine {
                     0,
                     false, // file-mode fill floor
                     biaser,
+                    ctl.abort,
                 )
                 .map_err(|e| GigasttError::Inference { source: e.into() })?
                 .0;
+            ctl.publish(&words);
+            ctl.check_abort()?;
             ctl.report(samples.len() as u64);
             Ok(words)
         } else {
@@ -142,7 +173,19 @@ impl Engine {
             float_samples.len(),
             regions.len()
         );
-        let mut words = self.decode_words(&speech, triplet, biaser, ctl)?;
+        let publish = |words: &[WordInfo]| {
+            let mut original = words.to_vec();
+            for w in &mut original {
+                w.start = crate::vad::remap_compressed_seconds(w.start, regions, 16000.0);
+                w.end = crate::vad::remap_compressed_seconds(w.end, regions, 16000.0);
+            }
+            ctl.publish(&original);
+        };
+        let mapped = DecodeControls {
+            on_partial: ctl.on_partial.map(|_| &publish as &dyn Fn(&[WordInfo])),
+            ..ctl
+        };
+        let mut words = self.decode_words(&speech, triplet, biaser, mapped)?;
         for w in &mut words {
             w.start = crate::vad::remap_compressed_seconds(w.start, regions, 16000.0);
             w.end = crate::vad::remap_compressed_seconds(w.end, regions, 16000.0);
@@ -202,7 +245,10 @@ impl Engine {
             return Err(GigasttError::Cancelled);
         }
         let Some(second) = next_owned_window(windows)? else {
-            return self.finish_window(Vec::new(), first.span(), overlap, triplet, biaser, ctl);
+            let words =
+                self.finish_window(Vec::new(), first.span(), overlap, triplet, biaser, ctl)?;
+            publish_window(windows, ctl, &words)?;
+            return Ok(words);
         };
 
         let mut extras = match self.pool_for_batch().try_checkout_n(cap.saturating_sub(1)) {
@@ -219,7 +265,9 @@ impl Engine {
             );
             let mut merged =
                 self.finish_window(Vec::new(), first.span(), overlap, triplet, biaser, ctl)?;
+            publish_window(windows, ctl, &merged)?;
             merged = self.finish_window(merged, second.span(), overlap, triplet, biaser, ctl)?;
+            publish_window(windows, ctl, &merged)?;
             return self.decode_windows_serial(windows, triplet, biaser, ctl, overlap, merged);
         }
 
@@ -248,17 +296,22 @@ impl Engine {
             if ctl.aborted() {
                 return Err(GigasttError::Cancelled);
             }
-            let decoded = self.decode_wave_parallel(&pending, triplet, &mut extras, biaser)?;
-            for (win, words) in pending.iter().zip(decoded) {
+            let decoded =
+                self.decode_wave_parallel(&pending, triplet, &mut extras, biaser, ctl.abort)?;
+            for (win, decoded) in pending.iter().zip(decoded) {
                 merged = stitch_report(
                     merged,
                     win.start_sample,
                     win.samples.len(),
-                    words,
+                    decoded.words,
                     overlap,
                     ctl,
                 );
+                if !decoded.completed {
+                    break;
+                }
             }
+            publish_window(windows, ctl, &merged)?;
             pending.clear();
         }
         Ok(merged)
@@ -282,7 +335,9 @@ impl Engine {
                 biaser,
                 ctl,
             )?;
+            publish_window(windows, ctl, &merged)?;
         }
+        ctl.check_abort()?;
         Ok(merged)
     }
 
@@ -298,16 +353,22 @@ impl Engine {
         if ctl.aborted() {
             return Err(GigasttError::Cancelled);
         }
-        let words =
-            self.decode_samples_window(window.samples, window.start_sample, triplet, biaser)?;
-        Ok(stitch_report(
+        let words = self.decode_samples_window(
+            window.samples,
+            window.start_sample,
+            triplet,
+            biaser,
+            ctl.abort,
+        )?;
+        let merged = stitch_report(
             merged,
             window.start_sample,
             window.samples.len(),
-            words,
+            words.words,
             overlap,
             ctl,
-        ))
+        );
+        Ok(merged)
     }
 
     fn decode_samples_window(
@@ -316,7 +377,8 @@ impl Engine {
         start_sample: usize,
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
-    ) -> Result<Vec<WordInfo>, GigasttError> {
+        abort: Option<&(dyn Fn() -> bool + Sync)>,
+    ) -> Result<WindowDecode, GigasttError> {
         let frame_samples = HOP_LENGTH * ENCODER_SUBSAMPLING;
         let (features, num_frames) = self.features.compute(samples);
         let frame_offset = start_sample / frame_samples;
@@ -329,8 +391,12 @@ impl Engine {
             frame_offset,
             false, // file-mode fill floor
             biaser,
+            abort,
         )
-        .map(|r| r.0)
+        .map(|r| WindowDecode {
+            words: r.0,
+            completed: !abort.is_some_and(|abort| abort()),
+        })
         .map_err(|e| GigasttError::Inference { source: e.into() })
     }
 
@@ -340,7 +406,8 @@ impl Engine {
         primary: &mut SessionTriplet,
         extras: &mut [PoolGuard<SessionTriplet>],
         biaser: Option<&bias::Biaser>,
-    ) -> Result<Vec<Vec<WordInfo>>, GigasttError> {
+        abort: Option<&(dyn Fn() -> bool + Sync)>,
+    ) -> Result<Vec<WindowDecode>, GigasttError> {
         debug_assert!(!wave.is_empty());
         // `zip` would silently drop windows if extras ran short — that is a
         // lost-audio bug, so fail loud instead of stitching a hole.
@@ -356,17 +423,24 @@ impl Engine {
                 wave[0].start_sample,
                 primary,
                 biaser,
+                abort,
             )?]);
         }
 
         std::thread::scope(|s| {
             let mut handles = Vec::with_capacity(wave.len());
             handles.push(s.spawn(|| {
-                self.decode_samples_window(&wave[0].samples, wave[0].start_sample, primary, biaser)
+                self.decode_samples_window(
+                    &wave[0].samples,
+                    wave[0].start_sample,
+                    primary,
+                    biaser,
+                    abort,
+                )
             }));
             for (win, guard) in wave[1..].iter().zip(extras.iter_mut()) {
                 handles.push(s.spawn(move || {
-                    self.decode_samples_window(&win.samples, win.start_sample, guard, biaser)
+                    self.decode_samples_window(&win.samples, win.start_sample, guard, biaser, abort)
                 }));
             }
             // Join every handle before returning: a leftover panicking sibling
@@ -432,7 +506,11 @@ impl Engine {
         let use_vad = self.vad.is_some() && overrides.vad.unwrap_or(true);
         match (use_vad, &self.vad) {
             (true, Some(vad)) => {
-                match vad.speech_regions_with_abort(float_samples, &self.vad_config, ctl.abort) {
+                match vad.speech_regions_with_abort(
+                    float_samples,
+                    &self.vad_config,
+                    ctl.abort.map(|a| a as &dyn Fn() -> bool),
+                ) {
                     Ok(regions) if regions.is_empty() => {
                         // Tone / continuous speech can yield zero regions on a bad
                         // threshold; fall back to fixed-window / full decode rather

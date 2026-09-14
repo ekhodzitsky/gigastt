@@ -43,6 +43,9 @@ impl Engine {
         }
 
         StreamingState {
+            abort: None,
+            partial: None,
+            failed: false,
             decoder: DecoderState::new(self.tokenizer.blank_id()),
             audio_buffer: Vec::new(),
             assembler: TranscriptAssembler::new(),
@@ -91,6 +94,11 @@ impl Engine {
         state: &mut StreamingState,
         triplet: &mut SessionTriplet,
     ) -> Result<Vec<TranscriptSegment>, GigasttError> {
+        if state.abort_requested() {
+            state.failed = true;
+            Self::publish_stream_partial(state);
+            return Err(GigasttError::Cancelled);
+        }
         if samples.is_empty() {
             return Ok(vec![]);
         }
@@ -152,9 +160,13 @@ impl Engine {
             return Ok(vec![]);
         }
 
-        let endpoint = self
-            .decode_window(state, triplet)
-            .map_err(|e| GigasttError::Inference { source: e.into() })?;
+        let decoded = self.decode_window(state, triplet);
+        Self::publish_stream_partial(state);
+        if state.abort_requested() {
+            state.failed = true;
+            return Err(GigasttError::Cancelled);
+        }
+        let endpoint = decoded.map_err(|e| GigasttError::Inference { source: e.into() })?;
         state.pending_samples = 0;
         let ts = now_timestamp();
 
@@ -348,6 +360,10 @@ impl Engine {
         state: &mut StreamingState,
         triplet: &mut SessionTriplet,
     ) -> anyhow::Result<bool> {
+        if state.abort_requested() {
+            state.failed = true;
+            return Ok(false);
+        }
         let mel_start = std::time::Instant::now();
         let num_frames = self.features.compute_mel(
             &state.audio_buffer,
@@ -372,6 +388,12 @@ impl Engine {
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
         // Streaming always uses the engine boot biaser (per-request hotwords
         // apply to file-transcription paths that carry TranscribeOverrides).
+        let abort = || {
+            state
+                .abort
+                .as_ref()
+                .is_some_and(|flag| flag.load(std::sync::atomic::Ordering::Relaxed))
+        };
         let (all_words, endpoint) = self.run_inference(
             triplet,
             &state.mel_output[..],
@@ -380,6 +402,7 @@ impl Engine {
             frame_offset,
             true, // streaming: ANE low-latency pad floor when available
             self.biaser.as_ref(),
+            Some(&abort),
         )?;
 
         // Suppress words inside the already-emitted left context so a slid
@@ -451,8 +474,19 @@ impl Engine {
             }
         }
 
-        state.assembler.set_words(tail);
+        // A cancelled re-decode may cover less audio than the previous live
+        // hypothesis. Keep that readable tail instead of replacing it by empty
+        // or shorter text. The committed prefix is never modified here.
+        if !state.abort_requested() || tail.len() > state.assembler.live_word_count() {
+            state.assembler.set_words(tail);
+        }
         Ok(endpoint)
+    }
+
+    fn publish_stream_partial(state: &StreamingState) {
+        if let Some(partial) = &state.partial {
+            partial.store(state.assembler.partial(now_timestamp()));
+        }
     }
 
     /// Decode any audio buffered since the last strided decode, then finalize.
@@ -464,15 +498,30 @@ impl Engine {
         state: &mut StreamingState,
         triplet: &mut SessionTriplet,
     ) -> Option<TranscriptSegment> {
+        if state.abort_requested() {
+            state.failed = true;
+            Self::publish_stream_partial(state);
+            return (!state.assembler.is_empty()).then(|| state.assembler.partial(now_timestamp()));
+        }
         let has_pending = state.pending_samples > 0 && state.audio_buffer.len() >= N_FFT;
         if has_pending && let Err(e) = self.decode_window(state, triplet) {
             tracing::warn!("finish_stream decode failed: {e:#}");
+        }
+        if state.abort_requested() {
+            state.failed = true;
+            Self::publish_stream_partial(state);
+            return (!state.assembler.is_empty()).then(|| state.assembler.partial(now_timestamp()));
         }
         self.flush_state(state)
     }
 
     /// Flush accumulated text as a Final segment (called on Stop/Close).
     pub fn flush_state(&self, state: &mut StreamingState) -> Option<TranscriptSegment> {
+        if state.abort_requested() {
+            state.failed = true;
+            Self::publish_stream_partial(state);
+            return (!state.assembler.is_empty()).then(|| state.assembler.partial(now_timestamp()));
+        }
         if state.assembler.is_empty() {
             return None;
         }

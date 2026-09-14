@@ -75,7 +75,8 @@ async fn test_live_ws_ready_audio_stop_final() {
 
     let ready = next_json(&mut stream).await;
     assert_eq!(ready["type"], "ready");
-    assert_eq!(ready["version"], "1.0");
+    assert_eq!(ready["version"], "1.1");
+    assert_eq!(ready["min_protocol_version"], "1.0");
 
     sink.send(Message::Text(
         serde_json::json!({"type": "configure", "sample_rate": 16000})

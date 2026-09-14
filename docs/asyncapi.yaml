@@ -2,7 +2,7 @@ asyncapi: 3.0.0
 
 info:
   title: gigastt WebSocket API
-  version: "1.0"
+  version: "1.1"
   description: |
     Live-partials WebSocket API powered by GigaAM v3 (rnnt head by default).
     On-device Russian speech recognition via ONNX Runtime. Buffered/chunked
@@ -387,6 +387,7 @@ components:
             - inference_error
             - inference_panic
             - inference_timeout
+            - cancelled
             - configure_too_late
             - invalid_sample_rate
             - invalid_endpoint_mode

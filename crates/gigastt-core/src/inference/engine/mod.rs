@@ -40,22 +40,35 @@ use super::{ENCODER_SUBSAMPLING, HOP_LENGTH, N_FFT, N_MELS, SECONDS_PER_FRAME, n
 #[cfg(feature = "diarization")]
 use super::diarization::{self, LazySpeakerEncoder};
 
+type PartialSink<'a> = &'a dyn Fn(&[WordInfo]);
+
 /// Cooperative-run hooks threaded through the decode call chain.
 ///
-/// Both fields are `None` on the historical path, in which case every decode
-/// function behaves byte-for-byte as before — the hooks are only ever consulted
-/// through `if let Some(_)` guards, adding no work when absent. `abort` is
-/// polled at window boundaries so a cancelled run releases its pooled session
-/// within one window; `on_progress` receives the cumulative count of processed
-/// 16 kHz samples after each long-form window so a server watchdog can reset its
-/// no-progress deadline and drive a real progress bar.
+/// Absent hooks preserve the historical decode path. `abort` is polled before
+/// encoding and between tokens/frames; a native encoder Run is not interrupted.
+/// `on_progress` receives cumulative processed 16 kHz samples after each whole
+/// window; `on_partial` receives provisional words, including on cancellation.
 #[derive(Clone, Copy, Default)]
 pub(crate) struct DecodeControls<'a> {
-    pub(crate) abort: Option<&'a dyn Fn() -> bool>,
+    pub(crate) abort: Option<&'a (dyn Fn() -> bool + Sync)>,
     pub(crate) on_progress: Option<&'a dyn Fn(u64)>,
+    pub(crate) on_partial: Option<PartialSink<'a>>,
 }
 
 impl DecodeControls<'_> {
+    pub(crate) fn publish(&self, words: &[WordInfo]) {
+        if let Some(on_partial) = self.on_partial {
+            on_partial(words);
+        }
+    }
+
+    pub(crate) fn check_abort(&self) -> Result<(), GigasttError> {
+        if self.aborted() {
+            Err(GigasttError::Cancelled)
+        } else {
+            Ok(())
+        }
+    }
     /// True once the caller has requested cancellation.
     #[inline]
     pub(crate) fn aborted(&self) -> bool {
@@ -78,6 +91,7 @@ impl DecodeControls<'_> {
         Self {
             abort: self.abort,
             on_progress: None,
+            on_partial: self.on_partial,
         }
     }
 }
