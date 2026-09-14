@@ -2774,9 +2774,9 @@ dependencies = [
 
 [[package]]
 name = "opus-rs"
-version = "0.1.32"
+version = "0.1.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f18e50e3ad1d816434f675150eca1b4c669e49cac7b685f733a88127cd75551"
+checksum = "a8380ecc3f3861651992dad78a8c135b3dcd94a3bcd279a733b5a078174742f6"
 
 [[package]]
 name = "ort"
@@ -4752,7 +4752,7 @@ dependencies = [
  "serde",
  "tempfile",
  "textwrap",
- "toml 0.9.12+spec-1.1.0",
+ "toml 1.1.5+spec-1.1.0",
  "uniffi_internal_macros",
  "uniffi_meta",
  "uniffi_pipeline",
@@ -4797,7 +4797,7 @@ dependencies = [
  "quote",
  "serde",
  "syn 2.0.117",
- "toml 0.9.12+spec-1.1.0",
+ "toml 1.1.5+spec-1.1.0",
  "uniffi_meta",
 ]
 
