@@ -26,16 +26,18 @@ with a Russian voice note:
 ```sh
 curl --fail-with-body http://127.0.0.1:9876/ready
 curl --fail-with-body http://127.0.0.1:9876/v1/audio/transcriptions \
-  -H 'Authorization: Bearer local-gigastt' \
+  -H 'Authorization: Bearer sk-local-gigastt' \
   -F 'file=@voice.ogg' \
   -F 'model=whisper-1' \
   -F 'language=ru'
 ```
 
 Expect `{"text":"..."}` with a nonempty transcript. gigastt accepts Telegram
-OGG/Opus files directly. It does not require a key: `local-gigastt` is a
-placeholder for OpenClaw's credential selection. `whisper-1` is also a
-compatibility label; gigastt uses the model already loaded by the server.
+OGG/Opus files directly. It does not require a key: `sk-local-gigastt` is a
+placeholder for OpenClaw's credential selection. Its `sk-` prefix satisfies
+the OpenAI key-format check in `models auth paste-api-key`; it is not a real
+cloud credential. `whisper-1` is also a compatibility label; gigastt uses the
+model already loaded by the server.
 
 ## Keep chat OAuth and select a separate audio profile
 
@@ -48,7 +50,7 @@ openclaw models auth paste-api-key --agent main --provider openai \
   --profile-id openai:gigastt
 ```
 
-Enter `local-gigastt` at the credential prompt. From the first command, copy the
+Enter `sk-local-gigastt` at the credential prompt. From the first command, copy the
 exact existing OAuth profile ID, then keep it first in the auth order. Replace
 `EXISTING_OAUTH_PROFILE_ID` below; retain any other profiles you already use:
 
@@ -90,7 +92,7 @@ settings and any image/video entries in `tools.media.models`:
 
 The adapter appends `/audio/transcriptions`, so `baseUrl` must end at `/v1`.
 Leave the provider-wide chat `baseUrl` and credentials configured for chat.
-Remove any experimental provider-wide `apiKey: "local-gigastt"` override:
+Remove any experimental provider-wide placeholder `apiKey` override:
 `models.providers.openai.apiKey` takes precedence over the audio profile.
 
 In v2026.8.2, the batch audio request path needs the explicit
@@ -141,7 +143,7 @@ runs on the host, use an address reachable from the gateway container. Test
 For a non-loopback listener, gigastt requires explicit opt-in, for example
 `gigastt serve --bind-all --host 0.0.0.0`. Restrict access through the container
 network or host firewall; the endpoint has no API-key authentication. The
-`local-gigastt` placeholder does not protect it.
+`sk-local-gigastt` placeholder does not protect it.
 
 If the gateway uses an HTTP proxy, arrange a direct route to the local STT
 destination. Check its `NO_PROXY`/`no_proxy` settings and any explicit provider
@@ -169,7 +171,12 @@ The local HTTP smoke check used the repository's `speech_telegram.ogg` fixture
 authentication returned HTTP 200 and the same text as `/v1/transcribe`:
 `60000 тенге, сколько будет стоить?`.
 
-The configuration was checked against the versioned OpenClaw sources. The full
-OpenClaw CLI provider/auth/network pipeline was not executed locally. Run the
-OpenClaw checks above, including Telegram delivery and the existing OAuth chat
-profile, in the deployment where they are configured.
+The OpenClaw CLI check used the published `openclaw@2026.8.2` package with
+Node.js 22.22.3 and isolated configuration/auth state. Configuration validation,
+saving the `sk-local-gigastt` audio profile, and the audio provider inventory
+succeeded. `capability audio transcribe` returned the same transcript through
+gigastt. Setting `allowPrivateNetwork: false` produced `SsrFBlockedError`;
+stopping gigastt produced a fetch error with this sole configured audio entry.
+
+Telegram delivery and an existing OAuth chat account still need verification
+in the deployment where they are configured.
