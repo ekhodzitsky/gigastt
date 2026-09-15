@@ -1,6 +1,6 @@
 # CLI Reference
 
-> **Recipes:** the [GigaSTT Workbook](https://ekhodzitsky.github.io/gigastt/) holds scenario-driven guides (EN + RU); this document stays the canonical CLI reference.
+For installation and common commands, see the [README](../README.md).
 
 Complete command-line interface for `gigastt`.
 

@@ -32,6 +32,9 @@ train/
 .agents/
 .gstack/
 .kimi/
+.kimi-code/
+backlog/
+agents/
 .grok/
 .githooks/
 .cargo/
@@ -40,8 +43,6 @@ train/
 docs/
 specs/
 CHANGELOG.md
-CONTRIBUTING.md
 README.md
-README_RU.md
 CLAUDE.md
 AGENTS.md

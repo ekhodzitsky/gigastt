@@ -32,9 +32,6 @@ COPY crates/gigastt-ffi/Cargo.toml crates/gigastt-ffi/
 COPY crates/gigastt/Cargo.toml crates/gigastt/
 COPY crates/gigastt-uniffi/Cargo.toml crates/gigastt-uniffi/
 COPY crates/gigastt-node/Cargo.toml crates/gigastt-node/
-# Vendored crate referenced by `[patch.crates-io]` in the workspace Cargo.toml —
-# must be present before the dependency-prefetch build resolves the lockfile.
-COPY vendor/ vendor/
 RUN mkdir -p crates/gigastt-core/src crates/gigastt-quantize/src crates/gigastt-ffi/src crates/gigastt/src/server crates/gigastt-uniffi/src/bin crates/gigastt-node/src && \
     echo 'pub mod error; pub mod inference; pub mod model; pub mod protocol;' > crates/gigastt-core/src/lib.rs && \
     echo '#[cfg(feature = "quantize")] pub mod quantize { pub use gigastt_quantize::*; }' >> crates/gigastt-core/src/lib.rs && \

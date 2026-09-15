@@ -25,16 +25,3 @@ strip = true
 [profile.wheel]
 inherits = "release"
 strip = false
-
-# Local overflow-guard patch for symphonia-metadata: a crafted APEv2 tag header
-# (APE tags ride on MP3 uploads) overflows `size + 32` in ape.rs and panics with
-# "attempt to add with overflow". The vendored copy saturates instead. Drop this
-# patch once symphonia-metadata >= 0.6.1 ships the fix upstream.
-# Local unknown-size patch for symphonia-format-mkv: a live WebM stream (what a
-# browser's MediaRecorder writes) has unknown-size Clusters, and the iterator
-# could not terminate one — it passed an ancestor's own depth where the child's
-# was required, so the Cluster that should have ended the previous one was
-# rejected as `UnexpectedElement`. Drop this patch once the fix ships upstream.
-[patch.crates-io]
-symphonia-metadata = { path = "vendor/symphonia-metadata-0.6.0" }
-symphonia-format-mkv = { path = "vendor/symphonia-format-mkv-0.6.0" }

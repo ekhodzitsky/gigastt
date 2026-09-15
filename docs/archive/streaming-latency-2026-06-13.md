@@ -2,7 +2,7 @@
 
 > **Historical.** Smoke note from 2026-06-13 on a single 4 s clip. The live
 > protocol, 100-clip WER Δ, and TTFP p50/p95 now live in
-> [`docs/benchmarks.md`](../docs/benchmarks.md#streaming-measurement-protocol)
+> [`docs/benchmarks.md`](../benchmarks.md#streaming-measurement-protocol)
 > (`STREAM_PROTOCOL_VERSION` 1.0). Do not quote the numbers below as current
 > product figures.
 

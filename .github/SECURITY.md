@@ -59,4 +59,4 @@ The following are **out of scope**:
   `--bind-all` or `GIGASTT_ALLOW_BIND_ANY=1`.
 - Cross-origin requests are denied by default; loopback origins are always allowed.
 - All model files are SHA-256 verified on download and written atomically.
-- No audio or transcript data is sent off-device. See [`docs/privacy.md`](docs/privacy.md).
+- No audio or transcript data is sent off-device. See [`docs/privacy.md`](../docs/privacy.md).

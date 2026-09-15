@@ -57,8 +57,6 @@ FROM base AS gigastt-builder
 
 COPY Cargo.toml Cargo.lock /workspace/
 COPY crates/ /workspace/crates/
-# Vendored crate referenced by `[patch.crates-io]` in the workspace Cargo.toml.
-COPY vendor/ /workspace/vendor/
 RUN cargo build --release -p gigastt --locked
 
 # =============================================================================

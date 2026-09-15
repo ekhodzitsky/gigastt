@@ -169,7 +169,7 @@ ship already picked the provider; there is no runtime "best EP" switch.
 
 ## Kotlin / JNI Bridge Skeleton
 
-The skeleton lives at [`ffi/android/GigasttBridge.kt`](ffi/android/GigasttBridge.kt). A typical usage flow looks like this:
+The skeleton lives at [`ffi/android/GigasttBridge.kt`](../ffi/android/GigasttBridge.kt). A typical usage flow looks like this:
 
 ```kotlin
 class MainActivity : AppCompatActivity() {

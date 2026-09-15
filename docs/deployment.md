@@ -482,4 +482,4 @@ Quick defaults; full knobs and numbers live in
 
 - [CLI Reference](cli.md) — `--bind-all`, `--allow-origin`, `--cors-allow-any` flags
 - [Runbook](runbook.md) — pool exhaustion, OOM, resource knobs
-- [Security](../SECURITY.md) — server-side security features
+- [Security](../.github/SECURITY.md) — server-side security features

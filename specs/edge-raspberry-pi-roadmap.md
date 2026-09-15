@@ -226,7 +226,7 @@ python3 benchmark/bench_edge.py \
 |---|---|
 | Edge harness | [`benchmark/bench_edge.py`](../benchmark/bench_edge.py) |
 | Shell wrapper | [`scripts/bench_edge_pi.sh`](../scripts/bench_edge_pi.sh) |
-| Latency reference (M1) | [`benchmark/benchmark_latency.py`](../benchmark/benchmark_latency.py), [`benchmark/latency_note.md`](../benchmark/latency_note.md) |
+| Latency reference (M1) | [`benchmark/benchmark_latency.py`](../benchmark/benchmark_latency.py), [Historical latency note](../docs/archive/streaming-latency-2026-06-13.md) |
 | Published M1 matrix | [`docs/benchmarks.md`](../docs/benchmarks.md) |
 | Held-out WER queue | [`specs/held-out-datasets-roadmap.md`](held-out-datasets-roadmap.md) |
 | CLI flags | [`docs/cli.md`](../docs/cli.md) |

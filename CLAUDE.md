@@ -294,4 +294,7 @@ So both stay self-contained on the essentials, and the two overlap on purpose:
 
 When a fact appears in both, `AGENTS.md` wins and this file must be updated to
 match. Facts that live in exactly one place: the shipped state of the code is
-`CHANGELOG.md`. There is no standing local task queue.
+`CHANGELOG.md`. The standing local task queue is Backlog.md — see
+[agents/backlog.md](agents/backlog.md).
+
+Coding principles for this repo live in [agents/coding-principles.md](agents/coding-principles.md) — read them before writing code.

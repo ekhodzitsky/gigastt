@@ -1,3 +1,5 @@
+agent-dev-kb: 0.8.1
+
 # gigastt — Agent Guide
 
 > Local speech-to-text server powered by GigaAM v3 (rnnt head by default). On-device Russian
@@ -527,3 +529,11 @@ RUST_LOG=gigastt=debug cargo run -- serve
   `.github/workflows/ci.yml`.
 - The project uses English for all code comments, documentation, and commit
   messages.
+
+## Backlog.md
+
+See [agents/backlog.md](agents/backlog.md) — read before acting.
+
+## Coding principles
+
+See [agents/coding-principles.md](agents/coding-principles.md) — read before acting.

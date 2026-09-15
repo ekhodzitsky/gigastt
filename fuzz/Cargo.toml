@@ -25,16 +25,6 @@ path = "../crates/gigastt-core"
 default-features = false
 features = ["__internals", "file-decode"]
 
-# This package is its own workspace (`[workspace]` above) so it does NOT inherit
-# the parent crate's `[patch.crates-io]`. Without these patches `audio_decode`
-# links crates.io `symphonia-metadata` 0.6.0, whose APEv2 header path panics on
-# `size + 32` overflow (nightly Continuous Fuzz crash-2cd57d8e…). Keep the
-# vendor paths in lockstep with the root `Cargo.toml` patches; drop when
-# upstream ships the fixes.
-[patch.crates-io]
-symphonia-metadata = { path = "../vendor/symphonia-metadata-0.6.0" }
-symphonia-format-mkv = { path = "../vendor/symphonia-format-mkv-0.6.0" }
-
 [[bin]]
 name = "audio_decode"
 path = "fuzz_targets/audio_decode.rs"

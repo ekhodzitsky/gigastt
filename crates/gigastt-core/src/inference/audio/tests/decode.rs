@@ -25,9 +25,8 @@ fn test_decode_audio_bytes_ape_overflow_crash_is_graceful() {
     // Regression: a crafted APEv2 tag header (APE tags can ride on MP3
     // uploads) sets an unbounded `size` field that made crates.io
     // symphonia-metadata 0.6.0 panic with "attempt to add with overflow" on
-    // `size + 32` (ape.rs). The root workspace and the separate fuzz
-    // workspace both patch to the vendored saturating copy, so decode must
-    // return a graceful `Err` — never panic.
+    // `size + 32` (ape.rs). Symphonia 0.6.1 widens the size to u64 before
+    // adding the header; decode must return a graceful `Err` — never panic.
     //
     // Two fixtures exercise the same path: the original on-disk seed (36 B),
     // and the exact Continuous Fuzz artifact that reddened Nightly Soak

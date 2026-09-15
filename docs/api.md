@@ -1,6 +1,6 @@
 # API
 
-> **Recipes:** the [GigaSTT Workbook](https://ekhodzitsky.github.io/gigastt/) holds scenario-driven guides (EN + RU); this document stays the canonical API reference.
+For installation and a first request, see the [README](../README.md).
 
 gigastt exposes WebSocket (streaming), REST, and SSE on a single port (default `9876`).
 Machine-readable specs: [`docs/asyncapi.yaml`](asyncapi.yaml) (WebSocket) and
@@ -291,10 +291,8 @@ a hard limit — raise `--max-session-secs` (or set `0`) and keep frames flowing
 so the idle timeout never trips. Reconnecting on the cap is also safe: the
 server flushes a `final` before closing, so nothing recognized is lost. See
 [troubleshooting](troubleshooting.md) for the failure scenarios these limits
-produce. Embedding the binary as a managed sidecar (spawn, readiness probing,
-version gating) is in [quickstarts](quickstarts.md) and workbook
-[ch.5](workbook/en/src/05-desktop-embedded.md); the onnxruntime linking
-trade-offs are in [embedding-packaging](embedding-packaging.md).
+produce. In-process embedding is covered in [quickstarts](quickstarts.md);
+ONNX Runtime linking trade-offs are in [embedding-packaging](embedding-packaging.md).
 
 ## REST
 

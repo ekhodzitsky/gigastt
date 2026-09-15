@@ -26,7 +26,7 @@ Enable the repository pre-commit hook once — it runs exactly the checks above
 git config core.hooksPath .githooks
 ```
 
-For E2E / load / soak tests see [`CLAUDE.md`](CLAUDE.md).
+For E2E / load / soak tests see [`CLAUDE.md`](../CLAUDE.md).
 
 ## Pull requests
 
@@ -38,7 +38,7 @@ For E2E / load / soak tests see [`CLAUDE.md`](CLAUDE.md).
 
 ## Release checklist
 
-Release artifacts are produced by [`release.yml`](.github/workflows/release.yml)
+Release artifacts are produced by [`release.yml`](workflows/release.yml)
 on `v*` tag push. Never upload tarballs manually — the workflow is the single
 source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
 

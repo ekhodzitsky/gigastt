@@ -13,6 +13,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+### Changed
+
+- Require Symphonia 0.6.1 and remove the vendored metadata and Matroska
+  patches. Upstream now handles APEv2 size overflow and unknown-size WebM
+  Clusters; the fuzz workspace uses the same upstream fixes.
+
 ### Added
 
 - **`--optimized-cache-dir <PATH>`** (env `GIGASTT_OPTIMIZED_CACHE_DIR`) on

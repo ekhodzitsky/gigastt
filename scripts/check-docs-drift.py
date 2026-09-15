@@ -1,49 +1,41 @@
 #!/usr/bin/env python3
 """Docs drift gate: fail when documentation drifts away from the code.
 
-Twelve axes, all stdlib-only (no third-party deps, no network):
+Ten checks, all stdlib-only (no third-party deps, no network):
 
   1. CLI flags/envs: every clap flag + GIGASTT_* env in the CLI sources
      (crates/gigastt/src/{main,serve,serve/bind,transcribe_cmd}.rs) is
      documented in docs/cli.md, and cli.md names no flag/env that does not
      exist (intentional exceptions live in scripts/check-docs-drift.allowlist).
-  1b. CLI flag scoping: a `--flag` documented under a `gigastt <subcommand>`
+  2. CLI flag scoping: a `--flag` documented under a `gigastt <subcommand>`
       section of cli.md must exist on that subcommand's clap struct (flattened
       arg structs and top-level global flags included). Axis 1 matches tokens
       globally, so it cannot catch a serve-only flag documented under
       `gigastt transcribe` — this one fails on it.
-  1c. CLI defaults: a `[default: X]` marker in cli.md must match the clap
+  3. CLI defaults: a `[default: X]` marker in cli.md must match the clap
       `default_value` / `default_value_t` literal for the flag in that
       section (UPPER_CASE constants are resolved from the CLI sources;
       non-literal expressions like `model::default_model_dir()` are skipped).
       A missing marker is never a failure — only a value mismatch is.
-  2. WS error codes: the enum in docs/asyncapi.yaml == the table in docs/api.md
+  4. WS error codes: the enum in docs/asyncapi.yaml == the table in docs/api.md
      == the codes emitted under crates/gigastt/src/server/ws/ (plus allowlisted
      doc-only entries).
-  3. Audio formats: the canonical FORMATS list below == the `// docs-drift: codecs`
+  5. Audio formats: the canonical FORMATS list below == the `// docs-drift: codecs`
      marker block in crates/gigastt-core/src/inference/audio/decode.rs, and every format
      is named in docs/api.md and docs/cli.md. When adding a codec, update all
      three places (marker, FORMATS, docs) in the same commit.
-  4. mdBook TOCs: every chapter file is listed in its book's SUMMARY.md, every
-     SUMMARY.md entry points at an existing file, and `mdbook build` succeeds
-     for both books (skipped with a warning when mdbook is not on PATH).
-  5. EN/RU parity: docs/workbook/en/src and docs/workbook/ru/src hold identical
-     file names, and paired files have the same heading count (structural
-     control only; translation freshness is a review responsibility).
-  6. Relative links: every relative markdown link in docs/**, the root README*,
-     and packaging/**/README* resolves to an existing file/directory, and
+  6. Relative links: every relative markdown link in docs/**, .github/*.md,
+     the root README*, and packaging/**/README* resolves to an existing file/directory, and
      #anchors resolve to a heading in the target file.
   7. OpenAPI paths: every `paths:` key in docs/openapi.yaml is registered in
      crates/gigastt/src/server/{mod,router,listen}.rs (or is the separate metrics listener),
-     and OpenAPI must not resurrect a stale unconditional duration-cap claim
-     now that the default file-transcription path has no duration limit.
-  8. SECURITY.md supported-version table marks the workspace Cargo.toml major.minor
+     and OpenAPI must describe the supported formats.
+  8. Duration claims: contract docs must not state an unconditional audio limit
+     when the default file-transcription path has no duration cap.
+  9. .github/SECURITY.md supported-version table marks the workspace Cargo.toml major.minor
      as current and the previous minor as previous.
-  9. Crate version pins: `gigastt-core = "X.Y"` in README*/architecture.md must
+  10. Crate version pins: `gigastt-core = "X.Y"` in README*/architecture.md must
      match the workspace package major.minor.
-  10. Workbook currency: docs/workbook/** must not hard-code the previous minor
-      (X.(Y-1).*) when the workspace is X.Y.*; EN chapters must mention the
-      required recipe tokens (admin reload, diarization, hotwords, VAD silence).
 
 Exit code 0 when everything is in sync, 1 otherwise. Runs in seconds.
 """
@@ -53,10 +45,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import shutil
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from urllib.parse import unquote
 
@@ -77,16 +66,14 @@ SERVER_ROUTE_SOURCES = (
 # Codec marker lives in the decode module after the audio/ feature split.
 AUDIO_RS = ROOT / "crates/gigastt-core/src/inference/audio/decode.rs"
 CARGO_TOML = ROOT / "Cargo.toml"
-SECURITY_MD = ROOT / "SECURITY.md"
+SECURITY_MD = ROOT / ".github/SECURITY.md"
 OPENAPI_YAML = ROOT / "docs/openapi.yaml"
 CLI_MD = ROOT / "docs/cli.md"
 API_MD = ROOT / "docs/api.md"
 ASYNCAPI_YAML = ROOT / "docs/asyncapi.yaml"
 ALLOWLIST = ROOT / "scripts/check-docs-drift.allowlist"
-WORKBOOK = ROOT / "docs/workbook"
 PIN_FILES = [
     ROOT / "README.md",
-    ROOT / "README_RU.md",
     ROOT / "docs/architecture.md",
 ]
 
@@ -144,7 +131,7 @@ def load_allowlist(path: Path) -> dict[str, dict[str, str]]:
 
 
 # ---------------------------------------------------------------------------
-# 1. CLI flags / env vars
+# 1–3. CLI flags / env vars, scoping and defaults
 # ---------------------------------------------------------------------------
 
 ARG_RE = re.compile(
@@ -444,7 +431,7 @@ def check_cli_defaults() -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# 2. WebSocket error codes
+# 4. WebSocket error codes
 # ---------------------------------------------------------------------------
 
 WS_CODE_RE = re.compile(r'\bcode:\s*"([a-z_]+)"')
@@ -513,7 +500,7 @@ def check_ws_error_codes(allow: dict[str, dict[str, str]]) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# 3. Audio formats
+# 5. Audio formats
 # ---------------------------------------------------------------------------
 
 
@@ -542,79 +529,6 @@ def check_formats() -> list[str]:
             failures.append(f"api.md: format `{token}` not found (needle: {api_needle!r})")
         if not re.search(cli_needle, cli_doc):
             failures.append(f"cli.md: format `{token}` not found (needle: {cli_needle!r})")
-    return failures
-
-
-# ---------------------------------------------------------------------------
-# 4. mdBook SUMMARY + build
-# ---------------------------------------------------------------------------
-
-SUMMARY_LINK_RE = re.compile(r"\]\(([^)#]+)\)")
-
-
-def check_workbook(skip_mdbook: bool) -> list[str]:
-    failures: list[str] = []
-    for lang in ("en", "ru"):
-        src_dir = WORKBOOK / lang / "src"
-        summary = src_dir / "SUMMARY.md"
-        entries = set(SUMMARY_LINK_RE.findall(summary.read_text(encoding="utf-8")))
-        for entry in sorted(entries):
-            if not (src_dir / entry).is_file():
-                failures.append(f"{summary.relative_to(ROOT)}: entry `{entry}` does not exist")
-        chapters = {
-            p.name
-            for p in src_dir.glob("*.md")
-            if p.name not in {"SUMMARY.md", "_template.md"} and not p.name.startswith("_")
-        }
-        for chapter in sorted(chapters - entries):
-            failures.append(f"{summary.relative_to(ROOT)}: chapter `{chapter}` is not listed")
-
-    mdbook = shutil.which("mdbook")
-    if skip_mdbook or mdbook is None:
-        note = "--skip-mdbook" if skip_mdbook else "mdbook not on PATH"
-        print(f"warning: mdbook build check skipped ({note})", file=sys.stderr)
-        return failures
-    for lang in ("en", "ru"):
-        book = WORKBOOK / lang
-        # Build a throwaway copy: mdbook auto-creates stub files for SUMMARY
-        # entries whose chapter is missing, which would mutate the real src/.
-        with tempfile.TemporaryDirectory(prefix=f"mdbook-{lang}-") as tmp:
-            copy = Path(tmp) / "book"
-            shutil.copytree(book, copy)
-            proc = subprocess.run(
-                [mdbook, "build", str(copy)],
-                capture_output=True,
-                text=True,
-            )
-        if proc.returncode != 0:
-            failures.append(f"mdbook build {book.relative_to(ROOT)} failed:\n{proc.stderr.strip()}")
-    return failures
-
-
-# ---------------------------------------------------------------------------
-# 5. EN/RU parity
-# ---------------------------------------------------------------------------
-
-HEADING_RE = re.compile(r"^#{1,6} ", re.M)
-
-
-def check_parity() -> list[str]:
-    failures: list[str] = []
-    en_dir = WORKBOOK / "en/src"
-    ru_dir = WORKBOOK / "ru/src"
-    en_files = {p.name for p in en_dir.glob("*.md")}
-    ru_files = {p.name for p in ru_dir.glob("*.md")}
-    for name in sorted(en_files - ru_files):
-        failures.append(f"workbook parity: {name} exists in en/ but not ru/")
-    for name in sorted(ru_files - en_files):
-        failures.append(f"workbook parity: {name} exists in ru/ but not en/")
-    for name in sorted(en_files & ru_files):
-        en_heads = len(HEADING_RE.findall((en_dir / name).read_text(encoding="utf-8")))
-        ru_heads = len(HEADING_RE.findall((ru_dir / name).read_text(encoding="utf-8")))
-        if en_heads != ru_heads:
-            failures.append(
-                f"workbook parity: {name} has {en_heads} headings in en/ but {ru_heads} in ru/"
-            )
     return failures
 
 
@@ -654,6 +568,7 @@ def heading_slugs(path: Path) -> set[str]:
 
 def link_check_files() -> list[Path]:
     files = sorted((ROOT / "docs").rglob("*.md"))
+    files += sorted((ROOT / ".github").glob("*.md"))
     files += sorted(ROOT.glob("README*.md"))
     files += sorted((ROOT / "packaging").rglob("README*"))
     return [f for f in files if f.is_file()]
@@ -815,14 +730,14 @@ def check_duration_claims() -> list[str]:
 def check_security_versions() -> list[str]:
     failures: list[str] = []
     if not SECURITY_MD.exists():
-        return ["SECURITY.md missing"]
+        return [".github/SECURITY.md missing"]
     major, minor, _patch = workspace_version()
     current = f"{major}.{minor}.x"
     text = SECURITY_MD.read_text(encoding="utf-8")
     # Expect a table row like: | 2.14.x  | Yes (current)  |
     if not re.search(rf"\|\s*{re.escape(current)}\s*\|\s*Yes\s*\(current\)", text):
         failures.append(
-            f"SECURITY.md: supported-versions table must mark `{current}` as Yes (current) "
+            f".github/SECURITY.md: supported-versions table must mark `{current}` as Yes (current) "
             f"(workspace version is {major}.{minor}.*)"
         )
     if minor > 0:
@@ -831,7 +746,7 @@ def check_security_versions() -> list[str]:
             rf"\|\s*{re.escape(previous)}\s*\|\s*Yes\s*\(previous\)", text
         ):
             failures.append(
-                f"SECURITY.md: supported-versions table must mark `{previous}` as Yes (previous) "
+                f".github/SECURITY.md: supported-versions table must mark `{previous}` as Yes (previous) "
                 f"(workspace minor is {major}.{minor})"
             )
     return failures
@@ -850,7 +765,7 @@ def check_crate_pins() -> list[str]:
         pins = pin_re.findall(text)
         if not pins:
             # architecture + README are expected to show an embed pin
-            if path.name in ("README.md", "README_RU.md", "architecture.md"):
+            if path.name in ("README.md", "architecture.md"):
                 failures.append(
                     f"{path.relative_to(ROOT)}: expected a `gigastt-core = \"{expected}\"` pin"
                 )
@@ -864,55 +779,12 @@ def check_crate_pins() -> list[str]:
     return failures
 
 
-# Required recipe coverage in the English workbook (tokens must appear
-# somewhere under docs/workbook/en/src/). Keep the list short and load-bearing.
-WORKBOOK_REQUIRED_TOKENS = {
-    "/v1/admin/reload": "ops hot-reload recipe (chapter 06)",
-    "diarization=true": "speaker diarization recipe (chapter 03)",
-    "hotwords-file": "hotword bias recipe (chapter 07)",
-    "vad-min-silence-ms": "VAD endpointing ownership (chapter 04)",
-    "x86_64-pc-windows-msvc": "Windows install recipe (chapter 01)",
-    "payload_too_large": "error-code appendix coverage",
-    "GIGASTT_OFFLINE": "offline checklist / air-gapped guard",
-}
-
-
-def check_workbook_currency() -> list[str]:
-    failures: list[str] = []
-    major, minor, _patch = workspace_version()
-    workbook = ROOT / "docs" / "workbook"
-    if not workbook.is_dir():
-        return ["docs/workbook/ missing"]
-
-    # Forbid hard-coded previous-minor versions (e.g. 2.13.* when workspace is 2.14.*).
-    if minor > 0:
-        stale = re.compile(rf"\b{major}\.{minor - 1}\.\d+\b")
-        for path in sorted(workbook.rglob("*.md")):
-            text = path.read_text(encoding="utf-8")
-            hits = stale.findall(text)
-            if hits:
-                failures.append(
-                    f"{path.relative_to(ROOT)}: stale version pin(s) {sorted(set(hits))} "
-                    f"(workspace is {major}.{minor}.* — bump or use resolve-latest)"
-                )
-
-    # Required product recipes must stay documented in the EN book.
-    en_src = workbook / "en" / "src"
-    corpus = "\n".join(p.read_text(encoding="utf-8") for p in en_src.glob("*.md") if p.is_file())
-    for token, why in WORKBOOK_REQUIRED_TOKENS.items():
-        if token not in corpus:
-            failures.append(f"docs/workbook/en: missing required recipe token `{token}` ({why})")
-
-    return failures
-
-
 # ---------------------------------------------------------------------------
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--skip-mdbook", action="store_true", help="skip the mdbook build step")
-    args = parser.parse_args()
+    parser.parse_args()
 
     os.chdir(ROOT)
     allow = load_allowlist(ALLOWLIST)
@@ -923,14 +795,11 @@ def main() -> int:
     results.append(("CLI defaults (cli.md [default: …] == clap)", check_cli_defaults()))
     results.append(("WS error codes (asyncapi.yaml == api.md == ws/)", check_ws_error_codes(allow)))
     results.append(("audio formats (api.md/cli.md == audio.rs marker)", check_formats()))
-    results.append(("mdBook SUMMARY + build", check_workbook(args.skip_mdbook)))
-    results.append(("workbook EN/RU parity", check_parity()))
     results.append(("relative links", check_links()))
     results.append(("OpenAPI paths + format claims", check_openapi()))
     results.append(("no unconditional duration caps (all contract docs)", check_duration_claims()))
-    results.append(("SECURITY.md supported versions", check_security_versions()))
+    results.append((".github/SECURITY.md supported versions", check_security_versions()))
     results.append(("crate version pins (README/architecture)", check_crate_pins()))
-    results.append(("workbook currency + required recipes", check_workbook_currency()))
 
     failed = 0
     for name, failures in results:

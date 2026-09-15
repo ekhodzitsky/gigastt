@@ -11,7 +11,7 @@ on the gateway host after upgrading.
 
 ## Start gigastt and check the endpoint
 
-Install gigastt using the [quick start](../../README.md#quickstart), then run:
+Install gigastt using the [installation instructions](../../README.md#install), then run:
 
 ```sh
 gigastt serve --punctuation on --itn on

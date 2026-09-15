@@ -1,17 +1,16 @@
 # gigastt documentation
 
-Index of the guides under `docs/`. The product hub remains the root
-[README](../README.md) / [README_RU](../README_RU.md). Scenario-driven
-onboarding lives in the bilingual workbook on GitHub Pages.
+Start with the [README](../README.md) for installation and examples.
+Use the references below for a specific API, command or deployment question.
 
 ## Start here
 
 | Guide | Audience | Contents |
 |---|---|---|
-| **[Workbook](https://ekhodzitsky.github.io/gigastt/)** | Everyone | Scenario recipes EN+RU: install → CLI/batch → telephony → WebSocket → desktop/embed → deploy → models |
 | **[API](api.md)** | Integrators | WebSocket protocol, REST + SSE, jobs, admin reload, error codes, client examples |
 | **[CLI](cli.md)** | Operators | Every subcommand and flag (drift-checked against `main.rs`) |
 | **[Quickstarts](quickstarts.md)** | Embedders | In-process Python / Node / Swift / Kotlin |
+| **[Who uses gigastt](who-uses.md)** | Integrators | Public applications, optional adapters and user reports, with source links |
 
 ## Reference
 
@@ -23,6 +22,7 @@ onboarding lives in the bilingual workbook on GitHub Pages.
 | **[Benchmarks](benchmarks.md)** | WER / RTF / footprint methodology and tables |
 | **[Held-out datasets roadmap](../specs/held-out-datasets-roadmap.md)** | Public RU sets beyond Golos/OpenSTT (CV, FLEURS, RuLS, SOVA, Podlodka, ToneWebinars) |
 | **[Embedding & packaging](embedding-packaging.md)** | Static vs `ort-load-dynamic`, wheel/AAR notes |
+| **[Android / C ABI](android.md)** | Native library build, model bundling and Kotlin/JNI integration |
 
 ## Operations
 
@@ -50,12 +50,12 @@ onboarding lives in the bilingual workbook on GitHub Pages.
 - [`specs/held-out-datasets-roadmap.md`](../specs/held-out-datasets-roadmap.md) — extra public benchmark sets (one-by-one)
 - [`specs/resource-ttx-roadmap.md`](../specs/resource-ttx-roadmap.md) — completed resource program (lean INT8, pool defaults, cache GC, …)
 - [`CHANGELOG.md`](../CHANGELOG.md) — release notes
-- [`SECURITY.md`](../SECURITY.md) — vulnerability reporting + supported versions
+- [Contributing](../.github/CONTRIBUTING.md) — development, pull requests and releases
+- [Security policy](../.github/SECURITY.md) — vulnerability reporting + supported versions
 - [`NOTICE`](../NOTICE) — third-party notices (opus, WeSpeaker, benchmark data)
 
 Archive / design notes under `docs/archive/` and `docs/superpowers/` are historical
 and may lag the current release. Dated `project-audit-*` snapshots (local,
 not shipped) are **not** current product truth — do not quote them.
 
-Android C-ABI: [`ANDROID.md`](../ANDROID.md). Experimental UniFFI AAR:
-[`packaging/android/README.md`](../packaging/android/README.md).
+Experimental UniFFI AAR: [`packaging/android/README.md`](../packaging/android/README.md).

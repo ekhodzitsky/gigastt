@@ -594,7 +594,7 @@ jobs:
   docs-drift:
     # Advisory gate against documentation drift (scripts/check-docs-drift.py):
     # CLI flags vs cli.md, WS error codes vs asyncapi.yaml/api.md, audio
-    # formats, mdBook TOCs, EN/RU workbook parity, relative links.
+    # formats, OpenAPI routes, relative links and version pins.
     # continue-on-error keeps it non-blocking while it stabilizes — revisit
     # promoting it to a required check after 2026-09-15.
     continue-on-error: true
@@ -614,6 +614,7 @@ jobs:
           filters: |
             docs:
               - 'docs/**'
+              - '.github/*.md'
               - 'crates/gigastt/src/main.rs'
               - 'crates/gigastt/src/serve.rs'
               - 'crates/gigastt/src/serve/bind.rs'
@@ -627,13 +628,8 @@ jobs:
               - 'scripts/check-docs-drift.py'
               - 'scripts/check-docs-drift.allowlist'
               - 'README*.md'
-              - 'SECURITY.md'
               - 'Cargo.toml'
               - 'packaging/**/README*'
-      - if: github.event_name != 'pull_request' || steps.filter.outputs.docs == 'true'
-        uses: taiki-e/install-action@v2
-        with:
-          tool: mdbook
       - if: github.event_name != 'pull_request' || steps.filter.outputs.docs == 'true'
         name: Check docs drift
         run: python3 scripts/check-docs-drift.py

@@ -148,7 +148,7 @@ phone, YouTube — CI-separated) and **statistically ties the best (Vosk 0.54) o
 read**. It is not a runaway leader on clean read — Vosk's point estimate still edges it —
 but the head switch turned the old "concedes clean read" story into a near-tie. The
 durable advantage remains the packaging — see Footprint and the
-[README](../README.md#how-it-compares).
+[README](../README.md#performance).
 
 ## English — WER % (LibriSpeech test-clean)
 
