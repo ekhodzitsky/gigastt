@@ -33,9 +33,9 @@ Client                            Server
 ```
 
 **Versioning.** Protocol messages are discriminated by the `type` field; the
-current version is `1.1`, reported in `ready.version`; `ready.min_protocol_version`
-is `1.0`, and clients configuring `1.0` remain supported. Version 1.1 adds
-cooperative cancellation with retained partial text. New fields are additive
+current version is `1.2`, reported in `ready.version`; `ready.min_protocol_version`
+is `1.0`, and clients configuring `1.0` or `1.1` remain supported. Version 1.2 adds
+committed/tentative text and a per-utterance commitment policy. New fields are additive
 only — never removed or renamed — so clients must ignore fields they do not
 know. A client may announce its version via `configure.protocol_version`; an
 unsupported value is rejected with `unsupported_protocol_version`.
@@ -51,7 +51,7 @@ Sent immediately after the WebSocket handshake, before any audio is accepted.
   "type": "ready",
   "model": "gigaam-v3-rnnt",
   "sample_rate": 48000,
-  "version": "1.1",
+  "version": "1.2",
   "min_protocol_version": "1.0",
   "supported_rates": [8000, 16000, 24000, 44100, 48000],
   "diarization": false,
@@ -83,6 +83,8 @@ so long monologues stay one utterance for voice assistants.
 {
   "type": "final",
   "text": "Привет, как дела?",
+  "committed": "Привет, как дела?",
+  "tentative": "",
   "timestamp": 1712700001.456,
   "is_final": true,
   "confidence": 0.95,
@@ -97,6 +99,8 @@ so long monologues stay one utterance for voice assistants.
 | Field | Type | Meaning |
 |---|---|---|
 | `text` | string | Joined transcript text (see post-processing below) |
+| `committed` | string | Immutable prefix of the current utterance; starts empty after each `final` |
+| `tentative` | string | Revisable suffix, including its separating space; `text` is exactly `committed + tentative` |
 | `timestamp` | number | Unix time (seconds) when the segment was produced |
 | `is_final` | boolean | Mirrors the `type` discriminator (`true` in `final`) |
 | `speech_final` | boolean | Present and `true` only on true utterance ends; omitted on partials |
@@ -120,8 +124,36 @@ resources loaded: inverse text normalization (number-words → digits), then
 punctuation/casing restoration (`--punctuation` / `--itn`; default `auto` = on
 for the bare `rnnt` head, off for `e2e_rnnt` which is already punctuated). The
 `words[]` payload always keeps the raw decoder output — only the joined `text`
-is rewritten. The same applies to SSE `final` events on `/v1/transcribe/stream`
-(server defaults; there are no per-request parameters there yet).
+is rewritten. With explicit `stable_prefix`, only the remaining tentative text
+is post-processed at Final; previously committed bytes stay unchanged. The same
+applies to SSE `final` events on `/v1/transcribe/stream` (server post-processing
+defaults, with a per-request `commit_policy` query parameter).
+
+**Text commitment.** Choose `commit_policy` before sending WS audio, or pass it
+as a query parameter on native SSE. Values are case-insensitive; canonical wire
+tokens use lowercase with underscores. The default is `auto`.
+
+| Policy | Behavior |
+|---|---|
+| `auto` | Uses `on_finalize` while ITN or an available punctuation model is enabled for the session; otherwise exposes the existing window-commit prefix. Preserves the historical `text` output. |
+| `on_finalize` | Every partial has `committed: ""` and `tentative: text`. A successful Final commits the entire processed utterance. Internal window slides still bound encoder memory. |
+| `stable_prefix` | Enables the existing stable-prefix window algorithm even if `--stream-stable-prefix=false`. Committed bytes only grow until Final; final text processing applies only to the uncommitted tail. |
+
+The stable-prefix algorithm compares two successive hypotheses with a right-edge
+horizon; its existing bounded-buffer fallback still applies. Once emitted,
+committed bytes stay fixed even if later audio would support a different spelling.
+Policies control text visibility, not endpoint detection: VAD/blank endpoints
+and `stop` still follow `endpoint_mode`. A successful Final has `committed == text`
+and `tentative == ""`. The next utterance starts with an empty committed prefix.
+Cancellation partials remain provisional; cancellation does not commit their tail.
+
+```json
+{"type":"partial","text":"привет мир","committed":"привет","tentative":" мир"}
+```
+
+Concatenate the two fields directly, without inserting or stripping spaces.
+Clients that only read `text` continue to work; the new fields are always strings,
+including when empty.
 
 #### `error`
 
@@ -155,6 +187,7 @@ replies with `configure_too_late` and keeps the previous settings).
 | `itn` | boolean | Per-session inverse text normalization override (`final` segments only) |
 | `endpoint_mode` | string | `auto` \| `assistant` \| `manual` — overrides server `--endpoint-mode` for this session |
 | `min_silence_ms` | integer | Per-session VAD trailing silence (ms); ignored if server has no VAD |
+| `commit_policy` | string | `auto` \| `on_finalize` \| `stable_prefix`; omitted = keep the current policy (initially `auto`). Invalid values yield `invalid_commit_policy` without changing the configuration |
 
 All fields are optional. Omitting a field keeps the server default; repeated
 `configure` messages compose (an absent field leaves the previous value).
@@ -207,6 +240,7 @@ frame). The same enum is declared in [`docs/asyncapi.yaml`](asyncapi.yaml).
 | `inference_error` | continues | Inference failed on the last chunk (bad audio format, etc.); the session state is intact |
 | `inference_panic` | continues, state reset | Inference panicked; the decoder state was reset, so earlier audio context is lost — already-received `final`s remain valid |
 | `configure_too_late` | continues | `configure` arrived after the first audio frame; previous settings kept |
+| `invalid_commit_policy` | continues | Unknown text commitment policy; previous settings kept. Native SSE returns HTTP 400 before decoding |
 | `invalid_sample_rate` | continues | Rate not in `supported_rates`; previous rate kept |
 | `invalid_endpoint_mode` | continues | `endpoint_mode` not one of `auto` / `assistant` / `manual`; previous mode kept |
 | `unsupported_protocol_version` | ends | Client requested a protocol version the server does not speak |
@@ -287,11 +321,11 @@ curl -X POST http://127.0.0.1:9876/v1/transcribe \
   -H "Content-Type: application/octet-stream" --data-binary @recording.wav
 # {"text":"Привет, как дела?","words":[{"word":"Привет,","start":0.5,"end":0.9,"confidence":0.97}, ...],"confidence":0.94,"duration":3.5}
 
-# SSE streaming
-curl -X POST http://127.0.0.1:9876/v1/transcribe/stream \
+# SSE streaming (commit_policy is optional; default auto)
+curl -X POST 'http://127.0.0.1:9876/v1/transcribe/stream?commit_policy=on_finalize' \
   -H "Content-Type: application/octet-stream" --data-binary @recording.wav
-# data: {"type":"partial","text":"привет как"}
-# data: {"type":"final","text":"Привет, как дела?","confidence":0.94}
+# data: {"type":"partial","text":"привет как","committed":"","tentative":"привет как"}
+# data: {"type":"final","text":"Привет, как дела?","committed":"Привет, как дела?","tentative":"","confidence":0.94}
 
 # OpenAI-compatible (llama-swap, Hermes Agent, OpenAI SDKs with custom base_url)
 curl -X POST http://127.0.0.1:9876/v1/audio/transcriptions \

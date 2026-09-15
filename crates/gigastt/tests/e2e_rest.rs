@@ -222,6 +222,83 @@ async fn test_transcribe_stream_sse_incremental() {
     let _ = shutdown.send(());
 }
 
+#[ignore = "requires model"]
+#[tokio::test]
+async fn test_sse_commit_policies_preserve_legacy_text_through_window_slides() {
+    let engine = gigastt::inference::Engine::load_with_pool_size(&common::model_dir(), 1)
+        .unwrap()
+        .with_itn(false)
+        .with_endpoint_mode(gigastt::inference::EndpointMode::Manual);
+    let (port, shutdown) = common::start_server_with_engine(engine).await;
+    let clip = gigastt::inference::audio::decode_audio_file(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/golos_00.wav"
+    ))
+    .unwrap();
+    let wav = gigastt::inference::audio::encode_wav_pcm16(&clip.repeat(3), 16000);
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(60))
+        .build()
+        .unwrap();
+    let mut baseline = None;
+    for policy in ["auto", "on_finalize", "stable_prefix"] {
+        let response = client
+            .post(format!(
+                "http://127.0.0.1:{port}/v1/transcribe/stream?commit_policy={policy}"
+            ))
+            .body(wav.clone())
+            .send()
+            .await
+            .unwrap();
+        assert_eq!(response.status(), 200);
+        let raw = response.text().await.unwrap();
+        let mut committed = String::new();
+        let mut partials = 0;
+        let mut saw_committed = false;
+        let mut final_text = None;
+        for line in raw.lines().filter_map(|line| line.strip_prefix("data:")) {
+            let value: serde_json::Value = serde_json::from_str(line.trim()).unwrap();
+            committed =
+                common::assert_stream_text_parts(&value, &committed, policy == "on_finalize");
+            if value["type"] == "partial" {
+                partials += 1;
+                saw_committed |= !committed.is_empty();
+            } else {
+                assert!(
+                    final_text.is_none(),
+                    "manual endpoint policy produces one Final"
+                );
+                final_text = Some(value["text"].as_str().unwrap().to_owned());
+            }
+        }
+        assert!(partials > 0);
+        if policy != "on_finalize" {
+            assert!(saw_committed);
+        }
+        let final_text = final_text.expect("SSE must end with a Final");
+        assert!(!final_text.is_empty());
+        if let Some(expected) = &baseline {
+            assert_eq!(&final_text, expected);
+        } else {
+            baseline = Some(final_text);
+        }
+    }
+    let response = client
+        .post(format!(
+            "http://127.0.0.1:{port}/v1/transcribe/stream?commit_policy=unknown"
+        ))
+        .body(wav)
+        .send()
+        .await
+        .unwrap();
+    assert_eq!(response.status(), 400);
+    assert_eq!(
+        response.json::<serde_json::Value>().await.unwrap()["code"],
+        "invalid_commit_policy"
+    );
+    let _ = shutdown.send(());
+}
+
 // ---------------------------------------------------------------------------
 // 6. POST /v1/transcribe/stream — empty body → 400
 // ---------------------------------------------------------------------------

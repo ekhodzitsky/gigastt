@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn test_protocol_version_constant() {
-    assert_eq!(PROTOCOL_VERSION, "1.1");
+    assert_eq!(PROTOCOL_VERSION, "1.2");
     assert_eq!(MIN_PROTOCOL_VERSION, "1.0");
 }
 
@@ -21,7 +21,7 @@ fn test_ready_serialization_includes_version() {
     let json = serde_json::to_string(&msg).unwrap();
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
     assert_eq!(v["type"], "ready");
-    assert_eq!(v["version"], "1.1");
+    assert_eq!(v["version"], "1.2");
     assert_eq!(v["model"], "test-model");
     assert_eq!(v["sample_rate"], 48000);
     assert_eq!(v["min_protocol_version"], "1.0");
@@ -52,6 +52,8 @@ fn test_ready_session_limits_always_serialized() {
 fn test_partial_serialization_no_version() {
     let msg = ServerMessage::Partial(crate::inference::TranscriptSegment {
         text: "hello".into(),
+        committed: "hello".into(),
+        tentative: String::new(),
         timestamp: 1.0,
         words: vec![],
         is_final: false,
@@ -72,6 +74,8 @@ fn test_partial_serialization_no_version() {
 fn test_final_serialization_no_version() {
     let msg = ServerMessage::Final(crate::inference::TranscriptSegment {
         text: "hello".into(),
+        committed: "hello".into(),
+        tentative: String::new(),
         timestamp: 1.0,
         words: vec![],
         is_final: true,

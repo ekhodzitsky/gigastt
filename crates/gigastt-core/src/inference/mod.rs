@@ -41,7 +41,7 @@ pub use pool::{OwnedReservation, Pool, PoolError, PoolGuard, SessionPool, Sessio
 #[cfg(feature = "diarization")]
 pub use diarization::{SharedExtractor, SpeakerEncoder, StreamingDiarizationState};
 pub use state::{
-    DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
+    CommitPolicy, DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
     TranscriptAssembler, TranscriptSegment, TranscriptSnapshot, WordInfo,
 };
 pub use types::{

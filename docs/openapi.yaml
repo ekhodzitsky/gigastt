@@ -472,7 +472,24 @@ paths:
         - `partial` — interim result (may change)
         - `final` — finalized utterance
         - `error` — processing error
+        Text fields match WebSocket protocol 1.2: text is exactly committed + tentative,
+        including whitespace. Commitment resets after each final. Successful finals have
+        committed equal to text and an empty tentative suffix.
       operationId: transcribeStream
+      parameters:
+        - name: commit_policy
+          in: query
+          required: false
+          description: >-
+            Case-insensitive commitment policy. AUTO defers commitment while final ITN or
+            available punctuation is enabled; otherwise exposes existing window commits.
+            ON_FINALIZE keeps every partial fully tentative. STABLE_PREFIX enables stable
+            window commits and only post-processes the remaining tail at Final. Unknown
+            values return 400 with code invalid_commit_policy before decoding.
+          schema:
+            type: string
+            enum: [auto, on_finalize, stable_prefix]
+            default: auto
       requestBody:
         required: true
         content:
@@ -508,9 +525,9 @@ paths:
               schema:
                 type: string
               example: |
-                data: {"type": "partial", "text": "привет", "timestamp": 1712700000.123, "words": [{"word": "привет", "start": 0.5, "end": 0.8}]}
+                data: {"type": "partial", "text": "привет", "committed": "", "tentative": "привет", "timestamp": 1712700000.123, "words": [{"word": "привет", "start": 0.5, "end": 0.8}]}
 
-                data: {"type": "final", "text": "привет как дела", "timestamp": 1712700001.456, "words": [{"word": "привет", "start": 0.5, "end": 0.8}, {"word": "как", "start": 0.9, "end": 1.0}, {"word": "дела", "start": 1.1, "end": 1.4}]}
+                data: {"type": "final", "text": "привет как дела", "committed": "привет как дела", "tentative": "", "timestamp": 1712700001.456, "words": [{"word": "привет", "start": 0.5, "end": 0.8}, {"word": "как", "start": 0.9, "end": 1.0}, {"word": "дела", "start": 1.1, "end": 1.4}]}
         "400":
           $ref: "#/components/responses/BadRequest"
         "413":
@@ -1448,6 +1465,12 @@ components:
       properties:
         text:
           type: string
+        committed:
+          type: string
+          description: Committed prefix when available; file cancellation snapshots use an empty string.
+        tentative:
+          type: string
+          description: Provisional suffix including its separator; text is committed + tentative.
         words:
           type: array
           items:

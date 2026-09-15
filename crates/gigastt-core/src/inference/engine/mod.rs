@@ -21,7 +21,7 @@ use super::load_files::{
 use super::pool::{Pool, PoolError, PoolGuard, SessionPool, SessionTriplet};
 use super::sizing;
 use super::state::{
-    DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
+    CommitPolicy, DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
     TranscriptAssembler, TranscriptSegment, WordInfo, aggregate_confidence,
 };
 use super::token_format::{TokenFormatter, overlap_mid_seconds, stitch_chunk_words};

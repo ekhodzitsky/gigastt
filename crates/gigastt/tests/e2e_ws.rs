@@ -11,6 +11,77 @@ use tokio_tungstenite::tungstenite::Message;
 
 #[ignore = "requires model"]
 #[tokio::test]
+async fn test_ws_commit_policies_preserve_legacy_text_through_window_slides() {
+    let engine = gigastt::inference::Engine::load_with_pool_size(&common::model_dir(), 1)
+        .unwrap()
+        .with_itn(false)
+        .with_endpoint_mode(gigastt::inference::EndpointMode::Manual);
+    let (port, shutdown) = common::start_server_with_engine(engine).await;
+    let clip = gigastt::inference::audio::decode_audio_file(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/golos_00.wav"
+    ))
+    .unwrap();
+    let wav = gigastt::inference::audio::encode_wav_pcm16(&clip.repeat(3), 16000);
+    let mut baseline = None;
+    for policy in ["auto", "on_finalize", "stable_prefix"] {
+        let (mut sink, mut stream, _) = common::ws_connect(port).await;
+        for configure in [
+            serde_json::json!({"type":"configure", "sample_rate":16000, "commit_policy":policy.to_uppercase()}),
+            // Recreating a state and omitting the policy must preserve it.
+            serde_json::json!({"type":"configure", "diarization":false, "punctuation":false}),
+        ] {
+            sink.send(Message::Text(configure.to_string().into()))
+                .await
+                .unwrap();
+        }
+        for pcm in wav[44..].chunks(32000) {
+            sink.send(Message::Binary(pcm.to_vec().into()))
+                .await
+                .unwrap();
+        }
+        sink.send(Message::Text(
+            serde_json::json!({"type":"stop"}).to_string().into(),
+        ))
+        .await
+        .unwrap();
+        let final_text = tokio::time::timeout(Duration::from_secs(60), async {
+            let mut committed = String::new();
+            let mut partials = 0;
+            let mut saw_committed = false;
+            loop {
+                let message = stream.next().await.unwrap().unwrap();
+                let Message::Text(text) = message else {
+                    continue;
+                };
+                let value: serde_json::Value = serde_json::from_str(&text).unwrap();
+                committed =
+                    common::assert_stream_text_parts(&value, &committed, policy == "on_finalize");
+                if value["type"] == "final" {
+                    assert!(partials > 0);
+                    if policy != "on_finalize" {
+                        assert!(saw_committed, "must commit before Final");
+                    }
+                    return value["text"].as_str().unwrap().to_owned();
+                }
+                partials += 1;
+                saw_committed |= !committed.is_empty();
+            }
+        })
+        .await
+        .unwrap();
+        assert!(!final_text.is_empty());
+        if let Some(expected) = &baseline {
+            assert_eq!(&final_text, expected);
+        } else {
+            baseline = Some(final_text);
+        }
+    }
+    let _ = shutdown.send(());
+}
+
+#[ignore = "requires model"]
+#[tokio::test]
 async fn test_ws_close_during_decode_releases_pool() {
     let (port, shutdown) = common::start_server_with_pool(&common::model_dir(), 1).await;
     let (mut sink, mut stream, _) = common::ws_connect(port).await;
@@ -74,7 +145,7 @@ async fn test_ws_connect_receives_ready() {
     let (_sink, _stream, ready) = common::ws_connect(port).await;
 
     assert_eq!(ready["type"], "ready");
-    assert_eq!(ready["version"], "1.1");
+    assert_eq!(ready["version"], "1.2");
     assert_eq!(ready["min_protocol_version"], "1.0");
     assert_eq!(ready["sample_rate"], 48000);
     assert!(
@@ -110,29 +181,31 @@ async fn test_ws_connect_receives_ready() {
 #[tokio::test]
 async fn test_ws_accepts_legacy_protocol_configure() {
     let (port, shutdown) = common::start_server(&common::model_dir()).await;
-    let (mut sink, mut stream, _) = common::ws_connect(port).await;
-    sink.send(Message::Text(
-        serde_json::json!({"type":"configure", "protocol_version":"1.0"})
-            .to_string()
-            .into(),
-    ))
-    .await
-    .unwrap();
-    sink.send(Message::Text(
-        serde_json::json!({"type":"stop"}).to_string().into(),
-    ))
-    .await
-    .unwrap();
-    let message = tokio::time::timeout(Duration::from_secs(5), stream.next())
+    for version in ["1.0", "1.1"] {
+        let (mut sink, mut stream, _) = common::ws_connect(port).await;
+        sink.send(Message::Text(
+            serde_json::json!({"type":"configure", "protocol_version":version})
+                .to_string()
+                .into(),
+        ))
         .await
-        .unwrap()
-        .unwrap()
         .unwrap();
-    let value: serde_json::Value = serde_json::from_str(message.to_text().unwrap()).unwrap();
-    assert_eq!(
-        value["type"], "final",
-        "legacy configure must not fail: {value}"
-    );
+        sink.send(Message::Text(
+            serde_json::json!({"type":"stop"}).to_string().into(),
+        ))
+        .await
+        .unwrap();
+        let message = tokio::time::timeout(Duration::from_secs(5), stream.next())
+            .await
+            .unwrap()
+            .unwrap()
+            .unwrap();
+        let value: serde_json::Value = serde_json::from_str(message.to_text().unwrap()).unwrap();
+        assert_eq!(
+            value["type"], "final",
+            "legacy configure must not fail: {value}"
+        );
+    }
     let _ = shutdown.send(());
 }
 

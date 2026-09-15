@@ -3,8 +3,8 @@
 use serde::{Deserialize, Serialize};
 
 /// Current WebSocket protocol version (semver-lite: major.minor).
-pub const PROTOCOL_VERSION: &str = "1.1";
-/// Oldest accepted client version; cancellation uses additive error semantics.
+pub const PROTOCOL_VERSION: &str = "1.2";
+/// Oldest accepted client version; newer versions add optional fields.
 pub const MIN_PROTOCOL_VERSION: &str = "1.0";
 
 /// Server → Client messages.
@@ -116,6 +116,11 @@ pub enum ClientMessage {
         /// No effect when the server has no VAD loaded. Optional.
         #[serde(default)]
         min_silence_ms: Option<u32>,
+        /// Text commitment policy: `auto`, `on_finalize`, or `stable_prefix`.
+        /// Omitted = keep the previous policy (initially `auto`). Commitment
+        /// is scoped to each utterance and resets after Final.
+        #[serde(default)]
+        commit_policy: Option<String>,
     },
 }
 

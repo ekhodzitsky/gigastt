@@ -105,6 +105,8 @@ pub(crate) fn aggregate_confidence(words: &[WordInfo]) -> Option<f32> {
 /// [`crate::inference::Engine::flush_state`] when the stream ends.
 #[non_exhaustive]
 pub struct StreamingState {
+    /// Public text commitment policy, scoped to the current utterance.
+    pub commit_policy: CommitPolicy,
     /// Cooperative cancellation for this stream. Once set, create a new state
     /// to start another stream; a failed state cannot resume decoding.
     pub abort: Option<std::sync::Arc<std::sync::atomic::AtomicBool>>,
@@ -189,6 +191,10 @@ impl StreamingState {
 pub struct TranscriptSnapshot(parking_lot::Mutex<Option<TranscriptSegment>>);
 
 impl TranscriptSnapshot {
+    pub(crate) fn clear(&self) {
+        *self.0.lock() = None;
+    }
+
     /// Read the latest snapshot, including after cancellation or timeout.
     pub fn get(&self) -> Option<TranscriptSegment> {
         self.0.lock().clone()
@@ -306,6 +312,33 @@ impl EndpointMode {
             Self::Auto => "auto",
             Self::Assistant => "assistant",
             Self::Manual => "manual",
+        }
+    }
+}
+
+/// When streaming text becomes immutable, until the next utterance starts.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+#[non_exhaustive]
+pub enum CommitPolicy {
+    /// Defer commitment if final-only text processing is enabled; otherwise
+    /// expose the assembler's stable prefix. Preserves legacy `text` output.
+    #[default]
+    Auto,
+    /// Keep all public text tentative until a true endpoint or explicit flush.
+    OnFinalize,
+    /// Expose the stable prefix and never rewrite it, including at Final.
+    StablePrefix,
+}
+
+impl CommitPolicy {
+    /// Parse a WS configure or SSE query token, accepting either letter case.
+    pub fn parse_token(s: &str) -> Option<Self> {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "auto" => Some(Self::Auto),
+            "on_finalize" => Some(Self::OnFinalize),
+            "stable_prefix" => Some(Self::StablePrefix),
+            _ => None,
         }
     }
 }
@@ -464,6 +497,8 @@ impl TranscriptAssembler {
         self.text.clear();
         self.words.clear();
         TranscriptSegment {
+            committed: text.clone(),
+            tentative: String::new(),
             text,
             words,
             is_final: true,
@@ -477,8 +512,13 @@ impl TranscriptAssembler {
     /// Build a **partial** segment from committed + live without resetting.
     pub fn partial(&self, timestamp: f64) -> TranscriptSegment {
         let words = self.full_words();
+        let text = self.full_text();
         TranscriptSegment {
-            text: self.full_text(),
+            committed: self.committed_text.clone(),
+            // The separator belongs to the tentative tail so concatenation
+            // needs no trimming, and the committed bytes never change.
+            tentative: text[self.committed_text.len()..].to_owned(),
+            text,
             words: words.clone(),
             is_final: false,
             speech_final: false,
@@ -514,6 +554,11 @@ impl TranscriptAssembler {
 pub struct TranscriptSegment {
     /// Recognized text for this segment.
     pub text: String,
+    /// Immutable prefix of this utterance. Resets after its Final.
+    pub committed: String,
+    /// Revisable suffix, including any separating space. `text` is exactly
+    /// `committed + tentative`; successful finals have an empty suffix.
+    pub tentative: String,
     /// Individual words with timing and confidence metadata.
     pub words: Vec<WordInfo>,
     /// Whether this segment is final (utterance complete) or partial (interim).
@@ -541,6 +586,8 @@ impl TranscriptSegment {
     pub fn empty_final() -> Self {
         Self {
             text: String::new(),
+            committed: String::new(),
+            tentative: String::new(),
             words: vec![],
             is_final: true,
             speech_final: true,

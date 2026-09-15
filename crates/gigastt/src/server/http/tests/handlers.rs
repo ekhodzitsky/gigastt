@@ -176,11 +176,32 @@ async fn test_transcribe_stream_invalid_audio() {
         jobs: None,
     });
     let body = Bytes::from(vec![0u8; 100]);
-    let result = transcribe_stream(State(state), body).await;
+    let result =
+        transcribe_stream(State(state), axum::extract::Query(Default::default()), body).await;
     match result {
         Err(resp) => assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY),
         Ok(_) => panic!("expected invalid_audio error"),
     }
+}
+
+#[tokio::test]
+async fn test_transcribe_stream_invalid_commit_policy_is_bad_request() {
+    let query = serde_json::from_value(serde_json::json!({"commit_policy":"unknown"})).unwrap();
+    let Err(error) = transcribe_stream(
+        State(bare_state(test_engine())),
+        axum::extract::Query(query),
+        Bytes::new(),
+    )
+    .await
+    else {
+        panic!("invalid policy must be rejected before audio decoding");
+    };
+    assert_eq!(error.status(), StatusCode::BAD_REQUEST);
+    let body = axum::body::to_bytes(error.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(payload["code"], "invalid_commit_policy");
 }
 
 #[tokio::test]
@@ -199,7 +220,8 @@ async fn test_transcribe_stream_payload_too_large() {
         jobs: None,
     });
     let body = Bytes::from(vec![0u8; 100]);
-    let result = transcribe_stream(State(state), body).await;
+    let result =
+        transcribe_stream(State(state), axum::extract::Query(Default::default()), body).await;
     match result {
         Err(resp) => assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE),
         Ok(_) => panic!("expected payload_too_large error"),
@@ -221,7 +243,8 @@ async fn test_transcribe_stream_pool_closed() {
         jobs: None,
     });
     let body = minimal_wav();
-    let result = transcribe_stream(State(state), body).await;
+    let result =
+        transcribe_stream(State(state), axum::extract::Query(Default::default()), body).await;
     match result {
         Err(resp) => assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE),
         Ok(_) => panic!("expected pool_closed error"),
@@ -260,7 +283,7 @@ async fn test_transcribe_stream_with_metrics() {
         jobs: None,
     });
     let body = short_wav();
-    match transcribe_stream(State(state), body).await {
+    match transcribe_stream(State(state), axum::extract::Query(Default::default()), body).await {
         Ok(_) => {}
         Err(_) => panic!("transcribe_stream with metrics failed"),
     }
@@ -374,7 +397,12 @@ async fn test_readiness_ready_when_pool_has_a_slot() {
 
 #[tokio::test]
 async fn test_transcribe_stream_empty_body_is_bad_request() {
-    let result = transcribe_stream(State(bare_state(test_engine())), Bytes::new()).await;
+    let result = transcribe_stream(
+        State(bare_state(test_engine())),
+        axum::extract::Query(Default::default()),
+        Bytes::new(),
+    )
+    .await;
     let resp = result.expect_err("empty body");
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
 }

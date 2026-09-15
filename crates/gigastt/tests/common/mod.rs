@@ -11,6 +11,40 @@ use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
+/// Check the additive text contract and model an older text-only client.
+pub fn assert_stream_text_parts(
+    value: &serde_json::Value,
+    previous: &str,
+    on_finalize: bool,
+) -> String {
+    #[derive(serde::Deserialize)]
+    struct LegacySegment {
+        text: String,
+    }
+    let legacy: LegacySegment = serde_json::from_value(value.clone()).unwrap();
+    let committed = value["committed"].as_str().expect("committed string");
+    let tentative = value["tentative"].as_str().expect("tentative string");
+    assert_eq!(legacy.text, committed.to_owned() + tentative);
+    assert!(
+        committed.starts_with(previous),
+        "committed text regressed: {value}"
+    );
+    match value["type"].as_str() {
+        Some("final") => {
+            assert!(tentative.is_empty());
+            assert_eq!(committed, legacy.text);
+            String::new()
+        }
+        Some("partial") => {
+            if on_finalize {
+                assert!(committed.is_empty());
+            }
+            committed.to_owned()
+        }
+        _ => panic!("unexpected stream message: {value}"),
+    }
+}
+
 /// Platform-specific home directory.
 pub fn home_dir() -> Option<PathBuf> {
     #[cfg(unix)]

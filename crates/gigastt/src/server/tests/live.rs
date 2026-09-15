@@ -33,6 +33,37 @@ async fn spawn_mock_server() -> (u16, tokio::sync::oneshot::Sender<()>, tempfile
 }
 
 #[tokio::test]
+async fn test_live_ws_invalid_commit_policy_keeps_session_usable() {
+    let (port, shutdown, _tmp) = spawn_mock_server().await;
+    let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/v1/ws"))
+        .await
+        .unwrap();
+    let (mut sink, mut stream) = ws.split();
+    assert_eq!(next_json(&mut stream).await["type"], "ready");
+    sink.send(Message::Text(
+        serde_json::json!({"type":"configure","commit_policy":"unknown"})
+            .to_string()
+            .into(),
+    ))
+    .await
+    .unwrap();
+    assert_eq!(
+        next_json(&mut stream).await["code"],
+        "invalid_commit_policy"
+    );
+    sink.send(Message::Text(
+        serde_json::json!({"type":"stop"}).to_string().into(),
+    ))
+    .await
+    .unwrap();
+    let final_ = next_json(&mut stream).await;
+    assert_eq!(final_["type"], "final");
+    assert_eq!(final_["committed"], "");
+    assert_eq!(final_["tentative"], "");
+    let _ = shutdown.send(());
+}
+
+#[tokio::test]
 async fn test_live_health_and_openai_transcriptions() {
     let (port, shutdown, _tmp) = spawn_mock_server().await;
     let health: serde_json::Value = reqwest::get(format!("http://127.0.0.1:{port}/health"))
@@ -75,7 +106,7 @@ async fn test_live_ws_ready_audio_stop_final() {
 
     let ready = next_json(&mut stream).await;
     assert_eq!(ready["type"], "ready");
-    assert_eq!(ready["version"], "1.1");
+    assert_eq!(ready["version"], "1.2");
     assert_eq!(ready["min_protocol_version"], "1.0");
 
     sink.send(Message::Text(

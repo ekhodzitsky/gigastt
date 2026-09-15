@@ -6,6 +6,26 @@ fn word(text: &str, start: f64, end: f64) -> WordInfo {
 }
 
 #[test]
+fn test_stream_text_parts_preserve_spaces_and_reset_after_final() {
+    let mut asm = TranscriptAssembler::new();
+    asm.append(vec![word("привет", 0.0, 0.5)]);
+    asm.commit_live();
+    asm.set_words(vec![word("мир", 0.5, 1.0)]);
+    let partial = serde_json::to_value(asm.partial(1.0)).unwrap();
+    assert_eq!(partial["committed"], "привет");
+    assert_eq!(partial["tentative"], " мир");
+    assert_eq!(partial["text"], "привет мир");
+
+    let final_ = serde_json::to_value(asm.finalize(2.0)).unwrap();
+    assert_eq!(final_["committed"], "привет мир");
+    assert_eq!(final_["tentative"], "");
+    asm.append(vec![word("снова", 1.0, 1.5)]);
+    let next = serde_json::to_value(asm.partial(3.0)).unwrap();
+    assert_eq!(next["committed"], "");
+    assert_eq!(next["tentative"], "снова");
+}
+
+#[test]
 fn test_decoder_state_new_zeros() {
     let blank_id = 1024;
     let state = DecoderState::new(blank_id);

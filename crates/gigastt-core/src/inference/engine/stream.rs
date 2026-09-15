@@ -43,6 +43,7 @@ impl Engine {
         }
 
         StreamingState {
+            commit_policy: CommitPolicy::Auto,
             abort: None,
             partial: None,
             failed: false,
@@ -96,7 +97,7 @@ impl Engine {
     ) -> Result<Vec<TranscriptSegment>, GigasttError> {
         if state.abort_requested() {
             state.failed = true;
-            Self::publish_stream_partial(state);
+            self.publish_stream_partial(state);
             return Err(GigasttError::Cancelled);
         }
         if samples.is_empty() {
@@ -144,7 +145,7 @@ impl Engine {
         // early decode only in legacy commit mode; with stable-prefix commits
         // an over-cap buffer just waits for the next stride (bounded by the
         // stride itself), avoiding an 8x decode rate during cap saturation.
-        let cap_forces_decode = over_cap && !self.stream_stable_prefix;
+        let cap_forces_decode = over_cap && !self.stable_prefix_enabled(state);
         if state.pending_samples < STREAM_DECODE_STRIDE_SAMPLES
             && !cap_forces_decode
             && !vad_endpoint
@@ -161,7 +162,7 @@ impl Engine {
         }
 
         let decoded = self.decode_window(state, triplet);
-        Self::publish_stream_partial(state);
+        self.publish_stream_partial(state);
         if state.abort_requested() {
             state.failed = true;
             return Err(GigasttError::Cancelled);
@@ -187,8 +188,7 @@ impl Engine {
             } else {
                 EndpointReason::Blank
             };
-            let mut seg = state.assembler.finalize_with_reason(ts, reason);
-            self.enrich_final_segment(&mut seg, state);
+            let seg = self.finalize_stream_segment(state, ts, reason);
             Self::slide_streaming_window(state);
             if seg.text.trim().is_empty() {
                 return Ok(vec![]);
@@ -200,7 +200,7 @@ impl Engine {
             // Encoder cost bound: commit live words so they are not lost when
             // the window slides, but do **not** end the utterance.
             let live = state.assembler.live_word_count();
-            let committed = if self.stream_stable_prefix {
+            let committed = if self.stable_prefix_enabled(state) {
                 Self::cap_commit_stable_prefix(state)
             } else {
                 state.cap_streak = 0;
@@ -213,10 +213,10 @@ impl Engine {
                 agreed = state.agreed_prefix,
                 streak = state.cap_streak,
                 window_samples = state.audio_buffer.len(),
-                stable = self.stream_stable_prefix,
+                stable = self.stable_prefix_enabled(state),
                 "stream window cap: committed prefix, sliding"
             );
-            if self.stream_stable_prefix {
+            if self.stable_prefix_enabled(state) {
                 // Slide only when words were actually committed: the anchored
                 // slide drops audio before the stable prefix's coverage end,
                 // and sliding without a commit would cut audio under the live
@@ -234,16 +234,17 @@ impl Engine {
             } else {
                 Self::slide_streaming_window(state);
             }
+            self.publish_stream_partial(state);
             if state.assembler.is_empty() {
                 return Ok(vec![]);
             }
-            return Ok(vec![state.assembler.partial(ts)]);
+            return Ok(vec![self.stream_partial(state, ts)]);
         }
 
         if state.assembler.is_empty() {
             return Ok(vec![]);
         }
-        Ok(vec![state.assembler.partial(ts)])
+        Ok(vec![self.stream_partial(state, ts)])
     }
 
     /// Whether this decode should close the utterance (`final` / `speech_final`).
@@ -414,7 +415,7 @@ impl Engine {
         // ever committed or slid, so nothing is suppressed.
         let window_start_s = frame_offset as f64 * SECONDS_PER_FRAME;
         let context_boundary_s = window_start_s + state.context_samples as f64 / 16000.0;
-        let stable = self.stream_stable_prefix;
+        let stable = self.stable_prefix_enabled(state);
         let decoded = all_words.len();
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
         let mut tail: Vec<WordInfo> = all_words
@@ -483,9 +484,9 @@ impl Engine {
         Ok(endpoint)
     }
 
-    fn publish_stream_partial(state: &StreamingState) {
+    fn publish_stream_partial(&self, state: &StreamingState) {
         if let Some(partial) = &state.partial {
-            partial.store(state.assembler.partial(now_timestamp()));
+            partial.store(self.stream_partial(state, now_timestamp()));
         }
     }
 
@@ -500,8 +501,9 @@ impl Engine {
     ) -> Option<TranscriptSegment> {
         if state.abort_requested() {
             state.failed = true;
-            Self::publish_stream_partial(state);
-            return (!state.assembler.is_empty()).then(|| state.assembler.partial(now_timestamp()));
+            self.publish_stream_partial(state);
+            return (!state.assembler.is_empty())
+                .then(|| self.stream_partial(state, now_timestamp()));
         }
         let has_pending = state.pending_samples > 0 && state.audio_buffer.len() >= N_FFT;
         if has_pending && let Err(e) = self.decode_window(state, triplet) {
@@ -509,8 +511,9 @@ impl Engine {
         }
         if state.abort_requested() {
             state.failed = true;
-            Self::publish_stream_partial(state);
-            return (!state.assembler.is_empty()).then(|| state.assembler.partial(now_timestamp()));
+            self.publish_stream_partial(state);
+            return (!state.assembler.is_empty())
+                .then(|| self.stream_partial(state, now_timestamp()));
         }
         self.flush_state(state)
     }
@@ -519,40 +522,76 @@ impl Engine {
     pub fn flush_state(&self, state: &mut StreamingState) -> Option<TranscriptSegment> {
         if state.abort_requested() {
             state.failed = true;
-            Self::publish_stream_partial(state);
-            return (!state.assembler.is_empty()).then(|| state.assembler.partial(now_timestamp()));
+            self.publish_stream_partial(state);
+            return (!state.assembler.is_empty())
+                .then(|| self.stream_partial(state, now_timestamp()));
         }
         if state.assembler.is_empty() {
             return None;
         }
-        let mut seg = state
-            .assembler
-            .finalize_with_reason(now_timestamp(), EndpointReason::Stop);
-        self.enrich_final_segment(&mut seg, state);
-        Some(seg)
+        Some(self.finalize_stream_segment(state, now_timestamp(), EndpointReason::Stop))
     }
 
-    /// Post-process a finalized streaming segment: ITN, then punctuation/casing
-    /// restoration on the joined `text`. Mirrors
-    /// [`Engine::finish_transcribe_result`]'s policy exactly — the per-session
-    /// override wins over the engine boot default (`None` keeps it), and the
-    /// `punctuator` guard makes the pass a graceful no-op when no punct model
-    /// is attached. Word payloads keep the raw decoder output, exactly like the
-    /// file path. Runs only at finalization boundaries (endpoint flush /
-    /// Stop-flush), so `partial` payloads are never rewritten and live previews
-    /// don't flicker between hypotheses.
-    ///
-    /// Latency: measured via `punctuation::tests::test_restore_latency_short_segments`
-    /// (debug build, Apple Silicon), `restore` costs p95 ≈ 0.45–1.0 ms on 1–10
-    /// word segments — roughly two orders of magnitude below the 100 ms budget
-    /// that would force a segment-length gate, so enrichment always runs
-    /// regardless of segment length.
-    pub(crate) fn enrich_final_segment(&self, seg: &mut TranscriptSegment, state: &StreamingState) {
-        let text = std::mem::take(&mut seg.text);
-        seg.text = self.apply_text_postprocess(
-            text,
+    fn stable_prefix_enabled(&self, state: &StreamingState) -> bool {
+        self.stream_stable_prefix || state.commit_policy == CommitPolicy::StablePrefix
+    }
+
+    fn resolved_commit_policy(&self, state: &StreamingState) -> CommitPolicy {
+        match state.commit_policy {
+            CommitPolicy::Auto
+                if state.itn.unwrap_or(self.itn)
+                    || (state.punctuation.unwrap_or(true) && self.has_punctuator()) =>
+            {
+                CommitPolicy::OnFinalize
+            }
+            CommitPolicy::Auto => CommitPolicy::StablePrefix,
+            policy => policy,
+        }
+    }
+
+    /// Window slides still retain an internal prefix under ON_FINALIZE; only
+    /// its public commitment is deferred, keeping the encoder buffer bounded.
+    pub(super) fn stream_partial(
+        &self,
+        state: &StreamingState,
+        timestamp: f64,
+    ) -> TranscriptSegment {
+        let mut segment = state.assembler.partial(timestamp);
+        if self.resolved_commit_policy(state) == CommitPolicy::OnFinalize {
+            segment.committed.clear();
+            segment.tentative = segment.text.clone();
+        }
+        segment
+    }
+
+    /// Commit the remaining tail at a true endpoint. Post-processing may only
+    /// rewrite tentative bytes; AUTO defers the entire utterance when ITN or
+    /// punctuation is enabled, preserving the historical final text exactly.
+    fn finalize_stream_segment(
+        &self,
+        state: &mut StreamingState,
+        timestamp: f64,
+        reason: EndpointReason,
+    ) -> TranscriptSegment {
+        let partial = self.stream_partial(state, timestamp);
+        let mut segment = state.assembler.finalize_with_reason(timestamp, reason);
+        let tail = self.apply_text_postprocess(
+            partial.tentative.trim_start().to_owned(),
             state.itn.unwrap_or(self.itn),
             state.punctuation.unwrap_or(true),
         );
+        segment.text = if partial.committed.is_empty() {
+            tail
+        } else if tail.is_empty() {
+            partial.committed
+        } else {
+            format!("{} {}", partial.committed, tail)
+        };
+        segment.committed = segment.text.clone();
+        segment.tentative.clear();
+        if let Some(snapshot) = &state.partial {
+            snapshot.clear();
+        }
+        segment
     }
 }

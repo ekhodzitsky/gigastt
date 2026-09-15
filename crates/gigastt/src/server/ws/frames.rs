@@ -288,6 +288,7 @@ pub(super) async fn handle_binary_frame(
             fresh.itn = state_back.itn;
             fresh.abort = state_back.abort;
             fresh.partial = state_back.partial;
+            fresh.commit_policy = state_back.commit_policy;
             *state_opt = Some(fresh);
             send_server_message(
                 sink,
@@ -328,6 +329,7 @@ pub(super) async fn handle_configure_message(
     itn: Option<bool>,
     endpoint_mode: Option<String>,
     min_silence_ms: Option<u32>,
+    commit_policy: Option<String>,
     peer: SocketAddr,
 ) -> Result<FrameOutcome> {
     if audio_received {
@@ -343,8 +345,12 @@ pub(super) async fn handle_configure_message(
         return Ok(FrameOutcome::Continue);
     }
     if let Some(ref ver) = protocol_version
-        && ver != gigastt_core::protocol::PROTOCOL_VERSION
-        && ver != gigastt_core::protocol::MIN_PROTOCOL_VERSION
+        && ![
+            gigastt_core::protocol::MIN_PROTOCOL_VERSION,
+            "1.1",
+            gigastt_core::protocol::PROTOCOL_VERSION,
+        ]
+        .contains(&ver.as_str())
     {
         send_server_message(
             sink,
@@ -361,6 +367,25 @@ pub(super) async fn handle_configure_message(
         .await?;
         return Ok(FrameOutcome::Break);
     }
+    let commit_policy = if let Some(token) = commit_policy {
+        let Some(policy) = gigastt_core::inference::CommitPolicy::parse_token(&token) else {
+            send_server_message(
+                sink,
+                &ServerMessage::Error {
+                    message:
+                        "Unsupported commit_policy. Supported: auto, on_finalize, stable_prefix"
+                            .into(),
+                    code: "invalid_commit_policy".into(),
+                    retry_after_ms: None,
+                },
+            )
+            .await?;
+            return Ok(FrameOutcome::Continue);
+        };
+        Some(policy)
+    } else {
+        None
+    };
     if let Some(rate) = sample_rate {
         if SUPPORTED_RATES.contains(&rate) {
             *client_sample_rate = rate;
@@ -391,6 +416,7 @@ pub(super) async fn handle_configure_message(
             new_state.endpoint_mode = old.endpoint_mode;
             new_state.abort = old.abort.clone();
             new_state.partial = old.partial.clone();
+            new_state.commit_policy = old.commit_policy;
         }
         *state_opt = Some(new_state);
     }
@@ -402,6 +428,9 @@ pub(super) async fn handle_configure_message(
     // absent field leaves the previous value, so repeated Configures compose
     // the same way `sample_rate` does.
     if let Some(state) = state_opt.as_mut() {
+        if let Some(policy) = commit_policy {
+            state.commit_policy = policy;
+        }
         if let Some(p) = punctuation {
             tracing::info!("Client {peer} configured punctuation: {p}");
             state.punctuation = Some(p);

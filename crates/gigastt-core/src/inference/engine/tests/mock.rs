@@ -779,6 +779,7 @@ fn bare_state(
     ctx: usize,
 ) -> crate::inference::StreamingState {
     crate::inference::StreamingState {
+        commit_policy: crate::inference::CommitPolicy::Auto,
         abort: None,
         partial: None,
         failed: false,

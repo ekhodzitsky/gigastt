@@ -1,6 +1,32 @@
 use super::*;
 
 #[test]
+fn test_sse_text_parts_match_websocket_and_legacy_text() {
+    use gigastt_core::inference::{TranscriptAssembler, WordInfo};
+    let mut assembler = TranscriptAssembler::new();
+    assembler.append(vec![WordInfo::new("привет", 0.0, 0.5, 1.0, None)]);
+    assembler.commit_live();
+    assembler.append(vec![WordInfo::new("мир", 0.5, 1.0, 1.0, None)]);
+    for segment in [assembler.partial(1.0), assembler.finalize(2.0)] {
+        let ws = if segment.is_final {
+            gigastt_core::protocol::ServerMessage::Final(segment.clone())
+        } else {
+            gigastt_core::protocol::ServerMessage::Partial(segment.clone())
+        };
+        let ws = serde_json::to_value(ws).unwrap();
+        let sse: serde_json::Value = serde_json::from_str(&sse_data_payload(&Ok(segment))).unwrap();
+        for field in ["committed", "tentative", "text"] {
+            assert_eq!(sse[field], ws[field]);
+        }
+        assert_eq!(sse["text"], "привет мир");
+        assert_eq!(
+            sse["text"].as_str().unwrap(),
+            sse["committed"].as_str().unwrap().to_owned() + sse["tentative"].as_str().unwrap()
+        );
+    }
+}
+
+#[test]
 fn test_sse_data_payload_preserves_error_codes() {
     // Per-variant code is preserved (not collapsed to a generic string),
     // including the distinct inference_panic / inference_timeout events.
@@ -60,6 +86,7 @@ fn test_sse_data_payload_includes_words_and_timestamp() {
     use gigastt_core::inference::WordInfo;
     let mut seg = gigastt_core::inference::TranscriptSegment::empty_final();
     seg.text = "привет".into();
+    seg.committed = seg.text.clone();
     seg.timestamp = 1.25;
     seg.words = vec![WordInfo::new("привет", 0.0, 0.5, 0.99, Some(0))];
     let payload = sse_data_payload(&Ok(seg));

@@ -2,7 +2,7 @@ asyncapi: 3.0.0
 
 info:
   title: gigastt WebSocket API
-  version: "1.1"
+  version: "1.2"
   description: |
     Live-partials WebSocket API powered by GigaAM v3 (rnnt head by default).
     On-device Russian speech recognition via ONNX Runtime. Buffered/chunked
@@ -38,6 +38,19 @@ info:
     - Per-session opt-out: `configure` with `punctuation: false` / `itn: false`; omitting a field keeps
       the server default. Requesting `punctuation: true` on a server without a punctuation model is a
       graceful no-op (finals stay raw).
+
+    ## Text Commitment
+
+    Protocol 1.2 adds `committed` and `tentative`; clients using 1.0 and 1.1 remain accepted.
+    `text` is exactly `committed + tentative`, including whitespace. The tentative suffix
+    includes any separating space. Commitment is scoped to one utterance and resets after Final.
+    Successful finals commit the full text and have an empty tentative suffix.
+    `commit_policy` in configure selects `auto` (default), `on_finalize`, or `stable_prefix`.
+    AUTO defers commitment when final ITN or available punctuation is enabled, otherwise
+    it exposes the existing window-commit prefix. ON_FINALIZE keeps all partial text tentative.
+    STABLE_PREFIX enables stable window commits and preserves their bytes through Final;
+    final post-processing only transforms the remaining tail. Cancellation retains provisional
+    text without committing the tail. See docs/api.md for the window algorithm and examples.
 
     ## Audio Format
 
@@ -254,7 +267,7 @@ components:
           description: Expected audio sample rate in Hz (client should send at this rate)
         version:
           type: string
-          example: "1.0"
+          example: "1.2"
           description: WebSocket protocol version (semver-lite major.minor)
         supported_rates:
           type: array
@@ -286,6 +299,8 @@ components:
       required:
         - type
         - text
+        - committed
+        - tentative
         - timestamp
       properties:
         type:
@@ -299,6 +314,12 @@ components:
             Current interim transcription (may change as more audio arrives).
             Always the raw decoder output — ITN/punctuation are applied to
             `final` segments only.
+        committed:
+          type: string
+          description: Immutable prefix of this utterance; resets after Final. Empty is valid.
+        tentative:
+          type: string
+          description: Revisable suffix including any separating space; text is committed + tentative. Empty on successful Final.
         timestamp:
           type: number
           format: double
@@ -327,6 +348,8 @@ components:
       required:
         - type
         - text
+        - committed
+        - tentative
         - timestamp
       properties:
         type:
@@ -340,7 +363,13 @@ components:
             Finalized transcription for the completed utterance. Enriched with
             ITN + punctuation/casing restoration when enabled (server default
             or per-session `configure` override); `words[]` always keep the
-            raw decoder output.
+            raw decoder output. With stable_prefix, only the tentative tail is post-processed.
+        committed:
+          type: string
+          description: Immutable prefix of this utterance; resets after Final. Empty is valid.
+        tentative:
+          type: string
+          description: Revisable suffix including any separating space; text is committed + tentative. Empty on successful Final.
         timestamp:
           type: number
           format: double
@@ -389,6 +418,7 @@ components:
             - inference_timeout
             - cancelled
             - configure_too_late
+            - invalid_commit_policy
             - invalid_sample_rate
             - invalid_endpoint_mode
             - timeout
@@ -450,6 +480,14 @@ components:
           description: >-
             Per-session utterance-end policy. Omitted = server `--endpoint-mode`.
             Invalid values yield `invalid_endpoint_mode` and keep the previous mode.
+        commit_policy:
+          type: string
+          enum: [auto, on_finalize, stable_prefix]
+          example: stable_prefix
+          description: >-
+            Text commitment per utterance. Omitted = keep the current policy (initially auto).
+            Values are case-insensitive. Unknown values yield invalid_commit_policy without
+            changing the configuration. See Text Commitment for final post-processing behavior.
         min_silence_ms:
           type: integer
           example: 1200

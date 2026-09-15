@@ -1,11 +1,12 @@
 //! Server-Sent Events streaming transcription (`POST /v1/transcribe/stream`).
 
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::sse::{Event, KeepAlive, Sse};
 use futures_util::StreamExt;
 use futures_util::stream::Stream;
+use gigastt_core::inference::CommitPolicy;
 use std::sync::Arc;
 
 use super::error::{ApiError, api_error};
@@ -17,6 +18,12 @@ use super::transcribe::reserve_batch_slot;
 /// because the streaming recognizer's state — and so the emitted segments —
 /// depend on the chunk cadence.
 pub(super) const STREAM_CHUNK_SAMPLES: usize = 16_000;
+
+/// Per-request text commitment for the native SSE endpoint.
+#[derive(Default, serde::Deserialize)]
+pub struct StreamQuery {
+    commit_policy: Option<String>,
+}
 
 /// Probe the container (optional duration ceiling) and open a lazy
 /// [`AudioChunks`] iterator. Shared by native SSE and OpenAI stream so both
@@ -71,6 +78,8 @@ pub(super) fn sse_data_payload(
             let mut payload = serde_json::json!({
                 "type": ty,
                 "text": seg.text,
+                "committed": seg.committed,
+                "tentative": seg.tentative,
                 "timestamp": seg.timestamp,
                 "words": seg.words,
             });
@@ -96,8 +105,20 @@ pub(super) fn sse_data_payload(
 /// and segments are sent to the SSE stream via an mpsc channel as they are produced.
 pub async fn transcribe_stream(
     State(state): State<Arc<AppState>>,
+    Query(query): Query<StreamQuery>,
     body: Bytes,
 ) -> Result<Sse<impl Stream<Item = Result<Event, std::convert::Infallible>>>, ApiError> {
+    let commit_policy = query
+        .commit_policy
+        .as_deref()
+        .map_or(Some(CommitPolicy::Auto), CommitPolicy::parse_token)
+        .ok_or_else(|| {
+            api_error(
+                StatusCode::BAD_REQUEST,
+                "Unsupported commit_policy. Supported: auto, on_finalize, stable_prefix",
+                "invalid_commit_policy",
+            )
+        })?;
     if body.is_empty() {
         return Err(api_error(
             StatusCode::BAD_REQUEST,
@@ -197,6 +218,7 @@ pub async fn transcribe_stream(
         // catch_unwind ensures the triplet is returned to the pool even on panic.
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let mut stream_state = engine.create_state(false);
+            stream_state.commit_policy = commit_policy;
             stream_state.abort = Some(abort.clone());
             let mut chunks = chunks;
 

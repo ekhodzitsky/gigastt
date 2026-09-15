@@ -435,6 +435,7 @@ async fn handle_ws_inner(
                             itn,
                             endpoint_mode,
                             min_silence_ms,
+                            commit_policy,
                             ..
                         }) => {
                             handle_configure_message(
@@ -450,6 +451,7 @@ async fn handle_ws_inner(
                                 itn,
                                 endpoint_mode,
                                 min_silence_ms,
+                                commit_policy,
                                 peer,
                             )
                             .await
