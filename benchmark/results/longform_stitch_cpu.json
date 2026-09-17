@@ -1,0 +1,3257 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-17",
+  "baseline_commit": "3df602a7ac756f69f315d12e0012f24707be9a1f",
+  "baseline_binary_sha256": "22fcf416b0a71d4a26b664eb8aa97c052d6559a266aef8cec7be6adb02b957f5",
+  "candidate_binary_sha256": "46d4c9c43bba57493061855d65faea290b51dff549049b2436b1f16a9d3ec15f",
+  "candidate_source_sha256": {
+    "crates/gigastt-core/src/inference/token_format.rs": "c6d506ce06d3664b3c8bb7f45c24ae24f1fecf1e2d792d22427442842f7d1795",
+    "crates/gigastt-core/src/inference/token_format/stitch.rs": "b6f8984809c8b53bf866d2634d98c02684ebda59128cd9b417eefffc2cd8e5f1"
+  },
+  "manifest_sha256": "2e6f4c04fd494648c52d3bc2c06a268b37e577e41aa7bc49040fa014d101a9ad",
+  "cpu": "\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M",
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "config": {
+    "ort": "2.0.0-rc.13",
+    "encoder_threads": 4,
+    "memory_max_bytes": 4294967296,
+    "memory_swap_max_bytes": 0,
+    "matrix_timeout_seconds": 1200,
+    "case_timeout_seconds": 120,
+    "itn": "off",
+    "punctuation": "off",
+    "matrix_runs_per_binary": 48
+  },
+  "model_sha256": {
+    "multilingual_ctc.int8.onnx": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+    "wespeaker_resnet34.onnx": "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb",
+    "v3_e2e_rnnt_vocab.txt": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7",
+    "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+    "v3_e2e_rnnt_decoder.onnx": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+    "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+    "v3_rnnt_encoder_int8.onnx": "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f",
+    "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+    "v3_e2e_rnnt_encoder_int8.onnx": "cf51b300af47cea099e17c806f8fecce2c46e9e8deb4709ec203f8970a067389",
+    "v3_e2e_rnnt_joint.onnx": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c",
+    "multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+  },
+  "vad_model_sha256": "2623a2953f6ff3d2c1e61740c6cdb7168133479b267dfef114a4a3cc5bdd788f",
+  "quality": {
+    "rnnt/serial": {
+      "reference_words": 1365,
+      "baseline_sdi": [
+        21,
+        0,
+        4
+      ],
+      "candidate_sdi": [
+        21,
+        0,
+        4
+      ],
+      "baseline_wer": 1.8315018315018314,
+      "candidate_wer": 1.8315018315018314
+    },
+    "rnnt/vad": {
+      "reference_words": 372,
+      "baseline_sdi": [
+        3,
+        0,
+        0
+      ],
+      "candidate_sdi": [
+        3,
+        0,
+        0
+      ],
+      "baseline_wer": 0.8064516129032258,
+      "candidate_wer": 0.8064516129032258
+    },
+    "rnnt/parallel": {
+      "reference_words": 372,
+      "baseline_sdi": [
+        4,
+        0,
+        0
+      ],
+      "candidate_sdi": [
+        4,
+        0,
+        0
+      ],
+      "baseline_wer": 1.075268817204301,
+      "candidate_wer": 1.075268817204301
+    },
+    "e2e_rnnt/serial": {
+      "reference_words": 1365,
+      "baseline_sdi": [
+        33,
+        0,
+        3
+      ],
+      "candidate_sdi": [
+        33,
+        0,
+        3
+      ],
+      "baseline_wer": 2.6373626373626373,
+      "candidate_wer": 2.6373626373626373
+    },
+    "e2e_rnnt/vad": {
+      "reference_words": 372,
+      "baseline_sdi": [
+        12,
+        0,
+        1
+      ],
+      "candidate_sdi": [
+        12,
+        0,
+        0
+      ],
+      "baseline_wer": 3.4946236559139785,
+      "candidate_wer": 3.225806451612903
+    },
+    "e2e_rnnt/parallel": {
+      "reference_words": 372,
+      "baseline_sdi": [
+        14,
+        0,
+        0
+      ],
+      "candidate_sdi": [
+        14,
+        0,
+        0
+      ],
+      "baseline_wer": 3.763440860215054,
+      "candidate_wer": 3.763440860215054
+    },
+    "ml_ctc/serial": {
+      "reference_words": 1365,
+      "baseline_sdi": [
+        69,
+        3,
+        10
+      ],
+      "candidate_sdi": [
+        69,
+        3,
+        3
+      ],
+      "baseline_wer": 6.007326007326007,
+      "candidate_wer": 5.4945054945054945
+    },
+    "ml_ctc/vad": {
+      "reference_words": 372,
+      "baseline_sdi": [
+        15,
+        1,
+        1
+      ],
+      "candidate_sdi": [
+        15,
+        1,
+        0
+      ],
+      "baseline_wer": 4.56989247311828,
+      "candidate_wer": 4.301075268817204
+    },
+    "ml_ctc/parallel": {
+      "reference_words": 372,
+      "baseline_sdi": [
+        17,
+        3,
+        0
+      ],
+      "candidate_sdi": [
+        17,
+        3,
+        0
+      ],
+      "baseline_wer": 5.376344086021505,
+      "candidate_wer": 5.376344086021505
+    }
+  },
+  "changes": [
+    {
+      "id": "long_example-e2e_rnnt-0-vad",
+      "before_sdi": [
+        4,
+        0,
+        1
+      ],
+      "after_sdi": [
+        4,
+        0,
+        0
+      ],
+      "edits_with_context": [
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.8032732605934143,
+              "end": 45.792,
+              "start": 45.432,
+              "word": "Монах"
+            },
+            {
+              "confidence": 0.8655440211296082,
+              "end": 47.552,
+              "start": 46.952,
+              "word": "Несчастный"
+            },
+            {
+              "confidence": 0.8081541657447815,
+              "end": 47.832,
+              "start": 46.992,
+              "word": "несчастный,"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.8032732605934143,
+              "end": 45.792,
+              "start": 45.432,
+              "word": "Монах"
+            },
+            {
+              "confidence": 0.8081541657447815,
+              "end": 47.832,
+              "start": 46.992,
+              "word": "несчастный,"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-ml_ctc-0-serial",
+      "before_sdi": [
+        6,
+        0,
+        1
+      ],
+      "after_sdi": [
+        6,
+        0,
+        0
+      ],
+      "edits_with_context": [
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9965574145317078,
+              "end": 67.16,
+              "start": 66.96000000000001,
+              "word": "через"
+            },
+            {
+              "confidence": 0.8960771560668945,
+              "end": 67.32000000000001,
+              "start": 67.08,
+              "word": "через"
+            },
+            {
+              "confidence": 0.8844476938247681,
+              "end": 67.64,
+              "start": 67.48,
+              "word": "моря"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.8960771560668945,
+              "end": 67.32000000000001,
+              "start": 67.08,
+              "word": "через"
+            },
+            {
+              "confidence": 0.8844476938247681,
+              "end": 67.64,
+              "start": 67.48,
+              "word": "моря"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-ml_ctc-3-serial",
+      "before_sdi": [
+        5,
+        0,
+        2
+      ],
+      "after_sdi": [
+        5,
+        0,
+        0
+      ],
+      "edits_with_context": [
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9996073246002197,
+              "end": 22.84,
+              "start": 22.72,
+              "word": "быть"
+            },
+            {
+              "confidence": 0.9520829916000366,
+              "end": 23.400000000000002,
+              "start": 22.96,
+              "word": "украдкой"
+            },
+            {
+              "confidence": 0.9643974900245667,
+              "end": 23.48,
+              "start": 23.04,
+              "word": "украдкой"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.9996073246002197,
+              "end": 22.84,
+              "start": 22.72,
+              "word": "быть"
+            },
+            {
+              "confidence": 0.9520829916000366,
+              "end": 23.400000000000002,
+              "start": 22.96,
+              "word": "украдкой"
+            }
+          ]
+        },
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9999622106552124,
+              "end": 67.0,
+              "start": 66.8,
+              "word": "царя"
+            },
+            {
+              "confidence": 0.9984415769577026,
+              "end": 67.32000000000001,
+              "start": 67.16,
+              "word": "царя"
+            },
+            {
+              "confidence": 0.9999451041221619,
+              "end": 67.6,
+              "start": 67.52,
+              "word": "там"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.9999622106552124,
+              "end": 67.0,
+              "start": 66.8,
+              "word": "царя"
+            },
+            {
+              "confidence": 0.9999451041221619,
+              "end": 67.6,
+              "start": 67.52,
+              "word": "там"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-ml_ctc-22-serial",
+      "before_sdi": [
+        5,
+        0,
+        1
+      ],
+      "after_sdi": [
+        5,
+        0,
+        0
+      ],
+      "edits_with_context": [
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9965574145317078,
+              "end": 89.16,
+              "start": 88.96000000000001,
+              "word": "через"
+            },
+            {
+              "confidence": 0.8960771560668945,
+              "end": 89.32000000000001,
+              "start": 89.08,
+              "word": "через"
+            },
+            {
+              "confidence": 0.8844476938247681,
+              "end": 89.64,
+              "start": 89.48,
+              "word": "моря"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.8960771560668945,
+              "end": 89.32000000000001,
+              "start": 89.08,
+              "word": "через"
+            },
+            {
+              "confidence": 0.8844476938247681,
+              "end": 89.64,
+              "start": 89.48,
+              "word": "моря"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-ml_ctc-0-serial",
+      "before_sdi": [
+        12,
+        0,
+        2
+      ],
+      "after_sdi": [
+        12,
+        0,
+        1
+      ],
+      "edits_with_context": [
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9968720078468323,
+              "end": 45.0,
+              "start": 45.0,
+              "word": "и"
+            },
+            {
+              "confidence": 0.9932328462600708,
+              "end": 45.04,
+              "start": 45.04,
+              "word": "и"
+            },
+            {
+              "confidence": 0.9994948506355286,
+              "end": 45.36,
+              "start": 45.160000000000004,
+              "word": "вином"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.9932328462600708,
+              "end": 45.04,
+              "start": 45.04,
+              "word": "и"
+            },
+            {
+              "confidence": 0.9994948506355286,
+              "end": 45.36,
+              "start": 45.160000000000004,
+              "word": "вином"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-ml_ctc-22-serial",
+      "before_sdi": [
+        12,
+        0,
+        3
+      ],
+      "after_sdi": [
+        12,
+        0,
+        1
+      ],
+      "edits_with_context": [
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9198009371757507,
+              "end": 22.8,
+              "start": 22.52,
+              "word": "кощей"
+            },
+            {
+              "confidence": 0.9150996208190918,
+              "end": 23.04,
+              "start": 22.96,
+              "word": "над"
+            },
+            {
+              "confidence": 0.9958727955818176,
+              "end": 23.2,
+              "start": 23.12,
+              "word": "над"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.9198009371757507,
+              "end": 22.8,
+              "start": 22.52,
+              "word": "кощей"
+            },
+            {
+              "confidence": 0.9958727955818176,
+              "end": 23.2,
+              "start": 23.12,
+              "word": "над"
+            }
+          ]
+        },
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9968720078468323,
+              "end": 67.0,
+              "start": 67.0,
+              "word": "и"
+            },
+            {
+              "confidence": 0.9932328462600708,
+              "end": 67.04,
+              "start": 67.04,
+              "word": "и"
+            },
+            {
+              "confidence": 0.9994948506355286,
+              "end": 67.36,
+              "start": 67.16,
+              "word": "вином"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.9932328462600708,
+              "end": 67.04,
+              "start": 67.04,
+              "word": "и"
+            },
+            {
+              "confidence": 0.9994948506355286,
+              "end": 67.36,
+              "start": 67.16,
+              "word": "вином"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "long_example-ml_ctc-22-vad",
+      "before_sdi": [
+        4,
+        1,
+        1
+      ],
+      "after_sdi": [
+        4,
+        1,
+        0
+      ],
+      "edits_with_context": [
+        {
+          "operation": "delete",
+          "before": [
+            {
+              "confidence": 0.9977569580078125,
+              "end": 44.86,
+              "start": 44.62,
+              "word": "икон"
+            },
+            {
+              "confidence": 0.9972266554832458,
+              "end": 45.26,
+              "start": 45.26,
+              "word": "и"
+            },
+            {
+              "confidence": 0.9988842606544495,
+              "end": 45.34,
+              "start": 45.34,
+              "word": "и"
+            }
+          ],
+          "after": [
+            {
+              "confidence": 0.9977569580078125,
+              "end": 44.86,
+              "start": 44.62,
+              "word": "икон"
+            },
+            {
+              "confidence": 0.9988842606544495,
+              "end": 45.34,
+              "start": 45.34,
+              "word": "и"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "shift_disagreement": [
+    {
+      "variant": "baseline",
+      "id": "long_example-rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-rnnt-3-vad",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-rnnt-3-parallel",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-rnnt-22-vad",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-rnnt-22-parallel",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-e2e_rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-e2e_rnnt-3-vad",
+      "sdi_vs_unshifted": [
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-e2e_rnnt-3-parallel",
+      "sdi_vs_unshifted": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-e2e_rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-e2e_rnnt-22-vad",
+      "sdi_vs_unshifted": [
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-e2e_rnnt-22-parallel",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-ml_ctc-3-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-ml_ctc-3-vad",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-ml_ctc-3-parallel",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-ml_ctc-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-ml_ctc-22-vad",
+      "sdi_vs_unshifted": [
+        2,
+        1,
+        1
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "long_example-ml_ctc-22-parallel",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0000-0010-rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0000-0010-rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0000-0010-e2e_rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0000-0010-e2e_rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0000-0010-ml_ctc-3-serial",
+      "sdi_vs_unshifted": [
+        2,
+        1,
+        2
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0000-0010-ml_ctc-22-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0013-0024-rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0013-0024-rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0013-0024-e2e_rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0013-0024-e2e_rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0013-0024-ml_ctc-3-serial",
+      "sdi_vs_unshifted": [
+        7,
+        1,
+        0
+      ]
+    },
+    {
+      "variant": "baseline",
+      "id": "ruls-0013-0024-ml_ctc-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-rnnt-3-vad",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-rnnt-3-parallel",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-rnnt-22-vad",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-rnnt-22-parallel",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-e2e_rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-e2e_rnnt-3-vad",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-e2e_rnnt-3-parallel",
+      "sdi_vs_unshifted": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-e2e_rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-e2e_rnnt-22-vad",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-e2e_rnnt-22-parallel",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-ml_ctc-3-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-ml_ctc-3-vad",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-ml_ctc-3-parallel",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-ml_ctc-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-ml_ctc-22-vad",
+      "sdi_vs_unshifted": [
+        2,
+        1,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "long_example-ml_ctc-22-parallel",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0000-0010-rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0000-0010-rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0000-0010-e2e_rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0000-0010-e2e_rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0000-0010-ml_ctc-3-serial",
+      "sdi_vs_unshifted": [
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0000-0010-ml_ctc-22-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0013-0024-rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0013-0024-rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0013-0024-e2e_rnnt-3-serial",
+      "sdi_vs_unshifted": [
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0013-0024-e2e_rnnt-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0013-0024-ml_ctc-3-serial",
+      "sdi_vs_unshifted": [
+        7,
+        0,
+        0
+      ]
+    },
+    {
+      "variant": "candidate",
+      "id": "ruls-0013-0024-ml_ctc-22-serial",
+      "sdi_vs_unshifted": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "pause_ablation": [
+    {
+      "id": "long_example-rnnt-0",
+      "head": "rnnt",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        1,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "long_example-rnnt-3",
+      "head": "rnnt",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        2,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        2,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "long_example-rnnt-22",
+      "head": "rnnt",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        1,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "long_example-e2e_rnnt-0",
+      "head": "e2e_rnnt",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        5,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "long_example-e2e_rnnt-3",
+      "head": "e2e_rnnt",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        4,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "long_example-e2e_rnnt-22",
+      "head": "e2e_rnnt",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        5,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        5,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "long_example-ml_ctc-0",
+      "head": "ml_ctc",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        6,
+        1,
+        0
+      ],
+      "quiet_sdi": [
+        6,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "long_example-ml_ctc-3",
+      "head": "ml_ctc",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        5,
+        1,
+        0
+      ],
+      "quiet_sdi": [
+        5,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "long_example-ml_ctc-22",
+      "head": "ml_ctc",
+      "reference_words": 124,
+      "midpoint_sdi": [
+        6,
+        1,
+        0
+      ],
+      "quiet_sdi": [
+        6,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-rnnt-0",
+      "head": "rnnt",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        1,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-rnnt-3",
+      "head": "rnnt",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        1,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-rnnt-22",
+      "head": "rnnt",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        1,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-e2e_rnnt-0",
+      "head": "e2e_rnnt",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        0,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-e2e_rnnt-3",
+      "head": "e2e_rnnt",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        1,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-e2e_rnnt-22",
+      "head": "e2e_rnnt",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        0,
+        0,
+        0
+      ],
+      "quiet_sdi": [
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-ml_ctc-0",
+      "head": "ml_ctc",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        6,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        6,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-ml_ctc-3",
+      "head": "ml_ctc",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        5,
+        0,
+        2
+      ],
+      "quiet_sdi": [
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0000-0010-ml_ctc-22",
+      "head": "ml_ctc",
+      "reference_words": 154,
+      "midpoint_sdi": [
+        5,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-rnnt-0",
+      "head": "rnnt",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        4,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        4,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-rnnt-3",
+      "head": "rnnt",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        5,
+        0,
+        2
+      ],
+      "quiet_sdi": [
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-rnnt-22",
+      "head": "rnnt",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        5,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        5,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-e2e_rnnt-0",
+      "head": "e2e_rnnt",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        6,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        6,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-e2e_rnnt-3",
+      "head": "e2e_rnnt",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        6,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        6,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-e2e_rnnt-22",
+      "head": "e2e_rnnt",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        6,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        6,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-ml_ctc-0",
+      "head": "ml_ctc",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        12,
+        0,
+        2
+      ],
+      "quiet_sdi": [
+        13,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-ml_ctc-3",
+      "head": "ml_ctc",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        12,
+        0,
+        1
+      ],
+      "quiet_sdi": [
+        12,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "ruls-0013-0024-ml_ctc-22",
+      "head": "ml_ctc",
+      "reference_words": 177,
+      "midpoint_sdi": [
+        12,
+        0,
+        3
+      ],
+      "quiet_sdi": [
+        13,
+        0,
+        2
+      ]
+    }
+  ],
+  "paired_performance": {
+    "summary": {
+      "rnnt": {
+        "baseline": {
+          "median_wall_seconds": 4.21,
+          "peak_rss_mib": 366.46875
+        },
+        "candidate": {
+          "median_wall_seconds": 4.09,
+          "peak_rss_mib": 366.0
+        }
+      },
+      "e2e_rnnt": {
+        "baseline": {
+          "median_wall_seconds": 4.11,
+          "peak_rss_mib": 388.7578125
+        },
+        "candidate": {
+          "median_wall_seconds": 4.0,
+          "peak_rss_mib": 396.55859375
+        }
+      },
+      "ml_ctc": {
+        "baseline": {
+          "median_wall_seconds": 4.28,
+          "peak_rss_mib": 469.60546875
+        },
+        "candidate": {
+          "median_wall_seconds": 4.29,
+          "peak_rss_mib": 467.9140625
+        }
+      }
+    },
+    "runs": [
+      {
+        "head": "rnnt",
+        "repeat": 0,
+        "variant": "baseline",
+        "wall_seconds": 4.05,
+        "peak_rss_kib": 374860,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "rnnt",
+        "repeat": 0,
+        "variant": "candidate",
+        "wall_seconds": 4.04,
+        "peak_rss_kib": 374784,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "rnnt",
+        "repeat": 1,
+        "variant": "candidate",
+        "wall_seconds": 4.09,
+        "peak_rss_kib": 372948,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "rnnt",
+        "repeat": 1,
+        "variant": "baseline",
+        "wall_seconds": 4.21,
+        "peak_rss_kib": 375264,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "rnnt",
+        "repeat": 2,
+        "variant": "baseline",
+        "wall_seconds": 4.31,
+        "peak_rss_kib": 357592,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "rnnt",
+        "repeat": 2,
+        "variant": "candidate",
+        "wall_seconds": 4.09,
+        "peak_rss_kib": 371532,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "e2e_rnnt",
+        "repeat": 0,
+        "variant": "baseline",
+        "wall_seconds": 4.24,
+        "peak_rss_kib": 398088,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "e2e_rnnt",
+        "repeat": 0,
+        "variant": "candidate",
+        "wall_seconds": 3.6,
+        "peak_rss_kib": 391808,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "e2e_rnnt",
+        "repeat": 1,
+        "variant": "candidate",
+        "wall_seconds": 4.05,
+        "peak_rss_kib": 406076,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "e2e_rnnt",
+        "repeat": 1,
+        "variant": "baseline",
+        "wall_seconds": 4.11,
+        "peak_rss_kib": 397520,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "e2e_rnnt",
+        "repeat": 2,
+        "variant": "baseline",
+        "wall_seconds": 3.89,
+        "peak_rss_kib": 391864,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "e2e_rnnt",
+        "repeat": 2,
+        "variant": "candidate",
+        "wall_seconds": 4.0,
+        "peak_rss_kib": 393288,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "ml_ctc",
+        "repeat": 0,
+        "variant": "baseline",
+        "wall_seconds": 4.39,
+        "peak_rss_kib": 480404,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "ml_ctc",
+        "repeat": 0,
+        "variant": "candidate",
+        "wall_seconds": 4.29,
+        "peak_rss_kib": 478932,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "ml_ctc",
+        "repeat": 1,
+        "variant": "candidate",
+        "wall_seconds": 4.58,
+        "peak_rss_kib": 479144,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "ml_ctc",
+        "repeat": 1,
+        "variant": "baseline",
+        "wall_seconds": 4.18,
+        "peak_rss_kib": 479624,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "ml_ctc",
+        "repeat": 2,
+        "variant": "baseline",
+        "wall_seconds": 4.28,
+        "peak_rss_kib": 480876,
+        "audio_seconds": 71.25
+      },
+      {
+        "head": "ml_ctc",
+        "repeat": 2,
+        "variant": "candidate",
+        "wall_seconds": 4.23,
+        "peak_rss_kib": 478508,
+        "audio_seconds": 71.25
+      }
+    ],
+    "notes": "Three runs per head and binary, alternating order; CLI wall time includes model load. Matrix timings may overlap compilation; use these separate paired runs for resource comparisons."
+  },
+  "matrix": {
+    "baseline": [
+      {
+        "id": "long_example-rnnt-0-serial",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.44,
+        "peak_rss_kib": 349484,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-0-vad",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "vad",
+        "wall_seconds": 3.56,
+        "peak_rss_kib": 597236,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-0-parallel",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "parallel",
+        "wall_seconds": 2.77,
+        "peak_rss_kib": 651620,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-3-serial",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.66,
+        "peak_rss_kib": 351764,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          2,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-3-vad",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "vad",
+        "wall_seconds": 3.39,
+        "peak_rss_kib": 584140,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-3-parallel",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "parallel",
+        "wall_seconds": 2.85,
+        "peak_rss_kib": 671564,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          2,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-22-serial",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.27,
+        "peak_rss_kib": 387264,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-22-vad",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "vad",
+        "wall_seconds": 3.33,
+        "peak_rss_kib": 624784,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-22-parallel",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "parallel",
+        "wall_seconds": 3.03,
+        "peak_rss_kib": 684828,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-0-short",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "short",
+        "wall_seconds": 1.15,
+        "peak_rss_kib": 342232,
+        "audio_seconds": 20.0
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-serial",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.99,
+        "peak_rss_kib": 901324,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-vad",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "vad",
+        "wall_seconds": 3.42,
+        "peak_rss_kib": 544284,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-parallel",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "parallel",
+        "wall_seconds": 2.81,
+        "peak_rss_kib": 698200,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-3-serial",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.34,
+        "peak_rss_kib": 390292,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-3-vad",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "vad",
+        "wall_seconds": 3.48,
+        "peak_rss_kib": 604604,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-3-parallel",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "parallel",
+        "wall_seconds": 2.87,
+        "peak_rss_kib": 730172,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-22-serial",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.58,
+        "peak_rss_kib": 379228,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-22-vad",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "vad",
+        "wall_seconds": 3.43,
+        "peak_rss_kib": 558856,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-22-parallel",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "parallel",
+        "wall_seconds": 3.14,
+        "peak_rss_kib": 707612,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-short",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "short",
+        "wall_seconds": 1.19,
+        "peak_rss_kib": 363592,
+        "audio_seconds": 20.0
+      },
+      {
+        "id": "long_example-ml_ctc-0-serial",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 4.22,
+        "peak_rss_kib": 815320,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-0-vad",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "vad",
+        "wall_seconds": 3.71,
+        "peak_rss_kib": 573608,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-0-parallel",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "parallel",
+        "wall_seconds": 3.1,
+        "peak_rss_kib": 865740,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-3-serial",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.84,
+        "peak_rss_kib": 478068,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-3-vad",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "vad",
+        "wall_seconds": 3.87,
+        "peak_rss_kib": 467072,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-3-parallel",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "parallel",
+        "wall_seconds": 3.1,
+        "peak_rss_kib": 819952,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-22-serial",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.48,
+        "peak_rss_kib": 478788,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-22-vad",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "vad",
+        "wall_seconds": 3.95,
+        "peak_rss_kib": 675792,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          1,
+          1
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-22-parallel",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "parallel",
+        "wall_seconds": 3.63,
+        "peak_rss_kib": 827740,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-0-short",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "short",
+        "wall_seconds": 1.73,
+        "peak_rss_kib": 431720,
+        "audio_seconds": 20.0
+      },
+      {
+        "id": "ruls-0000-0010-rnnt-0-serial",
+        "head": "rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 2.98,
+        "peak_rss_kib": 354676,
+        "audio_seconds": 69.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-rnnt-3-serial",
+        "head": "rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.15,
+        "peak_rss_kib": 353872,
+        "audio_seconds": 72.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-rnnt-22-serial",
+        "head": "rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.04,
+        "peak_rss_kib": 369992,
+        "audio_seconds": 91.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-e2e_rnnt-0-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.18,
+        "peak_rss_kib": 375952,
+        "audio_seconds": 69.62,
+        "reference_words": 154,
+        "sdi": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-e2e_rnnt-3-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.21,
+        "peak_rss_kib": 372456,
+        "audio_seconds": 72.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-e2e_rnnt-22-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 3.89,
+        "peak_rss_kib": 373568,
+        "audio_seconds": 91.62,
+        "reference_words": 154,
+        "sdi": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-ml_ctc-0-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0000-0010",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.47,
+        "peak_rss_kib": 471172,
+        "audio_seconds": 69.62,
+        "reference_words": 154,
+        "sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-ml_ctc-3-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0000-0010",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.51,
+        "peak_rss_kib": 481176,
+        "audio_seconds": 72.62,
+        "reference_words": 154,
+        "sdi": [
+          5,
+          0,
+          2
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-ml_ctc-22-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0000-0010",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.03,
+        "peak_rss_kib": 479176,
+        "audio_seconds": 91.62,
+        "reference_words": 154,
+        "sdi": [
+          5,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-rnnt-0-serial",
+        "head": "rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 4.14,
+        "peak_rss_kib": 379240,
+        "audio_seconds": 83.43,
+        "reference_words": 177,
+        "sdi": [
+          4,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-rnnt-3-serial",
+        "head": "rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 4.53,
+        "peak_rss_kib": 385196,
+        "audio_seconds": 86.43,
+        "reference_words": 177,
+        "sdi": [
+          5,
+          0,
+          2
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-rnnt-22-serial",
+        "head": "rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 5.26,
+        "peak_rss_kib": 408040,
+        "audio_seconds": 105.43,
+        "reference_words": 177,
+        "sdi": [
+          5,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-e2e_rnnt-0-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 4.14,
+        "peak_rss_kib": 376156,
+        "audio_seconds": 83.43,
+        "reference_words": 177,
+        "sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-e2e_rnnt-3-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 4.19,
+        "peak_rss_kib": 371980,
+        "audio_seconds": 86.43,
+        "reference_words": 177,
+        "sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-e2e_rnnt-22-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 5.22,
+        "peak_rss_kib": 382392,
+        "audio_seconds": 105.43,
+        "reference_words": 177,
+        "sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-ml_ctc-0-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0013-0024",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 4.19,
+        "peak_rss_kib": 478984,
+        "audio_seconds": 83.43,
+        "reference_words": 177,
+        "sdi": [
+          12,
+          0,
+          2
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-ml_ctc-3-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0013-0024",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 4.32,
+        "peak_rss_kib": 480652,
+        "audio_seconds": 86.43,
+        "reference_words": 177,
+        "sdi": [
+          12,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-ml_ctc-22-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0013-0024",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.95,
+        "peak_rss_kib": 472916,
+        "audio_seconds": 105.43,
+        "reference_words": 177,
+        "sdi": [
+          12,
+          0,
+          3
+        ]
+      }
+    ],
+    "candidate": [
+      {
+        "id": "long_example-rnnt-0-serial",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.2,
+        "peak_rss_kib": 374428,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-0-vad",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "vad",
+        "wall_seconds": 3.01,
+        "peak_rss_kib": 579680,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-0-parallel",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "parallel",
+        "wall_seconds": 2.74,
+        "peak_rss_kib": 676856,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-3-serial",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.24,
+        "peak_rss_kib": 351284,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          2,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-3-vad",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "vad",
+        "wall_seconds": 3.0,
+        "peak_rss_kib": 640608,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-3-parallel",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "parallel",
+        "wall_seconds": 2.72,
+        "peak_rss_kib": 658704,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          2,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-22-serial",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 3.99,
+        "peak_rss_kib": 376164,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-22-vad",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "vad",
+        "wall_seconds": 3.13,
+        "peak_rss_kib": 618324,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-22-parallel",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "parallel",
+        "wall_seconds": 3.01,
+        "peak_rss_kib": 695772,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-rnnt-0-short",
+        "head": "rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "short",
+        "wall_seconds": 1.14,
+        "peak_rss_kib": 357116,
+        "audio_seconds": 20.0
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-serial",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.12,
+        "peak_rss_kib": 380440,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-vad",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "vad",
+        "wall_seconds": 3.33,
+        "peak_rss_kib": 546544,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-parallel",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "parallel",
+        "wall_seconds": 2.89,
+        "peak_rss_kib": 691336,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-3-serial",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.12,
+        "peak_rss_kib": 387872,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-3-vad",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "vad",
+        "wall_seconds": 2.92,
+        "peak_rss_kib": 607340,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-3-parallel",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "parallel",
+        "wall_seconds": 2.71,
+        "peak_rss_kib": 721552,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-22-serial",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 3.85,
+        "peak_rss_kib": 391836,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-22-vad",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "vad",
+        "wall_seconds": 3.2,
+        "peak_rss_kib": 623816,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-22-parallel",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "parallel",
+        "wall_seconds": 3.15,
+        "peak_rss_kib": 701148,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-e2e_rnnt-0-short",
+        "head": "e2e_rnnt",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "short",
+        "wall_seconds": 1.08,
+        "peak_rss_kib": 372140,
+        "audio_seconds": 20.0
+      },
+      {
+        "id": "long_example-ml_ctc-0-serial",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.48,
+        "peak_rss_kib": 479320,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-0-vad",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "vad",
+        "wall_seconds": 3.61,
+        "peak_rss_kib": 463300,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-0-parallel",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "parallel",
+        "wall_seconds": 3.21,
+        "peak_rss_kib": 867148,
+        "audio_seconds": 71.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-3-serial",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.45,
+        "peak_rss_kib": 478704,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-3-vad",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "vad",
+        "wall_seconds": 3.65,
+        "peak_rss_kib": 725476,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-3-parallel",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 3,
+        "mode": "parallel",
+        "wall_seconds": 3.11,
+        "peak_rss_kib": 807220,
+        "audio_seconds": 74.25,
+        "reference_words": 124,
+        "sdi": [
+          5,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-22-serial",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.2,
+        "peak_rss_kib": 480992,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-22-vad",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "vad",
+        "wall_seconds": 3.77,
+        "peak_rss_kib": 472588,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          4,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-22-parallel",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 22,
+        "mode": "parallel",
+        "wall_seconds": 3.34,
+        "peak_rss_kib": 810816,
+        "audio_seconds": 93.25,
+        "reference_words": 124,
+        "sdi": [
+          6,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "long_example-ml_ctc-0-short",
+        "head": "ml_ctc",
+        "sample": "long_example",
+        "shift": 0,
+        "mode": "short",
+        "wall_seconds": 1.65,
+        "peak_rss_kib": 431852,
+        "audio_seconds": 20.0
+      },
+      {
+        "id": "ruls-0000-0010-rnnt-0-serial",
+        "head": "rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.13,
+        "peak_rss_kib": 352440,
+        "audio_seconds": 69.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-rnnt-3-serial",
+        "head": "rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 2.89,
+        "peak_rss_kib": 409072,
+        "audio_seconds": 72.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-rnnt-22-serial",
+        "head": "rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 3.78,
+        "peak_rss_kib": 386716,
+        "audio_seconds": 91.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-e2e_rnnt-0-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.1,
+        "peak_rss_kib": 380440,
+        "audio_seconds": 69.62,
+        "reference_words": 154,
+        "sdi": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-e2e_rnnt-3-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.15,
+        "peak_rss_kib": 395772,
+        "audio_seconds": 72.62,
+        "reference_words": 154,
+        "sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-e2e_rnnt-22-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0000-0010",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.09,
+        "peak_rss_kib": 377260,
+        "audio_seconds": 91.62,
+        "reference_words": 154,
+        "sdi": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-ml_ctc-0-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0000-0010",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 6.43,
+        "peak_rss_kib": 478952,
+        "audio_seconds": 69.62,
+        "reference_words": 154,
+        "sdi": [
+          6,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-ml_ctc-3-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0000-0010",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 4.14,
+        "peak_rss_kib": 479360,
+        "audio_seconds": 72.62,
+        "reference_words": 154,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0000-0010-ml_ctc-22-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0000-0010",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.0,
+        "peak_rss_kib": 480372,
+        "audio_seconds": 91.62,
+        "reference_words": 154,
+        "sdi": [
+          5,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-rnnt-0-serial",
+        "head": "rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.38,
+        "peak_rss_kib": 351720,
+        "audio_seconds": 83.43,
+        "reference_words": 177,
+        "sdi": [
+          4,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-rnnt-3-serial",
+        "head": "rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.47,
+        "peak_rss_kib": 355648,
+        "audio_seconds": 86.43,
+        "reference_words": 177,
+        "sdi": [
+          5,
+          0,
+          2
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-rnnt-22-serial",
+        "head": "rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.18,
+        "peak_rss_kib": 367348,
+        "audio_seconds": 105.43,
+        "reference_words": 177,
+        "sdi": [
+          5,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-e2e_rnnt-0-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.39,
+        "peak_rss_kib": 386504,
+        "audio_seconds": 83.43,
+        "reference_words": 177,
+        "sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-e2e_rnnt-3-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.37,
+        "peak_rss_kib": 375460,
+        "audio_seconds": 86.43,
+        "reference_words": 177,
+        "sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-e2e_rnnt-22-serial",
+        "head": "e2e_rnnt",
+        "sample": "ruls-0013-0024",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.05,
+        "peak_rss_kib": 385492,
+        "audio_seconds": 105.43,
+        "reference_words": 177,
+        "sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-ml_ctc-0-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0013-0024",
+        "shift": 0,
+        "mode": "serial",
+        "wall_seconds": 3.84,
+        "peak_rss_kib": 481232,
+        "audio_seconds": 83.43,
+        "reference_words": 177,
+        "sdi": [
+          12,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-ml_ctc-3-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0013-0024",
+        "shift": 3,
+        "mode": "serial",
+        "wall_seconds": 3.79,
+        "peak_rss_kib": 478996,
+        "audio_seconds": 86.43,
+        "reference_words": 177,
+        "sdi": [
+          12,
+          0,
+          1
+        ]
+      },
+      {
+        "id": "ruls-0013-0024-ml_ctc-22-serial",
+        "head": "ml_ctc",
+        "sample": "ruls-0013-0024",
+        "shift": 22,
+        "mode": "serial",
+        "wall_seconds": 4.21,
+        "peak_rss_kib": 475052,
+        "audio_seconds": 105.43,
+        "reference_words": 177,
+        "sdi": [
+          12,
+          0,
+          1
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "455 unique reference words of clean Russian read verse, repeated at three shifts; no statistical independence between shifts.",
+    "The official sample uses a published literary reference; word times are decoder estimates, not forced alignments.",
+    "Original four e2e_rnnt shift substitutions remain; the improvement addresses merge duplicates, not cross-window predictor state."
+  ]
+}

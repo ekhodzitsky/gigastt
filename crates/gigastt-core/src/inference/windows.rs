@@ -63,9 +63,10 @@ pub(crate) const STREAM_CAP_STREAK_MAX: usize = 3;
 /// File-transcription chunking threshold (samples @16kHz, 30s). Inputs at or
 /// below this length take the single-pass path unchanged; longer inputs are
 /// split into overlapping windows so the encoder's peak activation memory is
-/// bounded by the chunk size, not the file length. The Conformer encoder only
-/// carries ~20–30s of useful context, so chunking above this costs no accuracy
-/// in the common case. (A higher single-pass ceiling for CTC was tried for
+/// bounded by the chunk size, not the file length. Different encoder context
+/// and independent decodes can change recognition near a boundary; see
+/// `docs/longform-stitching.md` for the measured scope and limitations.
+/// (A higher single-pass ceiling for CTC was tried for
 /// stretch RTF on ~40s clips; measured wall time was worse than 24s windows —
 /// larger activation tensors thrash CPU caches — so both head families share
 /// this 30s ceiling.)

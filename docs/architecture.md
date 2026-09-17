@@ -84,6 +84,19 @@ lab measurements), **not** a lean-RAM SKU — ready RSS is about the same class 
 when both INT8 encoders are present. Prefer `--pool-size 1` for low RAM, not a head
 switch.
 
+## Long recordings
+
+Files over 30 seconds use independent overlapping windows: 24 seconds on CPU,
+CoreML EP and CUDA, or 30 seconds on ANE, with a 2-second overlap. Each window
+starts with a fresh decoder state. Overlap words are aligned by text, order and
+time before merging; unmatched regions use the midpoint cut. VAD removes longer
+pauses before windowing and maps word times back to the original recording.
+Short files retain the single-pass path.
+
+Changing window context can still change recognition. See
+[long-form stitching](longform-stitching.md) for the policy, measurements and
+reproduction commands.
+
 ## Hardware acceleration
 
 | Platform | Feature flag | Execution Provider |

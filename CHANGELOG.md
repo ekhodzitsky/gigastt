@@ -28,6 +28,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
+- Long-file overlap stitching aligns matching words before choosing a cut,
+  preventing timestamp jitter from dropping or duplicating boundary words.
+  Repeated words retain their order and count; an empty next hypothesis keeps
+  the available preceding tail. See [long-form measurements](docs/longform-stitching.md).
+
 - **Boot failure with a read-only model directory** (#336). The shipped
   systemd unit installs models under `/usr/share/gigastt/models` with
   `ProtectSystem=strict`, but the CPU encoder load path wrote the ORT

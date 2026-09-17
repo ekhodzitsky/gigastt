@@ -9,39 +9,8 @@ use super::decode;
 use super::state::WordInfo;
 use super::tokenizer::{self, Tokenizer};
 
-/// Merge a later chunk's words into the running `merged` list, de-duplicating
-/// the overlap region around `seam_s` (absolute seconds).
-///
-/// Both lists carry absolute timestamps (each chunk's words were already offset
-/// by the chunk start). The heuristic keeps `merged` words whose start is at or
-/// before the seam and `next` words whose start is strictly after the seam, so
-/// the ~2s overlap is attributed to exactly one chunk: the earlier chunk owns
-/// the front half of the overlap, the later chunk owns the back half. A word
-/// straddling the seam is decoded with full context in at least one chunk, so
-/// no unique word is dropped and no overlap word is emitted twice in the common
-/// case. The merged list is monotonic in `start` by construction (the earlier
-/// chunk's kept words all start ≤ seam < the later chunk's kept words).
-///
-/// Pure and free-standing so the stitch policy is unit-testable without a
-/// loaded model.
-pub(crate) fn stitch_chunk_words(
-    mut merged: Vec<WordInfo>,
-    next: Vec<WordInfo>,
-    seam_s: f64,
-) -> Vec<WordInfo> {
-    if merged.is_empty() {
-        return next;
-    }
-    // Drop the earlier chunk's tail that reaches past the seam — those words are
-    // re-decoded by `next` with more right context, so prefer the later chunk
-    // for the back half of the overlap. `merged` is monotonic in `start`, so the
-    // words to drop are exactly a suffix: binary-search the seam and truncate.
-    // (`retain` would rescan every word merged so far on every chunk — O(chunks
-    // × words) — for a policy that only ever trims the tail.)
-    merged.truncate(merged.partition_point(|w| w.start <= seam_s));
-    merged.extend(next.into_iter().filter(|w| w.start > seam_s));
-    merged
-}
+mod stitch;
+pub(crate) use stitch::stitch_chunk_words;
 
 /// Absolute-seconds midpoint of the overlap between this window and the
 /// previous one. `start_sample` is the window's 16 kHz origin; `overlap_samples`
