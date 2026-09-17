@@ -84,59 +84,74 @@ impl WindowSpec {
     }
 }
 
-/// Window-cursor arithmetic for a source that decodes as it goes.
+/// Window-cursor arithmetic shared by every window source.
 ///
-/// Pure and shared, so every streaming source yields the one window sequence
-/// [`SliceWindows`] would over the same fully-decoded buffer:
-/// [`WindowCursor::fill_target`] says how far the source must decode before the
-/// next window can be decided, and [`WindowCursor::take`] turns "here is what
-/// is available" into that window.
-#[cfg(feature = "file-decode")]
+/// Pure, so [`SliceWindows`] and the streaming sources yield one and the same
+/// window sequence over the same audio: [`WindowCursor::fill_target`] says how
+/// far a source must decode before the next window can be decided, and
+/// [`WindowCursor::take`] turns "here is what is available" into that window.
+///
+/// No window of a long input is shorter than the full window length. Once the
+/// stream length is known, the last window either **absorbs** the remainder
+/// (it may run to the single-pass ceiling, 30 s, exactly as a short file is
+/// decoded in one pass) or, when the remainder is longer than that allows, is
+/// **anchored** to the end: it starts at `len - window` (rounded up to the
+/// encoder frame grid) and overlaps the previous window by more than the
+/// nominal overlap. A source must therefore keep audio from
+/// [`WindowCursor::retain_from`] on.
 pub(crate) struct WindowCursor {
     spec: WindowSpec,
     /// Absolute start (@16 kHz) of the next window to yield.
     next_start: usize,
-    /// True until the first window's single-pass-vs-windowed decision is made.
-    first: bool,
+    /// Start of the most recently yielded window, once there is one.
+    prev_start: Option<usize>,
     done: bool,
 }
 
-#[cfg(feature = "file-decode")]
 impl WindowCursor {
     pub(crate) fn new(spec: WindowSpec) -> Self {
         Self {
             spec,
             next_start: 0,
-            first: true,
+            prev_start: None,
             done: false,
         }
     }
 
+    /// Longest window the last one may grow to: the single-pass ceiling, and
+    /// never less than the window itself (a partition spec has no ceiling).
+    fn last_window_max(&self) -> usize {
+        self.spec.single_pass_max().max(self.spec.window())
+    }
+
+    #[cfg(feature = "file-decode")]
     pub(crate) fn is_done(&self) -> bool {
         self.done
     }
 
+    #[cfg(test)]
     pub(crate) fn next_start(&self) -> usize {
         self.next_start
     }
 
-    pub(crate) fn spec(&self) -> WindowSpec {
-        self.spec
+    /// Earliest absolute sample the source must still hold for the next
+    /// [`WindowCursor::take`]: one stride before the nominal next start, because
+    /// an end-anchored trailing window can begin anywhere after the previous
+    /// window's start.
+    #[cfg(feature = "file-decode")]
+    pub(crate) fn retain_from(&self) -> usize {
+        self.next_start.saturating_sub(self.spec.stride())
     }
 
     /// Decode at least this many samples before calling [`WindowCursor::take`]:
-    /// one past the window end, so `end == total` is distinguishable from a
-    /// mid-stream boundary, and enough for the first window to decide
-    /// single-pass vs windowed.
+    /// one past the longest last window that could start at `next_start`, so
+    /// `end == total` is distinguishable from a mid-stream boundary and the
+    /// absorb-or-anchor decision for the remainder can be made.
+    #[cfg(feature = "file-decode")]
     pub(crate) fn fill_target(&self) -> usize {
-        if self.first {
-            self.spec
-                .single_pass_max()
-                .saturating_add(1)
-                .max(self.spec.window().saturating_add(1))
-        } else {
-            self.next_start + self.spec.window() + 1
-        }
+        self.next_start
+            .saturating_add(self.last_window_max())
+            .saturating_add(1)
     }
 
     /// The next `[start, end)` window given the samples decoded so far
@@ -147,31 +162,59 @@ impl WindowCursor {
             return None;
         }
         let start = self.next_start;
-        if self.first {
-            self.first = false;
-            if eof && avail_end <= self.spec.single_pass_max() {
-                // The whole stream fits the single-pass ceiling: one window over
-                // all of it. `decode_words_streaming` then runs one encoder pass
-                // with frame offset 0 and stitches onto an empty list —
-                // byte-identical to `decode_words`' non-windowed branch.
-                self.done = true;
-                return Some((start, avail_end));
-            }
-        }
         if start >= avail_end {
             // Reachable only at EOF, once the last window has been yielded.
             self.done = true;
             return None;
         }
-        // Because the caller decoded one sample past `start + window` (or hit
-        // EOF), `end == avail_end` holds only when this window reaches the end.
-        let end = (start + self.spec.window()).min(avail_end);
+        // Because the caller decoded one sample past the longest possible last
+        // window (or hit EOF), a remainder within reach makes this window the
+        // last one: it absorbs the remainder up to the single-pass ceiling
+        // when that keeps it at least one window long (for the first window
+        // that is `decode_words`' non-windowed branch, byte-identical). A
+        // remainder shorter than one window is re-anchored to the end instead.
+        let remaining = avail_end - start;
+        let absorb = eof
+            && remaining <= self.last_window_max()
+            && (remaining >= self.spec.window() || self.prev_start.is_none());
+        let (start, end) = if absorb {
+            (start, avail_end)
+        } else {
+            let end = (start + self.spec.window()).min(avail_end);
+            if eof && end == avail_end {
+                (self.anchored_start(start, avail_end), avail_end)
+            } else {
+                (start, end)
+            }
+        };
         if eof && end == avail_end {
             self.done = true;
         } else {
             self.next_start = start + self.spec.stride();
         }
+        self.prev_start = Some(start);
         Some((start, end))
+    }
+
+    /// Start of an end-anchored trailing window: `len - window` rounded up to
+    /// the frame grid, so the window is at most one full window long and its
+    /// origin maps to an integral encoder frame. It always lies strictly after
+    /// the previous window's start (the previous window did not reach the end)
+    /// and at or before `nominal`. The first window keeps the nominal start:
+    /// there is nothing to anchor against. A zero-overlap spec is a partition
+    /// (the flat container pulls feeding the VAD), not decode context, so it is
+    /// never anchored either: re-reading the tail would hand the same audio
+    /// out twice.
+    fn anchored_start(&self, nominal: usize, len: usize) -> usize {
+        let Some(prev_start) = self.prev_start else {
+            return nominal;
+        };
+        if len < self.spec.window() || self.spec.overlap() == 0 {
+            return nominal;
+        }
+        let anchored = (len - self.spec.window()).div_ceil(FRAME_SAMPLES) * FRAME_SAMPLES;
+        debug_assert!(anchored > prev_start && anchored <= nominal);
+        anchored.max(prev_start + FRAME_SAMPLES).min(nominal)
     }
 }
 
@@ -203,57 +246,33 @@ pub(crate) trait PcmWindows {
     /// remove silence before decoding). Plain sources already use that clock.
     fn remap_words(&self, _words: &mut [crate::inference::WordInfo]) {}
 
-    /// The window geometry this source yields.
-    fn spec(&self) -> WindowSpec;
-
     /// Lend the next window, or `Ok(None)` once the stream is exhausted.
     fn next_window(&mut self) -> Result<Option<PcmWindow<'_>>, GigasttError>;
 }
 
-/// [`PcmWindows`] over a fully materialized buffer.
-///
-/// Yields exactly the `(start, end)` sequence of the loop it replaced:
-/// `while start < total { end = min(start + window, total); …; if end == total
-/// { break } start += stride }`.
+/// [`PcmWindows`] over a fully materialized buffer: the whole buffer is
+/// available up front, so the cursor sees every call as end-of-stream.
 pub(crate) struct SliceWindows<'a> {
     samples: &'a [f32],
-    spec: WindowSpec,
-    next_start: usize,
-    done: bool,
+    cursor: WindowCursor,
 }
 
 impl<'a> SliceWindows<'a> {
     pub(crate) fn new(samples: &'a [f32], spec: WindowSpec) -> Self {
         Self {
             samples,
-            spec,
-            next_start: 0,
-            done: false,
+            cursor: WindowCursor::new(spec),
         }
     }
 }
 
 impl PcmWindows for SliceWindows<'_> {
-    fn spec(&self) -> WindowSpec {
-        self.spec
-    }
-
     fn next_window(&mut self) -> Result<Option<PcmWindow<'_>>, GigasttError> {
         let total = self.samples.len();
-        if self.done || self.next_start >= total {
+        if total == 0 {
             return Ok(None);
         }
-        let start = self.next_start;
-        let end = (start + self.spec.window()).min(total);
-        // The replaced loop stopped on `end == total` rather than on the next
-        // start passing `total`, so a window that reaches the end is the last
-        // one even when `start + stride` is still short of `total`.
-        if end == total {
-            self.done = true;
-        } else {
-            self.next_start = start + self.spec.stride();
-        }
-        Ok(Some(PcmWindow {
+        Ok(self.cursor.take(total, true).map(|(start, end)| PcmWindow {
             start_sample: start,
             samples: &self.samples[start..end],
         }))

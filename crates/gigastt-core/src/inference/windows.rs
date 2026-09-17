@@ -79,9 +79,13 @@ pub(crate) const CHUNK_WINDOW_SAMPLES_ORT: usize = 16000 * 24;
 /// fill ANE bucket 3000 at ~99.97% (vs ~80% fill at 24s), recovering pad-up
 /// waste. Peak activation is free on-device; ort keeps the shorter window.
 pub(crate) const CHUNK_WINDOW_SAMPLES_ANE: usize = 16000 * 30;
-/// Overlap retained between consecutive long-form windows (samples @16kHz, 2s),
+/// Nominal overlap between consecutive long-form windows (samples @16kHz, 2s),
 /// so a word straddling a seam is decoded fully in at least one chunk. The
 /// stitch step de-dups words in the overlap region (see [`super::token_format::stitch_chunk_words`]).
+/// The last window absorbs a short remainder up to the single-pass ceiling or
+/// is anchored to the end of the input, overlapping its predecessor by more
+/// than this (the window cursor in `audio/stream.rs`), so no window of a long
+/// input is shorter than the full window length.
 pub(crate) const CHUNK_OVERLAP_SAMPLES: usize = 16000 * 2;
 
 /// Select the long-form chunk window length for the active encoder backend.

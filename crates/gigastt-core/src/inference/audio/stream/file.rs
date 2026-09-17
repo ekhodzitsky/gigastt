@@ -104,7 +104,6 @@ pub(crate) struct FileWindows {
     buf_start_abs: usize,
     /// Total 16 kHz samples decoded so far (== `buf_start_abs + buf.len()`).
     decoded_16k_total: usize,
-    spec: WindowSpec,
     /// Which channel the packet loop keeps.
     channel: ChannelSelect,
     cursor: WindowCursor,
@@ -227,7 +226,6 @@ impl FileWindows {
                     buf: Vec::new(),
                     buf_start_abs: 0,
                     decoded_16k_total: 0,
-                    spec,
                     channel,
                     cursor: WindowCursor::new(spec),
                 })
@@ -253,7 +251,6 @@ impl FileWindows {
                     buf: Vec::new(),
                     buf_start_abs: 0,
                     decoded_16k_total: 0,
-                    spec,
                     channel,
                     cursor: WindowCursor::new(spec),
                 })
@@ -301,7 +298,6 @@ impl FileWindows {
             buf: Vec::new(),
             buf_start_abs: 0,
             decoded_16k_total: 0,
-            spec,
             channel,
             cursor: WindowCursor::new(spec),
         }
@@ -548,21 +544,17 @@ impl FileWindows {
 
 #[cfg(feature = "file-decode")]
 impl PcmWindows for FileWindows {
-    fn spec(&self) -> WindowSpec {
-        self.spec
-    }
-
     fn next_window(&mut self) -> Result<Option<PcmWindow<'_>>, GigasttError> {
         if self.cursor.is_done() {
             return Ok(None);
         }
 
-        // Reclaim the previous window's consumed prefix: windows only move
-        // forward, so everything before `next_start` is dead. This is what keeps
-        // the resident buffer at one window plus look-ahead.
+        // Reclaim the consumed prefix: windows only move forward, so everything
+        // before `retain_from` is dead. This is what keeps the resident buffer
+        // at one single-pass ceiling of audio plus one stride of look-behind.
         let drop = self
             .cursor
-            .next_start()
+            .retain_from()
             .saturating_sub(self.buf_start_abs)
             .min(self.buf.len());
         if drop > 0 {

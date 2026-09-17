@@ -172,12 +172,16 @@ fn test_stitch_unmatched_continuous_speech_keeps_midpoint_fallback() {
 }
 
 #[test]
-fn test_overlap_mid_seconds_is_start_plus_half_overlap() {
-    // File-chunk overlap is 2 s @16 kHz. A window at t=0 seams at 1.0 s;
-    // a window whose start is the 22 s stride (352_000) seams at 23.0 s.
-    assert_eq!(overlap_mid_seconds(0, CHUNK_OVERLAP_SAMPLES), 1.0);
-    assert_eq!(overlap_mid_seconds(352_000, CHUNK_OVERLAP_SAMPLES), 23.0);
-    assert_eq!(overlap_mid_seconds(0, 0), 0.0);
+fn test_seam_seconds_is_midpoint_of_actual_overlap() {
+    // Regular grid: a 24 s window ending at 24 s and the next one starting at
+    // the 22 s stride (352_000) share 2 s, so the seam is 23.0 s.
+    assert_eq!(seam_seconds(384_000, 352_000), 23.0);
+    // An end-anchored trailing window overlaps more: [44, 68] then
+    // [47.25, 71.25] seams at the middle of [47.25, 68].
+    assert_eq!(seam_seconds(68 * 16_000, 756_000), (47.25 + 68.0) / 2.0);
+    // No overlap (or no previous window): the seam is the window start.
+    assert_eq!(seam_seconds(0, 352_000), 22.0);
+    assert_eq!(seam_seconds(0, 0), 0.0);
 }
 
 #[test]

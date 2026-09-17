@@ -121,7 +121,16 @@ fn assert_matches_batch(n: usize, probs: &[f32], cfg: &VadConfig) {
     );
     let got_windows = drain(&mut src);
     assert_eq!(src.regions(), want_regions, "regions diverged at n={n}");
-    assert_eq!(got_windows, want_windows, "windows diverged at n={n}");
+    let geometry = |w: &[OwnedWindow]| w.iter().map(|(s, v)| (*s, v.len())).collect::<Vec<_>>();
+    assert_eq!(
+        geometry(&got_windows),
+        geometry(&want_windows),
+        "window geometry diverged at n={n}"
+    );
+    assert!(
+        got_windows == want_windows,
+        "window samples diverged at n={n}"
+    );
     assert_eq!(src.total_16k_samples(), decoded.len());
     // Both paths hand the clip back to the full decode on an empty result.
     assert_eq!(src.needs_fallback(), want_regions.is_empty());

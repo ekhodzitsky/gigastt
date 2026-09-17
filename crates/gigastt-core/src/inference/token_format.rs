@@ -12,11 +12,12 @@ use super::tokenizer::{self, Tokenizer};
 mod stitch;
 pub(crate) use stitch::stitch_chunk_words;
 
-/// Absolute-seconds midpoint of the overlap between this window and the
-/// previous one. `start_sample` is the window's 16 kHz origin; `overlap_samples`
-/// is the shared tail/head (2 s = 32_000 at the file-chunk geometry).
-pub(crate) fn overlap_mid_seconds(start_sample: usize, overlap_samples: usize) -> f64 {
-    (start_sample as f64 + overlap_samples as f64 / 2.0) / 16_000.0
+/// Absolute-seconds seam between the previous window, which ended at
+/// `prev_end_sample`, and the window starting at `start_sample`: the midpoint of
+/// their actual overlap (2 s on the regular grid, more for the end-anchored
+/// trailing window). Without overlap the seam is the window start.
+pub(crate) fn seam_seconds(prev_end_sample: usize, start_sample: usize) -> f64 {
+    (start_sample as f64 + prev_end_sample.saturating_sub(start_sample) as f64 / 2.0) / 16_000.0
 }
 
 /// Groups RNN-T decoded tokens into words at BPE word boundaries (`▁`).

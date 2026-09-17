@@ -70,18 +70,30 @@ def fetch(url, path):
     temporary.replace(path)
 
 
-def pcm(path):
+def layout(sample):
+    """(rate, channels) of a sample's WAV; 16 kHz mono unless the manifest says otherwise."""
+    return sample.get("rate", 16000), sample.get("channels", 1)
+
+
+def pcm(path, rate=16000, channels=1):
     with wave.open(str(path)) as source:
-        assert (source.getnchannels(), source.getsampwidth(), source.getframerate()) == (1, 2, 16000)
+        assert (source.getnchannels(), source.getsampwidth(), source.getframerate()) == (channels, 2, rate)
         return source.readframes(source.getnframes())
 
 
-def write_wav(path, data):
+def write_wav(path, data, rate=16000, channels=1):
     with wave.open(str(path), "wb") as out:
-        out.setnchannels(1)
+        out.setnchannels(channels)
         out.setsampwidth(2)
-        out.setframerate(16000)
+        out.setframerate(rate)
         out.writeframes(data)
+
+
+# Hugging Face datasets-server row layouts for samples assembled from parts.
+DATASETS = {
+    "istupakov/russian_librispeech": {"split": "test", "text": "text"},
+    "bond005/podlodka_speech": {"split": "train", "text": "transcription"},
+}
 
 
 def prepare(args, manifest):
@@ -94,34 +106,40 @@ def prepare(args, manifest):
             if "parts" not in sample:
                 fetch(sample["source"], path)
             else:
+                dataset = sample.get("dataset", "istupakov/russian_librispeech")
+                fields = DATASETS[dataset]
+                rate, channels = layout(sample)
                 chunks = []
                 for part in sample["parts"]:
-                    part_path = parts_dir / Path(part["file"]).name
+                    part_path = parts_dir / Path(part.get("file", f"{sample['id']}-{part['row']:04d}.wav")).name
                     if not part_path.exists():
                         url = ("https://datasets-server.huggingface.co/rows?"
-                               "dataset=istupakov/russian_librispeech&config=default&split=test"
+                               f"dataset={dataset}&config=default&split={fields['split']}"
                                f"&offset={part['row']}&length=1")
                         with urllib.request.urlopen(url, timeout=60) as response:
                             row = json.load(response)["rows"][0]["row"]
-                        assert row["audio_filepath"] == part["file"]
-                        assert row["text"] == part["reference"]
+                        if "file" in part:
+                            assert row["audio_filepath"] == part["file"]
+                        if "episode" in sample:
+                            assert row["episode"] == sample["episode"]
+                        assert row[fields["text"]] == part["reference"]
                         fetch(row["audio"][0]["src"], part_path)
                     checked_audio(part_path, part["sha256"])
-                    chunks.append(pcm(part_path))
-                write_wav(path, b"".join(chunks))
+                    chunks.append(pcm(part_path, rate, channels))
+                write_wav(path, b"".join(chunks), rate, channels)
         checked_audio(path, sample["sha256"])
         print(sample["id"], "verified", flush=True)
 
 
 def cases(manifest):
     for sample in manifest["samples"]:
+        modes = sample.get("modes", ["serial"])
         for head in ("rnnt", "e2e_rnnt", "ml_ctc"):
             for shift in (0, 3, 22):
-                yield sample, head, shift, "serial"
-                if sample["id"] == "long_example":
-                    yield sample, head, shift, "vad"
-                    yield sample, head, shift, "parallel"
-            if sample["id"] == "long_example":
+                for mode in modes:
+                    if mode != "short":
+                        yield sample, head, shift, mode
+            if "short" in modes:
                 yield sample, head, 0, "short"
 
 
@@ -153,14 +171,18 @@ def run(args, manifest):
     write_json(args.output / "metadata.json", metadata)
     results = []
     for sample, head, shift, mode in cases(manifest):
+        if args.modes and mode not in args.modes:
+            continue
         key = f"{sample['id']}-{head}-{shift}-{mode}"
         source = args.audio / sample["file"]
         checked_audio(source, sample["sha256"])
-        data = pcm(source)
+        rate, channels = layout(sample)
+        frame_bytes = 2 * channels
+        data = pcm(source, rate, channels)
         if mode == "short":
-            data = data[:20 * 32000]
+            data = data[:20 * rate * frame_bytes]
         shifted = args.output / "input.wav"
-        write_wav(shifted, b"\0" * (shift * 32000) + data)
+        write_wav(shifted, b"\0" * (shift * rate * frame_bytes) + data, rate, channels)
         destination = args.output / f"{key}.json"
         timing = args.output / f"{key}.time"
         command = ["/usr/bin/time", "-f", "%e %M", "-o", str(timing),
@@ -178,7 +200,7 @@ def run(args, manifest):
         wall, rss = timing.read_text().split()
         row = {"id": key, "head": head, "sample": sample["id"], "shift": shift, "mode": mode,
                "wall_seconds": float(wall), "peak_rss_kib": int(rss),
-               "audio_seconds": len(data) / 32000 + shift, "text": transcript["text"]}
+               "audio_seconds": len(data) / (rate * frame_bytes) + shift, "text": transcript["text"]}
         if mode != "short":
             reference = normalize(sample["reference"])
             row["reference_words"] = len(reference)
@@ -197,7 +219,7 @@ def pause(args, manifest):
     environment["RUST_LOG"] = "warn"
     results = []
     for sample, head, shift, mode in cases(manifest):
-        if mode != "serial":
+        if mode != "serial" or layout(sample) != (16000, 1):
             continue
         key = f"{sample['id']}-{head}-{shift}"
         source = args.audio / sample["file"]
@@ -255,6 +277,8 @@ def pause(args, manifest):
 def compare(args):
     baseline = {r["id"]: r for r in read_json(args.baseline / "results.json")}
     candidate = {r["id"]: r for r in read_json(args.candidate / "results.json")}
+    if args.subset:
+        baseline = {k: v for k, v in baseline.items() if k in candidate}
     assert baseline.keys() == candidate.keys()
     assert read_json(args.baseline / "metadata.json")["manifest_sha256"] == read_json(args.candidate / "metadata.json")["manifest_sha256"]
     summary = {}
@@ -293,6 +317,93 @@ def compare(args):
         print(group, s["baseline_sdi"], "->", s["candidate_sdi"], len(s["changed"]), "changed")
     if any(sum(s["candidate_sdi"]) > sum(s["baseline_sdi"]) for s in summary.values()):
         raise SystemExit("WER regression; inspect comparison.json")
+
+
+def align(reference, hypothesis):
+    """Levenshtein alignment as (op, i, j) with op in eq/sub/del/ins; same costs as `edits`."""
+    n, m = len(reference), len(hypothesis)
+    dist = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(1, n + 1):
+        dist[i][0] = i
+    for j in range(1, m + 1):
+        dist[0][j] = j
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            dist[i][j] = min(dist[i - 1][j - 1] + (reference[i - 1] != hypothesis[j - 1]),
+                             dist[i - 1][j] + 1, dist[i][j - 1] + 1)
+    ops, i, j = [], n, m
+    while i > 0 or j > 0:
+        if i > 0 and j > 0 and dist[i][j] == dist[i - 1][j - 1] + (reference[i - 1] != hypothesis[j - 1]):
+            ops.append(("eq" if reference[i - 1] == hypothesis[j - 1] else "sub", i - 1, j - 1))
+            i, j = i - 1, j - 1
+        elif i > 0 and dist[i][j] == dist[i - 1][j] + 1:
+            ops.append(("del", i - 1, None))
+            i -= 1
+        else:
+            ops.append(("ins", None, j - 1))
+            j -= 1
+    return ops[::-1]
+
+
+def timed_tokens(words, shift):
+    """Normalized tokens with original-audio times (a hypothesis word may split into several)."""
+    return [{"tok": tok, "word": w["word"], "start": round(w["start"] - shift, 2),
+             "end": round(w["end"] - shift, 2), "confidence": round(w["confidence"], 3)}
+            for w in words for tok in normalize(w["word"])]
+
+
+def residuals(args, manifest):
+    """Adjudicate every shifted-vs-unshifted disagreement against the reference.
+
+    Hypothesis disagreement is reported next to, not instead of, the reference
+    verdict of each side. With `--windows` (a `pause` output directory) each
+    item also lists the per-window copies decoded before stitching.
+    """
+    sample = next(s for s in manifest["samples"] if s["id"] == args.sample)
+    reference = normalize(sample["reference"])
+    report = {"sample": args.sample, "reference_words": len(reference), "heads": {}}
+    for head in ("rnnt", "e2e_rnnt", "ml_ctc"):
+        hyps = {}
+        for shift in (0, 3, 22):
+            words = read_json(args.run / f"{args.sample}-{head}-{shift}-serial.json")["words"]
+            tokens = timed_tokens(words, shift)
+            ops = align(reference, [t["tok"] for t in tokens])
+            verdict = {j: (op, reference[i] if i is not None else None) for op, i, j in ops if j is not None}
+            hyps[shift] = {"tokens": tokens, "verdict": verdict,
+                           "sdi": [sum(1 for o in ops if o[0] == k) for k in ("sub", "del", "ins")]}
+        entry = {"sdi_vs_reference": {s: h["sdi"] for s, h in hyps.items()}, "disagreements": {}}
+        for shift in (3, 22):
+            items = []
+            for op, i, j in align([t["tok"] for t in hyps[0]["tokens"]], [t["tok"] for t in hyps[shift]["tokens"]]):
+                if op == "eq":
+                    continue
+                item = {"op": op}
+                for label, s, k in (("shift0", 0, i), ("shifted", shift, j)):
+                    if k is not None:
+                        item[label] = {**hyps[s]["tokens"][k], "vs_reference": hyps[s]["verdict"].get(k)}
+                span = item.get("shift0") or item["shifted"]
+                if args.windows:
+                    copies = {}
+                    for s in (0, shift):
+                        for w in read_json(args.windows / f"{args.sample}-{head}-{s}-windows.json"):
+                            start = w["start"] - s
+                            if not start <= span["start"] <= start + 24:
+                                continue
+                            hit = [(x["word"], round(x["start"] - s, 2), round(x["end"] - s, 2), round(x["confidence"], 3))
+                                   for x in w["words"] if x["start"] - s < span["end"] + 0.05 and x["end"] - s > span["start"] - 0.05]
+                            copies.setdefault(str(s), []).append({"window": [round(start, 2), round(start + 24, 2)],
+                                                                  "seam": round(w["midpoint"] - s, 2), "copy": hit})
+                    item["window_copies"] = copies
+                items.append(item)
+            entry["disagreements"][str(shift)] = {"count": len(items), "items": items}
+        report["heads"][head] = entry
+        print(head, "S/D/I by shift", entry["sdi_vs_reference"])
+        for shift, block in entry["disagreements"].items():
+            for item in block["items"]:
+                a, b = item.get("shift0", {}), item.get("shifted", {})
+                print(f"  shift {shift}: {a.get('word', '-')} {a.get('vs_reference')} | {b.get('word', '-')} {b.get('vs_reference')}"
+                      f" @ {a.get('start', b.get('start'))}s")
+    write_json(args.output, report)
 
 
 def performance(args, manifest):
@@ -338,14 +449,21 @@ def main():
     p.add_argument("--binary", type=Path, required=True)
     p.add_argument("--models", type=Path, default=Path.home() / ".gigastt/models")
     p.add_argument("--output", type=Path, required=True)
+    p.add_argument("--modes", nargs="*", help="restrict to these modes (e.g. serial) for geometry sweeps")
     p = sub.add_parser("compare")
     p.add_argument("--baseline", type=Path, required=True)
     p.add_argument("--candidate", type=Path, required=True)
+    p.add_argument("--subset", action="store_true", help="candidate may cover a subset of the baseline cases")
     p = sub.add_parser("performance")
     p.add_argument("--audio", type=Path, required=True)
     p.add_argument("--baseline", type=Path, required=True)
     p.add_argument("--candidate", type=Path, required=True)
     p.add_argument("--models", type=Path, default=Path.home() / ".gigastt/models")
+    p.add_argument("--output", type=Path, required=True)
+    p = sub.add_parser("residuals")
+    p.add_argument("--run", type=Path, required=True)
+    p.add_argument("--windows", type=Path)
+    p.add_argument("--sample", default="long_example")
     p.add_argument("--output", type=Path, required=True)
     p = sub.add_parser("pause")
     p.add_argument("--audio", type=Path, required=True)
@@ -357,7 +475,8 @@ def main():
     if args.command == "compare":
         compare(args)
     else:
-        {"prepare": prepare, "run": run, "pause": pause, "performance": performance}[args.command](args, read_json(MANIFEST))
+        {"prepare": prepare, "run": run, "pause": pause, "performance": performance,
+         "residuals": residuals}[args.command](args, read_json(MANIFEST))
 
 
 if __name__ == "__main__":

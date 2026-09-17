@@ -13,5 +13,6 @@ mod commit_policy;
 mod load;
 mod mock;
 mod paths;
+mod predictor_probe;
 mod stream;
 mod transcribe;

@@ -44,6 +44,11 @@ impl OwnedPcmWindow {
             samples: &self.samples,
         }
     }
+
+    /// Absolute end (@16 kHz) of this window.
+    fn end(&self) -> usize {
+        self.start_sample + self.samples.len()
+    }
 }
 
 fn next_owned_window(windows: &mut dyn PcmWindows) -> Result<Option<OwnedPcmWindow>, GigasttError> {
@@ -57,6 +62,13 @@ struct PcmSpan<'a> {
     samples: &'a [f32],
 }
 
+impl PcmSpan<'_> {
+    /// Absolute end (@16 kHz) of this window.
+    fn end(&self) -> usize {
+        self.start_sample + self.samples.len()
+    }
+}
+
 impl<'a> From<&'a PcmWindow<'_>> for PcmSpan<'a> {
     fn from(window: &'a PcmWindow<'_>) -> Self {
         Self {
@@ -66,12 +78,15 @@ impl<'a> From<&'a PcmWindow<'_>> for PcmSpan<'a> {
     }
 }
 
+/// Stitch one decoded window onto `merged`. `prev_end` is where the previous
+/// window ended (0 before the first), so the seam sits in the middle of the
+/// two windows' actual overlap.
 fn stitch_report(
     merged: Vec<WordInfo>,
+    prev_end: usize,
     start_sample: usize,
     n_samples: usize,
     words: Vec<WordInfo>,
-    overlap: usize,
     ctl: DecodeControls<'_>,
 ) -> Vec<WordInfo> {
     // An abort before any new word must not trim the preceding window's tail.
@@ -81,7 +96,7 @@ fn stitch_report(
     let merged = if ctl.aborted() && !extends_previous {
         merged
     } else {
-        stitch_chunk_words(merged, words, overlap_mid_seconds(start_sample, overlap))
+        stitch_chunk_words(merged, words, seam_seconds(prev_end, start_sample))
     };
     if !ctl.aborted() {
         ctl.report((start_sample + n_samples) as u64);
@@ -196,7 +211,10 @@ impl Engine {
     /// Long-form decode: pull overlapping windows from `windows`, encode and
     /// decode each independently with a fresh [`DecoderState`], offset each
     /// chunk's word timestamps by the chunk's absolute start, then stitch the
-    /// per-chunk word lists with overlap de-dup via [`stitch_chunk_words`].
+    /// per-chunk word lists with overlap de-dup via [`stitch_chunk_words`] at
+    /// the midpoint of each pair's actual overlap (the last window absorbs a
+    /// short remainder or is anchored to the end of the input, so it may
+    /// overlap its predecessor by more than the nominal overlap).
     ///
     /// Peak encoder activation memory is bounded by the source's window length
     /// (24s ort / 30s ANE, see [`super::windows::chunk_window_samples`]) rather than the full
@@ -219,12 +237,11 @@ impl Engine {
         biaser: Option<&bias::Biaser>,
         ctl: DecodeControls,
     ) -> Result<Vec<WordInfo>, GigasttError> {
-        let overlap = windows.spec().overlap();
         let cap = self.file_window_concurrency();
         if cap <= 1 {
-            return self.decode_windows_serial(windows, triplet, biaser, ctl, overlap, Vec::new());
+            return self.decode_windows_serial(windows, triplet, biaser, ctl, 0, Vec::new());
         }
-        self.decode_windows_maybe_parallel(windows, triplet, biaser, ctl, overlap, cap)
+        self.decode_windows_maybe_parallel(windows, triplet, biaser, ctl, cap)
     }
 
     fn decode_windows_maybe_parallel(
@@ -233,7 +250,6 @@ impl Engine {
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
         ctl: DecodeControls,
-        overlap: usize,
         cap: usize,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         // Copy the first window so we can peek a second without holding a
@@ -245,8 +261,7 @@ impl Engine {
             return Err(GigasttError::Cancelled);
         }
         let Some(second) = next_owned_window(windows)? else {
-            let words =
-                self.finish_window(Vec::new(), first.span(), overlap, triplet, biaser, ctl)?;
+            let words = self.finish_window(Vec::new(), 0, first.span(), triplet, biaser, ctl)?;
             publish_window(windows, ctl, &words)?;
             return Ok(words);
         };
@@ -264,17 +279,19 @@ impl Engine {
                 "long-form window-parallel requested; no idle extra slot, serial"
             );
             let mut merged =
-                self.finish_window(Vec::new(), first.span(), overlap, triplet, biaser, ctl)?;
+                self.finish_window(Vec::new(), 0, first.span(), triplet, biaser, ctl)?;
             publish_window(windows, ctl, &merged)?;
-            merged = self.finish_window(merged, second.span(), overlap, triplet, biaser, ctl)?;
+            merged =
+                self.finish_window(merged, first.end(), second.span(), triplet, biaser, ctl)?;
             publish_window(windows, ctl, &merged)?;
-            return self.decode_windows_serial(windows, triplet, biaser, ctl, overlap, merged);
+            return self.decode_windows_serial(windows, triplet, biaser, ctl, second.end(), merged);
         }
 
         tracing::info!(slots = 1 + extras.len(), "long-form window-parallel decode");
         let n_slots = 1 + extras.len();
         let mut pending = vec![first, second];
         let mut merged = Vec::new();
+        let mut prev_end = 0;
         loop {
             if ctl.aborted() {
                 return Err(GigasttError::Cancelled);
@@ -301,12 +318,13 @@ impl Engine {
             for (win, decoded) in pending.iter().zip(decoded) {
                 merged = stitch_report(
                     merged,
+                    prev_end,
                     win.start_sample,
                     win.samples.len(),
                     decoded.words,
-                    overlap,
                     ctl,
                 );
+                prev_end = win.end();
                 if !decoded.completed {
                     break;
                 }
@@ -323,18 +341,14 @@ impl Engine {
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
         ctl: DecodeControls,
-        overlap: usize,
+        mut prev_end: usize,
         mut merged: Vec<WordInfo>,
     ) -> Result<Vec<WordInfo>, GigasttError> {
         while let Some(window) = windows.next_window()? {
-            merged = self.finish_window(
-                merged,
-                PcmSpan::from(&window),
-                overlap,
-                triplet,
-                biaser,
-                ctl,
-            )?;
+            let span = PcmSpan::from(&window);
+            let end = span.end();
+            merged = self.finish_window(merged, prev_end, span, triplet, biaser, ctl)?;
+            prev_end = end;
             publish_window(windows, ctl, &merged)?;
         }
         ctl.check_abort()?;
@@ -344,8 +358,8 @@ impl Engine {
     fn finish_window(
         &self,
         merged: Vec<WordInfo>,
+        prev_end: usize,
         window: PcmSpan<'_>,
-        overlap: usize,
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
         ctl: DecodeControls,
@@ -362,10 +376,10 @@ impl Engine {
         )?;
         let merged = stitch_report(
             merged,
+            prev_end,
             window.start_sample,
             window.samples.len(),
             words.words,
-            overlap,
             ctl,
         );
         Ok(merged)

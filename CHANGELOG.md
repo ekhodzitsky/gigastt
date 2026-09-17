@@ -28,6 +28,18 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
+- Long-file decoding no longer ends with a short trailing window. A window
+  that can reach the end of the input within the 30-second single-pass
+  ceiling absorbs the remainder; a longer remainder that is still shorter
+  than the 24-second window (30 s on ANE) becomes a full window anchored to
+  the end of the input, and the seam with its predecessor sits in the middle
+  of their actual overlap. Window-parallel decoding, VAD and files up to
+  30 seconds are unchanged. The shift-dependent readings reported in #349 were traced to the
+  encoder itself (a full-context decode of the same recording flips the same
+  words; a warmed RNN-T predictor changes none of them), so this removes the
+  one structural cause and documents the rest; see
+  [long-form measurements](docs/longform-stitching.md).
+
 - Long-file overlap stitching aligns matching words before choosing a cut,
   preventing timestamp jitter from dropping or duplicating boundary words.
   Repeated words retain their order and count; an empty next hypothesis keeps

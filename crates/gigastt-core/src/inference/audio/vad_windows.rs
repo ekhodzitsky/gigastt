@@ -10,8 +10,9 @@
 //! same overlapping windows [`SliceWindows`](super::SliceWindows) would yield
 //! over the fully compressed buffer.
 //!
-//! Peak audio memory is one decode window plus well under a second of retained
-//! PCM, regardless of file length. The windows themselves are unchanged, so the
+//! Peak audio memory is one single-pass ceiling of audio plus one stride of
+//! look-behind (for the end-anchored trailing window) and well under a second
+//! of retained PCM, regardless of file length. The windows themselves are unchanged, so the
 //! transcript is too.
 
 use crate::error::GigasttError;
@@ -158,20 +159,16 @@ impl PcmWindows for VadWindows<'_> {
         }
     }
 
-    fn spec(&self) -> WindowSpec {
-        self.cursor.spec()
-    }
-
     fn next_window(&mut self) -> Result<Option<PcmWindow<'_>>, GigasttError> {
         if self.cursor.is_done() {
             return Ok(None);
         }
 
-        // Reclaim the previous window's consumed prefix; windows only move
-        // forward, so everything before `next_start` is dead.
+        // Reclaim the consumed prefix; windows only move forward, so everything
+        // before `retain_from` is dead.
         let drop = self
             .cursor
-            .next_start()
+            .retain_from()
             .saturating_sub(self.buf_start_abs)
             .min(self.buf.len());
         if drop > 0 {
