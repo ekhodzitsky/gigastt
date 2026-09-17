@@ -153,7 +153,12 @@ fn hits(words: &[WordInfo], shift: f64, target: (f64, f64)) -> String {
 #[test]
 #[ignore = "requires the GigaAM model and GIGASTT_PROBE_AUDIO"]
 fn predictor_probe() {
-    let audio = std::env::var("GIGASTT_PROBE_AUDIO").expect("GIGASTT_PROBE_AUDIO");
+    // `--ignored` sweeps (coverage CI) run this without the recording: skip
+    // loudly rather than fail, exactly like the corpus-gated long-form tests.
+    let Ok(audio) = std::env::var("GIGASTT_PROBE_AUDIO") else {
+        eprintln!("skipping: set GIGASTT_PROBE_AUDIO to the official long_example.wav");
+        return;
+    };
     let source = crate::inference::audio::decode_audio_file(&audio).unwrap();
     let cases = [
         Case {
@@ -321,7 +326,12 @@ fn predictor_probe() {
 #[test]
 #[ignore = "requires the GigaAM model and GIGASTT_PROBE_AUDIO"]
 fn fullpass_probe() {
-    let audio = std::env::var("GIGASTT_PROBE_AUDIO").expect("GIGASTT_PROBE_AUDIO");
+    // `--ignored` sweeps (coverage CI) run this without the recording: skip
+    // loudly rather than fail, exactly like the corpus-gated long-form tests.
+    let Ok(audio) = std::env::var("GIGASTT_PROBE_AUDIO") else {
+        eprintln!("skipping: set GIGASTT_PROBE_AUDIO to the official long_example.wav");
+        return;
+    };
     let source = crate::inference::audio::decode_audio_file(&audio).unwrap();
     let targets = [
         ("temnu", (21.52, 21.84)),
