@@ -9,6 +9,7 @@
 # are the data, not typos we own — spell-checking them is meaningless.
 extend-exclude = [
     "benchmark/manifests/",
+    "benchmark/results/",
     "benchmark/results_full/",
     # Raw telephony fixtures (G.711 A-law/μ-law, G.722) are headerless binary
     # streams with no NUL bytes in the sniffed window, so typos treats them as
