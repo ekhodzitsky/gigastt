@@ -1671,7 +1671,7 @@ dependencies = [
  "reqwest",
  "rubato",
  "rustfft",
- "ryf 0.7.2",
+ "ryf",
  "safetensors 0.8.0",
  "serde",
  "serde_json",
@@ -2923,15 +2923,15 @@ dependencies = [
 
 [[package]]
 name = "polyvoice"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "670555990e904cd53ac77a54c1e9e71ee372687f9caf893f3016732005240283"
+checksum = "3ae4c44d891d70a7df7d8417b77d58959c77d09ba7d76f5436173eb30acc6eb3"
 dependencies = [
  "anyhow",
  "ndarray",
  "ort",
  "realfft",
- "ryf 0.3.2",
+ "ryf",
  "serde",
  "serde_json",
  "thiserror 2.0.20",
@@ -3569,12 +3569,6 @@ dependencies = [
  "tempfile",
  "wait-timeout",
 ]
-
-[[package]]
-name = "ryf"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11e6d16ce08a661ff9d22b1303115cf61b40bfd7de8d1d17c7302d1a2b05d93e"
 
 [[package]]
 name = "ryf"
