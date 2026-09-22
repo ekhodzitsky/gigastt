@@ -303,7 +303,7 @@ ONNX Runtime linking trade-offs are in [embedding-packaging](embedding-packaging
 |---|---|---|
 | `/health` | GET | Liveness check. Reports the loaded head + effective punctuation/ITN policy (`{"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","punctuation":true,"itn":true,...}`). During first-run model download it stays up with `model:"loading"`. |
 | `/ready` | GET | Readiness probe (200 when the engine pool is ready; 503 `initializing` while the model loads, `pool_exhausted` when saturated) |
-| `/v1/models` | GET | Model info (encoder type, pool size, capabilities) |
+| `/v1/models` | GET | Model info (encoder type, pool size, capabilities, `execution_provider` of the provider that actually loaded) |
 | `/v1/transcribe` | POST | File transcription, full JSON response or export format |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
 | `/v1/audio/transcriptions` | POST | OpenAI-compatible file transcription (`multipart` `file` + `model` → `{"text":"..."}`) |

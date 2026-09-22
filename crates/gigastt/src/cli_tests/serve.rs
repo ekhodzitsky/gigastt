@@ -193,6 +193,32 @@ fn test_cli_serve_file_window_concurrency_flag() {
 }
 
 #[test]
+fn test_cli_serve_execution_provider_default_exact_and_env() {
+    let cli = Cli::parse_from(["gigastt", "serve"]);
+    match cli.command {
+        Commands::Serve(ServeArgs {
+            execution_provider, ..
+        }) => assert_eq!(
+            execution_provider,
+            gigastt_core::ExecutionProviderChoice::Auto
+        ),
+        _ => panic!("expected serve"),
+    }
+    let cli = Cli::parse_from(["gigastt", "serve", "--execution-provider", "cpu"]);
+    match cli.command {
+        Commands::Serve(ServeArgs {
+            execution_provider, ..
+        }) => assert_eq!(
+            execution_provider,
+            gigastt_core::ExecutionProviderChoice::Cpu
+        ),
+        _ => panic!("expected serve"),
+    }
+    let cli = Cli::try_parse_from(["gigastt", "serve", "--execution-provider", "vulkan"]);
+    assert!(cli.is_err());
+}
+
+#[test]
 fn test_cli_serve_model_variant_override() {
     let cli = Cli::parse_from(["gigastt", "serve", "--model-variant", "e2e_rnnt"]);
     match cli.command {

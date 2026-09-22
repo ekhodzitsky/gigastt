@@ -116,6 +116,8 @@ pub fn load_rnnt_engine(dir: &Path, pool_size: usize) -> Result<Engine, GigasttE
         0,
         Box::new(rnnt_factory()),
         1,
+        true,
+        "cpu",
     )
 }
 

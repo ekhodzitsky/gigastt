@@ -170,6 +170,7 @@ paths:
                 variant: rnnt
                 version: "2.18.0"
                 encoder: int8
+                execution_provider: cpu
                 vocab_size: 34
                 sample_rate: 16000
                 pool_size: 2
@@ -1195,6 +1196,7 @@ components:
         - punctuation
         - itn
         - diarization
+        - execution_provider
       properties:
         id:
           type: string
@@ -1258,6 +1260,14 @@ components:
           type: boolean
           example: false
           description: Whether speaker diarization is available
+        execution_provider:
+          type: string
+          enum: [cpu, coreml, cuda, candle, ane]
+          example: cpu
+          description: >-
+            Provider that actually loaded. `auto` may report `cpu` after a
+            CoreML or CUDA fallback. An exact `--execution-provider` never
+            reports a different provider: boot fails instead.
 
     TranscribeResponse:
       type: object

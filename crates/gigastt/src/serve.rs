@@ -68,6 +68,20 @@ pub(crate) struct ServeArgs {
         )]
     pub(crate) model_variant: Option<ModelVariant>,
 
+    /// ORT execution provider. `auto` (default) uses the provider compiled
+    /// into this binary and may fall back to CPU if CoreML or CUDA cannot
+    /// run. `cpu`, `coreml`, and `cuda` are exact: boot fails when that
+    /// provider is not in the build or when warmup would otherwise move the
+    /// whole pool onto CPU. The provider that actually loaded is logged and
+    /// reported by `GET /v1/models`. Env: GIGASTT_EXECUTION_PROVIDER.
+    #[arg(
+        long,
+        env = "GIGASTT_EXECUTION_PROVIDER",
+        default_value = "auto",
+        value_parser = gigastt_core::ExecutionProviderChoice::parse
+    )]
+    pub(crate) execution_provider: gigastt_core::ExecutionProviderChoice,
+
     /// Punctuation + capitalization restoration: `on`, `off`, or `auto`.
     /// `auto` (default) enables it for the `rnnt` head (bare output) and
     /// disables it for `e2e_rnnt` (already punctuated). Requires the punct
@@ -453,6 +467,7 @@ pub(crate) async fn run_serve(
         stream_stable_prefix: args.stream_stable_prefix,
         file_window_concurrency: args.file_window_concurrency.max(1),
         optimized_cache_dir: args.optimized_cache_dir,
+        execution_provider: args.execution_provider,
     };
     let build_engine: server::EngineBuilder = {
         let recipe = recipe.clone();

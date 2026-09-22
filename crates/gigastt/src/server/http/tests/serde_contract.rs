@@ -155,6 +155,7 @@ fn test_model_info_serialization_shape() {
         punctuation: true,
         itn: true,
         diarization: false,
+        execution_provider: "cpu".into(),
     };
     let v = serde_json::to_value(&info).unwrap();
     assert_eq!(v["id"], "gigaam-v3-rnnt");
@@ -165,5 +166,6 @@ fn test_model_info_serialization_shape() {
     assert_eq!(v["punctuation"], true);
     assert_eq!(v["itn"], true);
     assert_eq!(v["diarization"], false);
+    assert_eq!(v["execution_provider"], "cpu");
     assert_eq!(v["supported_rates"][1], 48000);
 }

@@ -32,6 +32,51 @@ fn test_engine_load_missing_dir() {
 }
 
 #[test]
+fn test_exact_execution_provider_missing_from_build_fails_load() {
+    let dir = tempfile::tempdir().unwrap();
+    crate::test_support::write_rnnt_layout(dir.path()).unwrap();
+    let err = Engine::load_with_execution_provider(
+        dir.path().to_str().unwrap(),
+        None,
+        1,
+        1,
+        0,
+        1,
+        None,
+        crate::ExecutionProviderChoice::Coreml,
+    );
+    if cfg!(feature = "coreml") {
+        // The provider is compiled in. This fixture is not a real CoreML
+        // model, so load may fail later for a different reason. The
+        // selection itself must not reject the request.
+        if let Err(e) = &err {
+            let msg = std::error::Error::source(e)
+                .map(|s| s.to_string())
+                .unwrap_or_default();
+            assert!(
+                !msg.contains("does not include it"),
+                "compiled coreml must not be reported missing: {msg}"
+            );
+        }
+    } else {
+        let e = match err {
+            Ok(_) => panic!("exact coreml on a CPU build must fail"),
+            Err(e) => e,
+        };
+        let msg = std::error::Error::source(&e)
+            .map(|s| s.to_string())
+            .unwrap_or_default();
+        assert!(msg.contains("coreml"), "{msg}");
+    }
+}
+
+#[test]
+fn test_mock_engine_reports_cpu_provider() {
+    let (engine, _tmp) = crate::test_support::rnnt_engine();
+    assert_eq!(engine.execution_provider(), "cpu");
+}
+
+#[test]
 fn test_engine_load_empty_dir() {
     let dir = tempfile::tempdir().unwrap();
     let result = Engine::load_with_pool_size(dir.path().to_str().unwrap(), 1);

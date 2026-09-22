@@ -40,6 +40,7 @@ impl OrtExecutionProvider {
     pub(crate) fn execution_providers(
         self,
         model_path: &Path,
+        secondary_cpu: bool,
     ) -> Vec<ort::ep::ExecutionProviderDispatch> {
         // Each non-CPU arm names a provider type that `ort` 2.0.0-rc.13 gates
         // behind its own feature, so the arm is gated on the matching feature —
@@ -48,6 +49,10 @@ impl OrtExecutionProvider {
         // arm; the `let _` below keeps it accounted for on builds without it.
         #[cfg(not(feature = "coreml"))]
         let _ = model_path;
+        // Only the CUDA arm consults this. CoreML always keeps a CPU EP for
+        // dynamic-shape ops; a CPU-only build has nothing else to register.
+        #[cfg(not(feature = "cuda"))]
+        let _ = secondary_cpu;
         match self {
             Self::Cpu => vec![ort::ep::CPU::default().build()],
             #[cfg(feature = "coreml")]
@@ -73,10 +78,16 @@ impl OrtExecutionProvider {
                 vec![coreml_ep, ort::ep::CPU::default().build()]
             }
             #[cfg(feature = "cuda")]
-            Self::Cuda => vec![
-                ort::ep::CUDA::default().build(),
-                ort::ep::CPU::default().build(),
-            ],
+            Self::Cuda => {
+                // `auto` keeps CPU as a second provider so a missing GPU still
+                // loads. An exact `cuda` request omits it: session creation
+                // fails instead of silently running on CPU.
+                let mut eps = vec![ort::ep::CUDA::default().build()];
+                if secondary_cpu {
+                    eps.push(ort::ep::CPU::default().build());
+                }
+                eps
+            }
             #[cfg(feature = "nnapi")]
             Self::Nnapi => vec![
                 ort::ep::NNAPI::default().build(),
@@ -94,6 +105,9 @@ impl OrtExecutionProvider {
 /// Factory that creates an `ort` runtime configured for a specific provider.
 pub struct OrtFactory {
     provider: OrtExecutionProvider,
+    /// Register the CPU EP behind CoreML/CUDA. Exact CUDA turns this off.
+    /// CoreML always keeps it: dynamic-shape ops stay on CPU by design.
+    secondary_cpu: bool,
     prepacked: Option<Arc<ort::session::builder::PrepackedWeights>>,
     optimized_cache_dir: Option<PathBuf>,
 }
@@ -102,9 +116,18 @@ impl OrtFactory {
     fn with_provider(provider: OrtExecutionProvider) -> Self {
         Self {
             provider,
+            secondary_cpu: true,
             prepacked: None,
             optimized_cache_dir: None,
         }
+    }
+
+    /// CUDA with no CPU provider. Session load fails when the GPU is absent.
+    #[cfg(feature = "cuda")]
+    pub fn cuda_exact() -> Self {
+        let mut factory = Self::cuda();
+        factory.secondary_cpu = false;
+        factory
     }
 
     pub fn cpu() -> Self {
@@ -157,6 +180,7 @@ impl RuntimeFactory for OrtFactory {
         Ok(Box::new(OrtRuntime::new(
             intra_threads,
             self.provider,
+            self.secondary_cpu,
             self.prepacked.clone(),
             self.optimized_cache_dir.clone(),
         )))

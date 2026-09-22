@@ -181,6 +181,10 @@ pub struct Engine {
     /// horizon at the window edge) enters the stable prefix; the rest stays
     /// revisable. When false (default), the cap commits the whole live tail.
     stream_stable_prefix: bool,
+    /// Execution provider that actually loaded (`cpu`, `coreml`, `cuda`,
+    /// `candle`, `ane`). `auto` may rewrite this to `cpu` after a fallback.
+    /// An exact request never does.
+    execution_provider: String,
     /// True when pooled encoder sessions run on the ANE fixed-shape pad-up path.
     /// Selects the 30s long-form chunk window (vs 24s for ort). Derived from
     /// the loaded encoder session at boot, not from compile-time features alone,

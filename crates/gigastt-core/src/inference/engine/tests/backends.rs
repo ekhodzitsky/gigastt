@@ -29,6 +29,8 @@ fn candle_ort_transcription_parity() {
         0,
         Box::new(crate::runtime::ort::factory::OrtFactory::cpu()),
         1,
+        true,
+        "cpu",
     )
     .expect("ort engine should load");
     let candle_engine = Engine::load_with_factory(
@@ -39,6 +41,8 @@ fn candle_ort_transcription_parity() {
         0,
         Box::new(crate::runtime::candle::factory::CandleFactory::new()),
         1,
+        true,
+        "candle",
     )
     .expect("candle engine should load");
 
@@ -107,6 +111,8 @@ fn candle_ort_streaming_parity() {
         0,
         Box::new(crate::runtime::ort::factory::OrtFactory::cpu()),
         1,
+        true,
+        "cpu",
     )
     .expect("ort engine should load");
     let candle_engine = Engine::load_with_factory(
@@ -117,6 +123,8 @@ fn candle_ort_streaming_parity() {
         0,
         Box::new(crate::runtime::candle::factory::CandleFactory::new()),
         1,
+        true,
+        "candle",
     )
     .expect("candle engine should load");
 
@@ -289,6 +297,8 @@ fn ane_measurement_engines() -> Option<(Engine, Engine)> {
         0,
         Box::new(crate::runtime::ort::factory::OrtFactory::cpu()),
         1,
+        true,
+        "cpu",
     )
     .expect("ort engine should load");
     let ane_engine = Engine::load_with_factory(
@@ -299,6 +309,8 @@ fn ane_measurement_engines() -> Option<(Engine, Engine)> {
         0,
         Box::new(crate::runtime::coreml::factory::AneFactory::new()),
         1,
+        true,
+        "ane",
     )
     .expect("ANE engine should load");
     Some((ort_engine, ane_engine))

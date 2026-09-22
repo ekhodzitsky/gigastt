@@ -74,7 +74,7 @@ fn tiny_mock_engine() -> (Engine, tempfile::TempDir) {
     );
 
     let factory = Box::new(MockFactory::new(sessions));
-    let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1)
+    let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1, true, "cpu")
         .expect("engine should load with mock runtime");
     (engine, tmp)
 }
@@ -506,7 +506,7 @@ fn blank_run_engine() -> (Engine, tempfile::TempDir) {
     );
 
     let factory = Box::new(MockFactory::new(sessions));
-    let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1)
+    let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1, true, "cpu")
         .expect("engine should load with mock runtime");
     (engine, tmp)
 }
@@ -650,7 +650,7 @@ fn blank_run_engine_window_cap_mode(checked_encoder: bool) -> (Engine, tempfile:
         ),
     );
     let factory = Box::new(MockFactory::new(sessions));
-    let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1)
+    let engine = Engine::load_with_factory(dir, None, 1, 1, 0, factory, 1, true, "cpu")
         .expect("engine should load with mock runtime");
     (engine, tmp)
 }

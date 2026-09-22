@@ -1,4 +1,5 @@
 pub mod factory;
+pub mod selection;
 pub mod session;
 pub mod tensor;
 

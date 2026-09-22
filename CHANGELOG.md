@@ -41,6 +41,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   error and carries `truncated: true`. Recognized text stays in
   `committed`. A normal `stop` is unchanged and does not set the flag.
   File long-form stitching is unchanged.
+- **Fail-closed execution provider.** `--execution-provider` (env
+  `GIGASTT_EXECUTION_PROVIDER`, default `auto`) selects `auto`, `cpu`,
+  `coreml`, or `cuda`. `auto` may still fall back to CPU. An exact provider
+  fails boot when it is not compiled in, or when CoreML warmup would
+  otherwise rebuild the pool on CPU. The provider that actually loaded is
+  logged and returned by `GET /v1/models` as `execution_provider`.
 - Long-file decoding no longer ends with a short trailing window. A window
   that can reach the end of the input within the 30-second single-pass
   ceiling absorbs the remainder; a longer remainder that is still shorter

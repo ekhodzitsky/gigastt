@@ -90,6 +90,10 @@ pub struct ModelInfo {
     /// Whether inverse text normalization (numbers → digits) is active
     /// (effective `--itn` policy for the loaded head).
     pub itn: bool,
+    /// Execution provider that actually loaded: `cpu`, `coreml`, `cuda`,
+    /// `candle`, or `ane`. `auto` may report `cpu` after a fallback. An exact
+    /// request never reports a different provider — boot fails instead.
+    pub execution_provider: String,
     /// Whether speaker diarization is available (feature-gated build + model loaded).
     /// Added in v0.7.0 so clients can probe capabilities via REST instead of
     /// opening a WebSocket just to read the `Ready` frame.
@@ -234,5 +238,6 @@ pub async fn models(State(state): State<Arc<AppState>>) -> Json<ModelInfo> {
         punctuation: engine.has_punctuator(),
         itn: engine.has_itn(),
         diarization,
+        execution_provider: engine.execution_provider().to_string(),
     })
 }

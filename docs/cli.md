@@ -48,6 +48,15 @@ gigastt serve [OPTIONS]
                             (~1.3× faster than rnnt, RTF 0.032 vs 0.043), not a
                             lean-RAM SKU (ready RSS ≈ rnnt).
                             Env: GIGASTT_MODEL_VARIANT.
+  --execution-provider <P>  ORT execution provider: auto | cpu | coreml | cuda
+                            [default: auto]. auto uses the provider compiled into
+                            this binary and may fall back to CPU if CoreML or CUDA
+                            cannot run. cpu, coreml, and cuda are exact: boot fails
+                            when that provider is not in the build, or when warmup
+                            would otherwise move the whole pool onto CPU. The
+                            provider that actually loaded is logged as
+                            `execution provider bound` and returned by GET /v1/models
+                            as `execution_provider`. Env: GIGASTT_EXECUTION_PROVIDER.
   --punctuation <MODE>      Restore punctuation/casing on output: auto | on | off
                             [default: auto = on for rnnt, off for e2e_rnnt].
                             Optional ONNX pass; absent model → text unchanged.

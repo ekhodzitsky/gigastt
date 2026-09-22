@@ -13,6 +13,7 @@ use super::{factory::OrtExecutionProvider, tensor::value_to_tensor};
 pub struct OrtRuntime {
     intra_threads: usize,
     provider: OrtExecutionProvider,
+    secondary_cpu: bool,
     prepacked: Option<Arc<ort::session::builder::PrepackedWeights>>,
     optimized_cache_dir: Option<std::path::PathBuf>,
     /// Once-per-runtime result of the cache-dir writability probe. Pool
@@ -29,12 +30,14 @@ impl OrtRuntime {
     pub(crate) fn new(
         intra_threads: usize,
         provider: OrtExecutionProvider,
+        secondary_cpu: bool,
         prepacked: Option<Arc<ort::session::builder::PrepackedWeights>>,
         optimized_cache_dir: Option<std::path::PathBuf>,
     ) -> Self {
         Self {
             intra_threads,
             provider,
+            secondary_cpu,
             prepacked,
             optimized_cache_dir,
             usable_cache_dir: OnceLock::new(),
@@ -170,7 +173,9 @@ impl OrtRuntime {
                 .map_err(|e| load_failed(model_path, e))?;
         }
 
-        let eps = self.provider.execution_providers(model_path);
+        let eps = self
+            .provider
+            .execution_providers(model_path, self.secondary_cpu);
         builder = builder
             .with_execution_providers(&eps)
             .map_err(|e| load_failed(model_path, e))?;
@@ -406,7 +411,13 @@ mod tests {
     }
 
     fn cached_runtime(cache_dir: &Path) -> OrtRuntime {
-        OrtRuntime::new(1, OrtExecutionProvider::Cpu, None, Some(cache_dir.into()))
+        OrtRuntime::new(
+            1,
+            OrtExecutionProvider::Cpu,
+            true,
+            None,
+            Some(cache_dir.to_path_buf()),
+        )
     }
 
     #[test]

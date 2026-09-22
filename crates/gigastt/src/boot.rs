@@ -129,6 +129,9 @@ pub struct EngineRecipe {
     /// (serve `--optimized-cache-dir`). `None` keeps the default
     /// `<model_dir>/optimized_cache`.
     pub optimized_cache_dir: Option<String>,
+    /// ORT execution provider. `Auto` may fall back to CPU. An exact value
+    /// fails the load when that provider is unavailable.
+    pub execution_provider: gigastt_core::ExecutionProviderChoice,
 }
 
 impl EngineRecipe {
@@ -175,7 +178,17 @@ impl EngineRecipe {
             stream_stable_prefix: false,
             file_window_concurrency: 1,
             optimized_cache_dir: None,
+            execution_provider: gigastt_core::ExecutionProviderChoice::Auto,
         }
+    }
+
+    /// Fail-closed or automatic execution provider for this recipe.
+    pub fn with_execution_provider(
+        mut self,
+        choice: gigastt_core::ExecutionProviderChoice,
+    ) -> Self {
+        self.execution_provider = choice;
+        self
     }
 
     /// Cap overlapping-window parallelism for file transcription.
@@ -232,7 +245,7 @@ impl EngineRecipe {
                 .map(|n| n.get())
                 .unwrap_or(1),
         );
-        let mut engine = inference::Engine::load_with_pools_threads_variant_cache(
+        let mut engine = inference::Engine::load_with_execution_provider(
             &self.model_dir,
             Some(resolved),
             self.pool_size,
@@ -242,6 +255,7 @@ impl EngineRecipe {
             self.optimized_cache_dir
                 .as_deref()
                 .map(std::path::PathBuf::from),
+            self.execution_provider,
         )?
         .with_punctuator(punctuator)
         .with_itn(resolve_itn(self.itn, resolved))

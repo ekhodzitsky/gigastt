@@ -1,6 +1,11 @@
 //! `impl Engine` methods — split out of the former god-file.
 use super::*;
 impl Engine {
+    /// Provider bound at load (`cpu`, `coreml`, `cuda`, `candle`, `ane`).
+    pub fn execution_provider(&self) -> &str {
+        &self.execution_provider
+    }
+
     pub fn is_int8(&self) -> bool {
         self.int8
     }

@@ -72,6 +72,7 @@ pub mod vad;
 mod wordpiece;
 
 pub use runtime::cpu_factory;
+pub use runtime::ort::selection::ExecutionProviderChoice;
 
 /// Model-free mock engines for tests. Behind `__internals` (and `cfg(test)`
 /// inside this crate). Not a stable public surface.
