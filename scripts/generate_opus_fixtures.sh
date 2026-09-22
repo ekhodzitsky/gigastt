@@ -121,6 +121,71 @@ rm -f "$CORE_DIR/.tone_live_known_clusters.webm"
 ffmpeg -y -v error -i "$CORE_DIR/opus_tone_webm_live.webm" -f s16le -acodec pcm_s16le \
   -ar 16000 -ac 1 "$CORE_DIR/opus_tone_webm_live_ffmpeg.pcm"
 
+# Same Opus packets, two container rate tags. libopus always emits 48 kHz PCM
+# (RFC 7845). OpusHead "input sample rate" and Matroska SamplingFrequency are
+# the capture rate a browser records, not the decode rate. The 16 kHz copies
+# are byte patches of the 48 kHz files (page CRC recomputed for Ogg) so a
+# decode-length difference is the tag, not a different bitstream.
+ffmpeg -y -v error -i "$TONE" -ar 48000 -ac 1 -c:a libopus -b:a 32k \
+  "$CORE_DIR/opus_rate48.ogg"
+ffmpeg -y -v error -i "$TONE" -ar 48000 -ac 1 -c:a libopus -b:a 32k -f webm \
+  "$CORE_DIR/opus_rate48.webm"
+
+python3 - "$CORE_DIR/opus_rate48.ogg" "$CORE_DIR/opus_head16.ogg" \
+         "$CORE_DIR/opus_rate48.webm" "$CORE_DIR/opus_sf16.webm" <<'PY'
+import struct
+import sys
+
+
+def ogg_crc(data: bytes) -> int:
+    crc = 0
+    for byte in data:
+        crc ^= byte << 24
+        for _ in range(8):
+            if crc & 0x80000000:
+                crc = ((crc << 1) ^ 0x04C11DB7) & 0xFFFFFFFF
+            else:
+                crc = (crc << 1) & 0xFFFFFFFF
+    return crc
+
+
+def patch_ogg_input_rate(data: bytes, rate: int) -> bytes:
+    d = bytearray(data)
+    i = d.find(b"OpusHead")
+    if i < 0:
+        raise SystemExit("OpusHead not found")
+    d[i + 12 : i + 16] = rate.to_bytes(4, "little")
+    page = d.rfind(b"OggS", 0, i)
+    if page < 0:
+        raise SystemExit("Ogg page not found")
+    nseg = d[page + 26]
+    body = sum(d[page + 27 : page + 27 + nseg])
+    end = page + 27 + nseg + body
+    d[page + 22 : page + 26] = b"\x00\x00\x00\x00"
+    crc = ogg_crc(bytes(d[page:end]))
+    d[page + 22 : page + 26] = crc.to_bytes(4, "little")
+    return bytes(d)
+
+
+def patch_webm_sampling_frequency(data: bytes, rate: float) -> bytes:
+    d = bytearray(data)
+    needle = b"\xb5\x88" + struct.pack(">d", 48000.0)
+    n = d.count(needle)
+    if n != 1:
+        raise SystemExit(f"expected one 48 kHz SamplingFrequency, found {n}")
+    i = d.find(needle)
+    d[i + 2 : i + 10] = struct.pack(">d", rate)
+    return bytes(d)
+
+
+ogg48, ogg16, webm48, webm16 = sys.argv[1:]
+open(ogg16, "wb").write(patch_ogg_input_rate(open(ogg48, "rb").read(), 16000))
+open(webm16, "wb").write(
+    patch_webm_sampling_frequency(open(webm48, "rb").read(), 16000.0)
+)
+print("patched OpusHead input rate and WebM SamplingFrequency to 16 kHz")
+PY
+
 # ── E2E: real speech transcodes ─────────────────────────────────────────────
 
 # OGG/Opus from a 16 kHz mono source.

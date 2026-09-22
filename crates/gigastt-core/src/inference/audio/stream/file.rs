@@ -204,12 +204,16 @@ impl FileWindows {
 
         match decoder_opt {
             None => {
-                // The budget counts at the Opus decode rate (48 kHz), which is
-                // what the decoder actually emits and what a trip reports —
-                // the container's declared input rate is not necessarily the
-                // same number. No whole-buffer clamp: this path streams now.
+                // The budget and the resampler both count at the Opus decode
+                // rate (48 kHz). That is what the decoder emits. The container
+                // rate is the capture rate (OpusHead input rate, or a WebM
+                // SamplingFrequency a browser sets to the AudioContext rate)
+                // and is not the PCM rate (RFC 7845). Feeding it to the
+                // resampler leaves 48 kHz audio unresampled.
                 let (max_samples, limit_secs) = resolve_budget(max_audio_secs, OPUS_DECODE_RATE);
-                tracing::info!("Audio (opus): {sample_rate}Hz, {channels}ch (streaming windows)");
+                tracing::info!(
+                    "Audio (opus): container {sample_rate}Hz, decode {OPUS_DECODE_RATE}Hz, {channels}ch (streaming windows)"
+                );
                 Ok(Self {
                     src: Source::Opus {
                         format,
@@ -218,7 +222,7 @@ impl FileWindows {
                         decoded_48k: 0,
                         max_samples,
                         limit_secs,
-                        resampler: Box::new(ResampleTo16k::new(SampleRate(sample_rate), None)),
+                        resampler: Box::new(ResampleTo16k::new(SampleRate(OPUS_DECODE_RATE), None)),
                         pending: Vec::with_capacity(RESAMPLE_STAGING_FRAMES),
                     },
                     eof: false,

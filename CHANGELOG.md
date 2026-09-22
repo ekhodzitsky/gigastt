@@ -28,6 +28,14 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
+- **WebM/Opus with a non-48 kHz container rate.** Opus always decodes at
+  48 kHz. The file resampler used the container tag instead, so a browser
+  WebM whose `SamplingFrequency` is 16 kHz (the capture rate) was passed
+  through unresampled — about 3× too many samples, and a transcript of
+  time-stretched audio. Ogg input-sample-rate is unaffected (the demuxer
+  already reports 48 kHz). Flat file decode, windowed decode, and
+  `channels=split` now resample from 48 kHz. The length budget on the
+  split path does too.
 - Long-file decoding no longer ends with a short trailing window. A window
   that can reach the end of the input within the 30-second single-pass
   ceiling absorbs the remainder; a longer remainder that is still shorter

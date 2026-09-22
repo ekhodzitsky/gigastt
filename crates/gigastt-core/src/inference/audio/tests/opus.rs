@@ -21,7 +21,7 @@ fn eager_opus_reference(bytes: &[u8]) -> anyhow::Result<Vec<f32>> {
         FormatOptions::default(),
         MetadataOptions::default(),
     )?;
-    let (track_id, sample_rate, channels) = {
+    let (track_id, channels) = {
         let track = format
             .default_track(TrackType::Audio)
             .ok_or_else(|| anyhow::anyhow!("no audio track"))?;
@@ -32,7 +32,6 @@ fn eager_opus_reference(bytes: &[u8]) -> anyhow::Result<Vec<f32>> {
             .ok_or_else(|| anyhow::anyhow!("no audio params"))?;
         (
             track.id,
-            p.sample_rate.ok_or_else(|| anyhow::anyhow!("no rate"))?,
             p.channels.as_ref().map(|c| c.count()).unwrap_or(1),
         )
     };
@@ -43,8 +42,12 @@ fn eager_opus_reference(bytes: &[u8]) -> anyhow::Result<Vec<f32>> {
         usize::MAX,
         f64::INFINITY,
     )?);
-    let mut resampler =
-        crate::inference::audio::resample::ResampleTo16k::new(SampleRate(sample_rate), None);
+    // The decoder emits 48 kHz even when the container tag says otherwise.
+    // The oracle has to resample from that rate, matching the production path.
+    let mut resampler = crate::inference::audio::resample::ResampleTo16k::new(
+        SampleRate(crate::inference::audio::opus::OPUS_DECODE_RATE),
+        None,
+    );
     for piece in mono.chunks(crate::inference::audio::resample::RESAMPLE_STAGING_FRAMES) {
         resampler.stage().extend_from_slice(piece);
         resampler.flush_full()?;
@@ -368,6 +371,74 @@ fn test_decode_audio_file_webm_extension_matches_bytes() {
     for (a, b) in via_file.iter().zip(via_bytes.iter()) {
         assert!((a - b).abs() < f32::EPSILON);
     }
+}
+
+#[test]
+fn test_opus_container_rate_tag_does_not_change_decoded_pcm() {
+    // libopus always emits 48 kHz PCM (RFC 7845). These four files are one
+    // encode of tone_src.wav; the 16 kHz copies only rewrite OpusHead's input
+    // sample rate or the WebM SamplingFrequency (see
+    // scripts/generate_opus_fixtures.sh). A resampler built from the container
+    // tag treats that 48 kHz PCM as 16 kHz and returns ~3× as many samples,
+    // which is what a browser MediaRecorder WebM does. 3 s at 16 kHz.
+    let cases: &[(&str, &[u8])] = &[
+        (
+            "ogg input 48 kHz",
+            include_bytes!("../../../../tests/fixtures/opus/opus_rate48.ogg"),
+        ),
+        (
+            "ogg input 16 kHz",
+            include_bytes!("../../../../tests/fixtures/opus/opus_head16.ogg"),
+        ),
+        (
+            "webm sampling 48 kHz",
+            include_bytes!("../../../../tests/fixtures/opus/opus_rate48.webm"),
+        ),
+        (
+            "webm sampling 16 kHz",
+            include_bytes!("../../../../tests/fixtures/opus/opus_sf16.webm"),
+        ),
+    ];
+    let mut flat = Vec::with_capacity(cases.len());
+    for (name, bytes) in cases {
+        let pcm = decode_audio_bytes(bytes).unwrap_or_else(|e| panic!("{name} flat decode: {e:#}"));
+        assert!(
+            (46_000..50_000).contains(&pcm.len()),
+            "{name}: decoded {} samples, expected ~48_000 (3 s at 16 kHz)",
+            pcm.len()
+        );
+        // Lazy windowed path (FileWindows), not only the flat drain REST uses.
+        let spec = WindowSpec::new(8_000, 8_000, 1_600);
+        let mut windows = FileWindows::from_bytes(bytes::Bytes::copy_from_slice(bytes), spec, None)
+            .unwrap_or_else(|e| panic!("{name} windows: {e:#}"));
+        let mut n_windows = 0usize;
+        while windows
+            .next_window()
+            .unwrap_or_else(|e| panic!("{name} next window: {e}"))
+            .is_some()
+        {
+            n_windows += 1;
+        }
+        assert!(n_windows > 1, "{name}: expected more than one window");
+        assert_eq!(
+            windows.total_16k_samples(),
+            pcm.len(),
+            "{name}: windowed decode length diverged from flat"
+        );
+        // channels=split holds the whole Opus buffer, then resamples.
+        let split = decode_audio_bytes_shared_channels(bytes::Bytes::copy_from_slice(bytes))
+            .unwrap_or_else(|e| panic!("{name} split: {e:#}"));
+        assert_eq!(split.len(), 1, "{name}: expected mono");
+        assert_eq!(
+            split[0].len(),
+            pcm.len(),
+            "{name}: split-channel length diverged from flat"
+        );
+        flat.push(pcm);
+    }
+    // Identical packets: a rate tag must not move the samples.
+    assert_eq!(flat[0], flat[1], "OpusHead input rate changed the PCM");
+    assert_eq!(flat[2], flat[3], "WebM SamplingFrequency changed the PCM");
 }
 
 #[test]

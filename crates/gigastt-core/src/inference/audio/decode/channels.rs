@@ -10,7 +10,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 
 use super::super::MAX_SAMPLE_RATE;
-use super::super::opus::{decode_opus_channels, next_demux_packet};
+use super::super::opus::{OPUS_DECODE_RATE, decode_opus_channels, next_demux_packet};
 use super::super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
 use super::super::{audio_too_long_err, resolve_budget, whole_buffer_limit_secs};
 use super::BytesMediaSource;
@@ -113,10 +113,20 @@ fn decode_audio_inner_channels<'s>(
         .map(|c| c.count())
         .unwrap_or(1);
     let n_frames_hint = track.num_frames;
+    // Opus packets decode at 48 kHz regardless of the container tag. The
+    // length budget and the resampler have to use that rate, or a WebM
+    // SamplingFrequency of 16 kHz both trips the ceiling early and leaves
+    // the 48 kHz PCM unresampled.
+    let is_opus = audio_params.codec == CODEC_ID_OPUS;
+    let pcm_rate = if is_opus {
+        OPUS_DECODE_RATE
+    } else {
+        sample_rate
+    };
     let (max_samples, limit_secs) =
-        resolve_budget(Some(whole_buffer_limit_secs(max_audio_secs)), sample_rate);
+        resolve_budget(Some(whole_buffer_limit_secs(max_audio_secs)), pcm_rate);
 
-    tracing::info!("Audio ({source_label}): {sample_rate}Hz, {channels}ch (split)");
+    tracing::info!("Audio ({source_label}): {pcm_rate}Hz, {channels}ch (split)");
 
     // Each channel is an independent stream, so each gets its own staging
     // buffer and cached resampler; none of them ever holds more than one
@@ -132,13 +142,13 @@ fn decode_audio_inner_channels<'s>(
 
     // Symphonia demuxes OGG/Opus but ships no Opus decoder, so Opus packets
     // go through the `opus-rs` fallback and rejoin the shared resample tail.
-    let acc: Vec<ResampleTo16k> = if audio_params.codec == CODEC_ID_OPUS {
+    let acc: Vec<ResampleTo16k> = if is_opus {
         let decoded =
             decode_opus_channels(&mut *format, track_id, channels, max_samples, limit_secs)?;
         source_frames = decoded.first().map(|v| v.len()).unwrap_or(0);
         let mut acc = Vec::with_capacity(decoded.len());
         for samples in decoded {
-            let mut chan = ResampleTo16k::new(SampleRate(sample_rate), Some(samples.len()));
+            let mut chan = ResampleTo16k::new(SampleRate(pcm_rate), Some(samples.len()));
             for piece in samples.chunks(RESAMPLE_STAGING_FRAMES) {
                 chan.stage().extend_from_slice(piece);
                 chan.flush_full()?;
@@ -208,12 +218,12 @@ fn decode_audio_inner_channels<'s>(
         acc
     };
 
-    let duration_s = source_frames as f64 / sample_rate as f64;
+    let duration_s = source_frames as f64 / pcm_rate as f64;
     tracing::info!(
         "Decoded {} channel(s), first channel {} samples at {}Hz ({:.1}s)",
         acc.len(),
         source_frames,
-        sample_rate,
+        pcm_rate,
         duration_s
     );
 
@@ -222,7 +232,7 @@ fn decode_audio_inner_channels<'s>(
         .into_iter()
         .map(ResampleTo16k::finish)
         .collect::<Result<Vec<_>>>()?;
-    if sample_rate != 16000 {
+    if pcm_rate != 16000 {
         tracing::info!("Resampled {channel_count} channel(s) to 16kHz");
     }
 

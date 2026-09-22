@@ -16,3 +16,13 @@
   60 ms packet duration, so every packet holds three 20 ms frames (code 3,
   CBR). This is what Chromium's `MediaRecorder` emits; `opus_tone.ogg` is code 0
   throughout and never exercises multi-frame packet splitting.
+- `opus_rate48.ogg` / `opus_head16.ogg` / `opus_rate48.webm` / `opus_sf16.webm`
+  — one encode of `tone_src.wav` (`-ar 48000 -ac 1 -c:a libopus -b:a 32k`).
+  The 16 kHz files are byte patches of that encode: OpusHead input sample
+  rate `48000 → 16000` (Ogg page CRC recomputed) and Matroska
+  `SamplingFrequency` `48000.0 → 16000.0`. Packets are otherwise identical.
+  SHA-256:
+  `opus_rate48.ogg` `4b07490f21e643d90fa19b0d14fbf781c8efb4254ded9e7c35d9cb6950ce0185`,
+  `opus_head16.ogg` `c706e192c69f01f8630ead3882d497f3a3dd5daf1b81af3dd87432e126696471`,
+  `opus_rate48.webm` `54e08e96b1ffb56edf68b6b98edf6235b1590fcd83226784341206a2229bdbd0`,
+  `opus_sf16.webm` `adf073992626744cd19162ac3156de361c64ac19ae0c1eb31e4acf40a7dacea9`.
