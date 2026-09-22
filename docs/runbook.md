@@ -63,7 +63,7 @@ gigastt serve --max-session-secs 0
 # or: GIGASTT_MAX_SESSION_SECS=0 gigastt serve
 ```
 
-`0` parks the deadline at `u64::MAX / 2`, so `sleep_until` never fires. The session then runs as long as the idle timeout allows (default 300 s of silence).
+`0` parks the deadline ≈30 years in the future, so `sleep_until` never fires. The session then runs as long as the idle timeout allows (default 300 s of silence).
 
 ### Config pitfalls
 

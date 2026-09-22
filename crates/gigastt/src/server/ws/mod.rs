@@ -32,6 +32,12 @@ const WS_PING_INTERVAL_SECS: u64 = 30;
 /// seconds (≈ 90 s at the defaults).
 const WS_MAX_MISSED_PONGS: u32 = 2;
 
+/// Fallback deadline when the session cap is disabled or the requested
+/// duration overflows `Instant`. ≈30 years, same horizon tokio uses for
+/// `Instant::far_future()` (tokio-rs/tokio#3551) — large enough to never
+/// fire, small enough to fit in `Instant`'s representation.
+const FAR_FUTURE: std::time::Duration = std::time::Duration::from_secs(86_400 * 365 * 30);
+
 /// Whether a ping tick should close the socket: `true` once `unanswered_pings`
 /// has reached [`WS_MAX_MISSED_PONGS`]. Factored out of the session loop so the
 /// close-threshold and counter-reset edges can be unit-tested without driving a
@@ -238,13 +244,17 @@ async fn handle_ws_inner(
 
     // Wall-clock deadline independent of `idle_timeout`. Setting
     // `max_session_secs = 0` disables the cap by parking the deadline far in
-    // the future (u64::MAX / 2 ≈ 292 billion years) so `sleep_until` never
+    // the future (≈30 years) so `sleep_until` never
     // fires — callers who deliberately want unlimited sessions don't pay for
     // an additional branch in the select.
+    // Non-zero caps use `checked_add`, falling back to `FAR_FUTURE` on overflow
+    // so an extremely large value disables the cap instead of panicking.
     let session_deadline = if limits.max_session_secs == 0 {
-        tokio::time::Instant::now() + std::time::Duration::from_secs(u64::MAX / 2)
+        tokio::time::Instant::now() + FAR_FUTURE
     } else {
-        tokio::time::Instant::now() + std::time::Duration::from_secs(limits.max_session_secs)
+        tokio::time::Instant::now()
+            .checked_add(std::time::Duration::from_secs(limits.max_session_secs))
+            .unwrap_or(tokio::time::Instant::now() + FAR_FUTURE)
     };
 
     // Server-initiated keepalive: ping every `WS_PING_INTERVAL_SECS`, close once
@@ -497,6 +507,8 @@ async fn handle_ws_inner(
 
 #[cfg(test)]
 mod tests {
+    use super::FAR_FUTURE;
+
     #[test]
     fn test_keepalive_close_threshold_and_reset() {
         use super::{WS_MAX_MISSED_PONGS, keepalive_should_close};
@@ -555,5 +567,11 @@ mod tests {
             triplet_marker, "pool_slot/taken",
             "triplet marker must survive panic"
         );
+    }
+
+    #[test]
+    fn test_far_future_does_not_overflow_instant() {
+        let now = tokio::time::Instant::now();
+        let _deadline = now + FAR_FUTURE;
     }
 }

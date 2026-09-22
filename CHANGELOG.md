@@ -131,6 +131,14 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   raw telephony (plus diarization / `channels=split`) still holds the
   whole-buffer ~30-minute ceiling. The specs still said "G.722 / raw
   telephony".
+- **WebSocket sessions no longer panic on startup when
+  `GIGASTT_MAX_SESSION_SECS=0`.** Previously, the unlimited-session deadline
+  was computed as `Instant::now() + Duration::from_secs(u64::MAX / 2)`, which
+  overflows `Instant` and panics with `overflow when adding duration to
+  instant`. The deadline is now parked ≈30 years out (same horizon as
+  `tokio::time::Instant::far_future()`), and non-zero caps use
+  `Instant::checked_add`, so an extremely large value disables the cap
+  instead of panicking.
 
 ## [2.19.0] - 2026-08-31
 
