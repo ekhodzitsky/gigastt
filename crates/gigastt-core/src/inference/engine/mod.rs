@@ -198,7 +198,7 @@ pub struct Engine {
     file_window_concurrency: usize,
     /// Lazy speaker encoder for diarization (`None` if model file is absent).
     ///
-    /// Boot only probes for `wespeaker_resnet34.onnx`; the ONNX session is
+    /// Boot only probes for `wespeaker_resnet34.onnx`; the encoder session is
     /// opened on the first diarization request so unused speaker files do not
     /// inflate ready RSS (~+39 MiB when loaded). Shared across sessions via
     /// the `Arc` inside the loaded encoder.

@@ -18,6 +18,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 - Require Symphonia 0.6.1 and remove the vendored metadata and Matroska
   patches. Upstream now handles APEv2 size overflow and unknown-size WebM
   Clusters; the fuzz workspace uses the same upstream fixes.
+- **polyvoice 0.19.0 → 0.21.0.** Diarization still uses `FbankOnnxExtractor` /
+  `LegacyPipeline` / `StreamingPipeline` / EnergyVad and the same
+  `wespeaker_resnet34.onnx` file. Upstream dropped the `onnx` (ort) feature;
+  the extractor now runs on tract (`backend-tract`). The lockfile no longer
+  carries a second `ryf 0.3.2` copy.
 
 ### Added
 

@@ -347,7 +347,7 @@ impl Engine {
             tokenizer.vocab_size()
         );
 
-        // Probe only — do not open the WeSpeaker ONNX session at boot. The
+        // Probe only — do not open the WeSpeaker encoder session at boot. The
         // encoder is loaded on the first diarization request.
         #[cfg(feature = "diarization")]
         let speaker_encoder = diarization::probe_speaker_encoder(model_dir);

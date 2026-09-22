@@ -3,9 +3,9 @@
 //! Both pipelines take the v1.0 [`polyvoice::Embedder`] contract: the offline
 //! [`polyvoice::pipeline::LegacyPipeline`] and the per-session
 //! [`polyvoice::streaming::StreamingPipeline`] are generic over `E: Embedder`,
-//! and [`FbankOnnxExtractor`] implements it directly. The legacy
-//! `EmbeddingExtractor` / `EmbeddingError` surface this module used to contain
-//! is soft-deprecated upstream and is no longer referenced here.
+//! and [`FbankOnnxExtractor`] implements it directly (tract, polyvoice 0.21).
+//! The legacy `EmbeddingExtractor` / `EmbeddingError` surface this module used
+//! to contain is soft-deprecated upstream and is no longer referenced here.
 //!
 //! The WeSpeaker model (`wespeaker_resnet34.onnx`) expects rank-3 fbank input;
 //! keep [`load_speaker_encoder`] on the `FbankOnnxExtractor` constructor, not
@@ -26,10 +26,10 @@ use super::DiarizationOutcome;
 
 /// WeSpeaker ResNet34 embedding dimension.
 pub(crate) const SPEAKER_EMBEDDING_DIM: usize = 256;
-/// ONNX session pool size shared across concurrent diarization sessions.
+/// Tract session pool size shared across concurrent diarization sessions.
 const SPEAKER_POOL_SIZE: usize = 4;
 
-/// Shared WeSpeaker encoder handle (`Arc` over the fbank ONNX extractor).
+/// Shared WeSpeaker encoder handle (`Arc` over the fbank extractor).
 pub type SpeakerEncoder = Arc<FbankOnnxExtractor>;
 
 /// Per-session streaming diarization state.
@@ -37,7 +37,7 @@ pub type StreamingDiarizationState = StreamingPipeline<EnergyVad, SharedExtracto
 
 /// Adapter that lets a single shared [`FbankOnnxExtractor`] back the
 /// per-session [`StreamingPipeline`]s, which take ownership of their extractor.
-/// The ONNX session pool inside the extractor is shared across sessions via `Arc`.
+/// The session pool inside the extractor is shared across sessions via `Arc`.
 pub struct SharedExtractor(Arc<FbankOnnxExtractor>);
 
 impl Embedder for SharedExtractor {
@@ -55,12 +55,9 @@ impl Embedder for SharedExtractor {
 /// Uses the fbank constructor (rank-3 input). A missing/corrupt path returns
 /// `Err` — never panics.
 ///
-/// The execution provider is pinned to CPU rather than `ExecutionProvider::auto()`
-/// on purpose. polyvoice 0.9 registered no provider at all, so CPU is what the
-/// speaker embeddings were computed on; `auto()` would pick CoreML on Apple
-/// Silicon and XNNPACK on aarch64 Linux, and different numerics there mean
-/// different embeddings, different clustering, and a different DER — a quality
-/// change that belongs in its own measured task, not in a dependency bump.
+/// Tract always runs on CPU (`ExecutionProvider::auto()` is also `Cpu` since
+/// polyvoice 0.21 dropped ort). Named EPs are accepted by the constructor and
+/// ignored.
 pub(crate) fn load_speaker_encoder(
     model_path: &Path,
     pool_size: usize,
@@ -73,11 +70,11 @@ pub(crate) fn load_speaker_encoder(
     )?)
 }
 
-/// Lazy WeSpeaker handle: path probed at engine boot, ONNX session loaded on
+/// Lazy WeSpeaker handle: path probed at engine boot, encoder loaded on
 /// first diarization request so unused speaker files do not inflate ready RSS.
 ///
 /// Load is attempted once. Success or permanent failure is cached so concurrent
-/// diarization requests do not race multiple ONNX session opens, and a corrupt
+/// diarization requests do not race multiple session opens, and a corrupt
 /// model does not re-spam warnings on every request.
 pub struct LazySpeakerEncoder {
     path: PathBuf,
@@ -93,7 +90,7 @@ enum SpeakerLoadSlot {
 }
 
 impl LazySpeakerEncoder {
-    /// True when the ONNX session is resident.
+    /// True when the speaker encoder is resident.
     #[cfg(test)]
     pub(crate) fn is_loaded(&self) -> bool {
         matches!(*self.slot.lock(), SpeakerLoadSlot::Ready(_))
@@ -132,7 +129,7 @@ impl LazySpeakerEncoder {
     }
 }
 
-/// Probe for `model_dir/wespeaker_resnet34.onnx` without opening an ONNX session.
+/// Probe for `model_dir/wespeaker_resnet34.onnx` without opening a session.
 ///
 /// Returns `None` when the file is missing (diarization unavailable). Presence
 /// alone is enough to advertise diarization capability; the session is opened
@@ -315,7 +312,7 @@ mod tests {
         );
     }
 
-    /// Presence of the speaker file only probes — no ONNX session until
+    /// Presence of the speaker file only probes — no encoder session until
     /// `get_or_load`. A zero-byte placeholder is enough to exercise the probe
     /// without shipping the real WeSpeaker weights in unit tests.
     #[test]
@@ -328,10 +325,10 @@ mod tests {
         assert_eq!(lazy.path(), path.as_path());
         assert!(
             !lazy.is_loaded(),
-            "probe must not open an ONNX session at boot"
+            "probe must not open a speaker-encoder session at boot"
         );
 
-        // Corrupt/empty ONNX fails once and stays failed (no retry storm).
+        // Corrupt/empty speaker model fails once and stays failed (no retry storm).
         assert!(lazy.get_or_load().is_none());
         assert!(!lazy.is_loaded());
         assert!(
