@@ -96,3 +96,22 @@ fn test_sse_data_payload_includes_words_and_timestamp() {
     assert_eq!(v["timestamp"], 1.25);
     assert_eq!(v["words"][0]["word"], "привет");
 }
+
+#[test]
+fn test_sse_truncated_final_keeps_text_and_omits_the_flag_when_false() {
+    let mut cut = gigastt_core::inference::TranscriptSegment::empty_final();
+    cut.text = "привет мир".into();
+    cut.committed.clear();
+    cut.tentative = cut.text.clone();
+    let cut = cut.into_truncated_final();
+    let v: serde_json::Value = serde_json::from_str(&sse_data_payload(&Ok(cut))).unwrap();
+    assert_eq!(v["type"], "final");
+    assert_eq!(v["truncated"], true);
+    assert_eq!(v["text"], "привет мир");
+    assert_eq!(v["committed"], "привет мир");
+    assert_eq!(v["tentative"], "");
+
+    let plain = gigastt_core::inference::TranscriptSegment::empty_final();
+    let v: serde_json::Value = serde_json::from_str(&sse_data_payload(&Ok(plain))).unwrap();
+    assert!(v.get("truncated").is_none());
+}

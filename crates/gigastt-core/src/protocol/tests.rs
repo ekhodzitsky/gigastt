@@ -60,6 +60,7 @@ fn test_partial_serialization_no_version() {
         speech_final: false,
         endpoint_reason: None,
         confidence: None,
+        truncated: false,
     });
     let json = serde_json::to_string(&msg).unwrap();
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -82,6 +83,7 @@ fn test_final_serialization_no_version() {
         speech_final: true,
         endpoint_reason: Some(crate::inference::EndpointReason::Vad),
         confidence: None,
+        truncated: false,
     });
     let json = serde_json::to_string(&msg).unwrap();
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();

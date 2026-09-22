@@ -36,6 +36,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   already reports 48 kHz). Flat file decode, windowed decode, and
   `channels=split` now resample from 48 kHz. The length budget on the
   split path does too.
+- **A session cap or shutdown no longer looks like a failed empty stream.**
+  The WebSocket `final` (and the SSE shutdown `final`) is sent before the
+  error and carries `truncated: true`. Recognized text stays in
+  `committed`. A normal `stop` is unchanged and does not set the flag.
+  File long-form stitching is unchanged.
 - Long-file decoding no longer ends with a short trailing window. A window
   that can reach the end of the input within the 30-second single-pass
   ceiling absorbs the remainder; a longer remainder that is still shorter

@@ -532,6 +532,18 @@ impl Engine {
         Some(self.finalize_stream_segment(state, now_timestamp(), EndpointReason::Stop))
     }
 
+    /// Flush for a terminal cap (session limit or shutdown).
+    ///
+    /// Unlike [`Self::flush_state`], this always returns a final. Recognized
+    /// text stays in `committed`; an empty assembler is an explicit truncated
+    /// final, not a missing message.
+    pub fn flush_truncated(&self, state: &mut StreamingState) -> TranscriptSegment {
+        match self.flush_state(state) {
+            Some(segment) => segment.into_truncated_final(),
+            None => TranscriptSegment::empty_truncated_final(),
+        }
+    }
+
     fn stable_prefix_enabled(&self, state: &StreamingState) -> bool {
         self.stream_stable_prefix || state.commit_policy == CommitPolicy::StablePrefix
     }

@@ -291,6 +291,8 @@ async fn handle_ws_inner(
                 max_session_secs = limits.max_session_secs,
                 "Session cap reached — closing WS"
             );
+            // Final first: the cap is a truncation, not a failed empty session.
+            let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
             let _ = send_server_message(
                 &mut sink,
                 &ServerMessage::Error {
@@ -300,7 +302,6 @@ async fn handle_ws_inner(
                 },
             )
             .await;
-            let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
             let _ = sink
                 .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
                     code: 1008,
@@ -336,6 +337,8 @@ async fn handle_ws_inner(
                     max_session_secs = limits.max_session_secs,
                     "Session cap reached — closing WS"
                 );
+                // Final first: the cap is a truncation, not a failed empty session.
+                let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
                 let _ = send_server_message(
                     &mut sink,
                     &ServerMessage::Error {
@@ -345,7 +348,6 @@ async fn handle_ws_inner(
                     },
                 )
                 .await;
-                let _ = flush_and_final(&mut sink, engine, &mut state_opt).await;
                 let _ = sink
                     .send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
                         code: 1008,

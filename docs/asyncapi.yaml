@@ -370,6 +370,12 @@ components:
         tentative:
           type: string
           description: Revisable suffix including any separating space; text is committed + tentative. Empty on successful Final.
+        truncated:
+          type: boolean
+          description: >-
+            Present and true only when a session cap or shutdown cut the
+            utterance. The final still carries the recognized text. Omitted
+            when false. Not a failed empty session.
         timestamp:
           type: number
           format: double

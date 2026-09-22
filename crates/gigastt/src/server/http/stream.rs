@@ -88,6 +88,10 @@ pub(super) fn sse_data_payload(
             if let Some(confidence) = seg.confidence {
                 payload["confidence"] = confidence.into();
             }
+            // Same omission as the WebSocket segment: absent means not cut.
+            if seg.truncated {
+                payload["truncated"] = true.into();
+            }
             payload.to_string()
         }
         Err(err) => serde_json::json!({
@@ -227,6 +231,8 @@ pub async fn transcribe_stream(
             loop {
                 if cancel.is_cancelled() {
                     tracing::info!("SSE transcription cancelled by shutdown");
+                    let segment = engine.flush_truncated(&mut stream_state);
+                    let _ = tx.blocking_send(Ok(segment));
                     return;
                 }
                 let chunk = match chunks.next_chunk() {

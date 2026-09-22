@@ -104,6 +104,7 @@ so long monologues stay one utterance for voice assistants.
 | `timestamp` | number | Unix time (seconds) when the segment was produced |
 | `is_final` | boolean | Mirrors the `type` discriminator (`true` in `final`) |
 | `speech_final` | boolean | Present and `true` only on true utterance ends; omitted on partials |
+| `truncated` | boolean | Present and `true` only when a session cap or shutdown cut the utterance. The `final` still carries the recognized text (`committed == text`). Omitted when false. This is not a failed empty session |
 | `endpoint_reason` | string | Optional on finals: `vad` \| `blank` \| `stop` |
 | `confidence` | number | Segment-level confidence: the duration-weighted mean of `words[].confidence` (plain mean when all word durations are zero). Omitted when the segment has no words. It is an average of per-word softmax scores — not a calibrated probability |
 | `words[]` | object[] | Per-word detail; may be empty on flushed/empty finals |
@@ -144,7 +145,9 @@ horizon; its existing bounded-buffer fallback still applies. Once emitted,
 committed bytes stay fixed even if later audio would support a different spelling.
 Policies control text visibility, not endpoint detection: VAD/blank endpoints
 and `stop` still follow `endpoint_mode`. A successful Final has `committed == text`
-and `tentative == ""`. The next utterance starts with an empty committed prefix.
+and `tentative == ""`. A session cap or shutdown does too, and sets `truncated: true`
+instead of replacing that text with an empty failed final. The next utterance starts
+with an empty committed prefix.
 Cancellation partials remain provisional; cancellation does not commit their tail.
 
 ```json
@@ -233,7 +236,7 @@ frame). The same enum is declared in [`docs/asyncapi.yaml`](asyncapi.yaml).
 | `timeout` | ends (never opened) | Pool saturation: no inference slot freed within the checkout window (default 30 s). `retry_after_ms` is set — wait and reconnect |
 | `pool_closed` | ends | Server is shutting down, pool closed to new sessions |
 | `idle_timeout` | ends (close 1001) | No frames for `--idle-timeout-secs` (default 300 s) |
-| `max_session_duration_exceeded` | ends (close 1008) | Wall-clock session cap `--max-session-secs` (default 3600 s) hit; a `final` is flushed before the close |
+| `max_session_duration_exceeded` | ends (close 1008) | Wall-clock session cap `--max-session-secs` (default 3600 s) hit. A `final` with `truncated: true` is sent first and keeps the committed text; the error only explains the close |
 | `policy_violation` | ends (close 1008) | Empty-frame spam (over 1000 empty binary frames) |
 | `inference_timeout` | ends | One inference run exceeded `--inference-timeout-secs` (default 600 s) |
 | `cancelled` | ends | In-flight decoding was cancelled by disconnect or shutdown; the last available `partial` is sent first when the socket is writable |
@@ -250,7 +253,7 @@ frame). The same enum is declared in [`docs/asyncapi.yaml`](asyncapi.yaml).
 
 | Code | When |
 |---|---|
-| 1001 Going Away | Graceful shutdown drain (SIGTERM), `idle_timeout`, or keepalive ping timeout. A `final` is flushed first on shutdown |
+| 1001 Going Away | Graceful shutdown drain (SIGTERM), `idle_timeout`, or keepalive ping timeout. Shutdown flushes a `final` with `truncated: true` first (committed text kept); idle and ping timeouts do not |
 | 1008 Policy Violation | `max_session_duration_exceeded`, `policy_violation` |
 | 1009 Message Too Big | A frame exceeded `--ws-frame-max-bytes` |
 | 1006 Abnormal Closure | Never sent by the server — the client observes it when an established socket drops with no close frame (process killed, crash, middlebox). Do not confuse it with an *upgrade refusal*: while the model is still loading, `/v1/ws` answers HTTP 503 `{"code":"initializing"}` before any socket exists — poll `/ready` and retry later instead of killing the process; during graceful-shutdown drain the upgrade is likewise refused with HTTP 503 `{"code":"shutting_down"}`, which is final — do not retry, the server is exiting. If the port listens but even `/health` fails, suspect an orphaned process holding the port — see [troubleshooting](troubleshooting.md) |

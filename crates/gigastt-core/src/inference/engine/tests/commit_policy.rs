@@ -40,6 +40,59 @@ fn test_stream_snapshot_matches_emitted_commits_and_resets_after_final() {
 }
 
 #[test]
+fn test_stop_flush_keeps_committed_text() {
+    let (engine, _tmp) = crate::test_support::rnnt_engine();
+    let mut state = engine.create_state(false);
+    state.assembler.append(vec![word("привет", 0.0, 0.4)]);
+    state.assembler.commit_live();
+    state.assembler.set_words(vec![word("мир", 0.4, 0.8)]);
+    let seg = engine.flush_state(&mut state).unwrap();
+    assert!(!seg.truncated, "Stop is an endpoint, not a cap");
+    assert!(seg.is_final);
+    assert_eq!(seg.text, "привет мир");
+    assert_eq!(seg.committed, seg.text);
+    assert!(seg.tentative.is_empty());
+}
+
+#[test]
+fn test_session_cap_and_shutdown_keep_committed_text() {
+    let (engine, _tmp) = crate::test_support::rnnt_engine();
+    let mut state = engine.create_state(false);
+    state.commit_policy = CommitPolicy::OnFinalize;
+    state.assembler.append(vec![word("привет", 0.0, 0.4)]);
+    state.assembler.commit_live();
+    state.assembler.set_words(vec![word("мир", 0.4, 0.8)]);
+    // What an in-flight cap sees: the published partial, whose committed
+    // field is empty under on_finalize even though the words are there.
+    let partial = engine.stream_partial(&state, 1.0);
+    assert!(partial.committed.is_empty());
+    let cut = partial.into_truncated_final();
+    assert!(cut.truncated);
+    assert!(cut.is_final);
+    assert!(cut.speech_final);
+    assert_eq!(cut.text, "привет мир");
+    assert_eq!(cut.committed, cut.text);
+    assert!(cut.tentative.is_empty());
+
+    let flushed = engine.flush_truncated(&mut state);
+    assert!(flushed.truncated);
+    assert_eq!(flushed.text, "привет мир");
+    assert_eq!(flushed.committed, flushed.text);
+    assert!(flushed.tentative.is_empty());
+}
+
+#[test]
+fn test_truncated_flush_of_empty_state_is_explicit() {
+    let (engine, _tmp) = crate::test_support::rnnt_engine();
+    let mut state = engine.create_state(false);
+    let seg = engine.flush_truncated(&mut state);
+    assert!(seg.truncated);
+    assert!(seg.is_final);
+    assert!(seg.text.is_empty());
+    assert!(seg.committed.is_empty());
+}
+
+#[test]
 fn test_commit_policy_parts_finalize_and_reset_per_utterance() {
     let (engine, _tmp) = crate::test_support::rnnt_engine();
     for policy in [

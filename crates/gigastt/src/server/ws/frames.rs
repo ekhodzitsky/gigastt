@@ -96,13 +96,17 @@ async fn send_abort(
             retry_after_ms: None,
         },
     };
-    send_server_message(sink, &error).await?;
     if matches!(reason, StreamAbort::Shutdown | StreamAbort::SessionLimit) {
-        let mut segment =
-            partial.unwrap_or_else(gigastt_core::inference::TranscriptSegment::empty_final);
-        segment.is_final = true;
+        // The text goes out before the error so a client that stops reading
+        // on `error` still has the committed utterance. `on_finalize`
+        // partials publish an empty `committed` field; the truncated final
+        // puts the recognized text back there.
+        let segment = partial
+            .map(gigastt_core::inference::TranscriptSegment::into_truncated_final)
+            .unwrap_or_else(gigastt_core::inference::TranscriptSegment::empty_truncated_final);
         send_server_message(sink, &ServerMessage::Final(segment)).await?;
     }
+    send_server_message(sink, &error).await?;
     sink.send(WsMessage::Close(Some(axum::extract::ws::CloseFrame {
         code: if reason == StreamAbort::SessionLimit {
             1008
@@ -567,14 +571,11 @@ pub(super) async fn flush_and_final(
     engine: &Arc<Engine>,
     state_opt: &mut Option<gigastt_core::inference::StreamingState>,
 ) -> Result<()> {
-    let flush_seg = state_opt
-        .as_mut()
-        .and_then(|state| engine.flush_state(state));
-    let final_msg = match flush_seg {
-        Some(seg) => ServerMessage::Final(seg),
-        None => ServerMessage::Final(gigastt_core::inference::TranscriptSegment::empty_final()),
+    let segment = match state_opt.as_mut() {
+        Some(state) => engine.flush_truncated(state),
+        None => gigastt_core::inference::TranscriptSegment::empty_truncated_final(),
     };
-    send_server_message(sink, &final_msg).await
+    send_server_message(sink, &ServerMessage::Final(segment)).await
 }
 
 #[cfg(test)]

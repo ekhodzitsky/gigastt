@@ -506,6 +506,7 @@ impl TranscriptAssembler {
             endpoint_reason: Some(reason),
             timestamp,
             confidence,
+            truncated: false,
         }
     }
 
@@ -525,6 +526,7 @@ impl TranscriptAssembler {
             endpoint_reason: None,
             timestamp,
             confidence: aggregate_confidence(&words),
+            truncated: false,
         }
     }
 
@@ -571,6 +573,11 @@ pub struct TranscriptSegment {
     /// and when the reason is not set (legacy empty finals).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub endpoint_reason: Option<EndpointReason>,
+    /// The utterance was cut by a terminal cap (session limit or shutdown),
+    /// not by a recognition failure. Omitted when false. Recognized text, if
+    /// any, stays in `committed`.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub truncated: bool,
     /// Unix timestamp (seconds since epoch) when this segment was produced.
     pub timestamp: f64,
     /// Mean confidence across the segment's words (duration-weighted average
@@ -594,7 +601,37 @@ impl TranscriptSegment {
             endpoint_reason: Some(EndpointReason::Stop),
             timestamp: now_timestamp(),
             confidence: None,
+            truncated: false,
         }
+    }
+
+    /// Empty final that says the stream was cut before any text existed.
+    pub fn empty_truncated_final() -> Self {
+        let mut segment = Self::empty_final();
+        segment.truncated = true;
+        segment
+    }
+
+    /// Turn a partial (or an already-final segment) into a terminal final.
+    ///
+    /// `text` wins over the public `committed` field: `on_finalize` partials
+    /// publish an empty committed prefix even when the assembler already
+    /// holds words. A cap must not replace that text with an empty final.
+    pub fn into_truncated_final(mut self) -> Self {
+        if self.text.is_empty() && !self.committed.is_empty() {
+            self.text = self.committed.clone();
+        }
+        if !self.text.is_empty() {
+            self.committed = self.text.clone();
+            self.tentative.clear();
+        }
+        self.is_final = true;
+        self.speech_final = true;
+        self.truncated = true;
+        if self.endpoint_reason.is_none() {
+            self.endpoint_reason = Some(EndpointReason::Stop);
+        }
+        self
     }
 }
 

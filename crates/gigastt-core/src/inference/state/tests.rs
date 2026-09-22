@@ -223,6 +223,21 @@ fn test_segment_confidence_omitted_from_json_when_none() {
     let seg = TranscriptSegment::empty_final();
     let v = serde_json::to_value(&seg).unwrap();
     assert!(v.get("confidence").is_none());
+    assert!(v.get("truncated").is_none());
+}
+
+#[test]
+fn test_truncated_final_serializes_the_flag_and_keeps_text() {
+    let mut seg = TranscriptSegment::empty_final();
+    seg.text = "привет".into();
+    seg.tentative = seg.text.clone();
+    seg.committed.clear();
+    let seg = seg.into_truncated_final();
+    let v = serde_json::to_value(&seg).unwrap();
+    assert_eq!(v["truncated"], true);
+    assert_eq!(v["committed"], "привет");
+    assert_eq!(v["tentative"], "");
+    assert_eq!(v["text"], "привет");
 }
 
 #[test]
