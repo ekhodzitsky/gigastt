@@ -288,6 +288,49 @@ pub(crate) fn select_backend(variant: Option<crate::model::ModelVariant>) -> Bac
     BackendKind::Ort
 }
 
+/// Build the ort factory for an exact provider. CPU keeps the optimized-graph
+/// cache. Exact CUDA does not register a CPU provider beside it.
+pub(crate) fn exact_ort_factory(
+    provider: super::selection::BoundProvider,
+    model_dir: &Path,
+    optimized_cache_dir: Option<PathBuf>,
+) -> Box<dyn RuntimeFactory> {
+    match provider {
+        super::selection::BoundProvider::Cpu => {
+            let prepacked = std::sync::Arc::new(ort::session::builder::PrepackedWeights::new());
+            let cache = optimized_cache_dir.unwrap_or_else(|| model_dir.join("optimized_cache"));
+            Box::new(
+                OrtFactory::cpu()
+                    .with_optimized_cache_dir(cache)
+                    .with_prepacked_weights(prepacked),
+            )
+        }
+        super::selection::BoundProvider::Coreml => {
+            #[cfg(feature = "coreml")]
+            {
+                Box::new(OrtFactory::coreml())
+            }
+            #[cfg(not(feature = "coreml"))]
+            {
+                let _ = (model_dir, optimized_cache_dir);
+                unreachable!("coreml is rejected before this factory is built")
+            }
+        }
+        super::selection::BoundProvider::Cuda => {
+            #[cfg(feature = "cuda")]
+            {
+                let _ = (model_dir, optimized_cache_dir);
+                Box::new(OrtFactory::cuda_exact())
+            }
+            #[cfg(not(feature = "cuda"))]
+            {
+                let _ = (model_dir, optimized_cache_dir);
+                unreachable!("cuda is rejected before this factory is built")
+            }
+        }
+    }
+}
+
 /// Like [`production_factory`], but the caller supplies the resolved recognition
 /// head. The rnnt-only candle/ane backends are gated on `variant` directly (see
 /// [`select_backend`]) — re-detecting from disk here would reintroduce the

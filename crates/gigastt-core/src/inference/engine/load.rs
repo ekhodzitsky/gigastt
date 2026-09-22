@@ -128,7 +128,7 @@ impl Engine {
             batch_pool_size,
             encoder_intra_threads,
             optimized_cache_dir,
-            crate::runtime::ort::selection::ExecutionProviderChoice::Auto,
+            crate::runtime::ExecutionProviderChoice::Auto,
         )
     }
 
@@ -145,7 +145,7 @@ impl Engine {
         batch_pool_size: usize,
         encoder_intra_threads: usize,
         optimized_cache_dir: Option<PathBuf>,
-        execution_provider: crate::runtime::ort::selection::ExecutionProviderChoice,
+        execution_provider: crate::runtime::ExecutionProviderChoice,
     ) -> Result<Self, GigasttError> {
         let dir = Path::new(model_dir);
         // Resolve the head once, up front: an explicit `variant` wins, else
@@ -175,54 +175,22 @@ impl Engine {
             source: Some(message.into()),
         };
         let allow_cpu_fallback =
-            crate::runtime::ort::selection::bind_after_primary_failure(execution_provider).is_ok();
+            crate::runtime::bind_after_primary_failure(execution_provider).is_ok();
         let (factory, backend_name) = match execution_provider {
-            crate::runtime::ort::selection::ExecutionProviderChoice::Auto => (
+            crate::runtime::ExecutionProviderChoice::Auto => (
                 production_factory_variant_with_cache(
                     dir,
                     Some(variant),
                     optimized_cache_dir.clone(),
                 ),
-                crate::runtime::ort::selection::auto_backend_name(variant),
+                crate::runtime::auto_backend_name(variant),
             ),
             exact => {
-                let bound = crate::runtime::ort::selection::resolve_ort_provider(exact)
-                    .map_err(provider_error)?;
-                let factory: Box<dyn crate::runtime::factory::RuntimeFactory> = match bound {
-                    crate::runtime::ort::selection::BoundProvider::Cpu => {
-                        let prepacked =
-                            std::sync::Arc::new(ort::session::builder::PrepackedWeights::new());
-                        let cache = optimized_cache_dir
-                            .clone()
-                            .unwrap_or_else(|| dir.join("optimized_cache"));
-                        Box::new(
-                            crate::runtime::ort::factory::OrtFactory::cpu()
-                                .with_optimized_cache_dir(cache)
-                                .with_prepacked_weights(prepacked),
-                        )
-                    }
-                    crate::runtime::ort::selection::BoundProvider::Coreml => {
-                        #[cfg(feature = "coreml")]
-                        {
-                            Box::new(crate::runtime::ort::factory::OrtFactory::coreml())
-                        }
-                        #[cfg(not(feature = "coreml"))]
-                        {
-                            unreachable!("resolve_ort_provider rejects coreml on this build")
-                        }
-                    }
-                    crate::runtime::ort::selection::BoundProvider::Cuda => {
-                        #[cfg(feature = "cuda")]
-                        {
-                            Box::new(crate::runtime::ort::factory::OrtFactory::cuda_exact())
-                        }
-                        #[cfg(not(feature = "cuda"))]
-                        {
-                            unreachable!("resolve_ort_provider rejects cuda on this build")
-                        }
-                    }
-                };
-                (factory, bound.as_str())
+                let bound = crate::runtime::resolve_ort_provider(exact).map_err(provider_error)?;
+                (
+                    crate::runtime::exact_ort_factory(bound, dir, optimized_cache_dir.clone()),
+                    bound.as_str(),
+                )
             }
         };
         Self::load_with_factory(
@@ -427,7 +395,7 @@ impl Engine {
             )
             .map_err(model_load)?
         } else {
-            engine.warmup_one().map_err(model_load)?;
+            engine.warmup_one()?;
             engine
         };
 
