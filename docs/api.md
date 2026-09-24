@@ -306,7 +306,7 @@ ONNX Runtime linking trade-offs are in [embedding-packaging](embedding-packaging
 | `/v1/models` | GET | Model info (encoder type, pool size, capabilities, `execution_provider` of the provider that actually loaded) |
 | `/v1/transcribe` | POST | File transcription, full JSON response or export format |
 | `/v1/transcribe/stream` | POST | File transcription with SSE streaming |
-| `/v1/audio/transcriptions` | POST | OpenAI-compatible file transcription (`multipart` `file` + `model` → `{"text":"..."}`) |
+| `/v1/audio/transcriptions` | POST | OpenAI-compatible upload. `model` is accepted and ignored. Default body is `{"text":"..."}`. No speaker labels — see [Which endpoint returns which fields](#which-endpoint-returns-which-fields) |
 | `/v1/jobs` | POST | Submit an asynchronous transcription job (requires `--enable-jobs`) |
 | `/v1/jobs/{id}` | GET | Poll job status and progress |
 | `/v1/jobs/{id}` | DELETE | Cancel a queued or processing job |
@@ -340,6 +340,138 @@ optional top-level `confidence` — the duration-weighted mean of
 `words[].confidence` (an average of per-word softmax scores, not a calibrated
 probability; omitted when there are no words).
 
+### Which endpoint returns which fields
+
+Use this table to pick the route for the field you need. `POST /v1/audio/transcriptions`
+is a compatibility shim over the same recognizer: it accepts `model` and
+**ignores** it (any string; the loaded head is used), and it **never** returns
+speaker labels. A client that needs `speaker` calls native `POST /v1/transcribe`
+or WebSocket, not the OpenAI route.
+
+| You need | `POST /v1/transcribe` | `POST /v1/transcribe/stream` | `GET /v1/ws` | `POST /v1/audio/transcriptions` |
+|---|---|---|---|---|
+| Text | `text`. ITN and punctuation follow the server policy (per-request `punctuation` / `itn` overrides exist only here) | Each event's `text`, exactly `committed` + `tentative`. Partials stay raw; a `final` rewrites `text` | `partial` / `final` `text`, same commitment rules as SSE | `json`: `{"text"}` only. `text`: plain body. `verbose_json`: `text` plus the rows below. `srt` / `vtt`: captions |
+| Word timings | Always `words[]` (`word`, `start`, `end`, `confidence`). `?word_timestamps=true` only adds a Markdown word table; it does not add or remove JSON `words` | Each event's `words[]`, same fields. No `word_timestamps` query | `words[]` on `partial` and `final` | Only `response_format=verbose_json` with `timestamp_granularities[]=word`. Each word is `word`, `start`, `end` — no `confidence`, no `speaker` |
+| Segments | `?segments=true` adds `segments[]` (`start`, `end`, `text`, `words`, and `speaker` when a label exists). `segments[].text` is the raw words joined with spaces, **not** a copy of the post-processed top-level `text` | None. Events are utterance hypotheses, not grouped cues | None. `partial` / `final` are the utterance, not a `segments` array | `verbose_json` includes `segments` unless the client asks for words only. Whisper-shaped fields: `id`, `seek`, `start`, `end`, `text` (leading space, raw words), `tokens`, `temperature`, `avg_logprob`, `compression_ratio`, `no_speech_prob`. No `speaker` |
+| Speaker labels | `?diarization=true` when a speaker model is loaded (`GET /v1/models` → `diarization: true`): integer `speaker` on each labeled word, and on `segments[]` if requested. The `diarization` object is **absent** on success. If labeling cannot run, the transcript is still HTTP 200, `speaker` is omitted, and a `diarization` object explains why. `?channels=split` labels `0` and `1` only on real two-channel audio; mono and dual-mono are mixed and omit `speaker`. Both modes together → `400 conflicting_modes` | Not available. No diarization query; words have no `speaker` | `{"type":"configure","diarization":true}` labels `words[].speaker` only when `ready.diarization` is true. Otherwise the flag is a no-op: no `speaker`, and no `diarization` notice. Early partials can omit `speaker` until a label exists | Never, in every `response_format`, including `verbose_json` and `stream=true` |
+| Stream completion | One JSON body. Not a stream | The response ends after the last event. There is no `[DONE]`. A normal file ends on `type: final` with `committed` equal to `text` and `tentative: ""`. `truncated: true` is set only when shutdown cuts the stream, and is omitted otherwise. Events do not include `is_final`, `speech_final`, or `endpoint_reason` — `type` is the discriminator | Send `{"type":"stop"}`, wait for `final` (`is_final: true`, `speech_final: true`, `endpoint_reason`, usually `"stop"`), then close. `truncated: true` only on a session cap or shutdown | One HTTP body. With `stream=true` (only `json` or `text`): `transcript.text.delta` events, then `transcript.text.done`, then `data: [DONE]`. Deltas are append-only raw text. `transcript.text.done.text` is the post-processed transcript (the same string as non-streaming `text`) and is **not** always the concatenation of the deltas. No words and no speaker on the stream |
+
+`GET /v1/jobs/{id}/result` (when `--enable-jobs` is on) returns the same JSON
+object as `POST /v1/transcribe`, including `speaker` and the `diarization`
+notice. It is not a fifth shape.
+
+#### Speaker labels
+
+Check `GET /v1/models` (`diarization`) or WebSocket `ready.diarization` first.
+This is the request that returns speaker integers when the speaker model is
+loaded:
+
+```sh
+curl -X POST 'http://127.0.0.1:9876/v1/transcribe?diarization=true&segments=true' \
+  -H 'Content-Type: application/octet-stream' --data-binary @recording.wav
+```
+
+Success omits the `diarization` key. `speaker` is a zero-based integer on each
+labeled word and, with `segments=true`, on each segment. A one-speaker file is
+still labeled — often every word is `0`, which is not the same as the field
+being absent. Confidences below are rounded:
+
+```json
+{
+  "text": "60000 тенге, сколько будет стоить?",
+  "words": [
+    {"word": "шестьдесят", "start": 0.52, "end": 1.04, "confidence": 0.93, "speaker": 0}
+  ],
+  "duration": 4.0,
+  "confidence": 0.96,
+  "segments": [
+    {
+      "start": 0.52,
+      "end": 3.52,
+      "text": "шестьдесят тысяч тенге сколько будет стоить",
+      "speaker": 0,
+      "words": [
+        {"word": "шестьдесят", "start": 0.52, "end": 1.04, "confidence": 0.93, "speaker": 0}
+      ]
+    }
+  ]
+}
+```
+
+Top-level `text` may be rewritten by ITN and punctuation. `words[].word` and
+`segments[].text` stay the raw decoder tokens.
+
+When `diarization=true` was requested but speakers could not be labeled, the
+transcript is still complete and `speaker` is omitted. The response adds:
+
+```json
+{
+  "diarization": {
+    "status": "unavailable",
+    "reason": "no_speaker_model",
+    "message": "diarization was requested but no speaker model is loaded"
+  }
+}
+```
+
+`reason` is `no_speaker_model`, `duration_ceiling` (also `input_seconds` and
+`ceiling_seconds`), or `pipeline_error`. See the table under
+[Query parameters](#query-parameters). Do not treat a missing `speaker` as
+"one speaker" — look for this object.
+
+WebSocket, and only when `ready.diarization` is true:
+
+```json
+{"type": "configure", "sample_rate": 16000, "diarization": true}
+```
+
+`words[].speaker` then appears on later partials and on the `final`. If
+`ready.diarization` is false or omitted, the flag is ignored and no notice is
+sent.
+
+The OpenAI route cannot return speakers. `model` is accepted and ignored:
+
+```sh
+curl -X POST http://127.0.0.1:9876/v1/audio/transcriptions \
+  -F model=whisper-1 \
+  -F file=@recording.wav \
+  -F response_format=verbose_json \
+  -F language=ru \
+  -F 'timestamp_granularities[]=word' \
+  -F 'timestamp_granularities[]=segment'
+```
+
+```json
+{
+  "task": "transcribe",
+  "language": "ru",
+  "duration": 4.0,
+  "text": "60000 тенге, сколько будет стоить?",
+  "segments": [
+    {
+      "id": 0,
+      "seek": 52,
+      "start": 0.52,
+      "end": 3.52,
+      "text": " шестьдесят тысяч тенге сколько будет стоить",
+      "tokens": [],
+      "temperature": 0.0,
+      "avg_logprob": -0.03,
+      "compression_ratio": 1.0,
+      "no_speech_prob": 0.0
+    }
+  ],
+  "words": [
+    {"word": "шестьдесят", "start": 0.52, "end": 1.04}
+  ]
+}
+```
+
+There is no `speaker` on `words[]` or `segments[]`. Default
+`response_format=json` (or omitting it) is `{"text":"..."}` only.
+`stream=true` ends with `transcript.text.done` and then `data: [DONE]`; that
+stream is text-only as well.
+
 ### OpenAI-compatible transcriptions
 
 `POST /v1/audio/transcriptions` is a compatibility layer over the same
@@ -371,15 +503,20 @@ including audio-specific credentials, private-network settings, and verification
 **Streaming (`stream=true`).** Response is `text/event-stream`:
 
 ```
-data: {"type":"transcript.text.delta","delta":"Привет"}
-data: {"type":"transcript.text.delta","delta":" мир"}
-data: {"type":"transcript.text.done","text":"Привет мир"}
+data: {"type":"transcript.text.delta","delta":"шестьдесят"}
+data: {"type":"transcript.text.delta","delta":" тысяч тенге"}
+data: {"type":"transcript.text.done","text":"60000 тенге, сколько будет стоить?"}
 data: [DONE]
 ```
 
 Deltas are append-only progressive text from the real chunked encoder path
-(same pipeline as `/v1/transcribe/stream`). Incompatible with `srt` / `vtt` /
-`verbose_json` → `400 invalid_stream_options`.
+(same pipeline as `/v1/transcribe/stream`) and stay on the raw hypothesis.
+`transcript.text.done.text` is the post-processed transcript — the same string
+as a non-streaming `text` — and is not always the concatenation of the deltas
+(ITN or punctuation can rewrite the final). Read `done`, not the joined
+deltas, when you need that string. The stream then ends with `data: [DONE]`.
+Incompatible with `srt` / `vtt` / `verbose_json` → `400 invalid_stream_options`.
+No event on this stream carries words or a speaker field.
 
 ```sh
 # Default JSON
@@ -558,11 +695,11 @@ same object appears on `GET /v1/jobs/{id}/result`.
 
 ```json
 {
-  "text": "…", "words": [...], "duration": 812.4,
+  "text": "…", "words": [...], "duration": 4.0,
   "diarization": {
     "status": "unavailable",
     "reason": "no_speaker_model",
-    "message": "diarization unavailable: no speaker model is loaded; the transcript is complete but has no speaker labels"
+    "message": "diarization was requested but no speaker model is loaded"
   }
 }
 ```
@@ -600,8 +737,10 @@ render a speaker change as a `[SPEAKER_0]`-style prefix on the cue:
   (≈0.9 s), sentence-ending punctuation (`.`, `!`, `?`), speaker change, or a
   maximum segment length of ≈30 s. Each segment carries `start`, `end`, `text`,
   `words`, and an optional `speaker` when channel split or diarization is active.
-  With `format=md`, `segments=true` switches Markdown output to `### [mm:ss]`
-  section headers instead of a single flat transcript blob.
+  `segments[].text` is those raw `words[].word` values joined with spaces. It is
+  not the post-processed top-level `text` (ITN and punctuation rewrite only the
+  joined transcript). With `format=md`, `segments=true` switches Markdown output
+  to `### [mm:ss]` section headers instead of a single flat transcript blob.
 - `codec` (optional, string) — declare a raw headerless telephony stream instead
   of a container: `pcmu` (alias `ulaw`), `pcma` (alias `alaw`), or `g722`. See
   "Audio formats and telephony codecs" below.
@@ -617,8 +756,8 @@ curl -X POST "http://127.0.0.1:9876/v1/transcribe?segments=true&word_timestamps=
 #   "text": "Привет. Как дела?",
 #   "words": [...],
 #   "segments": [
-#     {"start": 0.0, "end": 0.9, "text": "Привет.", "words": [...]},
-#     {"start": 1.6, "end": 2.8, "text": "Как дела?", "words": [...]}
+#     {"start": 0.0, "end": 0.9, "text": "привет", "words": [...]},
+#     {"start": 1.6, "end": 2.8, "text": "как дела", "words": [...]}
 #   ],
 #   "duration": 3.5
 # }

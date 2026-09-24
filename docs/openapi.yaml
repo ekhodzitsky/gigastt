@@ -12,7 +12,7 @@ info:
     - **Health & discovery**: `GET /health`, `GET /ready`, `GET /v1/models`
     - **File transcription**: `POST /v1/transcribe` — upload audio, receive full transcript
     - **Streaming transcription**: `POST /v1/transcribe/stream` — upload audio, receive SSE stream of partial/final segments
-    - **OpenAI-compatible**: `POST /v1/audio/transcriptions` — multipart `file` + `model` → `{"text":"..."}`
+    - **OpenAI-compatible**: `POST /v1/audio/transcriptions` — multipart `file` + `model`. `model` is ignored. Default body is `{"text":"..."}`; `verbose_json` can add `segments` and `words`. This route never returns speaker labels — use `POST /v1/transcribe?diarization=true` or WebSocket `configure.diarization`. Field map: `docs/api.md` (`Which endpoint returns which fields`).
     - **Async jobs** (opt-in `--enable-jobs`): `POST /v1/jobs`, `GET/DELETE /v1/jobs/{id}`, result + SSE events
     - **Admin**: `POST /v1/admin/reload` — loopback-only model hot-reload
     - **WebSocket** (see `docs/asyncapi.yaml`): `GET /v1/ws`
@@ -207,7 +207,16 @@ paths:
         Pass `segments=true` to add a cue-grouped `segments` array to the default
         JSON response (same boundaries as the `srt` / `vtt` exports); combined
         with `format=md` it switches Markdown to `### [mm:ss]` segment headers.
-        `txt` / `srt` / `vtt` ignore `segments` (already flat / cue-based).
+        `segments[].text` is the raw words joined with spaces, not the
+        post-processed top-level `text`. `txt` / `srt` / `vtt` ignore `segments`
+        (already flat / cue-based).
+
+        Word `speaker` integers are omitted unless `diarization=true` succeeded
+        or `channels=split` labeled a real stereo file. A declined diarization
+        request keeps the transcript and adds a `diarization` notice
+        (`status`, `reason`, `message`) instead of empty speaker fields.
+        `word_timestamps` does not gate JSON `words` — those are always present;
+        the flag only adds a per-word Markdown table.
 
         Long files are decoded and transcribed in bounded overlapping windows,
         not as a single inference session, so peak memory stays roughly
@@ -281,8 +290,10 @@ paths:
             Per-request override for the punctuation / casing restoration pass.
             `true` forces it on, `false` skips it; absent = the server's boot
             policy (byte-unchanged response). `true` when no punctuation model is
-            loaded returns `409 punctuation_not_available`. Applies to this
-            endpoint only — the SSE / WebSocket paths never run this pass.
+            loaded returns `409 punctuation_not_available`. This query applies
+            to this endpoint only. SSE and WebSocket finals still follow the
+            server punctuation policy (WebSocket can override it with
+            `configure.punctuation`); they do not read this parameter.
         - name: itn
           in: query
           required: false
@@ -401,17 +412,14 @@ paths:
                     start: 0.5
                     end: 0.8
                     confidence: 0.97
-                    speaker: 0
                   - word: "как"
                     start: 0.9
                     end: 1.0
                     confidence: 0.95
-                    speaker: 1
                   - word: "дела"
                     start: 1.1
                     end: 1.4
                     confidence: 0.92
-                    speaker: 0
                 duration: 2.5
                 confidence: 0.95
             text/plain:
@@ -476,6 +484,13 @@ paths:
         Text fields match WebSocket protocol 1.2: text is exactly committed + tentative,
         including whitespace. Commitment resets after each final. Successful finals have
         committed equal to text and an empty tentative suffix.
+
+        The HTTP body ends after the last event. There is no `[DONE]` sentinel.
+        A normal file's last event is `type: final`. `truncated: true` is added
+        only when shutdown cuts the stream and is omitted otherwise. Events do
+        not include `is_final`, `speech_final`, `endpoint_reason`, `segments`,
+        or `speaker` — this endpoint has no diarization query. `words[]` uses
+        the same object as `/v1/transcribe` (`word`, `start`, `end`, `confidence`).
       operationId: transcribeStream
       parameters:
         - name: commit_policy
@@ -526,9 +541,9 @@ paths:
               schema:
                 type: string
               example: |
-                data: {"type": "partial", "text": "привет", "committed": "", "tentative": "привет", "timestamp": 1712700000.123, "words": [{"word": "привет", "start": 0.5, "end": 0.8}]}
+                data: {"type": "partial", "text": "привет", "committed": "", "tentative": "привет", "timestamp": 1712700000.123, "confidence": 0.97, "words": [{"word": "привет", "start": 0.5, "end": 0.8, "confidence": 0.97}]}
 
-                data: {"type": "final", "text": "привет как дела", "committed": "привет как дела", "tentative": "", "timestamp": 1712700001.456, "words": [{"word": "привет", "start": 0.5, "end": 0.8}, {"word": "как", "start": 0.9, "end": 1.0}, {"word": "дела", "start": 1.1, "end": 1.4}]}
+                data: {"type": "final", "text": "привет как дела", "committed": "привет как дела", "tentative": "", "timestamp": 1712700001.456, "confidence": 0.94, "words": [{"word": "привет", "start": 0.5, "end": 0.8, "confidence": 0.97}, {"word": "как", "start": 0.9, "end": 1.0, "confidence": 0.95}, {"word": "дела", "start": 1.1, "end": 1.4, "confidence": 0.92}]}
         "400":
           $ref: "#/components/responses/BadRequest"
         "413":
@@ -561,8 +576,15 @@ paths:
 
         `response_format`: `json` (default, `{"text"}`) · `text` · `srt` · `vtt`
         · `verbose_json` (Whisper-style: `task`, `language`, `duration`, `text`,
-        optional `segments`/`words`). For diarization, telephony codecs, or
-        native knobs use `POST /v1/transcribe`.
+        optional `segments`/`words`). No format, including `verbose_json` and
+        `stream=true`, includes a `speaker` field. `verbose_json` words are
+        `word` / `start` / `end` only (no `confidence`). For diarization,
+        telephony codecs, or native knobs use `POST /v1/transcribe`.
+
+        `stream=true` (only with `json` or `text`) emits append-only
+        `transcript.text.delta` events, then `transcript.text.done`, then
+        `data: [DONE]`. `done.text` is the post-processed transcript and is not
+        always the concatenation of the deltas.
       operationId: createTranscription
       requestBody:
         required: true
@@ -1336,7 +1358,10 @@ components:
         text:
           type: string
           example: "привет как дела"
-          description: Rendered segment text
+          description: |
+            Raw words in the segment, joined with spaces. Not a copy of the
+            post-processed top-level `text` (ITN and punctuation rewrite only
+            that joined transcript).
         words:
           type: array
           items:

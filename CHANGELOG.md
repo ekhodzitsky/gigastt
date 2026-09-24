@@ -89,6 +89,18 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   the server logs a warning and starts without the cache (slower cold start,
   higher per-session RAM) instead of failing.
 
+### Docs
+
+- **Transcript fields are mapped to the endpoint that returns them.**
+  `docs/api.md` now tables text, word timings, segments, speaker labels, and
+  stream completion for `POST /v1/transcribe`, `POST /v1/transcribe/stream`,
+  `GET /v1/ws`, and `POST /v1/audio/transcriptions`. Speaker integers stay on
+  the native file route (`diarization=true`, or real stereo `channels=split`)
+  and on WebSocket when `ready.diarization` is true. The OpenAI-compatible
+  route still accepts and ignores `model` and does not return a speaker field.
+  The `no_speaker_model` example message matches the server
+  (`diarization was requested but no speaker model is loaded`).
+
 ## [2.21.0] - 2026-09-06
 
 ### Added
