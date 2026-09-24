@@ -30,6 +30,15 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   `serve` and `cache-gc`: where the CPU encoder writes/reads the ORT
   optimized-graph cache (`*_optimized.ort`). Default unchanged:
   `<model-dir>/optimized_cache`. `cache-gc` prunes the directory given here.
+- **App-owned server lifecycle.**
+  [managed-lifecycle.md](docs/managed-lifecycle.md) and
+  `scripts/managed_server_lifecycle.sh` show how a downstream app supervises
+  `gigastt serve`: INT8 model, writable ORT cache outside the model directory,
+  loopback bind, `/health` versus `/ready`, a startup failure that names the
+  missing INT8 path, offline restart, and shutdown that reaps the child. The
+  same note explains how to drop `--fp32`, `--prequantized`,
+  `--skip-quantize`, and stub FP32 encoder filenames without deleting
+  unrelated models or user data.
 
 ### Fixed
 

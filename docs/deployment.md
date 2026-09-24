@@ -378,6 +378,20 @@ cold start, higher per-session RAM) instead of failing. When relocating the
 cache, pass the same path to `gigastt cache-gc` so it prunes the right
 directory.
 
+## App-owned process
+
+An application that supervises gigastt as a child (instead of linking the
+engine in-process) owns the PID: binary, lean INT8 files, a writable ORT
+cache **outside** the model directory, loopback bind, `/health` versus
+`/ready`, and a shutdown that `wait`s so no child is left behind. The tested
+recipe is [managed-lifecycle.md](managed-lifecycle.md)
+(`scripts/managed_server_lifecycle.sh`). It does not add a client SDK — use
+the [in-process bindings or the Go and TypeScript clients](quickstarts.md).
+
+Retiring `--fp32`, `--prequantized`, `--skip-quantize`, and stub FP32 encoder
+filenames is part of that recipe. Do not delete the model directory to do it;
+other heads and user files stay.
+
 ## Air-gapped / offline installation
 
 For hosts with no internet access, every release publishes a self-contained

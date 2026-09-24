@@ -165,3 +165,17 @@ backoff that honors the server's `retry_after_ms` hint on pool saturation.
 
 For one-file scripts without a library dependency, the `examples/` directory
 has minimal clients (Go, Bun/TypeScript, Python, Kotlin, Rust).
+
+## Owning the server process
+
+The bindings above load the engine in-process. To run `gigastt serve` as a
+child instead — crash isolation, or one model shared by several apps —
+supervise that process yourself. The tested loopback lifecycle (INT8 model,
+writable cache outside the model directory, readiness, startup failure,
+offline restart, and shutdown with no child left) is
+[managed-lifecycle.md](managed-lifecycle.md), script
+[`scripts/managed_server_lifecycle.sh`](../scripts/managed_server_lifecycle.sh).
+Talk to it with the Go and TypeScript clients above, or the one-file programs
+under [`examples/`](../examples/). There is no extra SDK for this. Dropping
+old FP32 download flags and stub encoder filenames, without deleting unrelated
+models, is in that same guide.
