@@ -12,8 +12,10 @@ Connect to `ws://127.0.0.1:9876/v1/ws`, send PCM16 audio frames, receive increme
 partials. This is **buffered/chunked over an offline RNN-T**, not a native streaming
 AM. Encoder geometry (do not change without a new protocol version): stride
 **0.8 s**, max window **2.5 s**, left context **1.5 s**. The first decode cannot
-run before ~0.8 s of new audio. TTFP p50 is ~0.82–1.65 s (protocol 1.0);
-streaming WER is ~11–15 pp worse than REST batch on the same files. Measurement:
+run before ~0.8 s of new audio. The 2026-08-14 corpus TTFP p50
+(~0.82–1.65 s) and the ~11–15 pp stream-minus-file WER gap are historical:
+that run predates stable-prefix, and no current corpus Δ is published.
+Measurement:
 [docs/benchmarks.md](benchmarks.md#streaming-measurement-protocol). This section is the human-readable protocol reference; the
 machine-readable schema (same fields, same error codes) lives in
 [`docs/asyncapi.yaml`](asyncapi.yaml). Field-level source of truth:
@@ -359,6 +361,16 @@ or WebSocket, not the OpenAI route.
 `GET /v1/jobs/{id}/result` (when `--enable-jobs` is on) returns the same JSON
 object as `POST /v1/transcribe`, including `speaker` and the `diarization`
 notice. It is not a fifth shape.
+
+Checked on 2026-09-24 against a debug build of this tree (`gigastt --version`
+prints 2.21.0; not a downloaded release tarball), bound to `127.0.0.1:9882`
+with `--pool-size 1 --model-variant rnnt --execution-provider cpu` and the
+INT8 models in `~/.gigastt/models`. The speaker model was loaded. Requests used
+`crates/gigastt/tests/fixtures/golos_00.wav`. Field names matched this table,
+including `speaker` on native diarized words and no `speaker` anywhere on
+`/v1/audio/transcriptions`. The JSON examples below round times and
+confidences; they show that response's shape, not a raw dump. WebSocket
+`ready.version` was `1.2`.
 
 #### Speaker labels
 
