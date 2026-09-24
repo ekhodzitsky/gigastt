@@ -1,0 +1,5982 @@
+{
+  "host": {
+    "binary": "/home/ekhodzitsky/Projects/gigastt/target/release/gigastt",
+    "version": "gigastt 2.21.0",
+    "commit": "824bf8ae094c0f28705aa646204b34db216d0494",
+    "cpu_model": "AMD Ryzen AI 9 HX 370 w/ Radeon 890M",
+    "logical_cpus_on_host": 24,
+    "taskset_cpus": "0,1",
+    "constraint": "Desktop substitute. The process is pinned with taskset to two logical CPUs on this machine. It is not the reporter's two-vCPU Xeon VM.",
+    "port": 9891,
+    "pool_size": 1,
+    "model_variant": "rnnt",
+    "n_cold": 6,
+    "n_warm_rounds": 8,
+    "loadavg_start": "6.95 13.83 15.94 3/4438 1039937",
+    "loadavg_end": "21.54 15.91 16.18 4/4408 1062511"
+  },
+  "configs": [
+    {
+      "name": "punct_itn_auto",
+      "serve_args": [
+        "--punctuation",
+        "auto",
+        "--itn",
+        "auto"
+      ],
+      "cold_ready_s": {
+        "n": 6,
+        "p50": 0.8626921529648826,
+        "p95": 1.0051774884923361,
+        "min": 0.41901525505818427,
+        "max": 1.006030483986251
+      },
+      "cold_ready_samples_s": [
+        0.41901525505818427,
+        0.5205667890841141,
+        1.0026185020105913,
+        0.8670089709339663,
+        1.006030483986251,
+        0.8583753349957988
+      ],
+      "first_request_s": {
+        "n": 6,
+        "p50": 0.6305903709726408,
+        "p95": 0.6584846579935402,
+        "min": 0.22384936606977135,
+        "max": 0.6633780329721048
+      },
+      "first_request_samples_s": [
+        0.22384936606977135,
+        0.629928795970045,
+        0.6312519459752366,
+        0.6438045330578461,
+        0.6200204330962151,
+        0.6633780329721048
+      ],
+      "warm_request_s": {
+        "wav": {
+          "n": 120,
+          "p50": 0.24798957200255245,
+          "p95": 0.5117370043706614,
+          "min": 0.11767861898988485,
+          "max": 0.8682081770384684
+        },
+        "ogg_opus_voip": {
+          "n": 120,
+          "p50": 0.2457079580053687,
+          "p95": 0.5155894288967828,
+          "min": 0.12287298997398466,
+          "max": 1.047053198912181
+        },
+        "webm_opus_live": {
+          "n": 120,
+          "p50": 0.2559140184894204,
+          "p95": 0.6156723045103718,
+          "min": 0.12029035098385066,
+          "max": 0.895605065044947
+        }
+      },
+      "warm_rtf": {
+        "wav": {
+          "n": 120,
+          "p50": 0.05660616039764556,
+          "p95": 0.1490830356639818,
+          "min": 0.04975809882468296,
+          "max": 0.21294061569314376
+        },
+        "ogg_opus_voip": {
+          "n": 120,
+          "p50": 0.05792824532982195,
+          "p95": 0.15157184181734917,
+          "min": 0.05226259881164878,
+          "max": 0.20941063978243618
+        },
+        "webm_opus_live": {
+          "n": 120,
+          "p50": 0.05829209541738532,
+          "p95": 0.15054130789300055,
+          "min": 0.052398754255059965,
+          "max": 0.1949152071621413
+        }
+      },
+      "warm_requests": [
+        {
+          "round": 0,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.33580129605252296,
+          "duration_s": 4.0,
+          "rtf": 0.08395032401313074
+        },
+        {
+          "round": 0,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2763644919032231,
+          "duration_s": 4.0,
+          "rtf": 0.06909112297580577
+        },
+        {
+          "round": 0,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2765004269313067,
+          "duration_s": 4.0,
+          "rtf": 0.06912510673282668
+        },
+        {
+          "round": 0,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.2435469499323517,
+          "duration_s": 3.43,
+          "rtf": 0.07100494167123957
+        },
+        {
+          "round": 0,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20362210099119693,
+          "duration_s": 3.43,
+          "rtf": 0.05936504402075712
+        },
+        {
+          "round": 0,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2374096109997481,
+          "duration_s": 3.43,
+          "rtf": 0.06921563002908108
+        },
+        {
+          "round": 0,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.27762485307175666,
+          "duration_s": 3.06,
+          "rtf": 0.09072707616724074
+        },
+        {
+          "round": 0,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2731708289356902,
+          "duration_s": 3.06,
+          "rtf": 0.08927151272408178
+        },
+        {
+          "round": 0,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2719976109219715,
+          "duration_s": 3.06,
+          "rtf": 0.08888810814443512
+        },
+        {
+          "round": 0,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.3535596550209448,
+          "duration_s": 5.44,
+          "rtf": 0.06499258364355602
+        },
+        {
+          "round": 0,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.49354633793700486,
+          "duration_s": 5.44,
+          "rtf": 0.09072542976783177
+        },
+        {
+          "round": 0,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3374773459509015,
+          "duration_s": 5.44,
+          "rtf": 0.062036276829209834
+        },
+        {
+          "round": 0,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.3433093320345506,
+          "duration_s": 5.22,
+          "rtf": 0.0657680712709867
+        },
+        {
+          "round": 0,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.32633090298622847,
+          "duration_s": 5.22,
+          "rtf": 0.0625154986563656
+        },
+        {
+          "round": 0,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.678391910973005,
+          "duration_s": 5.22,
+          "rtf": 0.1299601362017251
+        },
+        {
+          "round": 0,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.5258269539335743,
+          "duration_s": 3.203938,
+          "rtf": 0.16411895421620964
+        },
+        {
+          "round": 0,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.5150575879961252,
+          "duration_s": 3.203938,
+          "rtf": 0.16075766384871532
+        },
+        {
+          "round": 0,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.6244962390046567,
+          "duration_s": 3.203938,
+          "rtf": 0.1949152071621413
+        },
+        {
+          "round": 0,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.8682081770384684,
+          "duration_s": 5.0,
+          "rtf": 0.17364163540769367
+        },
+        {
+          "round": 0,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 1.047053198912181,
+          "duration_s": 5.0,
+          "rtf": 0.20941063978243618
+        },
+        {
+          "round": 0,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.895605065044947,
+          "duration_s": 5.0,
+          "rtf": 0.1791210130089894
+        },
+        {
+          "round": 0,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.4343988560140133,
+          "duration_s": 2.04,
+          "rtf": 0.21294061569314376
+        },
+        {
+          "round": 0,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.38527872099075466,
+          "duration_s": 2.04,
+          "rtf": 0.18886211813272288
+        },
+        {
+          "round": 0,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.34922167798504233,
+          "duration_s": 2.04,
+          "rtf": 0.17118709705149135
+        },
+        {
+          "round": 0,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.7078742049634457,
+          "duration_s": 4.928,
+          "rtf": 0.1436433045786213
+        },
+        {
+          "round": 0,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.7384401800809428,
+          "duration_s": 4.928,
+          "rtf": 0.14984581576317832
+        },
+        {
+          "round": 0,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.7409923509694636,
+          "duration_s": 4.928,
+          "rtf": 0.1503637075830892
+        },
+        {
+          "round": 0,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.43808632402215153,
+          "duration_s": 3.34325,
+          "rtf": 0.13103606491352773
+        },
+        {
+          "round": 0,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.28303023998159915,
+          "duration_s": 3.34325,
+          "rtf": 0.08465721677457538
+        },
+        {
+          "round": 0,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2657848410308361,
+          "duration_s": 3.34325,
+          "rtf": 0.0794989429539628
+        },
+        {
+          "round": 0,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.3222019380191341,
+          "duration_s": 3.906188,
+          "rtf": 0.08248500533490301
+        },
+        {
+          "round": 0,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3070911680115387,
+          "duration_s": 3.906188,
+          "rtf": 0.0786165868134198
+        },
+        {
+          "round": 0,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2909165850142017,
+          "duration_s": 3.906188,
+          "rtf": 0.07447582784397518
+        },
+        {
+          "round": 0,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.39078464498743415,
+          "duration_s": 5.64,
+          "rtf": 0.06928805762188549
+        },
+        {
+          "round": 0,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.40985368099063635,
+          "duration_s": 5.64,
+          "rtf": 0.07266909237422631
+        },
+        {
+          "round": 0,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3893877579830587,
+          "duration_s": 5.64,
+          "rtf": 0.0690403826211097
+        },
+        {
+          "round": 0,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.37467940303031355,
+          "duration_s": 5.943938,
+          "rtf": 0.06303555034226695
+        },
+        {
+          "round": 0,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3884567739441991,
+          "duration_s": 5.943938,
+          "rtf": 0.06535343638244528
+        },
+        {
+          "round": 0,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3627789180027321,
+          "duration_s": 5.943938,
+          "rtf": 0.06103342901671116
+        },
+        {
+          "round": 0,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.21356343606021255,
+          "duration_s": 3.2,
+          "rtf": 0.06673857376881642
+        },
+        {
+          "round": 0,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.23393818805925548,
+          "duration_s": 3.2,
+          "rtf": 0.07310568376851734
+        },
+        {
+          "round": 0,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21618334401864558,
+          "duration_s": 3.2,
+          "rtf": 0.06755729500582675
+        },
+        {
+          "round": 0,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.214205679949373,
+          "duration_s": 3.41,
+          "rtf": 0.0628169149411651
+        },
+        {
+          "round": 0,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22226529894396663,
+          "duration_s": 3.41,
+          "rtf": 0.06518043957301074
+        },
+        {
+          "round": 0,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2211933209327981,
+          "duration_s": 3.41,
+          "rtf": 0.06486607651988213
+        },
+        {
+          "round": 1,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.2517865760019049,
+          "duration_s": 4.0,
+          "rtf": 0.06294664400047623
+        },
+        {
+          "round": 1,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24696562404278666,
+          "duration_s": 4.0,
+          "rtf": 0.061741406010696664
+        },
+        {
+          "round": 1,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.25806970696430653,
+          "duration_s": 4.0,
+          "rtf": 0.06451742674107663
+        },
+        {
+          "round": 1,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.23689012799877673,
+          "duration_s": 3.43,
+          "rtf": 0.06906417725911858
+        },
+        {
+          "round": 1,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.23467516899108887,
+          "duration_s": 3.43,
+          "rtf": 0.0684184166154778
+        },
+        {
+          "round": 1,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.23020449292380363,
+          "duration_s": 3.43,
+          "rtf": 0.06711501251422845
+        },
+        {
+          "round": 1,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.19636115804314613,
+          "duration_s": 3.06,
+          "rtf": 0.06417031308599547
+        },
+        {
+          "round": 1,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2173985909903422,
+          "duration_s": 3.06,
+          "rtf": 0.07104529117331444
+        },
+        {
+          "round": 1,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2235086690634489,
+          "duration_s": 3.06,
+          "rtf": 0.07304204871354539
+        },
+        {
+          "round": 1,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.6081607239320874,
+          "duration_s": 5.44,
+          "rtf": 0.11179425072281018
+        },
+        {
+          "round": 1,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.32366472797002643,
+          "duration_s": 5.44,
+          "rtf": 0.05949719264154897
+        },
+        {
+          "round": 1,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3098347879713401,
+          "duration_s": 5.44,
+          "rtf": 0.05695492425943752
+        },
+        {
+          "round": 1,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.2959016839740798,
+          "duration_s": 5.22,
+          "rtf": 0.0566861463551877
+        },
+        {
+          "round": 1,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2847253360087052,
+          "duration_s": 5.22,
+          "rtf": 0.05454508352657188
+        },
+        {
+          "round": 1,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2953589470125735,
+          "duration_s": 5.22,
+          "rtf": 0.056582173757197984
+        },
+        {
+          "round": 1,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.17620388395152986,
+          "duration_s": 3.203938,
+          "rtf": 0.054996034240216214
+        },
+        {
+          "round": 1,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1893910199869424,
+          "duration_s": 3.203938,
+          "rtf": 0.05911194910355394
+        },
+        {
+          "round": 1,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20455993805080652,
+          "duration_s": 3.203938,
+          "rtf": 0.06384640965299782
+        },
+        {
+          "round": 1,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.2983550609787926,
+          "duration_s": 5.0,
+          "rtf": 0.05967101219575852
+        },
+        {
+          "round": 1,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.29017965495586395,
+          "duration_s": 5.0,
+          "rtf": 0.05803593099117279
+        },
+        {
+          "round": 1,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2819082379573956,
+          "duration_s": 5.0,
+          "rtf": 0.05638164759147912
+        },
+        {
+          "round": 1,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.14332132902927697,
+          "duration_s": 2.04,
+          "rtf": 0.070255553445724
+        },
+        {
+          "round": 1,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1397773789940402,
+          "duration_s": 2.04,
+          "rtf": 0.06851832303629421
+        },
+        {
+          "round": 1,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.13604455604217947,
+          "duration_s": 2.04,
+          "rtf": 0.06668850786381346
+        },
+        {
+          "round": 1,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2543703959090635,
+          "duration_s": 4.928,
+          "rtf": 0.0516173692997288
+        },
+        {
+          "round": 1,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.27396550704725087,
+          "duration_s": 4.928,
+          "rtf": 0.05559364996900383
+        },
+        {
+          "round": 1,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2685110289603472,
+          "duration_s": 4.928,
+          "rtf": 0.054486815941628894
+        },
+        {
+          "round": 1,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.19185716996435076,
+          "duration_s": 3.34325,
+          "rtf": 0.057386426370851944
+        },
+        {
+          "round": 1,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19043244002386928,
+          "duration_s": 3.34325,
+          "rtf": 0.056960275188475074
+        },
+        {
+          "round": 1,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20119316095951945,
+          "duration_s": 3.34325,
+          "rtf": 0.060178916012718
+        },
+        {
+          "round": 1,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.20598755299579352,
+          "duration_s": 3.906188,
+          "rtf": 0.052733650555424755
+        },
+        {
+          "round": 1,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2164220109116286,
+          "duration_s": 3.906188,
+          "rtf": 0.055404914180174784
+        },
+        {
+          "round": 1,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2217690689722076,
+          "duration_s": 3.906188,
+          "rtf": 0.05677378277036527
+        },
+        {
+          "round": 1,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.2920456900028512,
+          "duration_s": 5.64,
+          "rtf": 0.05178115070972539
+        },
+        {
+          "round": 1,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3028859089827165,
+          "duration_s": 5.64,
+          "rtf": 0.05370317535154548
+        },
+        {
+          "round": 1,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.31987811403814703,
+          "duration_s": 5.64,
+          "rtf": 0.05671597766633813
+        },
+        {
+          "round": 1,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.31887959293089807,
+          "duration_s": 5.943938,
+          "rtf": 0.05364786660474891
+        },
+        {
+          "round": 1,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3277929819887504,
+          "duration_s": 5.943938,
+          "rtf": 0.05514744298960561
+        },
+        {
+          "round": 1,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.31824971304740757,
+          "duration_s": 5.943938,
+          "rtf": 0.053541896474594376
+        },
+        {
+          "round": 1,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.17379861802328378,
+          "duration_s": 3.2,
+          "rtf": 0.05431206813227618
+        },
+        {
+          "round": 1,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.17911371495574713,
+          "duration_s": 3.2,
+          "rtf": 0.05597303592367098
+        },
+        {
+          "round": 1,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.188212250941433,
+          "duration_s": 3.2,
+          "rtf": 0.058816328419197816
+        },
+        {
+          "round": 1,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.18874849600251764,
+          "duration_s": 3.41,
+          "rtf": 0.05535146510337761
+        },
+        {
+          "round": 1,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19377074402291328,
+          "duration_s": 3.41,
+          "rtf": 0.05682426510935873
+        },
+        {
+          "round": 1,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19383368198759854,
+          "duration_s": 3.41,
+          "rtf": 0.056842721990498106
+        },
+        {
+          "round": 2,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.2183024949626997,
+          "duration_s": 4.0,
+          "rtf": 0.05457562374067493
+        },
+        {
+          "round": 2,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.23358875303529203,
+          "duration_s": 4.0,
+          "rtf": 0.05839718825882301
+        },
+        {
+          "round": 2,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2200278569944203,
+          "duration_s": 4.0,
+          "rtf": 0.05500696424860507
+        },
+        {
+          "round": 2,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.18845611799042672,
+          "duration_s": 3.43,
+          "rtf": 0.05494347463277747
+        },
+        {
+          "round": 2,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19955158501397818,
+          "duration_s": 3.43,
+          "rtf": 0.0581783046687983
+        },
+        {
+          "round": 2,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2004997010808438,
+          "duration_s": 3.43,
+          "rtf": 0.05845472334718478
+        },
+        {
+          "round": 2,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.1791052200132981,
+          "duration_s": 3.06,
+          "rtf": 0.058531117651404604
+        },
+        {
+          "round": 2,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18102661904413253,
+          "duration_s": 3.06,
+          "rtf": 0.05915902583141586
+        },
+        {
+          "round": 2,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20139386702794582,
+          "duration_s": 3.06,
+          "rtf": 0.06581498922481889
+        },
+        {
+          "round": 2,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.2982875449815765,
+          "duration_s": 5.44,
+          "rtf": 0.054832269298083915
+        },
+        {
+          "round": 2,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2966744330478832,
+          "duration_s": 5.44,
+          "rtf": 0.054535741369096176
+        },
+        {
+          "round": 2,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2921357490122318,
+          "duration_s": 5.44,
+          "rtf": 0.053701424450777906
+        },
+        {
+          "round": 2,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.2779222000390291,
+          "duration_s": 5.22,
+          "rtf": 0.053241800773760374
+        },
+        {
+          "round": 2,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2796107039321214,
+          "duration_s": 5.22,
+          "rtf": 0.05356526895251368
+        },
+        {
+          "round": 2,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.28839921893086284,
+          "duration_s": 5.22,
+          "rtf": 0.05524889251549097
+        },
+        {
+          "round": 2,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.16978492797352374,
+          "duration_s": 3.203938,
+          "rtf": 0.052992576002882624
+        },
+        {
+          "round": 2,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.17770520702470094,
+          "duration_s": 3.203938,
+          "rtf": 0.05546462104594438
+        },
+        {
+          "round": 2,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1791592410299927,
+          "duration_s": 3.203938,
+          "rtf": 0.05591844818157926
+        },
+        {
+          "round": 2,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.25488550204318017,
+          "duration_s": 5.0,
+          "rtf": 0.05097710040863603
+        },
+        {
+          "round": 2,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.26131299405824393,
+          "duration_s": 5.0,
+          "rtf": 0.05226259881164878
+        },
+        {
+          "round": 2,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.27056447591166943,
+          "duration_s": 5.0,
+          "rtf": 0.054112895182333885
+        },
+        {
+          "round": 2,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.12145555403549224,
+          "duration_s": 2.04,
+          "rtf": 0.05953703629190796
+        },
+        {
+          "round": 2,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.12595734803471714,
+          "duration_s": 2.04,
+          "rtf": 0.061743798056233895
+        },
+        {
+          "round": 2,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.12298635195475072,
+          "duration_s": 2.04,
+          "rtf": 0.06028742742879937
+        },
+        {
+          "round": 2,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2680014140205458,
+          "duration_s": 4.928,
+          "rtf": 0.05438340381910426
+        },
+        {
+          "round": 2,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2590233540395275,
+          "duration_s": 4.928,
+          "rtf": 0.052561557232046974
+        },
+        {
+          "round": 2,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.27129844098817557,
+          "duration_s": 4.928,
+          "rtf": 0.055052443382340825
+        },
+        {
+          "round": 2,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.1881371500203386,
+          "duration_s": 3.34325,
+          "rtf": 0.056273730657395826
+        },
+        {
+          "round": 2,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1967329439939931,
+          "duration_s": 3.34325,
+          "rtf": 0.05884481985911706
+        },
+        {
+          "round": 2,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18765149102546275,
+          "duration_s": 3.34325,
+          "rtf": 0.05612846512389524
+        },
+        {
+          "round": 2,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.22932626702822745,
+          "duration_s": 3.906188,
+          "rtf": 0.05870845617984271
+        },
+        {
+          "round": 2,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22679020604118705,
+          "duration_s": 3.906188,
+          "rtf": 0.058059214262392654
+        },
+        {
+          "round": 2,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22455284395255148,
+          "duration_s": 3.906188,
+          "rtf": 0.057486440476636425
+        },
+        {
+          "round": 2,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.31270355300512165,
+          "duration_s": 5.64,
+          "rtf": 0.055443892376794625
+        },
+        {
+          "round": 2,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31316626898478717,
+          "duration_s": 5.64,
+          "rtf": 0.05552593421716085
+        },
+        {
+          "round": 2,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3101353410165757,
+          "duration_s": 5.64,
+          "rtf": 0.054988535641236826
+        },
+        {
+          "round": 2,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.30963848007377237,
+          "duration_s": 5.943938,
+          "rtf": 0.05209315441610803
+        },
+        {
+          "round": 2,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3160120900720358,
+          "duration_s": 5.943938,
+          "rtf": 0.05316544184546269
+        },
+        {
+          "round": 2,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.32221538200974464,
+          "duration_s": 5.943938,
+          "rtf": 0.05420907519724207
+        },
+        {
+          "round": 2,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.17448883003089577,
+          "duration_s": 3.2,
+          "rtf": 0.05452775938465493
+        },
+        {
+          "round": 2,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18191174697130919,
+          "duration_s": 3.2,
+          "rtf": 0.05684742092853412
+        },
+        {
+          "round": 2,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.183374107000418,
+          "duration_s": 3.2,
+          "rtf": 0.05730440843763063
+        },
+        {
+          "round": 2,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.18284808099269867,
+          "duration_s": 3.41,
+          "rtf": 0.053621138121026
+        },
+        {
+          "round": 2,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1867845969973132,
+          "duration_s": 3.41,
+          "rtf": 0.05477554164144082
+        },
+        {
+          "round": 2,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18768535507842898,
+          "duration_s": 3.41,
+          "rtf": 0.0550396935713868
+        },
+        {
+          "round": 3,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.24787868396379054,
+          "duration_s": 4.0,
+          "rtf": 0.061969670990947634
+        },
+        {
+          "round": 3,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24445029196795076,
+          "duration_s": 4.0,
+          "rtf": 0.06111257299198769
+        },
+        {
+          "round": 3,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.24672888102941215,
+          "duration_s": 4.0,
+          "rtf": 0.06168222025735304
+        },
+        {
+          "round": 3,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.18984689400531352,
+          "duration_s": 3.43,
+          "rtf": 0.05534894868959577
+        },
+        {
+          "round": 3,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1910671900259331,
+          "duration_s": 3.43,
+          "rtf": 0.05570472012417874
+        },
+        {
+          "round": 3,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1997360100504011,
+          "duration_s": 3.43,
+          "rtf": 0.05823207290099157
+        },
+        {
+          "round": 3,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.16664583701640368,
+          "duration_s": 3.06,
+          "rtf": 0.05445942386156983
+        },
+        {
+          "round": 3,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1748427340062335,
+          "duration_s": 3.06,
+          "rtf": 0.057138148368050166
+        },
+        {
+          "round": 3,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.17450653400737792,
+          "duration_s": 3.06,
+          "rtf": 0.057028279087378404
+        },
+        {
+          "round": 3,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.2781410999596119,
+          "duration_s": 5.44,
+          "rtf": 0.0511288786690463
+        },
+        {
+          "round": 3,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.29303977300878614,
+          "duration_s": 5.44,
+          "rtf": 0.05386760533249745
+        },
+        {
+          "round": 3,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.29394989705178887,
+          "duration_s": 5.44,
+          "rtf": 0.05403490754628471
+        },
+        {
+          "round": 3,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.2696736369980499,
+          "duration_s": 5.22,
+          "rtf": 0.05166161628315133
+        },
+        {
+          "round": 3,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.294219582923688,
+          "duration_s": 5.22,
+          "rtf": 0.056363904774652876
+        },
+        {
+          "round": 3,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.33734180103056133,
+          "duration_s": 5.22,
+          "rtf": 0.06462486609780868
+        },
+        {
+          "round": 3,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.19589835102669895,
+          "duration_s": 3.203938,
+          "rtf": 0.06114299060303256
+        },
+        {
+          "round": 3,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19742370897438377,
+          "duration_s": 3.203938,
+          "rtf": 0.06161907907530788
+        },
+        {
+          "round": 3,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1866480610333383,
+          "duration_s": 3.203938,
+          "rtf": 0.05825582799459238
+        },
+        {
+          "round": 3,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.2622329869773239,
+          "duration_s": 5.0,
+          "rtf": 0.05244659739546478
+        },
+        {
+          "round": 3,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.273417760967277,
+          "duration_s": 5.0,
+          "rtf": 0.0546835521934554
+        },
+        {
+          "round": 3,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2747493559727445,
+          "duration_s": 5.0,
+          "rtf": 0.0549498711945489
+        },
+        {
+          "round": 3,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.120079156011343,
+          "duration_s": 2.04,
+          "rtf": 0.05886233137810931
+        },
+        {
+          "round": 3,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.12287298997398466,
+          "duration_s": 2.04,
+          "rtf": 0.060231857830384636
+        },
+        {
+          "round": 3,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.12029035098385066,
+          "duration_s": 2.04,
+          "rtf": 0.05896585832541699
+        },
+        {
+          "round": 3,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.24520791100803763,
+          "duration_s": 4.928,
+          "rtf": 0.04975809882468296
+        },
+        {
+          "round": 3,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2630800539627671,
+          "duration_s": 4.928,
+          "rtf": 0.05338475120997709
+        },
+        {
+          "round": 3,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2582210609689355,
+          "duration_s": 4.928,
+          "rtf": 0.052398754255059965
+        },
+        {
+          "round": 3,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.1876610890030861,
+          "duration_s": 3.34325,
+          "rtf": 0.05613133597639605
+        },
+        {
+          "round": 3,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1829559839097783,
+          "duration_s": 3.34325,
+          "rtf": 0.054723991298819503
+        },
+        {
+          "round": 3,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19445476599503309,
+          "duration_s": 3.34325,
+          "rtf": 0.05816339370224575
+        },
+        {
+          "round": 3,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.21184607897885144,
+          "duration_s": 3.906188,
+          "rtf": 0.05423345701201566
+        },
+        {
+          "round": 3,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2255344339646399,
+          "duration_s": 3.906188,
+          "rtf": 0.05773773150822231
+        },
+        {
+          "round": 3,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22205700795166194,
+          "duration_s": 3.906188,
+          "rtf": 0.05684749631908703
+        },
+        {
+          "round": 3,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.29240363102871925,
+          "duration_s": 5.64,
+          "rtf": 0.051844615430623985
+        },
+        {
+          "round": 3,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3026219850871712,
+          "duration_s": 5.64,
+          "rtf": 0.05365638033460483
+        },
+        {
+          "round": 3,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.29679191298782825,
+          "duration_s": 5.64,
+          "rtf": 0.05262267960777097
+        },
+        {
+          "round": 3,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.30816348700318485,
+          "duration_s": 5.943938,
+          "rtf": 0.05184500359916016
+        },
+        {
+          "round": 3,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.32680586294736713,
+          "duration_s": 5.943938,
+          "rtf": 0.054981371432098906
+        },
+        {
+          "round": 3,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3173080589622259,
+          "duration_s": 5.943938,
+          "rtf": 0.053383473879139706
+        },
+        {
+          "round": 3,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.16532545303925872,
+          "duration_s": 3.2,
+          "rtf": 0.05166420407476835
+        },
+        {
+          "round": 3,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1771734799258411,
+          "duration_s": 3.2,
+          "rtf": 0.05536671247682534
+        },
+        {
+          "round": 3,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18458794197067618,
+          "duration_s": 3.2,
+          "rtf": 0.05768373186583631
+        },
+        {
+          "round": 3,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.20245940296445042,
+          "duration_s": 3.41,
+          "rtf": 0.05937225893385643
+        },
+        {
+          "round": 3,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19817796198185533,
+          "duration_s": 3.41,
+          "rtf": 0.05811670439350596
+        },
+        {
+          "round": 3,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20225856604520231,
+          "duration_s": 3.41,
+          "rtf": 0.059313362476598915
+        },
+        {
+          "round": 4,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.21965795394498855,
+          "duration_s": 4.0,
+          "rtf": 0.05491448848624714
+        },
+        {
+          "round": 4,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.23025665001478046,
+          "duration_s": 4.0,
+          "rtf": 0.057564162503695115
+        },
+        {
+          "round": 4,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.23509546602144837,
+          "duration_s": 4.0,
+          "rtf": 0.05877386650536209
+        },
+        {
+          "round": 4,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.21088059002067894,
+          "duration_s": 3.43,
+          "rtf": 0.06148122158037286
+        },
+        {
+          "round": 4,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21014969004318118,
+          "duration_s": 3.43,
+          "rtf": 0.06126813120792454
+        },
+        {
+          "round": 4,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19030949007719755,
+          "duration_s": 3.43,
+          "rtf": 0.055483816349037186
+        },
+        {
+          "round": 4,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.17003522696904838,
+          "duration_s": 3.06,
+          "rtf": 0.05556706763694391
+        },
+        {
+          "round": 4,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.17058843292761594,
+          "duration_s": 3.06,
+          "rtf": 0.0557478538979137
+        },
+        {
+          "round": 4,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1793646349105984,
+          "duration_s": 3.06,
+          "rtf": 0.05861589376163346
+        },
+        {
+          "round": 4,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.3101835319539532,
+          "duration_s": 5.44,
+          "rtf": 0.05701903160918257
+        },
+        {
+          "round": 4,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31734027003403753,
+          "duration_s": 5.44,
+          "rtf": 0.05833460846213925
+        },
+        {
+          "round": 4,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3406279990449548,
+          "duration_s": 5.44,
+          "rtf": 0.0626154410009108
+        },
+        {
+          "round": 4,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.3013245640322566,
+          "duration_s": 5.22,
+          "rtf": 0.05772501226671583
+        },
+        {
+          "round": 4,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3049016959266737,
+          "duration_s": 5.22,
+          "rtf": 0.058410286575991135
+        },
+        {
+          "round": 4,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.32167856697924435,
+          "duration_s": 5.22,
+          "rtf": 0.061624246547747966
+        },
+        {
+          "round": 4,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.1939666720572859,
+          "duration_s": 3.203938,
+          "rtf": 0.060540082878409604
+        },
+        {
+          "round": 4,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.201326982001774,
+          "duration_s": 3.203938,
+          "rtf": 0.0628373526584391
+        },
+        {
+          "round": 4,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1845858469605446,
+          "duration_s": 3.203938,
+          "rtf": 0.0576121781883871
+        },
+        {
+          "round": 4,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.2652864980045706,
+          "duration_s": 5.0,
+          "rtf": 0.05305729960091412
+        },
+        {
+          "round": 4,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2697540679946542,
+          "duration_s": 5.0,
+          "rtf": 0.053950813598930836
+        },
+        {
+          "round": 4,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.26990311697591096,
+          "duration_s": 5.0,
+          "rtf": 0.05398062339518219
+        },
+        {
+          "round": 4,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.11767861898988485,
+          "duration_s": 2.04,
+          "rtf": 0.057685597544061204
+        },
+        {
+          "round": 4,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.12400933797471225,
+          "duration_s": 2.04,
+          "rtf": 0.060788891164074633
+        },
+        {
+          "round": 4,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1479847860755399,
+          "duration_s": 2.04,
+          "rtf": 0.07254156180173524
+        },
+        {
+          "round": 4,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2798382800538093,
+          "duration_s": 4.928,
+          "rtf": 0.05678536527065935
+        },
+        {
+          "round": 4,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.27835257700644433,
+          "duration_s": 4.928,
+          "rtf": 0.05648388332111289
+        },
+        {
+          "round": 4,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.28989558294415474,
+          "duration_s": 4.928,
+          "rtf": 0.05882621407145997
+        },
+        {
+          "round": 4,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.20378908305428922,
+          "duration_s": 3.34325,
+          "rtf": 0.06095538265289441
+        },
+        {
+          "round": 4,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20288929902017117,
+          "duration_s": 3.34325,
+          "rtf": 0.0606862481179006
+        },
+        {
+          "round": 4,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.195006299065426,
+          "duration_s": 3.34325,
+          "rtf": 0.05832836284017827
+        },
+        {
+          "round": 4,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.23092977202031761,
+          "duration_s": 3.906188,
+          "rtf": 0.059118959973334
+        },
+        {
+          "round": 4,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2301922789774835,
+          "duration_s": 3.906188,
+          "rtf": 0.05893015875771558
+        },
+        {
+          "round": 4,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.23677560302894562,
+          "duration_s": 3.906188,
+          "rtf": 0.06061551646488741
+        },
+        {
+          "round": 4,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.29507523600477725,
+          "duration_s": 5.64,
+          "rtf": 0.05231830425616618
+        },
+        {
+          "round": 4,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3111395430751145,
+          "duration_s": 5.64,
+          "rtf": 0.05516658565161605
+        },
+        {
+          "round": 4,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3160356560256332,
+          "duration_s": 5.64,
+          "rtf": 0.056034690784686744
+        },
+        {
+          "round": 4,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.32056523102801293,
+          "duration_s": 5.943938,
+          "rtf": 0.05393145605287487
+        },
+        {
+          "round": 4,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.46039466792717576,
+          "duration_s": 5.943938,
+          "rtf": 0.07745616928157321
+        },
+        {
+          "round": 4,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.8688714490272105,
+          "duration_s": 5.943938,
+          "rtf": 0.14617774428791325
+        },
+        {
+          "round": 4,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.47693619900383055,
+          "duration_s": 3.2,
+          "rtf": 0.14904256218869705
+        },
+        {
+          "round": 4,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.5055496250279248,
+          "duration_s": 3.2,
+          "rtf": 0.1579842578212265
+        },
+        {
+          "round": 4,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.49253028410021216,
+          "duration_s": 3.2,
+          "rtf": 0.1539157137813163
+        },
+        {
+          "round": 4,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.5109954280778766,
+          "duration_s": 3.41,
+          "rtf": 0.14985203169439196
+        },
+        {
+          "round": 4,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.6070872839773074,
+          "duration_s": 3.41,
+          "rtf": 0.17803146157692298
+        },
+        {
+          "round": 4,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.6152078869054094,
+          "duration_s": 3.41,
+          "rtf": 0.18041287006023735
+        },
+        {
+          "round": 5,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.6035551660461351,
+          "duration_s": 4.0,
+          "rtf": 0.15088879151153378
+        },
+        {
+          "round": 5,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.604937384952791,
+          "duration_s": 4.0,
+          "rtf": 0.15123434623819776
+        },
+        {
+          "round": 5,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.6575391930527985,
+          "duration_s": 4.0,
+          "rtf": 0.16438479826319963
+        },
+        {
+          "round": 5,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.5433770240051672,
+          "duration_s": 3.43,
+          "rtf": 0.15841895743590878
+        },
+        {
+          "round": 5,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.6176108489744365,
+          "duration_s": 3.43,
+          "rtf": 0.18006147200420888
+        },
+        {
+          "round": 5,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.48762430204078555,
+          "duration_s": 3.43,
+          "rtf": 0.14216451954541853
+        },
+        {
+          "round": 5,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.3357622129842639,
+          "duration_s": 3.06,
+          "rtf": 0.10972621339355029
+        },
+        {
+          "round": 5,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24237635591998696,
+          "duration_s": 3.06,
+          "rtf": 0.07920795945097613
+        },
+        {
+          "round": 5,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2537583300145343,
+          "duration_s": 3.06,
+          "rtf": 0.08292755882827918
+        },
+        {
+          "round": 5,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.37332381296437234,
+          "duration_s": 5.44,
+          "rtf": 0.06862570091256844
+        },
+        {
+          "round": 5,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3561660379637033,
+          "duration_s": 5.44,
+          "rtf": 0.0654716981550925
+        },
+        {
+          "round": 5,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.35374535305891186,
+          "duration_s": 5.44,
+          "rtf": 0.06502671931229997
+        },
+        {
+          "round": 5,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.3304886419791728,
+          "duration_s": 5.22,
+          "rtf": 0.06331200037915188
+        },
+        {
+          "round": 5,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.32435949007049203,
+          "duration_s": 5.22,
+          "rtf": 0.062137833346837555
+        },
+        {
+          "round": 5,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.31247623707167804,
+          "duration_s": 5.22,
+          "rtf": 0.05986134809802262
+        },
+        {
+          "round": 5,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.21229471894912422,
+          "duration_s": 3.203938,
+          "rtf": 0.0662605577726923
+        },
+        {
+          "round": 5,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19595113000832498,
+          "duration_s": 3.203938,
+          "rtf": 0.06115946376250882
+        },
+        {
+          "round": 5,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19940974900964648,
+          "duration_s": 3.203938,
+          "rtf": 0.062238953753052176
+        },
+        {
+          "round": 5,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.2613850880879909,
+          "duration_s": 5.0,
+          "rtf": 0.052277017617598176
+        },
+        {
+          "round": 5,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.28052501601632684,
+          "duration_s": 5.0,
+          "rtf": 0.05610500320326537
+        },
+        {
+          "round": 5,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3103163199266419,
+          "duration_s": 5.0,
+          "rtf": 0.062063263985328375
+        },
+        {
+          "round": 5,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.12646720302291214,
+          "duration_s": 2.04,
+          "rtf": 0.06199372697201576
+        },
+        {
+          "round": 5,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1491321459179744,
+          "duration_s": 2.04,
+          "rtf": 0.07310399309704628
+        },
+        {
+          "round": 5,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.14436017500702292,
+          "duration_s": 2.04,
+          "rtf": 0.07076479167010927
+        },
+        {
+          "round": 5,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2626450799871236,
+          "duration_s": 4.928,
+          "rtf": 0.05329648538699749
+        },
+        {
+          "round": 5,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.27596720797009766,
+          "duration_s": 4.928,
+          "rtf": 0.05599983927964644
+        },
+        {
+          "round": 5,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2904085830086842,
+          "duration_s": 4.928,
+          "rtf": 0.05893031311052845
+        },
+        {
+          "round": 5,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.2142863899935037,
+          "duration_s": 3.34325,
+          "rtf": 0.06409523367785948
+        },
+        {
+          "round": 5,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22794238501228392,
+          "duration_s": 3.34325,
+          "rtf": 0.06817988035961532
+        },
+        {
+          "round": 5,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21422110695857555,
+          "duration_s": 3.34325,
+          "rtf": 0.06407570685966517
+        },
+        {
+          "round": 5,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.24810046004131436,
+          "duration_s": 3.906188,
+          "rtf": 0.06351472587630558
+        },
+        {
+          "round": 5,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2556442429777235,
+          "duration_s": 3.906188,
+          "rtf": 0.06544596496065307
+        },
+        {
+          "round": 5,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2587377689778805,
+          "duration_s": 3.906188,
+          "rtf": 0.0662379201866066
+        },
+        {
+          "round": 5,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.32935383601579815,
+          "duration_s": 5.64,
+          "rtf": 0.05839607021556705
+        },
+        {
+          "round": 5,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31191919301636517,
+          "duration_s": 5.64,
+          "rtf": 0.055304821456802336
+        },
+        {
+          "round": 5,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.32673909794539213,
+          "duration_s": 5.64,
+          "rtf": 0.05793246417471492
+        },
+        {
+          "round": 5,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.33856673701666296,
+          "duration_s": 5.943938,
+          "rtf": 0.05696000480096915
+        },
+        {
+          "round": 5,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3476893480401486,
+          "duration_s": 5.943938,
+          "rtf": 0.05849478040318533
+        },
+        {
+          "round": 5,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.33549710595980287,
+          "duration_s": 5.943938,
+          "rtf": 0.05644357427008876
+        },
+        {
+          "round": 5,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.1834672810509801,
+          "duration_s": 3.2,
+          "rtf": 0.05733352532843128
+        },
+        {
+          "round": 5,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18923977599479258,
+          "duration_s": 3.2,
+          "rtf": 0.05913742999837268
+        },
+        {
+          "round": 5,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18585823103785515,
+          "duration_s": 3.2,
+          "rtf": 0.058080697199329734
+        },
+        {
+          "round": 5,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.19363511097617447,
+          "duration_s": 3.41,
+          "rtf": 0.056784490022338555
+        },
+        {
+          "round": 5,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1937562479870394,
+          "duration_s": 3.41,
+          "rtf": 0.056820014072445565
+        },
+        {
+          "round": 5,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19977211800869554,
+          "duration_s": 3.41,
+          "rtf": 0.058584198829529484
+        },
+        {
+          "round": 6,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.21808256302028894,
+          "duration_s": 4.0,
+          "rtf": 0.054520640755072236
+        },
+        {
+          "round": 6,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22345212299842387,
+          "duration_s": 4.0,
+          "rtf": 0.05586303074960597
+        },
+        {
+          "round": 6,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.23138602590188384,
+          "duration_s": 4.0,
+          "rtf": 0.05784650647547096
+        },
+        {
+          "round": 6,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.1950219189748168,
+          "duration_s": 3.43,
+          "rtf": 0.05685770232501947
+        },
+        {
+          "round": 6,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21201281109824777,
+          "duration_s": 3.43,
+          "rtf": 0.061811315188993514
+        },
+        {
+          "round": 6,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21240224002394825,
+          "duration_s": 3.43,
+          "rtf": 0.061924851318935346
+        },
+        {
+          "round": 6,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.17645054589957,
+          "duration_s": 3.06,
+          "rtf": 0.05766357709136274
+        },
+        {
+          "round": 6,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1794758039759472,
+          "duration_s": 3.06,
+          "rtf": 0.058652223521551375
+        },
+        {
+          "round": 6,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19123092701192945,
+          "duration_s": 3.06,
+          "rtf": 0.06249376699736257
+        },
+        {
+          "round": 6,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.3075023889541626,
+          "duration_s": 5.44,
+          "rtf": 0.05652617444010342
+        },
+        {
+          "round": 6,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.29982176900375634,
+          "duration_s": 5.44,
+          "rtf": 0.055114295772749324
+        },
+        {
+          "round": 6,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.30968969699461013,
+          "duration_s": 5.44,
+          "rtf": 0.05692825312400921
+        },
+        {
+          "round": 6,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.27901139203459024,
+          "duration_s": 5.22,
+          "rtf": 0.05345045824417438
+        },
+        {
+          "round": 6,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2909786819946021,
+          "duration_s": 5.22,
+          "rtf": 0.05574304252770155
+        },
+        {
+          "round": 6,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2964521059766412,
+          "duration_s": 5.22,
+          "rtf": 0.05679159118326459
+        },
+        {
+          "round": 6,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.18648407398723066,
+          "duration_s": 3.203938,
+          "rtf": 0.058204645029719886
+        },
+        {
+          "round": 6,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.180627191090025,
+          "duration_s": 3.203938,
+          "rtf": 0.056376618739196895
+        },
+        {
+          "round": 6,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18582728202454746,
+          "duration_s": 3.203938,
+          "rtf": 0.05799964981361919
+        },
+        {
+          "round": 6,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.27224320103414357,
+          "duration_s": 5.0,
+          "rtf": 0.05444864020682871
+        },
+        {
+          "round": 6,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.5256944060092792,
+          "duration_s": 5.0,
+          "rtf": 0.10513888120185584
+        },
+        {
+          "round": 6,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2831829369533807,
+          "duration_s": 5.0,
+          "rtf": 0.05663658739067614
+        },
+        {
+          "round": 6,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.12184455199167132,
+          "duration_s": 2.04,
+          "rtf": 0.05972772156454476
+        },
+        {
+          "round": 6,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.12650245905388147,
+          "duration_s": 2.04,
+          "rtf": 0.06201100934013797
+        },
+        {
+          "round": 6,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.13278943800833076,
+          "duration_s": 2.04,
+          "rtf": 0.06509286176878959
+        },
+        {
+          "round": 6,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2551520710112527,
+          "duration_s": 4.928,
+          "rtf": 0.05177598843572498
+        },
+        {
+          "round": 6,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2632895460119471,
+          "duration_s": 4.928,
+          "rtf": 0.05342726177190485
+        },
+        {
+          "round": 6,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.26974311796948314,
+          "duration_s": 4.928,
+          "rtf": 0.054736834003547716
+        },
+        {
+          "round": 6,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.1855251769302413,
+          "duration_s": 3.34325,
+          "rtf": 0.055492463001642504
+        },
+        {
+          "round": 6,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1913986710133031,
+          "duration_s": 3.34325,
+          "rtf": 0.0572492846820618
+        },
+        {
+          "round": 6,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19135714299045503,
+          "duration_s": 3.34325,
+          "rtf": 0.05723686322903015
+        },
+        {
+          "round": 6,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.21447138697840273,
+          "duration_s": 3.906188,
+          "rtf": 0.05490554652730558
+        },
+        {
+          "round": 6,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22256853699218482,
+          "duration_s": 3.906188,
+          "rtf": 0.05697844983195504
+        },
+        {
+          "round": 6,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21762485499493778,
+          "duration_s": 3.906188,
+          "rtf": 0.05571284715301408
+        },
+        {
+          "round": 6,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.2978429520735517,
+          "duration_s": 5.64,
+          "rtf": 0.05280903405559428
+        },
+        {
+          "round": 6,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.307652237941511,
+          "duration_s": 5.64,
+          "rtf": 0.05454826913856578
+        },
+        {
+          "round": 6,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3234420910011977,
+          "duration_s": 5.64,
+          "rtf": 0.057347888475389665
+        },
+        {
+          "round": 6,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.31622098304796964,
+          "duration_s": 5.943938,
+          "rtf": 0.05320058571404507
+        },
+        {
+          "round": 6,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3256780100055039,
+          "duration_s": 5.943938,
+          "rtf": 0.054791622995647646
+        },
+        {
+          "round": 6,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.31599234393797815,
+          "duration_s": 5.943938,
+          "rtf": 0.05316211978287427
+        },
+        {
+          "round": 6,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.16983472101856023,
+          "duration_s": 3.2,
+          "rtf": 0.05307335031830007
+        },
+        {
+          "round": 6,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.17861873796209693,
+          "duration_s": 3.2,
+          "rtf": 0.05581835561315529
+        },
+        {
+          "round": 6,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18448704201728106,
+          "duration_s": 3.2,
+          "rtf": 0.05765220063040033
+        },
+        {
+          "round": 6,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.18241898692213,
+          "duration_s": 3.41,
+          "rtf": 0.05349530408273606
+        },
+        {
+          "round": 6,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18810493999626487,
+          "duration_s": 3.41,
+          "rtf": 0.055162739001837206
+        },
+        {
+          "round": 6,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.191953290021047,
+          "duration_s": 3.41,
+          "rtf": 0.05629128739620146
+        },
+        {
+          "round": 7,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.21862713294103742,
+          "duration_s": 4.0,
+          "rtf": 0.054656783235259354
+        },
+        {
+          "round": 7,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22262996202334762,
+          "duration_s": 4.0,
+          "rtf": 0.055657490505836904
+        },
+        {
+          "round": 7,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22201521997340024,
+          "duration_s": 4.0,
+          "rtf": 0.05550380499335006
+        },
+        {
+          "round": 7,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.18700026103761047,
+          "duration_s": 3.43,
+          "rtf": 0.05451902654157739
+        },
+        {
+          "round": 7,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1926294770091772,
+          "duration_s": 3.43,
+          "rtf": 0.056160197378768865
+        },
+        {
+          "round": 7,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19856453593820333,
+          "duration_s": 3.43,
+          "rtf": 0.05789053525895141
+        },
+        {
+          "round": 7,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.16752205893862993,
+          "duration_s": 3.06,
+          "rtf": 0.0547457708949771
+        },
+        {
+          "round": 7,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.17149135505314916,
+          "duration_s": 3.06,
+          "rtf": 0.056042926487957244
+        },
+        {
+          "round": 7,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18291083700023592,
+          "duration_s": 3.06,
+          "rtf": 0.05977478333341043
+        },
+        {
+          "round": 7,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.2828321789857,
+          "duration_s": 5.44,
+          "rtf": 0.051991209372371325
+        },
+        {
+          "round": 7,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.29716163489501923,
+          "duration_s": 5.44,
+          "rtf": 0.05462530053217265
+        },
+        {
+          "round": 7,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.29829580907244235,
+          "duration_s": 5.44,
+          "rtf": 0.05483378843243425
+        },
+        {
+          "round": 7,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.2906958620296791,
+          "duration_s": 5.22,
+          "rtf": 0.055688862457792934
+        },
+        {
+          "round": 7,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2833787929266691,
+          "duration_s": 5.22,
+          "rtf": 0.05428712508173738
+        },
+        {
+          "round": 7,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3254402750171721,
+          "duration_s": 5.22,
+          "rtf": 0.06234488027148891
+        },
+        {
+          "round": 7,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.20600024599116296,
+          "duration_s": 3.203938,
+          "rtf": 0.06429595266548946
+        },
+        {
+          "round": 7,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20576148992404342,
+          "duration_s": 3.203938,
+          "rtf": 0.06422143310015468
+        },
+        {
+          "round": 7,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2066866729874164,
+          "duration_s": 3.203938,
+          "rtf": 0.06451019744683462
+        },
+        {
+          "round": 7,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.3037386479554698,
+          "duration_s": 5.0,
+          "rtf": 0.06074772959109396
+        },
+        {
+          "round": 7,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.27954365801997483,
+          "duration_s": 5.0,
+          "rtf": 0.05590873160399497
+        },
+        {
+          "round": 7,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.27753564598970115,
+          "duration_s": 5.0,
+          "rtf": 0.05550712919794023
+        },
+        {
+          "round": 7,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.12205182202160358,
+          "duration_s": 2.04,
+          "rtf": 0.05982932452039391
+        },
+        {
+          "round": 7,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1294337910367176,
+          "duration_s": 2.04,
+          "rtf": 0.0634479367827047
+        },
+        {
+          "round": 7,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.12492501398082823,
+          "duration_s": 2.04,
+          "rtf": 0.061237751951386386
+        },
+        {
+          "round": 7,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2525433839764446,
+          "duration_s": 4.928,
+          "rtf": 0.05124662824197334
+        },
+        {
+          "round": 7,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.261836233898066,
+          "duration_s": 4.928,
+          "rtf": 0.05313235265788677
+        },
+        {
+          "round": 7,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.26981392002198845,
+          "duration_s": 4.928,
+          "rtf": 0.054751201303163244
+        },
+        {
+          "round": 7,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.1797676709247753,
+          "duration_s": 3.34325,
+          "rtf": 0.0537703345321993
+        },
+        {
+          "round": 7,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18776023399550468,
+          "duration_s": 3.34325,
+          "rtf": 0.0561609912496836
+        },
+        {
+          "round": 7,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1930173240834847,
+          "duration_s": 3.34325,
+          "rtf": 0.05773344024033043
+        },
+        {
+          "round": 7,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.20404393097851425,
+          "duration_s": 3.906188,
+          "rtf": 0.05223607542148873
+        },
+        {
+          "round": 7,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21897301997523755,
+          "duration_s": 3.906188,
+          "rtf": 0.056057982865964855
+        },
+        {
+          "round": 7,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21188247599638999,
+          "duration_s": 3.906188,
+          "rtf": 0.0542427747963974
+        },
+        {
+          "round": 7,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.28811675996985286,
+          "duration_s": 5.64,
+          "rtf": 0.051084531909548384
+        },
+        {
+          "round": 7,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3045455180108547,
+          "duration_s": 5.64,
+          "rtf": 0.05399743227142814
+        },
+        {
+          "round": 7,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3055065789958462,
+          "duration_s": 5.64,
+          "rtf": 0.05416783315529188
+        },
+        {
+          "round": 7,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.3012731180060655,
+          "duration_s": 5.943938,
+          "rtf": 0.050685777342574144
+        },
+        {
+          "round": 7,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3163028859999031,
+          "duration_s": 5.943938,
+          "rtf": 0.05321436495466525
+        },
+        {
+          "round": 7,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.32341886800713837,
+          "duration_s": 5.943938,
+          "rtf": 0.05441154803551759
+        },
+        {
+          "round": 7,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.16843377600889653,
+          "duration_s": 3.2,
+          "rtf": 0.052635555002780166
+        },
+        {
+          "round": 7,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18502579093910754,
+          "duration_s": 3.2,
+          "rtf": 0.057820559668471105
+        },
+        {
+          "round": 7,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18021962698549032,
+          "duration_s": 3.2,
+          "rtf": 0.056318633432965726
+        },
+        {
+          "round": 7,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.18496126006357372,
+          "duration_s": 3.41,
+          "rtf": 0.05424083872832074
+        },
+        {
+          "round": 7,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1983791490783915,
+          "duration_s": 3.41,
+          "rtf": 0.05817570354205029
+        },
+        {
+          "round": 7,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2082070610485971,
+          "duration_s": 3.41,
+          "rtf": 0.061057789163811466
+        }
+      ],
+      "quality_wav": {
+        "n_clips": 15,
+        "normalized_wer_pct": 0.0,
+        "normalized_errors": 0,
+        "normalized_ref_words": 71,
+        "naive_wer_pct": 8.0,
+        "naive_errors": 6,
+        "naive_ref_words": 75
+      },
+      "examples_wav": {
+        "golos_00.wav": "60000 тенге, сколько будет стоить?",
+        "golos_06.wav": "Любовницы 2013— пятнадцатый сезон."
+      },
+      "resident_ready_s": 0.8310453420272097
+    },
+    {
+      "name": "punct_itn_off",
+      "serve_args": [
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "cold_ready_s": {
+        "n": 6,
+        "p50": 0.3838789684814401,
+        "p95": 0.508951335796155,
+        "min": 0.35795452899765223,
+        "max": 0.5492517100647092
+      },
+      "cold_ready_samples_s": [
+        0.38009812496602535,
+        0.38765981199685484,
+        0.35795452899765223,
+        0.5492517100647092,
+        0.3880502129904926,
+        0.3673434789525345
+      ],
+      "first_request_s": {
+        "n": 6,
+        "p50": 0.2167822765186429,
+        "p95": 0.26308538374723867,
+        "min": 0.2087093919981271,
+        "max": 0.27589281799737364
+      },
+      "first_request_samples_s": [
+        0.21861314703710377,
+        0.21225781994871795,
+        0.22466308099683374,
+        0.27589281799737364,
+        0.2087093919981271,
+        0.21495140600018203
+      ],
+      "warm_request_s": {
+        "wav": {
+          "n": 120,
+          "p50": 0.26309777703136206,
+          "p95": 0.6391257120005317,
+          "min": 0.11831180402077734,
+          "max": 2.371164318989031
+        },
+        "ogg_opus_voip": {
+          "n": 120,
+          "p50": 0.2643893579952419,
+          "p95": 0.7780614277813583,
+          "min": 0.12058980204164982,
+          "max": 1.9469468869501725
+        },
+        "webm_opus_live": {
+          "n": 120,
+          "p50": 0.2691759599256329,
+          "p95": 0.7887529584462752,
+          "min": 0.12307698198128492,
+          "max": 1.7045053000329062
+        }
+      },
+      "warm_rtf": {
+        "wav": {
+          "n": 120,
+          "p50": 0.05999117063748436,
+          "p95": 0.14708422381020353,
+          "min": 0.05037170374091691,
+          "max": 0.42041920549450906
+        },
+        "ogg_opus_voip": {
+          "n": 120,
+          "p50": 0.06265625347255106,
+          "p95": 0.15338157695258656,
+          "min": 0.051596072199754414,
+          "max": 0.3452033487500306
+        },
+        "webm_opus_live": {
+          "n": 120,
+          "p50": 0.06302913057289072,
+          "p95": 0.1609596839288523,
+          "min": 0.05155715725423206,
+          "max": 0.33217586747923633
+        }
+      },
+      "warm_requests": [
+        {
+          "round": 0,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.21282714698463678,
+          "duration_s": 4.0,
+          "rtf": 0.053206786746159196
+        },
+        {
+          "round": 0,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22680531395599246,
+          "duration_s": 4.0,
+          "rtf": 0.056701328488998115
+        },
+        {
+          "round": 0,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21823108999524266,
+          "duration_s": 4.0,
+          "rtf": 0.054557772498810664
+        },
+        {
+          "round": 0,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.18309039599262178,
+          "duration_s": 3.43,
+          "rtf": 0.053379124196099643
+        },
+        {
+          "round": 0,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1915173230227083,
+          "duration_s": 3.43,
+          "rtf": 0.055835954234025736
+        },
+        {
+          "round": 0,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19680290599353611,
+          "duration_s": 3.43,
+          "rtf": 0.057376940522896824
+        },
+        {
+          "round": 0,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.17286116199102253,
+          "duration_s": 3.06,
+          "rtf": 0.05649057581405965
+        },
+        {
+          "round": 0,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1722893500700593,
+          "duration_s": 3.06,
+          "rtf": 0.05630370917322199
+        },
+        {
+          "round": 0,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18172796303406358,
+          "duration_s": 3.06,
+          "rtf": 0.05938822321374627
+        },
+        {
+          "round": 0,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.28677463496569544,
+          "duration_s": 5.44,
+          "rtf": 0.0527159255451646
+        },
+        {
+          "round": 0,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2978982450440526,
+          "duration_s": 5.44,
+          "rtf": 0.05476070680956849
+        },
+        {
+          "round": 0,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3033280470408499,
+          "duration_s": 5.44,
+          "rtf": 0.05575883217662682
+        },
+        {
+          "round": 0,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.27363255398813635,
+          "duration_s": 5.22,
+          "rtf": 0.05242002949964298
+        },
+        {
+          "round": 0,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2902617580257356,
+          "duration_s": 5.22,
+          "rtf": 0.055605700771213726
+        },
+        {
+          "round": 0,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.28982201498001814,
+          "duration_s": 5.22,
+          "rtf": 0.055521458808432594
+        },
+        {
+          "round": 0,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.17806781607214361,
+          "duration_s": 3.203938,
+          "rtf": 0.05557779709599362
+        },
+        {
+          "round": 0,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18864979001227766,
+          "duration_s": 3.203938,
+          "rtf": 0.058880599441149505
+        },
+        {
+          "round": 0,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1939338609809056,
+          "duration_s": 3.203938,
+          "rtf": 0.06052984201969751
+        },
+        {
+          "round": 0,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.2745377999963239,
+          "duration_s": 5.0,
+          "rtf": 0.05490755999926478
+        },
+        {
+          "round": 0,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2626614701002836,
+          "duration_s": 5.0,
+          "rtf": 0.05253229402005673
+        },
+        {
+          "round": 0,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.271070204093121,
+          "duration_s": 5.0,
+          "rtf": 0.0542140408186242
+        },
+        {
+          "round": 0,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.11831180402077734,
+          "duration_s": 2.04,
+          "rtf": 0.05799598236312615
+        },
+        {
+          "round": 0,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.12370110093615949,
+          "duration_s": 2.04,
+          "rtf": 0.06063779457654877
+        },
+        {
+          "round": 0,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.12383452092763036,
+          "duration_s": 2.04,
+          "rtf": 0.06070319653315214
+        },
+        {
+          "round": 0,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.24989159498363733,
+          "duration_s": 4.928,
+          "rtf": 0.050708521709341994
+        },
+        {
+          "round": 0,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.263926510931924,
+          "duration_s": 4.928,
+          "rtf": 0.05355651601703003
+        },
+        {
+          "round": 0,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2693622539518401,
+          "duration_s": 4.928,
+          "rtf": 0.05465954828568184
+        },
+        {
+          "round": 0,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.18801839801017195,
+          "duration_s": 3.34325,
+          "rtf": 0.05623821072614132
+        },
+        {
+          "round": 0,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19117960007861257,
+          "duration_s": 3.34325,
+          "rtf": 0.05718375834251479
+        },
+        {
+          "round": 0,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19098457496147603,
+          "duration_s": 3.34325,
+          "rtf": 0.05712542435099859
+        },
+        {
+          "round": 0,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.21448369999416173,
+          "duration_s": 3.906188,
+          "rtf": 0.05490869870937131
+        },
+        {
+          "round": 0,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21138641703873873,
+          "duration_s": 3.906188,
+          "rtf": 0.05411578168760406
+        },
+        {
+          "round": 0,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22109120909590274,
+          "duration_s": 3.906188,
+          "rtf": 0.05660024788768557
+        },
+        {
+          "round": 0,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.29246256104670465,
+          "duration_s": 5.64,
+          "rtf": 0.05185506401537317
+        },
+        {
+          "round": 0,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.30022685800213367,
+          "duration_s": 5.64,
+          "rtf": 0.05323171241172583
+        },
+        {
+          "round": 0,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3031914720777422,
+          "duration_s": 5.64,
+          "rtf": 0.053757353205273445
+        },
+        {
+          "round": 0,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.3141454039141536,
+          "duration_s": 5.943938,
+          "rtf": 0.05285139311920036
+        },
+        {
+          "round": 0,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.32823268603533506,
+          "duration_s": 5.943938,
+          "rtf": 0.055221418197049676
+        },
+        {
+          "round": 0,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3242897189920768,
+          "duration_s": 5.943938,
+          "rtf": 0.054558058814219934
+        },
+        {
+          "round": 0,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.18003071402199566,
+          "duration_s": 3.2,
+          "rtf": 0.056259598131873645
+        },
+        {
+          "round": 0,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1912466560024768,
+          "duration_s": 3.2,
+          "rtf": 0.059764580000774004
+        },
+        {
+          "round": 0,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19687843695282936,
+          "duration_s": 3.2,
+          "rtf": 0.061524511547759175
+        },
+        {
+          "round": 0,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.1897373889805749,
+          "duration_s": 3.41,
+          "rtf": 0.05564146304415686
+        },
+        {
+          "round": 0,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1909751269267872,
+          "duration_s": 3.41,
+          "rtf": 0.0560044360489112
+        },
+        {
+          "round": 0,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20736921101342887,
+          "duration_s": 3.41,
+          "rtf": 0.06081208534118148
+        },
+        {
+          "round": 1,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.23946187598630786,
+          "duration_s": 4.0,
+          "rtf": 0.059865468996576965
+        },
+        {
+          "round": 1,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24422771495301276,
+          "duration_s": 4.0,
+          "rtf": 0.06105692873825319
+        },
+        {
+          "round": 1,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22110545495525002,
+          "duration_s": 4.0,
+          "rtf": 0.055276363738812506
+        },
+        {
+          "round": 1,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.20443153695669025,
+          "duration_s": 3.43,
+          "rtf": 0.05960103118270853
+        },
+        {
+          "round": 1,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22833244502544403,
+          "duration_s": 3.43,
+          "rtf": 0.06656922595493994
+        },
+        {
+          "round": 1,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.24660621990915388,
+          "duration_s": 3.43,
+          "rtf": 0.0718968571163714
+        },
+        {
+          "round": 1,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.19355482002720237,
+          "duration_s": 3.06,
+          "rtf": 0.06325320915921646
+        },
+        {
+          "round": 1,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20480327401310205,
+          "duration_s": 3.06,
+          "rtf": 0.06692917451408564
+        },
+        {
+          "round": 1,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2071440889267251,
+          "duration_s": 3.06,
+          "rtf": 0.06769414670808009
+        },
+        {
+          "round": 1,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.3182066330919042,
+          "duration_s": 5.44,
+          "rtf": 0.05849386637718827
+        },
+        {
+          "round": 1,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3237972760107368,
+          "duration_s": 5.44,
+          "rtf": 0.05952155809020897
+        },
+        {
+          "round": 1,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.29595694807358086,
+          "duration_s": 5.44,
+          "rtf": 0.05440385074882001
+        },
+        {
+          "round": 1,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.2891959110274911,
+          "duration_s": 5.22,
+          "rtf": 0.055401515522507876
+        },
+        {
+          "round": 1,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3209919109940529,
+          "duration_s": 5.22,
+          "rtf": 0.06149270325556569
+        },
+        {
+          "round": 1,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.32734682701993734,
+          "duration_s": 5.22,
+          "rtf": 0.06271012011876194
+        },
+        {
+          "round": 1,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.18791487393900752,
+          "duration_s": 3.203938,
+          "rtf": 0.058651220447776306
+        },
+        {
+          "round": 1,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.17957369703799486,
+          "duration_s": 3.203938,
+          "rtf": 0.05604780649250855
+        },
+        {
+          "round": 1,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2247737180441618,
+          "duration_s": 3.203938,
+          "rtf": 0.07015545183588502
+        },
+        {
+          "round": 1,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.31098335003480315,
+          "duration_s": 5.0,
+          "rtf": 0.06219667000696063
+        },
+        {
+          "round": 1,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3029673519777134,
+          "duration_s": 5.0,
+          "rtf": 0.06059347039554268
+        },
+        {
+          "round": 1,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.28135442989878356,
+          "duration_s": 5.0,
+          "rtf": 0.05627088597975671
+        },
+        {
+          "round": 1,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.134187447023578,
+          "duration_s": 2.04,
+          "rtf": 0.06577816030567549
+        },
+        {
+          "round": 1,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.14805539802182466,
+          "duration_s": 2.04,
+          "rtf": 0.07257617550089444
+        },
+        {
+          "round": 1,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.14862172899302095,
+          "duration_s": 2.04,
+          "rtf": 0.07285378872206909
+        },
+        {
+          "round": 1,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.26479775202460587,
+          "duration_s": 4.928,
+          "rtf": 0.05373331006992814
+        },
+        {
+          "round": 1,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.27941814297810197,
+          "duration_s": 4.928,
+          "rtf": 0.05670011018224472
+        },
+        {
+          "round": 1,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3017413760535419,
+          "duration_s": 4.928,
+          "rtf": 0.061229987023851844
+        },
+        {
+          "round": 1,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.19948726403526962,
+          "duration_s": 3.34325,
+          "rtf": 0.059668664932406974
+        },
+        {
+          "round": 1,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3214303619461134,
+          "duration_s": 3.34325,
+          "rtf": 0.09614308291217032
+        },
+        {
+          "round": 1,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.5371824679896235,
+          "duration_s": 3.34325,
+          "rtf": 0.16067672713366443
+        },
+        {
+          "round": 1,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.6003917689668015,
+          "duration_s": 3.906188,
+          "rtf": 0.15370273242527022
+        },
+        {
+          "round": 1,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.6604601760627702,
+          "duration_s": 3.906188,
+          "rtf": 0.16908048871758607
+        },
+        {
+          "round": 1,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.5718953519826755,
+          "duration_s": 3.906188,
+          "rtf": 0.14640753388794278
+        },
+        {
+          "round": 1,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.7627266589552164,
+          "duration_s": 5.64,
+          "rtf": 0.13523522321901002
+        },
+        {
+          "round": 1,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.7914514649892226,
+          "duration_s": 5.64,
+          "rtf": 0.14032827393425934
+        },
+        {
+          "round": 1,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.7863174170488492,
+          "duration_s": 5.64,
+          "rtf": 0.13941798174624986
+        },
+        {
+          "round": 1,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.8058373769745231,
+          "duration_s": 5.943938,
+          "rtf": 0.1355729782131851
+        },
+        {
+          "round": 1,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.8688403619453311,
+          "duration_s": 5.943938,
+          "rtf": 0.14617251423977354
+        },
+        {
+          "round": 1,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.9886900570709258,
+          "duration_s": 5.943938,
+          "rtf": 0.16633586303742162
+        },
+        {
+          "round": 1,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.39528873399831355,
+          "duration_s": 3.2,
+          "rtf": 0.12352772937447298
+        },
+        {
+          "round": 1,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.28513029392343014,
+          "duration_s": 3.2,
+          "rtf": 0.08910321685107192
+        },
+        {
+          "round": 1,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.28348907991312444,
+          "duration_s": 3.2,
+          "rtf": 0.08859033747285139
+        },
+        {
+          "round": 1,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.27531304210424423,
+          "duration_s": 3.41,
+          "rtf": 0.08073696249391327
+        },
+        {
+          "round": 1,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2495919450884685,
+          "duration_s": 3.41,
+          "rtf": 0.07319411879427228
+        },
+        {
+          "round": 1,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22878490306902677,
+          "duration_s": 3.41,
+          "rtf": 0.06709234694106357
+        },
+        {
+          "round": 2,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.33960145502351224,
+          "duration_s": 4.0,
+          "rtf": 0.08490036375587806
+        },
+        {
+          "round": 2,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2711508040083572,
+          "duration_s": 4.0,
+          "rtf": 0.0677877010020893
+        },
+        {
+          "round": 2,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.25711541005875915,
+          "duration_s": 4.0,
+          "rtf": 0.06427885251468979
+        },
+        {
+          "round": 2,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.2162211349932477,
+          "duration_s": 3.43,
+          "rtf": 0.06303823177645705
+        },
+        {
+          "round": 2,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24359179299790412,
+          "duration_s": 3.43,
+          "rtf": 0.071018015451284
+        },
+        {
+          "round": 2,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2074289129814133,
+          "duration_s": 3.43,
+          "rtf": 0.060474901743852276
+        },
+        {
+          "round": 2,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.1993891909951344,
+          "duration_s": 3.06,
+          "rtf": 0.06515986633827922
+        },
+        {
+          "round": 2,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24222160689532757,
+          "duration_s": 3.06,
+          "rtf": 0.07915738787429005
+        },
+        {
+          "round": 2,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20770817599259317,
+          "duration_s": 3.06,
+          "rtf": 0.06787848888646836
+        },
+        {
+          "round": 2,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.3175915899919346,
+          "duration_s": 5.44,
+          "rtf": 0.058380806983811505
+        },
+        {
+          "round": 2,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.32397606200538576,
+          "duration_s": 5.44,
+          "rtf": 0.05955442316275473
+        },
+        {
+          "round": 2,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.33496976806782186,
+          "duration_s": 5.44,
+          "rtf": 0.06157532501246725
+        },
+        {
+          "round": 2,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.3115749179851264,
+          "duration_s": 5.22,
+          "rtf": 0.05968868160634605
+        },
+        {
+          "round": 2,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31542032200377434,
+          "duration_s": 5.22,
+          "rtf": 0.06042534904286865
+        },
+        {
+          "round": 2,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2970512789906934,
+          "duration_s": 5.22,
+          "rtf": 0.05690637528557345
+        },
+        {
+          "round": 2,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.2223921261029318,
+          "duration_s": 3.203938,
+          "rtf": 0.0694121191180765
+        },
+        {
+          "round": 2,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19709242798853666,
+          "duration_s": 3.203938,
+          "rtf": 0.061515681011472964
+        },
+        {
+          "round": 2,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21056797401979566,
+          "duration_s": 3.203938,
+          "rtf": 0.06572161322091616
+        },
+        {
+          "round": 2,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.29963165195658803,
+          "duration_s": 5.0,
+          "rtf": 0.0599263303913176
+        },
+        {
+          "round": 2,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3058639590162784,
+          "duration_s": 5.0,
+          "rtf": 0.061172791803255674
+        },
+        {
+          "round": 2,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.31554624799173325,
+          "duration_s": 5.0,
+          "rtf": 0.06310924959834666
+        },
+        {
+          "round": 2,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.14139710401650518,
+          "duration_s": 2.04,
+          "rtf": 0.06931230589044371
+        },
+        {
+          "round": 2,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.144209983991459,
+          "duration_s": 2.04,
+          "rtf": 0.07069116862326422
+        },
+        {
+          "round": 2,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1418235630262643,
+          "duration_s": 2.04,
+          "rtf": 0.06952135442463937
+        },
+        {
+          "round": 2,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2752217610832304,
+          "duration_s": 4.928,
+          "rtf": 0.05584857164838279
+        },
+        {
+          "round": 2,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2814439788926393,
+          "duration_s": 4.928,
+          "rtf": 0.057111197015551805
+        },
+        {
+          "round": 2,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.30116740008816123,
+          "duration_s": 4.928,
+          "rtf": 0.06111351462827947
+        },
+        {
+          "round": 2,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.19389664102345705,
+          "duration_s": 3.34325,
+          "rtf": 0.05799645285977927
+        },
+        {
+          "round": 2,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1879919080529362,
+          "duration_s": 3.34325,
+          "rtf": 0.05623028731113025
+        },
+        {
+          "round": 2,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2070434910710901,
+          "duration_s": 3.34325,
+          "rtf": 0.06192880911421225
+        },
+        {
+          "round": 2,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.22139748302288353,
+          "duration_s": 3.906188,
+          "rtf": 0.056678655257474425
+        },
+        {
+          "round": 2,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21937713702209294,
+          "duration_s": 3.906188,
+          "rtf": 0.05616143847200722
+        },
+        {
+          "round": 2,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22833714401349425,
+          "duration_s": 3.906188,
+          "rtf": 0.058455236668970935
+        },
+        {
+          "round": 2,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.2920762979192659,
+          "duration_s": 5.64,
+          "rtf": 0.05178657764525992
+        },
+        {
+          "round": 2,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3219970039790496,
+          "duration_s": 5.64,
+          "rtf": 0.057091667372171924
+        },
+        {
+          "round": 2,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.33818565297406167,
+          "duration_s": 5.64,
+          "rtf": 0.05996199520816697
+        },
+        {
+          "round": 2,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.3198200350161642,
+          "duration_s": 5.943938,
+          "rtf": 0.053806085294995365
+        },
+        {
+          "round": 2,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3174219729844481,
+          "duration_s": 5.943938,
+          "rtf": 0.053402638618445894
+        },
+        {
+          "round": 2,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3558276549447328,
+          "duration_s": 5.943938,
+          "rtf": 0.05986395802660337
+        },
+        {
+          "round": 2,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.1858763750642538,
+          "duration_s": 3.2,
+          "rtf": 0.058086367207579315
+        },
+        {
+          "round": 2,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19179270893801004,
+          "duration_s": 3.2,
+          "rtf": 0.05993522154312814
+        },
+        {
+          "round": 2,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1932481760159135,
+          "duration_s": 3.2,
+          "rtf": 0.060390055004972965
+        },
+        {
+          "round": 2,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.19375491491518915,
+          "duration_s": 3.41,
+          "rtf": 0.056819623142284205
+        },
+        {
+          "round": 2,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24056731699965894,
+          "duration_s": 3.41,
+          "rtf": 0.07054760029315511
+        },
+        {
+          "round": 2,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20110046700574458,
+          "duration_s": 3.41,
+          "rtf": 0.05897374398995442
+        },
+        {
+          "round": 3,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.26587774499785155,
+          "duration_s": 4.0,
+          "rtf": 0.06646943624946289
+        },
+        {
+          "round": 3,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22893603600095958,
+          "duration_s": 4.0,
+          "rtf": 0.057234009000239894
+        },
+        {
+          "round": 3,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.25210886006243527,
+          "duration_s": 4.0,
+          "rtf": 0.06302721501560882
+        },
+        {
+          "round": 3,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.20478753396309912,
+          "duration_s": 3.43,
+          "rtf": 0.05970482039740499
+        },
+        {
+          "round": 3,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20324438402894884,
+          "duration_s": 3.43,
+          "rtf": 0.059254922457419486
+        },
+        {
+          "round": 3,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1974726099288091,
+          "duration_s": 3.43,
+          "rtf": 0.057572189483617815
+        },
+        {
+          "round": 3,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.17427450907416642,
+          "duration_s": 3.06,
+          "rtf": 0.05695245394580602
+        },
+        {
+          "round": 3,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.1780348230386153,
+          "duration_s": 3.06,
+          "rtf": 0.05818131471850173
+        },
+        {
+          "round": 3,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1744501779321581,
+          "duration_s": 3.06,
+          "rtf": 0.057009862069332715
+        },
+        {
+          "round": 3,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.287446693982929,
+          "duration_s": 5.44,
+          "rtf": 0.05283946580568547
+        },
+        {
+          "round": 3,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.4094264799496159,
+          "duration_s": 5.44,
+          "rtf": 0.0752622205789735
+        },
+        {
+          "round": 3,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.46540624799672514,
+          "duration_s": 5.44,
+          "rtf": 0.08555261911704505
+        },
+        {
+          "round": 3,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.2760273499879986,
+          "duration_s": 5.22,
+          "rtf": 0.05287880267969322
+        },
+        {
+          "round": 3,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3056020779768005,
+          "duration_s": 5.22,
+          "rtf": 0.058544459382528835
+        },
+        {
+          "round": 3,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.27323596097994596,
+          "duration_s": 5.22,
+          "rtf": 0.05234405382757586
+        },
+        {
+          "round": 3,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.1758483980083838,
+          "duration_s": 3.203938,
+          "rtf": 0.05488508142429217
+        },
+        {
+          "round": 3,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18069473700597882,
+          "duration_s": 3.203938,
+          "rtf": 0.05639770089370606
+        },
+        {
+          "round": 3,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1806534699862823,
+          "duration_s": 3.203938,
+          "rtf": 0.05638482080061546
+        },
+        {
+          "round": 3,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.26139780203811824,
+          "duration_s": 5.0,
+          "rtf": 0.052279560407623646
+        },
+        {
+          "round": 3,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2579803609987721,
+          "duration_s": 5.0,
+          "rtf": 0.051596072199754414
+        },
+        {
+          "round": 3,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.26898966589942575,
+          "duration_s": 5.0,
+          "rtf": 0.05379793317988515
+        },
+        {
+          "round": 3,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.12015556800179183,
+          "duration_s": 2.04,
+          "rtf": 0.058899788236172465
+        },
+        {
+          "round": 3,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.12058980204164982,
+          "duration_s": 2.04,
+          "rtf": 0.05911264805963226
+        },
+        {
+          "round": 3,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.12307698198128492,
+          "duration_s": 2.04,
+          "rtf": 0.06033185391239457
+        },
+        {
+          "round": 3,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2482317560352385,
+          "duration_s": 4.928,
+          "rtf": 0.05037170374091691
+        },
+        {
+          "round": 3,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2634682620409876,
+          "duration_s": 4.928,
+          "rtf": 0.05346352719987573
+        },
+        {
+          "round": 3,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2540736709488556,
+          "duration_s": 4.928,
+          "rtf": 0.05155715725423206
+        },
+        {
+          "round": 3,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.184385341941379,
+          "duration_s": 3.34325,
+          "rtf": 0.055151526790212825
+        },
+        {
+          "round": 3,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2089229020057246,
+          "duration_s": 3.34325,
+          "rtf": 0.06249095999573009
+        },
+        {
+          "round": 3,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20661094004753977,
+          "duration_s": 3.34325,
+          "rtf": 0.06179942871383826
+        },
+        {
+          "round": 3,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.2221393920481205,
+          "duration_s": 3.906188,
+          "rtf": 0.05686858698253143
+        },
+        {
+          "round": 3,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22786412795539945,
+          "duration_s": 3.906188,
+          "rtf": 0.058334142636094176
+        },
+        {
+          "round": 3,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3720234769862145,
+          "duration_s": 3.906188,
+          "rtf": 0.09523952175016014
+        },
+        {
+          "round": 3,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.6292244569631293,
+          "duration_s": 5.64,
+          "rtf": 0.11156462002892364
+        },
+        {
+          "round": 3,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.7773566889809445,
+          "duration_s": 5.64,
+          "rtf": 0.13782920017392633
+        },
+        {
+          "round": 3,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.7604906710330397,
+          "duration_s": 5.64,
+          "rtf": 0.1348387714597588
+        },
+        {
+          "round": 3,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.8245953089790419,
+          "duration_s": 5.943938,
+          "rtf": 0.1387287870396767
+        },
+        {
+          "round": 3,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.8389008899684995,
+          "duration_s": 5.943938,
+          "rtf": 0.14113553842057228
+        },
+        {
+          "round": 3,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.7708304719999433,
+          "duration_s": 5.943938,
+          "rtf": 0.12968346439682635
+        },
+        {
+          "round": 3,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.5247044909046963,
+          "duration_s": 3.2,
+          "rtf": 0.1639701534077176
+        },
+        {
+          "round": 3,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.5084229389904067,
+          "duration_s": 3.2,
+          "rtf": 0.1588821684345021
+        },
+        {
+          "round": 3,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.4379501990042627,
+          "duration_s": 3.2,
+          "rtf": 0.1368594371888321
+        },
+        {
+          "round": 3,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.4669488280778751,
+          "duration_s": 3.41,
+          "rtf": 0.13693514019879033
+        },
+        {
+          "round": 3,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.5220439659897238,
+          "duration_s": 3.41,
+          "rtf": 0.15309207213774892
+        },
+        {
+          "round": 3,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.5132881829049438,
+          "duration_s": 3.41,
+          "rtf": 0.1505243938137665
+        },
+        {
+          "round": 4,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.5196803979342803,
+          "duration_s": 4.0,
+          "rtf": 0.12992009948357008
+        },
+        {
+          "round": 4,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.542538283043541,
+          "duration_s": 4.0,
+          "rtf": 0.13563457076088525
+        },
+        {
+          "round": 4,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.545011296053417,
+          "duration_s": 4.0,
+          "rtf": 0.13625282401335426
+        },
+        {
+          "round": 4,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.4752687349682674,
+          "duration_s": 3.43,
+          "rtf": 0.13856231340182723
+        },
+        {
+          "round": 4,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.4855491650523618,
+          "duration_s": 3.43,
+          "rtf": 0.14155952333888097
+        },
+        {
+          "round": 4,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.4743391830706969,
+          "duration_s": 3.43,
+          "rtf": 0.13829130701769587
+        },
+        {
+          "round": 4,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.3569278549402952,
+          "duration_s": 3.06,
+          "rtf": 0.11664308984976968
+        },
+        {
+          "round": 4,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3895066810073331,
+          "duration_s": 3.06,
+          "rtf": 0.12728976503507616
+        },
+        {
+          "round": 4,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.4170275810174644,
+          "duration_s": 3.06,
+          "rtf": 0.13628352320832168
+        },
+        {
+          "round": 4,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.6326203990029171,
+          "duration_s": 5.44,
+          "rtf": 0.11629051452259505
+        },
+        {
+          "round": 4,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.7440492380410433,
+          "duration_s": 5.44,
+          "rtf": 0.13677375699283884
+        },
+        {
+          "round": 4,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.7512430660426617,
+          "duration_s": 5.44,
+          "rtf": 0.13809615184607751
+        },
+        {
+          "round": 4,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.6062660040333867,
+          "duration_s": 5.22,
+          "rtf": 0.11614291265007409
+        },
+        {
+          "round": 4,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.6580409340094775,
+          "duration_s": 5.22,
+          "rtf": 0.12606148161101102
+        },
+        {
+          "round": 4,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.4355935639468953,
+          "duration_s": 5.22,
+          "rtf": 0.08344704290170409
+        },
+        {
+          "round": 4,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.22658831800799817,
+          "duration_s": 3.203938,
+          "rtf": 0.07072181734103412
+        },
+        {
+          "round": 4,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2233991229441017,
+          "duration_s": 3.203938,
+          "rtf": 0.06972641884583962
+        },
+        {
+          "round": 4,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21047234500292689,
+          "duration_s": 3.203938,
+          "rtf": 0.06569176588402363
+        },
+        {
+          "round": 4,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.3149061290314421,
+          "duration_s": 5.0,
+          "rtf": 0.06298122580628843
+        },
+        {
+          "round": 4,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3076212010346353,
+          "duration_s": 5.0,
+          "rtf": 0.06152424020692706
+        },
+        {
+          "round": 4,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.30042099102865905,
+          "duration_s": 5.0,
+          "rtf": 0.06008419820573181
+        },
+        {
+          "round": 4,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.14212514809332788,
+          "duration_s": 2.04,
+          "rtf": 0.0696691902418274
+        },
+        {
+          "round": 4,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.14957453403621912,
+          "duration_s": 2.04,
+          "rtf": 0.07332085001775447
+        },
+        {
+          "round": 4,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.13981543004047126,
+          "duration_s": 2.04,
+          "rtf": 0.06853697551003493
+        },
+        {
+          "round": 4,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2784373249160126,
+          "duration_s": 4.928,
+          "rtf": 0.05650108054302203
+        },
+        {
+          "round": 4,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31142177095171064,
+          "duration_s": 4.928,
+          "rtf": 0.06319435287169453
+        },
+        {
+          "round": 4,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2908669519238174,
+          "duration_s": 4.928,
+          "rtf": 0.05902332628324217
+        },
+        {
+          "round": 4,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.20478827599436045,
+          "duration_s": 3.34325,
+          "rtf": 0.06125425140039197
+        },
+        {
+          "round": 4,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.22539460100233555,
+          "duration_s": 3.34325,
+          "rtf": 0.06741781230908116
+        },
+        {
+          "round": 4,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.23253495898097754,
+          "duration_s": 3.34325,
+          "rtf": 0.06955356583593136
+        },
+        {
+          "round": 4,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.2335252040065825,
+          "duration_s": 3.906188,
+          "rtf": 0.0597834011078275
+        },
+        {
+          "round": 4,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.25756546307820827,
+          "duration_s": 3.906188,
+          "rtf": 0.06593780511286407
+        },
+        {
+          "round": 4,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2521443560253829,
+          "duration_s": 3.906188,
+          "rtf": 0.0645499796797755
+        },
+        {
+          "round": 4,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.3341800990747288,
+          "duration_s": 5.64,
+          "rtf": 0.059251790616086666
+        },
+        {
+          "round": 4,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3348677270114422,
+          "duration_s": 5.64,
+          "rtf": 0.059373710463021666
+        },
+        {
+          "round": 4,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3386634079506621,
+          "duration_s": 5.64,
+          "rtf": 0.060046703537351434
+        },
+        {
+          "round": 4,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.34382376610301435,
+          "duration_s": 5.943938,
+          "rtf": 0.05784444018477554
+        },
+        {
+          "round": 4,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.33306882600300014,
+          "duration_s": 5.943938,
+          "rtf": 0.05603504377114972
+        },
+        {
+          "round": 4,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.36395129398442805,
+          "duration_s": 5.943938,
+          "rtf": 0.06123066794849274
+        },
+        {
+          "round": 4,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.21395326603669673,
+          "duration_s": 3.2,
+          "rtf": 0.06686039563646773
+        },
+        {
+          "round": 4,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19233607593923807,
+          "duration_s": 3.2,
+          "rtf": 0.0601050237310119
+        },
+        {
+          "round": 4,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19894889590796083,
+          "duration_s": 3.2,
+          "rtf": 0.06217152997123776
+        },
+        {
+          "round": 4,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.1980013110442087,
+          "duration_s": 3.41,
+          "rtf": 0.05806490059947469
+        },
+        {
+          "round": 4,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20406798599287868,
+          "duration_s": 3.41,
+          "rtf": 0.0598439841621345
+        },
+        {
+          "round": 4,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.19512063299771398,
+          "duration_s": 3.41,
+          "rtf": 0.05722012697880175
+        },
+        {
+          "round": 5,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.21734949899837375,
+          "duration_s": 4.0,
+          "rtf": 0.05433737474959344
+        },
+        {
+          "round": 5,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2290166369639337,
+          "duration_s": 4.0,
+          "rtf": 0.05725415924098343
+        },
+        {
+          "round": 5,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2254218930611387,
+          "duration_s": 4.0,
+          "rtf": 0.05635547326528467
+        },
+        {
+          "round": 5,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.19303287309594452,
+          "duration_s": 3.43,
+          "rtf": 0.05627780556733076
+        },
+        {
+          "round": 5,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20521121798083186,
+          "duration_s": 3.43,
+          "rtf": 0.059828343434644854
+        },
+        {
+          "round": 5,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.198818912031129,
+          "duration_s": 3.43,
+          "rtf": 0.0579646973851688
+        },
+        {
+          "round": 5,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.172548535047099,
+          "duration_s": 3.06,
+          "rtf": 0.05638841014611078
+        },
+        {
+          "round": 5,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.18147624097764492,
+          "duration_s": 3.06,
+          "rtf": 0.05930596110380553
+        },
+        {
+          "round": 5,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.18372966290917248,
+          "duration_s": 3.06,
+          "rtf": 0.060042373499729566
+        },
+        {
+          "round": 5,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.28845615591853857,
+          "duration_s": 5.44,
+          "rtf": 0.053025028661496054
+        },
+        {
+          "round": 5,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3160738160368055,
+          "duration_s": 5.44,
+          "rtf": 0.05810180441853042
+        },
+        {
+          "round": 5,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3092868209350854,
+          "duration_s": 5.44,
+          "rtf": 0.056854195024831876
+        },
+        {
+          "round": 5,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.2768933930201456,
+          "duration_s": 5.22,
+          "rtf": 0.05304471130654131
+        },
+        {
+          "round": 5,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3291056010639295,
+          "duration_s": 5.22,
+          "rtf": 0.06304705001224703
+        },
+        {
+          "round": 5,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3047753890277818,
+          "duration_s": 5.22,
+          "rtf": 0.058386089852065476
+        },
+        {
+          "round": 5,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.19653907092288136,
+          "duration_s": 3.203938,
+          "rtf": 0.06134296947159445
+        },
+        {
+          "round": 5,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19164157600607723,
+          "duration_s": 3.203938,
+          "rtf": 0.05981438342629515
+        },
+        {
+          "round": 5,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21760843391530216,
+          "duration_s": 3.203938,
+          "rtf": 0.0679190527142854
+        },
+        {
+          "round": 5,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.3095372909447178,
+          "duration_s": 5.0,
+          "rtf": 0.06190745818894357
+        },
+        {
+          "round": 5,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3089226989541203,
+          "duration_s": 5.0,
+          "rtf": 0.06178453979082406
+        },
+        {
+          "round": 5,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.33139353804290295,
+          "duration_s": 5.0,
+          "rtf": 0.0662787076085806
+        },
+        {
+          "round": 5,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.13898752897512168,
+          "duration_s": 2.04,
+          "rtf": 0.06813114165447141
+        },
+        {
+          "round": 5,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.15024243597872555,
+          "duration_s": 2.04,
+          "rtf": 0.07364825293074782
+        },
+        {
+          "round": 5,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.14995443599764258,
+          "duration_s": 2.04,
+          "rtf": 0.07350707646943264
+        },
+        {
+          "round": 5,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.28916513395961374,
+          "duration_s": 4.928,
+          "rtf": 0.05867798984570084
+        },
+        {
+          "round": 5,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31610909290611744,
+          "duration_s": 4.928,
+          "rtf": 0.06414551398257254
+        },
+        {
+          "round": 5,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2870003280695528,
+          "duration_s": 4.928,
+          "rtf": 0.05823870293619172
+        },
+        {
+          "round": 5,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.2121055640745908,
+          "duration_s": 3.34325,
+          "rtf": 0.06344292651599216
+        },
+        {
+          "round": 5,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21921951207332313,
+          "duration_s": 3.34325,
+          "rtf": 0.06557078054986111
+        },
+        {
+          "round": 5,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22904221492353827,
+          "duration_s": 3.34325,
+          "rtf": 0.06850885064638848
+        },
+        {
+          "round": 5,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.2317751150112599,
+          "duration_s": 3.906188,
+          "rtf": 0.05933537121389444
+        },
+        {
+          "round": 5,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.24589144194032997,
+          "duration_s": 3.906188,
+          "rtf": 0.06294920826655807
+        },
+        {
+          "round": 5,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2561005080351606,
+          "duration_s": 3.906188,
+          "rtf": 0.06556277066929718
+        },
+        {
+          "round": 5,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.3407548259710893,
+          "duration_s": 5.64,
+          "rtf": 0.060417522335299526
+        },
+        {
+          "round": 5,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.34488506405614316,
+          "duration_s": 5.64,
+          "rtf": 0.06114983405250766
+        },
+        {
+          "round": 5,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.35240313794929534,
+          "duration_s": 5.64,
+          "rtf": 0.06248282587753464
+        },
+        {
+          "round": 5,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.38362051302101463,
+          "duration_s": 5.943938,
+          "rtf": 0.06453979045895408
+        },
+        {
+          "round": 5,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.37010495201684535,
+          "duration_s": 5.943938,
+          "rtf": 0.06226595095992679
+        },
+        {
+          "round": 5,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.34001323708798736,
+          "duration_s": 5.943938,
+          "rtf": 0.05720336199468894
+        },
+        {
+          "round": 5,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.19420850498136133,
+          "duration_s": 3.2,
+          "rtf": 0.060690157806675415
+        },
+        {
+          "round": 5,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.19249822094570845,
+          "duration_s": 3.2,
+          "rtf": 0.06015569404553389
+        },
+        {
+          "round": 5,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.1908636080333963,
+          "duration_s": 3.2,
+          "rtf": 0.059644877510436345
+        },
+        {
+          "round": 5,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.28242544701788574,
+          "duration_s": 3.41,
+          "rtf": 0.08282271173545036
+        },
+        {
+          "round": 5,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.29390067502390593,
+          "duration_s": 3.41,
+          "rtf": 0.08618788123868208
+        },
+        {
+          "round": 5,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2306688929675147,
+          "duration_s": 3.41,
+          "rtf": 0.06764483664736501
+        },
+        {
+          "round": 6,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.258448606939055,
+          "duration_s": 4.0,
+          "rtf": 0.06461215173476376
+        },
+        {
+          "round": 6,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.27914694498758763,
+          "duration_s": 4.0,
+          "rtf": 0.06978673624689691
+        },
+        {
+          "round": 6,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.28796273097395897,
+          "duration_s": 4.0,
+          "rtf": 0.07199068274348974
+        },
+        {
+          "round": 6,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.23129461496137083,
+          "duration_s": 3.43,
+          "rtf": 0.06743283235025388
+        },
+        {
+          "round": 6,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.261293578078039,
+          "duration_s": 3.43,
+          "rtf": 0.0761788857370376
+        },
+        {
+          "round": 6,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.2312359350034967,
+          "duration_s": 3.43,
+          "rtf": 0.06741572449081536
+        },
+        {
+          "round": 6,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.22013928496744484,
+          "duration_s": 3.06,
+          "rtf": 0.07194094279981857
+        },
+        {
+          "round": 6,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21137053798884153,
+          "duration_s": 3.06,
+          "rtf": 0.06907533921203972
+        },
+        {
+          "round": 6,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20973692694678903,
+          "duration_s": 3.06,
+          "rtf": 0.06854147939437549
+        },
+        {
+          "round": 6,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.3327405109303072,
+          "duration_s": 5.44,
+          "rtf": 0.06116553509748294
+        },
+        {
+          "round": 6,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.37074385001324117,
+          "duration_s": 5.44,
+          "rtf": 0.06815144301713992
+        },
+        {
+          "round": 6,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.4468286429764703,
+          "duration_s": 5.44,
+          "rtf": 0.08213761819420409
+        },
+        {
+          "round": 6,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.3197922429535538,
+          "duration_s": 5.22,
+          "rtf": 0.06126288179186855
+        },
+        {
+          "round": 6,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3273874729638919,
+          "duration_s": 5.22,
+          "rtf": 0.06271790669806358
+        },
+        {
+          "round": 6,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.31450911494903266,
+          "duration_s": 5.22,
+          "rtf": 0.06025078830441239
+        },
+        {
+          "round": 6,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.20037667104043067,
+          "duration_s": 3.203938,
+          "rtf": 0.06254074549520953
+        },
+        {
+          "round": 6,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20178988797124475,
+          "duration_s": 3.203938,
+          "rtf": 0.06298183297281182
+        },
+        {
+          "round": 6,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21144144097343087,
+          "duration_s": 3.203938,
+          "rtf": 0.06599423614733833
+        },
+        {
+          "round": 6,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.2960162489907816,
+          "duration_s": 5.0,
+          "rtf": 0.05920324979815632
+        },
+        {
+          "round": 6,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3001421189401299,
+          "duration_s": 5.0,
+          "rtf": 0.060028423788025975
+        },
+        {
+          "round": 6,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3218194009969011,
+          "duration_s": 5.0,
+          "rtf": 0.06436388019938022
+        },
+        {
+          "round": 6,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.15112602105364203,
+          "duration_s": 2.04,
+          "rtf": 0.07408138286943237
+        },
+        {
+          "round": 6,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.13960692996624857,
+          "duration_s": 2.04,
+          "rtf": 0.06843476959129832
+        },
+        {
+          "round": 6,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.13656007195822895,
+          "duration_s": 2.04,
+          "rtf": 0.06694121174422987
+        },
+        {
+          "round": 6,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.27661764703225344,
+          "duration_s": 4.928,
+          "rtf": 0.05613182772570078
+        },
+        {
+          "round": 6,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.2648522050585598,
+          "duration_s": 4.928,
+          "rtf": 0.05374435979272723
+        },
+        {
+          "round": 6,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.26898509694729,
+          "duration_s": 4.928,
+          "rtf": 0.05458301480261567
+        },
+        {
+          "round": 6,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.19957489904481918,
+          "duration_s": 3.34325,
+          "rtf": 0.059694877453023015
+        },
+        {
+          "round": 6,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21101689501665533,
+          "duration_s": 3.34325,
+          "rtf": 0.06311729455369934
+        },
+        {
+          "round": 6,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.21072854497469962,
+          "duration_s": 3.34325,
+          "rtf": 0.06303104613017263
+        },
+        {
+          "round": 6,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.2355898009845987,
+          "duration_s": 3.906188,
+          "rtf": 0.060311946323269305
+        },
+        {
+          "round": 6,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.29553759295959026,
+          "duration_s": 3.906188,
+          "rtf": 0.07565882465452002
+        },
+        {
+          "round": 6,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 1.1779713509604335,
+          "duration_s": 3.906188,
+          "rtf": 0.30156545229272974
+        },
+        {
+          "round": 6,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 2.371164318989031,
+          "duration_s": 5.64,
+          "rtf": 0.42041920549450906
+        },
+        {
+          "round": 6,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 1.9469468869501725,
+          "duration_s": 5.64,
+          "rtf": 0.3452033487500306
+        },
+        {
+          "round": 6,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 1.0953201060183346,
+          "duration_s": 5.64,
+          "rtf": 0.19420569255644232
+        },
+        {
+          "round": 6,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 1.7471573969814926,
+          "duration_s": 5.943938,
+          "rtf": 0.2939393709997467
+        },
+        {
+          "round": 6,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 1.6648123359773308,
+          "duration_s": 5.943938,
+          "rtf": 0.2800857505541496
+        },
+        {
+          "round": 6,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 1.7045053000329062,
+          "duration_s": 5.943938,
+          "rtf": 0.28676364054149056
+        },
+        {
+          "round": 6,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.9533157449914142,
+          "duration_s": 3.2,
+          "rtf": 0.29791117030981695
+        },
+        {
+          "round": 6,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 1.061320838984102,
+          "duration_s": 3.2,
+          "rtf": 0.3316627621825319
+        },
+        {
+          "round": 6,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 1.0629627759335563,
+          "duration_s": 3.2,
+          "rtf": 0.33217586747923633
+        },
+        {
+          "round": 6,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.5629029250703752,
+          "duration_s": 3.41,
+          "rtf": 0.16507417157489007
+        },
+        {
+          "round": 6,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.7001347459154204,
+          "duration_s": 3.41,
+          "rtf": 0.20531810730657488
+        },
+        {
+          "round": 6,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.8350282449973747,
+          "duration_s": 3.41,
+          "rtf": 0.2448763181810483
+        },
+        {
+          "round": 7,
+          "file": "golos_00.wav",
+          "encoding": "wav",
+          "seconds": 0.5869435250060633,
+          "duration_s": 4.0,
+          "rtf": 0.14673588125151582
+        },
+        {
+          "round": 7,
+          "file": "golos_00.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.5231674819951877,
+          "duration_s": 4.0,
+          "rtf": 0.13079187049879692
+        },
+        {
+          "round": 7,
+          "file": "golos_00.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.5026001390069723,
+          "duration_s": 4.0,
+          "rtf": 0.12565003475174308
+        },
+        {
+          "round": 7,
+          "file": "golos_01.wav",
+          "encoding": "wav",
+          "seconds": 0.43313085997942835,
+          "duration_s": 3.43,
+          "rtf": 0.12627721865289457
+        },
+        {
+          "round": 7,
+          "file": "golos_01.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.4498177020577714,
+          "duration_s": 3.43,
+          "rtf": 0.13114218718885462
+        },
+        {
+          "round": 7,
+          "file": "golos_01.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.30165732803288847,
+          "duration_s": 3.43,
+          "rtf": 0.08794674286673133
+        },
+        {
+          "round": 7,
+          "file": "golos_02.wav",
+          "encoding": "wav",
+          "seconds": 0.2086818200768903,
+          "duration_s": 3.06,
+          "rtf": 0.06819667322774192
+        },
+        {
+          "round": 7,
+          "file": "golos_02.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21948077203705907,
+          "duration_s": 3.06,
+          "rtf": 0.07172574249577093
+        },
+        {
+          "round": 7,
+          "file": "golos_02.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.22486542991828173,
+          "duration_s": 3.06,
+          "rtf": 0.07348543461381755
+        },
+        {
+          "round": 7,
+          "file": "golos_03.wav",
+          "encoding": "wav",
+          "seconds": 0.35742408595979214,
+          "duration_s": 5.44,
+          "rtf": 0.06570295697790296
+        },
+        {
+          "round": 7,
+          "file": "golos_03.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3725611240370199,
+          "duration_s": 5.44,
+          "rtf": 0.06848550074209925
+        },
+        {
+          "round": 7,
+          "file": "golos_03.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.36093557404819876,
+          "duration_s": 5.44,
+          "rtf": 0.06634845111180124
+        },
+        {
+          "round": 7,
+          "file": "golos_04.wav",
+          "encoding": "wav",
+          "seconds": 0.3112781319068745,
+          "duration_s": 5.22,
+          "rtf": 0.05963182603579971
+        },
+        {
+          "round": 7,
+          "file": "golos_04.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3818040010519326,
+          "duration_s": 5.22,
+          "rtf": 0.07314252893715184
+        },
+        {
+          "round": 7,
+          "file": "golos_04.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.35226091207005084,
+          "duration_s": 5.22,
+          "rtf": 0.06748293334675304
+        },
+        {
+          "round": 7,
+          "file": "golos_05.wav",
+          "encoding": "wav",
+          "seconds": 0.21039757505059242,
+          "duration_s": 3.203938,
+          "rtf": 0.06566842899288076
+        },
+        {
+          "round": 7,
+          "file": "golos_05.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21880160993896425,
+          "duration_s": 3.203938,
+          "rtf": 0.06829146192559414
+        },
+        {
+          "round": 7,
+          "file": "golos_05.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.23657921608537436,
+          "duration_s": 3.203938,
+          "rtf": 0.0738401355099176
+        },
+        {
+          "round": 7,
+          "file": "golos_06.wav",
+          "encoding": "wav",
+          "seconds": 0.3100979409646243,
+          "duration_s": 5.0,
+          "rtf": 0.06201958819292486
+        },
+        {
+          "round": 7,
+          "file": "golos_06.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31540689698886126,
+          "duration_s": 5.0,
+          "rtf": 0.06308137939777225
+        },
+        {
+          "round": 7,
+          "file": "golos_06.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3736308290390298,
+          "duration_s": 5.0,
+          "rtf": 0.07472616580780596
+        },
+        {
+          "round": 7,
+          "file": "golos_07.wav",
+          "encoding": "wav",
+          "seconds": 0.14498827198985964,
+          "duration_s": 2.04,
+          "rtf": 0.07107268234797041
+        },
+        {
+          "round": 7,
+          "file": "golos_07.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.14539862098172307,
+          "duration_s": 2.04,
+          "rtf": 0.07127383381457013
+        },
+        {
+          "round": 7,
+          "file": "golos_07.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.16875608009286225,
+          "duration_s": 2.04,
+          "rtf": 0.08272356867297169
+        },
+        {
+          "round": 7,
+          "file": "golos_08.wav",
+          "encoding": "wav",
+          "seconds": 0.2996935989940539,
+          "duration_s": 4.928,
+          "rtf": 0.06081444784781938
+        },
+        {
+          "round": 7,
+          "file": "golos_08.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.31365237000864,
+          "duration_s": 4.928,
+          "rtf": 0.06364699066733766
+        },
+        {
+          "round": 7,
+          "file": "golos_08.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.31550361902918667,
+          "duration_s": 4.928,
+          "rtf": 0.0640226499653382
+        },
+        {
+          "round": 7,
+          "file": "golos_09.wav",
+          "encoding": "wav",
+          "seconds": 0.21293037896975875,
+          "duration_s": 3.34325,
+          "rtf": 0.06368963702079078
+        },
+        {
+          "round": 7,
+          "file": "golos_09.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21977256808895618,
+          "duration_s": 3.34325,
+          "rtf": 0.06573620521616876
+        },
+        {
+          "round": 7,
+          "file": "golos_09.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.23075934208463877,
+          "duration_s": 3.34325,
+          "rtf": 0.06902246080449825
+        },
+        {
+          "round": 7,
+          "file": "golos_10.wav",
+          "encoding": "wav",
+          "seconds": 0.2345900690415874,
+          "duration_s": 3.906188,
+          "rtf": 0.06005601088365112
+        },
+        {
+          "round": 7,
+          "file": "golos_10.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.25247392407618463,
+          "duration_s": 3.906188,
+          "rtf": 0.06463435043991345
+        },
+        {
+          "round": 7,
+          "file": "golos_10.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.24521818000357598,
+          "duration_s": 3.906188,
+          "rtf": 0.06277685047508619
+        },
+        {
+          "round": 7,
+          "file": "golos_11.wav",
+          "encoding": "wav",
+          "seconds": 0.3638731379760429,
+          "duration_s": 5.64,
+          "rtf": 0.06451651382553952
+        },
+        {
+          "round": 7,
+          "file": "golos_11.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3451598979299888,
+          "duration_s": 5.64,
+          "rtf": 0.06119856346276398
+        },
+        {
+          "round": 7,
+          "file": "golos_11.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3352881340542808,
+          "duration_s": 5.64,
+          "rtf": 0.05944825071884412
+        },
+        {
+          "round": 7,
+          "file": "golos_12.wav",
+          "encoding": "wav",
+          "seconds": 0.3522874320624396,
+          "duration_s": 5.943938,
+          "rtf": 0.05926835577060858
+        },
+        {
+          "round": 7,
+          "file": "golos_12.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.3720584230031818,
+          "duration_s": 5.943938,
+          "rtf": 0.06259460024703854
+        },
+        {
+          "round": 7,
+          "file": "golos_12.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.3750045320484787,
+          "duration_s": 5.943938,
+          "rtf": 0.0630902496036262
+        },
+        {
+          "round": 7,
+          "file": "golos_13.wav",
+          "encoding": "wav",
+          "seconds": 0.20014875393826514,
+          "duration_s": 3.2,
+          "rtf": 0.06254648560570786
+        },
+        {
+          "round": 7,
+          "file": "golos_13.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.21043102792464197,
+          "duration_s": 3.2,
+          "rtf": 0.06575969622645061
+        },
+        {
+          "round": 7,
+          "file": "golos_13.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.190146254026331,
+          "duration_s": 3.2,
+          "rtf": 0.05942070438322844
+        },
+        {
+          "round": 7,
+          "file": "golos_14.wav",
+          "encoding": "wav",
+          "seconds": 0.20007706002797931,
+          "duration_s": 3.41,
+          "rtf": 0.05867362464163616
+        },
+        {
+          "round": 7,
+          "file": "golos_14.wav",
+          "encoding": "ogg_opus_voip",
+          "seconds": 0.20950061501935124,
+          "duration_s": 3.41,
+          "rtf": 0.06143713050420857
+        },
+        {
+          "round": 7,
+          "file": "golos_14.wav",
+          "encoding": "webm_opus_live",
+          "seconds": 0.20074529200792313,
+          "duration_s": 3.41,
+          "rtf": 0.05886958709909769
+        }
+      ],
+      "quality_wav": {
+        "n_clips": 15,
+        "normalized_wer_pct": 0.0,
+        "normalized_errors": 0,
+        "normalized_ref_words": 71,
+        "naive_wer_pct": 0.0,
+        "naive_errors": 0,
+        "naive_ref_words": 75
+      },
+      "examples_wav": {
+        "golos_00.wav": "шестьдесят тысяч тенге сколько будет стоить",
+        "golos_06.wav": "любовницы две тысячи тринадцать пятнадцатый сезон"
+      },
+      "resident_ready_s": 0.36767173395492136
+    }
+  ]
+}

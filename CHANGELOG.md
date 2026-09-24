@@ -26,6 +26,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- **Short-note latency on a two-CPU pin.** Fifteen labelled Golos commands,
+  including Telegram-style Ogg/Opus and browser-style WebM/Opus, measured
+  with the release binary pinned to two logical CPUs. Warm RTF is about 0.06;
+  punctuation and ITN are not the warm-request cost. This is a desktop
+  substitute, not the reported two-vCPU Xeon. See
+  [docs/short-recording-latency.md](docs/short-recording-latency.md).
 - **`--optimized-cache-dir <PATH>`** (env `GIGASTT_OPTIMIZED_CACHE_DIR`) on
   `serve` and `cache-gc`: where the CPU encoder writes/reads the ORT
   optimized-graph cache (`*_optimized.ort`). Default unchanged:

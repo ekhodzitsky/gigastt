@@ -1,0 +1,362 @@
+[
+  {
+    "filename": "golos_00.wav",
+    "reference": "шестьдесят тысяч тенге сколько будет стоить",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_00.wav",
+        "bytes": 128078,
+        "sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+        "duration_s": 4.0
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_00.telegram.ogg",
+        "bytes": 15515,
+        "sha256": "85e0346ed1aede3e70ee3e7ccf59b063c80be1260e604990aa67c7647b4392cd",
+        "duration_s": 4.0
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_00.browser.webm",
+        "bytes": 31899,
+        "sha256": "12989c4116d03ee3bf39efd11bb49995a250624f7fbb2deedf82f148074d533c",
+        "duration_s": 4.0
+      }
+    }
+  },
+  {
+    "filename": "golos_01.wav",
+    "reference": "покажи мне на смотрешке телеканал синергия тв",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_01.wav",
+        "bytes": 109838,
+        "sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+        "duration_s": 3.43
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_01.telegram.ogg",
+        "bytes": 13988,
+        "sha256": "8fd504f3e18e60c5d39c89759daed13ddb11dc073c9d050e6c2fae1d9769c563",
+        "duration_s": 3.43
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_01.browser.webm",
+        "bytes": 35586,
+        "sha256": "5889ea244d7c8f19b632a97fb0e7a3e46ebc648cf7feea31a3d01da0d27d6310",
+        "duration_s": 3.43
+      }
+    }
+  },
+  {
+    "filename": "golos_02.wav",
+    "reference": "заказать яблоки зеленые",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_02.wav",
+        "bytes": 97998,
+        "sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+        "duration_s": 3.06
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_02.telegram.ogg",
+        "bytes": 12355,
+        "sha256": "b5ee23167e4567b0dc48eec54766e69a6e98ce348042f4be34574e00e5bbe82a",
+        "duration_s": 3.06
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_02.browser.webm",
+        "bytes": 25457,
+        "sha256": "98a5776aa1fa05c05ce9e7aae77c3096b09d441bcbb98f3f2f27e32715bc1ab3",
+        "duration_s": 3.06
+      }
+    }
+  },
+  {
+    "filename": "golos_03.wav",
+    "reference": "алиса закажи килограммовый торт графские развалины",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_03.wav",
+        "bytes": 174158,
+        "sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+        "duration_s": 5.44
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_03.telegram.ogg",
+        "bytes": 20813,
+        "sha256": "0a68158c443bdb5b752ee55471ac13c8ea1bda60664f978d942fef5e8baf1881",
+        "duration_s": 5.44
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_03.browser.webm",
+        "bytes": 44310,
+        "sha256": "ca9f4d9d29cb171233f690e73d091cf1092adbb9421f745dae0cad3d0c3a2b56",
+        "duration_s": 5.44
+      }
+    }
+  },
+  {
+    "filename": "golos_04.wav",
+    "reference": "ищи телеканал про бизнес на тиви",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_04.wav",
+        "bytes": 167118,
+        "sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+        "duration_s": 5.22
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_04.telegram.ogg",
+        "bytes": 20837,
+        "sha256": "bc523fcdb354a5a44a427041e0e62e4ee855a02f4af7320b5d0823d9977f2c0f",
+        "duration_s": 5.22
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_04.browser.webm",
+        "bytes": 51812,
+        "sha256": "2c7928aab0421c857c6c07e497ca8fd1b4a46cc932d76f3ae0fcb4d2fcb7a633",
+        "duration_s": 5.22
+      }
+    }
+  },
+  {
+    "filename": "golos_05.wav",
+    "reference": "михаила мурадяна",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_05.wav",
+        "bytes": 102604,
+        "sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+        "duration_s": 3.203938
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_05.telegram.ogg",
+        "bytes": 12499,
+        "sha256": "2f128c93181df76e23505661192e536cd1eee4c1ad939245ccd4d828124da12a",
+        "duration_s": 3.203938
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_05.browser.webm",
+        "bytes": 25217,
+        "sha256": "af8c33cc49dfd63d3f798d8d25967ae185f117fd6176c23a80ae8976b5b9f918",
+        "duration_s": 3.203938
+      }
+    }
+  },
+  {
+    "filename": "golos_06.wav",
+    "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_06.wav",
+        "bytes": 160078,
+        "sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+        "duration_s": 5.0
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_06.telegram.ogg",
+        "bytes": 20382,
+        "sha256": "9abc2884570691b39046990bd46e106af337c88c64693391e6eab38b49c7a49c",
+        "duration_s": 5.0
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_06.browser.webm",
+        "bytes": 46295,
+        "sha256": "19c1b3d976bd2fa3e009554bb5a358145fe036ae7b2ee492b40d2f15ff1c4604",
+        "duration_s": 5.0
+      }
+    }
+  },
+  {
+    "filename": "golos_07.wav",
+    "reference": "найди боевики",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_07.wav",
+        "bytes": 65358,
+        "sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+        "duration_s": 2.04
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_07.telegram.ogg",
+        "bytes": 7589,
+        "sha256": "43750956d1207b23cf199c081093ac4a2fda5d75ddf66a65a62764a8a80f3e12",
+        "duration_s": 2.04
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_07.browser.webm",
+        "bytes": 18154,
+        "sha256": "abda50538123e8c8d52a5a6faad9587ff0680587b61afe5da05d9ffa0b320ef7",
+        "duration_s": 2.04
+      }
+    }
+  },
+  {
+    "filename": "golos_08.wav",
+    "reference": "гетто сезон три",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_08.wav",
+        "bytes": 157774,
+        "sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+        "duration_s": 4.928
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_08.telegram.ogg",
+        "bytes": 18365,
+        "sha256": "70491e4e47e3bd462fb7164810e0010d77e00efa6fecdfde9f17d6ff5c33883d",
+        "duration_s": 4.928
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_08.browser.webm",
+        "bytes": 39735,
+        "sha256": "b46d390960e9153e7a6a2e4195fbdd2707c17e4982716a11b36bcfa5be126040",
+        "duration_s": 4.928
+      }
+    }
+  },
+  {
+    "filename": "golos_09.wav",
+    "reference": "хочу посмотреть ростов папа на телевизоре",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_09.wav",
+        "bytes": 107062,
+        "sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+        "duration_s": 3.34325
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_09.telegram.ogg",
+        "bytes": 13590,
+        "sha256": "0f3e0f65c92020aed35e8a23d707258ff35db974024e29cb6fbac269475e6218",
+        "duration_s": 3.34325
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_09.browser.webm",
+        "bytes": 29452,
+        "sha256": "f8257be6cf42d9d49f2c0ee646768b84b3e04bb0cc6352ed39c35867994bfa79",
+        "duration_s": 3.34325
+      }
+    }
+  },
+  {
+    "filename": "golos_10.wav",
+    "reference": "сбер какое твое самое ненавистное занятие",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_10.wav",
+        "bytes": 125076,
+        "sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+        "duration_s": 3.906188
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_10.telegram.ogg",
+        "bytes": 11723,
+        "sha256": "6eaf03ba6dbf4d6404f6ca8c9eb8cc81a1540d702cf4782298ba64e1353e0b62",
+        "duration_s": 3.906188
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_10.browser.webm",
+        "bytes": 24839,
+        "sha256": "44eb545349ce2d7627c32c0734f1987fc37bcb4e0b0124056d1c4f3954376dbe",
+        "duration_s": 3.906188
+      }
+    }
+  },
+  {
+    "filename": "golos_11.wav",
+    "reference": "афина чем платят у китайцев",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_11.wav",
+        "bytes": 180558,
+        "sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+        "duration_s": 5.64
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_11.telegram.ogg",
+        "bytes": 20840,
+        "sha256": "c0f1472cd52a5755b220165d0a32141bebaf2607299f06ddf66d467d419c8bdd",
+        "duration_s": 5.64
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_11.browser.webm",
+        "bytes": 45207,
+        "sha256": "7a49b2e43de4eff85a8e60bbe6c444de7e3fbb50053d82aaae894fd56f186f3d",
+        "duration_s": 5.64
+      }
+    }
+  },
+  {
+    "filename": "golos_12.wav",
+    "reference": "джой как работает досрочное погашение кредита",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_12.wav",
+        "bytes": 190284,
+        "sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+        "duration_s": 5.943938
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_12.telegram.ogg",
+        "bytes": 22893,
+        "sha256": "c67ff89b1525c4df56c564dff357add61df5056057bf6a1ddc002d32fab5c599",
+        "duration_s": 5.943938
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_12.browser.webm",
+        "bytes": 50935,
+        "sha256": "472f525a6d5545a205a9776bb8f123f9345512d5ebe3d9fbf4e338c01cb3be0c",
+        "duration_s": 5.943938
+      }
+    }
+  },
+  {
+    "filename": "golos_13.wav",
+    "reference": "у тебя найдется люк кейдж",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_13.wav",
+        "bytes": 102478,
+        "sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+        "duration_s": 3.2
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_13.telegram.ogg",
+        "bytes": 11600,
+        "sha256": "801b744bb3c3004a403a37fb353d2c73e2940a058cd6772e4b372aa581ae8c0e",
+        "duration_s": 3.2
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_13.browser.webm",
+        "bytes": 25233,
+        "sha256": "885e9e1fa75551b201ddfb4ac651a1b33e55b635bdaa04498ea7edb33ce8d2f1",
+        "duration_s": 3.2
+      }
+    }
+  },
+  {
+    "filename": "golos_14.wav",
+    "reference": "у тебя будет лучшая часть пинк",
+    "files": {
+      "wav": {
+        "path": "crates/gigastt/tests/fixtures/golos_14.wav",
+        "bytes": 109198,
+        "sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+        "duration_s": 3.41
+      },
+      "ogg_opus_voip": {
+        "path": "benchmark/short_notes/encoded/golos_14.telegram.ogg",
+        "bytes": 12778,
+        "sha256": "8143ea88b8b1fa8b6292757c3d5be5c56c5553175c532cfea64b5a73219e9688",
+        "duration_s": 3.41
+      },
+      "webm_opus_live": {
+        "path": "benchmark/short_notes/encoded/golos_14.browser.webm",
+        "bytes": 23759,
+        "sha256": "955066ea26a6db4f03dcd3b21a28436beceaabce9ff9b6b4f0846dfef7bc2ba2",
+        "duration_s": 3.41
+      }
+    }
+  }
+]

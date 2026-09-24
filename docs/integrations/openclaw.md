@@ -18,7 +18,11 @@ gigastt serve --punctuation on --itn on
 ```
 
 Wait for `GET /ready` to return HTTP 200. `/health` is also available while the
-model is loading, so it does not establish inference readiness.
+model is loading, so it does not establish inference readiness. Leave this
+process running: on a desktop pinned to two logical CPUs, a fresh process plus
+the first short note cost about a second and a half, while a later 2–6 s note
+was a few tenths of a second. That measurement is not a two-vCPU Xeon VM.
+Details: [short-note latency](../short-recording-latency.md).
 
 Run this from the OpenClaw gateway's network environment, replacing `voice.ogg`
 with a Russian voice note:
