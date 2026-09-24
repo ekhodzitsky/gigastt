@@ -273,8 +273,9 @@ max window **2.5 s** by default (configurable via `--stream-max-window-secs`,
 clamped to 2.4–30; longer windows improve long-phrase WER at a linear per-stride
 encoder-cost increase), left context **1.5 s**. Slide commits are
 hypothesis-stable by default (`--stream-stable-prefix`, opt out with
-`--stream-stable-prefix=false`; see cli.md). The first decode
-cannot run before
+`--stream-stable-prefix=false`; see [cli.md](cli.md)). That default
+shipped in 2.19.0 (2026-08-31) and is **not** what the published corpus
+table measured — see below. The first decode cannot run before
 ~0.8 s of new audio, so end-to-end TTFP cannot honestly be “sub-200 ms” on this path.
 
 **Client (canonical, `STREAM_PROTOCOL_VERSION = 1.0`):**
@@ -288,29 +289,36 @@ cannot run before
 7. A clip with no counted partial before timeout stays in the corpus as `n` / `n_timeout` / `n_no_partial`. **p50/p95 are over observed TTFPs only** (a missing partial is not imputed). Quote `n_timeout` next to p95.
 8. Warm server, INT8, CPU. Published latency rows use `--pool-size 1`. WER `--mode both` starts `serve` with the default `--pool-size 2`; do not mix those rows with the latency table. Stream RTF in `benchmark.py` is paced wall-clock (~1.0+), not encoder compute.
 
-Commands:
+Commands below measure **today's** defaults, including stable-prefix on.
+They did not produce the historical table.
 
 ```sh
-# Streaming WER vs the same REST batch path (same files, same normalizer)
+# New streaming WER vs the same REST batch path (same files, same normalizer).
+# Not the 2026-08-14 table — that run predates stable-prefix.
 cd benchmark
 python benchmark.py --mode both --runners gigastt --dataset golos_crowd --max-samples 100 \
   --output results_stream_wer.json
 
-# TTFP / TTFS p50–p95 (server must already be up)
+# TTFP / TTFS / finalization lag (server must already be up). Latency, not WER.
 gigastt serve --port 9877 --pool-size 1
 python benchmark_latency.py --dataset golos_crowd --max-samples 100 \
   --port 9877 --output results_latency_corpus.json
 ```
 
-`--mode batch` is the historical REST table (default). `--mode stream` is WebSocket only.
-`--mode both` prints **Δ = WER_stream − WER_batch** with a bootstrap 95% CI on the paired clips.
+`--mode batch` is the file/REST competitor table (the default mode). `--mode stream` is WebSocket only.
+`--mode both` prints **Δ = WER_stream − WER_batch** with a paired bootstrap 95% CI
+(1000 resamples, 2.5th and 97.5th percentiles; [`benchmark/streaming.py`](../benchmark/streaming.py)).
 
 ### Streaming vs batch WER
 
+**Historical (2026-08-14, pre-stable-prefix). Not a current accuracy claim.**
+`--stream-stable-prefix` did not exist on this run; it shipped in 2.19.0
+(2026-08-31) and is on by default now. No corpus rerun under that policy is
+in this repository, so there is no supported current stream-minus-file WER.
+Do not quote the Δ column as what streaming costs today.
+
 First **100** clips of each committed manifest (not the 1000-row competitor table
-above). Apple M1 Pro, CPU INT8, `rnnt`. WER `--mode both` uses default
-`--pool-size 2`. Same files, same normalizer. Measured 2026-08-14.
-Summary artifact:
+above). Summary artifact (rollup only — no per-clip hypotheses):
 [`benchmark/results_full/stream_protocol_v1_100.json`](../benchmark/results_full/stream_protocol_v1_100.json).
 
 | Dataset | n | WER_batch | WER_stream | Δ pp (stream − batch) | 95% CI on Δ |
@@ -318,26 +326,75 @@ Summary artifact:
 | `golos_crowd_1k` | 100 | 4.97 | 19.46 | **+14.49** | [10.91, 18.24] |
 | `golos_farfield` | 100 | 4.82 | 15.42 | **+10.60** | [6.53, 15.09] |
 
+Recovered configuration, from that artifact plus the tree that added it
+([`7049118da4fdce3d9fa4297e274eb4426195ddf0`](https://github.com/ekhodzitsky/gigastt/commit/7049118da4fdce3d9fa4297e274eb4426195ddf0),
+`v2.18.0-4-g7049118`, four commits after tag `v2.18.0`):
+
+- **Policy.** Fixed 2.5 s window, 0.8 s stride, 1.5 s left context
+  (`--stream-max-window-secs` did not exist yet). On the window cap the
+  engine committed every live word and slid. That is not hypothesis-stable
+  prefixes (two agreeing decodes, 1.0 s edge horizon), which landed later in
+  [`b012f8a72ebde7581a7181c23f8aac13239bc3aa`](https://github.com/ekhodzitsky/gigastt/commit/b012f8a72ebde7581a7181c23f8aac13239bc3aa).
+- **Head / machine.** INT8 `rnnt`, Apple M1 Pro, CPU, as the artifact's
+  `machine` field records. No encoder checksum and no `gigastt --version`
+  string are in the artifact.
+- **Harness.** The summary was added in that commit, from
+  `benchmark.py --mode both` on the first 100 clips of
+  [`golos_crowd_1k`](../benchmark/manifests/golos_crowd_1k.json) and
+  [`golos_farfield`](../benchmark/manifests/golos_farfield.json) (those
+  manifest blobs are unchanged since the commit). The artifact note says WER
+  used default `--pool-size 2` and latency used `--pool-size 1`. The runner
+  in that commit starts `serve` with no punctuation, ITN, variant, or VAD
+  flag, so the CLI defaults of that tree apply: punctuation `auto`, ITN
+  `auto`, variant auto-detected (artifact: `rnnt`), VAD off, endpoint mode
+  `auto` (decoder blank-run). The artifact does not record `gigastt --version`
+  or whether a punctuation model was on disk.
+- **Normalization.** Reported WER is the harness `compute_wer` pass
+  (`normalize_for_wer` in [`benchmark/common.py`](../benchmark/common.py)):
+  symmetric lowercase, `ё`→`е`, words-to-digits ITN, anglicism map, on both
+  reference and hypothesis. The summary does not include the verbatim
+  (`naive`) pass.
+- **CI.** Paired bootstrap in [`benchmark/streaming.py`](../benchmark/streaming.py)
+  (1000 resamples, 2.5th / 97.5th percentiles). The JSON stores rolled-up
+  bounds only. Far-field `delta_pp` is `10.6` there (two-decimal rounding);
+  the table shows that published value as +10.60.
+
 Crowd: 2 stream clips produced no transcript (counted as 100% WER). Farfield: 0
-timeouts. Typical stream errors are dropped / truncated words (`сколько` →
-`сколь`, long commands collapsed to a prefix), not substitutions of a full
-sentence.
+timeouts. On this run, typical stream errors were dropped / truncated words
+(`сколько` → `сколь`, long commands collapsed to a prefix), not substitutions
+of a full sentence.
 
 This 100-clip batch WER (4.97 / 4.82) is a **different n** from the 1000-row
-table (3.55 / 4.08). Do not splice them. The Δ is the number that matters:
-**streaming currently costs about 11–15 pp** on these slices.
+table (3.55 / 4.08). Do not splice them.
 
-A single-file guard still exists: `crates/gigastt-core/tests/streaming_quality.rs` (`golos_00`, word overlap ≥ 0.5). That is not a corpus WER.
+**No current corpus number.** A replacement claim needs the same protocol
+with stable-prefix **on**, and a retrievable raw artifact naming the code
+revision, model version, corpus manifest, normalization, window/policy, and
+confidence-interval method. This revision does not include that rerun. The
+2.19.0 changelog note on 10 labelled Golos fixtures
+(`crates/gigastt-core/tests/streaming_quality.rs`) is a different, smaller
+regression guard — not this table, and not a substitute for it. The same
+file's `golos_00` word-overlap check (≥ 0.5) is not a corpus WER either.
 
 ### Streaming latency (p50 / p95)
 
+Latency only. These rows are not a stream-minus-file WER, and they are not
+mixed into the accuracy claim above.
+
 Older single-clip smoke (`golos_00.wav`, 4 s, real-time, timer from first audio):
 **TTFP ~782 ms (CPU) / ~693 ms (CoreML)**. That number is dominated by *where the first word
-falls* plus the 0.8 s stride — not by encoder compute (~70–100 ms/chunk).
+falls* plus the 0.8 s stride — not by encoder compute (~70–100 ms/chunk). It is
+not a corpus figure and not from the 2026-08-14 run.
 
-Corpus (same protocol, Apple M1 Pro, CPU INT8, warm `--pool-size 1`, 2026-08-14).
-p50/p95 are over **observed** values only. `n_timeout` / `n_no_partial` /
-`n_error` stay in the experiment count.
+Corpus latency from the **same 2026-08-14 measurement** as the historical WER
+table (revision `7049118`, pre-`--stream-stable-prefix`, Apple M1 Pro, CPU
+INT8, warm `--pool-size 1`; rollup in the same
+[`stream_protocol_v1_100.json`](../benchmark/results_full/stream_protocol_v1_100.json)).
+Not a remeasurement with stable-prefix on. p50/p95 are over **observed**
+values only. `n_timeout` / `n_no_partial` / `n_error` stay in the experiment
+count. TTFP, TTFS, partial lag, and finalization lag stay separate from the
+WER table above; finalization lag includes clip duration (see the notes on
+each row).
 
 **`golos_crowd_1k`** (n=100; 2 clips no partial / harness error):
 
@@ -362,7 +419,7 @@ the 0.8 s stride, not encoder compute. Per-partial lag p50 is **41–51 ms**,
 p95 ~100–114 ms. Negative TTFS (energy onset after the first partial) is
 dropped from the percentile, not imputed.
 
-Vosk-server and T-one (300 ms chunks) are also genuine streaming designs. Whisper engines are offline. gigastt’s streaming win vs Whisper is incremental partials from one binary, **not** a lowest-latency claim, and **not** batch-equal WER on the live path.
+Vosk-server and T-one (300 ms chunks) are also genuine streaming designs. Whisper engines are offline. gigastt’s streaming win vs Whisper is incremental partials from one binary, **not** a lowest-latency claim. Live WER is not the file-transcription table; the only published corpus Δ is the historical table above, and it is not a current figure.
 
 ## Edge / Raspberry Pi
 

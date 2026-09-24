@@ -23,6 +23,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   `wespeaker_resnet34.onnx` file. Upstream dropped the `onnx` (ort) feature;
   the extractor now runs on tract (`backend-tract`). The lockfile no longer
   carries a second `ryf 0.3.2` copy.
+- **Streaming corpus WER gap is historical.** The 2026-08-14 100-clip
+  stream-minus-file figures (crowd +14.49 pp, far-field +10.60 pp) were
+  measured before `--stream-stable-prefix` (default on since 2.19.0).
+  [docs/benchmarks.md](docs/benchmarks.md#streaming-measurement-protocol)
+  labels that table historical. No current corpus Δ is published; this
+  revision does not include a rerun.
 
 ### Added
 
