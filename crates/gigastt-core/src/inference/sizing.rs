@@ -64,6 +64,20 @@ pub(crate) fn cgroup_memory_limit_bytes() -> Option<u64> {
 /// the pool RAM cap is a no-op). macOS: `sysctl HW_MEMSIZE`; Linux/other unix:
 /// `sysconf(_SC_PHYS_PAGES) * _SC_PAGESIZE`.
 pub(crate) fn total_ram_bytes() -> u64 {
+    // Miri does not implement `_SC_PHYS_PAGES`. Unknown RAM already disables
+    // the pool clamp, which is the right answer inside the interpreter.
+    #[cfg(miri)]
+    {
+        return 0;
+    }
+    #[cfg(not(miri))]
+    {
+        host_ram_bytes()
+    }
+}
+
+#[cfg(not(miri))]
+fn host_ram_bytes() -> u64 {
     #[cfg(target_os = "macos")]
     {
         let mut mem: u64 = 0;

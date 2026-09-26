@@ -95,8 +95,11 @@ fn test_decode_telephony_raw_pcma_roundtrip() {
 
 #[test]
 fn test_decode_telephony_raw_g722_roundtrip() {
-    // 1 s of 16 kHz tone; G.722 output stays at its native 16 kHz.
-    let source: Vec<i16> = (0..16000)
+    // 1 s of 16 kHz tone natively; G.722 output stays at its native 16 kHz.
+    // Miri uses a tenth of a second. The QMF delay and the RMSE bound are the
+    // same either way.
+    let n = if cfg!(miri) { 1_600 } else { 16_000 };
+    let source: Vec<i16> = (0..n)
         .map(|i| ((i as f32 * 0.03).sin() * 10000.0) as i16)
         .collect();
     let mut encoder = audio_codec::g722::G722Encoder::new();
@@ -162,7 +165,9 @@ fn test_decode_audio_bytes_g711_mulaw_wav() {
 fn test_decode_audio_bytes_g722_wav_fallback() {
     // G.722-in-WAV (tags 0x0064 / 0x0065 / 0x028F) is decoded by ryf
     // and produces 2 samples per encoded byte at native 16 kHz.
-    let source: Vec<i16> = (0..16000)
+    // One second natively. A tenth of a second is the same codec path under Miri.
+    let n = if cfg!(miri) { 1_600 } else { 16_000 };
+    let source: Vec<i16> = (0..n)
         .map(|i| ((i as f32 * 0.03).sin() * 10000.0) as i16)
         .collect();
     let mut encoder = audio_codec::g722::G722Encoder::new();
@@ -205,6 +210,10 @@ fn test_wave_g722_malformed_inputs() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "fixed-point G.722 compared with ffmpeg; numeric, runs natively"
+)]
 fn test_decode_audio_bytes_g722_wav_ffmpeg_fixture_matches_reference() {
     // Independent-reference verification: `g722_tone.wav` was ENCODED by
     // ffmpeg (libavcodec G.722, tag 0x028F) and `g722_tone_ffmpeg.pcm` is
@@ -244,7 +253,8 @@ fn test_decode_audio_bytes_g722_wav_ffmpeg_fixture_matches_reference() {
 
 #[test]
 fn test_encode_wav_pcm16_roundtrip() {
-    let source: Vec<f32> = (0..16000).map(|i| (i as f32 * 0.02).sin() * 0.5).collect();
+    let n = if cfg!(miri) { 2_000 } else { 16_000 };
+    let source: Vec<f32> = (0..n).map(|i| (i as f32 * 0.02).sin() * 0.5).collect();
     let wav = encode_wav_pcm16(&source, 16000);
     let decoded = decode_audio_bytes(&wav).unwrap();
     assert_eq!(decoded.len(), source.len());

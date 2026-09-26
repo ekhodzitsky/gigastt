@@ -179,7 +179,13 @@ mod tests {
     }
 
     /// One million 'a' — exercises multi-block streaming and the length field.
+    /// Multi-block hashing still runs under Miri via the chunking test; this
+    /// vector does not finish inside the nightly budget.
     #[test]
+    #[cfg_attr(
+        miri,
+        ignore = "one million bytes does not finish under Miri; multi-block hashing is covered by the chunking test"
+    )]
     fn test_sha256_million_a() {
         let mut h = Sha256::new();
         let chunk = vec![b'a'; 1000];

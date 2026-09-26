@@ -58,6 +58,10 @@ fn eager_opus_reference(bytes: &[u8]) -> anyhow::Result<Vec<f32>> {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_opus_streaming_decode_matches_whole_buffer() {
     // Opus used to be the one container that could not stream: the fallback
     // decoder accumulated every channel of the whole file before anything was
@@ -88,6 +92,10 @@ fn test_opus_streaming_decode_matches_whole_buffer() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_opus_streaming_windows_match_slice_over_flat_decode() {
     // The windowed source over an Opus stream must yield exactly what
     // `SliceWindows` yields over the same flat decode — the same guarantee the
@@ -165,6 +173,10 @@ fn test_is_recoverable_packet_eof_matches_unexpected_eof_only() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_decode_audio_bytes_opus_ogg_missing_eos_succeeds() {
     // Telegram Android (and some MediaRecorder paths) write Ogg/Opus without
     // the EOS flag on the final page. Symphonia then ends the demux with
@@ -200,6 +212,10 @@ fn test_decode_audio_bytes_opus_ogg_missing_eos_succeeds() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_decode_audio_file_opus_missing_eos_matches_bytes() {
     let no_eos = include_bytes!("../../../../tests/fixtures/opus/opus_tone_no_eos.ogg");
     let mut tmp = tempfile::NamedTempFile::with_suffix(".ogg").expect("temp file");
@@ -266,6 +282,10 @@ fn test_decode_audio_bytes_random_bytes_still_errors() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_decode_audio_bytes_opus_ogg_matches_ffmpeg_reference() {
     // Independent-reference verification: `opus_tone.ogg` was ENCODED by
     // ffmpeg (libopus) and `opus_tone_ffmpeg.pcm` is ffmpeg's own DECODE
@@ -299,6 +319,10 @@ fn test_decode_audio_bytes_opus_ogg_matches_ffmpeg_reference() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_decode_audio_bytes_opus_code3_multiframe_matches_ffmpeg_reference() {
     // `opus_tone_60ms.ogg` carries 60 ms packets — three 20 ms CELT frames per
     // packet, code 3 CBR — which is what Chromium's MediaRecorder emits and no
@@ -327,6 +351,10 @@ fn test_decode_audio_bytes_opus_code3_multiframe_matches_ffmpeg_reference() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_decode_audio_bytes_webm_opus_live_matches_ffmpeg_reference() {
     // A browser's MediaRecorder writes a *live* WebM: the Segment and every
     // Cluster carry an unknown size, because the length is not known while
@@ -357,6 +385,10 @@ fn test_decode_audio_bytes_webm_opus_live_matches_ffmpeg_reference() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_decode_audio_file_webm_extension_matches_bytes() {
     // Uploads arrive as bytes and are sniffed by content; the CLI goes through
     // the path-based probe with a `.webm` hint. Both must reach the same
@@ -374,6 +406,10 @@ fn test_decode_audio_file_webm_extension_matches_bytes() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_opus_container_rate_tag_does_not_change_decoded_pcm() {
     // libopus always emits 48 kHz PCM (RFC 7845). These four files are one
     // encode of tone_src.wav; the 16 kHz copies only rewrite OpusHead's input
@@ -442,6 +478,10 @@ fn test_opus_container_rate_tag_does_not_change_decoded_pcm() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "opus-rs decode plus resample does not finish under Miri"
+)]
 fn test_decode_audio_file_opus_extension_matches_bytes() {
     // The file path probes with an `.opus` extension hint; the bytes path
     // sniffs content only. Both must decode the same OGG/Opus stream

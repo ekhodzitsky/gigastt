@@ -40,7 +40,15 @@ fn install_abort(triplet: &mut SessionTriplet, flag: &Arc<AtomicBool>, after: us
 
 #[test]
 fn test_cancelled_request_keeps_words_from_interrupted_decode() {
-    for (samples, after) in [(8000, 3), (800_000, 14)] {
+    // 800_000 samples is past the 30 s single-pass ceiling, so a cancelled
+    // redecode must keep the previous window. That mock decode does not finish
+    // inside the nightly Miri budget; the short case still checks the partial.
+    let cases: &[(usize, usize)] = if cfg!(miri) {
+        &[(8_000, 3)]
+    } else {
+        &[(8_000, 3), (800_000, 14)]
+    };
+    for &(samples, after) in cases {
         let (engine, _tmp) = crate::test_support::rnnt_engine();
         let flag = Arc::new(AtomicBool::new(false));
         let partial = Arc::new(TranscriptSnapshot::default());

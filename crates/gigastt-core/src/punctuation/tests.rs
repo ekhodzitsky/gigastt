@@ -290,10 +290,13 @@ fn test_plan_windows_interior_words_keep_context_on_both_sides() {
 /// one label, from a window that actually covered it, at its own position.
 #[test]
 fn test_splice_window_labels_round_trips_5000_words() {
-    let words: Vec<String> = (0..5000).map(|i| format!("w{i}")).collect();
+    // Three windows still prove the splice. Five thousand owned strings do
+    // not finish under Miri inside the nightly budget.
+    let n = if cfg!(miri) { 600 } else { 5000 };
+    let words: Vec<String> = (0..n).map(|i| format!("w{i}")).collect();
     let text = words.join(" ");
     let spans = word_spans(&text);
-    assert_eq!(spans.len(), 5000);
+    assert_eq!(spans.len(), n);
 
     let windows = plan_windows(spans.len());
     let per_window: Vec<Option<Vec<usize>>> = windows
@@ -302,7 +305,7 @@ fn test_splice_window_labels_round_trips_5000_words() {
         .collect();
 
     let merged = splice_window_labels(&windows, &per_window, spans.len());
-    let expected: Vec<Option<usize>> = (0..5000).map(Some).collect();
+    let expected: Vec<Option<usize>> = (0..n).map(Some).collect();
     assert_eq!(merged, expected, "zero lost, duplicated or reordered words");
 
     // The word list the assembler walks is still the original one, in order.
@@ -443,7 +446,10 @@ fn stub_punctuator(
 /// labelled, in order, one run per planned window.
 #[test]
 fn test_restore_long_text_labels_every_word_one_run_per_window() {
-    let words: Vec<String> = (0..5000).map(|i| format!("w{i}")).collect();
+    // Several windows prove one run per window. Five thousand words through
+    // the tokenizer does not finish under Miri inside the nightly budget.
+    let n = if cfg!(miri) { 600 } else { 5000 };
+    let words: Vec<String> = (0..n).map(|i| format!("w{i}")).collect();
     let text = words.join(" ");
     let (punct, seqs) = stub_punctuator(MINIMAL_TOKENIZER_JSON, &["LOWER_O", "UPPER_O"], 1, None);
 
@@ -452,14 +458,21 @@ fn test_restore_long_text_labels_every_word_one_run_per_window() {
     let expected: Vec<String> = words.iter().map(|w| capitalize(w)).collect();
     assert_eq!(out, expected.join(" "));
     let seqs = seqs.lock();
-    assert_eq!(seqs.len(), plan_windows(5000).len());
+    assert_eq!(seqs.len(), plan_windows(n).len());
     assert!(seqs.iter().all(|&s| s <= WINDOW_WORDS), "{seqs:?}");
     assert_eq!(punct.failed_windows(), 0);
 }
 
 /// A window whose lexis blows past the subtoken ceiling is split until every
 /// submitted sequence fits the model's position table.
+// WordPiece over a window of 40-character words does not finish under Miri.
+// A shorter word no longer crosses the ceiling inside one window, so the
+// branch stays a native numeric test.
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "wordpiece of a full window of long words does not finish under Miri"
+)]
 fn test_restore_splits_a_window_over_the_subtoken_ceiling() {
     // 250 words × 40 subtokens ≈ 10k subtokens in one window.
     let word = "a".repeat(40);

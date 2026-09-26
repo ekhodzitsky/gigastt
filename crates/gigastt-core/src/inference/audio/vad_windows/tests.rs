@@ -137,6 +137,10 @@ fn assert_matches_batch(n: usize, probs: &[f32], cfg: &VadConfig) {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "synthesizes tens of seconds of audio; numeric VAD geometry, runs natively"
+)]
 fn test_vad_windows_match_batch_below_single_pass() {
     // 20 s: the compressed buffer stays under the single-pass ceiling, so
     // both paths must yield exactly one whole-buffer window.
@@ -145,6 +149,10 @@ fn test_vad_windows_match_batch_below_single_pass() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "synthesizes tens of seconds of audio; numeric VAD geometry, runs natively"
+)]
 fn test_vad_windows_match_batch_in_the_chunked_regime() {
     // 90 s with ~2/3 speech: the compressed buffer is well past the ceiling,
     // so the overlapping geometry is exercised over compressed time.
@@ -153,6 +161,10 @@ fn test_vad_windows_match_batch_in_the_chunked_regime() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "synthesizes tens of seconds of audio; numeric VAD geometry, runs natively"
+)]
 fn test_vad_windows_match_batch_on_sparse_speech() {
     // Long silences between short bursts: many regions, heavy compression.
     let n = 16000 * 75;
@@ -160,6 +172,10 @@ fn test_vad_windows_match_batch_on_sparse_speech() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "synthesizes tens of seconds of audio; numeric VAD geometry, runs natively"
+)]
 fn test_vad_windows_match_batch_across_configs() {
     let n = 16000 * 45;
     let probs = alternating(n, 25, 25);
@@ -188,6 +204,10 @@ fn test_vad_windows_match_batch_across_configs() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "synthesizes tens of seconds of audio; numeric VAD geometry, runs natively"
+)]
 fn test_vad_windows_all_speech_is_the_plain_stream() {
     // Every frame speech: the compressed timeline is the raw one, so the
     // windows must equal what `FileWindows` alone would yield.
@@ -212,6 +232,10 @@ fn test_vad_windows_all_speech_is_the_plain_stream() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "synthesizes tens of seconds of audio; numeric VAD geometry, runs natively"
+)]
 fn test_vad_windows_no_speech_asks_for_fallback() {
     let n = 16000 * 40;
     let samples = signal(n);
@@ -252,6 +276,10 @@ fn test_vad_windows_empty_clip_needs_no_fallback() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "the cancel poll fires every 32 s of audio; the 10 min scan runs natively"
+)]
 fn test_vad_windows_cancellation_stops_the_scan() {
     let n = 16000 * 600; // 10 min: many pull blocks, so the poll is reached
     let samples = signal(n);

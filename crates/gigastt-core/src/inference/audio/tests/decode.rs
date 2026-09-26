@@ -240,6 +240,7 @@ fn test_decode_wav_resamples_to_16k() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_decode_audio_bytes_shared_channels_8khz() {
     let sample_rate = 8000u32;
     let num_samples = sample_rate as usize;

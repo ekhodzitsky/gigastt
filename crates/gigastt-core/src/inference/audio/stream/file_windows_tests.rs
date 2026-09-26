@@ -76,12 +76,8 @@ fn expected_seq(flat: &[f32], spec: WindowSpec) -> Vec<(usize, Vec<f32>)> {
     }
 }
 
-#[test]
-fn test_file_windows_16k_geometry_matches_decode_words() {
-    let spec = ort_spec();
-    // Lengths straddling the single-pass ceiling (480_000 @16 kHz) and the
-    // window/stride grid.
-    for &n in &[1usize, 8_000, 480_000, 480_001, 560_000, 900_000] {
+fn assert_16k_geometry(spec: WindowSpec, lengths: &[usize]) {
+    for &n in lengths {
         let src = signal(n, 1.0);
         let wav = encode_wav_pcm16(&src, 16000);
         let flat = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None)
@@ -100,6 +96,22 @@ fn test_file_windows_16k_geometry_matches_decode_words() {
 }
 
 #[test]
+fn test_file_windows_16k_geometry_matches_decode_words() {
+    // A few thousand samples still cross a single-pass ceiling, so Miri checks
+    // the overlapping geometry. The production 30 s lengths below are the same
+    // check at the real ceiling; hundreds of thousands of samples do not finish
+    // inside the nightly Miri budget (the job stalls on this test).
+    let small = WindowSpec::new(2_000, 1_600, 320);
+    assert_16k_geometry(small, &[1, 800, 2_000, 2_001, 4_000]);
+    #[cfg(not(miri))]
+    assert_16k_geometry(ort_spec(), &[1, 8_000, 480_000, 480_001, 560_000, 900_000]);
+}
+
+#[test]
+#[cfg_attr(
+    miri,
+    ignore = "40 s of 48 kHz stereo plus the sinc resampler does not finish under Miri"
+)]
 fn test_file_windows_48k_stereo_matches_slice_over_drain() {
     let spec = ort_spec();
     // 40 s @48 kHz stereo → ~40 s @16 kHz mono, above the single-pass ceiling,
@@ -134,8 +146,15 @@ fn test_file_windows_48k_stereo_matches_slice_over_drain() {
 /// stream whose channels differ.
 #[test]
 fn test_file_windows_channel_select_matches_batch_per_channel_decode() {
-    for rate in [16_000u32, 48_000] {
-        let n = rate as usize * 3;
+    // 48 kHz resamples. A 3 s clip of that does not finish under Miri; the
+    // 16 kHz arm is the passthrough the interpreter can still check.
+    let rates: &[u32] = if cfg!(miri) {
+        &[16_000]
+    } else {
+        &[16_000, 48_000]
+    };
+    for &rate in rates {
+        let n = if cfg!(miri) { 1_600 } else { rate as usize * 3 };
         let left = signal(n, 0.3);
         let right = signal(n, 2.1);
         let wav = stereo_wav_pcm16(&left, &right, rate);
@@ -191,8 +210,13 @@ fn test_file_windows_single_pass_yields_one_window() {
 
 #[test]
 fn test_file_windows_total_16k_samples_is_exact_at_16k() {
-    let spec = ort_spec();
-    let n = 700_000; // chunked
+    // 700_000 samples is the native chunked case. Miri uses a small spec that
+    // is still past its own single-pass ceiling.
+    let (spec, n) = if cfg!(miri) {
+        (WindowSpec::new(2_000, 1_600, 320), 4_000)
+    } else {
+        (ort_spec(), 700_000)
+    };
     let src = signal(n, 1.3);
     let wav = encode_wav_pcm16(&src, 16000);
     let mut fw = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None).expect("open");

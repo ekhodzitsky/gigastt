@@ -156,10 +156,17 @@ fn test_download_progress_human_render_matches_legacy() {
 fn test_download_progress_json_first_throttled_then_final() {
     let (sink, log) = ProgressSink::capturing();
     let mut progress = DownloadProgress::new(1_000);
-    // 100 chunks of 10 bytes, all well inside the throttle window.
-    for _ in 0..100 {
+    // First chunk emits. Later chunks stay inside the throttle window even
+    // when the interpreter is slower than 200 ms per call: refresh the stamp
+    // instead of assuming the loop itself outruns the window. The last chunk
+    // is 100% and must still emit exactly once.
+    progress.update(10, &sink, "model.onnx");
+    for _ in 0..98 {
+        progress.last_json_emit = Some(std::time::Instant::now());
         progress.update(10, &sink, "model.onnx");
     }
+    progress.last_json_emit = Some(std::time::Instant::now());
+    progress.update(10, &sink, "model.onnx");
     let events = log.lock().unwrap();
     assert_eq!(
         events.as_slice(),

@@ -1,7 +1,10 @@
 use super::*;
 use crate::inference::CommitPolicy;
 
+// Five 1 s chunks through the mel frontend do not finish inside the
+// nightly Miri budget. The snapshot contract still runs natively.
 #[test]
+#[cfg_attr(miri, ignore = "5 s of streaming mel FFT does not finish under Miri")]
 fn test_stream_snapshot_matches_emitted_commits_and_resets_after_final() {
     use crate::inference::TranscriptSnapshot;
     use std::sync::Arc;

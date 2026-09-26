@@ -661,7 +661,10 @@ fn blank_run_engine_window_cap() -> (Engine, tempfile::TempDir) {
     blank_run_engine_window_cap_mode(true)
 }
 
+// 2.5 s of mel FFT plus the decode loop does not finish inside the
+// nightly Miri budget. The cap behaviour still runs on every native test.
 #[test]
+#[cfg_attr(miri, ignore = "2.5 s of mel FFT does not finish under Miri")]
 fn test_process_chunk_window_cap_emits_partial_not_final() {
     // Hitting STREAM_MAX_WINDOW must commit a stable prefix and emit a
     // non-final partial — never speech_final. Voice assistants treat
@@ -696,6 +699,7 @@ fn test_process_chunk_window_cap_emits_partial_not_final() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore = "2.5 s of mel FFT does not finish under Miri")]
 fn test_process_chunk_configured_window_defers_cap() {
     // With the window cap raised to 7.5 s, a 2.5 s chunk must NOT trigger the
     // cap path: no stable-prefix commit, no slide (context stays zero).

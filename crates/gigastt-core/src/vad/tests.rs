@@ -204,14 +204,23 @@ mod segmenter {
         let c = VadConfig::default();
         let fs = VAD_FRAME_SAMPLES;
         // Alternating speech/silence blocks of many different periods, plus the
-        // degenerate all-speech / all-silence ends.
-        for period in [1usize, 2, 3, 5, 8, 16, 20, 31, 64] {
-            let total = 200 * fs + 137; // deliberately not frame-aligned
+        // degenerate all-speech / all-silence ends. The long sweep does not
+        // finish under Miri; a few periods on a shorter clip still compare
+        // the streamer to the batch oracle.
+        let periods: &[usize] = if cfg!(miri) {
+            &[1, 8, 64]
+        } else {
+            &[1, 2, 3, 5, 8, 16, 20, 31, 64]
+        };
+        let frames = if cfg!(miri) { 48 } else { 200 };
+        for &period in periods {
+            let total = frames * fs + 137; // deliberately not frame-aligned
             let probs = probs_for(total, |i| if (i / period) % 2 == 0 { 0.9 } else { 0.1 });
             assert_stream_matches_batch(&probs, total, &c);
         }
+        let flat_frames = if cfg!(miri) { 24 } else { 97 };
         for level in [0.1f32, 0.9] {
-            let total = 97 * fs;
+            let total = flat_frames * fs;
             let probs = probs_for(total, |_| level);
             assert_stream_matches_batch(&probs, total, &c);
         }
@@ -285,7 +294,10 @@ mod segmenter {
         // that waited for it would hold the whole hour. Released early, the
         // retained PCM stays inside the look-ahead the config implies.
         let c = VadConfig::default();
-        let total = 16000 * 3600;
+        // The bound is about a second of look-ahead. Three seconds already
+        // exceeds it, so a segmenter that kept every sample fails the check.
+        // An hour of samples does not finish under Miri.
+        let total = if cfg!(miri) { 16000 * 3 } else { 16000 * 3600 };
         let probs = probs_for(total, |_| 0.9);
         let (regions, out, peak) = stream(&probs, total, &c);
         assert_eq!(regions, vec![(0, total)]);
@@ -304,7 +316,13 @@ mod segmenter {
         // Three hours of mostly silence with periodic speech: the same bound
         // must hold when regions open and close throughout.
         let c = VadConfig::default();
-        let total = 16000 * 3600 * 3;
+        // Eight seconds covers a full speech/silence cycle of this pattern.
+        // Three hours of samples does not finish under Miri.
+        let total = if cfg!(miri) {
+            16000 * 8
+        } else {
+            16000 * 3600 * 3
+        };
         let probs = probs_for(total, |i| if (i / 40) % 5 == 0 { 0.9 } else { 0.1 });
         let (regions, out, peak) = stream(&probs, total, &c);
         assert!(!regions.is_empty());

@@ -15,8 +15,11 @@
 # What it does NOT cover (left to the existing e2e / soak / CoreML-smoke jobs
 # plus code review — do not read this as a broad "memory-safety CI"):
 #   * The onnxruntime inference path (Miri interprets Rust MIR and cannot call
-#     the onnxruntime C API; the ort-FFI roundtrip tests are `#[cfg_attr(miri,
-#     ignore)]`).
+#     the onnxruntime C API). Tensor roundtrips, prepacked-weight attachment,
+#     and optimized-graph session loads are `#[cfg_attr(miri, ignore)]`:
+#     reaching `OrtGetApiBase` aborts the interpreter instead of failing the
+#     test. Host RAM sizing returns unknown under Miri (`_SC_PHYS_PAGES` is
+#     unimplemented); an unknown budget already leaves the pool clamp off.
 #   * The objc2 / Core ML ANE bridge (Objective-C runtime, macOS-only; compiled
 #     out here via `--no-default-features`).
 #   * The `gigastt-ffi` C-ABI cdylib.
@@ -24,13 +27,27 @@
 #   * The mel-spectrogram FFT and rubato resampler numeric paths — excluded from
 #     the Miri subset because a single sinc-resample / 1 s mel transform runs for
 #     minutes under the interpreter (see the `#[cfg_attr(miri, ignore)]` /
-#     `#[cfg(all(test, not(miri)))]` markers). These are numeric-correctness
-#     tests with little UB signal; they run natively on every `cargo test`. This
-#     is a documented Miri coverage gap, not a disabled test.
+#     `#[cfg(all(test, not(miri)))]` markers). The same exclusion covers
+#     opus-rs packet decode, multi-second file-window / VAD scans, the
+#     production 30 s window lengths, a 50 s mock cancellation decode, the
+#     30 s single-pass file decode, the punctuation split of a full window
+#     of 40-character words (WordPiece does not finish under Miri),
+#     hour-scale VAD retention scans (a few seconds still exceed the
+#     look-ahead bound), the long stream-versus-batch VAD sweep, the
+#     million-byte SHA-256 vector, the 2.5 s streaming-window mel, and a
+#     5 s streaming snapshot:
+#     The 2026-09 nightly job spent the rest of its 40-minute budget inside
+#     a file-window scan and never returned. Continuing that suite locally
+#     hit the same class of cliff in the other scans listed above. These
+#     are numeric-correctness tests with little UB signal; they run natively on
+#     every `cargo test`. Short stand-ins (a few thousand samples, packet
+#     framing, header-only Opus errors, a few seconds of VAD) stay in the
+#     Miri set. This is a documented Miri coverage gap, not a disabled test.
 #
-# NOTE: the Miri skip set was locked empirically on a macOS/aarch64 host (Miri
-# interprets host-agnostic MIR, so the eligible/ineligible split is the same),
-# while this workflow runs the interpretation on ubuntu-latest / x86_64.
+# NOTE: the original skip set was locked on a macOS/aarch64 host. Miri
+# interprets host-agnostic MIR, so the eligible/ineligible split is the same
+# on the ubuntu-latest / x86_64 runner. The 2026-09 budget pass was
+# re-measured on Linux x86_64.
 
 name: Nightly Miri + TSAN
 

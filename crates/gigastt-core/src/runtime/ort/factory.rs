@@ -428,7 +428,10 @@ mod tests {
         assert_eq!(select_backend(Some(ModelVariant::Rnnt)), BackendKind::Ort);
     }
 
+    // `PrepackedWeights::new` calls `OrtGetApiBase`. Miri aborts on that
+    // foreign function instead of failing the test.
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_cpu_factory_can_attach_prepacked_weights() {
         let pw = std::sync::Arc::new(ort::session::builder::PrepackedWeights::new());
         let f = OrtFactory::cpu().with_prepacked_weights(pw);

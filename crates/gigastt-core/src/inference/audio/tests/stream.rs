@@ -274,7 +274,15 @@ fn test_streaming_decode_matches_whole_buffer_resample_fixture() {
 fn test_streaming_decode_16k_input_is_bit_identical() {
     // A 16 kHz source must never reach the resampler: every sample stays the
     // raw PCM16 conversion and the frame count is preserved exactly.
-    let pcm = fixture_tone_pcm();
+    // The fixture is a few seconds; Miri checks the same identity on a short
+    // tone so the nightly job still finishes.
+    let pcm = if cfg!(miri) {
+        (0..2_000)
+            .map(|i| ((i as f32 * 0.02).sin() * 8000.0) as i16)
+            .collect()
+    } else {
+        fixture_tone_pcm()
+    };
     let mono = decode_audio_bytes(&make_wav_bytes(&pcm, 16000)).unwrap();
     assert_eq!(mono.len(), pcm.len());
     for (i, (&raw, &got)) in pcm.iter().zip(&mono).enumerate() {
@@ -336,7 +344,14 @@ fn test_telephony_raw_streaming_matches_whole_buffer_resample() {
 /// depends on the chunk cadence, so any drift here would change a transcript.
 #[test]
 fn test_audio_chunks_match_flat_decode_chunked() {
-    for &n in &[1usize, 999, 16_000, 16_001, 48_000, 120_000] {
+    // 48k–120k samples of encode-plus-decode do not finish under Miri.
+    // The short lengths still cross a chunk boundary.
+    let lengths: &[usize] = if cfg!(miri) {
+        &[1, 999, 2_000]
+    } else {
+        &[1, 999, 16_000, 16_001, 48_000, 120_000]
+    };
+    for &n in lengths {
         for &chunk in &[16_000usize, 640, 7_000] {
             let src: Vec<f32> = (0..n)
                 .map(|i| 0.4 * ((i as f32) * 0.017).sin() + 0.2 * ((i as f32) * 0.0031).sin())
@@ -364,7 +379,10 @@ fn test_audio_chunks_match_flat_decode_chunked() {
 /// HTTP layer can answer 413 rather than a generic decode failure.
 #[test]
 fn test_audio_chunks_honour_max_audio_secs() {
-    let src = vec![0.1f32; 16_000 * 5];
+    // Five seconds natively. One second still exceeds the cap below, and it
+    // finishes under Miri.
+    let secs = if cfg!(miri) { 1 } else { 5 };
+    let src = vec![0.1f32; 16_000 * secs];
     let wav = bytes::Bytes::from(encode_wav_pcm16(&src, 16000));
     // Unbounded: the whole clip streams.
     let mut ok = AudioChunks::from_bytes(wav.clone(), 16_000, None).expect("open");
@@ -375,11 +393,12 @@ fn test_audio_chunks_honour_max_audio_secs() {
     assert_eq!(total, src.len());
 
     // Bounded below the clip length: the budget trips during the pull.
-    let mut capped = AudioChunks::from_bytes(wav, 16_000, Some(1.0)).expect("open");
+    let cap = if cfg!(miri) { 0.25 } else { 1.0 };
+    let mut capped = AudioChunks::from_bytes(wav, 16_000, Some(cap)).expect("open");
     let err = loop {
         match capped.next_chunk() {
             Ok(Some(_)) => continue,
-            Ok(None) => panic!("a 5 s clip must not drain under a 1 s limit"),
+            Ok(None) => panic!("clip must not drain under a limit shorter than itself"),
             Err(e) => break e,
         }
     };
@@ -401,7 +420,9 @@ fn test_audio_chunks_honour_max_audio_secs() {
 #[test]
 fn test_dual_mono_detector_matches_batch_correlation() {
     // Deterministic, no rand: a base signal plus independent-ish perturbations.
-    let n = 40_000;
+    // 40_000 samples with one-sample pushes is the native recurrence. Miri
+    // checks the same recurrence on a shorter buffer.
+    let n = if cfg!(miri) { 4_000 } else { 40_000 };
     let base: Vec<f32> = (0..n)
         .map(|i| 0.5 * ((i as f32) * 0.013).sin() + 0.2 * ((i as f32) * 0.0007).cos())
         .collect();
@@ -524,8 +545,15 @@ fn stereo_wav(left: &[f32], right: &[f32], rate: u32) -> bytes::Bytes {
 #[cfg(feature = "file-decode")]
 #[test]
 fn test_scan_channels_matches_batch_dual_mono_verdict() {
-    for rate in [16_000u32, 48_000] {
-        let n = rate as usize * 2;
+    // 48 kHz resamples both channels. That sinc does not finish under Miri;
+    // 16 kHz is the passthrough.
+    let rates: &[u32] = if cfg!(miri) {
+        &[16_000]
+    } else {
+        &[16_000, 48_000]
+    };
+    for &rate in rates {
+        let n = if cfg!(miri) { 1_600 } else { rate as usize * 2 };
         let a: Vec<f32> = (0..n)
             .map(|i| 0.5 * ((i as f32) * 0.011).sin() + 0.15 * ((i as f32) * 0.0009).cos())
             .collect();

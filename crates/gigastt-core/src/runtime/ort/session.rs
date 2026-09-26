@@ -440,6 +440,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_cache_invalid_source_leaves_no_partial_files() {
         let tmp = tempfile::tempdir().unwrap();
         let model = tmp.path().join("encoder.onnx");
@@ -454,6 +455,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_cache_broken_graph_is_replaced_on_source_load() {
         let tmp = tempfile::tempdir().unwrap();
         let model = tmp.path().join("encoder.onnx");
@@ -472,6 +474,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_cache_refresh_replaces_file_without_truncating_readers() {
         use std::os::unix::fs::MetadataExt;
 
@@ -496,6 +499,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_cache_concurrent_cold_loads_leave_reusable_graph() {
         let tmp = tempfile::tempdir().unwrap();
         let model = tmp.path().join("encoder.onnx");
@@ -534,6 +538,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
     fn test_cache_publication_failure_keeps_loaded_session() {
         let tmp = tempfile::tempdir().unwrap();
         let model = tmp.path().join("encoder.onnx");

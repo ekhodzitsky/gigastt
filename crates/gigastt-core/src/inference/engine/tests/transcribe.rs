@@ -8,13 +8,20 @@ fn test_transcribe_samples_silence_yields_empty_text() {
     // duration.
     let (engine, _tmp) = test_support::rnnt_engine();
     let mut guard = engine.pool.checkout_blocking().expect("checkout");
-    let silence = vec![0.0f32; 16000 * 2]; // 2s
+    // A quarter-second still runs the encoder and the empty decode. Two
+    // seconds of mel FFT does not finish inside the nightly Miri budget.
+    let (samples, secs) = if cfg!(miri) {
+        (4_000, 0.25)
+    } else {
+        (16_000 * 2, 2.0)
+    };
+    let silence = vec![0.0f32; samples];
     let result = engine
         .transcribe_samples(&silence, &mut guard)
         .expect("silence transcription must not error");
     assert!(result.text.trim().is_empty(), "silence yields no text");
     assert!(result.words.is_empty());
-    assert!((result.duration_s - 2.0).abs() < 1e-6);
+    assert!((result.duration_s - secs).abs() < 1e-6);
 }
 
 #[test]
@@ -34,6 +41,10 @@ fn test_transcribe_samples_short_sub_frame_audio() {
 }
 
 #[test]
+#[cfg_attr(
+    miri,
+    ignore = "single-pass decode of the 30 s chunk threshold does not finish under Miri"
+)]
 fn test_transcribe_samples_below_chunk_threshold_single_pass() {
     // Just under the long-form chunk threshold (30s) takes the single-pass
     // path; pure silence still yields no words but must not error.
