@@ -1,0 +1,55 @@
+{
+  "name": "gigaam-v3-rnnt",
+  "runtime": "int8-onnx",
+  "fp32_engine": "not shipped; gigastt loads the INT8 encoder only. The FP32 reference is the author package.",
+  "measured": {
+    "date": "2026-09-27",
+    "gigastt": "2.21.0",
+    "host": "AMD Ryzen AI 9 HX 370, CPU"
+  },
+  "oracle": {
+    "package": "gigaam",
+    "revision": "7447938d791c4f3e643386ee22c33777004293a5",
+    "load": "gigaam.load_model('v3_rnnt', fp16_encoder=False, device='cpu')",
+    "decode": "greedy, no external language model"
+  },
+  "short_clip": {
+    "file": "crates/gigastt/tests/fixtures/golos_00.wav",
+    "transcript": "шестьдесят тысяч тенге сколько будет стоить",
+    "int8_vs_author_fp32": "exact"
+  },
+  "mel": {
+    "dump": "benchmark/oracle/golos_00_author_mel.f32",
+    "shape": [64, 399],
+    "layout": "float32 little-endian, time fastest",
+    "author_log_floor": 1e-9,
+    "gigastt_log_floor": 1e-10,
+    "max_abs_including_floor": 2.302584,
+    "active_bin_mean_abs": 0.008845,
+    "active_bin_max_abs": 0.30744,
+    "note": "Silent bins differ by ln(10) because the clamps differ. Active bins are those more than 0.05 above the author floor."
+  },
+  "encoder": {
+    "dump": "benchmark/oracle/golos_00_author_encoder.f32",
+    "shape": [768, 100],
+    "layout": "float32 little-endian, time fastest",
+    "int8_vs_author_cosine": 0.9985,
+    "int8_vs_author_max_abs": 0.14464,
+    "gate": "cosine > 0.997 and max abs < 0.20"
+  },
+  "fleurs_ru": {
+    "n": 775,
+    "author_rejected_long": 5,
+    "wer": "jiwer.wer, whitespace tokens, no number normalization",
+    "gigastt_int8_wer": 0.08939070016034206,
+    "author_fp32_wer_reject_as_deletion": 0.10168359166221272,
+    "both_decoded_n": 770,
+    "gigastt_int8_wer_both_decoded": 0.08917672589176726,
+    "author_fp32_wer_both_decoded": 0.08815950088159501,
+    "int8_minus_author_pp_both_decoded": 0.102
+  },
+  "intermediates": {
+    "shipped_onnx": "The encoder is one graph. Block outputs from the author PyTorch module are not tensors of the shipped ONNX file.",
+    "compared": "log-mel, encoder output, and the greedy transcript on the short clip; FLEURS-ru word error against the same author decode"
+  }
+}

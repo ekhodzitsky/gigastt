@@ -96,6 +96,50 @@ RTF (M1 CPU): gigastt ~0.04–0.09 · Vosk ~0.04–0.05 · faster-whisper ~0.7�
 Manifests under `benchmark/manifests/`. License notes:
 [`benchmark/DATA_LICENSE`](../benchmark/DATA_LICENSE).
 
+### Author-package oracle
+
+The table above is gigastt against other engines. It is not a check against
+the author `gigaam` package. That check is separate:
+[`benchmark/tolerances/gigaam-v3-rnnt.json`](../benchmark/tolerances/gigaam-v3-rnnt.json).
+
+gigastt loads the INT8 encoder only, so there is no FP32 engine number. The
+FP32 reference is `gigaam.load_model("v3_rnnt", fp16_encoder=False, device="cpu")`
+(package revision `7447938`, greedy, no external language model). The shipped
+ONNX encoder is one graph, so the author package's per-block tensors are not
+outputs we can diff.
+
+On `crates/gigastt/tests/fixtures/golos_00.wav` (4 s, 16 kHz) the INT8
+transcript and the author FP32 transcript are the same string. Log-mel is
+`[64, 399]` (HTK, `center=false`, hop 160). The author clamps energy at
+`1e-9` before the log and this frontend clamps at `1e-10`, so silent bins
+differ by `ln(10)` (max abs 2.303). On bins above that clamp the mean
+absolute gap is 0.0088 and the max is 0.307. Encoder output is `[768, 100]`:
+INT8 versus the author FP32 activation has cosine 0.9985 and max abs 0.145.
+
+FLEURS `ru_ru` test, n=775, same greedy recipe, punctuation and ITN off.
+Word error here is raw `jiwer.wer` (whitespace tokens, no number
+normalization). That is not the harness figure in the table above (gigastt
+5.26% on an Apple M1). The author package refuses five clips longer than one
+pass; those count as empty hypotheses. On the 770 clips both sides decode,
+INT8 is 8.918% and the author FP32 package is 8.816% (+0.102 pp). On all
+775, counting those five as deletions for the author only, INT8 is 8.939%
+and the author is 10.168%. Measured with gigastt 2.21.0 on an AMD Ryzen AI
+9 HX 370, CPU, 2026-09-27. Scoring these same INT8 hypotheses with the
+harness normalizer on this machine gives 4.65%. That does not replace the
+table, and it was not computed for the author package.
+
+```sh
+python3 scripts/oracle_gigaam.py
+cargo test -p gigastt-core --lib test_golos_00_int8_encoder_near_author_fp32 -- --ignored
+cargo test -p gigastt --test oracle_gigaam -- --ignored
+```
+
+The mel comparison runs in ordinary `cargo test --lib` and does not need the
+model. The script skips when `gigaam` or the release binary is missing. The
+ignored tests skip when `~/.gigastt/models/v3_rnnt_encoder_int8.onnx` is
+absent. FLEURS-ru is skipped until `scripts/prepare_fleurs.py --config ru_ru`
+has written the manifest and the wavs.
+
 > The pre-v2.3 default was the `e2e_rnnt` head (clean read 8.60%, far-field 5.90,
 > phone 19.28, YouTube 11.35); the `rnnt` head above more than halves clean-read WER
 > and edges the others. Both heads share the encoder — `rnnt` emits bare lowercase

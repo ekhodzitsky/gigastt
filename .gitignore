@@ -62,3 +62,6 @@ Thumbs.db
 
 # Dual-constraint harness regenerates this fixture locally
 benchmark/results_dual_constraint/*.wav
+
+# Per-clip oracle transcripts. The summary JSON next to this directory is kept.
+benchmark/oracle/fleurs_ru_int8/

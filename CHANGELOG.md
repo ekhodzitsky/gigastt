@@ -32,6 +32,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- **Author-package oracle for rnnt INT8.** On a 4-second Golos clip the greedy
+  transcript matches the author `gigaam` FP32 package exactly, and the INT8
+  encoder activation has cosine 0.9985 against that package. On FLEURS-ru,
+  INT8 is 0.102 pp above the author package on the 770 clips both sides decode.
+  The competitor table is unchanged. See
+  [docs/benchmarks.md](docs/benchmarks.md#author-package-oracle).
 - **Speaker attribution on short public meetings.** Four VoxConverse clips
   (CC BY 4.0) do not reproduce a 14-cluster outcome for five speakers.
   Current defaults are within +2 speakers. Details:

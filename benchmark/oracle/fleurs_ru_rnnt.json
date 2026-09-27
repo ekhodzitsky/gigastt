@@ -1,0 +1,17 @@
+{
+  "n": 775,
+  "wer": "jiwer.wer, whitespace tokens, no number normalization",
+  "author_rejected_long": 5,
+  "author_rejected_files": [
+    "10037381448507469978.wav",
+    "10388523902227354213.wav",
+    "14994704515906027952.wav",
+    "4066493812938862877.wav",
+    "612954240222298019.wav"
+  ],
+  "gigastt_int8_wer": 0.08939070016034206,
+  "author_fp32_wer_reject_as_deletion": 0.10168359166221272,
+  "both_decoded_n": 770,
+  "gigastt_int8_wer_both_decoded": 0.08917672589176726,
+  "author_fp32_wer_both_decoded": 0.08815950088159501
+}
