@@ -32,6 +32,10 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- **Speaker attribution on short public meetings.** Four VoxConverse clips
+  (CC BY 4.0) do not reproduce a 14-cluster outcome for five speakers.
+  Current defaults are within +2 speakers. Details:
+  [docs/speaker-attribution.md](docs/speaker-attribution.md).
 - **Long-recording limits.** [docs/long-recordings.md](docs/long-recordings.md)
   records a 20-minute file on the existing transcribe and jobs APIs: the
   50 MiB body cap, server RSS separate from the client, and that cancel or

@@ -190,6 +190,12 @@ impl Engine {
                 None => DiarizationOutcome::NoSpeakerModel,
                 Some(enc) => match diarization::run_offline(&enc, float_samples) {
                     Ok(turns) => {
+                        let speakers = turns
+                            .iter()
+                            .map(|turn| turn.speaker)
+                            .collect::<std::collections::BTreeSet<_>>()
+                            .len();
+                        tracing::info!(turns = turns.len(), speakers, "offline diarization turns");
                         diarization::assign_speakers_by_midpoint(&turns, &mut words);
                         DiarizationOutcome::Applied
                     }
