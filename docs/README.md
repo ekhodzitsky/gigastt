@@ -30,6 +30,7 @@ Use the references below for a specific API, command or deployment question.
 |---|---|
 | **[Deployment](deployment.md)** | Reverse proxy (Caddy/nginx), TLS, Docker |
 | **[Runbook](runbook.md)** | Drain, pool saturation, timeouts, OOM, model download failures |
+| **[Long recordings](long-recordings.md)** | Upload cap, in-memory jobs, cancel and restart |
 | **[Troubleshooting](troubleshooting.md)** | Symptom → cause → fix table |
 | **[Observability](observability/)** | Prometheus alerts + dashboard |
 | **[Privacy](privacy.md)** | What leaves the device (runtime vs build) |

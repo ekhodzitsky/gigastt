@@ -601,6 +601,9 @@ curl -X POST http://127.0.0.1:9876/v1/jobs \
 
 The endpoint is disabled by default. Enable it with `--enable-jobs` or
 `GIGASTT_ENABLE_JOBS=1`. When disabled, all `/v1/jobs` paths return `404`.
+Jobs are in-memory: a cancel or a restart does not resume the upload.
+Measured limits and the client recipe are in
+[long recordings](long-recordings.md).
 
 Poll for status:
 
@@ -936,7 +939,7 @@ mid-job.
 | 409 | `punctuation_not_available` | `?punctuation=true` but no punctuation model is loaded |
 | 400 | `too_many_hotwords` | More than 64 phrases in `?hotwords=` |
 | 400 | `hotword_phrase_too_long` | A `?hotwords=` phrase exceeds 64 characters |
-| 413 | `payload_too_large` | Body exceeds `--body-limit-bytes` (default 50 MiB) |
+| 413 | `payload_too_large` | Body exceeds `--body-limit-bytes` (default 50 MiB). A `Content-Length` already over the cap is rejected by the body-limit layer as plain text (`length limit exceeded`) before that JSON code |
 | 413 | `audio_too_long` | Audio exceeds `--max-audio-secs` (opt-in, env `GIGASTT_MAX_AUDIO_SECS`, default unlimited), or a whole-buffer path (diarization/`channels=split`/telephony) hit its ~30-minute safety ceiling |
 | 422 | `invalid_audio` | Audio could not be decoded (unsupported/corrupt format) |
 | 422 | `transcription_error` | Audio decoded but inference failed |

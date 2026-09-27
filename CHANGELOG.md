@@ -32,6 +32,10 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- **Long-recording limits.** [docs/long-recordings.md](docs/long-recordings.md)
+  records a 20-minute file on the existing transcribe and jobs APIs: the
+  50 MiB body cap, server RSS separate from the client, and that cancel or
+  restart means sending the file again. No durable queue.
 - **Short-note latency on a two-CPU pin.** Fifteen labelled Golos commands,
   including Telegram-style Ogg/Opus and browser-style WebM/Opus, measured
   with the release binary pinned to two logical CPUs. Warm RTF is about 0.06;

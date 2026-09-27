@@ -16,6 +16,7 @@ Operator-facing guidance for gigastt in production: graceful shutdown, session c
 | `inference_timeout` (REST `504` / WS close) | A run made no progress for `--inference-timeout-secs` (default 600 s) | Not a length limit — the deadline resets on every decode window, so long files never trip it. Investigate a wedged ONNX run |
 | Server won't start, model errors | Missing / corrupt model files | See [Model download failures](#model-download-failures) |
 | OOM / pod killed | Pool RSS exceeds the box | Lower `--pool-size`, use the INT8 encoder, `--pool-min-size` to boot degraded — see [Out-of-memory](#out-of-memory-oom) |
+| Long file must be sent again after a cancel or restart | Jobs are not stored on disk, and one upload is capped at `--body-limit-bytes` (default 50 MiB) | Chunk under the cap, or raise it with `--jobs-max-bytes`. See [Long recordings](long-recordings.md) |
 
 ## Graceful drain (SIGTERM)
 
