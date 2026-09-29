@@ -104,8 +104,22 @@ fn test_cli_cache_gc_optimized_cache_dir_env_var() {
 fn test_cli_quantize_parsing() {
     let cli = Cli::parse_from(["gigastt", "quantize", "--force"]);
     match cli.command {
-        Commands::Quantize { force, .. } => {
+        Commands::Quantize {
+            force, skip_conv, ..
+        } => {
             assert!(force);
+            assert!(!skip_conv);
+        }
+        _ => panic!("expected Quantize"),
+    }
+
+    let cli = Cli::parse_from(["gigastt", "quantize", "--skip-conv", "--force"]);
+    match cli.command {
+        Commands::Quantize {
+            force, skip_conv, ..
+        } => {
+            assert!(force);
+            assert!(skip_conv);
         }
         _ => panic!("expected Quantize"),
     }

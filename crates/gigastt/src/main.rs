@@ -94,6 +94,12 @@ enum Commands {
         /// Force re-quantization even if INT8 model exists
         #[arg(long)]
         force: bool,
+
+        /// Leave `Conv` in FP32. `MatMul` and `Gemm` stay quantized.
+        /// The published bundle still quantizes convolutions. When an INT8
+        /// encoder is already in the directory, `--force` is required.
+        #[arg(long, default_value_t = false)]
+        skip_conv: bool,
     },
 
     /// Prune stale ONNX Runtime optimized graphs and stale CoreML compiled-model
@@ -386,8 +392,12 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
         }
-        Commands::Quantize { model_dir, force } => {
-            run_quantize(model_dir, force)?;
+        Commands::Quantize {
+            model_dir,
+            force,
+            skip_conv,
+        } => {
+            run_quantize(model_dir, force, skip_conv)?;
         }
         Commands::CacheGc {
             model_dir,

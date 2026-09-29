@@ -32,6 +32,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- **`gigastt quantize --skip-conv`.** Packaging rebuild that leaves
+  convolutions in FP32 and still quantizes `MatMul` and `Gemm`. The
+  published INT8 bundle is unchanged. If an INT8 encoder is already in
+  the directory, the flag requires `--force`; otherwise it exits with
+  an error and leaves that file in place.
 - **Author-package oracle for rnnt INT8.** On a 4-second Golos clip the greedy
   transcript matches the author `gigaam` FP32 package exactly, and the INT8
   encoder activation has cosine 0.9985 against that package. On FLEURS-ru,

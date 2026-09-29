@@ -44,8 +44,31 @@ const CAST_TO_FLOAT: i64 = FLOAT as i64;
 /// `MatMulInteger` / `ConvInteger` need ≥10, so 11 covers everything we emit.
 const MIN_OPSET: i64 = 11;
 
-/// Node types whose weights benefit from INT8 quantization.
-const QUANTIZABLE_OPS: &[&str] = &["MatMul", "Conv", "Gemm"];
+/// Packaging filter for one local rebuild.
+///
+/// [`Default`] quantizes `MatMul`, `Conv`, and `Gemm`, which is the published
+/// bundle. `conv: false` leaves convolutions in float. `MatMul` and `Gemm`
+/// stay quantized either way; they are not switches.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct QuantizeOps {
+    pub conv: bool,
+}
+
+impl Default for QuantizeOps {
+    fn default() -> Self {
+        Self { conv: true }
+    }
+}
+
+impl QuantizeOps {
+    fn allows(self, op: &str) -> bool {
+        match op {
+            "MatMul" | "Gemm" => true,
+            "Conv" => self.conv,
+            _ => false,
+        }
+    }
+}
 
 /// Minimum number of elements in a tensor to quantize (skip small biases).
 const MIN_ELEMENTS: usize = 1024;
@@ -63,6 +86,12 @@ use weights::{QuantizedWeight, extract_float_data, per_channel_axis, quantize_pe
 /// → `Cast` → per-channel `Mul` (+ optional bias `Add`) chain, with the weight
 /// stored as a per-channel-symmetric INT8 initializer.
 pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
+    quantize_model_with(input, output, QuantizeOps::default())
+}
+
+/// [`quantize_model`] with [`QuantizeOps`]. [`QuantizeOps::default`] is the
+/// published bundle.
+pub fn quantize_model_with(input: &Path, output: &Path, ops: QuantizeOps) -> Result<()> {
     let model_bytes = std::fs::read(input).context("Failed to read ONNX model")?;
     let mut model =
         ModelProto::decode(&model_bytes[..]).context("Failed to decode ONNX protobuf")?;
@@ -83,7 +112,7 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     // Collect quantization targets: (node_index, weight_input_index, weight_name, init_index).
     let mut targets = Vec::new();
     for (ni, node) in graph.node.iter().enumerate() {
-        if !QUANTIZABLE_OPS.contains(&node.op_type()) {
+        if !ops.allows(node.op_type()) {
             continue;
         }
         // Weight is input[1] for MatMul/Conv/Gemm.

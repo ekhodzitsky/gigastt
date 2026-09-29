@@ -101,6 +101,55 @@ fn test_zero_scale_handling() {
 }
 
 #[test]
+fn test_skip_conv_keeps_float_conv_and_quantizes_matmul() {
+    let mut model = matmul_model("w_mm", vec![32, 32], 1024);
+    let graph = model.graph.as_mut().unwrap();
+    graph.initializer.push(TensorProto {
+        name: Some("w_conv".into()),
+        dims: vec![32, 32, 1, 1],
+        data_type: Some(FLOAT),
+        float_data: vec![0.01; 1024],
+        ..Default::default()
+    });
+    graph.initializer.push(TensorProto {
+        name: Some("w_gemm".into()),
+        dims: vec![32, 32],
+        data_type: Some(FLOAT),
+        float_data: vec![0.02; 1024],
+        ..Default::default()
+    });
+    graph.node.push(NodeProto {
+        op_type: Some("Conv".into()),
+        input: vec!["input".into(), "w_conv".into()],
+        output: vec!["conv_out".into()],
+        ..Default::default()
+    });
+    graph.node.push(NodeProto {
+        op_type: Some("Gemm".into()),
+        input: vec!["input".into(), "w_gemm".into()],
+        output: vec!["gemm_out".into()],
+        ..Default::default()
+    });
+
+    let tmp = tempfile::tempdir().unwrap();
+    let input = tmp.path().join("in.onnx");
+    let output = tmp.path().join("out.onnx");
+    let mut bytes = Vec::new();
+    model.encode(&mut bytes).unwrap();
+    std::fs::write(&input, bytes).unwrap();
+    quantize_model_with(&input, &output, QuantizeOps { conv: false }).unwrap();
+
+    let decoded = ModelProto::decode(&std::fs::read(&output).unwrap()[..]).unwrap();
+    let graph = decoded.graph.unwrap();
+    let ops: Vec<&str> = graph.node.iter().map(|node| node.op_type()).collect();
+    assert!(ops.contains(&"Conv"), "{ops:?}");
+    assert!(ops.contains(&"MatMulInteger"), "{ops:?}");
+    assert!(!ops.contains(&"ConvInteger"), "{ops:?}");
+    assert!(!ops.contains(&"MatMul"), "{ops:?}");
+    assert!(!ops.contains(&"Gemm"), "{ops:?}");
+}
+
+#[test]
 fn test_roundtrip_encode_decode_minimal_model() {
     // End-to-end sanity: a tiny ModelProto round-trips through the
     // generated prost codec without losing fields.
