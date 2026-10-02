@@ -1,0 +1,169 @@
+{
+  "completed": false,
+  "scope": "Manifest-only audit",
+  "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+  "no_training_split": true,
+  "bootstrap": {
+    "resampling_unit": "utterance",
+    "seed": 42,
+    "resamples": 1000,
+    "coverage": "95%",
+    "caveat": "Descriptive selected-set interval; repeated sentences/speakers violate independent-speaker interpretation; not a language-wide estimate"
+  },
+  "manifests": [
+    {
+      "language": "en",
+      "manifest_sha256": "c813e470291a372b3ad96238591db85310461b1887c36c6a4d59d8d1279bb284",
+      "n": 1000,
+      "splits": {
+        "test": 647,
+        "validation": 353
+      },
+      "unique_sentence_ids": 500,
+      "audio_s": 9753.12,
+      "digit_bearing_references": 166,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 259,
+        "1": 153,
+        "2": 72,
+        "3": 38,
+        "4": 31,
+        "5": 44,
+        "6": 39,
+        "7": 48,
+        "8": 34,
+        "9": 50,
+        "²": 1,
+        "½": 1,
+        "¾": 1,
+        "é": 4,
+        "ñ": 2,
+        "ó": 4,
+        "ö": 3,
+        "ă": 2,
+        "ğ": 2,
+        "ş": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "kk",
+      "manifest_sha256": "5a8d33c53c04bf36db9658335379ddc3605cc9ff88d3dc702c636001de9dc26c",
+      "n": 1000,
+      "splits": {
+        "test": 856,
+        "validation": 144
+      },
+      "unique_sentence_ids": 445,
+      "audio_s": 16048.2,
+      "digit_bearing_references": 182,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 272,
+        "1": 151,
+        "2": 90,
+        "3": 49,
+        "4": 34,
+        "5": 49,
+        "6": 45,
+        "7": 43,
+        "8": 43,
+        "9": 62,
+        "½": 2,
+        "¾": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "ky",
+      "manifest_sha256": "29b2cc8ea3ca651b96b1d852fc2a28e6e21144f911bdbd6897481642d1f2220c",
+      "n": 1000,
+      "splits": {
+        "test": 977,
+        "validation": 23
+      },
+      "unique_sentence_ids": 372,
+      "audio_s": 11926.14,
+      "digit_bearing_references": 184,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 271,
+        "1": 148,
+        "2": 95,
+        "3": 47,
+        "4": 24,
+        "5": 50,
+        "6": 41,
+        "7": 35,
+        "8": 39,
+        "9": 45,
+        "½": 2,
+        "¾": 2,
+        "é": 6
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "ru",
+      "manifest_sha256": "912ff7217578fd42d22913bc8d856a7295b942733433bafe827a3245b95ef7d7",
+      "n": 1000,
+      "splits": {
+        "test": 775,
+        "validation": 225
+      },
+      "unique_sentence_ids": 483,
+      "audio_s": 11477.58,
+      "digit_bearing_references": 185,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 279,
+        "1": 152,
+        "2": 93,
+        "3": 45,
+        "4": 36,
+        "5": 49,
+        "6": 40,
+        "7": 42,
+        "8": 31,
+        "9": 53,
+        "²": 2,
+        "½": 3,
+        "¾": 3,
+        "é": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "uz",
+      "manifest_sha256": "21d2bf3f5ddeb43ec1581d34832534102e563364097d6ca398fc73e84f37da1d",
+      "n": 1000,
+      "splits": {
+        "test": 862,
+        "validation": 138
+      },
+      "unique_sentence_ids": 447,
+      "audio_s": 11787.36,
+      "digit_bearing_references": 181,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 269,
+        "1": 129,
+        "2": 79,
+        "3": 49,
+        "4": 30,
+        "5": 47,
+        "6": 44,
+        "7": 35,
+        "8": 32,
+        "9": 41,
+        "²": 1,
+        "½": 2,
+        "¾": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    }
+  ],
+  "runs": [],
+  "original_model_hashes_verified": null
+}

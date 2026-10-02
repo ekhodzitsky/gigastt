@@ -1,0 +1,412 @@
+{
+  "completed": true,
+  "no_inference": true,
+  "n": 745,
+  "source_result_sha256": {
+    "benchmark/results/multilingual_conversation_20261001/uz_large.json": "7760b3c2316854f144ae3acdccd5c48c3a5c80a6bb859f388e6b962ff43448d1",
+    "benchmark/results/multilingual_model_comparison_20261001/whisper_uz.json": "a9ac03e2cbe2635d0b869c8dc29b4ad428b23127d55da0d9d8a8c8d78e441bbc"
+  },
+  "manifest_sha256": "97949072b134892553c86df00df451b119ae2b16c4c9cdaeb76e8577762bac69",
+  "publisher_source_transcript_verification": {
+    "original_arrow_rows": 745,
+    "exact_original_transcript_to_manifest_matches": 745,
+    "exact_original_name_to_manifest_matches": 745,
+    "transliteration_or_reference_edit": false
+  },
+  "source_and_reference_scripts": {
+    "letter_counts": {
+      "latin": 67255
+    },
+    "rows_containing_script": {
+      "latin": 745
+    },
+    "row_categories": {
+      "latin_only": 745
+    },
+    "dominant_script_rows": {
+      "latin": 745
+    }
+  },
+  "script_definition": "Unicode letter-name categories after the unchanged scorer apostrophe folding. Script does not identify spoken language. Mixed-script rows count in multiple presence columns. Dominant-script ties are explicit.",
+  "reference_words_distribution": {
+    "min": 1,
+    "p10": 3.0,
+    "p25": 4.0,
+    "median": 8.0,
+    "p75": 20.0,
+    "p90": 37.60000000000002,
+    "max": 86,
+    "mean": 14.56241610738255
+  },
+  "duration_s_distribution": {
+    "min": 1.074,
+    "p10": 1.8676000000000001,
+    "p25": 2.598,
+    "median": 4.511,
+    "p75": 10.365,
+    "p90": 22.135,
+    "max": 30.17,
+    "mean": 8.046409395973154
+  },
+  "models": {
+    "gigastt_ml_ctc_large": {
+      "totals": {
+        "reference_words": 10849,
+        "word_errors": 2404,
+        "substitutions": 1783,
+        "deletions": 353,
+        "insertions": 268,
+        "reference_chars": 77586,
+        "char_errors": 5942,
+        "wer_pct": 22.158724306387686,
+        "cer_pct": 7.658598200706313
+      },
+      "hypothesis_scripts": {
+        "letter_counts": {
+          "latin": 65915,
+          "cyrillic": 337
+        },
+        "rows_containing_script": {
+          "latin": 737,
+          "cyrillic": 42
+        },
+        "row_categories": {
+          "latin_only": 700,
+          "latin_cyrillic_mixed": 37,
+          "cyrillic_only": 5,
+          "no_letters": 3
+        },
+        "dominant_script_rows": {
+          "latin": 733,
+          "cyrillic": 7,
+          "tie": 2,
+          "no_letters": 3
+        }
+      },
+      "reference_to_hypothesis_dominant_script_matrix": {
+        "latin -> latin": 733,
+        "latin -> cyrillic": 7,
+        "latin -> tie": 2,
+        "latin -> no_letters": 3
+      },
+      "hypotheses_with_script_absent_from_reference": 42,
+      "hypotheses_with_script_absent_from_reference_pct": 5.6375838926174495,
+      "hypothesis_words_total": 10764,
+      "aggregate_hypothesis_to_reference_word_ratio": 0.9921651765139644,
+      "per_clip_word_ratio_distribution": {
+        "min": 0.0,
+        "p10": 0.9130434782608695,
+        "p25": 1.0,
+        "median": 1.0,
+        "p75": 1.0,
+        "p90": 1.0695238095238095,
+        "max": 4.0,
+        "mean": 1.0087814306507004
+      },
+      "word_ratio_bins": {
+        "equal": 459,
+        "over_equal_at_most_double": 129,
+        "over_half_below_equal": 149,
+        "empty": 3,
+        "nonempty_at_most_half": 3,
+        "over_double": 2
+      },
+      "empty_hypotheses": 3,
+      "raw_empty_hypotheses": 3,
+      "failed_requests": 0,
+      "clips_with_wer_over_100_pct": 8,
+      "clips_with_three_or_more_identical_consecutive_tokens_not_in_reference": 0,
+      "exhaustive_output_script_error_accounting": {
+        "latin_only": {
+          "n": 700,
+          "reference_words": 9965,
+          "word_errors": 2126
+        },
+        "latin_cyrillic_mixed": {
+          "n": 37,
+          "reference_words": 844,
+          "word_errors": 237
+        },
+        "cyrillic_only": {
+          "n": 5,
+          "reference_words": 11,
+          "word_errors": 12
+        },
+        "no_letters": {
+          "n": 3,
+          "reference_words": 29,
+          "word_errors": 29
+        }
+      },
+      "partition_note": "Descriptive partition by observed output script, not a new benchmark subset or alternate headline WER."
+    },
+    "whisper_large_v3_cpu_int8": {
+      "totals": {
+        "reference_words": 10849,
+        "word_errors": 10968,
+        "substitutions": 8648,
+        "deletions": 1046,
+        "insertions": 1274,
+        "reference_chars": 77586,
+        "char_errors": 34091,
+        "wer_pct": 101.09687528804498,
+        "cer_pct": 43.9396282834532
+      },
+      "hypothesis_scripts": {
+        "letter_counts": {
+          "latin": 59381,
+          "cyrillic": 2111
+        },
+        "rows_containing_script": {
+          "latin": 678,
+          "cyrillic": 63
+        },
+        "row_categories": {
+          "latin_only": 670,
+          "cyrillic_only": 55,
+          "no_letters": 12,
+          "latin_cyrillic_mixed": 8
+        },
+        "dominant_script_rows": {
+          "latin": 675,
+          "cyrillic": 58,
+          "no_letters": 12
+        }
+      },
+      "reference_to_hypothesis_dominant_script_matrix": {
+        "latin -> latin": 675,
+        "latin -> cyrillic": 58,
+        "latin -> no_letters": 12
+      },
+      "hypotheses_with_script_absent_from_reference": 63,
+      "hypotheses_with_script_absent_from_reference_pct": 8.456375838926174,
+      "hypothesis_words_total": 11077,
+      "aggregate_hypothesis_to_reference_word_ratio": 1.021015761821366,
+      "per_clip_word_ratio_distribution": {
+        "min": 0.0,
+        "p10": 0.7,
+        "p25": 0.875,
+        "median": 1.0,
+        "p75": 1.1111111111111112,
+        "p90": 1.3333333333333333,
+        "max": 37.333333333333336,
+        "mean": 1.1443005209093333
+      },
+      "word_ratio_bins": {
+        "equal": 188,
+        "over_half_below_equal": 249,
+        "nonempty_at_most_half": 34,
+        "over_equal_at_most_double": 251,
+        "over_double": 15,
+        "empty": 8
+      },
+      "empty_hypotheses": 8,
+      "raw_empty_hypotheses": 7,
+      "failed_requests": 0,
+      "clips_with_wer_over_100_pct": 180,
+      "clips_with_three_or_more_identical_consecutive_tokens_not_in_reference": 24,
+      "exhaustive_output_script_error_accounting": {
+        "latin_only": {
+          "n": 670,
+          "reference_words": 10274,
+          "word_errors": 10148
+        },
+        "cyrillic_only": {
+          "n": 55,
+          "reference_words": 281,
+          "word_errors": 341
+        },
+        "no_letters": {
+          "n": 12,
+          "reference_words": 72,
+          "word_errors": 184
+        },
+        "latin_cyrillic_mixed": {
+          "n": 8,
+          "reference_words": 222,
+          "word_errors": 295
+        }
+      },
+      "partition_note": "Descriptive partition by observed output script, not a new benchmark subset or alternate headline WER."
+    }
+  },
+  "example_selection": "First source-order Whisper output in each observed writing-script category; additionally first over-double-length and first repeated-token-run example. Deduplicated and shown in original order. All745 remain in every headline metric.",
+  "examples": [
+    {
+      "source_order_index": 0,
+      "id": "uz_telegram_0000",
+      "categories": [
+        "latin_only"
+      ],
+      "reference": "menimcha notebook bilan uy kompyuterining anaqa",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "menimcha noutbuk bilan uy kompyuterining anaqa",
+        "whisper_large_v3_cpu_int8": "Menimce notebook bulan uy kompyuterinin anaqa."
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 6,
+          "word_errors": 1,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 47,
+          "char_errors": 4
+        },
+        "whisper_large_v3_cpu_int8": {
+          "reference_words": 6,
+          "word_errors": 3,
+          "substitutions": 3,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 47,
+          "char_errors": 4
+        }
+      }
+    },
+    {
+      "source_order_index": 10,
+      "id": "uz_telegram_0010",
+      "categories": [
+        "cyrillic_only"
+      ],
+      "reference": "ha unda ham azartga berilib ketib nol bir lotli nol bir lotli sdelkalarni ochib yurmang",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "unda ham azartga berilib ketib nol bir lo bir lotli lkalar ochib yubormay",
+        "whisper_large_v3_cpu_int8": "Қазарт киверлі кеті нол барлот ли нөздел қалад, өчор ме?"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 15,
+          "word_errors": 5,
+          "substitutions": 3,
+          "deletions": 2,
+          "insertions": 0,
+          "reference_chars": 87,
+          "char_errors": 19
+        },
+        "whisper_large_v3_cpu_int8": {
+          "reference_words": 15,
+          "word_errors": 15,
+          "substitutions": 10,
+          "deletions": 5,
+          "insertions": 0,
+          "reference_chars": 87,
+          "char_errors": 78
+        }
+      }
+    },
+    {
+      "source_order_index": 13,
+      "id": "uz_telegram_0013",
+      "categories": [
+        "over_double_reference_word_count",
+        "repeated_token_run_absent_from_reference"
+      ],
+      "reference": "menimcha foydaga kirib ketsangiz kerak",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "menimcha foydaga kirib ketsa kerak",
+        "whisper_large_v3_cpu_int8": "ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, ee, e"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 5,
+          "word_errors": 1,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 38,
+          "char_errors": 4
+        },
+        "whisper_large_v3_cpu_int8": {
+          "reference_words": 5,
+          "word_errors": 75,
+          "substitutions": 5,
+          "deletions": 0,
+          "insertions": 70,
+          "reference_chars": 38,
+          "char_errors": 216
+        }
+      }
+    },
+    {
+      "source_order_index": 115,
+      "id": "uz_telegram_0115",
+      "categories": [
+        "no_letters"
+      ],
+      "reference": "2024-yil 1-oktyabr hisobidan oshadi deb hisoblansa deylik",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "ikki ming yigirma to'rtinchi yil birinchi oktyabr hisobidan oshadi deb hisoblansa deylik",
+        "whisper_large_v3_cpu_int8": "2012-2012-2013-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014-2014"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 7,
+          "word_errors": 7,
+          "substitutions": 2,
+          "deletions": 0,
+          "insertions": 5,
+          "reference_chars": 55,
+          "char_errors": 37
+        },
+        "whisper_large_v3_cpu_int8": {
+          "reference_words": 7,
+          "word_errors": 7,
+          "substitutions": 1,
+          "deletions": 6,
+          "insertions": 0,
+          "reference_chars": 55,
+          "char_errors": 295
+        }
+      }
+    },
+    {
+      "source_order_index": 197,
+      "id": "uz_telegram_0197",
+      "categories": [
+        "latin_cyrillic_mixed"
+      ],
+      "reference": "ha qancha odam qarzdorlik qarzdorlar ismini o'zgartirib boshqa odamman deb haligi gapdanda",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "haqancha odam qarzr qarzdorlasai ismini o'zgartiryabman boshqa odammand haligi gapdanda",
+        "whisper_large_v3_cpu_int8": "Қа қанч адам, қар зорлэ, қар зorлэ, шэ тэс мэ өз өз өз өз өз өз, өз өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз, өз,"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 12,
+          "word_errors": 7,
+          "substitutions": 5,
+          "deletions": 2,
+          "insertions": 0,
+          "reference_chars": 89,
+          "char_errors": 17
+        },
+        "whisper_large_v3_cpu_int8": {
+          "reference_words": 12,
+          "word_errors": 49,
+          "substitutions": 12,
+          "deletions": 0,
+          "insertions": 37,
+          "reference_chars": 89,
+          "char_errors": 146
+        }
+      }
+    }
+  ],
+  "interpretation": [
+    "The unchanged primary metric measures exact normalized written-transcript agreement; it does not separate acoustic recognition from choice of writing system, spelling or written number conventions.",
+    "Cyrillic output against a Latin reference is penalized even if some content could be equivalent. No transliteration was attempted, so the magnitude of a hypothetical script-normalized score is unknown.",
+    "All745 publisher references use Latin letters. Whisper has Cyrillic letters in63 outputs (8.4564%), but10,148 of10,968 total word edits occur in its670 Latin-only outputs. Therefore the measured error count is not predominantly located in cross-script outputs. This is exhaustive descriptive accounting, not an alternative subset WER.",
+    "Latin-only outputs also contain visible word/spelling differences in the source-order examples. The entire observed gap cannot be declared a script effect from these descriptive counts.",
+    "WER above100% is possible because insertions contribute errors in addition to substitutions and deletions; it does not mean100% failed requests.",
+    "Whisper used the known uz language token, but that token does not guarantee Latin-script output in these recorded results. This is an observation of outputs, not a language-support or causal diagnosis.",
+    "Empty counts follow the unchanged scorer: Whisper has8 outputs empty after normalization, of which7 are raw empty strings; one punctuation-only output also normalizes to empty."
+  ],
+  "limitations": [
+    "This is the published745-row Telegram sample, with repeated audio retained under the frozen primary protocol; it is not a population-wide estimate of Uzbek recognition quality.",
+    "No manual listening, semantic equivalence annotation, transliteration or alternative scoring was performed.",
+    "Results describe the selected CPUINT8 Whisper configuration and standard GigaAM Large pipeline, not every Whisper implementation or precision setting.",
+    "The same original floating-point audio was preserved; all745 FFmpegfloat32 arrays were previously verified exactly equal to the stored16k mono samples in whisper_frontend_sanity.json."
+  ]
+}

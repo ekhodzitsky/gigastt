@@ -1,0 +1,46 @@
+{
+  "check": "First5 frozen KK codeswitch resource inputs: preparatory sequential inference versus4 independent quality workers.",
+  "completed": true,
+  "metadata_equal": true,
+  "preparatory_resource_path": "/home/ekhodzitsky/.cache/gigastt-ready-comparison/resource-before-parallel-quality/resource_whisper_kk_codeswitch_r1.json",
+  "preparatory_resource_sha256": "52fdc3c3b7dbb0e2f9fb5864220b769c7b48e0073cfed3b716f4c186daf47521",
+  "quality_meta_sha256": "aa650427c061a13bff595999739c69e83a1af44c0046f4f7037edc2b364bb2c6",
+  "pairs": [
+    {
+      "id": "kzaudio_1",
+      "quality_committed": true,
+      "hypothesis_exact_match": true,
+      "audio_sha_match": true,
+      "both_status_ok": true
+    },
+    {
+      "id": "kzaudio_2",
+      "quality_committed": true,
+      "hypothesis_exact_match": true,
+      "audio_sha_match": true,
+      "both_status_ok": true
+    },
+    {
+      "id": "kzaudio_3",
+      "quality_committed": true,
+      "hypothesis_exact_match": true,
+      "audio_sha_match": true,
+      "both_status_ok": true
+    },
+    {
+      "id": "kzaudio_4",
+      "quality_committed": true,
+      "hypothesis_exact_match": true,
+      "audio_sha_match": true,
+      "both_status_ok": true
+    },
+    {
+      "id": "kzaudio_5",
+      "quality_committed": true,
+      "hypothesis_exact_match": true,
+      "audio_sha_match": true,
+      "both_status_ok": true
+    }
+  ],
+  "limitations": "Hypothesis consistency check on five preselected inputs only; not proof of universal determinism. Preparatory resource timings excluded from final resource comparison; no output was used for decoder/model tuning."
+}

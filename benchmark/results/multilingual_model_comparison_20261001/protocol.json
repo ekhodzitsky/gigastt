@@ -1,0 +1,67 @@
+{
+  "scope": "Compare existing ready models on identical frozen corpora without training, model tuning or product integration",
+  "models": {
+    "gigastt": "Existing standard ml_ctc_large INT8 baseline; no language hint",
+    "whisper": "Systran/faster-whisper-large-v3 pinned edaa852ec7e145841d8ffdb056a99866b5f0a478; CPU INT8, beam5, temperature0, known kk/uz, no previous-text conditioning, VAD off; native no-speech gate retained",
+    "omni": "Official omniASR_CTC_1B_v2 FP32, official greedy CTC, no language hint, no external language model"
+  },
+  "unsupported": {
+    "whisper": [
+      "ky"
+    ]
+  },
+  "expected_full_candidate_runs": 7,
+  "corpora": [
+    {
+      "corpus": "kk_conversation",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_conversations_expanded_manifest.json",
+      "manifest_sha256": "c8d61edb3435429ce2d8e9fa97c96f3ec83b2ff6ff609eabfe04a42a8f954d88",
+      "n": 887,
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_conversations_expanded_large.jsonl",
+      "baseline_sha256": "0ccc15013a5f874462343880075cf10ca900f1b3f3bfe0586b42b457f5f7f982"
+    },
+    {
+      "corpus": "kk_codeswitch",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_manifest.json",
+      "manifest_sha256": "89ff41aa67eb7d19e153c710a2605913474a582be9c49bed1734425d529fefb1",
+      "n": 31,
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_large.jsonl",
+      "baseline_sha256": "be80820159fcf79e79e27e181f42ba4f742b2ab77e905e2d67d6e4e0bfcc7cea"
+    },
+    {
+      "corpus": "uz_conversation",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/uz_manifest.json",
+      "manifest_sha256": "97949072b134892553c86df00df451b119ae2b16c4c9cdaeb76e8577762bac69",
+      "n": 745,
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/uz_large.jsonl",
+      "baseline_sha256": "90cecc0dbee76664cd6987dc496d0dcaf370da5a2f171cd96ab77a3a40dbf36c"
+    },
+    {
+      "corpus": "ky_read",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_1000_20261001/ky_manifest.json",
+      "manifest_sha256": "29b2cc8ea3ca651b96b1d852fc2a28e6e21144f911bdbd6897481642d1f2220c",
+      "n": 1000,
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_1000_20261001/ml_ctc_large_ky.json",
+      "baseline_sha256": "21ab511d2105edfe8d9cdba73f2f746379d9b488858d2357ebb316bc0e700d6a"
+    }
+  ],
+  "inference": "Three CPU compute threads and one inference worker per candidate; complete original file, native fixed model preprocessing/chunking. FFmpeg float32 mono16k adapter input; no external filters or PCM16 requantization.",
+  "primary": "Same single supplied human reference, Unicode normalized micro WER/CER, failed requests retained as empty, all original rows including duplicates. No transliteration, alternate-reference minimum or outcome-based subset selection.",
+  "timing": "Quality-run latencies are not speed benchmarks. Separate fixed20-row resource sample, first5 per corpus, sixth warmup;2reverse model-order rounds;fresh process per model/corpus/round, single sequential request. Unrelated user workloads are not stopped; results potentially contended.",
+  "resource_subset_sha256": "1b1e05702dfbf73dcc7d6560891a1cb6984eebde1ca081a3581b54e225c4df10",
+  "limitations": [
+    "Kyrgyz corpus is read speech, not conversation.",
+    "Kazakh natural conversation is887 short human-segmented units from4recordings.",
+    "Model families, native frontends, precision and known-language inputs differ; this compares deployable configurations, not architecture alone.",
+    "Public model training overlap with these evaluation corpora is unknown."
+  ],
+  "quality_execution_amendment": {
+    "when": "Before any candidate quality evaluation; after preparatory single-instance timing",
+    "reason": "Short-utterance Whisper CPU cost makes serial full-corpus evaluation slow",
+    "whisper_independent_instances": 4,
+    "omni_independent_instances": 1,
+    "compute_threads_per_instance": 3,
+    "unchanged": "Weights, decoder configuration, audio, references, selection and single-instance resource measurements",
+    "durability": "One source-order ledger; failed outputs retained; candidate models have no cross-recording context"
+  }
+}

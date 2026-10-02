@@ -1,0 +1,71 @@
+{
+  "checked_utc": "2026-10-01T20:20:17.525680+00:00",
+  "status": "PASS: final expanded 887-clip selection independently audited before inference.",
+  "manifest_sha256": "de2f33a69f87024a0cbd1106fc67c2f188bfe5be42d030d5513b311397c35419",
+  "human_reference_source": "https://reference-global.com/article/10.5334/johd.529?tab=article",
+  "provenance_findings": [
+    "Primary paper explicitly describes native-speaker manual ELAN transcription and senior Kazakh-speaking review.",
+    "Publisher TSV form is orthographic transcription with discourse symbols removed; English translation and interlinear gloss tiers are not used.",
+    "Original audio and transcripts anonymized by publisher; source remains CC BY-NC-SA 4.0, distinct from article CC BY 4.0 and repository MIT software license.",
+    "Attribution to Giorgia Troiani, Andrey Filchenko and MCSKL team; pinned source revision present. No assertion of commercial licensing."
+  ],
+  "passed_checks": {
+    "source_wav_matches_audio_zip_members": 4,
+    "source_tsv_matches_osf_zip_members": 4,
+    "selected_eaf_speaker_time_matches": 100,
+    "selected_lossless_pcm_checks": 100,
+    "selected_wav_sha256_checks": 100,
+    "all_source_tsv_modality_values": "_ (no READ/SING tags in supplied modality column)"
+  },
+  "initial_selection_findings": [
+    {
+      "id": "mcskl030_iu_30",
+      "finding": "Overlaps empty other-speaker EAF IU, SPK4008 18.610–22.635 s, absent from TSV."
+    },
+    {
+      "id": "mcskl030_iu_129",
+      "finding": "Overlaps empty other-speaker EAF IU, SPK4008 114.755–118.600 s, absent from TSV."
+    }
+  ],
+  "required_correction": "Completed before inference; no remaining blocking extraction finding.",
+  "limitations": [
+    "Annotation-defined isolated utterances measure segmented ASR, not full conversation diarization.",
+    "Only four speech events; source/speaker dependence prevents treating clips as independent population samples.",
+    "Publisher forms can contain fragments, Russian/English code-switches and mixed-script spelling; preserve independent references, do not repair from ASR outputs.",
+    "No semantic re-transcription by an independent native-speaker listener was performed."
+  ],
+  "expanded": {
+    "manifest_sha256": "c8d61edb3435429ce2d8e9fa97c96f3ec83b2ff6ff609eabfe04a42a8f954d88",
+    "selection_sha256": "2633be44ffa90e0efa4908757bf6b0a84c5d92add1f2d74f7da1179df308d817",
+    "n": 887,
+    "duration_s": 1378.7124308390023,
+    "passed_checks": {
+      "eaf_speaker_timestamp_matches": 887,
+      "other_speaker_eaf_overlaps_including_empty": 0,
+      "source_pcm_byte_matches": 887,
+      "preserved_audio_format_checks": 887,
+      "clip_sha256_checks": 887,
+      "references_equal_source_forms_with_declared_nonlexical_removal": 887,
+      "residual_markup_findings": 0,
+      "unknown_or_anonymized_selected_units": 0,
+      "seed42_selection_matches_reported_eligible_pool": 4
+    },
+    "eligible_counts": [
+      295,
+      344,
+      137,
+      254
+    ],
+    "selected_counts": [
+      250,
+      250,
+      137,
+      250
+    ],
+    "corrections_before_inference": [
+      "Overlap screening now includes all EAF IUs, including empty annotations.",
+      "Exclude unexplained residual transcription markup before seeded selection. An initial expanded sample contained <rush> markup; original proposal retained only in cache, never inferred."
+    ],
+    "audit_method": "Independent XML/TSV parsing and wave PCM comparison, without importing preparation functions. Random selection independently replayed from documented excluded-unit lists. Reference text reconstructed directly from original TSV forms; no ASR hypotheses read."
+  }
+}

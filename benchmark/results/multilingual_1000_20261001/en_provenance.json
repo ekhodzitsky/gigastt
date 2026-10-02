@@ -1,0 +1,51 @@
+{
+  "source": "https://huggingface.co/datasets/google/fleurs",
+  "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+  "license": "CC BY 4.0",
+  "attribution": "Conneau et al., FLEURS (2022)",
+  "language": "en",
+  "config": "en_us",
+  "count": 1000,
+  "selection": "All eligible test rows first, then random.Random(42).shuffle(eligible_validation_rows) top-up; reject repeated audio-file SHA256; final manifest sorted by split and source row index",
+  "seed": 42,
+  "sources": [
+    {
+      "split": "test",
+      "rows": 647,
+      "sha256": "6428a4d04d3aac29e16b45e039bb1470a8bd7aa334cf92f7984c9c520d1f234d",
+      "size_bytes": 401722686,
+      "url": "https://huggingface.co/datasets/google/fleurs/resolve/168de341b3db6859a9bac1c50a2ef5e3b47647e0/en_us/test/0000.parquet"
+    },
+    {
+      "split": "validation",
+      "rows": 394,
+      "sha256": "7c3eeb11a9597bd52cdc1b0d637e85389fe094cfd8763913e7bf4fdf7a853959",
+      "size_bytes": 236549523,
+      "url": "https://huggingface.co/datasets/google/fleurs/resolve/168de341b3db6859a9bac1c50a2ef5e3b47647e0/en_us/validation/0000.parquet"
+    }
+  ],
+  "source_exclusions": {
+    "test": {
+      "prior_adaptation_sentence_or_audio": 0,
+      "empty_reference_or_nonpositive_duration": 0
+    },
+    "validation": {
+      "prior_adaptation_sentence_or_audio": 0,
+      "empty_reference_or_nonpositive_duration": 0
+    }
+  },
+  "duplicate_audio_candidates_skipped": 0,
+  "kazakh_prior_adaptation_exclusion": null,
+  "selected_split_counts": {
+    "test": 647,
+    "validation": 353
+  },
+  "distinct_audio_hashes": 1000,
+  "distinct_sentence_ids": 500,
+  "distinct_normalized_texts": 500,
+  "digit_bearing_references": 166,
+  "duration_over_30_seconds": 1,
+  "audio_seconds": 9753.12,
+  "limitations": "Original read speech, not real telephone calls. Test and validation are reported separately. Multiple recordings of the same sentence are legitimate distinct audio, not independent text prompts. No training split or model training is used. Prior evaluation exposure and model pretraining overlap remain possible.",
+  "manifest_sha256": "c813e470291a372b3ad96238591db85310461b1887c36c6a4d59d8d1279bb284"
+}

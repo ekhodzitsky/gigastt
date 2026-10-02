@@ -1,0 +1,296 @@
+{
+  "dataset": "google/fleurs",
+  "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+  "license": "CC BY 4.0",
+  "attribution": "Conneau et al., FLEURS (2022)",
+  "unique_recordings": 5000,
+  "distinct_audio_file_sha256_global": 5000,
+  "distinct_sample_ids_global": 5000,
+  "recordings_per_language": 1000,
+  "audio_seconds": 60992.4,
+  "source_parquet_bytes": 4591561923,
+  "all_source_parquet_sha256_verified": true,
+  "training_performed": false,
+  "training_split_used": false,
+  "scope": "Benchmark original pretrained multilingual models only; no adapted checkpoints are part of this dataset preparation. Prior adaptation Kazakh validation IDs/audio are excluded for evaluation separation, not because this benchmark trains a model. Earlier evaluated test recordings were not used for adaptation training; prior evaluation exposure and model pretraining overlap remain possible.",
+  "sample_units": "Distinct audio recordings, not 5000 unique text prompts or speakers. Multiple spoken recordings of the same sentence remain valid distinct inputs.",
+  "selection": "Prefer all eligible test recordings; validation top-up with random.Random(42).shuffle; each final manifest sorted by split and source row.",
+  "languages": [
+    {
+      "source": "https://huggingface.co/datasets/google/fleurs",
+      "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+      "license": "CC BY 4.0",
+      "attribution": "Conneau et al., FLEURS (2022)",
+      "language": "ru",
+      "config": "ru_ru",
+      "count": 1000,
+      "selection": "All eligible test rows first, then random.Random(42).shuffle(eligible_validation_rows) top-up; reject repeated audio-file SHA256; final manifest sorted by split and source row index",
+      "seed": 42,
+      "source_exclusions": {
+        "test": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        },
+        "validation": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        }
+      },
+      "duplicate_audio_candidates_skipped": 0,
+      "kazakh_prior_adaptation_exclusion": null,
+      "selected_split_counts": {
+        "test": 775,
+        "validation": 225
+      },
+      "distinct_audio_hashes": 1000,
+      "distinct_sentence_ids": 483,
+      "distinct_normalized_texts": 483,
+      "digit_bearing_references": 185,
+      "duration_over_30_seconds": 2,
+      "audio_seconds": 11477.58,
+      "limitations": "Original read speech, not real telephone calls. Test and validation are reported separately. Multiple recordings of the same sentence are legitimate distinct audio, not independent text prompts. No training split or model training is used. Prior evaluation exposure and model pretraining overlap remain possible.",
+      "manifest_sha256": "912ff7217578fd42d22913bc8d856a7295b942733433bafe827a3245b95ef7d7"
+    },
+    {
+      "source": "https://huggingface.co/datasets/google/fleurs",
+      "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+      "license": "CC BY 4.0",
+      "attribution": "Conneau et al., FLEURS (2022)",
+      "language": "en",
+      "config": "en_us",
+      "count": 1000,
+      "selection": "All eligible test rows first, then random.Random(42).shuffle(eligible_validation_rows) top-up; reject repeated audio-file SHA256; final manifest sorted by split and source row index",
+      "seed": 42,
+      "source_exclusions": {
+        "test": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        },
+        "validation": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        }
+      },
+      "duplicate_audio_candidates_skipped": 0,
+      "kazakh_prior_adaptation_exclusion": null,
+      "selected_split_counts": {
+        "test": 647,
+        "validation": 353
+      },
+      "distinct_audio_hashes": 1000,
+      "distinct_sentence_ids": 500,
+      "distinct_normalized_texts": 500,
+      "digit_bearing_references": 166,
+      "duration_over_30_seconds": 1,
+      "audio_seconds": 9753.12,
+      "limitations": "Original read speech, not real telephone calls. Test and validation are reported separately. Multiple recordings of the same sentence are legitimate distinct audio, not independent text prompts. No training split or model training is used. Prior evaluation exposure and model pretraining overlap remain possible.",
+      "manifest_sha256": "c813e470291a372b3ad96238591db85310461b1887c36c6a4d59d8d1279bb284"
+    },
+    {
+      "source": "https://huggingface.co/datasets/google/fleurs",
+      "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+      "license": "CC BY 4.0",
+      "attribution": "Conneau et al., FLEURS (2022)",
+      "language": "kk",
+      "config": "kk_kz",
+      "count": 1000,
+      "selection": "All eligible test rows first, then random.Random(42).shuffle(eligible_validation_rows) top-up; reject repeated audio-file SHA256; final manifest sorted by split and source row index",
+      "seed": 42,
+      "source_exclusions": {
+        "test": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        },
+        "validation": {
+          "prior_adaptation_sentence_or_audio": 83,
+          "empty_reference_or_nonpositive_duration": 0
+        }
+      },
+      "duplicate_audio_candidates_skipped": 0,
+      "kazakh_prior_adaptation_exclusion": {
+        "manifest_sha256": "ed18225595713fbda85c1c18a39baae090fa94a707b9ec79f7c06bd6ccb5b1e7",
+        "sentence_ids": [
+          1515,
+          1518,
+          1519,
+          1526,
+          1529,
+          1530,
+          1548,
+          1549,
+          1550,
+          1553,
+          1556,
+          1557,
+          1558,
+          1559,
+          1564,
+          1566,
+          1569,
+          1571,
+          1585,
+          1591,
+          1598,
+          1601,
+          1612,
+          1627,
+          1631,
+          1636,
+          1651,
+          1652,
+          1655,
+          1659
+        ],
+        "audio_sha256": [
+          "002a0a053d999555ab97349ef59cdccf8bae2fd2a8e355d569152e24fe253c2c",
+          "03fe7b6658c24ac79cb8ba28669485b3e6a4b01a24c096d445887a88e6847266",
+          "075f2c27dccfa2beb573bc93e8580a21a235fdfd4a9c756721f62a407afe305d",
+          "08c5725d21b0b4d98e6e4bb4fe0ffe2148e22a21559de35cb1bc161ff3152a62",
+          "0c071e0e13f81b72c490b8eb552078be78da001abd158fe59e1c2201b4bd96b2",
+          "0c791429bc5b1994f5943073c3a2f4a21457c67656288a4c030b2a29de1944cb",
+          "0d8c22e7301119ea96b27545a518561d9ca8ecce5d5a74b19033f1797f9e6e6f",
+          "127acc7b34c829f011d14696e7b866ae7c998e20672414a7c06b4c9af1be9e9a",
+          "17952a8158aeca06636b3d0c20fa6cb0276389e4a81ef80291c954f745502452",
+          "18ab8e1a2675fb6da23f2f58dd7293550603e7f83fab5c61a84c3dcf183ebf6c",
+          "1c24360a2347ecc8d23ce7087ac9ee2c9cbd45b89d806363abd6dca3820f024b",
+          "28eeaedbea4a804d3c910e0127786a018dc2d154ba19373e1f5e2fae873d7591",
+          "29ab7906948b99e48b497bde777d9218d7105ba295d6808a8b933531ef715b9c",
+          "3ad6c28d5ea565d837efc5631e17337319490a9e104fd15daa9bea51d72d67bf",
+          "3c6dd5700ed2a7642eb98174e9b1ed71b28227b1426a1a26dd1d09e979fe84ca",
+          "4811e86c1b595fae7ad26bda667a07d54cbc7650029fe13898fc22db71a06c57",
+          "481aec64d109556b8f85ac8af9a0ac834acd6e0d78f4ce859963037e31848049",
+          "4ad76375ddf008d0b2e270aa92179b412dc2a7bf16e37283c398d45353c56f41",
+          "5f86759e102c1674bb6cc1e3ed61d26f96b6f2a6ea3e846f4dffbd9f110571d9",
+          "5fe652c924ac8e57d9970716aef3de0d4e36ddb9cf0b65baf53624de11bd321c",
+          "6515e826f7c3627a4da5e2d9ba671c09e6f4ace1c41a2f73aeed381285a3edc0",
+          "65700d7e668e338c33287748bb641b1b8f66b7cb7655bc5e4b73c05417f89238",
+          "6a051e24189e4759b2e334aecff21490b2cfb828a97a935160d3477a7165f4f8",
+          "720e3f312765cd0221ce5e30dc7beef2213f8f83c617510b0246c0aaa93dbe3d",
+          "732a15d66b8dd9c021af64654088c66f2f3c8572ca50e7d13ff4f5a4553744a7",
+          "73b8cf97cfbbd491f60266e6d4360617293de072af2858e2ab6e20d68080e208",
+          "76ad2d69303860adec509d05d884df095dc0ddff7a9d5dd9939d2a8a3ffecd73",
+          "77b9a27a1ec0822915fc29d4eb0f4247a7a63fa89f5a21f7b0e2c4c629a7de72",
+          "79c4e04b2d6f3a722965dcb9eded6dd752f552de559c25db1fdb75e5c02381a4",
+          "79ecce9c1cb2f93f6d4bc48229c8a166ff692bee5d05efa184da4013b170284e",
+          "8037698569932dffe2ddd7f50f558dfb056dc44af33d99988461f65372b65cab",
+          "82e86a6dd1c6db602602b5470c98f9d97e8a19fc12914512d7f061887a508981",
+          "872552011ef3feffa5fdb442fd1c53d92fa5af9e2a23aa2b7e1851593a4588e0",
+          "88bb5da3224e64501af26b941724e67e708671cb45f90b8b1e0e4fc26a1205d5",
+          "8f6ae147aee224f39a01705fb52d152216cfad3a2546e2e7e88fe2f2fbb1e557",
+          "94a8a0c9d33b685e62b1b9f59e2d9e0045e3b72519bc548425b078924fe3afa2",
+          "96ed60564382a4ca3016843555301143270640e7a6b1d9c2a15f3ed95480af24",
+          "9ddb678c4fb988e67e6b44772da95ca28b48059c148055be9480a295a53fab78",
+          "a16921f241d7c6eef9620e453a0f36c690fa6233447128a07df2a4be75bc2b5a",
+          "a752b91ad6824df54d391cd7444923c8d1b80a72801b95fc37b38b2eb239cec2",
+          "ad4fb0ea06704a1fe60dacad14f47d4da8b121fd0d1160c8a56aada721456c15",
+          "aecfea33d2033409ac4a0d65d26fda3bedbbd5b2babf067e703a3d54b3d0ee3c",
+          "aee12b5426063ee58205b1ebf382aa1136fbefec31d8e2e931220b878d562902",
+          "b06414512ed844cca9986620788dd7bcd12ca007f0de1a812e12c02eabec1734",
+          "b2f885b463b72bb6e6de9df0275b55ea8e8313ff900fcb9099c15880464cc16b",
+          "b3f97b8b3b4c8d7a5d5abc6091100874e159a2089375a3c17f3e895980058512",
+          "b68a2a70bf9a8646b66247f6dfa284c2fee7fd8ed7040512eb4e1a95089bccdb",
+          "c2945b98a8499b79c1cb15b5a9ddd6b3ad972d388ba2a160c1d4f9702788f022",
+          "cf08bf05a755078f9d22a5d93e6a5be818c7f2dfab4bd53d7d3b77d1cfe30e2f",
+          "d54dd209b138d1ae45f274f6f32338dff9c6c83b81f2cd886ead055552148b55",
+          "d5b8b9f1104db4024616d0a1402cb35bbdb451f10ed02e08e6d5be0d1e998a5d",
+          "d81b572908ef7b2642e690d371f1d0b6571b06a7d447aafee1564e6f06b1cef6",
+          "d833ea51cc725c8a5c528ed1a8882ab5b5b9a5d7121b2e5b7d7e9339bc3a0e14",
+          "d863074e6f4f33e67ed6921b3c808b233e384962ee40d1d6ab9aee85c8df416d",
+          "d86aa98d003988cf8bc821dec1c06def18a0e544a4a979d41d23b1f6b5fa7886",
+          "dd263069e1812198ef8115f973d06477f5efac50ca075576a10ceaed5b55e910",
+          "ea27ec3a3546b860f88597473b488506ddc14965b1d137fb761ce0b5b68f739e",
+          "ea294f05d36c19c86fb8104319730cff42f4df88c3d1e4b060406feec4bc66a1",
+          "f82f2f107bd4c9836755671627ac08367a257a68c84797ea99786e9009af6572",
+          "f95f4ddb2256701074bc5d7f53c2a2668642b97c7a1a99619ecb8dd70d787941",
+          "fa70fecb3a31d1c599b3723ca4e16a2adbba045ab59cd3f54733928917aa5afc",
+          "fc9b449f724e05c0027a0c70dbf080c26e6e56deef079735c247ee0deac40b24",
+          "fdc5ebf4213b4fd54087094e4df992926eab3ea4118a65092f5a89f20e7ca6e3",
+          "ff58adef1205ef54cca385b3146c8b92def3a7bd409df8b73dab92fe78c1caea"
+        ],
+        "policy": "Exclude every matching sentence ID or audio hash before sampling, across both test and validation"
+      },
+      "selected_split_counts": {
+        "test": 856,
+        "validation": 144
+      },
+      "distinct_audio_hashes": 1000,
+      "distinct_sentence_ids": 445,
+      "distinct_normalized_texts": 445,
+      "digit_bearing_references": 182,
+      "duration_over_30_seconds": 18,
+      "audio_seconds": 16048.2,
+      "limitations": "Original read speech, not real telephone calls. Test and validation are reported separately. Multiple recordings of the same sentence are legitimate distinct audio, not independent text prompts. No training split or model training is used. Prior evaluation exposure and model pretraining overlap remain possible.",
+      "manifest_sha256": "5a8d33c53c04bf36db9658335379ddc3605cc9ff88d3dc702c636001de9dc26c"
+    },
+    {
+      "source": "https://huggingface.co/datasets/google/fleurs",
+      "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+      "license": "CC BY 4.0",
+      "attribution": "Conneau et al., FLEURS (2022)",
+      "language": "ky",
+      "config": "ky_kg",
+      "count": 1000,
+      "selection": "All eligible test rows first, then random.Random(42).shuffle(eligible_validation_rows) top-up; reject repeated audio-file SHA256; final manifest sorted by split and source row index",
+      "seed": 42,
+      "source_exclusions": {
+        "test": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        },
+        "validation": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        }
+      },
+      "duplicate_audio_candidates_skipped": 0,
+      "kazakh_prior_adaptation_exclusion": null,
+      "selected_split_counts": {
+        "test": 977,
+        "validation": 23
+      },
+      "distinct_audio_hashes": 1000,
+      "distinct_sentence_ids": 372,
+      "distinct_normalized_texts": 372,
+      "digit_bearing_references": 184,
+      "duration_over_30_seconds": 2,
+      "audio_seconds": 11926.14,
+      "limitations": "Original read speech, not real telephone calls. Test and validation are reported separately. Multiple recordings of the same sentence are legitimate distinct audio, not independent text prompts. No training split or model training is used. Prior evaluation exposure and model pretraining overlap remain possible.",
+      "manifest_sha256": "29b2cc8ea3ca651b96b1d852fc2a28e6e21144f911bdbd6897481642d1f2220c"
+    },
+    {
+      "source": "https://huggingface.co/datasets/google/fleurs",
+      "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+      "license": "CC BY 4.0",
+      "attribution": "Conneau et al., FLEURS (2022)",
+      "language": "uz",
+      "config": "uz_uz",
+      "count": 1000,
+      "selection": "All eligible test rows first, then random.Random(42).shuffle(eligible_validation_rows) top-up; reject repeated audio-file SHA256; final manifest sorted by split and source row index",
+      "seed": 42,
+      "source_exclusions": {
+        "test": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        },
+        "validation": {
+          "prior_adaptation_sentence_or_audio": 0,
+          "empty_reference_or_nonpositive_duration": 0
+        }
+      },
+      "duplicate_audio_candidates_skipped": 0,
+      "kazakh_prior_adaptation_exclusion": null,
+      "selected_split_counts": {
+        "test": 862,
+        "validation": 138
+      },
+      "distinct_audio_hashes": 1000,
+      "distinct_sentence_ids": 447,
+      "distinct_normalized_texts": 447,
+      "digit_bearing_references": 181,
+      "duration_over_30_seconds": 1,
+      "audio_seconds": 11787.36,
+      "limitations": "Original read speech, not real telephone calls. Test and validation are reported separately. Multiple recordings of the same sentence are legitimate distinct audio, not independent text prompts. No training split or model training is used. Prior evaluation exposure and model pretraining overlap remain possible.",
+      "manifest_sha256": "21d2bf3f5ddeb43ec1581d34832534102e563364097d6ca398fc73e84f37da1d"
+    }
+  ]
+}

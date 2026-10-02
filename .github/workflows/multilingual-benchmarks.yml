@@ -1,0 +1,35 @@
+name: Multilingual benchmark evidence
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'benchmark/results/multilingual*/**'
+      - 'benchmark/results/multilingual_publication.json'
+      - 'scripts/**'
+      - 'benchmark/licenses/**'
+      - '.github/workflows/multilingual-benchmarks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'benchmark/results/multilingual*/**'
+      - 'benchmark/results/multilingual_publication.json'
+      - 'scripts/**'
+      - 'benchmark/licenses/**'
+      - '.github/workflows/multilingual-benchmarks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  saved-scores:
+    runs-on: ubuntu-latest
+    name: Multilingual saved scores
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - run: python -m pip install rapidfuzz==3.14.6
+      - run: python scripts/test_verify_multilingual_publication.py
+      - run: python scripts/verify_multilingual_publication.py

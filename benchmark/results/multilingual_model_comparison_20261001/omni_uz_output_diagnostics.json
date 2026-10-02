@@ -1,0 +1,458 @@
+{
+  "completed": true,
+  "no_inference": true,
+  "n": 745,
+  "source_result_sha256": {
+    "benchmark/results/multilingual_conversation_20261001/uz_large.json": "7760b3c2316854f144ae3acdccd5c48c3a5c80a6bb859f388e6b962ff43448d1",
+    "benchmark/results/multilingual_model_comparison_20261001/omni_uz.json": "ff625a52a8dc2d2615c29b35dd9f64be9f89ec13f90ef4bcbabd26f27e1d0d00"
+  },
+  "manifest_sha256": "97949072b134892553c86df00df451b119ae2b16c4c9cdaeb76e8577762bac69",
+  "publisher_source_transcript_verification": {
+    "original_arrow_rows": 745,
+    "exact_original_transcript_to_manifest_matches": 745,
+    "exact_original_name_to_manifest_matches": 745,
+    "transliteration_or_reference_edit": false
+  },
+  "source_and_reference_scripts": {
+    "letter_counts": {
+      "latin": 67255
+    },
+    "rows_containing_script": {
+      "latin": 745
+    },
+    "row_categories": {
+      "latin_only": 745
+    },
+    "dominant_script_rows": {
+      "latin": 745
+    }
+  },
+  "script_definition": "Unicode letter-name categories after unchanged scorer apostrophe folding. Script is not a spoken-language label. Mixed-script rows count in multiple presence columns; dominant-script ties are explicit.",
+  "reference_words_distribution": {
+    "min": 1,
+    "p10": 3.0,
+    "p25": 4.0,
+    "median": 8.0,
+    "p75": 20.0,
+    "p90": 37.60000000000002,
+    "max": 86,
+    "mean": 14.56241610738255
+  },
+  "duration_s_distribution": {
+    "min": 1.074,
+    "p10": 1.8676000000000001,
+    "p25": 2.598,
+    "median": 4.511,
+    "p75": 10.365,
+    "p90": 22.135,
+    "max": 30.17,
+    "mean": 8.046409395973154
+  },
+  "models": {
+    "gigastt_ml_ctc_large": {
+      "totals": {
+        "reference_words": 10849,
+        "word_errors": 2404,
+        "substitutions": 1783,
+        "deletions": 353,
+        "insertions": 268,
+        "reference_chars": 77586,
+        "char_errors": 5942,
+        "wer_pct": 22.158724306387686,
+        "cer_pct": 7.658598200706313
+      },
+      "hypothesis_scripts": {
+        "letter_counts": {
+          "latin": 65915,
+          "cyrillic": 337
+        },
+        "rows_containing_script": {
+          "latin": 737,
+          "cyrillic": 42
+        },
+        "row_categories": {
+          "latin_only": 700,
+          "latin_cyrillic_mixed": 37,
+          "cyrillic_only": 5,
+          "no_letters": 3
+        },
+        "dominant_script_rows": {
+          "latin": 733,
+          "cyrillic": 7,
+          "tie": 2,
+          "no_letters": 3
+        }
+      },
+      "reference_to_hypothesis_dominant_script_matrix": {
+        "latin -> latin": 733,
+        "latin -> cyrillic": 7,
+        "latin -> tie": 2,
+        "latin -> no_letters": 3
+      },
+      "hypotheses_with_script_absent_from_reference": 42,
+      "hypotheses_with_script_absent_from_reference_pct": 5.6375838926174495,
+      "hypothesis_words_total": 10764,
+      "aggregate_hypothesis_to_reference_word_ratio": 0.9921651765139644,
+      "per_clip_word_ratio_distribution": {
+        "min": 0.0,
+        "p10": 0.9130434782608695,
+        "p25": 1.0,
+        "median": 1.0,
+        "p75": 1.0,
+        "p90": 1.0695238095238095,
+        "max": 4.0,
+        "mean": 1.0087814306507004
+      },
+      "word_ratio_bins": {
+        "equal": 459,
+        "over_equal_at_most_double": 129,
+        "over_half_below_equal": 149,
+        "empty": 3,
+        "nonempty_at_most_half": 3,
+        "over_double": 2
+      },
+      "empty_hypotheses": 3,
+      "raw_empty_hypotheses": 3,
+      "failed_requests": 0,
+      "clips_with_wer_over_100_pct": 8,
+      "clips_with_three_or_more_identical_consecutive_tokens_not_in_reference": 0,
+      "exhaustive_output_script_error_accounting": {
+        "latin_only": {
+          "n": 700,
+          "reference_words": 9965,
+          "word_errors": 2126
+        },
+        "latin_cyrillic_mixed": {
+          "n": 37,
+          "reference_words": 844,
+          "word_errors": 237
+        },
+        "cyrillic_only": {
+          "n": 5,
+          "reference_words": 11,
+          "word_errors": 12
+        },
+        "no_letters": {
+          "n": 3,
+          "reference_words": 29,
+          "word_errors": 29
+        }
+      },
+      "partition_note": "Descriptive partition by observed output script, not a new benchmark subset or alternate headline WER."
+    },
+    "omni_asr_ctc_1b_cpu_float32": {
+      "totals": {
+        "reference_words": 10849,
+        "word_errors": 6486,
+        "substitutions": 4930,
+        "deletions": 1349,
+        "insertions": 207,
+        "reference_chars": 77586,
+        "char_errors": 22505,
+        "wer_pct": 59.784311918149136,
+        "cer_pct": 29.00652179516923
+      },
+      "hypothesis_scripts": {
+        "letter_counts": {
+          "latin": 51758,
+          "cyrillic": 4845,
+          "arabic": 1562,
+          "other_letters": 65,
+          "devanagari": 97,
+          "hangul": 14,
+          "han": 3,
+          "hebrew": 18
+        },
+        "rows_containing_script": {
+          "latin": 649,
+          "cyrillic": 56,
+          "arabic": 143,
+          "other_letters": 9,
+          "devanagari": 7,
+          "hangul": 3,
+          "han": 3,
+          "hebrew": 2
+        },
+        "row_categories": {
+          "latin_only": 540,
+          "cyrillic_only": 25,
+          "contains_other_scripts": 159,
+          "latin_cyrillic_mixed": 20,
+          "no_letters": 1
+        },
+        "dominant_script_rows": {
+          "latin": 592,
+          "cyrillic": 39,
+          "arabic": 90,
+          "other_letters": 6,
+          "devanagari": 5,
+          "hangul": 3,
+          "tie": 7,
+          "hebrew": 2,
+          "no_letters": 1
+        }
+      },
+      "reference_to_hypothesis_dominant_script_matrix": {
+        "latin -> latin": 592,
+        "latin -> cyrillic": 39,
+        "latin -> arabic": 90,
+        "latin -> other_letters": 6,
+        "latin -> devanagari": 5,
+        "latin -> hangul": 3,
+        "latin -> tie": 7,
+        "latin -> hebrew": 2,
+        "latin -> no_letters": 1
+      },
+      "hypotheses_with_script_absent_from_reference": 204,
+      "hypotheses_with_script_absent_from_reference_pct": 27.38255033557047,
+      "hypothesis_words_total": 9707,
+      "aggregate_hypothesis_to_reference_word_ratio": 0.8947368421052632,
+      "per_clip_word_ratio_distribution": {
+        "min": 0.0,
+        "p10": 0.6666666666666666,
+        "p25": 0.8571428571428571,
+        "median": 1.0,
+        "p75": 1.0,
+        "p90": 1.0473913043478262,
+        "max": 2.0,
+        "mean": 0.9238646475744832
+      },
+      "word_ratio_bins": {
+        "equal": 303,
+        "over_equal_at_most_double": 90,
+        "over_half_below_equal": 302,
+        "nonempty_at_most_half": 49,
+        "empty": 1
+      },
+      "empty_hypotheses": 1,
+      "raw_empty_hypotheses": 1,
+      "failed_requests": 0,
+      "clips_with_wer_over_100_pct": 30,
+      "clips_with_three_or_more_identical_consecutive_tokens_not_in_reference": 0,
+      "exhaustive_output_script_error_accounting": {
+        "latin_only": {
+          "n": 540,
+          "reference_words": 8997,
+          "word_errors": 4689
+        },
+        "cyrillic_only": {
+          "n": 25,
+          "reference_words": 566,
+          "word_errors": 571
+        },
+        "contains_other_scripts": {
+          "n": 159,
+          "reference_words": 932,
+          "word_errors": 909
+        },
+        "latin_cyrillic_mixed": {
+          "n": 20,
+          "reference_words": 353,
+          "word_errors": 316
+        },
+        "no_letters": {
+          "n": 1,
+          "reference_words": 1,
+          "word_errors": 1
+        }
+      },
+      "partition_note": "Descriptive partition by observed output script, not a new benchmark subset or alternate headline WER."
+    }
+  },
+  "example_selection": "First source-order Omni output in each observed writing-script category, plus first over-double-length and first repeated-token-run example when present. Deduplicated and shown in original order. All745 remain in the primary metric.",
+  "examples": [
+    {
+      "source_order_index": 0,
+      "id": "uz_telegram_0000",
+      "categories": [
+        "latin_only"
+      ],
+      "reference": "menimcha notebook bilan uy kompyuterining anaqa",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "menimcha noutbuk bilan uy kompyuterining anaqa",
+        "omni_asr_ctc_1b_cpu_float32": "menimcha noutbook bilan uy kompyuterining anaqa"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 6,
+          "word_errors": 1,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 47,
+          "char_errors": 4
+        },
+        "omni_asr_ctc_1b_cpu_float32": {
+          "reference_words": 6,
+          "word_errors": 1,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 47,
+          "char_errors": 2
+        }
+      }
+    },
+    {
+      "source_order_index": 8,
+      "id": "uz_telegram_0008",
+      "categories": [
+        "cyrillic_only"
+      ],
+      "reference": "shunaqa hozircha",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "shunaqa hozircha",
+        "omni_asr_ctc_1b_cpu_float32": "ушнаҳа ҳозирча"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 16,
+          "char_errors": 0
+        },
+        "omni_asr_ctc_1b_cpu_float32": {
+          "reference_words": 2,
+          "word_errors": 2,
+          "substitutions": 2,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 16,
+          "char_errors": 15
+        }
+      }
+    },
+    {
+      "source_order_index": 11,
+      "id": "uz_telegram_0011",
+      "categories": [
+        "contains_other_scripts"
+      ],
+      "reference": "0 butun",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "nol butun",
+        "omni_asr_ctc_1b_cpu_float32": "نول بتن"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 2,
+          "word_errors": 1,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 7,
+          "char_errors": 3
+        },
+        "omni_asr_ctc_1b_cpu_float32": {
+          "reference_words": 2,
+          "word_errors": 2,
+          "substitutions": 2,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 7,
+          "char_errors": 7
+        }
+      }
+    },
+    {
+      "source_order_index": 29,
+      "id": "uz_telegram_0029",
+      "categories": [
+        "latin_cyrillic_mixed"
+      ],
+      "reference": "zagruzit degan manovi belgi turibdiyu oʻshani bossez keyin qayerdan topishligiz chiqadi shunga fleshkali qoʻygan fleshkangizni kritsez ishlaydi",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "загрузить degan nimani yezing belgi turibdiyu o'shani yezasiz keyin qayerdan topishingiz chiqadi shunga fleshkaaligi qo'gan fleshkangizni kirgizsangiz ishlaydi",
+        "omni_asr_ctc_1b_cpu_float32": "zaгruzuт degеn umanesi beligi тurup тi sn essеz kilgеn кaardan top silgiz чuqada чuнki fleшкa лi foygan fleшкaz krgisеz islеz"
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 17,
+          "word_errors": 8,
+          "substitutions": 7,
+          "deletions": 0,
+          "insertions": 1,
+          "reference_chars": 141,
+          "char_errors": 36
+        },
+        "omni_asr_ctc_1b_cpu_float32": {
+          "reference_words": 17,
+          "word_errors": 20,
+          "substitutions": 17,
+          "deletions": 0,
+          "insertions": 3,
+          "reference_chars": 141,
+          "char_errors": 63
+        }
+      }
+    },
+    {
+      "source_order_index": 641,
+      "id": "uz_telegram_0641",
+      "categories": [
+        "no_letters"
+      ],
+      "reference": "eee",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "",
+        "omni_asr_ctc_1b_cpu_float32": ""
+      },
+      "scores": {
+        "gigastt_ml_ctc_large": {
+          "reference_words": 1,
+          "word_errors": 1,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0,
+          "reference_chars": 3,
+          "char_errors": 3
+        },
+        "omni_asr_ctc_1b_cpu_float32": {
+          "reference_words": 1,
+          "word_errors": 1,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0,
+          "reference_chars": 3,
+          "char_errors": 3
+        }
+      }
+    }
+  ],
+  "interpretation": [
+    "All745 publisher references contain only Latin letters after apostrophe folding. The same source texts were verified directly against both original Arrow shards.",
+    "The unchanged primary WER measures normalized written agreement. It mixes word recognition, spelling, number conventions and script choice; it is not an isolated acoustic-error rate.",
+    "No transliteration was performed, so neither the score after hypothetical script normalization nor the number of semantically equivalent cross-script answers is known.",
+    "Shorter outputs and deletions can coexist with script mismatch; the partition does not attribute all errors in those outputs to their writing system."
+  ],
+  "limitations": [
+    "The745-row published Telegram corpus retains duplicate audio under the frozen primary protocol; it is not a population-wide estimate of Uzbek accuracy.",
+    "No manual listening, semantic-equivalence annotation, transliteration, alternate reference scoring or new inference was performed.",
+    "Unicode script mismatch can penalize written equivalence, but its presence does not establish that other word errors in the same answer have that cause.",
+    "The output-dependent partitions account for all observed errors and are descriptive only, not alternative benchmark subsets.",
+    "Results describe the frozen deployable configurations and do not isolate architecture, precision, frontend or language-conditioning effects."
+  ],
+  "exhaustive_script_mismatch_accounting": {
+    "any_letter_script_absent_from_reference": {
+      "n": 204,
+      "reference_words": 1851,
+      "word_errors": 1796,
+      "substitutions": 1545,
+      "deletions": 222,
+      "insertions": 29
+    },
+    "no_letter_script_absent_from_reference": {
+      "n": 541,
+      "reference_words": 8998,
+      "word_errors": 4690,
+      "substitutions": 3385,
+      "deletions": 1127,
+      "insertions": 178
+    },
+    "share_of_all_word_errors_in_mismatched_script_rows_pct": 27.69041011409189,
+    "interpretation": "Co-occurrence, not causal attribution: every word edit in a mismatched-script answer is counted here, including edits unrelated to the script."
+  }
+}

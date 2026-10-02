@@ -1,0 +1,13 @@
+{
+  "scope": "Ordinary natural speech in Kazakh, Kyrgyz and Uzbek; no model changes, training or tuning",
+  "model": "Existing standard ml_ctc_large, not selective-precision candidate",
+  "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+  "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "configuration": "CPU, pool2, encoder threads3, punctuation/ITN/VAD off, two HTTP workers, original audio only",
+  "scoring": "Unicode micro WER/CER with existing scorer, one fixed human reference, all errors/empty responses retained",
+  "kazakh_primary_reference": "Verbatim human transcript, removing only literal nonlexical [false_start] annotation while retaining spoken fragments; normalized-written reference secondary, never min/best",
+  "uzbek_selection": "All 745 publisher rows; original manual-reference field, no outcome-based selection",
+  "kyrgyz_eligibility": "Accessible natural speech with verified human transcript provenance; reading and automatic labels ineligible for conversational estimate",
+  "acquisition": "Each corpus manifest and source provenance frozen before its inference; additional corpora reported separately, not pooled across domains",
+  "limits": "Not a matched cross-language corpus and not a population accuracy estimate; report n, duration, speech type, source/speaker coverage and missing evidence. Previously evaluated clips are not blind holdouts."
+}

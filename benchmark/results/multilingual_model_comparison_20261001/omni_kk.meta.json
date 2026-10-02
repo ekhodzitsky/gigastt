@@ -1,0 +1,68 @@
+{
+  "backend": "omni",
+  "model": {
+    "model_card": "omniASR_CTC_1B_v2",
+    "tokenizer_card": "omniASR_tokenizer_written_v2",
+    "source_revision": "81f51e224ce9e74b02cc2a3eaf21b2d91d743455",
+    "model_files": [
+      {
+        "filename": "omniASR-CTC-1B-v2.pt",
+        "bytes": 3902956068,
+        "sha256": "354f981756aa8f41591ea363e45b9c4eba1ec5144c2273af82e747efbb08919c"
+      },
+      {
+        "filename": "omniASR_tokenizer_written_v2.model",
+        "bytes": 91481,
+        "sha256": "8aa11a1092142ef472537476ef6e76541123e2f0d789b79f3ebd119008240b1e"
+      }
+    ],
+    "source_archive_sha256": "67c484bba6502454bf192f549d0d0aee974f707179f5c35649679a44eaf0d435",
+    "installed_source_tree_sha256": "947069e894e9adea2ba075346dd95eec3eeab7f64cae88eb4eb46600c12d9faa",
+    "versions": {
+      "omnilingual-asr": "0.2.0",
+      "fairseq2": "0.6",
+      "fairseq2n": "0.6+cpu",
+      "torch": "2.8.0+cpu",
+      "torchaudio": "2.8.0+cpu",
+      "numpy": "1.26.4"
+    },
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 3,
+    "interop_threads": 1,
+    "parameter_count": 975675056,
+    "batch_size": 1,
+    "decoder": "official greedy CTC; no external language model",
+    "language_conditioning": false,
+    "corpus_language": "kk",
+    "preprocessing": "official waveform normalization; supplied mono float32 16 kHz",
+    "maximum_audio_seconds": 40,
+    "recommended_audio_seconds": 30,
+    "long_audio_policy": "process complete input up to 40 seconds; reject longer input",
+    "training": false,
+    "adaptation": false,
+    "declared_dependency_omissions": {
+      "kenlm": "Native build failed in this environment; absent from the official greedy CTC code path"
+    }
+  },
+  "language": "kk",
+  "manifest_sha256": "89ff41aa67eb7d19e153c710a2605913474a582be9c49bed1734425d529fefb1",
+  "n": 31,
+  "threads": 3,
+  "quality_workers": 1,
+  "worker_policy": "Independent identical model instances; source-order durable commits; timing not comparative",
+  "script_sha256": "57be8369d3e74e92476074558fa2b6419aad73c0d9a4dc35118149feffce7079",
+  "backend_script_sha256": "238667f9dd9dd3705aa648b4d843668ce095bda4db569ffc05214401d5613ef1",
+  "scorer_sha256": {
+    "benchmark_multilingual_public.py": "9d1558e90ab6d451fa37997faab20f45a1444963491fbdd321c860286b7966fb",
+    "wer_unicode.py": "71e0703f3b78182b63e9629c2b9963c5f08938e2d010d660eb1cb8cf16370be2"
+  },
+  "jiwer": "4.0.0",
+  "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+  "decode": "FFmpeg mono 16 kHz float32; no filtering, VAD, PCM16 requantization or telephone simulation",
+  "scoring": "One fixed reference, existing Unicode normalization, micro WER/CER including spaces; all failures retained as empty",
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "python": "3.12.14",
+  "warmup": "First manifest audio, one unmeasured inference per independent instance; same fixed settings",
+  "timing_scope": "Exploratory quality run, potentially concurrent workloads; not an isolated speed benchmark"
+}

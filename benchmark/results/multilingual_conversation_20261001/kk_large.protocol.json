@@ -1,0 +1,32 @@
+{
+  "manifest_sha256": "89ff41aa67eb7d19e153c710a2605913474a582be9c49bed1734425d529fefb1",
+  "n": 31,
+  "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "encoder_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+  "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+  "command": [
+    "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+    "--offline",
+    "serve",
+    "--model-dir",
+    "/home/ekhodzitsky/.gigastt/models",
+    "--model-variant",
+    "ml_ctc_large",
+    "--execution-provider",
+    "cpu",
+    "--pool-size",
+    "2",
+    "--encoder-intra-threads",
+    "3",
+    "--punctuation",
+    "off",
+    "--itn",
+    "off",
+    "--port",
+    "20022"
+  ],
+  "conditions": "Original decoded audio only; no VAD, ITN, punctuation or preprocessing interventions.",
+  "scoring": "Existing Unicode micro WER/CER; one fixed primary reference; no minimum over reference alternatives.",
+  "failures": "All failed requests and empty hypotheses retained; no retries or replacement recordings.",
+  "script_sha256": "6a168c6400dafce26716caac55e9149e155f2aac9a5b8e98b5e44fd575891d71"
+}

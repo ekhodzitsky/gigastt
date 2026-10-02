@@ -1,0 +1,91 @@
+{
+  "frozen_utc": "2026-10-01T20:28:31.262976+00:00",
+  "status": "PASS",
+  "corpora": [
+    {
+      "corpus": "kk_conversation",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_conversations_expanded_manifest.json",
+      "manifest_sha256": "c8d61edb3435429ce2d8e9fa97c96f3ec83b2ff6ff609eabfe04a42a8f954d88",
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_conversations_expanded_large.jsonl",
+      "baseline_sha256": "0ccc15013a5f874462343880075cf10ca900f1b3f3bfe0586b42b457f5f7f982",
+      "n": 887,
+      "baseline_n": 887,
+      "unique_ids": 887,
+      "baseline_unique_ids": 887,
+      "baseline_status": {
+        "ok": 887
+      },
+      "duration_s": 1378.7124308390023,
+      "errors": []
+    },
+    {
+      "corpus": "kk_codeswitch",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_manifest.json",
+      "manifest_sha256": "89ff41aa67eb7d19e153c710a2605913474a582be9c49bed1734425d529fefb1",
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/kk_large.jsonl",
+      "baseline_sha256": "be80820159fcf79e79e27e181f42ba4f742b2ab77e905e2d67d6e4e0bfcc7cea",
+      "n": 31,
+      "baseline_n": 31,
+      "unique_ids": 31,
+      "baseline_unique_ids": 31,
+      "baseline_status": {
+        "ok": 31
+      },
+      "duration_s": 221.93077083333333,
+      "errors": []
+    },
+    {
+      "corpus": "uz_conversation",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/uz_manifest.json",
+      "manifest_sha256": "97949072b134892553c86df00df451b119ae2b16c4c9cdaeb76e8577762bac69",
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_conversation_20261001/uz_large.jsonl",
+      "baseline_sha256": "90cecc0dbee76664cd6987dc496d0dcaf370da5a2f171cd96ab77a3a40dbf36c",
+      "n": 745,
+      "baseline_n": 745,
+      "unique_ids": 745,
+      "baseline_unique_ids": 745,
+      "baseline_status": {
+        "ok": 745
+      },
+      "duration_s": 5994.575,
+      "errors": []
+    },
+    {
+      "corpus": "ky_read",
+      "manifest": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_1000_20261001/ky_manifest.json",
+      "manifest_sha256": "29b2cc8ea3ca651b96b1d852fc2a28e6e21144f911bdbd6897481642d1f2220c",
+      "baseline": "/home/ekhodzitsky/Projects/gigastt/benchmark/results/multilingual_1000_20261001/ml_ctc_large_ky.json",
+      "baseline_sha256": "21ab511d2105edfe8d9cdba73f2f746379d9b488858d2357ebb316bc0e700d6a",
+      "n": 1000,
+      "baseline_n": 1000,
+      "unique_ids": 1000,
+      "baseline_unique_ids": 1000,
+      "baseline_status": {
+        "ok": 1000
+      },
+      "duration_s": 11926.14,
+      "errors": []
+    }
+  ],
+  "total_rows": 2663,
+  "checks": "All frozen manifest IDs unique; baseline IDs unique and exact count; every baseline ID pairs identical reference, audio SHA and path; all 2663 audio file SHA256 values verified; all baseline requests status ok.",
+  "limitations": [
+    "Kyrgyz is read FLEURS, not conversational.",
+    "Corpora have different speakers, durations and reference conventions; report quality separately.",
+    "Historical baseline timing is not a fair cross-model resource comparison."
+  ],
+  "baseline_runtime_identity": {
+    "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "encoder_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+    "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+    "identity_consistent_across_all_four": true,
+    "variant": "ml_ctc_large",
+    "execution_provider": "cpu",
+    "pool_size": 2,
+    "punctuation": false,
+    "itn": false,
+    "conversation_encoder_threads": 3,
+    "ky_quality_request_workers": 2,
+    "warning": "KY historical run explicitly documents contended CPU timing; exclude those latencies from cross-model performance claims."
+  }
+}

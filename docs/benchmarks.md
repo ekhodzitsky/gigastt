@@ -61,8 +61,8 @@ Domains: **Clean read** `golos_crowd_1k` · **Far-field** `golos_farfield` ·
 
 ² the Multilingual CTC heads were measured only on the two Russian domains whose audio was
 locally available (clean read `golos_crowd_1k`, far-field `golos_farfield`); the OpenSTT
-phone / YouTube sets were not on hand. Their Kazakh / Kyrgyz / Uzbek accuracy is not
-measured here (no reference set).
+phone / YouTube sets were not on hand for that comparison. Separate verified Kazakh,
+Kyrgyz and Uzbek measurements are in [Languages](languages.md).
 
 ## Held-out / additional public sets — WER % (95% CI)
 
@@ -219,8 +219,8 @@ The 600M head (4.63%) is only ~0.2 pp behind its own Russian clean-read WER (4.4
 model card's "moderate on English" understates it on clean read; the 220M head is at 6.67%.
 The Russian-specialized `rnnt` / `e2e_rnnt` heads have a **Cyrillic-only** vocabulary and
 cannot produce English at all (100% WER), so the Multilingual heads are the only option for
-English — and for Kazakh / Kyrgyz / Uzbek, which are not measured here for lack of a
-reference set (Common Voice 16.1 was removed from the Hub).
+English, Kazakh, Kyrgyz and Uzbek. See [Languages](languages.md) for the later
+1,000-recording FLEURS evaluation and separate conversation measurements.
 
 > Same caveat as the Russian table: GigaAM Multilingual is pre-trained on 2M hours across
 > 70+ languages and LibriSpeech is a common English ASR corpus, so read this as a best-case
@@ -228,36 +228,31 @@ reference set (Common Voice 16.1 was removed from the Hub).
 
 ## Kazakh / Kyrgyz / Uzbek — WER % (FLEURS)
 
-The Multilingual CTC heads' other three supported languages, on FLEURS test splits (read
-speech, CC BY 4.0; Kazakh 856 · Kyrgyz 977 · Uzbek 862 utterances). WER is computed with a
-Unicode-complete verbatim normalizer ([`scripts/wer_unicode.py`](../scripts/wer_unicode.py)) —
-the Russian harness normalizer keeps only `[a-zа-я0-9]` and would strip the Turkic Cyrillic
-letters (`ә ғ қ ң ө ұ ү һ і`) these languages need.
-
-Two normalization confounds are removed so the number reflects recognition, not writing
-convention: **(1)** the charwise-CTC heads spell numbers out while ~19% of FLEURS references
-keep digits, and there is no reliable words↔digits ITN for these languages (`num2words` has
-no support) — so the headline **digit-free** WER excludes number-bearing sentences; **(2)**
-apostrophe variants are folded, so Uzbek `oʻ` / `gʻ` (U+02BB) and the model's `o'` / `g'`
-(U+0027) compare equal. The **full** figure is the upper bound over all utterances.
+The published fixed evaluation uses 1,000 distinct recordings per language and
+model, with all eligible FLEURS test rows followed by a seeded validation top-up.
+These are complete-set micro WER values with Unicode letters preserved,
+apostrophe variants removed and no number conversion. Number-bearing references
+remain in the primary metric. This replaces the earlier digit-free headline;
+the populations and scoring scopes must not be mixed.
 
 | Head | Kazakh | Kyrgyz | Uzbek |
-|---|---|---|---|
-| **gigastt** (`ml_ctc_large`, 600M, INT8) | **6.52 (5.9–7.1)** | **7.39 (6.7–8.0)** | **9.21 (8.5–9.9)** |
-| gigastt (`ml_ctc`, 220M, INT8) | 7.21 (6.6–7.9) | 8.82 (8.1–9.5) | 11.96 (11.1–12.8) |
+|---|---:|---:|---:|
+| `ml_ctc_large` INT8 | 11.47% | 12.34% | 13.89% |
+| `ml_ctc` INT8 | 12.32% | 13.68% | 16.75% |
 
-*Full-set upper bounds (all utterances, incl. the digit-format mismatch): 600M — kk 11.35 /
-ky 12.50 / uz 14.04; 220M — kk 12.14 / ky 13.88 / uz 17.06.*
+[Full five-language report, raw outputs and independent audit](../benchmark/results/multilingual_1000_20261001/README.md).
+This is reading, not telephone or conversational accuracy, and not the official
+test-only FLEURS benchmark. Training overlap is unknown.
 
-*Provenance: the committed `results_full/fleurs_{kk,ky,uz}_gigastt_ml_ctc*.json` artifacts
-were scored with the older normalizer and do not reproduce these numbers (e.g. uz 600M
-reads 19.85 there vs 9.21 here); the digit-free / apostrophe-folded recompute via
-[`scripts/wer_unicode.py`](../scripts/wer_unicode.py) is not committed.*
+Separate natural-speech measurements for `ml_ctc_large` are **36.91% WER** on
+887 short Kazakh conversational utterances, **16.54%** on 31 Kazakh media clips,
+and **22.16%** on 745 Uzbek voice messages. Kyrgyz conversation remains unmeasured.
+Whisper large-v3 and Omnilingual CTC1B v2 did not improve WER on the matched
+eligible sets; Omnilingual had lower CER on Kyrgyz reading despite higher WER.
 
-Across all five supported languages the 600M head lands at **4.4–9.2% clean-read WER**
-(Russian 4.44 · English 4.63 · Kazakh 6.52 · Kyrgyz 7.39 · Uzbek 9.21) — a genuinely strong
-multilingual result. Same caveat as above: FLEURS overlaps common multilingual ASR training
-data, so read these as in-distribution upper bounds.
+[Language selection and interpretation](languages.md) ·
+[Matched comparison and CPU resource measurements](../benchmark/results/multilingual_model_comparison_20261001/README.md).
+The latter is a separate Linux CPU experiment, not the historical M1 speed table below.
 
 ## Speed — RTF (processing ÷ audio; lower = faster; M1 CPU)
 

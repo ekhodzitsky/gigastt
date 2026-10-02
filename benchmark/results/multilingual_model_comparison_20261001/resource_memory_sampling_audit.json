@@ -1,0 +1,109 @@
+{
+  "status": "Auditor-only correction; frozen measurements and worker unchanged.",
+  "initial_audit_failure": "Incorrect assumption that independently sourced sampled PSS peaks must not exceed statm RSS peaks.",
+  "evidence": [
+    {
+      "path": "/home/ekhodzitsky/.cache/gigastt-alternative/venv312/lib/python3.12/site-packages/psutil/_pslinux.py",
+      "sha256": "a8a09bab87848075b691c46112b00692745785a8c9d5a2c87037ae124b469749",
+      "version": "7.2.2",
+      "findings": "memory_full_info first parses smaps_rollup (fallback smaps) for USS/PSS, then calls memory_info reading RSS from statm. Separate sequential reads, not a common atomic snapshot."
+    },
+    {
+      "path": "/home/ekhodzitsky/.cache/gigastt-ready-comparison/omni-venv/lib/python3.12/site-packages/psutil/_pslinux.py",
+      "sha256": "41823ac874ef44c619955c41d3af3154010c10018645253d13bfac243df5eb9a",
+      "version": "5.9.8",
+      "findings": "memory_full_info first parses smaps_rollup (fallback smaps) for USS/PSS, then calls memory_info reading RSS from statm. Separate sequential reads, not a common atomic snapshot."
+    }
+  ],
+  "primary_documentation": [
+    "https://www.man7.org/linux/man-pages/man5/proc_pid_statm.5.html",
+    "https://docs.kernel.org/filesystems/proc.html"
+  ],
+  "documentation_findings": "Linux documents statm resident accounting as inaccurate because of scalability optimizations and recommends smaps/smaps_rollup for accurate detailed values. Installed psutil source additionally proves separate reads. These facts justify preserving PSS>RSS anomalies rather than rejecting genuine measurements; they do not prove which mechanism explains every byte of each discrepancy.",
+  "retained_checks": [
+    "Positive sample counts",
+    "Nonnegative integer memory fields",
+    "USS peak <= PSS peak from same source",
+    "Last PSS <= peak PSS"
+  ],
+  "discrepancies": [
+    {
+      "file": "resource_omni_kk_codeswitch_r1.json",
+      "file_sha256": "d86d60b316355b2b598fe7b955d2c13640e091b60c40bfc1f71979a5c3eb54a1",
+      "phase": "load",
+      "samples": 35,
+      "peak_rss_bytes": 7912939520,
+      "peak_pss_bytes": 7954002944,
+      "peak_uss_bytes": 7953752064,
+      "last_pss_bytes": 5196194816,
+      "pss_minus_rss_bytes": 41063424
+    },
+    {
+      "file": "resource_omni_kk_codeswitch_r1.json",
+      "file_sha256": "d86d60b316355b2b598fe7b955d2c13640e091b60c40bfc1f71979a5c3eb54a1",
+      "phase": "measured",
+      "samples": 138,
+      "peak_rss_bytes": 4638195712,
+      "peak_pss_bytes": 4638834688,
+      "peak_uss_bytes": 4638552064,
+      "last_pss_bytes": 4522192896,
+      "pss_minus_rss_bytes": 638976
+    },
+    {
+      "file": "resource_omni_kk_codeswitch_r2.json",
+      "file_sha256": "48c1e9f373afc030af7d7a605f723f54a9c1886d723b97694561172377e8a713",
+      "phase": "warmup",
+      "samples": 29,
+      "peak_rss_bytes": 4474703872,
+      "peak_pss_bytes": 4504796160,
+      "peak_uss_bytes": 4504489984,
+      "last_pss_bytes": 4426615808,
+      "pss_minus_rss_bytes": 30092288
+    },
+    {
+      "file": "resource_omni_uz_conversation_r1.json",
+      "file_sha256": "6362e11dd962441925c612309b08a1cd9eaec0218ab3466222a4f4f6e3239cb3",
+      "phase": "measured",
+      "samples": 175,
+      "peak_rss_bytes": 4847882240,
+      "peak_pss_bytes": 4906243072,
+      "peak_uss_bytes": 4905959424,
+      "last_pss_bytes": 4520580096,
+      "pss_minus_rss_bytes": 58360832
+    },
+    {
+      "file": "resource_omni_uz_conversation_r2.json",
+      "file_sha256": "d4d63b13dc586adf21412c8b051377053c82d67f369b1da17bc5cad2f24b7d21",
+      "phase": "measured",
+      "samples": 172,
+      "peak_rss_bytes": 4873400320,
+      "peak_pss_bytes": 4902084608,
+      "peak_uss_bytes": 4901789696,
+      "last_pss_bytes": 4559421440,
+      "pss_minus_rss_bytes": 28684288
+    },
+    {
+      "file": "resource_whisper_kk_codeswitch_r1.json",
+      "file_sha256": "7a3e62282069492df26ff58bdf98ee16e643a2e62391ca0ca2c915b5dfc90498",
+      "phase": "warmup",
+      "samples": 82,
+      "peak_rss_bytes": 2669813760,
+      "peak_pss_bytes": 2673582080,
+      "peak_uss_bytes": 2670342144,
+      "last_pss_bytes": 2673582080,
+      "pss_minus_rss_bytes": 3768320
+    },
+    {
+      "file": "resource_whisper_kk_codeswitch_r2.json",
+      "file_sha256": "3a1693fca44e7d9d646d8b44573426fedde887e4a5afda6223fd0169ed77d665",
+      "phase": "load",
+      "samples": 31,
+      "peak_rss_bytes": 3176067072,
+      "peak_pss_bytes": 3178468352,
+      "peak_uss_bytes": 3175284736,
+      "last_pss_bytes": 1894986752,
+      "pss_minus_rss_bytes": 2401280
+    }
+  ],
+  "metric_preference": "Sampled process-tree PSS, with 100ms sampling and competing-workload caveats; RSS remains an approximate auxiliary metric."
+}

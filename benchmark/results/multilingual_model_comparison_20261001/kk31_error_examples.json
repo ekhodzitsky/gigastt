@@ -1,0 +1,184 @@
+{
+  "scope": "Read-only analysis of the completed 31-clip Kazakh standup/interview comparison; no inference, reference edits or parameter changes.",
+  "source_results": {
+    "benchmark/results/multilingual_conversation_20261001/kk_large.json": "a6d7e70b5fd603a5f24480ef5bcb3150c73f99cb9b238650fbd4e11891ba26f9",
+    "benchmark/results/multilingual_model_comparison_20261001/whisper_kk.json": "3a92b9a74eb5926ce3fe028f4d957fecb51c0b6cd16cb786bc2671fba2877be9"
+  },
+  "primary_reference": "The same fixed verbatim reference and existing scorer for both systems",
+  "totals": {
+    "gigastt_ml_ctc_large": {
+      "reference_words": 532,
+      "word_errors": 88,
+      "substitutions": 69,
+      "deletions": 12,
+      "insertions": 7,
+      "reference_chars": 3384,
+      "char_errors": 144,
+      "n": 31,
+      "wer_pct": 16.541353383458645,
+      "cer_pct": 4.25531914893617,
+      "empty_hypotheses": 0,
+      "failed_requests": 0
+    },
+    "whisper_large_v3_cpu_int8": {
+      "reference_words": 532,
+      "word_errors": 262,
+      "substitutions": 211,
+      "deletions": 41,
+      "insertions": 10,
+      "reference_chars": 3384,
+      "char_errors": 492,
+      "n": 31,
+      "wer_pct": 49.24812030075188,
+      "cer_pct": 14.539007092198581,
+      "empty_hypotheses": 0,
+      "failed_requests": 0
+    }
+  },
+  "paired_utterances": {
+    "gigastt_fewer_word_errors": 29,
+    "whisper_fewer_word_errors": 0,
+    "equal_word_errors": 2
+  },
+  "selection_note": "Five qualitative illustrations selected after reading outputs: distinct error patterns, including one equal-error clip. They are not a random sample or a count of error-type prevalence.",
+  "examples": [
+    {
+      "id": "kzaudio_7",
+      "observed_type": "Word merging and altered word forms",
+      "reference": "біз алып жатқан келіннің яғни қыздың бір тәтесі тілек айтып жатыр екен айналайын айнұржан барған жеріңе бақытты болам деп емес бақытты қылам деп бар алтыным",
+      "gigastt_hypothesis": "біз алып жатқан келіннің яғни қыздың бір тәтесі тілек айтып жатыр екен айналайын айнұржан барған жеріңе бақытты болам деп емес бақытты қыламн деп бар алтыным",
+      "whisper_hypothesis": "біз алып жатқан келінің, яғни қыздың бір тәтестілейгі айтпетірекен, айналайын айныржан, барған жеріне бақытты болам деп емес, бақытты қылам деп баралтыным.",
+      "gigastt_scores": {
+        "reference_words": 25,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 156,
+        "char_errors": 1
+      },
+      "whisper_scores": {
+        "reference_words": 25,
+        "word_errors": 10,
+        "substitutions": 6,
+        "deletions": 4,
+        "insertions": 0,
+        "reference_chars": 156,
+        "char_errors": 15
+      },
+      "explanation": "Whisper merges the five reference words \"тәтесі тілек айтып жатыр екен\" into \"тәтестілейгі айтпетірекен\". GigaAM preserves this span but produces \"қыламн\" elsewhere instead of \"қылам\". Word boundaries contribute several word errors even when some characters remain recognizable."
+    },
+    {
+      "id": "kzaudio_22",
+      "observed_type": "Content substitution and written endings",
+      "reference": "бауырлар бірін бірін түсіне алмай жүрген жастар келед солар азаматтар солардың ортасын біріктіру оларды жарастыру енді психологияның қаншалықты өзінің дүниесі болса да менің негізгі психологиям ол дін болад ",
+      "gigastt_hypothesis": "бауырлар бірін бірін түсіне алмай жүрген жастар келеді солар азаматтар солардың ортасын біріктіру оларды жарастыру енді психологияның қаншалықты өзінің дүниесі болса да менің негізгі психологиям ол дін болады",
+      "whisper_hypothesis": "бауырлар бірін-бірін үшін алмай жүрген жастар келеді. Солар азаматтар, солардың ортасын біріктіру, оларды жарастыру. Енді психологияның қанчалықты өзінің дүниесі болса да, менің негізгі психологиям ол дем болады.",
+      "gigastt_scores": {
+        "reference_words": 28,
+        "word_errors": 2,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 206,
+        "char_errors": 2
+      },
+      "whisper_scores": {
+        "reference_words": 28,
+        "word_errors": 7,
+        "substitutions": 6,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 206,
+        "char_errors": 9
+      },
+      "explanation": "Whisper outputs \"дем\" for reference \"дін\" and \"үшін\" for \"түсіне\". GigaAM preserves these words. Both output the written forms \"келеді\" and \"болады\" where the verbatim reference has \"келед\" and \"болад\"; these count as substitutions under the fixed primary scorer."
+    },
+    {
+      "id": "kzaudio_23",
+      "observed_type": "Filler omission and merged words",
+      "reference": "бір ээ оқиға бар бір үлкен патша кісі қайтыс болып бір жиырмаға жете жетпес баласы қалған екен",
+      "gigastt_hypothesis": "бір оқиға бар бір үлкен патша кісі қайтыс болып бір жиырмаға жете жетпес баласы қалған екен",
+      "whisper_hypothesis": "Бір оқиға бар, бір үлкен патшаксы қайтыс болып, бір жүрмаға жетер жетпес баласы қалған екен.",
+      "gigastt_scores": {
+        "reference_words": 17,
+        "word_errors": 1,
+        "substitutions": 0,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 94,
+        "char_errors": 3
+      },
+      "whisper_scores": {
+        "reference_words": 17,
+        "word_errors": 5,
+        "substitutions": 3,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 94,
+        "char_errors": 9
+      },
+      "explanation": "Both models omit the reference filler \"ээ\". Whisper additionally merges \"патша кісі\" into \"патшаксы\" and changes other words; GigaAM otherwise matches this reference."
+    },
+    {
+      "id": "kzaudio_26",
+      "observed_type": "Equal word-error count with different substitutions",
+      "reference": "ең бірінші жаман ой салад жақсы ой салмайд жаман ой келед сондықтан со жаман ойды жақсы ойға алмастыру ",
+      "gigastt_hypothesis": "ең бірінші жаман ой салады жақсы ой салмайды жаман ой келеді сондықтан сол жаман ойды жақсы ойға алмастыру",
+      "whisper_hypothesis": "Ең бір жаман ой салады, жақсы ой салмайды, жаман ой келеді. Сондықтан со жаман ойды жақсы ойға алмастыру.",
+      "gigastt_scores": {
+        "reference_words": 18,
+        "word_errors": 4,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 102,
+        "char_errors": 4
+      },
+      "whisper_scores": {
+        "reference_words": 18,
+        "word_errors": 4,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 102,
+        "char_errors": 7
+      },
+      "explanation": "Both expand \"салад\", \"салмайд\", \"келед\" into written endings. Whisper additionally changes \"бірінші\" to \"бір\"; GigaAM changes \"со\" to \"сол\". Each has four word errors. This illustrates that GigaAM is not error-free and the primary benchmark includes verbatim-versus-written-form differences."
+    },
+    {
+      "id": "kzaudio_30",
+      "observed_type": "Number formatting plus a word substitution",
+      "reference": "бес алты жеті рет барды ол дұрыс па",
+      "gigastt_hypothesis": "ы бес алты жеті рет барды ол дұрыс па",
+      "whisper_hypothesis": "5, 6, 7 рет барды. Ол дұрыс ба?",
+      "gigastt_scores": {
+        "reference_words": 8,
+        "word_errors": 1,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 35,
+        "char_errors": 2
+      },
+      "whisper_scores": {
+        "reference_words": 8,
+        "word_errors": 4,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 35,
+        "char_errors": 12
+      },
+      "explanation": "Whisper renders \"бес алты жеті\" as \"5, 6, 7\" and \"па\" as \"ба\": four substitutions under the unchanged scorer. GigaAM keeps the number words but adds initial \"ы\": one insertion. The number substitutions are formatting differences, not evidence that the numeric values were misunderstood."
+    }
+  ],
+  "plain_language_explanation": "Across the same 532 reference words, GigaAM has 88 word edits and Whisper has 262. A word edit is a substitution, omission or extra word, so WER is not the percentage of clips that failed. Most of the gap comes from substitutions (69 versus 211), with additional omissions (12 versus 41) and insertions (7 versus 10). Observed differences include altered words and word boundaries, alongside number formatting and omission of fillers. Letter case and ordinary sentence punctuation are normalized by the shared scorer; word boundaries still matter, and the frozen hyphen handling can join words.",
+  "secondary_reference_note": "Using the already declared normalized reference, without changing either hypothesis, yields GigaAM 35/529 = 6.616257% and Whisper 236/529 = 44.612476%. This is a separate diagnostic, not a replacement headline.",
+  "limits": [
+    "Only 31 clips from two source videos; do not generalize to all Kazakh speech or ordinary conversations.",
+    "This compares the recorded deployable configurations, including Whisper CPU int8_float32 and each stack frontend; it is not a pure architecture comparison.",
+    "The observed text errors do not establish why they occurred, nor isolate quantization, language switching or audio mixing as their cause.",
+    "Detailed frontend checks and the FFmpeg stereo mixing caveat are in whisper_frontend_sanity.json."
+  ]
+}

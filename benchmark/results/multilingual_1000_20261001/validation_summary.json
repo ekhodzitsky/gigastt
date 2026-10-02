@@ -1,0 +1,360 @@
+{
+  "completed": true,
+  "scope": "All 5,000 original recordings × two unadapted INT8 models",
+  "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+  "no_training_split": true,
+  "original_model_hashes_verified": true,
+  "bootstrap": {
+    "resampling_unit": "utterance",
+    "seed": 42,
+    "resamples": 1000,
+    "coverage": "95%",
+    "caveat": "Descriptive selected-set interval; repeated sentences/speakers violate independent-speaker interpretation; not a language-wide estimate"
+  },
+  "manifests": [
+    {
+      "language": "en",
+      "manifest_sha256": "c813e470291a372b3ad96238591db85310461b1887c36c6a4d59d8d1279bb284",
+      "n": 1000,
+      "splits": {
+        "test": 647,
+        "validation": 353
+      },
+      "unique_sentence_ids": 500,
+      "audio_s": 9753.12,
+      "digit_bearing_references": 166,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 259,
+        "1": 153,
+        "2": 72,
+        "3": 38,
+        "4": 31,
+        "5": 44,
+        "6": 39,
+        "7": 48,
+        "8": 34,
+        "9": 50,
+        "²": 1,
+        "½": 1,
+        "¾": 1,
+        "é": 4,
+        "ñ": 2,
+        "ó": 4,
+        "ö": 3,
+        "ă": 2,
+        "ğ": 2,
+        "ş": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "kk",
+      "manifest_sha256": "5a8d33c53c04bf36db9658335379ddc3605cc9ff88d3dc702c636001de9dc26c",
+      "n": 1000,
+      "splits": {
+        "test": 856,
+        "validation": 144
+      },
+      "unique_sentence_ids": 445,
+      "audio_s": 16048.2,
+      "digit_bearing_references": 182,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 272,
+        "1": 151,
+        "2": 90,
+        "3": 49,
+        "4": 34,
+        "5": 49,
+        "6": 45,
+        "7": 43,
+        "8": 43,
+        "9": 62,
+        "½": 2,
+        "¾": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "ky",
+      "manifest_sha256": "29b2cc8ea3ca651b96b1d852fc2a28e6e21144f911bdbd6897481642d1f2220c",
+      "n": 1000,
+      "splits": {
+        "test": 977,
+        "validation": 23
+      },
+      "unique_sentence_ids": 372,
+      "audio_s": 11926.14,
+      "digit_bearing_references": 184,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 271,
+        "1": 148,
+        "2": 95,
+        "3": 47,
+        "4": 24,
+        "5": 50,
+        "6": 41,
+        "7": 35,
+        "8": 39,
+        "9": 45,
+        "½": 2,
+        "¾": 2,
+        "é": 6
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "ru",
+      "manifest_sha256": "912ff7217578fd42d22913bc8d856a7295b942733433bafe827a3245b95ef7d7",
+      "n": 1000,
+      "splits": {
+        "test": 775,
+        "validation": 225
+      },
+      "unique_sentence_ids": 483,
+      "audio_s": 11477.58,
+      "digit_bearing_references": 185,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 279,
+        "1": 152,
+        "2": 93,
+        "3": 45,
+        "4": 36,
+        "5": 49,
+        "6": 40,
+        "7": 42,
+        "8": 31,
+        "9": 53,
+        "²": 2,
+        "½": 3,
+        "¾": 3,
+        "é": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    },
+    {
+      "language": "uz",
+      "manifest_sha256": "21d2bf3f5ddeb43ec1581d34832534102e563364097d6ca398fc73e84f37da1d",
+      "n": 1000,
+      "splits": {
+        "test": 862,
+        "validation": 138
+      },
+      "unique_sentence_ids": 447,
+      "audio_s": 11787.36,
+      "digit_bearing_references": 181,
+      "non_nfc_references": 0,
+      "normalized_out_of_vocabulary_characters": {
+        "0": 269,
+        "1": 129,
+        "2": 79,
+        "3": 49,
+        "4": 30,
+        "5": 47,
+        "6": 44,
+        "7": 35,
+        "8": 32,
+        "9": 41,
+        "²": 1,
+        "½": 2,
+        "¾": 2
+      },
+      "source_selection_and_audio_hashes_verified": true
+    }
+  ],
+  "runs": [
+    {
+      "language": "en",
+      "variant": "ml_ctc",
+      "result_sha256": "d4fc21635a28794a4246cf39a2589a917153f61ac23d0fd471e2dfe0ef72f0f3",
+      "n": 1000,
+      "model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 16.214592671318332,
+      "wer_utterance_bootstrap_95_percent": [
+        15.39574388650364,
+        17.058660763696736
+      ],
+      "cer_percent": 6.975992431111286
+    },
+    {
+      "language": "kk",
+      "variant": "ml_ctc",
+      "result_sha256": "e810473f4465070af881371bfac128d3fd64d359218b9409ebf88abd73394012",
+      "n": 1000,
+      "model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 12.322855309966759,
+      "wer_utterance_bootstrap_95_percent": [
+        11.36428694108891,
+        13.350020859407593
+      ],
+      "cer_percent": 4.587457736028028
+    },
+    {
+      "language": "ky",
+      "variant": "ml_ctc",
+      "result_sha256": "3428349009dc951e7c70f52f8f95ba957c69ea34846ccc86ec8f932614a5e133",
+      "n": 1000,
+      "model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 13.684878555356834,
+      "wer_utterance_bootstrap_95_percent": [
+        12.760134557272364,
+        14.601668762144245
+      ],
+      "cer_percent": 5.0368457038668994
+    },
+    {
+      "language": "en",
+      "variant": "ml_ctc_large",
+      "result_sha256": "87b8f6a8a5a26f4e1b5f7f37802e4c8361bc964b438a7502c326099b2e186870",
+      "n": 1000,
+      "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 13.617670163116307,
+      "wer_utterance_bootstrap_95_percent": [
+        12.859353749472401,
+        14.422805532034998
+      ],
+      "cer_percent": 5.928962825718453
+    },
+    {
+      "language": "kk",
+      "variant": "ml_ctc_large",
+      "result_sha256": "6e9b146b63d159016b16b91ef9636d60652df19993527c80702f8798db4ffd72",
+      "n": 1000,
+      "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 11.471394413016855,
+      "wer_utterance_bootstrap_95_percent": [
+        10.501585809937742,
+        12.51523770824868
+      ],
+      "cer_percent": 4.473478879488396
+    },
+    {
+      "language": "ky",
+      "variant": "ml_ctc_large",
+      "result_sha256": "21ab511d2105edfe8d9cdba73f2f746379d9b488858d2357ebb316bc0e700d6a",
+      "n": 1000,
+      "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 12.340621935037213,
+      "wer_utterance_bootstrap_95_percent": [
+        11.457970003487967,
+        13.316479510847198
+      ],
+      "cer_percent": 4.686621590822761
+    },
+    {
+      "language": "ru",
+      "variant": "ml_ctc_large",
+      "result_sha256": "88d966c567727941ffbd501e90132e5f3ed0d94d85a02403b7035f86af1583dd",
+      "n": 1000,
+      "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 8.78169124980316,
+      "wer_utterance_bootstrap_95_percent": [
+        8.116031476623977,
+        9.50643664981498
+      ],
+      "cer_percent": 4.500901515882261
+    },
+    {
+      "language": "uz",
+      "variant": "ml_ctc_large",
+      "result_sha256": "e5da5f67cb9f73b13f690980c1a0e6afb7ba853773dcc1487dbc9cc1fdbe42e8",
+      "n": 1000,
+      "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 13.892477950676929,
+      "wer_utterance_bootstrap_95_percent": [
+        12.947878097408147,
+        14.905725454127385
+      ],
+      "cer_percent": 4.269696452933151
+    },
+    {
+      "language": "ru",
+      "variant": "ml_ctc",
+      "result_sha256": "876949a6333426eccbe431749c14e5c325acf26be185b77385f52a26ac11a1d3",
+      "n": 1000,
+      "model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 9.967980683428692,
+      "wer_utterance_bootstrap_95_percent": [
+        9.276350288411116,
+        10.678537561900749
+      ],
+      "cer_percent": 4.707174285650686
+    },
+    {
+      "language": "uz",
+      "variant": "ml_ctc",
+      "result_sha256": "e219fc8fb06f27535f3f220961d1ab8dfc27b55fa40d3884683a937cf72953a3",
+      "n": 1000,
+      "model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+      "failed_requests": 0,
+      "independent_all_word_distances_verified": true,
+      "all_character_distances_recomputed": true,
+      "independent_python_character_dp_checks": 50,
+      "all_summary_groups_verified": true,
+      "wer_percent": 16.75186787259143,
+      "wer_utterance_bootstrap_95_percent": [
+        15.723765605668653,
+        17.82044803772949
+      ],
+      "cer_percent": 4.887164620281946
+    }
+  ]
+}

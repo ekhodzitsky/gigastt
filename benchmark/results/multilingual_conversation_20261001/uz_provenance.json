@@ -1,0 +1,59 @@
+{
+  "source": "https://huggingface.co/datasets/BoburAmirov/asr_evaluate_set",
+  "revision": "c6e1b4f66d45e9d7644003d1564837786295850a",
+  "license": "Apache-2.0 per pinned publisher README",
+  "publisher_card_url": "https://huggingface.co/datasets/BoburAmirov/asr_evaluate_set/blob/c6e1b4f66d45e9d7644003d1564837786295850a/README.md",
+  "publisher_card_sha256": "db82d8bcae84461e64e240fc5ef9c2d75e702839b836ffc28c55838914810942",
+  "dataset_info_sha256": "5a9402e1d453f1985f81f0ab6061eabd250e516739377ff0f5084a5ba2a2a677",
+  "arrow_sources": [
+    {
+      "url": "https://huggingface.co/datasets/BoburAmirov/asr_evaluate_set/resolve/c6e1b4f66d45e9d7644003d1564837786295850a/data-00000-of-00002.arrow",
+      "sha256": "c83379b77b1ba1cfe58458e7305a11628a831fc8d95d357293f6e16839ecba83",
+      "bytes": 380252560
+    },
+    {
+      "url": "https://huggingface.co/datasets/BoburAmirov/asr_evaluate_set/resolve/c6e1b4f66d45e9d7644003d1564837786295850a/data-00001-of-00002.arrow",
+      "sha256": "986885f18da1f39d93a2b6fc965a2c55714c7b2d21f13d25311490325943afdc",
+      "bytes": 387164408
+    }
+  ],
+  "publisher_claims": {
+    "domain": "Voice messages from open Telegram groups; conversational speech",
+    "annotations": "Manually annotated, human-verified ground truth",
+    "speakers": "Multiple speakers; no identities or speaker-disjoint split supplied"
+  },
+  "verified_structure": {
+    "count": 745,
+    "columns": [
+      "name",
+      "transcript",
+      "audio"
+    ],
+    "published_split": "train",
+    "card_schema_discrepancy": "README calls the text column transcription; actual Arrow/dataset_info uses transcript.",
+    "sample_rates": {
+      "16000": 745
+    },
+    "audio_seconds": 5994.575,
+    "unique_source_names": 745,
+    "unique_audio_files": 727,
+    "unique_pcm_arrays": 727,
+    "unique_verbatim_references": 725,
+    "unique_normalized_references": 725,
+    "duplicate_audio_rows": 18,
+    "duplicate_pcm_rows": 18,
+    "empty_reference_ids": [],
+    "empty_normalized_reference_ids": []
+  },
+  "extraction": {
+    "audio": "Original sample-rate mono arrays serialized as IEEE float32 WAV; no filtering, gain, resampling, segmentation, narrowband degradation or integer PCM quantization.",
+    "source_array_dtype": "float64",
+    "native_decoder_dtype": "float32",
+    "float32_roundtrip_exact": true,
+    "source_arrays_exactly_representable_float32": 745,
+    "max_float64_to_float32_absolute_difference": 0.0
+  },
+  "selection": "All745published rows in original shard/row order; no exclusions, deduplication, replacement, model-result selection or training.",
+  "limitations": "Conversational provenance and manual annotation are publisher claims, not independent sample-level validation. No per-row read/spontaneous/commercial labels, speaker IDs, telephone metadata or blind-holdout guarantee. Do not call745rows745independent speakers or conversations. Prior100-row pilot usedPCM16 serialization and is not asserted bit-identical.",
+  "script_sha256": "3fbe8955dc0cbb27258464f8cf5f05deff2aced2e1d888c13d5467d5f65ea94c"
+}

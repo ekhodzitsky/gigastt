@@ -13,6 +13,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+### Documentation
+
+- Publish verified five-language reading benchmarks, Kazakh/Uzbek conversational
+  results and matched ready-model comparisons, with language selection guidance,
+  raw evidence and offline score verification. No model defaults were changed.
+
 ### Changed
 
 - **polyvoice 0.21.0 → 1.0.0.** Diarization still uses `FbankOnnxExtractor` /

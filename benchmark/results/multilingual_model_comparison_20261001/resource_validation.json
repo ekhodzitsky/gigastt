@@ -1,0 +1,1941 @@
+{
+  "completed": true,
+  "partial_report": false,
+  "expected_jobs": 22,
+  "audited_jobs": 22,
+  "missing": [],
+  "round_order_and_nonoverlap_verified": true,
+  "runs": [
+    {
+      "backend": "gigastt",
+      "corpus": "kk_conversation",
+      "round": 1,
+      "result_sha256": "5a34dbdeac8c57c77e49c2ca2320b75db1b3f007909185a08c3e5155cbf26c88",
+      "rtf": 0.09979284950689175,
+      "cpu_rtf": 0.2531654653027689,
+      "failed": 0,
+      "startup_including_validation_s": 3.9031323439994594,
+      "warmup_s": 0.12360231501224916,
+      "memory": {
+        "load": {
+          "samples": 36,
+          "peak_rss_bytes": 850796544,
+          "peak_pss_bytes": 700793856,
+          "peak_uss_bytes": 629563392,
+          "last_pss_bytes": 700793856
+        },
+        "warmup": {
+          "samples": 1,
+          "peak_rss_bytes": 1308975104,
+          "peak_pss_bytes": 707331072,
+          "peak_uss_bytes": 114233344,
+          "last_pss_bytes": 707331072
+        },
+        "measured": {
+          "samples": 6,
+          "peak_rss_bytes": 1317748736,
+          "peak_pss_bytes": 716104704,
+          "peak_uss_bytes": 123006976,
+          "last_pss_bytes": 711635968
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "mcskl030_iu_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_19",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_38",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_39",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_41",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3191799,
+      "worker_start_epoch_s": 1790944497.4409728,
+      "measurement_end_epoch_s": 1790944502.100656,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "kk_codeswitch",
+      "round": 1,
+      "result_sha256": "8abc7b7513eef158e1c00f7e5887d93838a73b67af809798c1bed33715e27ea2",
+      "rtf": 0.07151515444210908,
+      "cpu_rtf": 0.19163526747608556,
+      "failed": 0,
+      "startup_including_validation_s": 2.8339695829927223,
+      "warmup_s": 0.5598490219999803,
+      "memory": {
+        "load": {
+          "samples": 27,
+          "peak_rss_bytes": 1308872704,
+          "peak_pss_bytes": 707876864,
+          "peak_uss_bytes": 603029504,
+          "last_pss_bytes": 707876864
+        },
+        "warmup": {
+          "samples": 4,
+          "peak_rss_bytes": 1367822336,
+          "peak_pss_bytes": 766089216,
+          "peak_uss_bytes": 173006848,
+          "last_pss_bytes": 766089216
+        },
+        "measured": {
+          "samples": 22,
+          "peak_rss_bytes": 1407938560,
+          "peak_pss_bytes": 806152192,
+          "peak_uss_bytes": 213016576,
+          "last_pss_bytes": 787552256
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "kzaudio_1",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_2",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_4",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_5",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3192227,
+      "worker_start_epoch_s": 1790944502.2568867,
+      "measurement_end_epoch_s": 1790944508.1805663,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "uz_conversation",
+      "round": 1,
+      "result_sha256": "f159e5d3b9a2c9c0fcfbb80f58b97920e977e5b77d4a2f822642a90fdef459f2",
+      "rtf": 0.08961882021830854,
+      "cpu_rtf": 0.22292791362337253,
+      "failed": 0,
+      "startup_including_validation_s": 3.569402003995492,
+      "warmup_s": 0.46623968199128285,
+      "memory": {
+        "load": {
+          "samples": 32,
+          "peak_rss_bytes": 1226944512,
+          "peak_pss_bytes": 695834624,
+          "peak_uss_bytes": 610152448,
+          "last_pss_bytes": 695834624
+        },
+        "warmup": {
+          "samples": 4,
+          "peak_rss_bytes": 1369210880,
+          "peak_pss_bytes": 767477760,
+          "peak_uss_bytes": 174391296,
+          "last_pss_bytes": 767477760
+        },
+        "measured": {
+          "samples": 35,
+          "peak_rss_bytes": 1409421312,
+          "peak_pss_bytes": 807647232,
+          "peak_uss_bytes": 214495232,
+          "last_pss_bytes": 752633856
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "uz_telegram_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3192639,
+      "worker_start_epoch_s": 1790944508.4001153,
+      "measurement_end_epoch_s": 1790944516.6758766,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "ky_read",
+      "round": 1,
+      "result_sha256": "b81da86747d07c468592ecb4fd7e2cbf43eb922ec2ef1b9a11855d73f3558b62",
+      "rtf": 0.07369133084482997,
+      "cpu_rtf": 0.19155275148965997,
+      "failed": 0,
+      "startup_including_validation_s": 2.9628707009978825,
+      "warmup_s": 0.8976953879900975,
+      "memory": {
+        "load": {
+          "samples": 27,
+          "peak_rss_bytes": 739840000,
+          "peak_pss_bytes": 696229888,
+          "peak_uss_bytes": 671715328,
+          "last_pss_bytes": 696229888
+        },
+        "warmup": {
+          "samples": 8,
+          "peak_rss_bytes": 1377603584,
+          "peak_pss_bytes": 777932800,
+          "peak_uss_bytes": 184827904,
+          "last_pss_bytes": 775278592
+        },
+        "measured": {
+          "samples": 36,
+          "peak_rss_bytes": 1452773376,
+          "peak_pss_bytes": 853041152,
+          "peak_uss_bytes": 259805184,
+          "last_pss_bytes": 718254080
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "fleurs_ky_kg_test_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3193209,
+      "worker_start_epoch_s": 1790944516.9168794,
+      "measurement_end_epoch_s": 1790944524.9993126,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "whisper",
+      "corpus": "kk_conversation",
+      "round": 1,
+      "result_sha256": "d644ef3259e33435bae1b218b708a9dcaf88fb80d7c20945effdca738ff6e0de",
+      "rtf": 4.524280575380612,
+      "cpu_rtf": 14.685179271718733,
+      "failed": 0,
+      "startup_including_validation_s": 4.024701936999918,
+      "warmup_s": 5.528603016995476,
+      "memory": {
+        "load": {
+          "samples": 33,
+          "peak_rss_bytes": 3095650304,
+          "peak_pss_bytes": 3085436928,
+          "peak_uss_bytes": 3082235904,
+          "last_pss_bytes": 1894971392
+        },
+        "warmup": {
+          "samples": 45,
+          "peak_rss_bytes": 2488762368,
+          "peak_pss_bytes": 2481195008,
+          "peak_uss_bytes": 2477973504,
+          "last_pss_bytes": 2481195008
+        },
+        "measured": {
+          "samples": 215,
+          "peak_rss_bytes": 2669273088,
+          "peak_pss_bytes": 2661697536,
+          "peak_uss_bytes": 2658418688,
+          "last_pss_bytes": 2481682432
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "mcskl030_iu_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_19",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_38",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_39",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_41",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3194265,
+      "worker_start_epoch_s": 1790944525.1913123,
+      "measurement_end_epoch_s": 1790944563.340939,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "whisper",
+      "corpus": "kk_codeswitch",
+      "round": 1,
+      "result_sha256": "7a3e62282069492df26ff58bdf98ee16e643a2e62391ca0ca2c915b5dfc90498",
+      "rtf": 1.2166014353543768,
+      "cpu_rtf": 4.220809414959184,
+      "failed": 0,
+      "startup_including_validation_s": 3.876422332992661,
+      "warmup_s": 11.999522768994211,
+      "memory": {
+        "load": {
+          "samples": 32,
+          "peak_rss_bytes": 3164971008,
+          "peak_pss_bytes": 3155217408,
+          "peak_uss_bytes": 3152019456,
+          "last_pss_bytes": 1894972416
+        },
+        "warmup": {
+          "samples": 82,
+          "peak_rss_bytes": 2669813760,
+          "peak_pss_bytes": 2673582080,
+          "peak_uss_bytes": 2670342144,
+          "last_pss_bytes": 2673582080
+        },
+        "measured": {
+          "samples": 295,
+          "peak_rss_bytes": 2872770560,
+          "peak_pss_bytes": 2865168384,
+          "peak_uss_bytes": 2861895680,
+          "last_pss_bytes": 2685181952
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [
+        {
+          "phase": "warmup",
+          "samples": 82,
+          "peak_rss_bytes": 2669813760,
+          "peak_pss_bytes": 2673582080,
+          "peak_uss_bytes": 2670342144,
+          "last_pss_bytes": 2673582080,
+          "pss_minus_rss_bytes": 3768320
+        }
+      ],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "kzaudio_1",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_2",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_4",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_5",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3198716,
+      "worker_start_epoch_s": 1790944563.623374,
+      "measurement_end_epoch_s": 1790944622.3056629,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "whisper",
+      "corpus": "uz_conversation",
+      "round": 1,
+      "result_sha256": "1a59fef2e5a04e1ef00908cd74ad0443a70a3e246871cf79cfabce970b22698e",
+      "rtf": 0.6534236384460884,
+      "cpu_rtf": 2.3031650259341596,
+      "failed": 0,
+      "startup_including_validation_s": 5.156512376997853,
+      "warmup_s": 6.699244859992177,
+      "memory": {
+        "load": {
+          "samples": 38,
+          "peak_rss_bytes": 3185475584,
+          "peak_pss_bytes": 3168746496,
+          "peak_uss_bytes": 3165560832,
+          "last_pss_bytes": 1895386112
+        },
+        "warmup": {
+          "samples": 48,
+          "peak_rss_bytes": 2490310656,
+          "peak_pss_bytes": 2482706432,
+          "peak_uss_bytes": 2479468544,
+          "last_pss_bytes": 2482706432
+        },
+        "measured": {
+          "samples": 217,
+          "peak_rss_bytes": 2636562432,
+          "peak_pss_bytes": 2628925440,
+          "peak_uss_bytes": 2625654784,
+          "last_pss_bytes": 2483873792
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "uz_telegram_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3205846,
+      "worker_start_epoch_s": 1790944622.5766754,
+      "measurement_end_epoch_s": 1790944665.29965,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "kk_conversation",
+      "round": 1,
+      "result_sha256": "2c1b1b2761ca3f6ea8892c5bf748e551537ea05e915b4ed45343ae594388dea9",
+      "rtf": 0.6057183612491426,
+      "cpu_rtf": 1.9224752521429007,
+      "failed": 0,
+      "startup_including_validation_s": 7.394773426000029,
+      "warmup_s": 0.7986938690009993,
+      "memory": {
+        "load": {
+          "samples": 54,
+          "peak_rss_bytes": 8133373952,
+          "peak_pss_bytes": 7959582720,
+          "peak_uss_bytes": 7959302144,
+          "last_pss_bytes": 6203295744
+        },
+        "warmup": {
+          "samples": 6,
+          "peak_rss_bytes": 4413861888,
+          "peak_pss_bytes": 4409011200,
+          "peak_uss_bytes": 4408709120,
+          "last_pss_bytes": 4409010176
+        },
+        "measured": {
+          "samples": 27,
+          "peak_rss_bytes": 4473032704,
+          "peak_pss_bytes": 4468149248,
+          "peak_uss_bytes": 4467843072,
+          "last_pss_bytes": 4468141056
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "mcskl030_iu_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_19",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_38",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_39",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_41",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3209844,
+      "worker_start_epoch_s": 1790944666.0786948,
+      "measurement_end_epoch_s": 1790944678.106082,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "kk_codeswitch",
+      "round": 1,
+      "result_sha256": "d86d60b316355b2b598fe7b955d2c13640e091b60c40bfc1f71979a5c3eb54a1",
+      "rtf": 0.5158725811991339,
+      "cpu_rtf": 1.3667518260497677,
+      "failed": 0,
+      "startup_including_validation_s": 4.997408851006185,
+      "warmup_s": 3.7857501589896856,
+      "memory": {
+        "load": {
+          "samples": 35,
+          "peak_rss_bytes": 7912939520,
+          "peak_pss_bytes": 7954002944,
+          "peak_uss_bytes": 7953752064,
+          "last_pss_bytes": 5196194816
+        },
+        "warmup": {
+          "samples": 30,
+          "peak_rss_bytes": 4432433152,
+          "peak_pss_bytes": 4424876032,
+          "peak_uss_bytes": 4424593408,
+          "last_pss_bytes": 4424876032
+        },
+        "measured": {
+          "samples": 138,
+          "peak_rss_bytes": 4638195712,
+          "peak_pss_bytes": 4638834688,
+          "peak_uss_bytes": 4638552064,
+          "last_pss_bytes": 4522192896
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [
+        {
+          "phase": "load",
+          "samples": 35,
+          "peak_rss_bytes": 7912939520,
+          "peak_pss_bytes": 7954002944,
+          "peak_uss_bytes": 7953752064,
+          "last_pss_bytes": 5196194816,
+          "pss_minus_rss_bytes": 41063424
+        },
+        {
+          "phase": "measured",
+          "samples": 138,
+          "peak_rss_bytes": 4638195712,
+          "peak_pss_bytes": 4638834688,
+          "peak_uss_bytes": 4638552064,
+          "last_pss_bytes": 4522192896,
+          "pss_minus_rss_bytes": 638976
+        }
+      ],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "kzaudio_1",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_2",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_4",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_5",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3210994,
+      "worker_start_epoch_s": 1790944679.0676496,
+      "measurement_end_epoch_s": 1790944706.0005324,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "uz_conversation",
+      "round": 1,
+      "result_sha256": "6362e11dd962441925c612309b08a1cd9eaec0218ab3466222a4f4f6e3239cb3",
+      "rtf": 0.506987671620544,
+      "cpu_rtf": 1.3227479623160792,
+      "failed": 0,
+      "startup_including_validation_s": 4.700461675005499,
+      "warmup_s": 2.802923513998394,
+      "memory": {
+        "load": {
+          "samples": 33,
+          "peak_rss_bytes": 8191500288,
+          "peak_pss_bytes": 8013184000,
+          "peak_uss_bytes": 8012931072,
+          "last_pss_bytes": 5597785088
+        },
+        "warmup": {
+          "samples": 23,
+          "peak_rss_bytes": 4424015872,
+          "peak_pss_bytes": 4419044352,
+          "peak_uss_bytes": 4418760704,
+          "last_pss_bytes": 4419044352
+        },
+        "measured": {
+          "samples": 175,
+          "peak_rss_bytes": 4847882240,
+          "peak_pss_bytes": 4906243072,
+          "peak_uss_bytes": 4905959424,
+          "last_pss_bytes": 4520580096
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [
+        {
+          "phase": "measured",
+          "samples": 175,
+          "peak_rss_bytes": 4847882240,
+          "peak_pss_bytes": 4906243072,
+          "peak_uss_bytes": 4905959424,
+          "last_pss_bytes": 4520580096,
+          "pss_minus_rss_bytes": 58360832
+        }
+      ],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "uz_telegram_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3215208,
+      "worker_start_epoch_s": 1790944706.7402933,
+      "measurement_end_epoch_s": 1790944738.194344,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "ky_read",
+      "round": 1,
+      "result_sha256": "04941d67504921055927b3a792329f705a06f2ec4eef4a86fd22843f8e32ae3c",
+      "rtf": 0.4764228153351161,
+      "cpu_rtf": 1.250613389414651,
+      "failed": 0,
+      "startup_including_validation_s": 4.763394519992289,
+      "warmup_s": 6.610399571000016,
+      "memory": {
+        "load": {
+          "samples": 33,
+          "peak_rss_bytes": 7619678208,
+          "peak_pss_bytes": 7450889216,
+          "peak_uss_bytes": 7450611712,
+          "last_pss_bytes": 6675663872
+        },
+        "warmup": {
+          "samples": 50,
+          "peak_rss_bytes": 4564733952,
+          "peak_pss_bytes": 4555480064,
+          "peak_uss_bytes": 4555165696,
+          "last_pss_bytes": 4450315264
+        },
+        "measured": {
+          "samples": 198,
+          "peak_rss_bytes": 4920045568,
+          "peak_pss_bytes": 4899933184,
+          "peak_uss_bytes": 4899618816,
+          "last_pss_bytes": 4518759424
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "fleurs_ky_kg_test_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3218095,
+      "worker_start_epoch_s": 1790944738.9991367,
+      "measurement_end_epoch_s": 1790944777.5615222,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "kk_conversation",
+      "round": 2,
+      "result_sha256": "ab6a12188fc623c8746d55acefb0eb5fba4cd4a24a819f6ccceba86a78e216a7",
+      "rtf": 0.5619847912042081,
+      "cpu_rtf": 1.7531708472216738,
+      "failed": 0,
+      "startup_including_validation_s": 4.682791301005636,
+      "warmup_s": 0.7319965790084098,
+      "memory": {
+        "load": {
+          "samples": 33,
+          "peak_rss_bytes": 8162893824,
+          "peak_pss_bytes": 7926027264,
+          "peak_uss_bytes": 7925764096,
+          "last_pss_bytes": 5571986432
+        },
+        "warmup": {
+          "samples": 6,
+          "peak_rss_bytes": 4415299584,
+          "peak_pss_bytes": 4410369024,
+          "peak_uss_bytes": 4410085376,
+          "last_pss_bytes": 4410369024
+        },
+        "measured": {
+          "samples": 28,
+          "peak_rss_bytes": 4475809792,
+          "peak_pss_bytes": 4470824960,
+          "peak_uss_bytes": 4470530048,
+          "last_pss_bytes": 4470824960
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "mcskl030_iu_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_19",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_38",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_39",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_41",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3221637,
+      "worker_start_epoch_s": 1790944778.3661532,
+      "measurement_end_epoch_s": 1790944787.3345664,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "kk_codeswitch",
+      "round": 2,
+      "result_sha256": "48c1e9f373afc030af7d7a605f723f54a9c1886d723b97694561172377e8a713",
+      "rtf": 0.47556215505804794,
+      "cpu_rtf": 1.2973764473195526,
+      "failed": 0,
+      "startup_including_validation_s": 5.443719123999472,
+      "warmup_s": 4.100496161001502,
+      "memory": {
+        "load": {
+          "samples": 37,
+          "peak_rss_bytes": 8196366336,
+          "peak_pss_bytes": 7994793984,
+          "peak_uss_bytes": 7994531840,
+          "last_pss_bytes": 5384888320
+        },
+        "warmup": {
+          "samples": 29,
+          "peak_rss_bytes": 4474703872,
+          "peak_pss_bytes": 4504796160,
+          "peak_uss_bytes": 4504489984,
+          "last_pss_bytes": 4426615808
+        },
+        "measured": {
+          "samples": 121,
+          "peak_rss_bytes": 4644167680,
+          "peak_pss_bytes": 4585008128,
+          "peak_uss_bytes": 4584714240,
+          "last_pss_bytes": 4510120960
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [
+        {
+          "phase": "warmup",
+          "samples": 29,
+          "peak_rss_bytes": 4474703872,
+          "peak_pss_bytes": 4504796160,
+          "peak_uss_bytes": 4504489984,
+          "last_pss_bytes": 4426615808,
+          "pss_minus_rss_bytes": 30092288
+        }
+      ],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "kzaudio_1",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_2",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_4",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_5",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3222577,
+      "worker_start_epoch_s": 1790944788.202453,
+      "measurement_end_epoch_s": 1790944814.4786386,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "uz_conversation",
+      "round": 2,
+      "result_sha256": "d4d63b13dc586adf21412c8b051377053c82d67f369b1da17bc5cad2f24b7d21",
+      "rtf": 0.5034654614378152,
+      "cpu_rtf": 1.3189372287498677,
+      "failed": 0,
+      "startup_including_validation_s": 4.743766644998686,
+      "warmup_s": 2.772023960002116,
+      "memory": {
+        "load": {
+          "samples": 34,
+          "peak_rss_bytes": 7765102592,
+          "peak_pss_bytes": 7543791616,
+          "peak_uss_bytes": 7543533568,
+          "last_pss_bytes": 6253621248
+        },
+        "warmup": {
+          "samples": 23,
+          "peak_rss_bytes": 4462276608,
+          "peak_pss_bytes": 4457279488,
+          "peak_uss_bytes": 4456984576,
+          "last_pss_bytes": 4457279488
+        },
+        "measured": {
+          "samples": 172,
+          "peak_rss_bytes": 4873400320,
+          "peak_pss_bytes": 4902084608,
+          "peak_uss_bytes": 4901789696,
+          "last_pss_bytes": 4559421440
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [
+        {
+          "phase": "measured",
+          "samples": 172,
+          "peak_rss_bytes": 4873400320,
+          "peak_pss_bytes": 4902084608,
+          "peak_uss_bytes": 4901789696,
+          "last_pss_bytes": 4559421440,
+          "pss_minus_rss_bytes": 28684288
+        }
+      ],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "uz_telegram_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3225302,
+      "worker_start_epoch_s": 1790944815.29176,
+      "measurement_end_epoch_s": 1790944846.5918326,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "omni",
+      "corpus": "ky_read",
+      "round": 2,
+      "result_sha256": "4ed769ff86a7b71531b9945279c69bf00c9292743d01a38e0db8813c8835c093",
+      "rtf": 0.48157800306709525,
+      "cpu_rtf": 1.2355415352260777,
+      "failed": 0,
+      "startup_including_validation_s": 4.789821238999139,
+      "warmup_s": 6.874419982996187,
+      "memory": {
+        "load": {
+          "samples": 34,
+          "peak_rss_bytes": 8015417344,
+          "peak_pss_bytes": 7832964096,
+          "peak_uss_bytes": 7832698880,
+          "last_pss_bytes": 5670317056
+        },
+        "warmup": {
+          "samples": 52,
+          "peak_rss_bytes": 4573655040,
+          "peak_pss_bytes": 4562527232,
+          "peak_uss_bytes": 4562231296,
+          "last_pss_bytes": 4447663104
+        },
+        "measured": {
+          "samples": 217,
+          "peak_rss_bytes": 4974673920,
+          "peak_pss_bytes": 4959241216,
+          "peak_uss_bytes": 4958945280,
+          "last_pss_bytes": 4535735296
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "fleurs_ky_kg_test_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3228268,
+      "worker_start_epoch_s": 1790944847.390974,
+      "measurement_end_epoch_s": 1790944886.537846,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "whisper",
+      "corpus": "kk_conversation",
+      "round": 2,
+      "result_sha256": "c931c75acb90dad2ddb3e3b4c7a008ab5ac0e5b9aaf5828a806aaf7c2fde2c77",
+      "rtf": 4.0944830459546,
+      "cpu_rtf": 13.699416241196078,
+      "failed": 0,
+      "startup_including_validation_s": 3.7806884110032115,
+      "warmup_s": 6.8439019240031485,
+      "memory": {
+        "load": {
+          "samples": 32,
+          "peak_rss_bytes": 3190484992,
+          "peak_pss_bytes": 3181593600,
+          "peak_uss_bytes": 3178409984,
+          "last_pss_bytes": 1895027712
+        },
+        "warmup": {
+          "samples": 48,
+          "peak_rss_bytes": 2488737792,
+          "peak_pss_bytes": 2481284096,
+          "peak_uss_bytes": 2478047232,
+          "last_pss_bytes": 2481284096
+        },
+        "measured": {
+          "samples": 189,
+          "peak_rss_bytes": 2669436928,
+          "peak_pss_bytes": 2661950464,
+          "peak_uss_bytes": 2658680832,
+          "last_pss_bytes": 2481980416
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "mcskl030_iu_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_19",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_38",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_39",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_41",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3231924,
+      "worker_start_epoch_s": 1790944887.319705,
+      "measurement_end_epoch_s": 1790944923.823155,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "whisper",
+      "corpus": "kk_codeswitch",
+      "round": 2,
+      "result_sha256": "3a1693fca44e7d9d646d8b44573426fedde887e4a5afda6223fd0169ed77d665",
+      "rtf": 1.2156810084638192,
+      "cpu_rtf": 4.187543352207402,
+      "failed": 0,
+      "startup_including_validation_s": 3.693548908995581,
+      "warmup_s": 10.90946775500197,
+      "memory": {
+        "load": {
+          "samples": 31,
+          "peak_rss_bytes": 3176067072,
+          "peak_pss_bytes": 3178468352,
+          "peak_uss_bytes": 3175284736,
+          "last_pss_bytes": 1894986752
+        },
+        "warmup": {
+          "samples": 78,
+          "peak_rss_bytes": 2654597120,
+          "peak_pss_bytes": 2647032832,
+          "peak_uss_bytes": 2643791872,
+          "last_pss_bytes": 2615337984
+        },
+        "measured": {
+          "samples": 307,
+          "peak_rss_bytes": 2680995840,
+          "peak_pss_bytes": 2668434432,
+          "peak_uss_bytes": 2665160704,
+          "last_pss_bytes": 2668434432
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [
+        {
+          "phase": "load",
+          "samples": 31,
+          "peak_rss_bytes": 3176067072,
+          "peak_pss_bytes": 3178468352,
+          "peak_uss_bytes": 3175284736,
+          "last_pss_bytes": 1894986752,
+          "pss_minus_rss_bytes": 2401280
+        }
+      ],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "kzaudio_1",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_2",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_4",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_5",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3235259,
+      "worker_start_epoch_s": 1790944924.0659838,
+      "measurement_end_epoch_s": 1790944981.4308398,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "whisper",
+      "corpus": "uz_conversation",
+      "round": 2,
+      "result_sha256": "d61ad3929664df9a504295b4bea97e443c5ef160342e98074469b2e9531dd7ff",
+      "rtf": 0.6915435469035639,
+      "cpu_rtf": 2.4066899544829043,
+      "failed": 0,
+      "startup_including_validation_s": 3.805480284994701,
+      "warmup_s": 5.954842035993352,
+      "memory": {
+        "load": {
+          "samples": 32,
+          "peak_rss_bytes": 3162849280,
+          "peak_pss_bytes": 3155274752,
+          "peak_uss_bytes": 3152089088,
+          "last_pss_bytes": 1895029760
+        },
+        "warmup": {
+          "samples": 45,
+          "peak_rss_bytes": 2489843712,
+          "peak_pss_bytes": 2482170880,
+          "peak_uss_bytes": 2478940160,
+          "last_pss_bytes": 2482170880
+        },
+        "measured": {
+          "samples": 231,
+          "peak_rss_bytes": 2803556352,
+          "peak_pss_bytes": 2795850752,
+          "peak_uss_bytes": 2792587264,
+          "last_pss_bytes": 2615847936
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "uz_telegram_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3240028,
+      "worker_start_epoch_s": 1790944981.6898708,
+      "measurement_end_epoch_s": 1790945024.1476212,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "kk_conversation",
+      "round": 2,
+      "result_sha256": "2c11fb1e47083b7de4f9641967f070f0752b3a8daa04ef24f1563b5e4295b7d4",
+      "rtf": 0.08867299346761519,
+      "cpu_rtf": 0.2389249078794882,
+      "failed": 0,
+      "startup_including_validation_s": 2.81087859699619,
+      "warmup_s": 0.12832448600966018,
+      "memory": {
+        "load": {
+          "samples": 26,
+          "peak_rss_bytes": 884957184,
+          "peak_pss_bytes": 699540480,
+          "peak_uss_bytes": 554602496,
+          "last_pss_bytes": 699540480
+        },
+        "warmup": {
+          "samples": 1,
+          "peak_rss_bytes": 1305759744,
+          "peak_pss_bytes": 703927296,
+          "peak_uss_bytes": 110854144,
+          "last_pss_bytes": 703927296
+        },
+        "measured": {
+          "samples": 5,
+          "peak_rss_bytes": 1309749248,
+          "peak_pss_bytes": 707917824,
+          "peak_uss_bytes": 114843648,
+          "last_pss_bytes": 707917824
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "mcskl030_iu_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_19",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_38",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_39",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "mcskl030_iu_41",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3243651,
+      "worker_start_epoch_s": 1790945024.383561,
+      "measurement_end_epoch_s": 1790945027.8852267,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "kk_codeswitch",
+      "round": 2,
+      "result_sha256": "63702000c2421561d64a0fcb930159248b1b24a4d9534b0834982904e8c146c1",
+      "rtf": 0.08052836907364137,
+      "cpu_rtf": 0.21295966667594673,
+      "failed": 0,
+      "startup_including_validation_s": 2.7938177049945807,
+      "warmup_s": 0.5403058560041245,
+      "memory": {
+        "load": {
+          "samples": 26,
+          "peak_rss_bytes": 894001152,
+          "peak_pss_bytes": 715216896,
+          "peak_uss_bytes": 558948352,
+          "last_pss_bytes": 715216896
+        },
+        "warmup": {
+          "samples": 4,
+          "peak_rss_bytes": 1358270464,
+          "peak_pss_bytes": 756516864,
+          "peak_uss_bytes": 163450880,
+          "last_pss_bytes": 756516864
+        },
+        "measured": {
+          "samples": 23,
+          "peak_rss_bytes": 1399963648,
+          "peak_pss_bytes": 793982976,
+          "peak_uss_bytes": 200851456,
+          "last_pss_bytes": 750307328
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "kzaudio_1",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_2",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_3",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_4",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "kzaudio_5",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3243983,
+      "worker_start_epoch_s": 1790945028.0663774,
+      "measurement_end_epoch_s": 1790945034.2413094,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "uz_conversation",
+      "round": 2,
+      "result_sha256": "0692dec761cc6da80f78d6ac5606e0b555cb30bdbc2b72e6a22979602586f110",
+      "rtf": 0.0923172442257759,
+      "cpu_rtf": 0.22589181750820367,
+      "failed": 0,
+      "startup_including_validation_s": 3.403724214003887,
+      "warmup_s": 0.41646499499620404,
+      "memory": {
+        "load": {
+          "samples": 31,
+          "peak_rss_bytes": 1086525440,
+          "peak_pss_bytes": 692519936,
+          "peak_uss_bytes": 512917504,
+          "last_pss_bytes": 692519936
+        },
+        "warmup": {
+          "samples": 3,
+          "peak_rss_bytes": 1329111040,
+          "peak_pss_bytes": 727307264,
+          "peak_uss_bytes": 134221824,
+          "last_pss_bytes": 727307264
+        },
+        "measured": {
+          "samples": 35,
+          "peak_rss_bytes": 1450676224,
+          "peak_pss_bytes": 848876544,
+          "peak_uss_bytes": 255725568,
+          "last_pss_bytes": 748151808
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "uz_telegram_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "uz_telegram_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3244465,
+      "worker_start_epoch_s": 1790945034.6251261,
+      "measurement_end_epoch_s": 1790945042.8099723,
+      "all_five_hypotheses_exactly_match_quality": true
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "ky_read",
+      "round": 2,
+      "result_sha256": "056d8953c65e3732c403e129992c02abacfb810026cf05674e6603b9310f4c64",
+      "rtf": 0.09821608955459392,
+      "cpu_rtf": 0.232912723449001,
+      "failed": 0,
+      "startup_including_validation_s": 2.808484449007665,
+      "warmup_s": 0.9253386780037545,
+      "memory": {
+        "load": {
+          "samples": 26,
+          "peak_rss_bytes": 856526848,
+          "peak_pss_bytes": 691352576,
+          "peak_uss_bytes": 575709184,
+          "last_pss_bytes": 691352576
+        },
+        "warmup": {
+          "samples": 8,
+          "peak_rss_bytes": 1373958144,
+          "peak_pss_bytes": 777815040,
+          "peak_uss_bytes": 184741888,
+          "last_pss_bytes": 767464448
+        },
+        "measured": {
+          "samples": 42,
+          "peak_rss_bytes": 1458524160,
+          "peak_pss_bytes": 862286848,
+          "peak_uss_bytes": 269082624,
+          "last_pss_bytes": 778556416
+        }
+      },
+      "execution_verified": true,
+      "non_atomic_memory_discrepancies": [],
+      "quality_complete": true,
+      "hypothesis_parity": [
+        {
+          "id": "fleurs_ky_kg_test_0000",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0001",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0002",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0003",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        },
+        {
+          "id": "fleurs_ky_kg_test_0004",
+          "exact_hypothesis_match": true,
+          "normalized_hypothesis_match": true,
+          "status_match": true
+        }
+      ],
+      "pid": 3245507,
+      "worker_start_epoch_s": 1790945042.9947326,
+      "measurement_end_epoch_s": 1790945052.3390274,
+      "all_five_hypotheses_exactly_match_quality": true
+    }
+  ],
+  "ranges": [
+    {
+      "backend": "gigastt",
+      "corpus": "kk_conversation",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.08867299346761519,
+        "max": 0.09979284950689175
+      },
+      "cpu_rtf": {
+        "min": 0.2389249078794882,
+        "max": 0.2531654653027689
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 707917824,
+        "max": 716104704
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 1309749248,
+        "max": 1317748736
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "kk_codeswitch",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.07151515444210908,
+        "max": 0.08052836907364137
+      },
+      "cpu_rtf": {
+        "min": 0.19163526747608556,
+        "max": 0.21295966667594673
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 793982976,
+        "max": 806152192
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 1399963648,
+        "max": 1407938560
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "uz_conversation",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.08961882021830854,
+        "max": 0.0923172442257759
+      },
+      "cpu_rtf": {
+        "min": 0.22292791362337253,
+        "max": 0.22589181750820367
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 807647232,
+        "max": 848876544
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 1409421312,
+        "max": 1450676224
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "gigastt",
+      "corpus": "ky_read",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.07369133084482997,
+        "max": 0.09821608955459392
+      },
+      "cpu_rtf": {
+        "min": 0.19155275148965997,
+        "max": 0.232912723449001
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 853041152,
+        "max": 862286848
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 1452773376,
+        "max": 1458524160
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "whisper",
+      "corpus": "kk_conversation",
+      "rounds": 2,
+      "rtf": {
+        "min": 4.0944830459546,
+        "max": 4.524280575380612
+      },
+      "cpu_rtf": {
+        "min": 13.699416241196078,
+        "max": 14.685179271718733
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 2661697536,
+        "max": 2661950464
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 2669273088,
+        "max": 2669436928
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "whisper",
+      "corpus": "kk_codeswitch",
+      "rounds": 2,
+      "rtf": {
+        "min": 1.2156810084638192,
+        "max": 1.2166014353543768
+      },
+      "cpu_rtf": {
+        "min": 4.187543352207402,
+        "max": 4.220809414959184
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 2668434432,
+        "max": 2865168384
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 2680995840,
+        "max": 2872770560
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "whisper",
+      "corpus": "uz_conversation",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.6534236384460884,
+        "max": 0.6915435469035639
+      },
+      "cpu_rtf": {
+        "min": 2.3031650259341596,
+        "max": 2.4066899544829043
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 2628925440,
+        "max": 2795850752
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 2636562432,
+        "max": 2803556352
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "omni",
+      "corpus": "kk_conversation",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.5619847912042081,
+        "max": 0.6057183612491426
+      },
+      "cpu_rtf": {
+        "min": 1.7531708472216738,
+        "max": 1.9224752521429007
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 4468149248,
+        "max": 4470824960
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 4473032704,
+        "max": 4475809792
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "omni",
+      "corpus": "kk_codeswitch",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.47556215505804794,
+        "max": 0.5158725811991339
+      },
+      "cpu_rtf": {
+        "min": 1.2973764473195526,
+        "max": 1.3667518260497677
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 4585008128,
+        "max": 4638834688
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 4638195712,
+        "max": 4644167680
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "omni",
+      "corpus": "uz_conversation",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.5034654614378152,
+        "max": 0.506987671620544
+      },
+      "cpu_rtf": {
+        "min": 1.3189372287498677,
+        "max": 1.3227479623160792
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 4902084608,
+        "max": 4906243072
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 4847882240,
+        "max": 4873400320
+      },
+      "failed_requests": 0
+    },
+    {
+      "backend": "omni",
+      "corpus": "ky_read",
+      "rounds": 2,
+      "rtf": {
+        "min": 0.4764228153351161,
+        "max": 0.48157800306709525
+      },
+      "cpu_rtf": {
+        "min": 1.2355415352260777,
+        "max": 1.250613389414651
+      },
+      "sampled_measured_peak_pss_bytes": {
+        "min": 4899933184,
+        "max": 4959241216
+      },
+      "sampled_measured_peak_rss_bytes": {
+        "min": 4920045568,
+        "max": 4974673920
+      },
+      "failed_requests": 0
+    }
+  ],
+  "order_ledger_sha256": "22a904f319a79f0ac3f95c7dca7bf90118f11b91284023986249aad95aa07a8a",
+  "orchestrator_current_sha256": "f360baf11670e26d283bd3ed37e9a021c453f5cc3156793e5428b0eb0d44941e",
+  "limitations": [
+    "Only five fixed recordings per corpus per round; ranges are observed two-round ranges, not confidence intervals.",
+    "Other user workloads remain active; timing is confounded and does not establish an isolated speed ratio.",
+    "Memory is sampled harness/process-tree RSS/PSS/USS. RSS double-counts shared mappings; PSS is preferable. Short peaks may be missed.",
+    "psutil USS/PSS comes from smaps(_rollup), then RSS from statm: different non-atomic reads; statm RSS is approximate. Recorded PSS>RSS discrepancies are retained. Prefer sampled PSS; no values repaired.",
+    "GigaAM pool2 versus one candidate worker; local HTTP/adapter boundaries and model precision differ.",
+    "Startup includes validation and loading; filesystem caches are uncontrolled.",
+    "Hypothesis parity differences are reported, never used to tune or replace results."
+  ],
+  "auditor_sha256": "61101acb49921b6b7f89110cd1ca8f0db5894e109783d7ccaf070e589c397529"
+}

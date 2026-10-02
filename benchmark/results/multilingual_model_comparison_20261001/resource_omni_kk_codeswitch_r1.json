@@ -1,0 +1,255 @@
+{
+  "completed": true,
+  "backend": "omni",
+  "corpus": "kk_codeswitch",
+  "round": 1,
+  "pid": 3210994,
+  "process_start_epoch_s": 1790944678.22,
+  "worker_start_epoch_s": 1790944679.0676496,
+  "measurement_end_epoch_s": 1790944706.0005324,
+  "warmup": {
+    "id": "kzaudio_6",
+    "sha256": "8315d017f07938cbbaae272e45cd07f7c149cf98ab171c859d1f3f64879f79d2"
+  },
+  "subset_sha256": "1b1e05702dfbf73dcc7d6560891a1cb6984eebde1ca081a3581b54e225c4df10",
+  "worker_sha256": "b5d884f53e86410b0a75955f350b906c063f55a17a80e944d3f4a28fe4fbb5d4",
+  "decoder_script_sha256": "57be8369d3e74e92476074558fa2b6419aad73c0d9a4dc35118149feffce7079",
+  "metadata": {
+    "model": {
+      "model_card": "omniASR_CTC_1B_v2",
+      "tokenizer_card": "omniASR_tokenizer_written_v2",
+      "source_revision": "81f51e224ce9e74b02cc2a3eaf21b2d91d743455",
+      "model_files": [
+        {
+          "filename": "omniASR-CTC-1B-v2.pt",
+          "bytes": 3902956068,
+          "sha256": "354f981756aa8f41591ea363e45b9c4eba1ec5144c2273af82e747efbb08919c"
+        },
+        {
+          "filename": "omniASR_tokenizer_written_v2.model",
+          "bytes": 91481,
+          "sha256": "8aa11a1092142ef472537476ef6e76541123e2f0d789b79f3ebd119008240b1e"
+        }
+      ],
+      "source_archive_sha256": "67c484bba6502454bf192f549d0d0aee974f707179f5c35649679a44eaf0d435",
+      "installed_source_tree_sha256": "947069e894e9adea2ba075346dd95eec3eeab7f64cae88eb4eb46600c12d9faa",
+      "versions": {
+        "omnilingual-asr": "0.2.0",
+        "fairseq2": "0.6",
+        "fairseq2n": "0.6+cpu",
+        "torch": "2.8.0+cpu",
+        "torchaudio": "2.8.0+cpu",
+        "numpy": "1.26.4"
+      },
+      "device": "cpu",
+      "dtype": "float32",
+      "threads": 3,
+      "interop_threads": 1,
+      "parameter_count": 975675056,
+      "batch_size": 1,
+      "decoder": "official greedy CTC; no external language model",
+      "language_conditioning": false,
+      "corpus_language": "kk",
+      "preprocessing": "official waveform normalization; supplied mono float32 16 kHz",
+      "maximum_audio_seconds": 40,
+      "recommended_audio_seconds": 30,
+      "long_audio_policy": "process complete input up to 40 seconds; reject longer input",
+      "training": false,
+      "adaptation": false,
+      "declared_dependency_omissions": {
+        "kenlm": "Native build failed in this environment; absent from the official greedy CTC code path"
+      }
+    },
+    "backend_source_sha256": "238667f9dd9dd3705aa648b4d843668ce095bda4db569ffc05214401d5613ef1"
+  },
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "load_s": 4.997408851006185,
+  "warmup_s": 3.7857501589896856,
+  "memory": {
+    "load": {
+      "samples": 35,
+      "peak_rss_bytes": 7912939520,
+      "peak_pss_bytes": 7954002944,
+      "peak_uss_bytes": 7953752064,
+      "last_pss_bytes": 5196194816
+    },
+    "warmup": {
+      "samples": 30,
+      "peak_rss_bytes": 4432433152,
+      "peak_pss_bytes": 4424876032,
+      "peak_uss_bytes": 4424593408,
+      "last_pss_bytes": 4424876032
+    },
+    "measured": {
+      "samples": 138,
+      "peak_rss_bytes": 4638195712,
+      "peak_pss_bytes": 4638834688,
+      "peak_uss_bytes": 4638552064,
+      "last_pss_bytes": 4522192896
+    }
+  },
+  "details": [
+    {
+      "corpus": "kk_codeswitch",
+      "id": "kzaudio_1",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_1.wav",
+      "sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и вообщем влажениены канешно менен бастадық брэкет салдым",
+      "reference_verbatim_raw": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и вообщем влажениены канешно менен бастадық брэкет салдым",
+      "reference_normalized": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениены конечно менен бастадық брекет салдым",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 7.308666666666666,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем влажениен конечно менен бастадық брекит салды",
+      "elapsed_s": 4.516432144999271,
+      "cpu_s": 11.510000000000002
+    },
+    {
+      "corpus": "kk_codeswitch",
+      "id": "kzaudio_2",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_2.wav",
+      "sha256": "d134cb07b5ba7bf729fe292343ebbf8818f6d32974663bf2029d3cf4b2855610",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "алдында кароче мен осы брэкетті тағып шықтым да и менің өзім бір жақын танысымды келістіріп қалдым и андай шыға салып бір тупой сұрақтарды қойд да брэкетіме қарап",
+      "reference_verbatim_raw": "алдында кароче мен осы брэкетті тағып шықтым да и менің өзім бір жақын танысымды келістіріп қалдым и андай шыға салып бір тупой сұрақтарды қойд да брэкетіме қарап",
+      "reference_normalized": "алдында короче мен осы брекетті тағып шықтым да и менің өзім бір жақын танысымды келістіріп қалдым и андай шыға салып бір тупой сұрақтарды қойды да брекетіме қарап",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 10.1535,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "алдында кәроча мен осы біракеті тағы шықтым да и менің өзім бір жақын танысымды кезіктіріп қын андай шыға салып бір тубой сұрақтар қойды та бірекеті ма қарап",
+      "elapsed_s": 5.153704142998322,
+      "cpu_s": 13.380000000000003
+    },
+    {
+      "corpus": "kk_codeswitch",
+      "id": "kzaudio_3",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_3.wav",
+      "sha256": "cfdffd097e768d7f06c0ee693751786df41e132e31be3d41e7b12e7b3e973a11",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "тұрып қумаш үйтп баспайт шығар енд ол специально солай шы- шығарылған ғой енді аузының бәрі",
+      "reference_verbatim_raw": "тұрып қумаш үйтп баспайт шығар енд ол специально солай шы-[false_start] шығарылған ғой енді аузының бәрі",
+      "reference_normalized": "тұрып қумаш үйтіп баспайтын шығар енді ол специально солай шығарылған ғой енді аузының бәрі",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 5.050729166666667,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "трпқумаш үйт баспайты шығар енді ол специальна солай шығарылған ғой енді ауызының бәрі",
+      "elapsed_s": 2.4317381820001174,
+      "cpu_s": 6.699999999999996
+    },
+    {
+      "corpus": "kk_codeswitch",
+      "id": "kzaudio_4",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_4.wav",
+      "sha256": "89914316cd562d25ecfbf58e591c9719bc559b05ba948e64ef4f89fb43dc0525",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "білмейм пиқылдай ма әлі аэропортқа барып үлгерген жоқпын мен қайдан білемін енді специально пиқылдамайтын қып шығарған шығар",
+      "reference_verbatim_raw": "білмейм пиқылдай ма әлі аэропортқа барып үлгерген жоқпын мен қайдан білемін енді специально пиқылдамайтын қып шығарған шығар",
+      "reference_normalized": "білмеймін пиқылдай ма әлі аэропортқа барып үлгерген жоқпын мен қайдан білемін енді специально пиқылдамайтын қылып шығарған шығар",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 6.365958333333333,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "білмеймін пиқылдай ма әлі аэропортқа барып үлгерген жоқпын мен қайдан білемін енді специальна пиқылдамайтын қып шығарған шығар",
+      "elapsed_s": 3.0824184350058204,
+      "cpu_s": 8.390000000000008
+    },
+    {
+      "corpus": "kk_codeswitch",
+      "id": "kzaudio_5",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_5.wav",
+      "sha256": "91b326e15609d60b3aa873dc45a47dad9e80e0476e6ecb8f0c640c0983d2cdf6",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "қызық ащущение енді көрген адамға да жалпы өзіме де ыңғайсыз енд дәл қаз сіздер бәріңіз менің брэкеттіма қарап отсыздар",
+      "reference_verbatim_raw": "қызық ащущение енді көрген адамға да жалпы өзіме де ыңғайсыз енд дәл қаз сіздер бәріңіз менің брэкеттіма қарап отсыздар",
+      "reference_normalized": "қызық ощущение енді көрген адамға да жалпы өзіме де ыңғайсыз енді дәл қазір сіздер бәріңіз менің брекеттіма қарап отырсыздар",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 6.292125,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "қызық ашжене енді көрген адамға да жалпы өзіме де ыңғайсыз енд дәл қазір сіздер бәріңіз менің біркитма қара отыстыр",
+      "elapsed_s": 2.9594509010057664,
+      "cpu_s": 8.089999999999996
+    }
+  ],
+  "audio_s": 35.17097916666667,
+  "wall_s": 18.143743806009297,
+  "cpu_s": 48.07000000000001,
+  "failed": 0,
+  "load_average": [
+    5.3525390625,
+    4.94873046875,
+    5.6005859375
+  ],
+  "scope": "Fresh process per model/corpus/round; ready-to-final-text includes decoding, preprocessing and inference. GigaAM additionally includes local HTTP. Memory is sampled harness/process-tree RSS/PSS/USS, not model weights alone. Other user workloads may contend; this is not an isolated hardware benchmark.",
+  "rtf": 0.5158725811991339,
+  "cpu_rtf": 1.3667518260497677
+}

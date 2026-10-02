@@ -1,0 +1,47 @@
+2026-10-02T12:43:55.073160Z  INFO gigastt::server::listen: gigastt bootstrapping on http://127.0.0.1:20041 — loading model, /health is up
+2026-10-02T12:43:55.073406Z  WARN gigastt_core::model::download: Model directory /home/ekhodzitsky/.gigastt/models holds Rnnt files but MlCtcLarge was requested; downloading the MlCtcLarge set (variants are never mixed)
+2026-10-02T12:43:55.073481Z  INFO gigastt_core::model::download: Model (MlCtcLarge) found at /home/ekhodzitsky/.gigastt/models after lock acquisition
+2026-10-02T12:43:56.893510Z  INFO gigastt_core::inference::engine::load: Detected model variant: MlCtcLarge
+2026-10-02T12:43:56.893545Z  INFO gigastt_core::inference::engine::load: Using INT8 quantized encoder
+2026-10-02T12:43:56.893549Z  INFO gigastt_core::inference::engine::load: Loading ONNX models from /home/ekhodzitsky/.gigastt/models (pool_size=2)...
+2026-10-02T12:43:56.893552Z  INFO gigastt_core::inference::engine::load: Using CPU execution provider
+2026-10-02T12:43:56.893757Z  INFO gigastt_core::inference::load_files: Loading session triplet 1/2 (shared runtime)
+2026-10-02T12:43:56.893774Z  INFO gigastt_core::inference::load_files: Loading session triplet 2/2 (shared runtime)
+2026-10-02T12:43:57.341778Z  INFO gigastt_core::runtime::ort::session: encoder: loaded fresh optimized graph cache, skipped source model path=/home/ekhodzitsky/.gigastt/models/optimized_cache/multilingual_large_ctc.int8_optimized.ort
+2026-10-02T12:43:57.768930Z  INFO gigastt_core::runtime::ort::session: encoder: loaded fresh optimized graph cache, skipped source model path=/home/ekhodzitsky/.gigastt/models/optimized_cache/multilingual_large_ctc.int8_optimized.ort
+2026-10-02T12:43:57.769039Z  INFO gigastt_core::inference::tokenizer: Loaded vocabulary: 71 tokens, blank_id=70
+2026-10-02T12:43:57.769047Z  INFO gigastt_core::inference::engine::load: Models loaded (vocab_size=71, pool_size=2)
+2026-10-02T12:43:57.769053Z  INFO gigastt_core::inference::diarization: Speaker encoder present at /home/ekhodzitsky/.gigastt/models/wespeaker_resnet34.onnx (lazy load on first diarization request)
+2026-10-02T12:43:57.769118Z  INFO gigastt_core::inference::engine::load: execution provider bound execution_provider="cpu"
+2026-10-02T12:43:57.769158Z  INFO gigastt::boot: VmRSS:	  109204 kB
+2026-10-02T12:43:57.769286Z  INFO gigastt::server::listen: Model ready — starting full server
+2026-10-02T12:43:57.769414Z  INFO gigastt_core::inference::engine::words: Extracted 99 mel frames
+2026-10-02T12:43:57.900175Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=130
+2026-10-02T12:43:57.900227Z  INFO gigastt_core::inference::engine::transcribe: transcribe complete audio_s=1.00 wall_s=0.13 rtf=0.131 encoder=int8/cpu
+2026-10-02T12:43:57.900312Z  INFO gigastt_core::inference::engine::words: Extracted 99 mel frames
+2026-10-02T12:43:58.030394Z  INFO gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=130
+2026-10-02T12:43:58.030442Z  INFO gigastt_core::inference::engine::transcribe: transcribe complete audio_s=1.00 wall_s=0.13 rtf=0.130 encoder=int8/cpu
+2026-10-02T12:43:58.030454Z  INFO gigastt::server::listen: Engine warmup complete elapsed_ms=261
+2026-10-02T12:43:58.030674Z  INFO gigastt::server::listen: gigastt server listening on http://127.0.0.1:20041
+2026-10-02T12:43:58.030705Z  INFO gigastt::server::listen:   WebSocket: ws://127.0.0.1:20041/v1/ws
+2026-10-02T12:43:58.030715Z  INFO gigastt::server::listen:   REST API:  http://127.0.0.1:20041/health, /ready, /v1/transcribe, /v1/transcribe/stream, /v1/audio/transcriptions
+2026-10-02T12:43:58.032992Z  INFO request{request_id=01a0fca4-8ed0-72c7-bc2b-61e8a5bf387d method=POST path=/v1/transcribe}: gigastt_core::inference::audio::wave: Audio (wave): 16000Hz, 1ch (streaming windows)
+2026-10-02T12:43:58.447733Z  INFO request{request_id=01a0fca4-8ed0-72c7-bc2b-61e8a5bf387d method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=414
+2026-10-02T12:43:58.447832Z  INFO request{request_id=01a0fca4-8ed0-72c7-bc2b-61e8a5bf387d method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=5.95 wall_s=0.41 rtf=0.070
+2026-10-02T12:43:58.449708Z  INFO request{request_id=01a0fca4-9071-73c6-bdc3-bf1e2c5449fd method=POST path=/v1/transcribe}: gigastt_core::inference::audio::wave: Audio (wave): 16000Hz, 1ch (streaming windows)
+2026-10-02T12:43:58.902430Z  INFO request{request_id=01a0fca4-9071-73c6-bdc3-bf1e2c5449fd method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=452
+2026-10-02T12:43:58.902517Z  INFO request{request_id=01a0fca4-9071-73c6-bdc3-bf1e2c5449fd method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=5.90 wall_s=0.45 rtf=0.077
+2026-10-02T12:43:58.903668Z  INFO request{request_id=01a0fca4-9237-73ca-a96f-d77c5158e3e3 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::wave: Audio (wave): 16000Hz, 1ch (streaming windows)
+2026-10-02T12:43:59.135209Z  INFO request{request_id=01a0fca4-9237-73ca-a96f-d77c5158e3e3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=231
+2026-10-02T12:43:59.135281Z  INFO request{request_id=01a0fca4-9237-73ca-a96f-d77c5158e3e3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=2.77 wall_s=0.23 rtf=0.084
+2026-10-02T12:43:59.136922Z  INFO request{request_id=01a0fca4-9320-77ce-a054-9410a5f918e3 method=POST path=/v1/transcribe}: gigastt_core::inference::audio::wave: Audio (wave): 16000Hz, 1ch (streaming windows)
+2026-10-02T12:44:00.905275Z  INFO request{request_id=01a0fca4-9320-77ce-a054-9410a5f918e3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1767
+2026-10-02T12:44:00.905456Z  INFO request{request_id=01a0fca4-9320-77ce-a054-9410a5f918e3 method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=17.20 wall_s=1.77 rtf=0.103
+2026-10-02T12:44:00.907157Z  INFO request{request_id=01a0fca4-9a0a-77b4-a3a7-b1c8396de56e method=POST path=/v1/transcribe}: gigastt_core::inference::audio::wave: Audio (wave): 16000Hz, 1ch (streaming windows)
+2026-10-02T12:44:02.526474Z  INFO request{request_id=01a0fca4-9a0a-77b4-a3a7-b1c8396de56e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=1617
+2026-10-02T12:44:02.526650Z  INFO request{request_id=01a0fca4-9a0a-77b4-a3a7-b1c8396de56e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=17.40 wall_s=1.62 rtf=0.093
+2026-10-02T12:44:02.528446Z  INFO request{request_id=01a0fca4-a060-700a-bec8-3dbb2982cd9e method=POST path=/v1/transcribe}: gigastt_core::inference::audio::wave: Audio (wave): 16000Hz, 1ch (streaming windows)
+2026-10-02T12:44:02.809036Z  INFO request{request_id=01a0fca4-a060-700a-bec8-3dbb2982cd9e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::infer: encoder_inference elapsed_ms=280
+2026-10-02T12:44:02.809122Z  INFO request{request_id=01a0fca4-a060-700a-bec8-3dbb2982cd9e method=POST path=/v1/transcribe}: gigastt_core::inference::engine::file_stream: transcribe complete (streaming windows) audio_s=3.96 wall_s=0.28 rtf=0.071
+2026-10-02T12:44:02.821951Z  INFO gigastt::server::listen: Shutting down server
+2026-10-02T12:44:02.858758Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

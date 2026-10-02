@@ -1,0 +1,35 @@
+{
+  "source": "https://github.com/Tim2190/Kaz-ASR-codeswitch-benchmark",
+  "revision": "6575c5cd9e9e481edcb4d9928fda2b2f60d3e5ad",
+  "annotation_author": "Timur Seidalin",
+  "license": "Annotations and code MIT; source audio CC BY per publisher attribution.",
+  "selection": "All31 publisher clips in metadata order, no output-based selection or new segmentation.",
+  "primary_reference": "Publisher transcript_verbatim with literal [false_start] markup removed; spoken fragments retained. No [unclear] occurs.",
+  "secondary_reference": "Publisher normalized_written, scored separately; never select best/min reference.",
+  "human_reference_evidence": [
+    "https://github.com/Tim2190/Kaz-ASR-codeswitch-benchmark/blob/6575c5cd9e9e481edcb4d9928fda2b2f60d3e5ad/annotation_methodology.md#7-annotation-quality-control",
+    "https://github.com/Tim2190/Kaz-ASR-codeswitch-benchmark/blob/6575c5cd9e9e481edcb4d9928fda2b2f60d3e5ad/README.md#author--contributions"
+  ],
+  "audio_handling": "Original publisher WAV bytes; no external resampling, channel editing, denoising or VAD.",
+  "limitation": "Only two source videos: performance stand-up and interview; not representative everyday dyadic conversation. Previously evaluated corpus, not blind holdout.",
+  "n": 31,
+  "duration_s": 221.93077083333333,
+  "hours": 0.06164743634259259,
+  "speech_type_counts": {
+    "standup": 16,
+    "interview": 15
+  },
+  "source_counts": {
+    "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU": 16,
+    "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН": 15
+  },
+  "russian_insertion_flag_count": 11,
+  "false_start_markup_removed_count": 6,
+  "source_file_sha256": {
+    "metadata.csv": "cf2a14652ebc72ce44dc9d366a2a42a4aef866a2d73d8608256bbb76ee4c134e",
+    "annotation_methodology.md": "a7816df305376bb92d411c334cd13c9de94d776069acbdf0cc378be43c926aa8",
+    "README.md": "625465bd7cd9bb7f78aa1779f27cb388dfac5e72e977d24dc6ef4c5cbf1ca898",
+    "LICENSE": "b42bfa91cc5b2414027c1a04f1be1191c0b4ff9945a5fbb601754df8ad8d7d0c"
+  },
+  "preparation_script_sha256": "1b6092345a019e68dde892d2237a53de09b04c34207aaee783ab53a25785c90a"
+}

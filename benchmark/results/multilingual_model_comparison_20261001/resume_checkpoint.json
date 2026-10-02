@@ -1,0 +1,7 @@
+{
+  "status": "resumed_at_user_request",
+  "resumed_utc": "2026-10-02T09:40:11.910371+00:00",
+  "previous_checkpoint": "pause_checkpoint.json",
+  "settings": "unchanged frozen model, decoder, corpus and scoring identities",
+  "completed_comparison": false
+}

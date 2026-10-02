@@ -1,0 +1,12 @@
+{
+  "train": {
+    "prior_manifest_sha256": "1ebff9b8fc6805f47fde4272425e6f80629a351e1af4d3383343fcd5b17b1011",
+    "sentence_id_overlap": 0,
+    "audio_sha256_overlap": 0
+  },
+  "validation": {
+    "prior_manifest_sha256": "ed18225595713fbda85c1c18a39baae090fa94a707b9ec79f7c06bd6ccb5b1e7",
+    "sentence_id_overlap": 0,
+    "audio_sha256_overlap": 0
+  }
+}

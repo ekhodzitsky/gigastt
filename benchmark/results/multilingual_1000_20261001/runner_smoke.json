@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "checks": [
+    "HTTP stub",
+    "kill+resume",
+    "truncated tail recovery",
+    "failure scoring+nonzero exit",
+    "subset counts",
+    "completed resume warmup-only",
+    "model mismatch",
+    "binary mismatch",
+    "audio mismatch",
+    "strict1000 preflight"
+  ],
+  "runner": "scripts/benchmark_multilingual_1000.py",
+  "runner_sha256": "ebd59264c53dc56177535af989b7e289570f8121c0415500b34063f87649f52b",
+  "test": "scripts/test_benchmark_multilingual_1000.py",
+  "command": "<benchmark-python> scripts/test_benchmark_multilingual_1000.py",
+  "fixture_samples": 5,
+  "production_samples_per_language": 1000,
+  "method": "Real local HTTP server, SIGKILL after two committed JSONL results, appended interrupted final line, then resumed. No ASR model required."
+}

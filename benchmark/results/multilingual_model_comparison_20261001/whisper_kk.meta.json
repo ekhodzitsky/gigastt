@@ -1,0 +1,107 @@
+{
+  "backend": "whisper",
+  "model": {
+    "backend": "faster-whisper",
+    "model": "Systran/faster-whisper-large-v3",
+    "revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+    "model_files": {
+      "README.md": {
+        "sha256": "39e96252229f5a3d0141dc81afb65a36fd205461ac21e5b70f2cd1248ef0082c",
+        "size_bytes": 2052,
+        "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/README.md",
+        "source_git_blob": "a84bfa7f20cac02ea5a99efa5eaf687ad58c1caf"
+      },
+      "config.json": {
+        "sha256": "a9306624f5ec14270a014b647e5c316b6e03a662c369758d1b90697a7b0655b9",
+        "size_bytes": 2394,
+        "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/config.json",
+        "source_git_blob": "75336feae814999bae6ccccdecf177639ffc6f9d"
+      },
+      "model.bin": {
+        "sha256": "69f74147e3334731bc3a76048724833325d2ec74642fb52620eda87352e3d4f1",
+        "size_bytes": 3087284237,
+        "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/model.bin",
+        "source_git_blob": "e91bbba72de41ca3cdc9a656b17aa9407c7e85b6"
+      },
+      "preprocessor_config.json": {
+        "sha256": "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711",
+        "size_bytes": 340,
+        "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/preprocessor_config.json",
+        "source_git_blob": "931c77a740890c46365c7ae0c9d350ba3cca908f"
+      },
+      "tokenizer.json": {
+        "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+        "size_bytes": 2480617,
+        "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/tokenizer.json",
+        "source_git_blob": "3a5e2ba63acdcac9a19ba56cf9bd27f185bfff61"
+      },
+      "vocabulary.json": {
+        "sha256": "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1",
+        "size_bytes": 1068114,
+        "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/vocabulary.json",
+        "source_git_blob": "0adcd01e7c237205d593b707e66dd5d7bc785d2d"
+      }
+    },
+    "provenance_sha256": "9b355f82470f67d7dcb7085fb54aa45b96bbcd8b6384e74d8e077b377b7ce7f0",
+    "device": "cpu",
+    "requested_compute_type": "int8",
+    "actual_compute_type": "int8_float32",
+    "cpu_threads": 3,
+    "num_workers": 1,
+    "language": "kk",
+    "input": "caller-supplied float32 mono 16000 Hz ndarray; file decoder bypassed",
+    "transcription_options": {
+      "task": "transcribe",
+      "beam_size": 5,
+      "temperature": 0.0,
+      "condition_on_previous_text": false,
+      "vad_filter": false,
+      "word_timestamps": false,
+      "initial_prompt": null,
+      "hotwords": null,
+      "chunk_length": 30,
+      "without_timestamps": false,
+      "compression_ratio_threshold": 2.4,
+      "log_prob_threshold": -1.0,
+      "no_speech_threshold": 0.6,
+      "patience": 1.0,
+      "length_penalty": 1.0,
+      "repetition_penalty": 1.0,
+      "no_repeat_ngram_size": 0,
+      "suppress_blank": true,
+      "suppress_tokens": [
+        -1
+      ]
+    },
+    "packages": {
+      "faster-whisper": "1.2.1",
+      "ctranslate2": "4.8.2",
+      "numpy": "2.5.3",
+      "tokenizers": "0.22.2",
+      "av": "16.0.1",
+      "huggingface-hub": "0.36.2",
+      "onnxruntime": "1.28.0"
+    },
+    "backend_source_sha256": "102e5ac7637fecbb8ea3a5cae006be08416029f56155df6dc7219390c7f61db5"
+  },
+  "language": "kk",
+  "manifest_sha256": "89ff41aa67eb7d19e153c710a2605913474a582be9c49bed1734425d529fefb1",
+  "n": 31,
+  "threads": 3,
+  "quality_workers": 4,
+  "worker_policy": "Independent identical model instances; source-order durable commits; timing not comparative",
+  "script_sha256": "57be8369d3e74e92476074558fa2b6419aad73c0d9a4dc35118149feffce7079",
+  "backend_script_sha256": "102e5ac7637fecbb8ea3a5cae006be08416029f56155df6dc7219390c7f61db5",
+  "scorer_sha256": {
+    "benchmark_multilingual_public.py": "9d1558e90ab6d451fa37997faab20f45a1444963491fbdd321c860286b7966fb",
+    "wer_unicode.py": "71e0703f3b78182b63e9629c2b9963c5f08938e2d010d660eb1cb8cf16370be2"
+  },
+  "jiwer": "4.0.0",
+  "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+  "decode": "FFmpeg mono 16 kHz float32; no filtering, VAD, PCM16 requantization or telephone simulation",
+  "scoring": "One fixed reference, existing Unicode normalization, micro WER/CER including spaces; all failures retained as empty",
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "python": "3.12.14",
+  "warmup": "First manifest audio, one unmeasured inference per independent instance; same fixed settings",
+  "timing_scope": "Exploratory quality run, potentially concurrent workloads; not an isolated speed benchmark"
+}

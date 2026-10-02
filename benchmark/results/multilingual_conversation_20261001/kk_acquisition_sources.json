@@ -1,0 +1,49 @@
+{
+  "measured_by_parent_only": true,
+  "sources": [
+    {
+      "name": "Kazakh Code-Switching ASR Benchmark",
+      "revision": "6575c5cd9e9e481edcb4d9928fda2b2f60d3e5ad",
+      "url": "https://github.com/Tim2190/Kaz-ASR-codeswitch-benchmark",
+      "human_reference_evidence": "https://raw.githubusercontent.com/Tim2190/Kaz-ASR-codeswitch-benchmark/6575c5cd9e9e481edcb4d9928fda2b2f60d3e5ad/annotation_methodology.md",
+      "scope": "All 31 publisher clips from 2 videos;16 standup,15 interview;221.93077 s. Fixed verbatim primary, normalized_written secondary. Previously inspected corpus, not blind.",
+      "local_manifest": "kk_manifest.json"
+    },
+    {
+      "name": "Multimedia Corpus of Spoken Kazakh Language module 1",
+      "repository": "https://osf.io/6zjdq/",
+      "paper": "https://reference-global.com/article/10.5334/johd.529?tab=article",
+      "github_revision": "ada9282bb3720eef7001f4f1fc4060f7541b2b31",
+      "human_reference_evidence": "Paper Transcription and annotation / Quality control sections: manual native-speaker ELAN transcription and senior Kazakh-speaking review. Publisher TSV form field is orthographic text, align field has IU timestamps.",
+      "audio_archive": {
+        "url": "https://osf.io/download/pf2vm/",
+        "sha256": "c3368b896bb829ccda96444a297cd8cae37678a1857e4ebc6bf66fa0ffc5c7fd",
+        "bytes": 655569878
+      },
+      "tsv_archive": {
+        "url": "https://osf.io/download/ve4ja/",
+        "sha256": "ba711def081a399386764a863351a857861789cb29c76da3089ed85c134dfc01",
+        "bytes": 1223174
+      },
+      "license": "CC BY-NC-SA 4.0; research evaluation only; attribute MCSKL authors. Audio stays in private cache.",
+      "scope": "887 seeded eligible IUs from 4 recordings,1378.71243 s;3 friend/student conversations and1 online interview. Short clean non-overlap segments, not full conversation inference.",
+      "local_manifest": "kk_conversations_expanded_manifest.json",
+      "superseded_unmeasured": [
+        "kk_conversations_manifest.json",
+        "private pre_audit_expanded/kk_conversations_expanded_manifest.json"
+      ]
+    }
+  ],
+  "not_used": [
+    {
+      "source": "KSC / FLEURS",
+      "reason": "Read speech does not answer the requested conversational domain."
+    },
+    {
+      "source": "LDC Babel / MATERIAL demos",
+      "reason": "User narrowed this stage to ordinary conversational quality; no telephone robustness sweep."
+    }
+  ],
+  "no_training": true,
+  "no_new_models": true
+}

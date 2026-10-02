@@ -1,0 +1,1635 @@
+{
+  "completed": true,
+  "n": 31,
+  "metadata": {
+    "backend": "whisper",
+    "model": {
+      "backend": "faster-whisper",
+      "model": "Systran/faster-whisper-large-v3",
+      "revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+      "model_files": {
+        "README.md": {
+          "sha256": "39e96252229f5a3d0141dc81afb65a36fd205461ac21e5b70f2cd1248ef0082c",
+          "size_bytes": 2052,
+          "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/README.md",
+          "source_git_blob": "a84bfa7f20cac02ea5a99efa5eaf687ad58c1caf"
+        },
+        "config.json": {
+          "sha256": "a9306624f5ec14270a014b647e5c316b6e03a662c369758d1b90697a7b0655b9",
+          "size_bytes": 2394,
+          "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/config.json",
+          "source_git_blob": "75336feae814999bae6ccccdecf177639ffc6f9d"
+        },
+        "model.bin": {
+          "sha256": "69f74147e3334731bc3a76048724833325d2ec74642fb52620eda87352e3d4f1",
+          "size_bytes": 3087284237,
+          "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/model.bin",
+          "source_git_blob": "e91bbba72de41ca3cdc9a656b17aa9407c7e85b6"
+        },
+        "preprocessor_config.json": {
+          "sha256": "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711",
+          "size_bytes": 340,
+          "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/preprocessor_config.json",
+          "source_git_blob": "931c77a740890c46365c7ae0c9d350ba3cca908f"
+        },
+        "tokenizer.json": {
+          "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+          "size_bytes": 2480617,
+          "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/tokenizer.json",
+          "source_git_blob": "3a5e2ba63acdcac9a19ba56cf9bd27f185bfff61"
+        },
+        "vocabulary.json": {
+          "sha256": "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1",
+          "size_bytes": 1068114,
+          "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/vocabulary.json",
+          "source_git_blob": "0adcd01e7c237205d593b707e66dd5d7bc785d2d"
+        }
+      },
+      "provenance_sha256": "9b355f82470f67d7dcb7085fb54aa45b96bbcd8b6384e74d8e077b377b7ce7f0",
+      "device": "cpu",
+      "requested_compute_type": "int8",
+      "actual_compute_type": "int8_float32",
+      "cpu_threads": 3,
+      "num_workers": 1,
+      "language": "kk",
+      "input": "caller-supplied float32 mono 16000 Hz ndarray; file decoder bypassed",
+      "transcription_options": {
+        "task": "transcribe",
+        "beam_size": 5,
+        "temperature": 0.0,
+        "condition_on_previous_text": false,
+        "vad_filter": false,
+        "word_timestamps": false,
+        "initial_prompt": null,
+        "hotwords": null,
+        "chunk_length": 30,
+        "without_timestamps": false,
+        "compression_ratio_threshold": 2.4,
+        "log_prob_threshold": -1.0,
+        "no_speech_threshold": 0.6,
+        "patience": 1.0,
+        "length_penalty": 1.0,
+        "repetition_penalty": 1.0,
+        "no_repeat_ngram_size": 0,
+        "suppress_blank": true,
+        "suppress_tokens": [
+          -1
+        ]
+      },
+      "packages": {
+        "faster-whisper": "1.2.1",
+        "ctranslate2": "4.8.2",
+        "numpy": "2.5.3",
+        "tokenizers": "0.22.2",
+        "av": "16.0.1",
+        "huggingface-hub": "0.36.2",
+        "onnxruntime": "1.28.0"
+      },
+      "backend_source_sha256": "102e5ac7637fecbb8ea3a5cae006be08416029f56155df6dc7219390c7f61db5"
+    },
+    "language": "kk",
+    "manifest_sha256": "89ff41aa67eb7d19e153c710a2605913474a582be9c49bed1734425d529fefb1",
+    "n": 31,
+    "threads": 3,
+    "quality_workers": 4,
+    "worker_policy": "Independent identical model instances; source-order durable commits; timing not comparative",
+    "script_sha256": "57be8369d3e74e92476074558fa2b6419aad73c0d9a4dc35118149feffce7079",
+    "backend_script_sha256": "102e5ac7637fecbb8ea3a5cae006be08416029f56155df6dc7219390c7f61db5",
+    "scorer_sha256": {
+      "benchmark_multilingual_public.py": "9d1558e90ab6d451fa37997faab20f45a1444963491fbdd321c860286b7966fb",
+      "wer_unicode.py": "71e0703f3b78182b63e9629c2b9963c5f08938e2d010d660eb1cb8cf16370be2"
+    },
+    "jiwer": "4.0.0",
+    "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+    "decode": "FFmpeg mono 16 kHz float32; no filtering, VAD, PCM16 requantization or telephone simulation",
+    "scoring": "One fixed reference, existing Unicode normalization, micro WER/CER including spaces; all failures retained as empty",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+    "python": "3.12.14",
+    "warmup": "First manifest audio, one unmeasured inference per independent instance; same fixed settings",
+    "timing_scope": "Exploratory quality run, potentially concurrent workloads; not an isolated speed benchmark"
+  },
+  "primary_instance_load_s": 3.5212743420015613,
+  "memory_before_primary_warmup": {
+    "rss_bytes": 1906307072,
+    "pss_bytes": 1901936640,
+    "uss_bytes": 1901756416,
+    "process_peak_rss_bytes": 3196608512
+  },
+  "memory_after_primary_warmup": {
+    "rss_bytes": 2423529472,
+    "pss_bytes": 2419095552,
+    "uss_bytes": 2418872320,
+    "process_peak_rss_bytes": 3196608512
+  },
+  "memory_final": {
+    "rss_bytes": 10536763392,
+    "pss_bytes": 10667693056,
+    "uss_bytes": 10642399232,
+    "process_peak_rss_bytes": 11988738048
+  },
+  "current_process_run_id": 1790888067014754285,
+  "details": [
+    {
+      "id": "kzaudio_1",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_1.wav",
+      "sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и вообщем влажениены канешно менен бастадық брэкет салдым",
+      "reference_verbatim_raw": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и вообщем влажениены канешно менен бастадық брэкет салдым",
+      "reference_normalized": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениены конечно менен бастадық брекет салдым",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 7.308666666666666,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Біз өзімізге влажене жасаймыз, өзімізбен жұмыс жасаймыз деп. И в общем, влаженен, конечно, менем бастадық, брекет салды.",
+      "scores": {
+        "reference_words": 16,
+        "word_errors": 8,
+        "substitutions": 7,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 117,
+        "char_errors": 9
+      },
+      "elapsed_s": 24.366343501998927,
+      "decode_s": 0.03225034400020377,
+      "inference_s": 24.333545673001936,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11225526272,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_2",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_2.wav",
+      "sha256": "d134cb07b5ba7bf729fe292343ebbf8818f6d32974663bf2029d3cf4b2855610",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "алдында кароче мен осы брэкетті тағып шықтым да и менің өзім бір жақын танысымды келістіріп қалдым и андай шыға салып бір тупой сұрақтарды қойд да брэкетіме қарап",
+      "reference_verbatim_raw": "алдында кароче мен осы брэкетті тағып шықтым да и менің өзім бір жақын танысымды келістіріп қалдым и андай шыға салып бір тупой сұрақтарды қойд да брэкетіме қарап",
+      "reference_normalized": "алдында короче мен осы брекетті тағып шықтым да и менің өзім бір жақын танысымды келістіріп қалдым и андай шыға салып бір тупой сұрақтарды қойды да брекетіме қарап",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 10.1535,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Алдында мен осы брекетті тағып шықтым да, менің өзім бір жақын таңысымды кезіктіріп құн, ондай шыға салып бір тұпой сұрақтар қойтты брекетті мағырып.",
+      "scores": {
+        "reference_words": 27,
+        "word_errors": 14,
+        "substitutions": 10,
+        "deletions": 4,
+        "insertions": 0,
+        "reference_chars": 162,
+        "char_errors": 36
+      },
+      "elapsed_s": 28.29745720899882,
+      "decode_s": 0.030132939002214698,
+      "inference_s": 28.26674317099969,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11248975872,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_3",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_3.wav",
+      "sha256": "cfdffd097e768d7f06c0ee693751786df41e132e31be3d41e7b12e7b3e973a11",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "тұрып қумаш үйтп баспайт шығар енд ол специально солай шы- шығарылған ғой енді аузының бәрі",
+      "reference_verbatim_raw": "тұрып қумаш үйтп баспайт шығар енд ол специально солай шы-[false_start] шығарылған ғой енді аузының бәрі",
+      "reference_normalized": "тұрып қумаш үйтіп баспайтын шығар енді ол специально солай шығарылған ғой енді аузының бәрі",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 5.050729166666667,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Құмаш баспайты шығар енді ол специально солай шығарылған қойын да, ауызың бәрі.",
+      "scores": {
+        "reference_words": 15,
+        "word_errors": 9,
+        "substitutions": 6,
+        "deletions": 3,
+        "insertions": 0,
+        "reference_chars": 90,
+        "char_errors": 24
+      },
+      "elapsed_s": 22.380863721002243,
+      "decode_s": 0.03083056500327075,
+      "inference_s": 22.34920329200031,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11179413504,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_4",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_4.wav",
+      "sha256": "89914316cd562d25ecfbf58e591c9719bc559b05ba948e64ef4f89fb43dc0525",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "білмейм пиқылдай ма әлі аэропортқа барып үлгерген жоқпын мен қайдан білемін енді специально пиқылдамайтын қып шығарған шығар",
+      "reference_verbatim_raw": "білмейм пиқылдай ма әлі аэропортқа барып үлгерген жоқпын мен қайдан білемін енді специально пиқылдамайтын қып шығарған шығар",
+      "reference_normalized": "білмеймін пиқылдай ма әлі аэропортқа барып үлгерген жоқпын мен қайдан білемін енді специально пиқылдамайтын қылып шығарған шығар",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 6.365958333333333,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Білмейм, пейқылдайма, әлі айрапортқа бар бүлгерген жоқ мен, қайдан білем. Енді специально пейқылдам айтынғы шығарған шығар.",
+      "scores": {
+        "reference_words": 17,
+        "word_errors": 9,
+        "substitutions": 8,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 124,
+        "char_errors": 19
+      },
+      "elapsed_s": 23.771498264999536,
+      "decode_s": 0.027526937999937218,
+      "inference_s": 23.743583440002112,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11217362944,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_5",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_5.wav",
+      "sha256": "91b326e15609d60b3aa873dc45a47dad9e80e0476e6ecb8f0c640c0983d2cdf6",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "қызық ащущение енді көрген адамға да жалпы өзіме де ыңғайсыз енд дәл қаз сіздер бәріңіз менің брэкеттіма қарап отсыздар",
+      "reference_verbatim_raw": "қызық ащущение енді көрген адамға да жалпы өзіме де ыңғайсыз енд дәл қаз сіздер бәріңіз менің брэкеттіма қарап отсыздар",
+      "reference_normalized": "қызық ощущение енді көрген адамға да жалпы өзіме де ыңғайсыз енді дәл қазір сіздер бәріңіз менің брекеттіма қарап отырсыздар",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 6.292125,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Қызық ашшен енді, көрген адамға да жалпы, өз медияңға айсыз енді, дәл қазысыздар, бәріңіз менің бірікеті мағара отыстыр.",
+      "scores": {
+        "reference_words": 19,
+        "word_errors": 10,
+        "substitutions": 9,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 119,
+        "char_errors": 27
+      },
+      "elapsed_s": 22.905886356998963,
+      "decode_s": 0.04016527600106201,
+      "inference_s": 22.86525346399867,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11453837312,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_6",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_6.wav",
+      "sha256": "8315d017f07938cbbaae272e45cd07f7c149cf98ab171c859d1f3f64879f79d2",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "сәл жоғары көзімізге қарайып сө- сөйлесейік иә ааа воопщем құттықтап қойсаңыздар болад жақында званием өсті қайын әпке деген звание алдым",
+      "reference_verbatim_raw": "сәл жоғары көзімізге қарайып сө-[false_start] сөйлесейік иә ааа воопщем құттықтап қойсаңыздар болад жақында званием өсті қайын әпке деген звание алдым",
+      "reference_normalized": "сәл жоғары көзімізге қарайып сөйлесейік иә ааа в общем құттықтап қойсаңыздар болады жақында званием өсті қайын әпке деген звание алдым",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 7.98425,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Сәл, жоғар, көзіміз беғар еп сөйлесейге. В общем, қытықтап қойсаңыздар болады. Жақында зван емісті қайынап ке деген зван елдің.",
+      "scores": {
+        "reference_words": 20,
+        "word_errors": 16,
+        "substitutions": 15,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 136,
+        "char_errors": 36
+      },
+      "elapsed_s": 24.08469929000057,
+      "decode_s": 0.033109543001046404,
+      "inference_s": 24.050937485997565,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 3
+        }
+      },
+      "process_peak_rss_bytes": 11732418560,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_7",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_7.wav",
+      "sha256": "358481caa369a06e14e74326f812c702871239be9c780b63f59e80a38aed181d",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "біз алып жатқан келіннің яғни қыздың бір тәтесі тілек айтып жатыр екен айналайын айнұржан барған жеріңе бақытты болам деп емес бақытты қылам деп бар алтыным",
+      "reference_verbatim_raw": "біз алып жатқан келіннің яғни қыздың бір тәтесі тілек айтып жатыр екен айналайын айнұржан барған жеріңе бақытты болам деп емес бақытты қылам деп бар алтыным",
+      "reference_normalized": "біз алып жатқан келіннің яғни қыздың бір тәтесі тілек айтып жатыр екен айналайын айнұржан барған жеріңе бақытты боламын деп емес бақытты қыламын деп бар алтыным",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 10.7,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "1"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "біз алып жатқан келінің, яғни қыздың бір тәтестілейгі айтпетірекен, айналайын айныржан, барған жеріне бақытты болам деп емес, бақытты қылам деп баралтыным.",
+      "scores": {
+        "reference_words": 25,
+        "word_errors": 10,
+        "substitutions": 6,
+        "deletions": 4,
+        "insertions": 0,
+        "reference_chars": 156,
+        "char_errors": 15
+      },
+      "elapsed_s": 24.503803663003055,
+      "decode_s": 0.03588041200055159,
+      "inference_s": 24.467512872000952,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 5
+        }
+      },
+      "process_peak_rss_bytes": 11732418560,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_8",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_8.wav",
+      "sha256": "746aa1a2efa5335976e005c4d126de096d3a3994219370985725ada6d5b8defb",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "ойланып қарасам менің ұзату тойымда да маған да сондай тілек айтқан екен да",
+      "reference_verbatim_raw": "ойланып қарасам менің ұзату тойымда да маған да сондай тілек айтқан екен да",
+      "reference_normalized": "ойланып қарасам менің ұзату тойымда да маған да сондай тілек айтқан екен да",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 3.7,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "ойлан қарасым менің жату ұт ойымдады, мағыны сұндай тілегі әйткенде.",
+      "scores": {
+        "reference_words": 13,
+        "word_errors": 12,
+        "substitutions": 9,
+        "deletions": 3,
+        "insertions": 0,
+        "reference_chars": 75,
+        "char_errors": 24
+      },
+      "elapsed_s": 17.72850655900038,
+      "decode_s": 0.04537609399994835,
+      "inference_s": 17.682729484000447,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11503345664,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_9",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_9.wav",
+      "sha256": "4d842786273bec362e5ca8e7f6e5f651e5bc5299835b79c8fd30a9efecad8f5c",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "біз келін боп түсеміз сүйтіп біз келін боп түскен үйдің дастархан басында таңертең тұрып алақай",
+      "reference_verbatim_raw": "біз келін боп түсеміз сүйтіп біз келін боп түскен үйдің дастархан басында таңертең тұрып алақай",
+      "reference_normalized": "біз келін болып түсеміз сөйтіп біз келін болып түскен үйдің дастарқан басында таңертең тұрып алақай",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 6.964770833333334,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "біз келім болып түсеміз, сөйтіп, біз келім болып түскен едің дастар қамбасында тәңертен тұрып, алар қай!",
+      "scores": {
+        "reference_words": 15,
+        "word_errors": 11,
+        "substitutions": 10,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 95,
+        "char_errors": 17
+      },
+      "elapsed_s": 17.92031876100009,
+      "decode_s": 0.03954058700037422,
+      "inference_s": 17.880323272998794,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11883347968,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_10",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_10.wav",
+      "sha256": "0250327eed31a59b90d4846acb5969445404a50f875584dea4cf64afb63c5de1",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "бәрін бердік сондағысы сен қонақ болдың дейд так стоп мен қонақ боған жоқпын",
+      "reference_verbatim_raw": "бәрін бердік сондағысы сен қонақ болдың дейд так стоп мен қонақ боған жоқпын",
+      "reference_normalized": "бәрін бердік сондағысы сен қонақ болдың дейді так стоп мен қонақ болған жоқпын",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 5.949,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Бәрін бердік, сондағы сіз сен қонақ болдың дейді. Так, стоп! Мен қонақ болған жоқ бұн!",
+      "scores": {
+        "reference_words": 13,
+        "word_errors": 6,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 2,
+        "reference_chars": 76,
+        "char_errors": 8
+      },
+      "elapsed_s": 17.378973421997216,
+      "decode_s": 0.03869196699815802,
+      "inference_s": 17.339963549999084,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 3
+        }
+      },
+      "process_peak_rss_bytes": 11883347968,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_11",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_11.wav",
+      "sha256": "72c8776a1206687a0afc6d258f2eafe5a5b78b9ee099c064924486fdcd42ddaf",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "қызың боласың қимайсың өсіріп баптап өсірген гүлім деп",
+      "reference_verbatim_raw": "қызың боласың қимайсың өсіріп баптап өсірген гүлім деп",
+      "reference_normalized": "қызың боласың қимайсың өсіріп баптап өсірген гүлім деп",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 5.7,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "қызың боласын, қимайсын, өсіріп баптап, өсірген көлім деп.",
+      "scores": {
+        "reference_words": 8,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 54,
+        "char_errors": 4
+      },
+      "elapsed_s": 14.74439032599912,
+      "decode_s": 0.0393796049975208,
+      "inference_s": 14.704795809000643,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11883347968,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_12",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_12.wav",
+      "sha256": "92e9453ab7eaac310cd11fe57248f89a3b2184b9a982bbf41588d3621b4d4f5e",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "тойдағы тілектер өзі андай бірінен кейн бірі кете бередта самый потолок тілек біздің үйлену тойымызда дидардың сестрасы болды",
+      "reference_verbatim_raw": "тойдағы тілектер өзі андай бірінен кейн бірі кете бередта самый потолок тілек біздің үйлену тойымызда дидардың сестрасы болды",
+      "reference_normalized": "тойдағы тілектер өзі андай бірінен кейін бірі кете береді да самый потолок тілек біздің үйлену тойымызда дидардың сестрасы болды",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 6.571,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "1"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "тойдағы тілектер өзі әнді бірненгейін бір кетеберетті. Самый патолог тілек біздің үйлі өміт ойымызда дейдердің сестерасы болды.",
+      "scores": {
+        "reference_words": 18,
+        "word_errors": 12,
+        "substitutions": 9,
+        "deletions": 2,
+        "insertions": 1,
+        "reference_chars": 125,
+        "char_errors": 24
+      },
+      "elapsed_s": 20.43067266700018,
+      "decode_s": 0.03520537799704471,
+      "inference_s": 20.39498040699982,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11883347968,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_13",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_13.wav",
+      "sha256": "f23d33cfcb09191e71df20ebc856da53676e73dfd2755b493fa6755098972250",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "тілектің бәрі дұрыс емес сен бақытты қыл қызым саған аманат",
+      "reference_verbatim_raw": "тілектің бәрі дұрыс емес сен бақытты қыл қызым саған аманат",
+      "reference_normalized": "тілектің бәрі дұрыс емес сен бақытты қыл қызым саған аманат",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 4.222895833333333,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Әттілектің бәрі дұрыс емес, сен бақытты қыл, қызымсаған аманат.",
+      "scores": {
+        "reference_words": 10,
+        "word_errors": 3,
+        "substitutions": 2,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 59,
+        "char_errors": 3
+      },
+      "elapsed_s": 16.411086964002607,
+      "decode_s": 0.025798071001190692,
+      "inference_s": 16.385020970999904,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11939278848,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_14",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_14.wav",
+      "sha256": "81da06b2e66d588eaa8c135d62ef4e10510647e56e3365c213cf5d173e1bbb87",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "менің ойымша ондай нәрсе ондай қорқынышт историялар тек қазақтарда бар сияқты өйткені мен орысшаға аударып көрдім ананы кароче ",
+      "reference_verbatim_raw": "менің ойымша ондай нәрсе ондай қорқынышт историялар тек қазақтарда бар сияқты өйткені мен орысшаға аударып көрдім ананы кароче ",
+      "reference_normalized": "менің ойымша ондай нәрсе ондай қорқынышты историялар тек қазақтарда бар сияқты өйткені мен орысшаға аударып көрдім ананы короче ",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 7.9,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Мен ойымша, оңдай нәрсе, оңдай қорғаншы историялар тек қазақтарда бар сияқты. Өйткені мен орыншаға ұдар көрдім ананың қарыч.",
+      "scores": {
+        "reference_words": 18,
+        "word_errors": 8,
+        "substitutions": 8,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 126,
+        "char_errors": 17
+      },
+      "elapsed_s": 22.425623224000446,
+      "decode_s": 0.041530812999553746,
+      "inference_s": 22.38380747699921,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11939278848,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_15",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_15.wav",
+      "sha256": "a94179cd397e4ecca7c5ce37ca9d7e9e991c6006616de5b1327bacb604640cc7",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "ерік сен есентай мен разияның арқасында көтерілгенсің дейд көбісі айтад барлықтарына бірден жауап берейн",
+      "reference_verbatim_raw": "ерік сен есентай мен разияның арқасында көтерілгенсің дейд көбісі айтад барлықтарына бірден жауап берейн",
+      "reference_normalized": "ерік сен есентай мен разияның арқасында көтерілгенсің дейді көбісі айтады барлықтарына бірден жауап берейін",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 6.3,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "1"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "еркісен есін тайымен ұразияның арқасына көтерілген сұн дейді. Көпіс айтады. Барлықтарыны бірден жауап бірең.",
+      "scores": {
+        "reference_words": 14,
+        "word_errors": 12,
+        "substitutions": 12,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 104,
+        "char_errors": 18
+      },
+      "elapsed_s": 21.21529508399908,
+      "decode_s": 0.02686970799913979,
+      "inference_s": 21.188132557002973,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 3
+        }
+      },
+      "process_peak_rss_bytes": 11939278848,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_16",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_16.wav",
+      "sha256": "ae917a4a9435e9d6e7c73e18bbab5224be32fa82c59662cdf46784d85d4768d0",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "былай бастайды ғо сен негізі жақсы жігітсің просто мен саған недостойномын",
+      "reference_verbatim_raw": "былай бастайды ғо сен негізі жақсы жігітсің просто мен саған недостойномын",
+      "reference_normalized": "былай бастайды ғой сен негізі жақсы жігітсің просто мен саған недостойномын",
+      "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+      "speech_type": "standup",
+      "condition": "original",
+      "duration_s": 7.755,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Балай бастайын оң, сен негізі жақсы жүгітсің. Просто, мен саға недастойным.",
+      "scores": {
+        "reference_words": 11,
+        "word_errors": 6,
+        "substitutions": 6,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 74,
+        "char_errors": 11
+      },
+      "elapsed_s": 16.883938527000282,
+      "decode_s": 0.06501605400262633,
+      "inference_s": 16.81865925099919,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11939278848,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_17",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_17.wav",
+      "sha256": "2e18368f76ceb7214f1aa8302dd56919fc711b181ae64bb41c1ebd93cb144dc8",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "мен осы елімнің азаматымын енді қазақта сөз бар шақырған жерден қалма дейд мен барған шара бұл ааа жарым жартылай мемлекеттік деп те айтуға болад жарым жартылай жеке шара бұл сонау тарихына үңілсек ",
+      "reference_verbatim_raw": "мен осы елімнің азаматымын енді қазақта сөз бар шақырған жерден қалма дейд мен барған шара бұл ааа жарым жартылай мемлекеттік деп те айтуға болад жарым жартылай жеке шара бұл сонау тарихына үңілсек ",
+      "reference_normalized": "мен осы елімнің азаматымын енді қазақта сөз бар шақырған жерден қалма дейді мен барған шара бұл ааа жарым жартылай мемлекеттік деп те айтуға болады жарым жартылай жеке шара бұл сонау тарихына үңілсек ",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 13.289229166666667,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Мен осы елімнің азаматымын, енді қазақта сөзгарым, шақырған жәден қалма дейді. Мен барған шара, бұл жарым жатылай мемлекеттіктеп дейді оға болады, жарым жатылай жеке шара. Бұл сұнау тарихынай оны сөк.",
+      "scores": {
+        "reference_words": 32,
+        "word_errors": 16,
+        "substitutions": 12,
+        "deletions": 3,
+        "insertions": 1,
+        "reference_chars": 197,
+        "char_errors": 29
+      },
+      "elapsed_s": 28.68292517500231,
+      "decode_s": 0.056310711999685736,
+      "inference_s": 28.626345929998934,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 3
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_18",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_18.wav",
+      "sha256": "cfba504999465cae00378a5c439a8196dd2ee0aff3249cc110716a4e8d0320ba",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "биылғы ғатысқанның шарасы ютуб арнасында тұр дональд трамптың бір жарым сағат сөйледі тоқтамастан бір сағат қырық минутқа дейін барды  ",
+      "reference_verbatim_raw": "биылғы ғатысқанның шарасы ютуб арнасында тұр дональд трамптың бір жарым сағат сөйледі тоқтамастан бір сағат қырық минутқа дейін барды  ",
+      "reference_normalized": "биылғы қатысқанның шарасы ютуб арнасында тұр дональд трамптың бір жарым сағат сөйледі тоқтамастан бір сағат қырық минутқа дейін барды  ",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 8.362,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "1"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Билғы ғацқанының шарасы Ютуб арнасында тұр. Дональд Трамптың бір жарым сағат сөйлөрді. Тоқтам астан. Бір сағат 40 минут қадем барды.",
+      "scores": {
+        "reference_words": 19,
+        "word_errors": 8,
+        "substitutions": 7,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 133,
+        "char_errors": 18
+      },
+      "elapsed_s": 20.66478196600292,
+      "decode_s": 0.030918239001039183,
+      "inference_s": 20.633418261997576,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 4
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_19",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_19.wav",
+      "sha256": "4013f9159a0fe3cf4de177150150550033472995eed8352eea5c0cf98e442985",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "мен тек қана бұл шарам емес бұл шарамен қоса мен спорт әлемінің оскарын алдым",
+      "reference_verbatim_raw": "мен тек қана бұл шарам емес бұл шарамен қоса мен спорт әлемінің оскарын алдым",
+      "reference_normalized": "мен тек қана бұл шарам емес бұл шарамен қоса мен спорт әлемінің оскарын алдым",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 4.9,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Мен деққана бұл шарам емес. Бұл шарам емес қоса, мен спорт әлемінің Оскарын алдым.",
+      "scores": {
+        "reference_words": 14,
+        "word_errors": 4,
+        "substitutions": 2,
+        "deletions": 1,
+        "insertions": 1,
+        "reference_chars": 77,
+        "char_errors": 7
+      },
+      "elapsed_s": 15.113240308997774,
+      "decode_s": 0.03519353599767783,
+      "inference_s": 15.07785648799836,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_20",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_20.wav",
+      "sha256": "b3e7408214f1662154be5708ca12b97067f5885f80ae8624f57970aba65842b0",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "бүгінгі дейін сіз тиктокқа шығасыз инстаграмға ша- шығасыз иә тікелей эфирге сол жұмысыңызды тастамайсыз",
+      "reference_verbatim_raw": "бүгінгі дейін сіз тиктокқа шығасыз инстаграмға ша-[false_start] шығасыз иә тікелей эфирге сол жұмысыңызды тастамайсыз",
+      "reference_normalized": "бүгінгі дейін сіз тиктокқа шығасыз инстаграмға шығасыз иә тікелей эфирге сол жұмысыңызды тастамайсыз",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 8.423354166666666,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "1"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Бүгінгі дейін, сіз ТикТокға шығасыз, Инстаграмға шығасыз, тікіле еферге сол жұмысыңызды тастамайсыз.",
+      "scores": {
+        "reference_words": 14,
+        "word_errors": 5,
+        "substitutions": 3,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 103,
+        "char_errors": 11
+      },
+      "elapsed_s": 16.626844745998824,
+      "decode_s": 0.03269588799958001,
+      "inference_s": 16.593910790998052,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_21",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_21.wav",
+      "sha256": "967245c3d151cfe53f7c61d04cf6e6d9839d59c87aae59de4fc4df9487ab0bf3",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "әрбір азамат ұлтына қызмет ету керек деп есептейм ол мм жәй адам бола ма ой шау- шаруа адам бола ма әркім өз деңгейінде қызмет жасаса біздің еліміз алға басад",
+      "reference_verbatim_raw": "әрбір азамат ұлтына қызмет ету керек деп есептейм ол мм жәй адам бола ма ой шау-[false_start] шаруа адам бола ма әркім өз деңгейінде қызмет жасаса біздің еліміз алға басад",
+      "reference_normalized": "әрбір азамат ұлтына қызмет ету керек деп есептеймін ол мм жай адам болады ма ой шаруа адам болады ма әркім өз деңгейінде қызмет жасаса біздің еліміз алға басады",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 9.091,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Әр бір азамат ұлтына қызмет ету керек деп есіп дейім. Ол жай адам болама, ол шару адам болама, әр кім өз денгейінде қызмет жасаса, біздің еліміз алға басады.",
+      "scores": {
+        "reference_words": 29,
+        "word_errors": 16,
+        "substitutions": 11,
+        "deletions": 3,
+        "insertions": 2,
+        "reference_chars": 157,
+        "char_errors": 20
+      },
+      "elapsed_s": 21.648199457999,
+      "decode_s": 0.030135343000438297,
+      "inference_s": 21.617749105000257,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_22",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_22.wav",
+      "sha256": "75ed5c17a0c224215f9f6868a9c67a6e23baaea6ff5cf6a6f16866149ec9078d",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "бауырлар бірін бірін түсіне алмай жүрген жастар келед солар азаматтар солардың ортасын біріктіру оларды жарастыру енді психологияның қаншалықты өзінің дүниесі болса да менің негізгі психологиям ол дін болад ",
+      "reference_verbatim_raw": "бауырлар бірін бірін түсіне алмай жүрген жастар келед солар азаматтар солардың ортасын біріктіру оларды жарастыру енді психологияның қаншалықты өзінің дүниесі болса да менің негізгі психологиям ол дін болад ",
+      "reference_normalized": "бауырлар бірін бірін түсіне алмай жүрген жастар келеді солар азаматтар солардың ортасын біріктіру оларды жарастыру енді психологияның қаншалықты өзінің дүниесі болса да менің негізгі психологиям ол дін болады ",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 11.971229166666667,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "бауырлар бірін-бірін үшін алмай жүрген жастар келеді. Солар азаматтар, солардың ортасын біріктіру, оларды жарастыру. Енді психологияның қанчалықты өзінің дүниесі болса да, менің негізгі психологиям ол дем болады.",
+      "scores": {
+        "reference_words": 28,
+        "word_errors": 7,
+        "substitutions": 6,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 206,
+        "char_errors": 9
+      },
+      "elapsed_s": 26.522333265998896,
+      "decode_s": 0.029821685999195324,
+      "inference_s": 26.492166543997882,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 5
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_23",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_23.wav",
+      "sha256": "e310bae5081898f4682c93926b51758ef8e97174cb38c9b1a17bba55e71a632e",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "бір ээ оқиға бар бір үлкен патша кісі қайтыс болып бір жиырмаға жете жетпес баласы қалған екен",
+      "reference_verbatim_raw": "бір ээ оқиға бар бір үлкен патша кісі қайтыс болып бір жиырмаға жете жетпес баласы қалған екен",
+      "reference_normalized": "бір ээ оқиға бар бір үлкен патша кісі қайтыс болып бір жиырмаға жете жетпес баласы қалған екен",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 8.987145833333333,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Бір оқиға бар, бір үлкен патшаксы қайтыс болып, бір жүрмаға жетер жетпес баласы қалған екен.",
+      "scores": {
+        "reference_words": 17,
+        "word_errors": 5,
+        "substitutions": 3,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 94,
+        "char_errors": 9
+      },
+      "elapsed_s": 16.10802089199933,
+      "decode_s": 0.035801593996438896,
+      "inference_s": 16.071744868997484,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_24",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_24.wav",
+      "sha256": "53bf36436bf2de6d8b06c44e1182a430a14fca67e58b2a366c57180a41b75d8d",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "бұрынғы дипломменен бүгінгі заманауи біздің жеткен дүниеміздегі бар дүниеміз жиырма жылғы бұрынғы д- жағдайға келмеуі де мүмкін ",
+      "reference_verbatim_raw": "бұрынғы дипломменен бүгінгі заманауи біздің жеткен дүниеміздегі бар дүниеміз жиырма жылғы бұрынғы д-[false_start] жағдайға келмеуі де мүмкін ",
+      "reference_normalized": "бұрынғы дипломменен бүгінгі заманауи біздің жеткен дүниеміздегі бар дүниеміз жиырма жылғы бұрынғы жағдайға келмеуі де мүмкін ",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 6.831,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "бұрынғы дипломенен бүгінгі заманауи біздің жеткен дүниеміздегі бар дүниеміз жылмай жылғы бұрынғы дүнчағдайға келмейуден мүмкін.",
+      "scores": {
+        "reference_words": 17,
+        "word_errors": 6,
+        "substitutions": 4,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 126,
+        "char_errors": 11
+      },
+      "elapsed_s": 21.86300993700206,
+      "decode_s": 0.028591703001438873,
+      "inference_s": 21.834156574997905,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 4
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_25",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_25.wav",
+      "sha256": "2c036f75c0504d6de98b89c578ef76a0ca524806eddb434d1c23c7f12d8aa2ab",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "адам үйленсе де тұрмыс құрса да аб- интерес бар ғо бір өмірде бір сондықтан әлбетте мм спонсор болғанда рас ол жасырын еме",
+      "reference_verbatim_raw": "адам үйленсе де тұрмыс құрса да аб-[false_start] интерес бар ғо бір өмірде бір сондықтан әлбетте мм спонсор болғанда рас ол жасырын еме",
+      "reference_normalized": "адам үйленсе де тұрмыс құрса да интерес бар ғой бір өмірде бір сондықтан әлбетте мм спонсор болғанда рас ол жасырын емес",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 8.7,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "1",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Адам үйленісі де, тұрмыз құрса да, интерес барға бір өмірде бір. Сондықтан, әлбетте, спонсор болғанда раз, жасыр немес.",
+      "scores": {
+        "reference_words": 22,
+        "word_errors": 10,
+        "substitutions": 6,
+        "deletions": 4,
+        "insertions": 0,
+        "reference_chars": 121,
+        "char_errors": 18
+      },
+      "elapsed_s": 20.707294036998064,
+      "decode_s": 0.035086094998405315,
+      "inference_s": 20.671873585997673,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_26",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_26.wav",
+      "sha256": "b90f2a39a4e0c56fbc3b3cd89adad882b4359f8ca9155b4f86b87590919316d2",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "ең бірінші жаман ой салад жақсы ой салмайд жаман ой келед сондықтан со жаман ойды жақсы ойға алмастыру ",
+      "reference_verbatim_raw": "ең бірінші жаман ой салад жақсы ой салмайд жаман ой келед сондықтан со жаман ойды жақсы ойға алмастыру ",
+      "reference_normalized": "ең бірінші жаман ой салады жақсы ой салмайды жаман ой келеді сондықтан сол жаман ойды жақсы ойға алмастыру ",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 6.5335,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Ең бір жаман ой салады, жақсы ой салмайды, жаман ой келеді. Сондықтан со жаман ойды жақсы ойға алмастыру.",
+      "scores": {
+        "reference_words": 18,
+        "word_errors": 4,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 102,
+        "char_errors": 7
+      },
+      "elapsed_s": 19.74727219700071,
+      "decode_s": 0.040689338002266595,
+      "inference_s": 19.706246869001916,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_27",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_27.wav",
+      "sha256": "23af5c986894406e6b367190696ed0d874b237c48238254bb930c2991dd9b5a8",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "бірақ мм құстың жаңағы сүтін немесе адамның ойына келмеген нәрселерді емес",
+      "reference_verbatim_raw": "бірақ мм құстың жаңағы сүтін немесе адамның ойына келмеген нәрселерді емес",
+      "reference_normalized": "бірақ мм құстың жаңағы сүтін немесе адамның ойына келмеген нәрселерді емес",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 5.8,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Бірақ құстың жағы, сүтін, немесе адамның ойына келмеге нәрселердеймес.",
+      "scores": {
+        "reference_words": 11,
+        "word_errors": 5,
+        "substitutions": 3,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 74,
+        "char_errors": 9
+      },
+      "elapsed_s": 17.47243065799921,
+      "decode_s": 0.03235909700015327,
+      "inference_s": 17.438855644002615,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_28",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_28.wav",
+      "sha256": "ca204f8844d9201e588db2b92fbe38b1327193b757a29ec4caed712d327829f5",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "берсе алыңыз бірақ кейде былай была қарап тұрып пакетке тығып жіберетіндер бар",
+      "reference_verbatim_raw": "берсе алыңыз бірақ кейде былай была қарап тұрып пакетке тығып жіберетіндер бар",
+      "reference_normalized": "берсе алыңыз бірақ кейде былай былай қарап тұрып пакетке тығып жіберетіндер бар",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 4.600791666666667,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Берсе, алыңыз. Бірақ кейді бұлай-бұлай ғарап тұр пакет кетігі жөретіндер бар.",
+      "scores": {
+        "reference_words": 12,
+        "word_errors": 8,
+        "substitutions": 7,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 78,
+        "char_errors": 17
+      },
+      "elapsed_s": 19.415209445000073,
+      "decode_s": 0.04238356000132626,
+      "inference_s": 19.372488944001816,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 1
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_29",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_29.wav",
+      "sha256": "0dfd4b9b597a95d79c5501fd3c959bf2a56e0e7418c82827ff30552719ca6450",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "алға жүрмеген артқа кетед бәрібір прогресс болу керек адамда бір қадам қосылу керек сол сияқты бір жас қосылды адамға",
+      "reference_verbatim_raw": "алға жүрмеген артқа кетед бәрібір прогресс болу керек адамда бір қадам қосылу керек сол сияқты бір жас қосылды адамға",
+      "reference_normalized": "алға жүрмеген артқа кетеді бәрібір прогресс болу керек адамда бір қадам қосылу керек сол сияқты бір жас қосылды адамға",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 7.104,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "1",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "қалға жүрмеген артқа кететпәрі бір. Прогресс болу көрек адамда, бір қадам қосылу көрек. Сол сияқты бір жас қосылды адамға.",
+      "scores": {
+        "reference_words": 19,
+        "word_errors": 5,
+        "substitutions": 5,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 117,
+        "char_errors": 7
+      },
+      "elapsed_s": 16.515951892000885,
+      "decode_s": 0.033133929002360674,
+      "inference_s": 16.482516529998975,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 3
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_30",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_30.wav",
+      "sha256": "fea0c5b5c3fcf7c9277af69ae7212fe42eda8a0853596e388dee9508da8be2a0",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "бес алты жеті рет барды ол дұрыс па",
+      "reference_verbatim_raw": "бес алты жеті рет барды ол дұрыс па",
+      "reference_normalized": "бес алты жеті рет барды ол дұрыс па",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 3.6562916666666667,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "5, 6, 7 рет барды. Ол дұрыс ба?",
+      "scores": {
+        "reference_words": 8,
+        "word_errors": 4,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 35,
+        "char_errors": 12
+      },
+      "elapsed_s": 10.110721501998341,
+      "decode_s": 0.06450566800049273,
+      "inference_s": 10.045829381000658,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    },
+    {
+      "id": "kzaudio_31",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/kk/source/audio/kzaudio_31.wav",
+      "sha256": "d2cbcffc28fb8012cca76533e4d69d2d84a02492e563f11a9898287b3de5150a",
+      "language": "kk",
+      "dataset": "kazakh_russian_natural",
+      "split": "labelled_all",
+      "reference": "ораза да солай намаз да солай адамды өзгерес алып келсе онда қуану керек",
+      "reference_verbatim_raw": "ораза да солай намаз да солай адамды өзгерес алып келсе онда қуану керек",
+      "reference_normalized": "ораза да солай намаз да солай адамды өзгерес алып келсе онда қуану керек",
+      "source": "https://www.youtube.com/watch?v=YSH3vmT9T_I/ Алладан не тілеуге болады? Channel: \nDINARA SATZHAN / ДИНАРА САТЖАН",
+      "speech_type": "interview",
+      "condition": "original",
+      "duration_s": 4.763333333333334,
+      "sample_rate": 48000,
+      "channels": 2,
+      "sample_width_bytes": 2,
+      "flags": {
+        "has_contraction": "0",
+        "has_dialect_slang": "0",
+        "has_barbarisms": "0",
+        "has_propers": "0"
+      },
+      "status": "ok",
+      "error": null,
+      "hypothesis": "Ол азада солай, на мағызда солай. Адамды өзгері салып кесе, оны қуаны құрек.",
+      "scores": {
+        "reference_words": 13,
+        "word_errors": 10,
+        "substitutions": 10,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 72,
+        "char_errors": 16
+      },
+      "elapsed_s": 12.09955243800141,
+      "decode_s": 0.0400855469997623,
+      "inference_s": 12.059247680997942,
+      "diagnostics": {
+        "diagnostics": {
+          "language": "kk",
+          "language_probability": 1,
+          "segments": 2
+        }
+      },
+      "process_peak_rss_bytes": 11988738048,
+      "run_id": 1790888067014754285
+    }
+  ],
+  "summary": {
+    "reference_words": 532,
+    "word_errors": 262,
+    "substitutions": 211,
+    "deletions": 41,
+    "insertions": 10,
+    "reference_chars": 3384,
+    "char_errors": 492,
+    "n": 31,
+    "empty_hypotheses": 0,
+    "failed_requests": 0,
+    "wer_pct": 49.24812030075188,
+    "cer_pct": 14.539007092198581
+  }
+}

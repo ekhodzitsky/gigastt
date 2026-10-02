@@ -1,0 +1,69 @@
+{
+  "checked_utc": "2026-10-02T09:40:00.049724+00:00",
+  "resume_integrity": "PASS",
+  "comparison_completed": false,
+  "checks": "Independent auditor verified unchanged model/adapter/runner/scorer identities, exact corpus pairing, all committed scores and source audio hashes. Separate process run IDs confirm resumed suffixes preserve pre-pause prefixes. No inference launched by auditor.",
+  "runs": [
+    {
+      "run": "whisper_kk_conversations_expanded",
+      "committed_before_pause": 159,
+      "observed_n": 168,
+      "process_run_counts": {
+        "1790888242809357612": 159,
+        "1790933919540540094": 9
+      },
+      "pre_pause_prefix_retained": true,
+      "duplicate_ids": 0,
+      "uncommitted_tail": false
+    },
+    {
+      "run": "omni_kk",
+      "committed_before_pause": 12,
+      "observed_n": 20,
+      "process_run_counts": {
+        "1790888595689927238": 12,
+        "1790933921146339095": 8
+      },
+      "pre_pause_prefix_retained": true,
+      "duplicate_ids": 0,
+      "uncommitted_tail": false
+    },
+    {
+      "run": "omni_kk_conversations_expanded",
+      "committed_before_pause": 49,
+      "observed_n": 85,
+      "process_run_counts": {
+        "1790888588100829078": 49,
+        "1790933918400106779": 36
+      },
+      "pre_pause_prefix_retained": true,
+      "duplicate_ids": 0,
+      "uncommitted_tail": false
+    },
+    {
+      "run": "omni_uz",
+      "committed_before_pause": 12,
+      "observed_n": 17,
+      "process_run_counts": {
+        "1790888598616429280": 12,
+        "1790933924035155691": 5
+      },
+      "pre_pause_prefix_retained": true,
+      "duplicate_ids": 0,
+      "uncommitted_tail": false
+    },
+    {
+      "run": "omni_ky",
+      "committed_before_pause": 7,
+      "observed_n": 11,
+      "process_run_counts": {
+        "1790888608752981743": 7,
+        "1790933931000865588": 4
+      },
+      "pre_pause_prefix_retained": true,
+      "duplicate_ids": 0,
+      "uncommitted_tail": false
+    }
+  ],
+  "limitations": "Live source-order snapshots; counts continue to grow. These are integrity checks, not final quality claims."
+}

@@ -1,0 +1,372 @@
+{
+  "completed": true,
+  "evaluated_corpora": [
+    "kk",
+    "uz",
+    "kk_conversations_expanded"
+  ],
+  "evaluated_languages": [
+    "kk",
+    "uz"
+  ],
+  "not_evaluated_languages": [
+    "ky"
+  ],
+  "total_recognitions": 1663,
+  "model": "standard ml_ctc_large",
+  "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+  "limitations": "Corpora differ in source and speech type; no cross-language ranking or population estimate. Human/conversational provenance comes from publisher evidence, not inferred by this numeric audit. Duplicate rows remain in the primary metric. Missing languages are not scored as zero.",
+  "corpora": [
+    {
+      "corpus": "kk",
+      "language": "kk",
+      "n": 31,
+      "audio_s": 221.93077083333333,
+      "primary": {
+        "reference_words": 532,
+        "word_errors": 88,
+        "substitutions": 69,
+        "deletions": 12,
+        "insertions": 7,
+        "reference_chars": 3384,
+        "char_errors": 144,
+        "n": 31,
+        "empty_hypotheses": 0,
+        "failed_requests": 0,
+        "wer_pct": 16.541353383458645,
+        "cer_pct": 4.25531914893617
+      },
+      "primary_reference": "Exact supplied manifest reference for every row; no alternate-reference selection",
+      "unique_audio_sha256": 31,
+      "duplicate_audio_rows": 0,
+      "duplicate_groups": [],
+      "unique_verbatim_references": 31,
+      "unique_normalized_references": 31,
+      "manifest_sha256": "89ff41aa67eb7d19e153c710a2605913474a582be9c49bed1734425d529fefb1",
+      "result_sha256": "a6d7e70b5fd603a5f24480ef5bcb3150c73f99cb9b238650fbd4e11891ba26f9",
+      "ledger_sha256": "be80820159fcf79e79e27e181f42ba4f742b2ab77e905e2d67d6e4e0bfcc7cea",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "all_summary_groups_verified": true,
+      "exact_ledger_final_manifest_pairing_verified": true,
+      "all_audio_model_binary_scorer_hashes_verified": true,
+      "secondary": [
+        {
+          "kind": "digit_free",
+          "selection": "Exclude supplied references containing str.isdigit characters; diagnostic only",
+          "reference_words": 532,
+          "word_errors": 88,
+          "substitutions": 69,
+          "deletions": 12,
+          "insertions": 7,
+          "reference_chars": 3384,
+          "char_errors": 144,
+          "n": 31,
+          "empty_hypotheses": 0,
+          "failed_requests": 0,
+          "wer_pct": 16.541353383458645,
+          "cer_pct": 4.25531914893617
+        },
+        {
+          "kind": "publisher_normalized_written_reference",
+          "selection": "Same unchanged hypotheses, separately scored publisher alternative for every row; never min/best of references",
+          "reference_words": 529,
+          "word_errors": 35,
+          "substitutions": 23,
+          "deletions": 7,
+          "insertions": 5,
+          "reference_chars": 3418,
+          "char_errors": 69,
+          "n": 31,
+          "empty_hypotheses": 0,
+          "failed_requests": 0,
+          "wer_pct": 6.616257088846881,
+          "cer_pct": 2.018724400234055
+        }
+      ]
+    },
+    {
+      "corpus": "uz",
+      "language": "uz",
+      "n": 745,
+      "audio_s": 5994.575,
+      "primary": {
+        "reference_words": 10849,
+        "word_errors": 2404,
+        "substitutions": 1783,
+        "deletions": 353,
+        "insertions": 268,
+        "reference_chars": 77586,
+        "char_errors": 5942,
+        "n": 745,
+        "empty_hypotheses": 3,
+        "failed_requests": 0,
+        "wer_pct": 22.158724306387686,
+        "cer_pct": 7.658598200706313
+      },
+      "primary_reference": "Exact supplied manifest reference for every row; no alternate-reference selection",
+      "unique_audio_sha256": 727,
+      "duplicate_audio_rows": 18,
+      "duplicate_groups": [
+        {
+          "audio_sha256": "a9a271ade48dbe7697332af17ae74819d7183e18de28dd02503407c01130ce12",
+          "ids": [
+            "uz_telegram_0292",
+            "uz_telegram_0293"
+          ],
+          "distinct_verbatim_references": 2,
+          "distinct_normalized_references": 2
+        },
+        {
+          "audio_sha256": "e2c186cf69ec78dcffb98cf5459725c65ab5dbbb177d7b337ee3c952adceb878",
+          "ids": [
+            "uz_telegram_0662",
+            "uz_telegram_0679"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "6d01f952fc3cdec14fe021b223d1243f9f453a6c17ea6eba7e80c909b75ad1ce",
+          "ids": [
+            "uz_telegram_0663",
+            "uz_telegram_0680"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "bea5d595f39f4e6be018a409c9306b99e1a7c145ed0df4de71cbef71fbdadeed",
+          "ids": [
+            "uz_telegram_0664",
+            "uz_telegram_0681"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "4cf5633ee4b8dc39d56e213dbe2a5addc55954dc80042176f4c796047dac220b",
+          "ids": [
+            "uz_telegram_0665",
+            "uz_telegram_0682"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "270ef6711f68ae327d7ea93c87f05ae28fe02330055b37be7f6d1f935d15d6f4",
+          "ids": [
+            "uz_telegram_0666",
+            "uz_telegram_0683"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "40fdf5718dc069050212711a9b0f8eaa36a3f0941c5bd239f2daefddc92be2b7",
+          "ids": [
+            "uz_telegram_0667",
+            "uz_telegram_0684"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "81511aff8d41b6df1527466e6b666c2a118a1f238a776f8fd3e1983720232ef1",
+          "ids": [
+            "uz_telegram_0668",
+            "uz_telegram_0685"
+          ],
+          "distinct_verbatim_references": 2,
+          "distinct_normalized_references": 2
+        },
+        {
+          "audio_sha256": "d59131d160f50e79359eef1415a06fbc93f0379786fba090a016722ea0a20bf1",
+          "ids": [
+            "uz_telegram_0669",
+            "uz_telegram_0686"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "00fbe9843aa8a71ef07d04750275504c43a1bfd9f74d24be3b35c3eb44d73ac6",
+          "ids": [
+            "uz_telegram_0670",
+            "uz_telegram_0687"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "2ebffc4ef7460a1e0909ffeed8cc9c6a1eddafb16770e97e15d201e99918e2b7",
+          "ids": [
+            "uz_telegram_0671",
+            "uz_telegram_0688"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "467731afe376a9846985e8e5a1511a49f37d0eedf73340754aeda87ebd0bc095",
+          "ids": [
+            "uz_telegram_0672",
+            "uz_telegram_0689"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "d883128714d9b477dea3b6178059392aceb433efc9248b945b94d96dbd4b19bf",
+          "ids": [
+            "uz_telegram_0673",
+            "uz_telegram_0690"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "b1f1598df2937cdccee4c1eac58a41a26b7600af7cfbf4aa2fca0e4ab17d9800",
+          "ids": [
+            "uz_telegram_0674",
+            "uz_telegram_0691"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "340dca2e0648a481d14243736d816c17bea40fffaf985036f6d430ceb637f2e3",
+          "ids": [
+            "uz_telegram_0675",
+            "uz_telegram_0692"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "b015c1adbea62ae4c153d275b013c32d445f58d8b5c6df9afe65bbc00e1d8027",
+          "ids": [
+            "uz_telegram_0676",
+            "uz_telegram_0693"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "dccecdfc05aa3aa3a481ea16bbd534fd2d9e7ee05cf3b2dd3a781ecdad67a983",
+          "ids": [
+            "uz_telegram_0677",
+            "uz_telegram_0694"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        },
+        {
+          "audio_sha256": "b5c54c29d54cfa341ccb7f2335423a1a1b96d5c626410fa5f52d827a2c685dbb",
+          "ids": [
+            "uz_telegram_0678",
+            "uz_telegram_0695"
+          ],
+          "distinct_verbatim_references": 1,
+          "distinct_normalized_references": 1
+        }
+      ],
+      "unique_verbatim_references": 725,
+      "unique_normalized_references": 725,
+      "manifest_sha256": "97949072b134892553c86df00df451b119ae2b16c4c9cdaeb76e8577762bac69",
+      "result_sha256": "7760b3c2316854f144ae3acdccd5c48c3a5c80a6bb859f388e6b962ff43448d1",
+      "ledger_sha256": "90cecc0dbee76664cd6987dc496d0dcaf370da5a2f171cd96ab77a3a40dbf36c",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "all_summary_groups_verified": true,
+      "exact_ledger_final_manifest_pairing_verified": true,
+      "all_audio_model_binary_scorer_hashes_verified": true,
+      "secondary": [
+        {
+          "kind": "first_row_per_audio_sha256",
+          "selection": "Source order; keep first row for each exact audio hash regardless of transcript or result; not the primary metric",
+          "reference_words": 10657,
+          "word_errors": 2376,
+          "substitutions": 1764,
+          "deletions": 348,
+          "insertions": 264,
+          "reference_chars": 76067,
+          "char_errors": 5868,
+          "n": 727,
+          "empty_hypotheses": 3,
+          "failed_requests": 0,
+          "wer_pct": 22.295205029558037,
+          "cer_pct": 7.714251909500835
+        },
+        {
+          "kind": "digit_free",
+          "selection": "Exclude supplied references containing str.isdigit characters; diagnostic only",
+          "reference_words": 9530,
+          "word_errors": 1965,
+          "substitutions": 1471,
+          "deletions": 309,
+          "insertions": 185,
+          "reference_chars": 68541,
+          "char_errors": 4536,
+          "n": 683,
+          "empty_hypotheses": 3,
+          "failed_requests": 0,
+          "wer_pct": 20.61909758656873,
+          "cer_pct": 6.617936709414803
+        }
+      ]
+    },
+    {
+      "corpus": "kk_conversations_expanded",
+      "language": "kk",
+      "n": 887,
+      "audio_s": 1378.7124308390023,
+      "primary": {
+        "reference_words": 3701,
+        "word_errors": 1366,
+        "substitutions": 910,
+        "deletions": 356,
+        "insertions": 100,
+        "reference_chars": 23095,
+        "char_errors": 4012,
+        "n": 887,
+        "empty_hypotheses": 11,
+        "failed_requests": 0,
+        "wer_pct": 36.90894352877601,
+        "cer_pct": 17.371725481705997
+      },
+      "primary_reference": "Exact supplied manifest reference for every row; no alternate-reference selection",
+      "unique_audio_sha256": 887,
+      "duplicate_audio_rows": 0,
+      "duplicate_groups": [],
+      "unique_verbatim_references": 881,
+      "unique_normalized_references": 881,
+      "manifest_sha256": "c8d61edb3435429ce2d8e9fa97c96f3ec83b2ff6ff609eabfe04a42a8f954d88",
+      "result_sha256": "77a4c0adccb27855329e7780a419c03bd26f38156d8318eb161fcc5712356662",
+      "ledger_sha256": "0ccc15013a5f874462343880075cf10ca900f1b3f3bfe0586b42b457f5f7f982",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "all_summary_groups_verified": true,
+      "exact_ledger_final_manifest_pairing_verified": true,
+      "all_audio_model_binary_scorer_hashes_verified": true,
+      "secondary": [
+        {
+          "kind": "digit_free",
+          "selection": "Exclude supplied references containing str.isdigit characters; diagnostic only",
+          "reference_words": 3701,
+          "word_errors": 1366,
+          "substitutions": 910,
+          "deletions": 356,
+          "insertions": 100,
+          "reference_chars": 23095,
+          "char_errors": 4012,
+          "n": 887,
+          "empty_hypotheses": 11,
+          "failed_requests": 0,
+          "wer_pct": 36.90894352877601,
+          "cer_pct": 17.371725481705997
+        }
+      ]
+    }
+  ]
+}

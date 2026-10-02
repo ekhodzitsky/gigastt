@@ -1,0 +1,43 @@
+{
+  "repo": "Systran/faster-whisper-large-v3",
+  "revision": "edaa852ec7e145841d8ffdb056a99866b5f0a478",
+  "files": {
+    "README.md": {
+      "sha256": "39e96252229f5a3d0141dc81afb65a36fd205461ac21e5b70f2cd1248ef0082c",
+      "size_bytes": 2052,
+      "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/README.md",
+      "source_git_blob": "a84bfa7f20cac02ea5a99efa5eaf687ad58c1caf"
+    },
+    "config.json": {
+      "sha256": "a9306624f5ec14270a014b647e5c316b6e03a662c369758d1b90697a7b0655b9",
+      "size_bytes": 2394,
+      "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/config.json",
+      "source_git_blob": "75336feae814999bae6ccccdecf177639ffc6f9d"
+    },
+    "model.bin": {
+      "sha256": "69f74147e3334731bc3a76048724833325d2ec74642fb52620eda87352e3d4f1",
+      "size_bytes": 3087284237,
+      "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/model.bin",
+      "source_git_blob": "e91bbba72de41ca3cdc9a656b17aa9407c7e85b6"
+    },
+    "preprocessor_config.json": {
+      "sha256": "7ccc62c6f2765af1f3b46c00c9b5894426835a05021c8b9c01eecb6dfb542711",
+      "size_bytes": 340,
+      "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/preprocessor_config.json",
+      "source_git_blob": "931c77a740890c46365c7ae0c9d350ba3cca908f"
+    },
+    "tokenizer.json": {
+      "sha256": "6d8cbd7cd0d8d5815e478dac67b85a26bbe77c1f5e0c6d76d1ce2abc0e5f21ca",
+      "size_bytes": 2480617,
+      "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/tokenizer.json",
+      "source_git_blob": "3a5e2ba63acdcac9a19ba56cf9bd27f185bfff61"
+    },
+    "vocabulary.json": {
+      "sha256": "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1",
+      "size_bytes": 1068114,
+      "source_url": "https://huggingface.co/Systran/faster-whisper-large-v3/resolve/edaa852ec7e145841d8ffdb056a99866b5f0a478/vocabulary.json",
+      "source_git_blob": "0adcd01e7c237205d593b707e66dd5d7bc785d2d"
+    }
+  },
+  "weight_format": "CTranslate2 float16 stored; CPU int8 runtime compute"
+}

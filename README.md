@@ -73,6 +73,10 @@ and casing; `ml_ctc` / `ml_ctc_large` support Russian, English, Kazakh,
 Kyrgyz and Uzbek. Optional punctuation, Russian text normalization,
 hotwords and speaker diarization are described in the [API](docs/api.md).
 
+For measured Kazakh, Kyrgyz and Uzbek accuracy, model selection and limits on
+conversation quality, see [Languages](docs/languages.md). The latest matched
+evaluation recommends `ml_ctc_large`; reading and conversation are reported separately.
+
 CPU works out of the box. CUDA, CoreML and NNAPI builds, plus experimental
 ANE and Candle backends: [architecture](docs/architecture.md).
 

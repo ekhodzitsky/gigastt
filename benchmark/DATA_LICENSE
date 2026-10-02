@@ -79,3 +79,42 @@ NOT by the MIT license.
 Future option: the reference text could instead be replaced by source IDs +
 checksums to avoid redistributing transcripts; this is not done here in order to
 preserve reproducibility of the already-committed benchmark results.
+
+
+Published multilingual evaluation snapshot (2026-10-01/02)
+--------------------------------------------------------
+Directories: results/multilingual_1000_20261001,
+results/multilingual_conversation_20261001, and
+results/multilingual_model_comparison_20261001.
+Only text references, predictions, manifests and measurement metadata are
+redistributed; source audio and model weights are not bundled. Reference text
+and corpus-derived material retain the licenses below, not the repository MIT
+license. Scoring strips punctuation/apostrophe variants as documented; MCSKL
+selection and removal of annotation markup are recorded in provenance files.
+
+- FLEURS: Google; Conneau et al. (2022), CC BY 4.0.
+  https://huggingface.co/datasets/google/fleurs
+  https://creativecommons.org/licenses/by/4.0/
+  Pinned revision: 168de341b3db6859a9bac1c50a2ef5e3b47647e0.
+- MCSKL: Giorgia Troiani, Andrey Filchenko and the annotation team,
+  CC BY-NC-SA 4.0. MCSKL-derived references, selected manifests and derived
+  transcript material in the kk_conversations* and matching comparison
+  artifacts remain CC BY-NC-SA 4.0. No commercial data license is conveyed.
+  https://osf.io/6zjdq/
+  https://creativecommons.org/licenses/by-nc-sa/4.0/
+  Annotation description: https://reference-global.com/article/10.5334/johd.529
+  Pinned source/selection hashes are in kk_conversations_expanded_provenance.json.
+- Kazakh codeswitch media references: Timur Seidalin, MIT annotations/code;
+  source audio CC BY per publisher attribution (audio not redistributed).
+  https://github.com/Tim2190/Kaz-ASR-codeswitch-benchmark
+  Pinned revision: 6575c5cd9e9e481edcb4d9928fda2b2f60d3e5ad.
+  Copyright and license: licenses/kaz-asr-codeswitch-MIT.txt.
+- Uzbek Telegram evaluation: Bobur Amirov, Apache-2.0 per publisher.
+  https://huggingface.co/datasets/BoburAmirov/asr_evaluate_set
+  Pinned revision: c6e1b4f66d45e9d7644003d1564837786295850a.
+  https://www.apache.org/licenses/LICENSE-2.0
+  License copy: licenses/Apache-2.0.txt.
+
+Mixed-corpus diagnostic files preserve these per-source terms; their location
+inside an MIT repository does not relicense the references. See each report's
+source attribution and per-recording identifiers for the applicable corpus.

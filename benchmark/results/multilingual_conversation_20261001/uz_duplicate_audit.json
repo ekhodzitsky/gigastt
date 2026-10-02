@@ -1,0 +1,170 @@
+{
+  "manifest_sha256": "97949072b134892553c86df00df451b119ae2b16c4c9cdaeb76e8577762bac69",
+  "duplicate_groups": [
+    {
+      "audio_sha256": "a9a271ade48dbe7697332af17ae74819d7183e18de28dd02503407c01130ce12",
+      "ids": [
+        "uz_telegram_0292",
+        "uz_telegram_0293"
+      ],
+      "distinct_references": 2,
+      "distinct_normalized_references": 2
+    },
+    {
+      "audio_sha256": "e2c186cf69ec78dcffb98cf5459725c65ab5dbbb177d7b337ee3c952adceb878",
+      "ids": [
+        "uz_telegram_0662",
+        "uz_telegram_0679"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "6d01f952fc3cdec14fe021b223d1243f9f453a6c17ea6eba7e80c909b75ad1ce",
+      "ids": [
+        "uz_telegram_0663",
+        "uz_telegram_0680"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "bea5d595f39f4e6be018a409c9306b99e1a7c145ed0df4de71cbef71fbdadeed",
+      "ids": [
+        "uz_telegram_0664",
+        "uz_telegram_0681"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "4cf5633ee4b8dc39d56e213dbe2a5addc55954dc80042176f4c796047dac220b",
+      "ids": [
+        "uz_telegram_0665",
+        "uz_telegram_0682"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "270ef6711f68ae327d7ea93c87f05ae28fe02330055b37be7f6d1f935d15d6f4",
+      "ids": [
+        "uz_telegram_0666",
+        "uz_telegram_0683"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "40fdf5718dc069050212711a9b0f8eaa36a3f0941c5bd239f2daefddc92be2b7",
+      "ids": [
+        "uz_telegram_0667",
+        "uz_telegram_0684"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "81511aff8d41b6df1527466e6b666c2a118a1f238a776f8fd3e1983720232ef1",
+      "ids": [
+        "uz_telegram_0668",
+        "uz_telegram_0685"
+      ],
+      "distinct_references": 2,
+      "distinct_normalized_references": 2
+    },
+    {
+      "audio_sha256": "d59131d160f50e79359eef1415a06fbc93f0379786fba090a016722ea0a20bf1",
+      "ids": [
+        "uz_telegram_0669",
+        "uz_telegram_0686"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "00fbe9843aa8a71ef07d04750275504c43a1bfd9f74d24be3b35c3eb44d73ac6",
+      "ids": [
+        "uz_telegram_0670",
+        "uz_telegram_0687"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "2ebffc4ef7460a1e0909ffeed8cc9c6a1eddafb16770e97e15d201e99918e2b7",
+      "ids": [
+        "uz_telegram_0671",
+        "uz_telegram_0688"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "467731afe376a9846985e8e5a1511a49f37d0eedf73340754aeda87ebd0bc095",
+      "ids": [
+        "uz_telegram_0672",
+        "uz_telegram_0689"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "d883128714d9b477dea3b6178059392aceb433efc9248b945b94d96dbd4b19bf",
+      "ids": [
+        "uz_telegram_0673",
+        "uz_telegram_0690"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "b1f1598df2937cdccee4c1eac58a41a26b7600af7cfbf4aa2fca0e4ab17d9800",
+      "ids": [
+        "uz_telegram_0674",
+        "uz_telegram_0691"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "340dca2e0648a481d14243736d816c17bea40fffaf985036f6d430ceb637f2e3",
+      "ids": [
+        "uz_telegram_0675",
+        "uz_telegram_0692"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "b015c1adbea62ae4c153d275b013c32d445f58d8b5c6df9afe65bbc00e1d8027",
+      "ids": [
+        "uz_telegram_0676",
+        "uz_telegram_0693"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "dccecdfc05aa3aa3a481ea16bbd534fd2d9e7ee05cf3b2dd3a781ecdad67a983",
+      "ids": [
+        "uz_telegram_0677",
+        "uz_telegram_0694"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    },
+    {
+      "audio_sha256": "b5c54c29d54cfa341ccb7f2335423a1a1b96d5c626410fa5f52d827a2c685dbb",
+      "ids": [
+        "uz_telegram_0678",
+        "uz_telegram_0695"
+      ],
+      "distinct_references": 1,
+      "distinct_normalized_references": 1
+    }
+  ],
+  "groups_with_conflicting_verbatim_references": 2,
+  "retained_all_rows": true,
+  "groups_with_conflicting_normalized_references": 2
+}

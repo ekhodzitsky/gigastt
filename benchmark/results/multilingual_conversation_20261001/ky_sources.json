@@ -1,0 +1,198 @@
+{
+  "checked_utc": "2026-10-01T20:14:30.280379+00:00",
+  "language": "ky",
+  "goal": "Ordinary spontaneous Kyrgyz conversation/interviews/voice messages with publisher-supported human references; no training or tuning.",
+  "qualified_recordings": 0,
+  "manifest_created": false,
+  "status": "No qualified accessible corpus established among the inspected sources.",
+  "scope_limit": "Bounded search result; not a universal absence claim. No read speech or machine-labelled material substituted. No inference was run on unqualified data.",
+  "sources": [
+    {
+      "url": "https://huggingface.co/datasets/the-cramer-project/Akylai_STT_Benchmark",
+      "evidence": "Card provides schema only. Independently read dataset_name, augmentation_type, snr columns of all three original parquet shards at fixed revision. All2700 rows derive from FLEURS and two studio/sentence datasets; only600original rows,2100augmentations.",
+      "decision": "Excluded: no established spontaneous conversation subset; cafe/phone metadata denotes augmentation, not natural environment.",
+      "revision": "9844027e3aae6ec1adc51395d2ba319db2562203",
+      "gated": false,
+      "metadata_sha256": "50c24434962f8e33687ccc60a85d1dcaaa5a6718fc98d87cfad7f5bbc8f760d9",
+      "readme_sha256": "219116b3a6dba353768f483a4085bbf821f98324107f8bb098fb092325953172"
+    },
+    {
+      "url": "https://huggingface.co/datasets/the-cramer-project/Akylai_voice_dataset_mk4_Base",
+      "evidence": "Publisher describes studio-quality sentence recordings, speaker Kanykey Bakashova, declarative/interrogative/exclamatory sentence categories.",
+      "decision": "Excluded: studio sentence corpus, no verified spontaneous conversational provenance.",
+      "revision": "5be2d2f40bb3e936d4f84dc65007b29e205c939a",
+      "gated": false,
+      "metadata_sha256": "84fa2aa0575ae68161696b0042fe22e3b11e7a7c6b6c616953880c7280e28788",
+      "readme_sha256": "448ee5e606cfb638ccda50fb2572666a6feba91a78ce8e80de2bb476e6b14434"
+    },
+    {
+      "url": "https://huggingface.co/datasets/the-cramer-project/Akylai_audio_dataset_mk4_Roza_v0",
+      "evidence": "Publisher card provides sentence_type/speaker_id schema and1000rows but no recording-domain or human-transcription procedure.",
+      "decision": "Excluded: cannot infer spontaneous conversation or human-verification from card/name alone.",
+      "revision": "18c29b7ea7185fe9d1e83da58136293a9781427e",
+      "gated": false,
+      "metadata_sha256": "095e6e652bb9a0833df19e541cbc173486d8558f675e04f4d1a24b81f93a440b",
+      "readme_sha256": "7976cc4e24ad69d50ce33d5392882610955036a915197604d3d282c311861419"
+    },
+    {
+      "url": "https://huggingface.co/datasets/kstunlp/kyrgyz-asr-verified-v1",
+      "evidence": "Publisher restricts access/use to KSTU institution affiliates and rejects external requests. ASR-verified label is not itself proof of human conversation transcripts.",
+      "decision": "Excluded: restricted institution-only data; no access request or bypass; anonymous README resolution returned401.",
+      "revision": "39d9f534aacea4332b068e005035ba078fb2afb6",
+      "gated": "manual",
+      "metadata_sha256": "30c8938462810f10235823e93f57ee6b9d3ca91d4466d0c624d0c1b692e98c45"
+    },
+    {
+      "url": "https://huggingface.co/datasets/shunyalabs/kyrgyz-speech-dataset",
+      "evidence": "Card gives audio/transcript schema but no source/license/human-transcription provenance. Inspected100previewrows; expository sentences. Compared normalized references against prior1000FLEURS set: zero exact matches, so FLEURS derivation is NOT established.",
+      "decision": "Excluded for missing spontaneous/human-reference provenance, not on unproven FLEURS identification.",
+      "revision": "b936fcbbdbafc2906dbef03cc0e7b6879b2ae11c",
+      "gated": false,
+      "metadata_sha256": "a16ec253540cbeb130a3897143f7425efa0e456b46154bab8bce9973fefccd01",
+      "readme_sha256": "5c09a4b8a36707874e3e521081c0ea9dcfc6e54983c60c958b863a8e0d85668a"
+    },
+    {
+      "url": "https://www.mdpi.com/2078-2489/14/1/55",
+      "name": "M2ASR-Kirghiz",
+      "evidence": "Original research describes 128 hours / 163 speakers. Speakers read randomly prompted selected sentences, re-recording errors; this is prompted reading, not spontaneous conversation. Project resources are offered on request; project access failed in this check.",
+      "decision": "Not substituted for ordinary conversation."
+    },
+    {
+      "url": "https://commonvoice.mozilla.org/dav/datasets",
+      "name": "Mozilla Common Voice catalog",
+      "evidence": "Current catalog includes Kyrgyz under Scripted Speech. Checked Spontaneous Speech listings/search returned no Kyrgyz dataset.",
+      "decision": "Scripted Kyrgyz excluded; no claim that no Kyrgyz spontaneous resource can exist elsewhere."
+    },
+    {
+      "url": "https://huggingface.co/datasets/Speech-data/Kyrgyz-Speech-Dataset",
+      "name": "Speech-data demo",
+      "evidence": "One37second female voice demo; transcript describes an AI voice dataset. No verified spontaneous/interview origin. CC BY-NC-ND4.0 card.",
+      "decision": "Not a conversation benchmark."
+    },
+    {
+      "url": "https://speechyou.com/kyrgyz-cyrillic-script-transcription",
+      "name": "Speechyou",
+      "evidence": "Provider claims a custom broadcast/podcast/interview dataset; inspected page offers transcription service, not downloadable human-reference corpus.",
+      "decision": "No public source acquired, no service upload or contact."
+    },
+    {
+      "url": "https://doi.org/10.1007/978-3-031-31990-7_1",
+      "name": "Research interviews including Kyrgyz",
+      "evidence": "Author discusses recorded interviews and checked transcripts available at Bremen research center subject to respondent conditions. No unrestricted audio/transcript pair download established.",
+      "decision": "Not acquired; no request or privacy/access bypass."
+    },
+    {
+      "name": "Nexdata public speech collection and conversation catalog",
+      "url": "https://www.nexdata.ai/service/speech-recognition",
+      "additional_urls": [
+        "https://www.nexdata.ai/industries/conversational-ai",
+        "https://huggingface.co/Nexdata-kr/datasets"
+      ],
+      "evidence": "Public service pages describe collection/annotation and customized conversation data, but inspected exact Kyrgyz/Kirghiz searches did not locate a direct conversational audio/reference demo. Anonymous HF API returned 23 Nexdata-kr repositories, none with Kyrgyz/Kirghiz in its name. This name-based inventory is not proof of absence in multilingual repositories.",
+      "decision": "No qualified public pair acquired; no contact or sample request sent."
+    },
+    {
+      "name": "DataOcean public catalogs and HF demos",
+      "url": "https://huggingface.co/DataoceanAI/datasets",
+      "additional_urls": [
+        "https://www.haitianruisheng.com/dataset/c52-9810.htm",
+        "https://www.haitianruisheng.com/dataset/c52-9628.htm"
+      ],
+      "evidence": "Anonymous HF API returned 83 DataoceanAI repositories, none named Kyrgyz/Kirghiz. Chinese catalog search snippets explicitly recommend a Kyrgyz telephone conversation corpus (吉尔吉斯语识别语音库-对话（电话）); live page content and recommendation lists varied across reads. Inspected sample sections linked to consultation, not a downloadable audio/reference pair. Direct HTML fetch from local environment failed DNS resolution, so vendor availability is not comprehensively resolved.",
+      "decision": "Real vendor lead exists, but no public eligible demo established; no purchase, login, contact, or access bypass."
+    },
+    {
+      "name": "Magic Data and MagicHub",
+      "url": "https://www.magicdatatech.com/index.php/dataset-explorer/",
+      "additional_urls": [
+        "https://www.magicdatatech.com/",
+        "https://magichub.com/cn/datasets/multi-stream-spontaneous-conversation-training-datasets_english/"
+      ],
+      "evidence": "Public landing page advertises human-annotated duplex conversation data but Request Samples leads to contact form. Explorer browser rendering exposed no matching datasets. Bounded Kyrgyz/Kirghiz searches found no direct pair. Public spontaneous English sample is not Kyrgyz and was not substituted.",
+      "decision": "No qualified Kyrgyz public pair established; incomplete dynamic catalog visibility explicitly retained."
+    }
+  ],
+  "akylai_metadata_audit": {
+    "revision": "9844027e3aae6ec1adc51395d2ba319db2562203",
+    "rows": 2700,
+    "dataset_name_counts": {
+      "Simonlob/Kany_dataset_mk4_Base": 767,
+      "google/fleurs": 956,
+      "Simonlob/Audio_dataset_mk4_Roza_v0": 977
+    },
+    "augmentation_type_counts": {
+      "original": 600,
+      "white_noise": 500,
+      "disco": 500,
+      "cafe": 500,
+      "city_street": 500,
+      "phone": 100
+    },
+    "method": "HTTP range reads using fsspec and pyarrow, metadata columns only, all3shards; audio was not downloaded.",
+    "snapshots": [
+      {
+        "path": "/home/ekhodzitsky/.cache/gigastt-conversation/ky/akylai_shard0_metadata.json",
+        "sha256": "918c7e4ca1972f13c7265f41ae04fcc458f4c7b6ed7f93c6bf81905959dfaaa4",
+        "rows": 900
+      },
+      {
+        "path": "/home/ekhodzitsky/.cache/gigastt-conversation/ky/akylai_shard1_metadata.json",
+        "sha256": "2a05388c2a592ba7235c0f70b3250e18c97a87ddd08c05bc91452dd4c7c30f3e",
+        "rows": 900
+      },
+      {
+        "path": "/home/ekhodzitsky/.cache/gigastt-conversation/ky/akylai_shard2_metadata.json",
+        "sha256": "e6fd9f573495a999d441d8c8faf9be4378d154b1759bc7468f53dc46d1cfe700",
+        "rows": 900
+      }
+    ]
+  },
+  "queries": [
+    "Kyrgyz spontaneous speech corpus conversational dataset human transcriptions",
+    "Kyrgyz speech dataset interviews transcripts audio spontaneous",
+    "site:huggingface.co/datasets kyrgyz conversation speech",
+    "Kyrgyz corpus spontaneous",
+    "Kyrgyz Common Voice Spontaneous",
+    "кыргыз корпус интервью аудио транскрипция",
+    "Kyrgyz spoken corpus audio ELAR Pangloss archive",
+    "site:elararchive.org Kyrgyz",
+    "site:archive.mpi.nl Kyrgyz",
+    "M2ASR-Kirghiz read sentences",
+    "Kyrgyz transcribed conversation download",
+    "site.nexdata.ai Kyrgyz speech dataset",
+    "site.dataoceanai.com Kyrgyz speech dataset",
+    "site.magicdatatech.com Kyrgyz dataset",
+    "site.magichub.com Kyrgyz Kirghiz",
+    "Kirghiz speech dataset conversation sample",
+    "Kyrgyz spontaneous speech corpus sample DataOcean",
+    "吉尔吉斯 语音 数据 样例",
+    "吉尔吉斯语识别语音库",
+    "site.haitianruisheng.com 吉尔吉斯语 对话"
+  ],
+  "vendor_inventory_snapshots": [
+    {
+      "url": "https://huggingface.co/api/datasets?author=Nexdata&limit=1000",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/ky/Nexdata_datasets_api.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "repository_count": 0
+    },
+    {
+      "url": "https://huggingface.co/api/datasets?author=Nexdata-kr&limit=1000",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/ky/Nexdata-kr_datasets_api.json",
+      "sha256": "406795ca5e5b826be7714d5e7a84d4d22a5388ee06df24e4ccc70fd1de8e3526",
+      "repository_count": 23
+    },
+    {
+      "url": "https://huggingface.co/api/datasets?author=DataoceanAI&limit=1000",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/ky/DataoceanAI_datasets_api.json",
+      "sha256": "14a53d022ba3197ab4627a0cf6454ff5ee1c3f9325a3a0859b4f2662b5b9eea9",
+      "repository_count": 83
+    },
+    {
+      "url": "https://huggingface.co/api/datasets?author=MagicData&limit=1000",
+      "path": "/home/ekhodzitsky/.cache/gigastt-conversation/ky/MagicData_datasets_api.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "repository_count": 0
+    }
+  ]
+}

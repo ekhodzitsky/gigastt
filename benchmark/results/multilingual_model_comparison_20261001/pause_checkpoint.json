@@ -1,0 +1,43 @@
+{
+  "status": "paused_at_user_request",
+  "paused_utc": "2026-10-01T21:05:50.143632+00:00",
+  "runs": [
+    {
+      "run": "omni_kk",
+      "committed_rows": 12,
+      "uncommitted_tail": false,
+      "final_exists": false
+    },
+    {
+      "run": "omni_kk_conversations_expanded",
+      "committed_rows": 49,
+      "uncommitted_tail": false,
+      "final_exists": false
+    },
+    {
+      "run": "omni_ky",
+      "committed_rows": 7,
+      "uncommitted_tail": false,
+      "final_exists": false
+    },
+    {
+      "run": "omni_uz",
+      "committed_rows": 12,
+      "uncommitted_tail": false,
+      "final_exists": false
+    },
+    {
+      "run": "whisper_kk",
+      "committed_rows": 31,
+      "uncommitted_tail": false,
+      "final_exists": true
+    },
+    {
+      "run": "whisper_kk_conversations_expanded",
+      "committed_rows": 159,
+      "uncommitted_tail": false,
+      "final_exists": false
+    }
+  ],
+  "completed_comparison": false
+}

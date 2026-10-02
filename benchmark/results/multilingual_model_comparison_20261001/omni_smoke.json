@@ -1,0 +1,60 @@
+{
+  "status": "ok",
+  "synthetic": true,
+  "input": "one second 440 Hz sine, amplitude0.01, float32 mono16kHz",
+  "input_sha256": "6200f4a60c725a07e78241adda263b30a3952862dbff0f1a39a73ff8e6b207fb",
+  "load_seconds": 14.188563088002411,
+  "inference_seconds": 1.7709625720017357,
+  "response": {
+    "hypothesis": "",
+    "input_samples": 16000,
+    "exceeds_recommended_30_seconds": false,
+    "language_conditioning": false
+  },
+  "metadata": {
+    "model_card": "omniASR_CTC_1B_v2",
+    "tokenizer_card": "omniASR_tokenizer_written_v2",
+    "source_revision": "81f51e224ce9e74b02cc2a3eaf21b2d91d743455",
+    "model_files": [
+      {
+        "filename": "omniASR-CTC-1B-v2.pt",
+        "bytes": 3902956068,
+        "sha256": "354f981756aa8f41591ea363e45b9c4eba1ec5144c2273af82e747efbb08919c"
+      },
+      {
+        "filename": "omniASR_tokenizer_written_v2.model",
+        "bytes": 91481,
+        "sha256": "8aa11a1092142ef472537476ef6e76541123e2f0d789b79f3ebd119008240b1e"
+      }
+    ],
+    "source_archive_sha256": "67c484bba6502454bf192f549d0d0aee974f707179f5c35649679a44eaf0d435",
+    "installed_source_tree_sha256": "947069e894e9adea2ba075346dd95eec3eeab7f64cae88eb4eb46600c12d9faa",
+    "versions": {
+      "omnilingual-asr": "0.2.0",
+      "fairseq2": "0.6",
+      "fairseq2n": "0.6+cpu",
+      "torch": "2.8.0+cpu",
+      "torchaudio": "2.8.0+cpu",
+      "numpy": "1.26.4"
+    },
+    "device": "cpu",
+    "dtype": "float32",
+    "threads": 3,
+    "interop_threads": 1,
+    "parameter_count": 975675056,
+    "batch_size": 1,
+    "decoder": "official greedy CTC; no external language model",
+    "language_conditioning": false,
+    "corpus_language": "kk",
+    "preprocessing": "official waveform normalization; supplied mono float32 16 kHz",
+    "maximum_audio_seconds": 40,
+    "recommended_audio_seconds": 30,
+    "long_audio_policy": "process complete input up to 40 seconds; reject longer input",
+    "training": false,
+    "adaptation": false,
+    "declared_dependency_omissions": {
+      "kenlm": "Native build failed in this environment; absent from the official greedy CTC code path"
+    }
+  },
+  "peak_rss_bytes": 8221532160
+}

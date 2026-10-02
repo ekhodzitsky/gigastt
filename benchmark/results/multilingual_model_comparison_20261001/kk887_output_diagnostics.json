@@ -1,0 +1,454 @@
+{
+  "completed": true,
+  "no_inference": true,
+  "n": 887,
+  "source_result_sha256": {
+    "benchmark/results/multilingual_conversation_20261001/kk_conversations_expanded_large.json": "77a4c0adccb27855329e7780a419c03bd26f38156d8318eb161fcc5712356662",
+    "benchmark/results/multilingual_model_comparison_20261001/whisper_kk_conversations_expanded.json": "bdf92770c020e092991eeea41c0c4f21cd40a06740040de89cf69d73aeb2e089",
+    "benchmark/results/multilingual_model_comparison_20261001/omni_kk_conversations_expanded.json": "faed179e7df76078c57eea3e4091c73082d43a68f64c38c0f0744d0d63c5e644"
+  },
+  "manifest_sha256": "c8d61edb3435429ce2d8e9fa97c96f3ec83b2ff6ff609eabfe04a42a8f954d88",
+  "scope": "All 887 fixed short conversational excerpts, one primary reference; no alternative scoring or outcome-based exclusions.",
+  "recording_counts": {
+    "MCSKL030": 250,
+    "MCSKL031": 250,
+    "MCSKL032": 137,
+    "MCSKL033": 250
+  },
+  "duration_seconds_distribution": {
+    "min": 1.0,
+    "p10": 1.0648,
+    "p25": 1.16,
+    "median": 1.36,
+    "p75": 1.771,
+    "p90": 2.33,
+    "max": 5.151,
+    "mean": 1.5543544879808369
+  },
+  "reference_word_count_distribution": {
+    "min": 1,
+    "p10": 2.0,
+    "p25": 3.0,
+    "median": 4.0,
+    "p75": 5.0,
+    "p90": 7.0,
+    "max": 20,
+    "mean": 4.1724915445321304
+  },
+  "reference_writing_scripts": {
+    "letter_counts": {
+      "cyrillic": 19618,
+      "latin": 663
+    },
+    "rows_containing_script": {
+      "cyrillic": 884,
+      "latin": 83
+    },
+    "dominant_script_rows": {
+      "cyrillic": 867,
+      "latin": 20
+    },
+    "dominant_tie_policy": "First observed script wins equal letter counts; script categories do not identify spoken language"
+  },
+  "models": {
+    "gigastt_ml_ctc_large": {
+      "totals": {
+        "reference_words": 3701,
+        "word_errors": 1366,
+        "substitutions": 910,
+        "deletions": 356,
+        "insertions": 100,
+        "reference_chars": 23095,
+        "char_errors": 4012,
+        "wer_pct": 36.90894352877601,
+        "cer_pct": 17.371725481705997
+      },
+      "hypothesis_words_total": 3445,
+      "aggregate_hypothesis_to_reference_word_ratio": 0.9308295055390435,
+      "hypothesis_words_distribution": {
+        "min": 0,
+        "p10": 2.0,
+        "p25": 2.0,
+        "median": 4.0,
+        "p75": 5.0,
+        "p90": 6.0,
+        "max": 17,
+        "mean": 3.8838782412626833
+      },
+      "per_clip_word_ratio_distribution": {
+        "min": 0.0,
+        "p10": 0.6666666666666666,
+        "p25": 0.8333333333333334,
+        "median": 1.0,
+        "p75": 1.0,
+        "p90": 1.0,
+        "max": 3.0,
+        "mean": 0.9361688433700835
+      },
+      "word_ratio_bins": {
+        "over_half_below_equal": 201,
+        "equal": 538,
+        "over_double": 2,
+        "nonempty_at_most_half": 52,
+        "empty": 11,
+        "over_equal_at_most_double": 83
+      },
+      "clips_with_any_insertions": 94,
+      "clips_with_any_deletions": 272,
+      "clips_with_wer_over_100_pct": 13,
+      "empty_hypotheses": 11,
+      "failed_requests": 0,
+      "writing_scripts": {
+        "letter_counts": {
+          "cyrillic": 18671,
+          "latin": 72
+        },
+        "rows_containing_script": {
+          "cyrillic": 872,
+          "latin": 10
+        },
+        "dominant_script_rows": {
+          "cyrillic": 870,
+          "no_letters": 11,
+          "latin": 6
+        },
+        "dominant_tie_policy": "First observed script wins equal letter counts; script categories do not identify spoken language"
+      },
+      "clips_with_letter_script_absent_from_reference": 11,
+      "first_source_order_ids_with_letter_script_absent_from_reference": [
+        "mcskl030_iu_254",
+        "mcskl030_iu_463",
+        "mcskl031_iu_670",
+        "mcskl031_iu_1453",
+        "mcskl031_iu_1552"
+      ],
+      "clips_with_at_least_three_identical_consecutive_tokens_absent_from_reference": 0,
+      "first_source_order_ids_with_repetition": []
+    },
+    "whisper_large_v3_cpu_int8": {
+      "totals": {
+        "reference_words": 3701,
+        "word_errors": 3523,
+        "substitutions": 2425,
+        "deletions": 613,
+        "insertions": 485,
+        "reference_chars": 23095,
+        "char_errors": 12344,
+        "wer_pct": 95.19048905701162,
+        "cer_pct": 53.448798441221044
+      },
+      "hypothesis_words_total": 3573,
+      "aggregate_hypothesis_to_reference_word_ratio": 0.9654147527695217,
+      "hypothesis_words_distribution": {
+        "min": 1,
+        "p10": 2.0,
+        "p25": 3.0,
+        "median": 3.0,
+        "p75": 5.0,
+        "p90": 6.0,
+        "max": 56,
+        "mean": 4.028184892897407
+      },
+      "per_clip_word_ratio_distribution": {
+        "min": 0.16666666666666666,
+        "p10": 0.6,
+        "p25": 0.75,
+        "median": 1.0,
+        "p75": 1.0,
+        "p90": 1.5,
+        "max": 14.0,
+        "mean": 1.06190736796712
+      },
+      "word_ratio_bins": {
+        "over_equal_at_most_double": 142,
+        "equal": 330,
+        "over_double": 34,
+        "over_half_below_equal": 314,
+        "nonempty_at_most_half": 67
+      },
+      "clips_with_any_insertions": 183,
+      "clips_with_any_deletions": 387,
+      "clips_with_wer_over_100_pct": 134,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "writing_scripts": {
+        "letter_counts": {
+          "cyrillic": 19756,
+          "latin": 9
+        },
+        "rows_containing_script": {
+          "cyrillic": 887,
+          "latin": 2
+        },
+        "dominant_script_rows": {
+          "cyrillic": 887
+        },
+        "dominant_tie_policy": "First observed script wins equal letter counts; script categories do not identify spoken language"
+      },
+      "clips_with_letter_script_absent_from_reference": 4,
+      "first_source_order_ids_with_letter_script_absent_from_reference": [
+        "mcskl031_iu_670",
+        "mcskl032_iu_449",
+        "mcskl032_iu_527",
+        "mcskl033_iu_321"
+      ],
+      "clips_with_at_least_three_identical_consecutive_tokens_absent_from_reference": 48,
+      "first_source_order_ids_with_repetition": [
+        "mcskl030_iu_38",
+        "mcskl030_iu_199",
+        "mcskl030_iu_223",
+        "mcskl030_iu_245",
+        "mcskl030_iu_374"
+      ]
+    },
+    "omni_asr_ctc_1b_cpu_float32": {
+      "totals": {
+        "reference_words": 3701,
+        "word_errors": 3085,
+        "substitutions": 1793,
+        "deletions": 1239,
+        "insertions": 53,
+        "reference_chars": 23095,
+        "char_errors": 14131,
+        "wer_pct": 83.35584977033234,
+        "cer_pct": 61.18640398354622
+      },
+      "hypothesis_words_total": 2515,
+      "aggregate_hypothesis_to_reference_word_ratio": 0.6795460686300999,
+      "hypothesis_words_distribution": {
+        "min": 0,
+        "p10": 1.0,
+        "p25": 1.0,
+        "median": 2.0,
+        "p75": 4.0,
+        "p90": 5.0,
+        "max": 16,
+        "mean": 2.8354002254791433
+      },
+      "per_clip_word_ratio_distribution": {
+        "min": 0.0,
+        "p10": 0.2857142857142857,
+        "p25": 0.5,
+        "median": 0.6666666666666666,
+        "p75": 1.0,
+        "p90": 1.0,
+        "max": 2.0,
+        "mean": 0.7017992529830185
+      },
+      "word_ratio_bins": {
+        "over_half_below_equal": 257,
+        "nonempty_at_most_half": 329,
+        "equal": 252,
+        "empty": 9,
+        "over_equal_at_most_double": 40
+      },
+      "clips_with_any_insertions": 45,
+      "clips_with_any_deletions": 600,
+      "clips_with_wer_over_100_pct": 28,
+      "empty_hypotheses": 9,
+      "failed_requests": 0,
+      "writing_scripts": {
+        "letter_counts": {
+          "cyrillic": 9097,
+          "arabic": 1992,
+          "latin": 2950,
+          "han": 138,
+          "hiragana": 46,
+          "hangul": 59,
+          "other_letters": 20,
+          "katakana": 10,
+          "devanagari": 1,
+          "thai": 2,
+          "hebrew": 1
+        },
+        "rows_containing_script": {
+          "cyrillic": 417,
+          "arabic": 340,
+          "latin": 268,
+          "han": 51,
+          "hiragana": 13,
+          "hangul": 13,
+          "other_letters": 8,
+          "katakana": 5,
+          "devanagari": 1,
+          "thai": 1,
+          "hebrew": 1
+        },
+        "dominant_script_rows": {
+          "cyrillic": 374,
+          "arabic": 259,
+          "han": 39,
+          "no_letters": 9,
+          "latin": 190,
+          "hangul": 7,
+          "other_letters": 2,
+          "hiragana": 4,
+          "katakana": 2,
+          "thai": 1
+        },
+        "dominant_tie_policy": "First observed script wins equal letter counts; script categories do not identify spoken language"
+      },
+      "clips_with_letter_script_absent_from_reference": 519,
+      "first_source_order_ids_with_letter_script_absent_from_reference": [
+        "mcskl030_iu_19",
+        "mcskl030_iu_38",
+        "mcskl030_iu_39",
+        "mcskl030_iu_41",
+        "mcskl030_iu_49"
+      ],
+      "clips_with_at_least_three_identical_consecutive_tokens_absent_from_reference": 0,
+      "first_source_order_ids_with_repetition": []
+    }
+  },
+  "example_selection": "First two manifest entries from each of four source recordings, retained in manifest order; selection independent of model outputs.",
+  "examples": [
+    {
+      "source_order_index": 0,
+      "id": "mcskl030_iu_3",
+      "recording_id": "MCSKL030",
+      "duration_s": 1.13,
+      "reference": "актовый зал-да болды себебі",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "актоалды болды себебі",
+        "whisper_large_v3_cpu_int8": "Ақты салты болды, селі бол!",
+        "omni_asr_ctc_1b_cpu_float32": "актезалты болды себебі"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 2,
+        "whisper_large_v3_cpu_int8": 4,
+        "omni_asr_ctc_1b_cpu_float32": 2
+      }
+    },
+    {
+      "source_order_index": 1,
+      "id": "mcskl030_iu_19",
+      "recording_id": "MCSKL030",
+      "duration_s": 1.26,
+      "reference": "cосын біз келген шақта",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "сосын біз келген шақта",
+        "whisper_large_v3_cpu_int8": "Сіздің біз керекен шықтар.",
+        "omni_asr_ctc_1b_cpu_float32": "زكرن شخصا"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 1,
+        "whisper_large_v3_cpu_int8": 3,
+        "omni_asr_ctc_1b_cpu_float32": 4
+      }
+    },
+    {
+      "source_order_index": 250,
+      "id": "mcskl031_iu_10",
+      "recording_id": "MCSKL031",
+      "duration_s": 1.819,
+      "reference": "Мен главное capstone-ды тапсырдым",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "мен главный капустаны тапшырдым",
+        "whisper_large_v3_cpu_int8": "Мәңғалдай, қақыстан ұтап сұрсын.",
+        "omni_asr_ctc_1b_cpu_float32": "mömlana kapstonu taptır"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 3,
+        "whisper_large_v3_cpu_int8": 4,
+        "omni_asr_ctc_1b_cpu_float32": 4
+      }
+    },
+    {
+      "source_order_index": 251,
+      "id": "mcskl031_iu_13",
+      "recording_id": "MCSKL031",
+      "duration_s": 1.553,
+      "reference": "Capstone-ды топпен жазасыңдар ма",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "как соны топпен жазасыңдар ма",
+        "whisper_large_v3_cpu_int8": "Қақсының топпен жүресінің ма?",
+        "omni_asr_ctc_1b_cpu_float32": "kausaun toppengasesnelma"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 2,
+        "whisper_large_v3_cpu_int8": 2,
+        "omni_asr_ctc_1b_cpu_float32": 4
+      }
+    },
+    {
+      "source_order_index": 500,
+      "id": "mcskl032_iu_1",
+      "recording_id": "MCSKL032",
+      "duration_s": 1.28,
+      "reference": "жоятын программаларды",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "жоятын программалар",
+        "whisper_large_v3_cpu_int8": "жұрятын программаларды.",
+        "omni_asr_ctc_1b_cpu_float32": "жuatn пrоgraмaла"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 1,
+        "whisper_large_v3_cpu_int8": 1,
+        "omni_asr_ctc_1b_cpu_float32": 2
+      }
+    },
+    {
+      "source_order_index": 501,
+      "id": "mcskl032_iu_3",
+      "recording_id": "MCSKL032",
+      "duration_s": 1.03,
+      "reference": "ойластырып жатыр",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "ойластырып жатыр",
+        "whisper_large_v3_cpu_int8": "ол астырып жатыр.",
+        "omni_asr_ctc_1b_cpu_float32": "ulastripжater"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 0,
+        "whisper_large_v3_cpu_int8": 2,
+        "omni_asr_ctc_1b_cpu_float32": 2
+      }
+    },
+    {
+      "source_order_index": 637,
+      "id": "mcskl033_iu_0",
+      "recording_id": "MCSKL033",
+      "duration_s": 1.67,
+      "reference": "Маған да бір кездері осы ұна-",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "маған да бір кездері осы ұна",
+        "whisper_large_v3_cpu_int8": "Маңынды бір кезер осы, ма?",
+        "omni_asr_ctc_1b_cpu_float32": "مnبrكiزerوs"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 0,
+        "whisper_large_v3_cpu_int8": 4,
+        "omni_asr_ctc_1b_cpu_float32": 6
+      }
+    },
+    {
+      "source_order_index": 638,
+      "id": "mcskl033_iu_2",
+      "recording_id": "MCSKL033",
+      "duration_s": 1.187,
+      "reference": "тақырып қатты қызық болған",
+      "hypotheses": {
+        "gigastt_ml_ctc_large": "тақырып қатты қызық боламын",
+        "whisper_large_v3_cpu_int8": "Тарап қаттығыз болын.",
+        "omni_asr_ctc_1b_cpu_float32": "خقطخز"
+      },
+      "word_errors": {
+        "gigastt_ml_ctc_large": 1,
+        "whisper_large_v3_cpu_int8": 4,
+        "omni_asr_ctc_1b_cpu_float32": 4
+      }
+    }
+  ],
+  "interpretation": [
+    "Whisper has more substitutions and insertions than the other systems; some short references receive longer text. This describes disagreement with the reference, not verified speech hallucination attribution.",
+    "Omni has many deletions and outputs using letter scripts absent from the corresponding references. Unicode scripts are measured mechanically; they are not inferred spoken-language labels.",
+    "An output in another writing system may count as one word under the unchanged whitespace-based scorer, so word-count ratios and WER alone do not describe its content; CER is retained alongside them.",
+    "A high corpus WER is the aggregate number of word edits divided by reference words, not the percentage of failed requests or an assessment that every word is wrong.",
+    "The source excerpts are short and lack surrounding conversational context. This protocol feature is documented, but these outputs do not establish it as the cause of any model ranking."
+  ],
+  "limitations": [
+    "Four recordings do not represent all Kazakh speakers or conversations.",
+    "Original source audio and human references are frozen; no correction, transliteration, model tuning or new inference was performed.",
+    "The compared deployable model configurations have different native frontends and language-conditioning capabilities. Results do not isolate architecture, precision or language-conditioning effects."
+  ]
+}

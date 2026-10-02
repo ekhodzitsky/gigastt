@@ -1,0 +1,199 @@
+{
+  "binary": {
+    "path": "/tmp/gigastt-narrowband/gigastt-candidate",
+    "sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566"
+  },
+  "git_head": "ca661d5f642065d86cae75560dc36821823ffe0c",
+  "working_tree_note": "Includes previously tested narrowband PCM16 mitigation; FLEURS source files are16kHz so8k-to16k resampling path is not exercised. No trained model checkpoint is used.",
+  "servers": [
+    {
+      "variant": "ml_ctc",
+      "port": 19881,
+      "pid": 2676264,
+      "command": [
+        "/tmp/gigastt-narrowband/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--port",
+        "19881"
+      ],
+      "actual_models_endpoint": {
+        "id": "gigaam-multilingual-ctc",
+        "name": "GigaAM Multilingual CTC",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 0,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": true
+      }
+    },
+    {
+      "variant": "ml_ctc_large",
+      "port": 19882,
+      "pid": 2676265,
+      "command": [
+        "/tmp/gigastt-narrowband/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--model-variant",
+        "ml_ctc_large",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--port",
+        "19882"
+      ],
+      "actual_models_endpoint": {
+        "id": "gigaam-multilingual-large-ctc",
+        "name": "GigaAM Multilingual CTC (large)",
+        "variant": "ml_ctc_large",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 0,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": true
+      }
+    }
+  ],
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "timing_note": "Two model servers concurrently, each pool2 encoder3threads; unrelated processes also active. Timing is diagnostic not comparable benchmark throughput.",
+  "checks": {
+    "unit_passed": 1117,
+    "unit_ignored": 39,
+    "unit_failed": 0,
+    "clippy": "passed",
+    "fmt": "passed"
+  },
+  "resume_note": "Original temporary control files and server processes were unavailable on continuation. Persistent JSONL ledgers retained4838 small and2280 large results. Resumed after strict runner identity checks with identical binary/model/scorer/configuration; no completed result discarded.",
+  "resumed_servers": [
+    {
+      "variant": "ml_ctc",
+      "port": 19881,
+      "pid": 21509,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--port",
+        "19881"
+      ]
+    },
+    {
+      "variant": "ml_ctc_large",
+      "port": 19882,
+      "pid": 21510,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--model-variant",
+        "ml_ctc_large",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--port",
+        "19882"
+      ]
+    }
+  ],
+  "second_large_server": {
+    "pid": 39119,
+    "command": [
+      "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+      "--offline",
+      "serve",
+      "--model-variant",
+      "ml_ctc_large",
+      "--execution-provider",
+      "cpu",
+      "--pool-size",
+      "2",
+      "--encoder-intra-threads",
+      "3",
+      "--punctuation",
+      "off",
+      "--itn",
+      "off",
+      "--port",
+      "19883"
+    ]
+  },
+  "concurrency_note": "After small completed, its server stopped and a second identically configured large server started for Russian. Kazakh continued on its original server, followed by Kyrgyz. Settings remain CPU,pool2,encoder3threads,workers2 per server; timing is not comparable throughput."
+}

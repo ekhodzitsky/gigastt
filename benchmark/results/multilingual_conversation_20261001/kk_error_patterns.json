@@ -1,0 +1,312 @@
+{
+  "result_sha256": "77a4c0adccb27855329e7780a419c03bd26f38156d8318eb161fcc5712356662",
+  "manifest_sha256": "c8d61edb3435429ce2d8e9fa97c96f3ec83b2ff6ff609eabfe04a42a8f954d88",
+  "model_variant": "ml_ctc_large",
+  "analysis": "Post-hoc descriptive grouping of the completed frozen run; no rescoring, filtering, inference or model changes. Duration bins are descriptive, not independent causal comparisons.",
+  "overall": {
+    "reference_words": 3701,
+    "word_errors": 1366,
+    "substitutions": 910,
+    "deletions": 356,
+    "insertions": 100,
+    "n": 887,
+    "micro_wer_percent": 36.90894352877601,
+    "empty": 11,
+    "normalized_exact": 239,
+    "duration_s": 1378.7124308390023
+  },
+  "by_source": {
+    "MCSKL030": {
+      "reference_words": 909,
+      "word_errors": 365,
+      "substitutions": 222,
+      "deletions": 111,
+      "insertions": 32,
+      "n": 250,
+      "micro_wer_percent": 40.15401540154016,
+      "empty": 8,
+      "normalized_exact": 59,
+      "duration_s": 401.3004308390023
+    },
+    "MCSKL031": {
+      "reference_words": 1009,
+      "word_errors": 469,
+      "substitutions": 324,
+      "deletions": 108,
+      "insertions": 37,
+      "n": 250,
+      "micro_wer_percent": 46.4816650148662,
+      "empty": 1,
+      "normalized_exact": 41,
+      "duration_s": 349.275
+    },
+    "MCSKL032": {
+      "reference_words": 527,
+      "word_errors": 135,
+      "substitutions": 85,
+      "deletions": 28,
+      "insertions": 22,
+      "n": 137,
+      "micro_wer_percent": 25.616698292220114,
+      "empty": 2,
+      "normalized_exact": 64,
+      "duration_s": 237.035
+    },
+    "MCSKL033": {
+      "reference_words": 1256,
+      "word_errors": 397,
+      "substitutions": 279,
+      "deletions": 109,
+      "insertions": 9,
+      "n": 250,
+      "micro_wer_percent": 31.60828025477707,
+      "empty": 0,
+      "normalized_exact": 75,
+      "duration_s": 391.102
+    }
+  },
+  "by_duration": {
+    "1_to_under_1.5_seconds": {
+      "reference_words": 1704,
+      "word_errors": 718,
+      "substitutions": 471,
+      "deletions": 202,
+      "insertions": 45,
+      "n": 527,
+      "micro_wer_percent": 42.136150234741784,
+      "empty": 9,
+      "normalized_exact": 146,
+      "duration_s": 635.5782267573696
+    },
+    "1.5_to_under_2_seconds": {
+      "reference_words": 968,
+      "word_errors": 322,
+      "substitutions": 214,
+      "deletions": 80,
+      "insertions": 28,
+      "n": 215,
+      "micro_wer_percent": 33.264462809917354,
+      "empty": 1,
+      "normalized_exact": 62,
+      "duration_s": 369.7621473922903
+    },
+    "2_to_under_3_seconds": {
+      "reference_words": 802,
+      "word_errors": 266,
+      "substitutions": 185,
+      "deletions": 60,
+      "insertions": 21,
+      "n": 124,
+      "micro_wer_percent": 33.16708229426434,
+      "empty": 1,
+      "normalized_exact": 29,
+      "duration_s": 294.9400566893424
+    },
+    "3_seconds_or_more": {
+      "reference_words": 227,
+      "word_errors": 60,
+      "substitutions": 40,
+      "deletions": 14,
+      "insertions": 6,
+      "n": 21,
+      "micro_wer_percent": 26.431718061674008,
+      "empty": 0,
+      "normalized_exact": 2,
+      "duration_s": 78.432
+    }
+  },
+  "by_reference_word_count": {
+    "1_to_2_words": {
+      "reference_words": 329,
+      "word_errors": 164,
+      "substitutions": 103,
+      "deletions": 37,
+      "insertions": 24,
+      "n": 182,
+      "micro_wer_percent": 49.848024316109424,
+      "empty": 10,
+      "normalized_exact": 74,
+      "duration_s": 226.9911247165533
+    },
+    "3_to_5_words": {
+      "reference_words": 1994,
+      "word_errors": 777,
+      "substitutions": 523,
+      "deletions": 198,
+      "insertions": 56,
+      "n": 521,
+      "micro_wer_percent": 38.96690070210632,
+      "empty": 1,
+      "normalized_exact": 127,
+      "duration_s": 745.8641814058957
+    },
+    "6_or_more_words": {
+      "reference_words": 1378,
+      "word_errors": 425,
+      "substitutions": 284,
+      "deletions": 121,
+      "insertions": 20,
+      "n": 184,
+      "micro_wer_percent": 30.84179970972424,
+      "empty": 0,
+      "normalized_exact": 38,
+      "duration_s": 405.8571247165533
+    }
+  },
+  "examples": [
+    {
+      "id": "mcskl030_iu_19",
+      "reference": "cосын біз келген шақта",
+      "output": "сосын біз келген шақта",
+      "scores": {
+        "reference_words": 4,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 22,
+        "char_errors": 1
+      },
+      "description": "Reference has ASCII c where hypothesis has Cyrillic с; scorer treats them as different."
+    },
+    {
+      "id": "mcskl031_iu_10",
+      "reference": "Мен главное capstone-ды тапсырдым",
+      "output": "мен главный капустаны тапшырдым",
+      "scores": {
+        "reference_words": 4,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 32,
+        "char_errors": 12
+      },
+      "description": "Russian/English insertion rendered as different words."
+    },
+    {
+      "id": "mcskl032_iu_1",
+      "reference": "жоятын программаларды",
+      "output": "жоятын программалар",
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 21,
+        "char_errors": 2
+      },
+      "description": "Word-ending difference."
+    },
+    {
+      "id": "mcskl032_iu_23",
+      "reference": "емделетін аурулардан қазір көптеген балалар эм",
+      "output": "емделетін аурулардан қазір көптеген балалар",
+      "scores": {
+        "reference_words": 6,
+        "word_errors": 1,
+        "substitutions": 0,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 46,
+        "char_errors": 3
+      },
+      "description": "Reference hesitation omitted."
+    },
+    {
+      "id": "mcskl033_iu_18",
+      "reference": "бір-бірімізді біз үйретпейміз",
+      "output": "бір бірімізді біз үйретпейміз",
+      "scores": {
+        "reference_words": 3,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 28,
+        "char_errors": 1
+      },
+      "description": "Hyphen versus word-space boundary affects the fixed scorer."
+    },
+    {
+      "id": "mcskl030_iu_77",
+      "reference": "тағы да сұрақтар бар ма",
+      "output": "тағы да сұрақтар бар ма",
+      "scores": {
+        "reference_words": 5,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 23,
+        "char_errors": 0
+      },
+      "description": "Normalized exact recognition example."
+    }
+  ],
+  "examples_selection": "Illustrative examples inspected after inference; not representative category frequencies. Exact and differing outputs both included.",
+  "empty_reference_examples": [
+    {
+      "id": "mcskl030_iu_79",
+      "reference": "әәәә",
+      "duration_s": 1.38
+    },
+    {
+      "id": "mcskl030_iu_223",
+      "reference": "әәә",
+      "duration_s": 1.15
+    },
+    {
+      "id": "mcskl030_iu_245",
+      "reference": "әәәә",
+      "duration_s": 1.15
+    },
+    {
+      "id": "mcskl030_iu_468",
+      "reference": "әм",
+      "duration_s": 1.1300226757369614
+    },
+    {
+      "id": "mcskl030_iu_506",
+      "reference": "әм",
+      "duration_s": 1.11
+    },
+    {
+      "id": "mcskl030_iu_674",
+      "reference": "что біз әм",
+      "duration_s": 1.77
+    },
+    {
+      "id": "mcskl030_iu_686",
+      "reference": "әрине",
+      "duration_s": 1.08
+    },
+    {
+      "id": "mcskl030_iu_779",
+      "reference": "ммм",
+      "duration_s": 1.3100226757369615
+    },
+    {
+      "id": "mcskl031_iu_2099",
+      "reference": "м",
+      "duration_s": 2.11
+    },
+    {
+      "id": "mcskl032_iu_49",
+      "reference": "эм",
+      "duration_s": 1.249
+    },
+    {
+      "id": "mcskl032_iu_509",
+      "reference": "эм",
+      "duration_s": 1.232
+    }
+  ],
+  "limitations": [
+    "Four recordings, 887 short presegmented non-overlapping units; 527 units shorter than1.5 seconds and only21 at least3 seconds.",
+    "Timing/source/speaker/content and switching differ across strata; no causal effect of duration is established.",
+    "Human reference preserves fragments and hesitations; Unicode scoring does not fold Latin/Cyrillic homoglyphs or normalize hyphen-to-space differences.",
+    "No assessment of full-conversation segmentation, overlapping speech, diarization or population-representative Kazakh quality."
+  ]
+}
