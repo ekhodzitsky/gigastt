@@ -13,6 +13,14 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+### Changed
+
+- **polyvoice 0.21.0 → 1.0.0.** Diarization still uses `FbankOnnxExtractor` /
+  `LegacyPipeline` / `StreamingPipeline` / EnergyVad and the same
+  `wespeaker_resnet34.onnx` file on tract (`backend-tract`). Upstream compares
+  the duration ceiling in `f64` and marks the pipeline error enums
+  `non_exhaustive`. Cosine AHC defaults are unchanged.
+
 ## [2.22.0] - 2026-10-01
 
 ### Performance

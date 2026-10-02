@@ -97,8 +97,8 @@ opus-rs = { version = "0.1", optional = true }
 bytes = "1"
 gigastt-quantize = { version = "2.22.0", path = "../gigastt-quantize", optional = true }
 # Speaker embeddings via FbankOnnxExtractor. 0.21 removed the `onnx` (ort)
-# feature; `backend-tract` is the remaining ONNX-file backend.
-polyvoice = { version = "0.21.0", features = ["backend-tract"], optional = true }
+# feature; `backend-tract` is the remaining ONNX-file backend. 1.0 keeps it.
+polyvoice = { version = "1.0.0", features = ["backend-tract"], optional = true }
 parking_lot = "0.12"
 libc = "0.2"
 tar = { version = "0.4", optional = true }

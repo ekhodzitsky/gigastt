@@ -3,7 +3,7 @@
 //! Both pipelines take the v1.0 [`polyvoice::Embedder`] contract: the offline
 //! [`polyvoice::pipeline::LegacyPipeline`] and the per-session
 //! [`polyvoice::streaming::StreamingPipeline`] are generic over `E: Embedder`,
-//! and [`FbankOnnxExtractor`] implements it directly (tract, polyvoice 0.21).
+//! and [`FbankOnnxExtractor`] implements it directly (tract, polyvoice 1.0).
 //! The legacy `EmbeddingExtractor` / `EmbeddingError` surface this module used
 //! to contain is soft-deprecated upstream and is no longer referenced here.
 //!

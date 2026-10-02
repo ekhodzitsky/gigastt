@@ -3081,9 +3081,9 @@ dependencies = [
 
 [[package]]
 name = "polyvoice"
-version = "0.21.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35afb80f6d72de01c9dfacef1eadf7cf37990807b607919cc6a0d188f10517f4"
+checksum = "8d228fa3c7373fb4b4b53703beae3364eda37173cc74c62e7ad3aa9be21a53c5"
 dependencies = [
  "anyhow",
  "ndarray",
