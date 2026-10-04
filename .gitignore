@@ -11,6 +11,11 @@ missions/
 .kimi/
 .gstack/
 # Local agent / IDE harness state (never ship)
+.serena/
+.codex/
+.cursor/
+.aider
+.aider.*
 .kimi-code/
 /backlog/
 /agents/

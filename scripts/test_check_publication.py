@@ -84,6 +84,54 @@ class GitTests(unittest.TestCase):
             input=input_text, text=True, capture_output=True,
         )
 
+    def test_ignored_tool_state_is_rejected_after_forced_add(self):
+        (self.root / '.gitignore').write_bytes(SCRIPT.parent.parent.joinpath('.gitignore').read_bytes())
+        for name in ('.serena/cache.bin', 'nested/.serena/memories/note.md',
+                     '.codex/state.json', '.cursor/session.json', '.claude/settings.json',
+                     '.agents/notes.md', '.grok/state.json', '.omx/state.json',
+                     '.aider.chat.history.md', 'nested/.aider.tags.cache.v4/index',
+                     '.idea/workspace.xml', '.vscode/settings.json', 'skills-lock.json'):
+            with self.subTest(path=name):
+                path = self.root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'local state\0')
+                self.git('check-ignore', name)
+                self.git('add', '-f', name)
+                result = self.run_guard()
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertIn('local tool state', result.stderr)
+                self.git('rm', '--cached', name)
+
+    def test_deleted_tool_state_still_blocks_push(self):
+        base = self.git('rev-parse', 'HEAD')
+        path = self.root / '.serena' / 'memory.md'
+        path.parent.mkdir()
+        path.write_text('Local memory')
+        self.git('add', '-f', str(path))
+        self.git('commit', '-qm', 'Add local fixture')
+        self.git('rm', str(path))
+        self.git('commit', '-qm', 'Remove fixture')
+        head = self.git('rev-parse', 'HEAD')
+        line = f'refs/heads/main {head} refs/heads/main {base}\n'
+        result = self.run_guard('--pre-push', input_text=line)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('local tool state', result.stderr)
+
+    def test_tool_state_gitlink_cannot_bypass_index_or_push(self):
+        head = self.git('rev-parse', 'HEAD')
+        self.git('update-index', '--add', '--cacheinfo', f'160000,{head},.serena')
+        self.assertEqual(self.run_guard().returncode, 1)
+        self.git('commit', '-qm', 'Add gitlink fixture')
+        tip = self.git('rev-parse', 'HEAD')
+        self.git('update-ref', 'refs/remotes/origin/fixture', tip)
+        self.git('checkout', '-q', '--detach', head)
+        line = f'refs/heads/main {tip} refs/heads/new {"0" * 40}\n'
+        self.assertEqual(self.run_guard('--pre-push', input_text=line).returncode, 1)
+
+    def test_shared_instructions_and_similar_public_names_remain_allowed(self):
+        for name in ('AGENTS.md', 'CLAUDE.md', 'docs/serena.md', 'src/cursor.rs'):
+            self.assertEqual(publication.check_file(name, b'Project documentation'), [])
+
     def test_checks_index_instead_of_unstaged_replacement(self):
         (self.root / "readme.txt").write_text(internal())
         self.git("add", ".")

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject local planning material in staged files and publication metadata."""
+"""Reject local tool state and planning material before publication."""
 
 import argparse
 import io
@@ -34,6 +34,11 @@ UPSTREAM_SPEC = (
     "https://www.opencompute.org/documents/ocp-microscaling-formats-mx-v1-0-spec-final-pdf"
 )
 PRIVATE_DIRS = {"backlog", "specs", "roadmap"}
+LOCAL_TOOL_PATHS = {
+    ".serena", ".codex", ".cursor", ".agents", ".claude", ".grok",
+    ".omc", ".omx", ".superpowers", ".kimi", ".kimi-code", ".gstack",
+    ".idea", ".vscode", ".aider", "skills-lock.json",
+}
 
 
 def scan_text(label, text):
@@ -49,10 +54,17 @@ def git(*args):
     return subprocess.check_output(["git", *args], stderr=subprocess.PIPE)
 
 
-def check_file(path, data):
+def check_path(path):
     errors = scan_text("tracked filename", path)
     if path.split("/", 1)[0] in PRIVATE_DIRS:
         errors.append("tracked content includes a private planning directory")
+    if any(part in LOCAL_TOOL_PATHS or part.startswith(".aider.") for part in path.split("/")):
+        errors.append("tracked content includes local tool state")
+    return errors
+
+
+def check_file(path, data):
+    errors = check_path(path)
     if b"\0" not in data:
         errors.extend(scan_text(path, data.decode("utf-8", errors="replace")))
     return errors
@@ -60,6 +72,7 @@ def check_file(path, data):
 
 def check_index():
     entries = []
+    errors = []
     for record in git("ls-files", "--stage", "-z").split(b"\0"):
         if not record:
             continue
@@ -69,17 +82,22 @@ def check_index():
             raise ValueError("resolve the unmerged index before publication")
         if mode != b"160000":  # A submodule object belongs to another repository.
             entries.append((path.decode("utf-8"), oid))
-    return check_blobs(entries)
+        else:
+            errors.extend(check_path(path.decode("utf-8")))
+    return errors + check_blobs(entries)
 
 
 def check_tree(revision):
     entries = []
+    errors = []
     for record in filter(None, git("ls-tree", "-r", "-z", revision).split(b"\0")):
         metadata, path = record.split(b"\t", 1)
         _, kind, oid = metadata.split()
         if kind == b"blob":
             entries.append((path.decode("utf-8"), oid))
-    return check_blobs(entries)
+        else:
+            errors.extend(check_path(path.decode("utf-8")))
+    return errors + check_blobs(entries)
 
 
 def check_blobs(entries):
