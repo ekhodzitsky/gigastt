@@ -13,21 +13,13 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+## [2.22.0] - 2026-10-04
+
 ### Documentation
 
 - Publish verified five-language reading benchmarks, Kazakh/Uzbek conversational
   results and matched ready-model comparisons, with language selection guidance,
   raw evidence and offline score verification. No model defaults were changed.
-
-### Changed
-
-- **polyvoice 0.21.0 → 1.0.0.** Diarization still uses `FbankOnnxExtractor` /
-  `LegacyPipeline` / `StreamingPipeline` / EnergyVad and the same
-  `wespeaker_resnet34.onnx` file on tract (`backend-tract`). Upstream compares
-  the duration ceiling in `f64` and marks the pipeline error enums
-  `non_exhaustive`. Cosine AHC defaults are unchanged.
-
-## [2.22.0] - 2026-10-01
 
 ### Performance
 
@@ -88,11 +80,13 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 - Require Symphonia 0.6.1 and remove the vendored metadata and Matroska
   patches. Upstream now handles APEv2 size overflow and unknown-size WebM
   Clusters; the fuzz workspace uses the same upstream fixes.
-- **polyvoice 0.19.0 → 0.21.0.** Diarization still uses `FbankOnnxExtractor` /
+- **polyvoice 0.19.0 → 1.0.0.** Diarization still uses `FbankOnnxExtractor` /
   `LegacyPipeline` / `StreamingPipeline` / EnergyVad and the same
   `wespeaker_resnet34.onnx` file. Upstream dropped the `onnx` (ort) feature;
   the extractor now runs on tract (`backend-tract`). The lockfile no longer
-  carries a second `ryf 0.3.2` copy.
+  carries a second `ryf 0.3.2` copy. Upstream compares the duration ceiling in
+  `f64` and marks the pipeline error enums `non_exhaustive`. Cosine AHC
+  defaults are unchanged.
 - **Streaming corpus WER gap is historical.** The 2026-08-14 100-clip
   stream-minus-file figures (crowd +14.49 pp, far-field +10.60 pp) were
   measured before `--stream-stable-prefix` (default on since 2.19.0).
@@ -149,6 +143,10 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   unrelated models or user data.
 
 ### Fixed
+
+- Ignore local Serena, Codex, Cursor and Aider state and reject local agent and
+  editor paths in commit, push and CI publication checks, including forced
+  additions, nested paths and files removed by later commits.
 
 - Give the four-client REST load test four explicit pool slots, matching bounded
   upload admission, and validate complete transcription responses from a synchronized burst.
