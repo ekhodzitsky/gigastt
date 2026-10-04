@@ -48,6 +48,8 @@ class ReleaseSourceTests(unittest.TestCase):
                                    'GITHUB_WORKFLOW_REF': 'example/repo/.github/workflows/release.yml@refs/heads/main',
                                    'GITHUB_REF': 'refs/heads/main', 'GITHUB_SHA': self.dispatch,
                                    'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '2',
+                                   'GITHUB_REPOSITORY_ID': '1234', 'GITHUB_REPOSITORY_OWNER_ID': '5678',
+                                   'RUNNER_ENVIRONMENT': 'github-hosted',
                                    'GITHUB_EVENT_NAME': 'workflow_dispatch', **github},
                               text=True, capture_output=True)
 
@@ -61,6 +63,10 @@ class ReleaseSourceTests(unittest.TestCase):
         outputs = dict(line.split('=', 1) for line in self.output.read_text().splitlines())
         predicate = json.loads(outputs['predicate'])
         self.assertEqual(predicate['buildDefinition']['externalParameters']['inputs'], {'tag': 'v2.22.0'})
+        self.assertEqual(predicate['buildDefinition']['internalParameters']['github'], {
+            'event_name': 'workflow_dispatch', 'repository_id': '1234',
+            'repository_owner_id': '5678', 'runner_environment': 'github-hosted',
+        })
         dependencies = predicate['buildDefinition']['resolvedDependencies']
         self.assertEqual(dependencies[0]['digest']['gitCommit'], self.dispatch)
         self.assertEqual(dependencies[1]['digest']['gitCommit'], self.release)

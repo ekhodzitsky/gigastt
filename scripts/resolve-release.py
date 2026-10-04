@@ -63,7 +63,14 @@ def provenance(source, env):
         'buildDefinition': {
             'buildType': 'https://actions.github.io/buildtypes/workflow/v1',
             'externalParameters': external,
-            'internalParameters': {'github': {'event_name': env['GITHUB_EVENT_NAME']}},
+            # Preserve the GitHub context carried by the standard provenance
+            # generator; the attestations API validates these fields too.
+            'internalParameters': {'github': {
+                'event_name': env['GITHUB_EVENT_NAME'],
+                'repository_id': env['GITHUB_REPOSITORY_ID'],
+                'repository_owner_id': env['GITHUB_REPOSITORY_OWNER_ID'],
+                'runner_environment': env['RUNNER_ENVIRONMENT'],
+            }},
             'resolvedDependencies': [
                 {'uri': 'git+' + repository + '@' + env['GITHUB_REF'],
                  'digest': {'gitCommit': env['GITHUB_SHA']}},
