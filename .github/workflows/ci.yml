@@ -28,6 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: python3 scripts/test-performance-gates.py
+      - run: python3 scripts/test-ci-prerequisites.py
       - run: python3 scripts/test-resolve-release.py
       - run: python3 scripts/test-resolve-android.py
       - run: python3 scripts/test-release-assets.py
@@ -206,7 +207,8 @@ jobs:
         with:
           components: clippy
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -226,7 +228,8 @@ jobs:
       - name: Validate Docker dependency-cache targets
         run: python3 scripts/test_docker_cache.py
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -330,7 +333,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -344,7 +348,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -388,16 +393,18 @@ jobs:
   speaker-performance:
     runs-on: ubuntu-latest
     name: Speaker performance
-    timeout-minutes: 35
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - name: Install native build prerequisites
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler pkg-config libssl-dev
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: speaker-performance
@@ -429,6 +436,10 @@ jobs:
           for backend in production legacy-tract; do
             GIGASTT_SPEAKER_RESOURCE_BACKEND="$backend" cargo test -p gigastt-core --release --locked --lib "$test_name" -- --ignored --exact --test-threads=1 --nocapture 2>&1 | tee "speaker-resources-$backend.log"
           done
+      - name: Compare actual base and candidate speaker resources and quality
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/compare-speaker-revisions.py --base "$BASE_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -436,6 +447,7 @@ jobs:
           path: |
             speaker-performance.log
             speaker-resources-*.log
+            target/speaker-revisions/
           if-no-files-found: error
 
   model-smoke:
@@ -458,7 +470,8 @@ jobs:
           persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - name: Install native build prerequisites
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler pkg-config libssl-dev
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -498,7 +511,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -530,7 +544,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -618,7 +633,8 @@ jobs:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -646,7 +662,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov
@@ -799,7 +816,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -816,7 +834,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
@@ -836,7 +855,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -900,7 +920,8 @@ jobs:
       # dependabot.yml ignore).
       - uses: dtolnay/rust-toolchain@1.94
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: msrv
@@ -914,7 +935,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@nightly
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-fuzz
@@ -937,13 +959,15 @@ jobs:
     # Model smoke depends on this job, so its existing required status covers it.
     runs-on: ubuntu-latest
     name: Benchmarks (regression gate)
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -988,7 +1012,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov

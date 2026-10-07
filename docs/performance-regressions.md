@@ -33,9 +33,12 @@ missing, renamed and removed benchmark results require investigation.
   streaming feeds/finalization. Embeddings must match both the CPU oracle and
   frozen vectors (maximum component error below 0.001). Seven alternating
   timing rounds must have median candidate/oracle ratio at most 1.20.
-  Separate Linux processes also record load time, RSS and peak RSS for both
-  implementations. These resource reports are review evidence, without an
-  automated memory-regression threshold.
+  It also builds the same test-only production-path probe in clean base and
+  candidate checkouts, each with its own locked dependencies. Seven alternating
+  pairs of separate Linux processes must preserve embeddings and offline/streaming
+  turns. Median paired increases above 20% for load, embedding, offline or streaming
+  time, or above 10% for RSS/peak RSS, fail the check. This catches changes shared
+  by the live oracle and candidate, including an ONNX Runtime upgrade.
 - **Model smoke** explicitly requires both performance jobs to succeed. It
   runs even if a dependency fails, and fails itself in that case. This is
   necessary because a skipped required GitHub job can otherwise permit merge.
@@ -65,7 +68,23 @@ cargo test -p gigastt-core --release --locked --lib \
 python3 scripts/test-performance-gates.py
 ```
 
-On Linux, collect comparable speaker resource measurements in separate processes:
+On Linux, run the mandatory comparison with an immutable base commit:
+
+```sh
+python3 scripts/compare-speaker-revisions.py --base <base-commit-sha>
+```
+
+Both builds complete before timing. The script adds the identical test-only
+probe to temporary checkouts, without replacing either production implementation,
+and retains raw process logs and `target/speaker-revisions/report.json`.
+Embeddings use the same nine prefixes; offline and streaming timings include the
+full pipeline on the concatenated clips with silence gaps. Each path is warmed
+before timing. Model hashing warms the filesystem cache before measuring load.
+All seven pairs must use matching assets, CPU counts and four speaker pool slots;
+missing or invalid measurements fail. The same-source probe must compile against
+both revisions; an incompatible test seam needs review, never a skipped comparison.
+
+For an additional same-build diagnostic of the legacy backend:
 
 ```sh
 for backend in production legacy-tract; do
@@ -109,10 +128,9 @@ reference and candidate frontend. Offline and streaming comparisons preserve
 the existing pipeline behavior on these fixtures.
 
 These short clips are not a labeled meeting corpus and do not establish DER on
-long meetings, overlap quality, all execution providers, or all CPU models. The
-live timing oracle uses the same linked ONNX Runtime, so an upgrade that slows
-both oracle and candidate requires an additional before/after model benchmark.
-The recognition quality gate's RSS budget is not a diarization memory budget.
+long meetings, overlap quality, all execution providers, or all CPU models.
+Revision comparisons cover speaker latency and memory on these Linux fixtures;
+they do not establish full-server peak memory with simultaneous ASR requests.
 Changes affecting these areas require representative measurements in addition
 to the automated gates. Timing tests cannot prove absence of every regression.
 

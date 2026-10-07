@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Model-free regression tests for fail-closed performance and release checks."""
 import importlib.util
+import copy
 import json
 from pathlib import Path
 import tempfile
@@ -96,6 +97,61 @@ class ReleaseTests(unittest.TestCase):
         jobs[-1]['conclusion'] = 'skipped'
         with self.assertRaises(ValueError):
             gates.check_release([self.run_record()], jobs, 'a' * 40)
+
+
+class SpeakerRevisionTests(unittest.TestCase):
+    def report(self):
+        sample = {'model_sha256': 'a' * 64, 'fixture_sha256': ['b' * 64] * 3,
+                  'pool_size': 4, 'logical_cpus': 4,
+                  'load_seconds': 0.2, 'embedding_seconds': 0.6,
+                  'offline_seconds': 1.0, 'streaming_seconds': 1.0,
+                  'rss_kib': 200000, 'peak_rss_kib': 210000,
+                  'embeddings': [[1.0] * 256 for _ in range(3)],
+                  'offline_turns': [[0.0, 1.0, 0]], 'streaming_turns': [[0.0, 1.0, 0]]}
+        return {'base': [copy.deepcopy(sample) for _ in range(7)],
+                'candidate': [copy.deepcopy(sample) for _ in range(7)]}
+
+    def test_matching_revisions_pass(self):
+        ratios = gates.check_speaker_revisions(self.report())
+        self.assertTrue(all(value == 1.0 for value in ratios.values()))
+
+    def test_latency_load_and_memory_regressions_fail(self):
+        for metric in ['embedding_seconds', 'offline_seconds', 'streaming_seconds',
+                       'load_seconds', 'rss_kib', 'peak_rss_kib']:
+            with self.subTest(metric=metric):
+                report = self.report()
+                for sample in report['candidate']:
+                    sample[metric] *= 1.3
+                with self.assertRaises(ValueError):
+                    gates.check_speaker_revisions(report)
+
+    def test_missing_or_invalid_measurements_fail(self):
+        for metric in ['embedding_seconds', 'load_seconds', 'rss_kib', 'peak_rss_kib']:
+            for value in [0, -1, True, float('nan'), float('inf'), None]:
+                with self.subTest(metric=metric, value=value):
+                    report = self.report()
+                    report['candidate'][0][metric] = value
+                    with self.assertRaises(ValueError):
+                        gates.check_speaker_revisions(report)
+        report = self.report()
+        report['candidate'].pop()
+        with self.assertRaises(ValueError):
+            gates.check_speaker_revisions(report)
+
+    def test_quality_and_protocol_changes_fail(self):
+        for metric, value in [('model_sha256', 'c' * 64), ('fixture_sha256', []),
+                              ('pool_size', 1), ('logical_cpus', 2),
+                              ('embeddings', []), ('offline_turns', []),
+                              ('streaming_turns', [[0.0, 1.0, 1]])]:
+            with self.subTest(metric=metric):
+                report = self.report()
+                report['candidate'][0][metric] = value
+                with self.assertRaises(ValueError):
+                    gates.check_speaker_revisions(report)
+        report = self.report()
+        report['candidate'][0]['embeddings'][0][0] += 0.01
+        with self.assertRaises(ValueError):
+            gates.check_speaker_revisions(report)
 
 
 if __name__ == '__main__':
