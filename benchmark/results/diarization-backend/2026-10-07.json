@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "date": "2026-10-07",
+  "base_revision": "888857f99d31fabcbe26e92b2ff6d007ce08b695",
+  "candidate": "local working tree, content hashes below",
+  "cpu": "AMD Ryzen AI 9 HX 370",
+  "logical_cpus": 24,
+  "os": "Ubuntu 26.04.1 LTS x86_64",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "profile": {
+    "name": "release",
+    "lto": true,
+    "codegen_units": 1,
+    "opt_level": 3
+  },
+  "dependencies": {
+    "polyvoice": "1.0.0",
+    "tract-onnx": "0.23.8",
+    "ort": "2.0.0-rc.13"
+  },
+  "model": {
+    "file": "wespeaker_resnet34.onnx",
+    "sha256": "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb"
+  },
+  "source_sha256": {
+    "crates/gigastt-core/Cargo.toml": "85e8696a3e6188bfb139f6b7c63776f1c25671979fbe6fd7392bebf4a3c8c620",
+    "Cargo.lock": "bbebcd335d4339753b4a9beb3514e1af126e5617d740836b7494462ce6367239",
+    "crates/gigastt-core/src/inference/diarization.rs": "a6e03dc681bba3344daad017de68502c58f5b782194a06c3249f364afaebff52",
+    "crates/gigastt-core/src/inference/diarization/speaker.rs": "1076d26aec4fad03121801078f1649fabbd7efc939f7dfe8915bc66e23cc88f9",
+    "crates/gigastt-core/src/inference/diarization/model_tests.rs": "284304262148cc652086a2f66bc32f33f3ca336ce06e10c47e79c44bb766638b",
+    "crates/gigastt-core/src/runtime/mod.rs": "d3f5f06dcd111547d539113ed6338665672948bbde6d91a189c23cc7fae8c85a",
+    "crates/gigastt-core/src/runtime/ort/factory.rs": "6ec9e9c4f38f1a1ed72cd8e96f38b751811cbfa83d9fc7535e96e2ea84444713",
+    "crates/gigastt-core/src/runtime/ort/session.rs": "1a1b0b4314fff9ca7d13c909f1f76f89b57784ab191d2456b9925da1e742b168"
+  },
+  "fixture_sha256": {
+    "crates/gigastt/tests/fixtures/golos_00.wav": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+    "crates/gigastt/tests/fixtures/golos_01.wav": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+    "crates/gigastt/tests/fixtures/golos_02.wav": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+    "crates/gigastt-core/src/inference/diarization/speaker-embeddings.f32le": "17dc9a8cc8d08095078d78db36d3bd3bb98dabac363575d0574881107e5f20e7"
+  },
+  "protocol": {
+    "clips": 9,
+    "prefix_seconds": [
+      0.5,
+      1.5,
+      3.0
+    ],
+    "total_clip_seconds": 15.0,
+    "rounds": 7,
+    "speaker_pool": 4,
+    "intra_threads": 6,
+    "inter_threads": 1,
+    "aggregate": "median elapsed seconds; median of paired candidate/oracle ratios; alternating run order",
+    "scope": "speaker embeddings including fbank/CMVN; excludes ASR, decoding, load and clustering from warm timing",
+    "command": "cargo test -p gigastt-core --release --lib inference::diarization::model_tests::test_speaker_quality_and_latency_against_cpu_oracle -- --ignored --exact --test-threads=1 --nocapture"
+  },
+  "initial_regression_test": {
+    "candidate_seconds": 1.01870875,
+    "clips": 9,
+    "load_seconds": 0.392397377,
+    "oracle_seconds": 0.428444786,
+    "ratio": 2.4397959028290783,
+    "rounds": 7
+  },
+  "corrected": {
+    "candidate_round_seconds": [
+      0.157940176,
+      0.14927821,
+      0.14648816,
+      0.148722787,
+      0.148406914,
+      0.144913614,
+      0.141048074
+    ],
+    "candidate_seconds": 0.148406914,
+    "clips": 9,
+    "intra_threads": 6,
+    "load_seconds": 0.115762942,
+    "onnx_runtime": "ORT Build Info: git-branch=rel-1.28.0, git-commit-id=da9b5e3, fp8-kv-cache=1, build type=Release",
+    "oracle_round_seconds": [
+      0.159164134,
+      0.150988642,
+      0.143769585,
+      0.143098876,
+      0.145230479,
+      0.140315198,
+      0.14234509
+    ],
+    "oracle_seconds": 0.143769585,
+    "ratio": 1.018909249824989,
+    "rounds": 7
+  },
+  "legacy_tract_control": {
+    "legacy_round_seconds": [
+      1.116880934,
+      1.06264809,
+      1.038420453,
+      1.058318759,
+      1.052293856,
+      1.054555493,
+      1.052387741
+    ],
+    "legacy_seconds": 1.054555493,
+    "oracle_round_seconds": [
+      0.147745502,
+      0.138629603,
+      0.140546783,
+      0.140489886,
+      0.148249048,
+      0.147376248,
+      0.141353689
+    ],
+    "oracle_seconds": 0.141353689,
+    "ratio": 7.445067394031718
+  },
+  "single_thread_cpu_control": {
+    "intra_threads": 1,
+    "seconds": 0.430316894
+  },
+  "legacy_to_corrected_median_ratio": 7.105838027195957,
+  "quality": {
+    "embedding_component_tolerance": 0.001,
+    "fixed_vectors": 3,
+    "offline_turns_match": true,
+    "streaming_turns_and_flush_match": true,
+    "concurrent_embeddings_match": true,
+    "short_input_and_silence_match": true
+  },
+  "limits": [
+    "Not the issue reporters private 20-recording corpus or Ryzen 9950X3D.",
+    "No labeled meeting DER or full REST wall-time claim.",
+    "Live oracle shares ORT and polyvoice frontend; upgrades affecting both need independent base/candidate measurements.",
+    "The initial reproduction used one-thread ORT; the final run restores the historical six-thread CPU budget.",
+    "Resource probe covers speaker-only process RSS on Linux; no full-server peak-memory or cold-disk-load claim."
+  ],
+  "resources": {
+    "production": {
+      "backend": "production",
+      "load_seconds": 0.094543684,
+      "peak_rss_kib": 196380,
+      "pool_size": 4,
+      "rss_kib": 196380
+    },
+    "legacy-tract": {
+      "backend": "legacy-tract",
+      "load_seconds": 0.333579009,
+      "peak_rss_kib": 210600,
+      "pool_size": 4,
+      "rss_kib": 210600
+    },
+    "protocol": "Separate Linux test processes; four sessions; nine embeddings of first three seconds of golos_00.wav; /proc/self/status after inference. Libraries included; ASR model excluded; warm filesystem cache. One process per backend, not a confidence interval."
+  }
+}

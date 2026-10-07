@@ -80,6 +80,14 @@ For E2E / load / soak tests see [`CLAUDE.md`](../CLAUDE.md).
 - For user-visible changes: add a bullet under the `## [Unreleased]` section of `CHANGELOG.md`.
 - Keep commit messages short and present-tense (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).
 
+## Dependency and runtime changes
+
+Follow [performance and dependency acceptance](../docs/performance-regressions.md).
+Backend, model, codec and thread-policy changes require measured quality, speed
+and resource comparisons. Compilation and API compatibility do not establish
+performance compatibility. Performance gates apply to automated dependency PRs
+as well as hand-written changes.
+
 ## Release checklist
 
 Release artifacts are produced by [`release.yml`](workflows/release.yml)
@@ -89,11 +97,11 @@ source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
 1. **Bump version** in `Cargo.toml` (`version = "x.y.z"`). Run `cargo check` so `Cargo.lock` updates.
 2. **Update `CHANGELOG.md`**: move the `## [Unreleased]` bullets into a new `## [x.y.z] - YYYY-MM-DD` section; leave an empty `## [Unreleased]` for the next cycle.
 3. **Verify locally**: `cargo test --workspace --lib --bins && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all -- --check && python3 scripts/check-docs-drift.py`.
-4. **Commit**: `chore: bump version to x.y.z, update CHANGELOG`.
+4. **Merge through a PR**: commit the release preparation, merge after required checks pass, and wait for the exact resulting main commit to pass the full CI, including performance and quality gates.
 5. **Tag & push** (signed):
    ```sh
    git tag -s vx.y.z -m "gigastt vx.y.z"
-   git push origin main --tags
+   git push origin vx.y.z
    ```
 6. **Wait for the release workflow** to finish on GitHub Actions.
    It must produce:
@@ -114,7 +122,10 @@ source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
    workflows when prompted, wait for green checks and merge it; see
    [Homebrew release updates](../docs/homebrew-release.md).
 7. **Verify the release page** on GitHub — all assets attached, release notes generated.
-8. **Publish to crates.io** (only after step 7):
+8. **Publish to crates.io** (only after step 7, from the validated release commit).
+   Run `GITHUB_REPOSITORY=ekhodzitsky/gigastt python3 scripts/performance-gates.py release "$(git rev-parse HEAD)"`
+   with authenticated `gh` before publishing:
+
    ```sh
    cargo publish -p gigastt-core --dry-run
    cargo publish -p gigastt-core

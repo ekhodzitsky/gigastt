@@ -12,6 +12,7 @@ use super::{factory::OrtExecutionProvider, tensor::value_to_tensor};
 /// `ort`-backed runtime that loads sessions for a specific execution provider.
 pub struct OrtRuntime {
     intra_threads: usize,
+    allow_spinning: bool,
     provider: OrtExecutionProvider,
     secondary_cpu: bool,
     prepacked: Option<Arc<ort::session::builder::PrepackedWeights>>,
@@ -36,6 +37,7 @@ impl OrtRuntime {
     ) -> Self {
         Self {
             intra_threads,
+            allow_spinning: true,
             provider,
             secondary_cpu,
             prepacked,
@@ -43,6 +45,12 @@ impl OrtRuntime {
             usable_cache_dir: OnceLock::new(),
             cache_load: parking_lot::Mutex::new(()),
         }
+    }
+
+    #[cfg(feature = "diarization")]
+    pub(crate) fn without_spinning(mut self) -> Self {
+        self.allow_spinning = false;
+        self
     }
 }
 
@@ -217,6 +225,11 @@ impl OrtRuntime {
             .map_err(|e| load_failed(model_path, e))?;
 
         if self.provider.is_cpu() {
+            builder = builder
+                .with_intra_op_spinning(self.allow_spinning)
+                .map_err(|e| load_failed(model_path, e))?
+                .with_inter_op_spinning(self.allow_spinning)
+                .map_err(|e| load_failed(model_path, e))?;
             let intra_threads = if is_encoder {
                 self.intra_threads.max(1)
             } else {

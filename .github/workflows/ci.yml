@@ -27,6 +27,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+      - run: python3 scripts/test-performance-gates.py
+      - run: python3 scripts/test-ci-prerequisites.py
       - run: python3 scripts/test-resolve-release.py
       - run: python3 scripts/test-resolve-android.py
       - run: python3 scripts/test-release-assets.py
@@ -205,7 +207,8 @@ jobs:
         with:
           components: clippy
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -225,7 +228,8 @@ jobs:
       - name: Validate Docker dependency-cache targets
         run: python3 scripts/test_docker_cache.py
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -329,7 +333,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -343,7 +348,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -384,20 +390,88 @@ jobs:
       # Warning-free with the lean core (no default features) + ane only.
       - run: cargo check -p gigastt-core --no-default-features --features ane
 
-  model-smoke:
-    # All PRs, including forks: indirect inference dependencies cannot skip this gate.
+  speaker-performance:
     runs-on: ubuntu-latest
-    name: Model smoke
-    timeout-minutes: 25
+    name: Speaker performance
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - name: Install native build prerequisites
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler pkg-config libssl-dev
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: speaker-performance
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Cache speaker model
+        uses: actions/cache@v6
+        with:
+          path: ~/.gigastt/models/wespeaker_resnet34.onnx
+          key: gigastt-speaker-${{ hashFiles('crates/gigastt-core/src/model/variant.rs') }}
+      - name: Provision and verify speaker model
+        run: |
+          mkdir -p "$HOME/.gigastt/models"
+          model="$HOME/.gigastt/models/wespeaker_resnet34.onnx"
+          if [ ! -f "$model" ]; then
+            curl --fail --location --retry 3 'https://huggingface.co/onnx-community/wespeaker-voxceleb-resnet34-LM/resolve/main/onnx/model.onnx' -o "$model"
+          fi
+          echo "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb  $model" | sha256sum -c -
+      - name: Compare speaker quality and latency against CPU oracle
+        run: |
+          set -euo pipefail
+          test_name=inference::diarization::model_tests::test_speaker_quality_and_latency_against_cpu_oracle
+          cargo test -p gigastt-core --release --locked --lib "$test_name" -- --ignored --exact --list | grep -Fx "$test_name: test"
+          cargo test -p gigastt-core --release --locked --lib "$test_name" -- --ignored --exact --test-threads=1 --nocapture 2>&1 | tee speaker-performance.log
+      - name: Record speaker resource use in separate processes
+        run: |
+          set -euo pipefail
+          test_name=inference::diarization::model_tests::test_speaker_resource_probe
+          cargo test -p gigastt-core --release --locked --lib "$test_name" -- --ignored --exact --list | grep -Fx "$test_name: test"
+          for backend in production legacy-tract; do
+            GIGASTT_SPEAKER_RESOURCE_BACKEND="$backend" cargo test -p gigastt-core --release --locked --lib "$test_name" -- --ignored --exact --test-threads=1 --nocapture 2>&1 | tee "speaker-resources-$backend.log"
+          done
+      - name: Compare actual base and candidate speaker resources and quality
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/compare-speaker-revisions.py --base "$BASE_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: speaker-performance
+          path: |
+            speaker-performance.log
+            speaker-resources-*.log
+            target/speaker-revisions/
+          if-no-files-found: error
+
+  model-smoke:
+    # All PRs, including forks: indirect inference dependencies cannot skip this gate.
+    runs-on: ubuntu-latest
+    name: Model smoke
+    needs: [bench, speaker-performance]
+    if: always()
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Require performance gates
+        env:
+          BENCH_RESULT: ${{ needs.bench.result }}
+          SPEAKER_RESULT: ${{ needs.speaker-performance.result }}
+        run: test "$BENCH_RESULT" = success && test "$SPEAKER_RESULT" = success
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install native build prerequisites
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -437,7 +511,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -469,7 +544,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -557,7 +633,8 @@ jobs:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -585,7 +662,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov
@@ -738,7 +816,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -755,7 +834,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
@@ -775,7 +855,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
@@ -839,7 +920,8 @@ jobs:
       # dependabot.yml ignore).
       - uses: dtolnay/rust-toolchain@1.94
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: msrv
@@ -853,7 +935,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@nightly
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-fuzz
@@ -872,80 +955,47 @@ jobs:
           RUSTUP_TOOLCHAIN: nightly
 
   bench:
-    # PR-only: criterion needs a main baseline to diff against, and the
-    # regression gate is meaningless on the very push that moves main.
-    # Shared GH runners are noisy: sub-10% swings are common and have
-    # reddened otherwise-clean PRs. Keep the report, but don't block merge —
-    # real regressions show up in the soak/WER gates and local benches.
-    if: github.event_name == 'pull_request' && !startsWith(github.head_ref, 'dependabot/')
-    continue-on-error: true
+    # Compare both revisions on this runner, including dependency-update PRs.
+    # Model smoke depends on this job, so its existing required status covers it.
     runs-on: ubuntu-latest
     name: Benchmarks (regression gate)
+    timeout-minutes: 60
+    env:
+      # Cargo's --target-dir is not exported to the benchmark process;
+      # Criterion otherwise discovers a different report directory per worktree.
+      CRITERION_HOME: ${{ github.workspace }}/target/criterion
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: Save baseline from main
-        # Branch refs are untrusted input — pass the base through an env var
-        # rather than interpolating into the shell directly (script-injection
-        # guard). Return to the PR head by the SHA captured up front, NOT by
-        # `github.head_ref`: on a fork PR the head branch name is not a local ref
-        # in this checkout, so `git checkout "$HEAD_REF"` dies with "pathspec did
-        # not match" — which (under the default `bash -e`) aborted this step and
-        # skipped the benchmark + regression gate, failing the job for every fork
-        # PR. `git checkout --detach <sha>` works for fork and same-repo alike.
+      - name: Measure the immutable base revision
         env:
-          BASE_REF: ${{ github.base_ref }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BASE_WORKTREE: ${{ runner.temp }}/benchmark-base
         run: |
-          head_sha="$(git rev-parse HEAD)"
-          git stash --include-untracked || true
-          git checkout "origin/$BASE_REF"
-          cargo bench -p gigastt-core --features __internals -- --save-baseline main || true
-          git checkout --detach "$head_sha"
-          git stash pop || true
+          set -euo pipefail
+          test -n "$BASE_SHA"
+          git cat-file -e "$BASE_SHA^{commit}"
+          rm -rf target/criterion
+          git worktree add --detach "$BASE_WORKTREE" "$BASE_SHA"
+          cargo bench --manifest-path "$BASE_WORKTREE/Cargo.toml" --target-dir "$GITHUB_WORKSPACE/target" -p gigastt-core --locked --features __internals -- --save-baseline main
 
       - name: Run benchmarks
-        run: cargo bench -p gigastt-core --features __internals -- --baseline main 2>&1 | tee benchmark.log
-
-      - name: Check for performance regressions (>5%)
         run: |
-          python3 - <<'PY'
-          import re, sys
+          set -euo pipefail
+          cargo bench -p gigastt-core --locked --features __internals -- --baseline main 2>&1 | tee benchmark.log
 
-          with open("benchmark.log") as f:
-              log = f.read()
-
-          # Criterion prints `change: [lo% mid% hi%]` followed by
-          # `Performance has regressed.` for confirmed slowdowns. Gate on the
-          # lower confidence bound so we only fail when we're confident the
-          # slowdown actually exceeds the threshold.
-          pattern = re.compile(
-              r"change:\s+\[([+\-][\d.]+)%\s+[+\-][\d.]+%\s+[+\-][\d.]+%\]"
-              r"[^\n]*\n\s*Performance has regressed\."
-          )
-
-          THRESHOLD = 5.0
-          regressions = [
-              (m.group(0).splitlines()[0].strip(), float(m.group(1)))
-              for m in pattern.finditer(log)
-              if float(m.group(1)) > THRESHOLD
-          ]
-
-          if regressions:
-              print(f"Performance regressions exceeding {THRESHOLD}% detected:")
-              for line, lower in regressions:
-                  print(f"  {line} (lower bound +{lower}%)")
-              sys.exit(1)
-          print(f"No performance regressions exceeding {THRESHOLD}% threshold.")
-          PY
+      - name: Require complete measurements and reject regressions
+        run: python3 scripts/performance-gates.py criterion target/criterion
 
       - name: Upload criterion report
         if: always()
@@ -966,7 +1016,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov

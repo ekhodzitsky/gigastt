@@ -13,6 +13,18 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+### Fixed
+
+- Restore CPU ONNX Runtime for Engine speaker embeddings after the polyvoice
+  backend change slowed diarization. Preserve the WeSpeaker frontend, clustering,
+  lazy loading and bounded session pool.
+- Require real-model speaker quality/latency checks and complete performance
+  comparisons before merge, including dependency PRs. Release publication now
+  requires successful quality/performance checks for the exact source commit.
+- Compare speaker load time, offline/streaming latency and memory against the
+  base revision with independently built dependencies, rejecting regressions
+  and changes to the checked embeddings or speaker turns.
+
 ## [2.22.0] - 2026-10-04
 
 ### Documentation

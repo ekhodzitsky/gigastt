@@ -513,6 +513,12 @@ RUST_LOG=gigastt=debug cargo run -- serve
 
 ## Notes for AI Agents
 
+- Dependency/backend/model/codec/thread-policy changes require measured quality,
+  latency, throughput and memory evidence for the affected workload. Follow
+  [performance acceptance](docs/performance-regressions.md); never disable a
+  regression gate or change its baseline to hide a slowdown. Dependency updates
+  receive the same checks as source changes.
+
 - **Always run `cargo test --workspace --lib --bins && cargo clippy` before finishing any change.**
   Never a bare `cargo test` / `cargo test --workspace`: the WER benchmark is a `harness = false`
   target, so `--ignored` does not skip it and the run takes ~2.5 hours.

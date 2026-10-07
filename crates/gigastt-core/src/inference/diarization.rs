@@ -1,15 +1,8 @@
-//! Speaker diarization via [polyvoice] (feature-gated).
+//! Speaker diarization via polyvoice, with WeSpeaker inference owned by gigastt.
 //!
-//! Both pipelines take the v1.0 [`polyvoice::Embedder`] contract: the offline
-//! [`polyvoice::pipeline::LegacyPipeline`] and the per-session
-//! [`polyvoice::streaming::StreamingPipeline`] are generic over `E: Embedder`,
-//! and [`FbankOnnxExtractor`] implements it directly (tract, polyvoice 1.0).
-//! The legacy `EmbeddingExtractor` / `EmbeddingError` surface this module used
-//! to contain is soft-deprecated upstream and is no longer referenced here.
-//!
-//! The WeSpeaker model (`wespeaker_resnet34.onnx`) expects rank-3 fbank input;
-//! keep [`load_speaker_encoder`] on the `FbankOnnxExtractor` constructor, not
-//! the old rank-2 waveform `OnnxEmbeddingExtractor`.
+//! Both offline and streaming pipelines use the same CPU ONNX Runtime embedder.
+//! The frontend retains WeSpeaker's rank-3, 80-bin fbank + CMVN contract;
+//! polyvoice supplies VAD and clustering, without choosing the production backend.
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -24,21 +17,26 @@ use polyvoice::{
 
 use super::DiarizationOutcome;
 
+mod speaker;
+use speaker::SpeakerEmbedder;
+type LoadedSpeakerEncoder = Arc<SpeakerEmbedder>;
+
 /// WeSpeaker ResNet34 embedding dimension.
 pub(crate) const SPEAKER_EMBEDDING_DIM: usize = 256;
-/// Tract session pool size shared across concurrent diarization sessions.
+/// CPU session pool size shared across concurrent diarization sessions.
 const SPEAKER_POOL_SIZE: usize = 4;
 
-/// Shared WeSpeaker encoder handle (`Arc` over the fbank extractor).
+/// Legacy polyvoice encoder handle retained for Rust source compatibility.
+/// Engine-owned speaker inference uses gigastt's CPU runtime instead.
 pub type SpeakerEncoder = Arc<FbankOnnxExtractor>;
 
 /// Per-session streaming diarization state.
 pub type StreamingDiarizationState = StreamingPipeline<EnergyVad, SharedExtractor>;
 
-/// Adapter that lets a single shared [`FbankOnnxExtractor`] back the
+/// Adapter that lets a single shared CPU speaker encoder back the
 /// per-session [`StreamingPipeline`]s, which take ownership of their extractor.
 /// The session pool inside the extractor is shared across sessions via `Arc`.
-pub struct SharedExtractor(Arc<FbankOnnxExtractor>);
+pub struct SharedExtractor(LoadedSpeakerEncoder);
 
 impl Embedder for SharedExtractor {
     fn dim(&self) -> usize {
@@ -52,24 +50,12 @@ impl Embedder for SharedExtractor {
     }
 }
 
-/// Load a WeSpeaker ResNet34 encoder from `model_path`.
-///
-/// Uses the fbank constructor (rank-3 input). A missing/corrupt path returns
-/// `Err` — never panics.
-///
-/// Tract always runs on CPU (`ExecutionProvider::auto()` is also `Cpu` since
-/// polyvoice 0.21 dropped ort). Named EPs are accepted by the constructor and
-/// ignored.
+/// Load the fixed WeSpeaker frontend and CPU runtime session pool.
 pub(crate) fn load_speaker_encoder(
     model_path: &Path,
     pool_size: usize,
-) -> anyhow::Result<FbankOnnxExtractor> {
-    Ok(FbankOnnxExtractor::new(
-        model_path,
-        SPEAKER_EMBEDDING_DIM,
-        pool_size,
-        polyvoice::onnx::ExecutionProvider::Cpu,
-    )?)
+) -> anyhow::Result<SpeakerEmbedder> {
+    SpeakerEmbedder::load(model_path, pool_size)
 }
 
 /// Lazy WeSpeaker handle: path probed at engine boot, encoder loaded on
@@ -86,7 +72,7 @@ pub struct LazySpeakerEncoder {
 enum SpeakerLoadSlot {
     /// File present; ONNX session not yet opened.
     Pending,
-    Ready(SpeakerEncoder),
+    Ready(LoadedSpeakerEncoder),
     /// Load was attempted and failed; do not retry until engine reload.
     Failed,
 }
@@ -113,7 +99,7 @@ impl LazySpeakerEncoder {
     ///
     /// Returns `None` when load fails (already logged). Subsequent calls after a
     /// failure also return `None` without re-attempting.
-    pub fn get_or_load(&self) -> Option<SpeakerEncoder> {
+    pub fn get_or_load(&self) -> Option<LoadedSpeakerEncoder> {
         let mut slot = self.slot.lock();
         match &*slot {
             SpeakerLoadSlot::Ready(enc) => return Some(Arc::clone(enc)),
@@ -158,7 +144,7 @@ pub fn probe_speaker_encoder(model_dir: &Path) -> Option<LazySpeakerEncoder> {
 }
 
 /// Open a per-session streaming diarization pipeline sharing `encoder`.
-pub fn open_streaming(encoder: &SpeakerEncoder) -> Option<StreamingDiarizationState> {
+pub fn open_streaming(encoder: &LoadedSpeakerEncoder) -> Option<StreamingDiarizationState> {
     let config = DiaConfig {
         cluster: ClusterConfig {
             threshold: 0.5,
@@ -208,7 +194,7 @@ pub struct LabeledTurn {
 ///   input and ceiling seconds polyvoice reported — and
 /// - [`DiarizationOutcome::Failed`] for any other pipeline error (still logged).
 pub fn run_offline(
-    encoder: &SpeakerEncoder,
+    encoder: &LoadedSpeakerEncoder,
     samples: &[f32],
 ) -> Result<Vec<LabeledTurn>, DiarizationOutcome> {
     #[cfg(test)]
@@ -291,7 +277,7 @@ impl<V: polyvoice::VoiceActivityDetector> polyvoice::VoiceActivityDetector
 /// The existing pipeline still owns clustering. Active model calls and the
 /// clustering call finish synchronously; checks prevent starting later stages.
 pub(crate) fn run_offline_with_abort(
-    encoder: &SpeakerEncoder,
+    encoder: &LoadedSpeakerEncoder,
     samples: &[f32],
     abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<Vec<LabeledTurn>, OfflineRunError> {
@@ -437,12 +423,8 @@ mod tests {
         );
     }
 
-    // Model-free guard for the WeSpeaker rank-3 fbank fix: `load_speaker_encoder`
-    // must stay wired to polyvoice's `FbankOnnxExtractor` (rank-3 fbank input) via
-    // its 3-arg constructor, NOT the old rank-2 raw-waveform
-    // `OnnxEmbeddingExtractor` (4-arg) that caused the `Got: 2 Expected: 3`
-    // failure. The extractor reads the ONNX model at construction, so a
-    // nonexistent path returns Err (never panics/Ok).
+    // Missing models fail without panicking; the real-model oracle separately
+    // verifies rank-3 fbank input and CPU inference behavior.
     #[test]
     fn test_load_speaker_encoder_missing_model_errors() {
         let missing = Path::new("/nonexistent/gigastt-test/wespeaker_resnet34.onnx");
@@ -729,3 +711,6 @@ mod cancellation_tests {
         assert!(guarded.process(&[]).is_err());
     }
 }
+
+#[cfg(all(test, feature = "file-decode"))]
+mod model_tests;

@@ -34,14 +34,7 @@ fn test_create_state_diarization_flag_ignored_without_feature() {
     assert!(state.audio_buffer.is_empty());
 }
 
-// Model-free guard for the 2.11.2 diarization fix: `load_speaker_encoder` must
-// stay wired to polyvoice's `FbankOnnxExtractor` (rank-3 fbank input) via its
-// 3-arg constructor, NOT the old rank-2 raw-waveform `OnnxEmbeddingExtractor`
-// (4-arg, with a segment-samples window) that caused the `Got: 2 Expected: 3`
-// failure. The extractor reads the ONNX model at construction, so a nonexistent
-// path returns Err (never panics/Ok). This runs on every PR without the ~26 MB
-// model, and won't compile if the loader's return type / constructor arity
-// regresses to the waveform extractor.
+// Missing speaker models must return an error without panicking.
 #[cfg(feature = "diarization")]
 #[test]
 fn test_load_speaker_encoder_missing_model_errors() {
