@@ -960,6 +960,10 @@ jobs:
     runs-on: ubuntu-latest
     name: Benchmarks (regression gate)
     timeout-minutes: 60
+    env:
+      # Cargo's --target-dir is not exported to the benchmark process;
+      # Criterion otherwise discovers a different report directory per worktree.
+      CRITERION_HOME: ${{ github.workspace }}/target/criterion
     steps:
       - uses: actions/checkout@v7
         with:
