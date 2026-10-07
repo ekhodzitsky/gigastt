@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
     outputs:
       tag: ${{ steps.source.outputs.tag }}
       commit: ${{ steps.source.outputs.commit }}
@@ -41,6 +42,11 @@ jobs:
           RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           RELEASE_METADATA_PATH: ${{ runner.temp }}/release-source.json
         run: python3 scripts/resolve-release.py
+      - name: Require successful performance and quality gates for release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: ${{ steps.source.outputs.commit }}
+        run: python3 scripts/performance-gates.py release "$RELEASE_COMMIT"
       - name: Preserve validated release selection for downstream automation
         uses: actions/upload-artifact@v4
         with:

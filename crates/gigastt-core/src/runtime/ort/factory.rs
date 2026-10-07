@@ -244,6 +244,17 @@ pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
     Box::new(OrtFactory::cpu())
 }
 
+/// Speaker pools need threaded CPU inference without idle workers competing
+/// with another slot or the recognition encoder between embedding calls.
+#[cfg(feature = "diarization")]
+pub(crate) fn speaker_runtime(intra_threads: usize) -> Box<dyn Runtime> {
+    ensure_ort_initialized();
+    Box::new(
+        OrtRuntime::new(intra_threads, OrtExecutionProvider::Cpu, true, None, None)
+            .without_spinning(),
+    )
+}
+
 /// Returns a production `ort` factory that preserves the provider selection and
 /// disk-cache layout used by the engine before the runtime abstraction.
 ///

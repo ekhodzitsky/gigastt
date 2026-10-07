@@ -22,7 +22,23 @@ defaults:
     working-directory: crates/gigastt-uniffi
 
 jobs:
+  validate-performance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Require successful quality and performance checks
+        if: inputs.publish
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: python3 scripts/performance-gates.py release "$SOURCE_COMMIT"
+
   wheels:
+    needs: validate-performance
     name: Wheel ${{ matrix.platform }}
     runs-on: ${{ matrix.host }}
     strategy:
