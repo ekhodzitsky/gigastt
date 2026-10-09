@@ -38,5 +38,6 @@
         "candidate": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091"
       }
     }
-  }
+  },
+  "short_form_evidence": "benchmark/results/rnnt-quantization/2026-10-09/golos-report.json"
 }

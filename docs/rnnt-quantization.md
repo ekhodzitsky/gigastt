@@ -35,6 +35,19 @@ excerpt the candidate has one more word error; the corpus total improves.
 Full transcripts are content-addressed beside each report. These observations
 cover this host and corpus, not every CPU or utterance.
 
+The additional [Golos short-form evidence](../benchmark/results/rnnt-quantization/2026-10-09/golos-report.json)
+uses the canonical `golos_crowd_1k` slice and existing benchmark normalization:
+992 non-empty references, 4732 normalized words; eight empty references are
+excluded by the existing corpus policy. RNN-T errors decrease from 139 to 138
+(2.937% to 2.916% WER). E2E RNN-T errors increase from 397 to 399 (8.390% to
+8.432%). Five e2e utterances worsen and three improve; some differences concern
+English name spelling or abbreviations, but there are also word substitutions.
+Raw scoring is retained too (RNN-T 139 to 139; e2e 756 to 762 errors on 5013
+words). The normalizer has not been changed to erase these differences.
+The e2e candidate therefore remains blocked from model publication pending an
+explicit decision on this accuracy trade-off. These Linux measurements do not
+replace the historical macOS benchmark numbers.
+
 The remaining errors have distinct boundaries: dynamic MatMul quantization
 still changes predictions relative to FP32, while the phrase missing at 1087.8
 seconds is also missing in FP32. Removing Conv quantization cannot establish a
@@ -71,6 +84,11 @@ or latency gate.
 
 `Release Model` now runs the public long-form comparison before making a bundle
 available for publication. A missing, invalid or incomplete measurement fails.
+It also validates the saved Golos evidence against every proposed model file,
+the frozen reference manifest and complete transcript coverage, then recomputes
+both score variants from the transcripts. A short-form WER increase blocks
+publication independently of long-form improvement; changing model bytes
+requires new evidence.
 Publication also requires successful main CI for the exact source commit and
 refuses an existing model tag. Optional minisign signatures are retained.
 Candidates can be built with `publish: false` before promotion. Model activation
@@ -97,3 +115,17 @@ python3 scripts/model-quality.py --binary target/release/gigastt --head e2e_rnnt
 
 Repeat for `rnnt`. Do not run compilation or other inference jobs concurrently
 with resource measurements. Keep the complete evidence when a candidate fails.
+
+To reproduce short-form evidence with the existing Golos WAV corpus:
+
+```sh
+python3 scripts/measure-model-short-quality.py --binary target/release/gigastt \
+  --models /tmp/model-bundle --audio "$HOME/.gigastt/benchmarks/golos_wav" \
+  --output /tmp/model-golos-results
+python3 scripts/model-short-quality.py
+```
+
+The second command checks the committed report selected by
+`benchmark/model-release.json`. It intentionally fails for the current e2e
+candidate. Batch wall time and peak RSS in the short-form report are informative;
+the repeated cold/warm long-form measurements enforce the resource limits.

@@ -21,6 +21,8 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   of shared weights and general Gemm semantics.
 - Rebuild model releases from verified FP32 sources and gate both heads on
   long-form WER, phrase deletion, cold/warm latency, memory and artifact size.
+  Require matching short-form Golos evidence and recompute scores from complete
+  saved transcripts; a short-form regression blocks publication independently.
   Runtime model pins are promoted after the immutable bundle is published.
 - Keep release-only speaker performance probes out of debug coverage while
   retaining the mandatory optimized performance job.

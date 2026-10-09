@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
+      - name: Require complete short-form evidence without quality regression
+        run: python3 scripts/model-short-quality.py
       - uses: dtolnay/rust-toolchain@stable
       - name: Install native prerequisites
         timeout-minutes: 8
@@ -29,6 +31,7 @@ jobs:
           cargo build --release -p gigastt --locked
           python3 scripts/test-model-bundle.py
           python3 scripts/test-model-quality.py
+          python3 scripts/test-model-short-quality.py
       - name: Rebuild both heads from verified FP32 sources
         run: python3 scripts/prepare-model-bundle.py --binary target/release/gigastt --root "$RUNNER_TEMP/model-bundle"
       - name: Prepare frozen public long-form audio
