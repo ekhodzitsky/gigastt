@@ -2,6 +2,8 @@
 //!
 //! Provides server startup with clean shutdown, WAV generation,
 //! WebSocket helpers, and readiness polling.
+//! Set `GIGASTT_TEST_MODEL_DIR` to check a candidate bundle in isolation from
+//! the installed models; the default remains `~/.gigastt/models`.
 
 // Each test binary only uses a subset of these helpers.
 #![allow(dead_code)]
@@ -59,10 +61,14 @@ pub fn home_dir() -> Option<PathBuf> {
 
 /// Return model directory if model files exist, or panic with helpful message.
 pub fn model_dir() -> String {
-    let dir = home_dir()
-        .expect("Cannot determine home directory")
-        .join(".gigastt")
-        .join("models");
+    let dir = std::env::var_os("GIGASTT_TEST_MODEL_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            home_dir()
+                .expect("Cannot determine home directory")
+                .join(".gigastt")
+                .join("models")
+        });
     // Accept either recognition head — the engine auto-detects the variant from
     // whichever encoder is present (`rnnt` is the default download since v2.3,
     // `e2e_rnnt` is the alternative; FP32 or generated INT8 both count).

@@ -1,4 +1,4 @@
-//! Exercise the real file-stream producers with an unread HTTP response body.
+//! Exercise file handlers with controlled native stalls and unread responses.
 
 use super::*;
 use axum::body::Body;
@@ -216,6 +216,115 @@ impl BlockingGate {
         *self.blocked.lock().unwrap() = false;
         self.release.notify_all();
     }
+}
+
+struct UnblockOnDrop(Arc<BlockingGate>);
+
+impl Drop for UnblockOnDrop {
+    fn drop(&mut self) {
+        self.0.unblock();
+    }
+}
+
+/// A fast model must not turn watchdog coverage into a speed test. Block an
+/// encoder call explicitly, then exercise the real REST route and admission.
+#[tokio::test]
+async fn test_rest_watchdog_cancels_stalled_inference_and_recovers_capacity() {
+    use std::time::Duration;
+
+    let tmp = tempfile::tempdir().unwrap();
+    gigastt_core::test_support::write_rnnt_layout(tmp.path()).unwrap();
+    let gate = Arc::new(BlockingGate::default());
+    let factory = TalkativeFactory {
+        gate: Some(gate.clone()),
+        ..Default::default()
+    };
+    let engine = Arc::new(
+        gigastt_core::test_support::load_rnnt_engine_with_factory(
+            tmp.path(),
+            1,
+            Box::new(factory.clone()),
+        )
+        .unwrap(),
+    );
+    let limits = RuntimeLimits {
+        inference_timeout_secs: 1,
+        pool_checkout_timeout_secs: 2,
+        ..Default::default()
+    };
+    let retry_after_secs = limits.pool_checkout_timeout_secs;
+    let state = Arc::new(AppState {
+        engine: engine_swap(engine.clone()),
+        limits: Arc::new(ArcSwap::from_pointee(limits)),
+        metrics_registry: None,
+        engine_builder: None,
+        reload_lock: Arc::new(tokio::sync::Mutex::new(())),
+        shutdown: tokio_util::sync::CancellationToken::new(),
+        tracker: tokio_util::task::TaskTracker::new(),
+        jobs: None,
+    });
+    let app = crate::server::router::protected_v1_router(
+        false,
+        crate::server::upload::UploadAdmission::new(1, retry_after_secs),
+    )
+    .with_state(state.clone());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(5))
+        .build()
+        .unwrap();
+    let url = format!("http://{address}/v1/transcribe");
+
+    // Warmup has completed. Keep the next native call blocked even after the
+    // watchdog returns; the worker still owns its input and pooled session.
+    factory.windows.store(0, Ordering::Relaxed);
+    *gate.blocked.lock().unwrap() = true;
+    let _unblock = UnblockOnDrop(gate.clone());
+    let wav = gigastt_core::test_support::pcm16_wav(&vec![0; 16_000 * 50], 16_000);
+    let request = client.post(&url).body(wav);
+    let response = tokio::spawn(async move { request.send().await });
+    tokio::time::timeout(Duration::from_secs(5), gate.entered.notified())
+        .await
+        .expect("native encoder entered the controlled stall");
+    let response = tokio::time::timeout(Duration::from_secs(3), response).await;
+    let still_reserved = engine.pool_for_batch().available() == 0;
+    let short = gigastt_core::test_support::pcm16_wav(&vec![0; 16_000], 16_000);
+    let busy = client.post(&url).body(short.clone()).send().await;
+
+    // Always release the native call before assertions so a failed test cannot
+    // strand a blocking worker. Cancellation must prevent even its first window
+    // from completing, not merely finish the entire file quickly on this host.
+    gate.unblock();
+    state.tracker.close();
+    tokio::time::timeout(Duration::from_secs(5), state.tracker.wait())
+        .await
+        .expect("cancelled native worker exited");
+    assert!(still_reserved, "a native call must retain its pool slot");
+    assert_eq!(engine.pool_for_batch().available(), 1);
+    assert_eq!(factory.windows.load(Ordering::Relaxed), 0);
+    let response = response
+        .expect("watchdog returns while the native call is blocked")
+        .unwrap()
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::GATEWAY_TIMEOUT);
+    let error: serde_json::Value = response.json().await.unwrap();
+    assert_eq!(error["code"], "inference_timeout");
+    let busy = busy.unwrap();
+    assert_eq!(busy.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(
+        busy.headers()[header::RETRY_AFTER],
+        retry_after_secs.to_string()
+    );
+    let error: serde_json::Value = busy.json().await.unwrap();
+    assert_eq!(error["code"], "upload_busy");
+    assert_eq!(error["retry_after_ms"], retry_after_secs * 1000);
+    let recovered = client.post(&url).body(short).send().await.unwrap();
+    assert_eq!(recovered.status(), StatusCode::OK);
+    assert_eq!(engine.pool_for_batch().available(), 1);
+    state.shutdown.cancel();
+    server.abort();
 }
 
 #[tokio::test]
