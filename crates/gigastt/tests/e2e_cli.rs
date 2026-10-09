@@ -7,9 +7,9 @@
 //! `Serve` / `Transcribe` / `Quantize` match arms and their helper wiring are
 //! actually executed.
 //!
-//! Help / version / arg-validation tests need no model and run anywhere. The
-//! transcribe / serve / quantize tests are `#[ignore]` (require the GigaAM
-//! model ~225 MB INT8 at `~/.gigastt/models`). Run all with:
+//! Help / version / arg-validation / quantize overwrite tests need no model.
+//! Transcribe / serve tests are `#[ignore]` (require the GigaAM INT8 model
+//! at `~/.gigastt/models`). Run all with:
 //! `cargo test --test e2e_cli -- --include-ignored --test-threads=1`.
 
 mod common;
@@ -271,30 +271,31 @@ fn cli_transcribe_bad_format_fails() {
     assert!(!out.status.success(), "an unknown export format must fail");
 }
 
-// ─── model-gated: quantize ──────────────────────────────────────────────────
+// ─── no-model: quantize overwrite protection ────────────────────────────────
 
-#[ignore = "requires the GigaAM model (~225 MB INT8)"]
 #[test]
-fn cli_quantize_existing_is_noop() {
-    let md = common::model_dir();
-    // Only run the fast "already exists" path; if no INT8 encoder is present a
-    // real quantize would take ~2 min, so skip rather than block the suite.
-    let has_int8 = ["v3_rnnt_encoder_int8.onnx", "v3_e2e_rnnt_encoder_int8.onnx"]
-        .iter()
-        .any(|f| std::path::Path::new(&md).join(f).exists());
-    if !has_int8 {
-        eprintln!("skipping cli_quantize_existing_is_noop: no INT8 encoder present");
-        return;
+fn cli_quantize_existing_requires_force_and_preserves_output() {
+    for (head, filename) in [
+        ("rnnt", "v3_rnnt_encoder_int8.onnx"),
+        ("e2e_rnnt", "v3_e2e_rnnt_encoder_int8.onnx"),
+    ] {
+        let directory = tempfile::tempdir().expect("tempdir");
+        let encoder = directory.path().join(filename);
+        let original = b"existing encoder must not be overwritten";
+        std::fs::write(&encoder, original).expect("write fixture");
+        let out = Command::new(bin())
+            .args(["quantize", "--model-variant", head, "--model-dir"])
+            .arg(directory.path())
+            .output()
+            .expect("run");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            !out.status.success(),
+            "{head}: existing output must require --force"
+        );
+        assert!(stderr.contains("Use --force"), "{head}: {stderr}");
+        assert_eq!(std::fs::read(encoder).expect("read fixture"), original);
     }
-    let out = Command::new(bin())
-        .args(["quantize", "--model-dir", &md])
-        .output()
-        .expect("run");
-    assert!(
-        out.status.success(),
-        "quantize (noop) failed: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
 }
 
 // ─── model-gated: serve boot + graceful shutdown ────────────────────────────
