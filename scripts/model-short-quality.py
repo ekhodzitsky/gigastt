@@ -18,7 +18,8 @@ from common import compute_wer, compute_wer_naive
 
 def evidence_digest(report, head):
     """Bind an explicit trade-off to model bytes, references and every transcript."""
-    evidence = dict(manifest_sha256=report['manifest_sha256'], models=report['models'][head],
+    evidence = dict(manifest_sha256=report['manifest_sha256'], audio_sha256=report['audio_sha256'],
+                    models=report['models'][head],
                     transcripts={arm: report['results'][head][arm]['details']
                                  for arm in ('baseline', 'candidate')})
     return hashlib.sha256(json.dumps(evidence, sort_keys=True, separators=(',', ':')).encode()).hexdigest()

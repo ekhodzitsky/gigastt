@@ -42,7 +42,7 @@
   "short_form_evidence": "benchmark/results/rnnt-quantization/2026-10-09/golos-report.json",
   "short_form_transition": {
     "e2e_rnnt": {
-      "evidence_sha256": "ad6d648b05c121741b477ca0614e7595ee7cc63c6532e8b774503bd0c936cd41",
+      "evidence_sha256": "f4057e08cb7eca8765d62a0646407de6592a872dccaf3025a6e03058c3c547b7",
       "baseline_errors": 397,
       "max_candidate_errors": 399,
       "approved_on": "2026-10-09",

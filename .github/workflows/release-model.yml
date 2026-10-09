@@ -32,10 +32,21 @@ jobs:
           python3 scripts/test-model-bundle.py
           python3 scripts/test-model-quality.py
           python3 scripts/test-model-short-quality.py
+          python3 scripts/test-longform-prepare.py
       - name: Rebuild both heads from verified FP32 sources
         run: python3 scripts/prepare-model-bundle.py --binary target/release/gigastt --root "$RUNNER_TEMP/model-bundle"
-      - name: Prepare frozen public long-form audio
+      - uses: actions/cache/restore@v6
+        id: audio-cache
+        with:
+          path: ${{ runner.temp }}/audio
+          key: longform-audio-v1-${{ hashFiles('benchmark/manifests/longform_stitch.json') }}
+      - name: Prepare and verify frozen public long-form audio
         run: python3 scripts/longform_stitch.py prepare --audio "$RUNNER_TEMP/audio"
+      - uses: actions/cache/save@v6
+        if: steps.audio-cache.outputs.cache-hit != 'true'
+        with:
+          path: ${{ runner.temp }}/audio
+          key: ${{ steps.audio-cache.outputs.cache-primary-key }}
       - name: Require quality and performance non-regression for both heads
         run: |
           for head in rnnt e2e_rnnt; do

@@ -81,6 +81,11 @@ class ShortQualityTests(unittest.TestCase):
         self.release['short_form_transition']['rnnt']['max_candidate_errors'] = 0
         self.assertTrue(self.check())
 
+    def test_approval_does_not_cover_different_audio(self):
+        self.approve_regression()
+        self.report['audio_sha256']['a.wav'] = 'f' * 64
+        self.assertTrue(self.check())
+
     def test_unmeasured_model_or_companion_is_rejected(self):
         for name in ('v3_rnnt_encoder_int8.onnx', 'v3_vocab.txt'):
             with self.subTest(name=name):

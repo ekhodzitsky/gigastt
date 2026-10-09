@@ -258,6 +258,7 @@ jobs:
           python3 scripts/test-model-bundle.py
           python3 scripts/test-model-quality.py
           python3 scripts/test-model-short-quality.py
+          python3 scripts/test-longform-prepare.py
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest
