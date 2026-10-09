@@ -203,7 +203,7 @@ docker run -p 127.0.0.1:9876:9876 ghcr.io/ekhodzitsky/gigastt:2.18.0
 Pin a concrete version (`:2.18.0`) for reproducible deploys; `:latest` / `:cuda`
 track the newest release. Want zero cold-start? Build a model-baked image
 locally with `docker build --build-arg GIGASTT_BAKE_MODEL=1 -t gigastt:baked .`
-(adds ~225 MB INT8).
+(adds ~310 MiB INT8).
 
 ### Build from source
 
@@ -254,7 +254,7 @@ curl http://127.0.0.1:9876/health
 # {"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt","version":"2.18.0","punctuation":true,"itn":true}
 ```
 
-**Non-blocking first run.** The port binds immediately, before the ~225 MB INT8 model
+**Non-blocking first run.** The port binds immediately, before the ~310 MiB INT8 model
 download finishes (if the model dir is empty). During that window `/health` returns `200` with
 `model:"loading"` and `/ready` returns `503 {"reason":"initializing"}` — so a
 Docker `HEALTHCHECK` / load-balancer probe on `/health` does not flap, and an

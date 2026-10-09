@@ -25,7 +25,7 @@
 
 set -euo pipefail
 
-PREQUANT_BASE="https://github.com/ekhodzitsky/gigastt/releases/download/models-v3-2026-06-22"
+PREQUANT_BASE="https://github.com/ekhodzitsky/gigastt/releases/download/models-v3-2026-10-09"
 PUNCT_BASE="https://huggingface.co/ekhodzitsky/rupunct-small-onnx/resolve/main"
 
 if [ "$#" -ne 1 ]; then
@@ -78,7 +78,7 @@ fetch() {
 }
 
 fetch "${PREQUANT_BASE}/v3_rnnt_encoder_int8.onnx" "${DEST}/v3_rnnt_encoder_int8.onnx" \
-    "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f"
+    "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f"
 fetch "${PREQUANT_BASE}/v3_rnnt_decoder.onnx" "${DEST}/v3_rnnt_decoder.onnx" \
     "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da"
 fetch "${PREQUANT_BASE}/v3_rnnt_joint.onnx" "${DEST}/v3_rnnt_joint.onnx" \

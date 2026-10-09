@@ -25,8 +25,9 @@ exposes:
 - **OpenAI-compatible** (`/v1/audio/transcriptions`) — multipart `file` + `model` → `{"text":"..."}`
 - **CLI** — `serve`, `download`, `transcribe`, `transcribe-batch`, `watch`, `cache-gc`, `quantize` commands
 
-The product path is **INT8 only** (~225 MB prequantized bundle from Releases):
-`serve` / `download` / engine load never use FP32. `gigastt quantize` remains a
+The product path is **INT8 only** (~310 MiB prequantized bundle from Releases):
+`serve` / `download` / engine load never use a fully FP32 encoder. Convolutions
+remain FP32 inside the prequantized bundle. `gigastt quantize` remains a
 packaging tool that needs a local FP32 ONNX as source (not a runtime path).
 
 ### Key metrics
@@ -34,8 +35,8 @@ packaging tool that needs a local FP32 ONNX as source (not a runtime path).
 | Property | Value |
 |---|---|
 | WER (Russian) | Primary rnnt comparison withheld pending raw results and complete provenance — see [docs/benchmarks.md](docs/benchmarks.md) |
-| RTF (INT8, M1 CPU) | ~0.10 |
-| Memory | ~46 MB resident / ~277 MB `ps` RSS at `--pool-size 1`; ~66 MB / ~510 MB at the default `--pool-size 2` (INT8, M1 Pro, steady state — the 215 MB model is memory-mapped and shared, so RSS overstates; resident footprint is the honest figure) |
+| CPU latency | New bundle: 0.55–0.56× old warm wall time on measured Linux long-form corpus; M1 not remeasured — see [quantization evidence](docs/rnnt-quantization.md) |
+| Memory | New bundle: about 22–23% higher peak RSS on measured Linux long-form corpus; steady-state M1 footprint not remeasured. Encoder is 305 MiB; size is not a RAM budget. |
 | Concurrent sessions | 2 (configurable via `--pool-size`) |
 
 ## Technology Stack
@@ -123,7 +124,7 @@ cargo fmt --check                    # Format check
 Unit tests live in `#[cfg(test)] mod tests` at the bottom of each source file.
 They use synthetic data. Test naming convention: `test_<what>_<expected_behavior>`.
 
-### E2E tests (require model ~225 MB INT8, run in CI on main push only)
+### E2E tests (require model ~310 MiB INT8, run in CI on main push only)
 
 ```sh
 # Download model first
@@ -249,7 +250,7 @@ Default lean install under `~/.gigastt/models/` (prequantized INT8 from Releases
 
 | File | Size | Purpose |
 |---|---|---|
-| `v3_rnnt_encoder_int8.onnx` | ~215 MB | Conformer encoder (INT8; default) |
+| `v3_rnnt_encoder_int8.onnx` | ~305 MiB | Conformer encoder (INT8; default) |
 | `v3_rnnt_decoder.onnx` | ~3.3 MB | LSTM decoder |
 | `v3_rnnt_joint.onnx` | ~1.4 MB | RNN-T joiner |
 | `v3_vocab.txt` | small | char vocabulary (34 tokens) |
@@ -480,7 +481,12 @@ reference: [`docs/cli.md`](docs/cli.md) (enforced by `scripts/check-docs-drift.p
 | `GIGASTT_SOAK_DURATION_SECS` | soak test duration (tests only) | 300 |
 | `RUST_LOG` | tracing filter | `gigastt=info` |
 
-`--pool-size` is CLI-only (no `GIGASTT_POOL_SIZE`); default 2 for multi-connection hosts. RAM is no longer the reason to drop to `--pool-size 1` — an extra slot costs only ~20 MB resident (~66 MB pool-2 vs ~46 MB pool-1; `ps` RSS ~510 vs ~277 MB because it counts the shared memory-mapped model). Pool > 1 can still cost ~10–20% single-job RTF (thread split), which is the real edge trade-off. Leave `--encoder-intra-threads` unset (auto); avoid `1` on multi-core (~3× slower; explicit `1` still allowed for debug).
+`--pool-size` is CLI-only (no `GIGASTT_POOL_SIZE`); default 2 for multi-connection
+hosts. Use 1 for serial or memory-constrained workloads and measure peak memory
+on the deployment host. Historical M1 pool measurements used the old ConvInteger
+bundle and are not a sizing guarantee for the current 305 MiB encoder. Pool > 1
+splits encoder threads between slots and can slow a serial job. Leave
+`--encoder-intra-threads` unset (auto); explicit `1` is allowed for debugging.
 
 ## Useful Commands for Agents
 

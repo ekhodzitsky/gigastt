@@ -19,6 +19,9 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v7
+      - name: Require the current runtime bundle as publication baseline
+        if: inputs.publish
+        run: python3 scripts/model-release-baseline.py
       - name: Require complete short-form evidence without quality regression
         run: python3 scripts/model-short-quality.py
       - uses: dtolnay/rust-toolchain@stable
@@ -33,6 +36,7 @@ jobs:
           python3 scripts/test-model-quality.py
           python3 scripts/test-model-short-quality.py
           python3 scripts/test-longform-prepare.py
+          python3 scripts/test-model-release-baseline.py
       - name: Rebuild both heads from verified FP32 sources
         run: python3 scripts/prepare-model-bundle.py --binary target/release/gigastt --root "$RUNNER_TEMP/model-bundle"
       - uses: actions/cache/restore@v6
@@ -125,7 +129,14 @@ jobs:
         run: |
           existing=$(git ls-remote --tags origin "refs/tags/$MODEL_TAG")
           test -z "$existing" || { echo 'Refusing to replace an existing model tag'; exit 1; }
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          base = f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/blob/{os.environ['GITHUB_SHA']}/benchmark/"
+          notes = Path('docs/rnnt-quantization.md').read_text().replace('(../benchmark/', f'({base}')
+          (Path(os.environ['RUNNER_TEMP']) / 'model-notes.md').write_text(notes)
+          PY
           gh release create "$MODEL_TAG" dist/* \
             --target "$GITHUB_SHA" --latest=false \
             --title "GigaAM v3 INT8 model ($MODEL_TAG)" \
-            --notes-file docs/rnnt-quantization.md
+            --notes-file "$RUNNER_TEMP/model-notes.md"

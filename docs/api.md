@@ -582,7 +582,7 @@ recipe (model dir, pool sizes, punctuation / ITN / VAD / hotwords), **swaps**
 the live `Arc<Engine>`, then warms the new engine. In-flight requests keep the
 engine they started with; a failed rebuild leaves the previous model serving.
 
-**RAM:** reload builds a second engine. The 215 MB encoder mapping is shared;
+**RAM:** reload builds a second engine. The 305 MiB encoder mapping is shared;
 ORT arenas and decoder state are not. Peak after mmap is **unmeasured** — do
 not quote the copy-era +536 MiB figure. Soft mode: `POST /v1/admin/reload?soft=true`
 waits up to ~5 s for the old engine to drain before warming (`soft` /

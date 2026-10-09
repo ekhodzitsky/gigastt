@@ -76,7 +76,7 @@ Inference runs on libuv's worker threadpool (default 4 threads, shared with Node
 
 Supported prebuilt platforms: `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc` (Intel macOS omitted — ort ships no onnxruntime for it). The binaries are built per native runner and attached to the `node-v<version>` release by the **Node Prebuilds** workflow (`.github/workflows/node-prebuilds.yml`, `workflow_dispatch`); the single `gigastt` package is then published.
 
-Caveat: `npm install --ignore-scripts` skips the postinstall, so the binary is not fetched — `require('gigastt')` then errors with instructions to run `node install.js`. The ~215 MB INT8 model is **not** bundled either; side-load it at runtime (e.g. `gigastt download`).
+Caveat: `npm install --ignore-scripts` skips the postinstall, so the binary is not fetched — `require('gigastt')` then errors with instructions to run `node install.js`. The ~305 MiB INT8 model is **not** bundled either; side-load it at runtime (e.g. `gigastt download`).
 
 ## License
 

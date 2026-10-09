@@ -10,7 +10,7 @@ Russian speech to text, locally.
 
 A speech recognizer in Rust, powered by [GigaAM v3](https://github.com/salute-developers/GigaAM)
 and ONNX Runtime. Transcribe files, serve HTTP and WebSocket clients, or embed
-the engine. CPU by default. The default INT8 model is about 225 MB; inference
+the engine. CPU by default. The default INT8 model is about 310 MiB; inference
 runs on the device after the initial downloads. No cloud API or API key.
 
 ## Examples
@@ -98,9 +98,12 @@ distribution; results on held-out sets differ. Full
 comparisons, confidence intervals and artifact provenance:
 [benchmarks](docs/benchmarks.md).
 
-File RTF is about 0.10 on M1 CPU. At the default two-session pool, measured
-resident memory is about 66 MB on M1 Pro; RSS is about 510 MB because it
-also counts the shared mapped model. [Measurement details](docs/benchmarks.md#footprint).
+The 2026-10-09 RNN-T bundle keeps convolutions in FP32 and quantizes MatMul
+weights to INT8. On the measured Linux CPU, warm long-form processing takes
+about 55–56% of the old bundle's time, with about 22–23% higher peak RSS.
+Model size is about 310 MiB per head. The historical M1 latency and memory
+figures have not been remeasured for this bundle. See the
+[quality trade-offs and upgrade instructions](docs/rnnt-quantization.md).
 
 Live WebSocket recognition uses a buffered offline model with incremental
 partials. Its accuracy and latency differ from file transcription;

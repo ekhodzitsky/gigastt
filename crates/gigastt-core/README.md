@@ -15,7 +15,7 @@ gigastt-core = "2.22"
 use gigastt_core::inference::Engine;
 use gigastt_core::model;
 
-// Download the lean INT8 bundle on first run (~225 MB, GitHub Releases)
+// Download the lean INT8 bundle on first run (~310 MiB, GitHub Releases)
 let model_dir = model::default_model_dir();
 model::ensure_model(&model_dir).await?;
 

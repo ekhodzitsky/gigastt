@@ -19,7 +19,7 @@ Options:
 
 Commands:
   serve        Start STT server
-  download     Download lean INT8 model (~225 MB; default)
+  download     Download lean INT8 model (~310 MiB; default)
   transcribe   Transcribe audio file (offline)
   transcribe-batch  Transcribe every audio file in a directory (offline)
   watch        Watch a directory and transcribe new/changed audio files
@@ -107,12 +107,11 @@ gigastt serve [OPTIONS]
                             flags are left at defaults. Env: GIGASTT_PROFILE.
   --pool-size <N>           Concurrent inference sessions [default: 2].
                             CLI-only (no matching env var). Edge / low-RAM:
-                            `--pool-size 1` (~46 MB resident / ~277 MB `ps` RSS).
-                            Default 2 is ~66 MB resident / ~510 MB `ps` RSS;
-                            the 215 MB encoder is memory-mapped and shared
-                            (~20 MB resident per extra slot). `ps` RSS overstates
-                            because it counts the mapping. Pool > 1 can cost
-                            ~10–20% single-job RTF (encoder threads split).
+                            use `--pool-size 1` and measure peak memory on the
+                            deployment host. The encoder mapping is shared, but
+                            each slot needs scratch/decoder state. Historical M1
+                            footprint figures used the old model bundle.
+                            Pool > 1 splits encoder threads across slots.
   --encoder-intra-threads <N>  Intra-op threads for the encoder session (CPU build
                             only). Unset: logical CPUs divided across the pool.
                             Avoid `1` on multi-core (~3× slower than auto); explicit
@@ -200,7 +199,7 @@ gigastt download [OPTIONS]
   --progress <FORMAT>    Progress output: human (default) | json.
                          Env: GIGASTT_DOWNLOAD_PROGRESS.
 
-  Always fetches the lean **INT8** bundle (~225 MB). There is no FP32 download
+  Always fetches the lean **INT8** bundle (~310 MiB). There is no FP32 download
   path and no on-device quantize step for runtime.
 
   Machine-readable progress (--progress=json)
@@ -311,10 +310,9 @@ gigastt transcribe-batch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
   -f, --format <LIST>         Export formats, comma-separated: txt, json, md, srt, vtt
                               [default: txt,json]. Env: GIGASTT_FORMAT.
   --pool-size <N>             Concurrent transcription workers [default: 2].
-                              CLI-only. Edge: `--pool-size 1` (~46 MB resident).
-                              Default 2 ~66 MB resident; `ps` RSS is higher
-                              (mapped encoder). Pool > 1 can cost ~10–20%
-                              single-job RTF (thread split).
+                              CLI-only. Edge: `--pool-size 1`; measure peak memory
+                              with the deployed model. Pool > 1 splits encoder
+                              threads and can slow a serial job.
   --retries <N>               Extra attempts per file after a failure [default: 0].
                               Env: GIGASTT_BATCH_RETRIES.
   --move-to <DIR>             Move each successfully transcribed source into DIR

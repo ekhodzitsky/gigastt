@@ -15,6 +15,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
+- Activate the verified 2026-10-09 RNN-T model bundle for fresh downloads.
+  Keep convolutions in FP32 for lower phrase loss and faster CPU inference;
+  document the approved e2e short-form accuracy trade-off and higher memory
+  cost. Existing installations can migrate through a separate model directory.
+
 - Keep Conv in FP32 in the default INT8 packaging recipe to reduce long-form
   phrase loss and CPU latency. Add explicit head selection and an experimental
   `--quantize-conv` option; reject no-op conversions and preserve float consumers
