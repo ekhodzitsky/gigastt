@@ -235,6 +235,8 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace --lib --bins
+      - name: Model-free CLI integration tests
+        run: cargo test -p gigastt --test e2e_cli
       - name: Runtime output allocation regression
         run: cargo test -p gigastt-core --test runtime_output_workspace
       - name: Completed-job status allocation regression
