@@ -3,6 +3,7 @@ import copy
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('quality', Path(__file__).with_name('model-quality.py'))
 quality = importlib.util.module_from_spec(spec)
@@ -42,6 +43,10 @@ class QualityTests(unittest.TestCase):
         self.assertEqual(quality.compare(report), [])
         report['models']['candidate']['files']['v3_rnnt_encoder_int8.onnx'] = 'a' * 64
         self.assertTrue(quality.compare(report))
+        # Updating the release recipe must not silently extend an old exception.
+        release['heads']['rnnt']['candidate_encoder_sha256'] = 'a' * 64
+        with patch.object(quality.json, 'loads', return_value=release):
+            self.assertTrue(quality.compare(report))
 
     def test_identical_metrics_pass(self):
         self.assertEqual(quality.compare(self.report()), [])

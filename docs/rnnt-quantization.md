@@ -26,6 +26,15 @@ MatMul-only recipe also improved both phrase loss and speed. VNNI did not remove
 the regression. These are reporter measurements, not independently reproduced
 results on that private recording.
 
+The [local public evidence](../benchmark/results/rnnt-quantization/2026-10-09/summary.json)
+uses Linux x86_64 on Ryzen AI 9 HX 370: 2714 reference words across 1154 seconds.
+RNN-T errors decrease from 200 to 197, e2e RNN-T from 160 to 158. Median paired
+warm wall time is 0.547x and 0.560x baseline; peak RSS is 1.233x and 1.221x.
+There are no three-word deletion runs in either public arm. On one e2e podcast
+excerpt the candidate has one more word error; the corpus total improves.
+Full transcripts are content-addressed beside each report. These observations
+cover this host and corpus, not every CPU or utterance.
+
 The remaining errors have distinct boundaries: dynamic MatMul quantization
 still changes predictions relative to FP32, while the phrase missing at 1087.8
 seconds is also missing in FP32. Removing Conv quantization cannot establish a

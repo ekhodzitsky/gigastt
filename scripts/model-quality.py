@@ -13,6 +13,7 @@ import math
 import os
 from pathlib import Path
 import platform
+import shutil
 import statistics
 import subprocess
 import sys
@@ -69,9 +70,9 @@ def compare(report):
     failures = []
     limits = {'size': 1.10, 'rss': 1.10}
     release = json.loads((Path(__file__).resolve().parents[1] / 'benchmark/model-release.json').read_text())
-    recipe = release['heads'].get(report.get('head'))
-    if recipe and all(report['models'][arm]['files'][f"v3_{report['head']}_encoder_int8.onnx"] == recipe[key]
-                      for arm, key in [('baseline', 'baseline_encoder_sha256'), ('candidate', 'candidate_encoder_sha256')]):
+    pair = release['resource_transition']['encoder_pairs'].get(report.get('head'))
+    if pair and all(report['models'][arm]['files'][f"v3_{report['head']}_encoder_int8.onnx"] == pair[arm]
+                    for arm in ('baseline', 'candidate')):
         limits = {'size': release['resource_transition']['max_encoder_ratio'],
                   'rss': release['resource_transition']['max_peak_rss_ratio']}
     totals = {'baseline': [0, 0, 0], 'candidate': [0, 0, 0]}
@@ -170,6 +171,10 @@ def run(args):
                                     'transcript_sha256': digest(stem.with_suffix('.json'))})
                 (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
                 print(sample['id'], label, repeat, case[label][-1], flush=True)
+        # These are generated caches and model symlinks, not the source packs.
+        # Reclaim them between cases to keep release runners within disk limits.
+        for label in ('baseline', 'candidate'):
+            shutil.rmtree(output / f"pack-{sample['id']}-{label}")
     report['failures'] = compare(report)
     (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     return bool(report['failures'])

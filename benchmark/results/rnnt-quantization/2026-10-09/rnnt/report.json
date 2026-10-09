@@ -1,0 +1,466 @@
+{
+  "schema": 1,
+  "head": "rnnt",
+  "binary_sha256": "ca57a33b2562df52e8e329b8a03bc16c548d2f27f950c4c18858d042710daa66",
+  "manifest_sha256": "c482c7fa458065e2c9d8a410fa4fd46af734f0c5697fb1820d2cff9279477dc2",
+  "models": {
+    "baseline": {
+      "files": {
+        "v3_rnnt_encoder_int8.onnx": "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f",
+        "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+        "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+        "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+      },
+      "encoder_bytes": 225250603
+    },
+    "candidate": {
+      "files": {
+        "v3_rnnt_encoder_int8.onnx": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+        "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+        "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+        "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+      },
+      "encoder_bytes": 319665270
+    }
+  },
+  "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+  "cpu": "processor\t: 0\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 4938.189\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 0\ncpu cores\t: 12\napicid\t\t: 0\ninitial apicid\t: 0\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 1\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 5125.032\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 1\ncpu cores\t: 12\napicid\t\t: 2\ninitial apicid\t: 2\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 2\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 5114.830\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 2\ncpu cores\t: 12\napicid\t\t: 4\ninitial apicid\t: 4\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 3\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 1702.735\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 3\ncpu cores\t: 12\napicid\t\t: 6\ninitial apicid\t: 6\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 4\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 2470.991\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 8\ncpu cores\t: 12\napicid\t\t: 16\ninitial apicid\t: 16\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 5\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3324.435\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 9\ncpu cores\t: 12\napicid\t\t: 18\ninitial apicid\t: 18\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 6\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3324.430\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 10\ncpu cores\t: 12\napicid\t\t: 20\ninitial apicid\t: 20\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 7\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3189.131\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 11\ncpu cores\t: 12\napicid\t\t: 22\ninitial apicid\t: 22\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 8\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 605.264\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 12\ncpu cores\t: 12\napicid\t\t: 24\ninitial apicid\t: 24\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 9\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3324.512\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 13\ncpu cores\t: 12\napicid\t\t: 26\ninitial apicid\t: 26\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 10\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 605.264\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 14\ncpu cores\t: 12\napicid\t\t: 28\ninitial apicid\t: 28\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 11\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 1946.737\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 15\ncpu cores\t: 12\napicid\t\t: 30\ninitial apicid\t: 30\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 12\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 5126.579\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 0\ncpu cores\t: 12\napicid\t\t: 1\ninitial apicid\t: 1\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 13\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3778.539\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 1\ncpu cores\t: 12\napicid\t\t: 3\ninitial apicid\t: 3\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 14\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 5115.215\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 2\ncpu cores\t: 12\napicid\t\t: 5\ninitial apicid\t: 5\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 15\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3603.778\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 3\ncpu cores\t: 12\napicid\t\t: 7\ninitial apicid\t: 7\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 16\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 1998.708\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 8\ncpu cores\t: 12\napicid\t\t: 17\ninitial apicid\t: 17\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 17\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3320.517\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 9\ncpu cores\t: 12\napicid\t\t: 19\ninitial apicid\t: 19\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 18\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 3062.506\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 10\ncpu cores\t: 12\napicid\t\t: 21\ninitial apicid\t: 21\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 19\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 2353.585\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 11\ncpu cores\t: 12\napicid\t\t: 23\ninitial apicid\t: 23\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 20\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 605.264\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 12\ncpu cores\t: 12\napicid\t\t: 25\ninitial apicid\t: 25\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 21\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 2633.640\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 13\ncpu cores\t: 12\napicid\t\t: 27\ninitial apicid\t: 27\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 22\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 605.264\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 14\ncpu cores\t: 12\napicid\t\t: 29\ninitial apicid\t: 29\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\nprocessor\t: 23\nvendor_id\t: AuthenticAMD\ncpu family\t: 26\nmodel\t\t: 36\nmodel name\t: AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nstepping\t: 0\nmicrocode\t: 0xb204037\ncpu MHz\t\t: 605.264\ncache size\t: 1024 KB\nphysical id\t: 0\nsiblings\t: 24\ncore id\t\t: 15\ncpu cores\t: 12\napicid\t\t: 31\ninitial apicid\t: 31\nfpu\t\t: yes\nfpu_exception\t: yes\ncpuid level\t: 16\nwp\t\t: yes\nflags\t\t: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nbugs\t\t: sysret_ss_attrs spectre_v1 spectre_v2 spec_store_bypass srso spectre_v2_user vmscape\nbogomips\t: 3992.59\nTLB size\t: 192 4K pages\nclflush size\t: 64\ncache_alignment\t: 64\naddress sizes\t: 48 bits physical, 48 bits virtual\npower management: ts ttp tm hwpstate cpb eff_freq_ro [13] [14]\n\n",
+  "encoder_threads": 6,
+  "cases": [
+    {
+      "id": "long_example",
+      "audio_sha256": "1868ece0195dfa9fc2394be24865d1133c8452a8292a397db45ba8c3ed9e01e3",
+      "baseline": [
+        {
+          "reference_words": 124,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.64,
+          "peak_rss_kib": 901708,
+          "transcript_sha256": "2439155b4c32789cd5ffae8118f18fd707e522362e5156d2e152e5578e2748f4"
+        },
+        {
+          "reference_words": 124,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.01,
+          "peak_rss_kib": 388920,
+          "transcript_sha256": "2439155b4c32789cd5ffae8118f18fd707e522362e5156d2e152e5578e2748f4"
+        },
+        {
+          "reference_words": 124,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 2.91,
+          "peak_rss_kib": 396608,
+          "transcript_sha256": "2439155b4c32789cd5ffae8118f18fd707e522362e5156d2e152e5578e2748f4"
+        }
+      ],
+      "candidate": [
+        {
+          "reference_words": 124,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 2.41,
+          "peak_rss_kib": 1194692,
+          "transcript_sha256": "59e0334a5280b67484ca4e700912b42124f8ece6bd159d60c167760937725060"
+        },
+        {
+          "reference_words": 124,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 1.73,
+          "peak_rss_kib": 471748,
+          "transcript_sha256": "59e0334a5280b67484ca4e700912b42124f8ece6bd159d60c167760937725060"
+        },
+        {
+          "reference_words": 124,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 1.74,
+          "peak_rss_kib": 479592,
+          "transcript_sha256": "59e0334a5280b67484ca4e700912b42124f8ece6bd159d60c167760937725060"
+        }
+      ]
+    },
+    {
+      "id": "ruls-0000-0010",
+      "audio_sha256": "bfa66eb7d77630ed81e27e7f9730f392c52b79903e61a8f859d73dc4a6765b29",
+      "baseline": [
+        {
+          "reference_words": 154,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.51,
+          "peak_rss_kib": 901464,
+          "transcript_sha256": "51661fe30e60f800c3e4b32211680f24156837f628b1a2ccc4a87fe6582b1bc2"
+        },
+        {
+          "reference_words": 154,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 2.94,
+          "peak_rss_kib": 380696,
+          "transcript_sha256": "51661fe30e60f800c3e4b32211680f24156837f628b1a2ccc4a87fe6582b1bc2"
+        },
+        {
+          "reference_words": 154,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.03,
+          "peak_rss_kib": 392988,
+          "transcript_sha256": "51661fe30e60f800c3e4b32211680f24156837f628b1a2ccc4a87fe6582b1bc2"
+        }
+      ],
+      "candidate": [
+        {
+          "reference_words": 154,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 2.36,
+          "peak_rss_kib": 1187932,
+          "transcript_sha256": "cb25a369509448994ba17ee8bb0cef7b76d66c8c0cd72dcc51d10a20b0edf468"
+        },
+        {
+          "reference_words": 154,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 1.75,
+          "peak_rss_kib": 465908,
+          "transcript_sha256": "cb25a369509448994ba17ee8bb0cef7b76d66c8c0cd72dcc51d10a20b0edf468"
+        },
+        {
+          "reference_words": 154,
+          "edits": 1,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 1.72,
+          "peak_rss_kib": 466004,
+          "transcript_sha256": "cb25a369509448994ba17ee8bb0cef7b76d66c8c0cd72dcc51d10a20b0edf468"
+        }
+      ]
+    },
+    {
+      "id": "ruls-0013-0024",
+      "audio_sha256": "372dd0e1d202b2c9359abeeb8d160781f9ce6d452579af8c62549482108ea3d8",
+      "baseline": [
+        {
+          "reference_words": 177,
+          "edits": 6,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 4.23,
+          "peak_rss_kib": 901940,
+          "transcript_sha256": "f35a852b10eacc63790bca09143e9a6dac3ca415106fe8c938c76945ab911f63"
+        },
+        {
+          "reference_words": 177,
+          "edits": 6,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.52,
+          "peak_rss_kib": 368208,
+          "transcript_sha256": "f35a852b10eacc63790bca09143e9a6dac3ca415106fe8c938c76945ab911f63"
+        },
+        {
+          "reference_words": 177,
+          "edits": 6,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.38,
+          "peak_rss_kib": 376888,
+          "transcript_sha256": "f35a852b10eacc63790bca09143e9a6dac3ca415106fe8c938c76945ab911f63"
+        }
+      ],
+      "candidate": [
+        {
+          "reference_words": 177,
+          "edits": 6,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 2.76,
+          "peak_rss_kib": 1187764,
+          "transcript_sha256": "f848726ca1ec1293d6508689a233e0affc5610c67c2776f2c7685dfd7aa03b03"
+        },
+        {
+          "reference_words": 177,
+          "edits": 6,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 2.0,
+          "peak_rss_kib": 476288,
+          "transcript_sha256": "f848726ca1ec1293d6508689a233e0affc5610c67c2776f2c7685dfd7aa03b03"
+        },
+        {
+          "reference_words": 177,
+          "edits": 6,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 2.04,
+          "peak_rss_kib": 477624,
+          "transcript_sha256": "f848726ca1ec1293d6508689a233e0affc5610c67c2776f2c7685dfd7aa03b03"
+        }
+      ]
+    },
+    {
+      "id": "podlodka-306",
+      "audio_sha256": "46cb7a0868bf7ab39c248af8206836a4ab34ed852b34fc72acf1ea8574088767",
+      "baseline": [
+        {
+          "reference_words": 696,
+          "edits": 84,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 8.83,
+          "peak_rss_kib": 902044,
+          "transcript_sha256": "cd4bca1532973591a44c25a206fe891b4531ceb3acd0f15356fab8cb872acc4c"
+        },
+        {
+          "reference_words": 696,
+          "edits": 84,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 8.38,
+          "peak_rss_kib": 373812,
+          "transcript_sha256": "cd4bca1532973591a44c25a206fe891b4531ceb3acd0f15356fab8cb872acc4c"
+        },
+        {
+          "reference_words": 696,
+          "edits": 84,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 8.67,
+          "peak_rss_kib": 380920,
+          "transcript_sha256": "cd4bca1532973591a44c25a206fe891b4531ceb3acd0f15356fab8cb872acc4c"
+        }
+      ],
+      "candidate": [
+        {
+          "reference_words": 696,
+          "edits": 84,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 5.27,
+          "peak_rss_kib": 1188192,
+          "transcript_sha256": "37e25fcc742a0f36647f1a0e7681db4e11ebb0147eca65cbb87b30dca53a29b7"
+        },
+        {
+          "reference_words": 696,
+          "edits": 84,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 4.59,
+          "peak_rss_kib": 465488,
+          "transcript_sha256": "37e25fcc742a0f36647f1a0e7681db4e11ebb0147eca65cbb87b30dca53a29b7"
+        },
+        {
+          "reference_words": 696,
+          "edits": 84,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 4.71,
+          "peak_rss_kib": 484756,
+          "transcript_sha256": "37e25fcc742a0f36647f1a0e7681db4e11ebb0147eca65cbb87b30dca53a29b7"
+        }
+      ]
+    },
+    {
+      "id": "podlodka-132",
+      "audio_sha256": "73504de68da4d9df2d17ae26b1bb634150c45155c8d176a6cea0703d668674c1",
+      "baseline": [
+        {
+          "reference_words": 722,
+          "edits": 71,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 9.92,
+          "peak_rss_kib": 902200,
+          "transcript_sha256": "710b6e17cad57e3c7cc11c7ab1673f4f9c6f4fc4ae6eafa3a088ef688cab0a53"
+        },
+        {
+          "reference_words": 722,
+          "edits": 71,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 9.89,
+          "peak_rss_kib": 387648,
+          "transcript_sha256": "710b6e17cad57e3c7cc11c7ab1673f4f9c6f4fc4ae6eafa3a088ef688cab0a53"
+        },
+        {
+          "reference_words": 722,
+          "edits": 71,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 9.49,
+          "peak_rss_kib": 377832,
+          "transcript_sha256": "710b6e17cad57e3c7cc11c7ab1673f4f9c6f4fc4ae6eafa3a088ef688cab0a53"
+        }
+      ],
+      "candidate": [
+        {
+          "reference_words": 722,
+          "edits": 70,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 5.91,
+          "peak_rss_kib": 1189776,
+          "transcript_sha256": "8063456a060c2b750548471521751e697d7dc2097c47cc85e2b95673dc450660"
+        },
+        {
+          "reference_words": 722,
+          "edits": 70,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 5.28,
+          "peak_rss_kib": 467964,
+          "transcript_sha256": "8063456a060c2b750548471521751e697d7dc2097c47cc85e2b95673dc450660"
+        },
+        {
+          "reference_words": 722,
+          "edits": 70,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 5.12,
+          "peak_rss_kib": 466324,
+          "transcript_sha256": "8063456a060c2b750548471521751e697d7dc2097c47cc85e2b95673dc450660"
+        }
+      ]
+    },
+    {
+      "id": "podlodka-200",
+      "audio_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914",
+      "baseline": [
+        {
+          "reference_words": 431,
+          "edits": 9,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 9.4,
+          "peak_rss_kib": 902628,
+          "transcript_sha256": "206a80685c20567a30739776383d2b83fe7840b31f93a23d5c8e3c6870d177b1"
+        },
+        {
+          "reference_words": 431,
+          "edits": 9,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 8.56,
+          "peak_rss_kib": 395000,
+          "transcript_sha256": "206a80685c20567a30739776383d2b83fe7840b31f93a23d5c8e3c6870d177b1"
+        },
+        {
+          "reference_words": 431,
+          "edits": 9,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 9.15,
+          "peak_rss_kib": 371980,
+          "transcript_sha256": "206a80685c20567a30739776383d2b83fe7840b31f93a23d5c8e3c6870d177b1"
+        }
+      ],
+      "candidate": [
+        {
+          "reference_words": 431,
+          "edits": 9,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 5.2,
+          "peak_rss_kib": 1187964,
+          "transcript_sha256": "5fcaeab365c93a7937c74ca040b0e359b0acd381c003dbe2902985b974263aca"
+        },
+        {
+          "reference_words": 431,
+          "edits": 9,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 4.68,
+          "peak_rss_kib": 451908,
+          "transcript_sha256": "5fcaeab365c93a7937c74ca040b0e359b0acd381c003dbe2902985b974263aca"
+        },
+        {
+          "reference_words": 431,
+          "edits": 9,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 4.55,
+          "peak_rss_kib": 467472,
+          "transcript_sha256": "5fcaeab365c93a7937c74ca040b0e359b0acd381c003dbe2902985b974263aca"
+        }
+      ]
+    },
+    {
+      "id": "podlodka-275",
+      "audio_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6",
+      "baseline": [
+        {
+          "reference_words": 410,
+          "edits": 28,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 6.97,
+          "peak_rss_kib": 902324,
+          "transcript_sha256": "e22d028901127666b419e51a71181a9359f16bc0d86e8e57dd631dbc2fcc390c"
+        },
+        {
+          "reference_words": 410,
+          "edits": 28,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 6.69,
+          "peak_rss_kib": 393592,
+          "transcript_sha256": "e22d028901127666b419e51a71181a9359f16bc0d86e8e57dd631dbc2fcc390c"
+        },
+        {
+          "reference_words": 410,
+          "edits": 28,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 6.37,
+          "peak_rss_kib": 397420,
+          "transcript_sha256": "e22d028901127666b419e51a71181a9359f16bc0d86e8e57dd631dbc2fcc390c"
+        }
+      ],
+      "candidate": [
+        {
+          "reference_words": 410,
+          "edits": 26,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 4.15,
+          "peak_rss_kib": 1188248,
+          "transcript_sha256": "fbed52b2feaff06213d77fb18f55063a6905b159403d10c622d3acd77a3c5ac8"
+        },
+        {
+          "reference_words": 410,
+          "edits": 26,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.48,
+          "peak_rss_kib": 484500,
+          "transcript_sha256": "fbed52b2feaff06213d77fb18f55063a6905b159403d10c622d3acd77a3c5ac8"
+        },
+        {
+          "reference_words": 410,
+          "edits": 26,
+          "deletion_runs": 0,
+          "words_in_deletion_runs": 0,
+          "wall_seconds": 3.47,
+          "peak_rss_kib": 500936,
+          "transcript_sha256": "fbed52b2feaff06213d77fb18f55063a6905b159403d10c622d3acd77a3c5ac8"
+        }
+      ]
+    }
+  ],
+  "failures": []
+}

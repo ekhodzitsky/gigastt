@@ -27,6 +27,16 @@
   "resource_transition": {
     "max_encoder_ratio": 1.45,
     "max_peak_rss_ratio": 1.5,
-    "reason": "Explicitly approved switch from dynamic INT8 Conv to float Conv for accuracy and speed. Applies only to the exact baseline/candidate encoder hashes below; subsequent model changes retain the standard 1.10 resource limits."
+    "reason": "Explicitly approved switch from dynamic INT8 Conv to float Conv for accuracy and speed. Applies only to the exact baseline/candidate encoder hashes below; subsequent model changes retain the standard 1.10 resource limits.",
+    "encoder_pairs": {
+      "rnnt": {
+        "baseline": "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f",
+        "candidate": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f"
+      },
+      "e2e_rnnt": {
+        "baseline": "cf51b300af47cea099e17c806f8fecce2c46e9e8deb4709ec203f8970a067389",
+        "candidate": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091"
+      }
+    }
   }
 }
