@@ -16,6 +16,14 @@ sys.path.insert(0, str(ROOT / 'benchmark'))
 from common import compute_wer, compute_wer_naive
 
 
+def evidence_digest(report, head):
+    """Bind an explicit trade-off to model bytes, references and every transcript."""
+    evidence = dict(manifest_sha256=report['manifest_sha256'], models=report['models'][head],
+                    transcripts={arm: report['results'][head][arm]['details']
+                                 for arm in ('baseline', 'candidate')})
+    return hashlib.sha256(json.dumps(evidence, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
 def check(report, manifest_path, release):
     manifest_bytes = manifest_path.read_bytes()
     manifest = json.loads(manifest_bytes)
@@ -59,7 +67,12 @@ def check(report, manifest_path, release):
                 if not prefix:
                     totals[arm] = errors
         if totals['candidate'] > totals['baseline']:
-            failures.append(f"{head}: Golos word errors increased from {totals['baseline']} to {totals['candidate']}")
+            approval = release.get('short_form_transition', {}).get(head, {})
+            approved = (approval.get('evidence_sha256') == evidence_digest(report, head)
+                        and totals['baseline'] == approval.get('baseline_errors')
+                        and totals['candidate'] <= approval.get('max_candidate_errors', -1))
+            if not approved:
+                failures.append(f"{head}: Golos word errors increased from {totals['baseline']} to {totals['candidate']}")
     return failures
 
 

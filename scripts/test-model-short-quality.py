@@ -53,6 +53,34 @@ class ShortQualityTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.check()
 
+    def approve_regression(self):
+        candidate = self.report['results']['rnnt']['candidate']
+        candidate.update(errors=1, raw_errors=1, wer=0.5, raw_wer=0.5)
+        candidate['details'][0].update(text='one other', errors=1, raw_errors=1)
+        self.release['short_form_transition'] = {'rnnt': {
+            'evidence_sha256': quality.evidence_digest(self.report, 'rnnt'),
+            'baseline_errors': 0, 'max_candidate_errors': 1}}
+
+    def test_explicit_approval_accepts_only_measured_transcripts_and_models(self):
+        self.approve_regression()
+        self.assertEqual(self.check(), [])
+        # Timing metadata may change on reproduction; quality evidence may not.
+        self.report['results']['rnnt']['candidate']['wall_seconds'] = 123
+        self.assertEqual(self.check(), [])
+        self.report['results']['rnnt']['candidate']['details'][0]['text'] = 'one different'
+        self.assertTrue(self.check())
+
+    def test_approval_does_not_follow_a_future_recipe_change(self):
+        self.approve_regression()
+        self.release['heads']['rnnt']['candidate_encoder_sha256'] = 'f' * 64
+        self.report['models']['rnnt']['candidate']['files']['v3_rnnt_encoder_int8.onnx'] = 'f' * 64
+        self.assertTrue(self.check())
+
+    def test_approval_does_not_exceed_explicit_error_budget(self):
+        self.approve_regression()
+        self.release['short_form_transition']['rnnt']['max_candidate_errors'] = 0
+        self.assertTrue(self.check())
+
     def test_unmeasured_model_or_companion_is_rejected(self):
         for name in ('v3_rnnt_encoder_int8.onnx', 'v3_vocab.txt'):
             with self.subTest(name=name):

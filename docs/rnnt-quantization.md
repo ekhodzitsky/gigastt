@@ -44,8 +44,8 @@ excluded by the existing corpus policy. RNN-T errors decrease from 139 to 138
 English name spelling or abbreviations, but there are also word substitutions.
 Raw scoring is retained too (RNN-T 139 to 139; e2e 756 to 762 errors on 5013
 words). The normalizer has not been changed to erase these differences.
-The e2e candidate therefore remains blocked from model publication pending an
-explicit decision on this accuracy trade-off. These Linux measurements do not
+The measured e2e trade-off was explicitly accepted on 2026-10-09 in exchange
+for fewer long-form phrase losses and approximately twice the CPU speed. These Linux measurements do not
 replace the historical macOS benchmark numbers.
 
 The remaining errors have distinct boundaries: dynamic MatMul quantization
@@ -87,8 +87,10 @@ available for publication. A missing, invalid or incomplete measurement fails.
 It also validates the saved Golos evidence against every proposed model file,
 the frozen reference manifest and complete transcript coverage, then recomputes
 both score variants from the transcripts. A short-form WER increase blocks
-publication independently of long-form improvement; changing model bytes
-requires new evidence.
+publication independently of long-form improvement unless an explicit approval
+matches the exact model files, reference manifest and all measured transcripts.
+The accepted e2e transition permits 397 to 399 errors only for that evidence;
+changing models or transcripts does not inherit the exception.
 Publication also requires successful main CI for the exact source commit and
 refuses an existing model tag. Optional minisign signatures are retained.
 Candidates can be built with `publish: false` before promotion. Model activation
@@ -126,6 +128,5 @@ python3 scripts/model-short-quality.py
 ```
 
 The second command checks the committed report selected by
-`benchmark/model-release.json`. It intentionally fails for the current e2e
-candidate. Batch wall time and peak RSS in the short-form report are informative;
+`benchmark/model-release.json`, including the narrowly scoped e2e approval. Batch wall time and peak RSS in the short-form report are informative;
 the repeated cold/warm long-form measurements enforce the resource limits.

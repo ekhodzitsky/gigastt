@@ -39,5 +39,14 @@
       }
     }
   },
-  "short_form_evidence": "benchmark/results/rnnt-quantization/2026-10-09/golos-report.json"
+  "short_form_evidence": "benchmark/results/rnnt-quantization/2026-10-09/golos-report.json",
+  "short_form_transition": {
+    "e2e_rnnt": {
+      "evidence_sha256": "ad6d648b05c121741b477ca0614e7595ee7cc63c6532e8b774503bd0c936cd41",
+      "baseline_errors": 397,
+      "max_candidate_errors": 399,
+      "approved_on": "2026-10-09",
+      "reason": "Explicitly accepted two additional Golos word errors in exchange for fewer long-form phrase losses and approximately twice the CPU speed. This exception applies only to the exact measured models, reference manifest and transcripts; it is not a budget for future candidates."
+    }
+  }
 }
