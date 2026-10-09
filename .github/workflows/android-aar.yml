@@ -84,7 +84,7 @@ jobs:
       # install Gradle, so `gradle …` below would otherwise use an unpinned,
       # image-version-dependent binary. 8.7 is the minimum Gradle for AGP 8.5.2
       # (packaging/android/build.gradle.kts).
-      - uses: gradle/actions/setup-gradle@v6.3.0
+      - uses: gradle/actions/setup-gradle@v6.4.0
         with:
           gradle-version: '8.7'
 
