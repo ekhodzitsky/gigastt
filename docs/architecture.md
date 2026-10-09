@@ -62,10 +62,12 @@ Server surfaces (single process, one primary port unless metrics is enabled):
 [SberDevices](https://github.com/salute-developers/GigaAM) — RNN-T (Conformer encoder +
 LSTM decoder + joiner), 16-layer 768-dim encoder (240M params); the vocab depends on the
 head (`rnnt` 34-token char — the default since v2.3 — or `e2e_rnnt` 1025-token BPE), 16 kHz
-mono input, MIT licensed. Default install is lean INT8 (~225 MB total: encoder
-~215 MB + decoder/joiner/vocab) via `gigastt download` / first `serve` from
-**GitHub Releases**. Runtime loads INT8 only — there is no FP32 download or
-inference path. Trained on 700K+ hours of Russian speech.
+mono input, MIT licensed. Default install is lean INT8 (~310 MiB total: encoder
+~305 MiB + decoder/joiner/vocab) via `gigastt download` / first `serve` from
+**GitHub Releases**. Runtime loads the prequantized bundle only — there is no
+FP32-only encoder download or inference mode. Convolutions remain FP32 inside the INT8 bundle;
+MatMul weights are quantized per channel. See [quality evidence and upgrade
+instructions](rnnt-quantization.md). Trained on 700K+ hours of Russian speech.
 
 Two opt-in heads (`--model-variant ml_ctc` / `ml_ctc_large`) use
 [**GigaAM Multilingual**](https://huggingface.co/istupakov/gigaam-multilingual-ctc-onnx)
@@ -79,7 +81,8 @@ Kazakh, Kyrgyz, and Uzbek. Both download istupakov's pre-quantized INT8 encoder
 directly — no FP32 download, no on-device quantization (`ml_ctc` ~225 MB, `ml_ctc_large`
 ~592 MB).
 
-**SKU note:** `ml_ctc` is a **speed** head (~**1.5×** better RTF than default `rnnt` in
+**Historical SKU note (old RNN-T ConvInteger bundle; not remeasured for the
+current 305 MiB encoder):** `ml_ctc` is a **speed** head (~**1.5×** better RTF than default `rnnt` in
 lab measurements), **not** a lean-RAM SKU — ready RSS is about the same class as `rnnt`
 when both INT8 encoders are present. Prefer `--pool-size 1` for low RAM, not a head
 switch.

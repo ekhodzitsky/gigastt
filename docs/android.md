@@ -113,14 +113,14 @@ Gradle packages these automatically into the APK/AAB.
 
 ## Model Bundling
 
-The GigaAM v3 model set for the default `rnnt` head is **lean INT8 ~225 MB** on
+The GigaAM v3 model set for the default `rnnt` head is **lean INT8 ~310 MiB** on
 disk (`gigastt download`). The `e2e_rnnt` head uses the parallel `v3_e2e_rnnt_*`
 names; multilingual heads ship `multilingual[_large]_ctc.int8.onnx` +
 `multilingual_vocab.txt`.
 
 | File | Size (approx) |
 |------|---------------|
-| `v3_rnnt_encoder_int8.onnx` | ~215 MB (required on mobile) |
+| `v3_rnnt_encoder_int8.onnx` | ~305 MiB (required on mobile) |
 | `v3_rnnt_decoder.onnx` | ~3.3 MB |
 | `v3_rnnt_joint.onnx` | ~1.4 MB |
 | `v3_vocab.txt` | ~200 B |
@@ -227,7 +227,7 @@ GigasttBridge.stringFree(result)
 | Component | Approximate Size |
 |-----------|------------------|
 | `libgigastt_ffi.so` (arm64, stripped, release, LTO) | ~20–30 MB |
-| ONNX models (INT8) | ~225 MB |
+| ONNX models (INT8) | ~310 MiB |
 | **Total on-device** | ~230–240 MB |
 
 Tips to reduce binary size:
@@ -250,7 +250,7 @@ Tips to reduce binary size:
 
 4. **Model directory layout is fixed** — `Engine::load` expects exactly the filenames from the download and auto-detects the head from them: the default `rnnt` head (`v3_rnnt_encoder_int8.onnx`, `v3_rnnt_decoder.onnx`, `v3_rnnt_joint.onnx`, `v3_vocab.txt`), or the `e2e_rnnt` head (`v3_e2e_rnnt_*`). Runtime is INT8 only — an FP32 `v3_rnnt_encoder.onnx` is not a fallback. Do not rename files.
 
-5. **Memory footprint** — budget **resident** RAM: ~46 MB at `pool_size = 1`, ~66 MB at pool 2 (INT8 `rnnt`; the 215 MB encoder is memory-mapped). `ps` RSS reads ~277 / ~510 MB because it counts the mapping. On mobile use `pool_size = 1`.
+5. **Memory footprint** — use `pool_size = 1` on mobile and measure peak memory on the target device. The current 305 MiB encoder has higher memory cost than the old ConvInteger bundle; historical M1 figures are not Android memory budgets. See [model evidence](rnnt-quantization.md).
 
 ---
 

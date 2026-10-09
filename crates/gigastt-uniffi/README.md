@@ -38,7 +38,7 @@ AAR are still in progress.
 
 Install the prebuilt wheel — `pip install gigastt` — no compiler, no `protoc`, no
 onnxruntime download (it is statically linked; the wheel is `py3-none-<platform>`,
-one per platform across all Python 3.x). The ~215 MB model is side-loaded at
+one per platform across all Python 3.x). The ~305 MiB model is side-loaded at
 runtime. Wheels are built + published by `.github/workflows/python-wheels.yml`.
 
 ```python

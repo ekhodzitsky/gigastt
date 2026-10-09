@@ -1,5 +1,11 @@
 # Benchmarks
 
+> **Model revision:** Unless explicitly linked to the [2026-10-09 model
+> comparison](rnnt-quantization.md), performance and footprint measurements on
+> this page describe the older ConvInteger bundle. They are historical evidence,
+> not current-model memory budgets. The current encoder is 305 MiB; its M1
+> footprint and latency have not been remeasured.
+
 Historical comparisons of gigastt against Russian-ASR engines. The primary
 comparison used Apple M1 CPU, 1,000-sample manifests per domain (992 nonempty
 clean-read references), failures included in scoring, and bootstrap intervals.

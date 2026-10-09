@@ -13,7 +13,7 @@ pub(super) const HF_REPO: &str = "istupakov/gigaam-v3-onnx";
 /// revision; bump it together with the INT8 checksums when re-quantizing.
 #[cfg(feature = "net")]
 pub(super) const PREQUANT_RELEASE_BASE: &str =
-    "https://github.com/ekhodzitsky/gigastt/releases/download/models-v3-2026-06-22";
+    "https://github.com/ekhodzitsky/gigastt/releases/download/models-v3-2026-10-09";
 
 /// Base URL of the pinned GitHub Release hosting the per-bucket palettized
 /// **ANE** (Core ML) encoder packages, one deterministic `.tar` per mel bucket.
@@ -254,10 +254,10 @@ impl ModelVariant {
     pub fn encoder_int8_checksum(self) -> &'static str {
         match self {
             ModelVariant::Rnnt => {
-                "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f"
+                "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f"
             }
             ModelVariant::E2eRnnt => {
-                "cf51b300af47cea099e17c806f8fecce2c46e9e8deb4709ec203f8970a067389"
+                "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091"
             }
             // Downloaded pre-quantized from istupakov's HuggingFace repo (not our
             // GitHub Release); this is the SHA-256 of `multilingual_ctc.int8.onnx`.

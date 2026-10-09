@@ -297,12 +297,13 @@ To force a clean re-download, remove `~/.gigastt/models/` and re-run.
 
 ## Out-of-memory (OOM)
 
-The 215 MB INT8 encoder is **memory-mapped and shared** across pool slots.
-Budget **resident** footprint (dirty + compressed pages): ~46 MB at
-`--pool-size 1`, ~66 MB at the default 2 (~20 MB per extra slot). `ps` RSS
-reads ~277 / ~510 MB because it counts the shared mapping — do not size
-cgroups off `ps` RSS. Per-request encoder scratch still grows with audio
-length (a few minutes of 16 kHz can add tens of MiB).
+The current RNN-T INT8 encoder is **305 MiB** and its optimized mapping is
+shared across pool slots. Measure process/container peak memory under realistic
+request concurrency, audio length and sidecar settings before setting limits.
+The new bundle increased peak RSS by about 22–23% in the measured Linux
+long-form comparison. Historical M1 resident/RSS figures used the old
+ConvInteger bundle and are not a current-model sizing guarantee.
+See [model measurements and trade-offs](rnnt-quantization.md).
 
 **Reduce footprint**
 - Runtime is **INT8 only** (`gigastt download` / first `serve`).
@@ -335,10 +336,9 @@ Operator notes for pool sizing, SKUs, VAD, and reload. Full flag list:
 
 ### Pool size tradeoffs (RAM vs concurrency vs RTF)
 
-- Each extra pool slot costs about **~20 MB resident** (the encoder mapping
-  is shared). Honest figures for INT8 `rnnt` on M1: pool-1 ≈ **46 MB
-  resident / 277 MB `ps` RSS**, pool-2 ≈ **66 MB / 510 MB**. Do not use the
-  old “~400 / ~790 MB per copy” arithmetic.
+- Each extra slot adds runtime arenas, scratch and decoder state; the encoder
+  mapping is shared. Measure the marginal cost with the current model on your
+  host. Historical M1 estimates of ~20 MB resident per slot used the old bundle.
 - Pool > 1 also **splits encoder intra-op threads** across concurrent triplets.
   A **single** job on a busy multi-slot pool is therefore slower than the same
   job on pool=1 — typically about **+10–20% RTF** on a quiet serial workload
@@ -380,7 +380,7 @@ Clamped so at least one interactive triplet remains.
 
 `POST /v1/admin/reload` builds a **second** engine, then **swaps before warmup**
 so the warm peak is not forced to stack on the previous copy once in-flight
-work finishes. The 215 MB encoder mapping is shared; ORT arenas and decoder
+work finishes. The 305 MiB encoder mapping is shared; ORT arenas and decoder
 state are not. Peak after mmap is **unmeasured** (do not quote the copy-era
 +536 MiB figure). Edge boxes with almost no free RAM can still OOM mid-build;
 keep headroom or restart the process instead.
@@ -424,7 +424,9 @@ VAD-enabled server.
 `--model-variant ml_ctc` is a **throughput / RTF** choice (~**1.5×** faster RTF
 than default `rnnt` in lab — e.g. RTF **~0.023** vs **~0.034**), **not** a
 low-memory SKU. Ready RSS for `ml_ctc` is **about the same class as `rnnt`**
-on multi-head installs (both ~225 MB INT8 encoder class). For less RAM use
+in older measurements made before the RNN-T encoder grew to 305 MiB.
+The former speed and ready-memory comparison is not established for the new
+RNN-T bundle. For less RAM use
 **`--pool-size 1`**, not a head switch. Use `ml_ctc` / `ml_ctc_large` when you
 need **ru/en/kk/ky/uz** or higher encode speed; `rnnt` remains the Russian-only
 default. Its primary accuracy comparison awaits complete benchmark evidence.

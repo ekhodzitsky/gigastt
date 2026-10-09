@@ -45,8 +45,8 @@ English name spelling or abbreviations, but there are also word substitutions.
 Raw scoring is retained too (RNN-T 139 to 139; e2e 756 to 762 errors on 5013
 words). The normalizer has not been changed to erase these differences.
 The measured e2e trade-off was explicitly accepted on 2026-10-09 in exchange
-for fewer long-form phrase losses and approximately twice the CPU speed. These Linux measurements do not
-replace the historical macOS benchmark numbers.
+for fewer long-form phrase losses and approximately twice the CPU speed.
+These Linux measurements do not replace the historical macOS benchmark numbers.
 
 The remaining errors have distinct boundaries: dynamic MatMul quantization
 still changes predictions relative to FP32, while the phrase missing at 1087.8
@@ -128,5 +128,35 @@ python3 scripts/model-short-quality.py
 ```
 
 The second command checks the committed report selected by
-`benchmark/model-release.json`, including the narrowly scoped e2e approval. Batch wall time and peak RSS in the short-form report are informative;
+`benchmark/model-release.json`, including the narrowly scoped e2e approval.
+Batch wall time and peak RSS in the short-form report are informative;
 the repeated cold/warm long-form measurements enforce the resource limits.
+
+## Upgrading existing installations
+
+Fresh downloads use the immutable `models-v3-2026-10-09` bundle. Existing
+complete model directories are deliberately reused, including locally quantized
+models; installing a new binary or running `download` over a complete directory
+does not replace its encoder.
+
+Use a binary containing the updated model pins, download into a new directory,
+and select it explicitly. Each head needs about 310 MiB (rnnt 309.4 MiB,
+e2e_rnnt 311.8 MiB), plus its generated optimized cache and optional sidecars:
+
+```sh
+gigastt download --model-dir "$HOME/.gigastt/models-v3-2026-10-09" --model-variant rnnt
+gigastt download --model-dir "$HOME/.gigastt/models-v3-2026-10-09" --model-variant e2e_rnnt
+gigastt transcribe recording.wav --model-dir "$HOME/.gigastt/models-v3-2026-10-09" --model-variant rnnt
+gigastt serve --model-dir "$HOME/.gigastt/models-v3-2026-10-09" --model-variant rnnt
+```
+
+For e2e output choose `--model-variant e2e_rnnt` on `transcribe` or `serve`.
+Stop an existing server before starting another on the same port; update its
+service configuration to use the new directory. Keep the previous directory to
+roll back by selecting it again. No model or recording needs to be deleted.
+The old immutable release remains available for older binaries.
+
+The encoder hashes are:
+
+- `rnnt`: `1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f`
+- `e2e_rnnt`: `16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091`
