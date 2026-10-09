@@ -1,0 +1,32 @@
+{
+  "tag": "models-v3-2026-10-09",
+  "baseline_release": "https://github.com/ekhodzitsky/gigastt/releases/download/models-v3-2026-06-22",
+  "source_repo": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/main",
+  "heads": {
+    "rnnt": {
+      "source_files": {
+        "v3_rnnt_encoder.onnx": "7ae7509c3f1128369564df0b00e2ee4950adf539de2392ac5c800a5bc04c7132",
+        "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+        "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+        "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+      },
+      "baseline_encoder_sha256": "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f",
+      "candidate_encoder_sha256": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f"
+    },
+    "e2e_rnnt": {
+      "source_files": {
+        "v3_e2e_rnnt_encoder.onnx": "cd60b3764a832e8560ae6d3ad0b10adc1a42ffae412b9476f25620aae4f4a508",
+        "v3_e2e_rnnt_decoder.onnx": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+        "v3_e2e_rnnt_joint.onnx": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c",
+        "v3_e2e_rnnt_vocab.txt": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7"
+      },
+      "baseline_encoder_sha256": "cf51b300af47cea099e17c806f8fecce2c46e9e8deb4709ec203f8970a067389",
+      "candidate_encoder_sha256": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091"
+    }
+  },
+  "resource_transition": {
+    "max_encoder_ratio": 1.45,
+    "max_peak_rss_ratio": 1.5,
+    "reason": "Explicitly approved switch from dynamic INT8 Conv to float Conv for accuracy and speed. Applies only to the exact baseline/candidate encoder hashes below; subsequent model changes retain the standard 1.10 resource limits."
+  }
+}

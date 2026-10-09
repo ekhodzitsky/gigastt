@@ -4,26 +4,25 @@ use gigastt_core::model;
 use gigastt_core::model::{ModelVariant, ProgressMode};
 
 /// Packaging: rebuild INT8 encoder from a local FP32 ONNX (no download).
-pub(crate) fn run_quantize(model_dir: String, force: bool, skip_conv: bool) -> anyhow::Result<()> {
-    // Lean INT8 installs have no FP32 source, so an existing INT8 file is a
-    // no-op unless `--force` is set. `--skip-conv` cannot take that path:
-    // the file on disk may still quantize Conv, and a success exit would
-    // hide that.
+pub(crate) fn run_quantize(
+    model_dir: String,
+    force: bool,
+    quantize_conv: bool,
+    requested: Option<ModelVariant>,
+) -> anyhow::Result<()> {
+    // Rebuild only with explicit replacement; an existing file may use a
+    // different recipe, so a no-op must not claim successful conversion.
     let dir = std::path::Path::new(&model_dir);
-    let resolved = model::ModelVariant::detect_in_dir(dir).unwrap_or_default();
+    let resolved = requested
+        .or_else(|| model::ModelVariant::detect_in_dir(dir))
+        .unwrap_or_default();
     let input = dir.join(resolved.encoder_file());
     let output = dir.join(resolved.encoder_int8_file());
     if output.exists() && !force {
-        if skip_conv {
-            anyhow::bail!(
-                "INT8 encoder already exists at {}. --skip-conv leaves that file untouched \
-                 unless --force rebuilds it with Conv left in FP32.",
-                output.display()
-            );
-        }
-        tracing::info!("INT8 model already exists: {}", output.display());
-        tracing::info!("Use --force to re-quantize.");
-        return Ok(());
+        anyhow::bail!(
+            "INT8 encoder already exists at {}. Use --force to rebuild it.",
+            output.display()
+        );
     }
     if !input.is_file() {
         anyhow::bail!(
@@ -32,10 +31,12 @@ pub(crate) fn run_quantize(model_dir: String, force: bool, skip_conv: bool) -> a
             input.display()
         );
     }
-    if skip_conv {
+    if !quantize_conv {
         tracing::info!("Leaving Conv in FP32; quantizing MatMul and Gemm only");
     }
-    let ops = gigastt_core::quantize::QuantizeOps { conv: !skip_conv };
+    let ops = gigastt_core::quantize::QuantizeOps {
+        conv: quantize_conv,
+    };
     gigastt_core::quantize::quantize_model_with(&input, &output, ops)?;
     tracing::info!("Quantized model saved to {}", output.display());
     Ok(())
@@ -192,21 +193,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_run_quantize_noops_when_int8_already_present() {
+    fn test_run_quantize_explicit_head_overrides_directory_detection() {
+        let tmp = tempfile::tempdir().unwrap();
+        let rnnt = tmp.path().join("v3_rnnt_encoder_int8.onnx");
+        std::fs::write(&rnnt, b"existing rnnt").unwrap();
+        let error = run_quantize(
+            tmp.path().display().to_string(),
+            true,
+            false,
+            Some(ModelVariant::E2eRnnt),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("v3_e2e_rnnt_encoder.onnx"));
+        assert_eq!(std::fs::read(rnnt).unwrap(), b"existing rnnt");
+    }
+
+    #[test]
+    fn test_run_quantize_refuses_existing_int8_without_force() {
         let tmp = tempfile::tempdir().expect("tempdir");
         std::fs::write(tmp.path().join("v3_rnnt_encoder_int8.onnx"), b"int8").unwrap();
-        run_quantize(tmp.path().display().to_string(), false, false)
-            .expect("existing INT8 is a no-op");
+        run_quantize(tmp.path().display().to_string(), false, false, None)
+            .expect_err("existing INT8 needs explicit replacement");
         assert!(!tmp.path().join("v3_rnnt_encoder.onnx").exists());
     }
 
     #[test]
-    fn test_run_quantize_skip_conv_refuses_existing_int8_without_force() {
+    fn test_run_quantize_legacy_recipe_refuses_existing_int8_without_force() {
         let tmp = tempfile::tempdir().expect("tempdir");
         let int8 = tmp.path().join("v3_rnnt_encoder_int8.onnx");
         std::fs::write(&int8, b"int8").unwrap();
-        let err = run_quantize(tmp.path().display().to_string(), false, true)
-            .expect_err("skip-conv must not succeed over an existing INT8 file");
+        let err = run_quantize(tmp.path().display().to_string(), false, true, None)
+            .expect_err("legacy recipe must not succeed over an existing INT8 file");
         let msg = format!("{err:#}");
         assert!(msg.contains("--force"), "unexpected error: {msg}");
         assert_eq!(std::fs::read(&int8).unwrap(), b"int8");
@@ -215,7 +232,7 @@ mod tests {
     #[test]
     fn test_run_quantize_errors_when_fp32_missing() {
         let tmp = tempfile::tempdir().expect("tempdir");
-        let err = run_quantize(tmp.path().display().to_string(), true, false)
+        let err = run_quantize(tmp.path().display().to_string(), true, false, None)
             .expect_err("force still needs FP32");
         let msg = format!("{err:#}");
         assert!(

@@ -253,6 +253,10 @@ jobs:
       # (WER / RTF / RSS / cold-start ceilings + relative baselines). The full
       # model-gated run is main-push only (quality-gate job).
       - run: cargo test --test benchmark -- --self-test
+      - name: Model packaging and long-form gate self-tests
+        run: |
+          python3 scripts/test-model-bundle.py
+          python3 scripts/test-model-quality.py
       - uses: taiki-e/install-action@v2
         with:
           tool: nextest
@@ -1056,7 +1060,11 @@ jobs:
         # We also run ignored lib+bin tests (model-dependent unit tests) and
         # exercise CLI commands to push coverage toward 90 %.
         run: |
-          cargo llvm-cov --no-report --workspace --lib --bins -- --ignored --test-threads=1
+          # Optimized timing/RSS probes run in the mandatory Speaker performance
+          # job. Instrumented debug coverage cannot provide valid measurements.
+          cargo llvm-cov --no-report --workspace --lib --bins -- --ignored --test-threads=1 \
+            --skip inference::diarization::model_tests::test_speaker_quality_and_latency_against_cpu_oracle \
+            --skip inference::diarization::model_tests::test_speaker_resource_probe
           # gigastt-ffi is a `cdylib`; the `--workspace --lib` pass above does not
           # run its model-gated (#[ignore]) lib tests, so run them explicitly or
           # the FFI streaming/transcribe paths read as uncovered.

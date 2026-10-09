@@ -21,6 +21,14 @@ missing, renamed and removed benchmark results require investigation.
 
 ## Automated checks
 
+- **Release Model** rebuilds both RNN-T heads from verified FP32 packaging
+  sources and compares the pinned previous and candidate INT8 bundles on
+  seven frozen long-form recordings. Aggregate WER, per-file phrase deletions,
+  cold/warm latency, peak RSS and encoder size must pass before publication.
+  The explicitly approved memory/size trade-off for the exact ConvInteger to
+  float-Conv transition is recorded by model hash, not a blanket relaxation.
+  See [the quantization protocol](rnnt-quantization.md).
+
 - **Benchmarks (regression gate)** runs on every PR, including Dependabot, and
   every main push. It measures the immutable PR base or previous main commit
   and the candidate on the same runner with locked dependencies. It fails if

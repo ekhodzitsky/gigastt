@@ -126,6 +126,32 @@ fn test_cli_quantize_parsing() {
 }
 
 #[test]
+fn test_cli_quantize_explicit_head_and_legacy_recipe() {
+    let cli = Cli::try_parse_from([
+        "gigastt",
+        "quantize",
+        "--model-variant",
+        "e2e_rnnt",
+        "--quantize-conv",
+    ])
+    .unwrap();
+    match cli.command {
+        Commands::Quantize {
+            model_variant,
+            quantize_conv,
+            ..
+        } => {
+            assert_eq!(model_variant, Some(ModelVariant::E2eRnnt));
+            assert!(quantize_conv);
+        }
+        _ => panic!("expected Quantize"),
+    }
+    assert!(
+        Cli::try_parse_from(["gigastt", "quantize", "--skip-conv", "--quantize-conv",]).is_err()
+    );
+}
+
+#[test]
 fn test_cli_download_parses() {
     let cli = Cli::try_parse_from(["gigastt", "download"]).expect("parse");
     match cli.command {
