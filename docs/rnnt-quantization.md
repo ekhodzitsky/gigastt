@@ -93,6 +93,10 @@ The accepted e2e transition permits 397 to 399 errors only for that evidence;
 changing models or transcripts does not inherit the exception.
 Publication also requires successful main CI for the exact source commit and
 refuses an existing model tag. Optional minisign signatures are retained.
+The publication baseline must match the runtime download pin. After promotion,
+a future candidate must be compared with the newly active bundle; it cannot
+reuse an older, slower reference to conceal a regression. The historical recipe
+remains usable with `publish: false` to reproduce its original comparison.
 Candidates can be built with `publish: false` before promotion. Model activation
 in runtime pins follows publication, so clients never reference an unavailable
 bundle and old installed versions retain their immutable download source.
