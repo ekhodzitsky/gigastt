@@ -356,12 +356,14 @@ gigastt watch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
 
 gigastt quantize [OPTIONS]          # packaging only (needs local FP32 source)
   --model-dir <DIR>      Model directory holding the FP32 encoder
-  --force                Re-quantize even if INT8 model exists
-  --skip-conv            Leave Conv in FP32; still quantize MatMul and Gemm.
-                         The published bundle quantizes convolutions. This
-                         flag only affects a local rebuild. If an INT8
-                         encoder is already present, `--force` is required;
-                         without it the command fails and that file stays.
+  --model-variant <HEAD> Rebuild this head; otherwise detect from local files.
+                         Env: GIGASTT_MODEL_VARIANT. Use this in mixed-head dirs.
+  --force                Required to replace an existing INT8 encoder
+  --skip-conv            Compatibility flag: Conv remains FP32 by default;
+                         MatMul and Gemm weights use per-channel INT8.
+  --quantize-conv        Experimental legacy ConvInteger recipe. May increase
+                         phrase loss and latency; conflicts with --skip-conv.
+                         Env: GIGASTT_QUANTIZE_CONV (packaging only).
 
 gigastt cache-gc [OPTIONS]
   --model-dir <DIR>      Model directory [default: ~/.gigastt/models]

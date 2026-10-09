@@ -87,6 +87,10 @@ enum Commands {
     /// Packaging: quantize a local **FP32** encoder ONNX to INT8.
     /// Runtime inference never uses FP32 — prefer `gigastt download` for INT8.
     Quantize {
+        /// Recognition head to rebuild (otherwise detected from local files)
+        #[arg(long, env = "GIGASTT_MODEL_VARIANT", value_parser = parse_model_variant)]
+        model_variant: Option<ModelVariant>,
+
         /// Model directory holding the FP32 encoder source
         #[arg(long, default_value_t = model::default_model_dir())]
         model_dir: String,
@@ -95,11 +99,14 @@ enum Commands {
         #[arg(long)]
         force: bool,
 
-        /// Leave `Conv` in FP32. `MatMul` and `Gemm` stay quantized.
-        /// The published bundle still quantizes convolutions. When an INT8
-        /// encoder is already in the directory, `--force` is required.
-        #[arg(long, default_value_t = false)]
+        /// Leave Conv in FP32 (the default); retained for existing scripts.
+        #[arg(long, conflicts_with = "quantize_conv")]
         skip_conv: bool,
+
+        /// Experimental legacy recipe: also quantize Conv; may lose phrases and run slower.
+        /// Env: GIGASTT_QUANTIZE_CONV (packaging only).
+        #[arg(long, env = "GIGASTT_QUANTIZE_CONV")]
+        quantize_conv: bool,
     },
 
     /// Prune stale ONNX Runtime optimized graphs and stale CoreML compiled-model
@@ -393,11 +400,13 @@ async fn main() -> anyhow::Result<()> {
             .await?;
         }
         Commands::Quantize {
+            model_variant,
             model_dir,
             force,
-            skip_conv,
+            skip_conv: _,
+            quantize_conv,
         } => {
-            run_quantize(model_dir, force, skip_conv)?;
+            run_quantize(model_dir, force, quantize_conv, model_variant)?;
         }
         Commands::CacheGc {
             model_dir,

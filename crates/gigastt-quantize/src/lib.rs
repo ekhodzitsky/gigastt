@@ -1,16 +1,14 @@
 //! Dynamic INT8 (QOperator) quantization for ONNX encoder models.
 //!
-//! Native Rust replacement for `scripts/quantize.py`. Auto-invoked after
-//! `gigastt download` and `gigastt serve` (see `src/main.rs`); also exposed
-//! as the `gigastt quantize` subcommand.
+//! Packaging-only conversion exposed as the `gigastt quantize` subcommand.
+//! Runtime commands download a prequantized bundle instead.
 //!
 //! This emits the **dynamic INT8 (QOperator)** form that ONNX Runtime's
 //! `quantize_dynamic(..., weight_type=QInt8)` produces:
 //! `DynamicQuantizeLinear` on activations feeding integer compute kernels
 //! (`MatMulInteger` / `ConvInteger`), with a per-channel float rescale on the
-//! int32 output. This is fundamentally faster than weight-only `QDQ`
-//! (`DequantizeLinear` → float `MatMul`/`Conv`), which stores int8 weights but
-//! dequantizes them back to float at load and runs the heavy ops in FP32.
+//! int32 output. Integer kernels are not necessarily faster on every CPU;
+//! model changes require measured quality, latency, and memory comparisons.
 //!
 //! The protobuf types come from `crate::onnx_proto`, which is generated at
 //! build time from `proto/onnx.proto` via `prost-build` (see `build.rs`).
@@ -46,18 +44,12 @@ const MIN_OPSET: i64 = 11;
 
 /// Packaging filter for one local rebuild.
 ///
-/// [`Default`] quantizes `MatMul`, `Conv`, and `Gemm`, which is the published
-/// bundle. `conv: false` leaves convolutions in float. `MatMul` and `Gemm`
-/// stay quantized either way; they are not switches.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// [`Default`] quantizes `MatMul` and `Gemm`, leaving convolutions in float.
+/// Dynamic Conv quantization is an explicit experimental opt-in: it can
+/// increase phrase loss and latency even on CPUs with VNNI.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct QuantizeOps {
     pub conv: bool,
-}
-
-impl Default for QuantizeOps {
-    fn default() -> Self {
-        Self { conv: true }
-    }
 }
 
 impl QuantizeOps {
@@ -89,8 +81,8 @@ pub fn quantize_model(input: &Path, output: &Path) -> Result<()> {
     quantize_model_with(input, output, QuantizeOps::default())
 }
 
-/// [`quantize_model`] with [`QuantizeOps`]. [`QuantizeOps::default`] is the
-/// published bundle.
+/// [`quantize_model`] with explicit operator selection. The default leaves
+/// Conv in FP32; validate model quality and resources before publication.
 pub fn quantize_model_with(input: &Path, output: &Path, ops: QuantizeOps) -> Result<()> {
     let model_bytes = std::fs::read(input).context("Failed to read ONNX model")?;
     let mut model =
@@ -113,6 +105,14 @@ pub fn quantize_model_with(input: &Path, output: &Path, ops: QuantizeOps) -> Res
     let mut targets = Vec::new();
     for (ni, node) in graph.node.iter().enumerate() {
         if !ops.allows(node.op_type()) {
+            continue;
+        }
+        // The integer chain implements plain A @ B. Preserve general Gemm
+        // semantics (bias, transposes and scaling) instead of dropping them.
+        if node.op_type() == "Gemm"
+            && (!node.attribute.is_empty()
+                || node.input.get(2).is_some_and(|bias| !bias.is_empty()))
+        {
             continue;
         }
         // Weight is input[1] for MatMul/Conv/Gemm.
@@ -232,6 +232,11 @@ pub fn quantize_model_with(input: &Path, output: &Path, ops: QuantizeOps) -> Res
     let mut replacements: HashMap<usize, Vec<NodeProto>> = HashMap::new();
     let mut chain_initializers = Vec::new();
 
+    anyhow::ensure!(
+        !quantized.is_empty(),
+        "No weights were quantized; refusing to write a float-only model as INT8"
+    );
+
     for (node_idx, _input_idx, weight_name, _init_idx) in &targets {
         let Some(qw) = quantized.get(weight_name) else {
             continue; // weight was skipped above (shape mismatch / zero channels)
@@ -260,11 +265,18 @@ pub fn quantize_model_with(input: &Path, output: &Path, ops: QuantizeOps) -> Res
     }
     graph.node = rebuilt;
 
-    // Remove original float weight initializers that we quantized.
+    // A weight can also feed an unquantized op or be a graph output. Keep it
+    // while still referenced; removing it makes mixed-precision graphs invalid.
     let quantized_weight_names: HashSet<&str> = quantized.keys().map(|s| s.as_str()).collect();
+    let live_names: HashSet<&str> = graph
+        .node
+        .iter()
+        .flat_map(|node| node.input.iter().map(String::as_str))
+        .chain(graph.output.iter().map(|output| output.name()))
+        .collect();
     graph
         .initializer
-        .retain(|t| !quantized_weight_names.contains(t.name()));
+        .retain(|t| !quantized_weight_names.contains(t.name()) || live_names.contains(t.name()));
 
     // Add quantized weight initializers + chain reshape/shape initializers.
     graph.initializer.extend(new_initializers);

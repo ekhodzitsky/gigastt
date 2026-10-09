@@ -405,6 +405,14 @@ docker build --build-arg GIGASTT_BAKE_MODEL=1 -t gigastt:baked .
 Docker images run with `--bind-all --host 0.0.0.0` because container networking
 requires listening on all interfaces. The non-Docker default is `127.0.0.1`.
 
+## RNN-T packaging
+
+`quantize --model-variant` selects the head explicitly (`GIGASTT_MODEL_VARIANT`).
+Convolutions remain FP32 by default; `--skip-conv` is retained for compatibility.
+`--quantize-conv` / `GIGASTT_QUANTIZE_CONV` enables the experimental legacy recipe.
+An existing output requires `--force`. Model promotion uses the hash-pinned
+recipe and mandatory long-form gate in `docs/rnnt-quantization.md`.
+
 ## Environment Variables
 
 Most CLI flags map to `GIGASTT_*` env vars (clap `env =`). Canonical flag
@@ -439,6 +447,7 @@ reference: [`docs/cli.md`](docs/cli.md) (enforced by `scripts/check-docs-drift.p
 | `GIGASTT_DOWNLOAD_PROGRESS` | `download --progress` | human |
 | `GIGASTT_METRICS` | `--metrics` | false |
 | `GIGASTT_METRICS_LISTEN` | `--metrics-listen` | 127.0.0.1:9090 |
+| `GIGASTT_QUANTIZE_CONV` | `quantize --quantize-conv` (experimental packaging only) | false |
 | `GIGASTT_MODEL_VARIANT` | `--model-variant` | rnnt (fresh installs) |
 | `GIGASTT_EXECUTION_PROVIDER` | `--execution-provider` (`auto` / `cpu` / `coreml` / `cuda`) | auto |
 | `GIGASTT_OPTIMIZED_CACHE_DIR` | `--optimized-cache-dir` (also on `cache-gc`) | `<model-dir>/optimized_cache` |

@@ -1,14 +1,68 @@
 use super::*;
 
+#[test]
+fn test_quantization_without_integer_compute_rejects_output() {
+    let model = matmul_model("small", vec![2, 2], 4);
+    let tmp = tempfile::tempdir().unwrap();
+    let input = tmp.path().join("input.onnx");
+    let output = tmp.path().join("output.onnx");
+    std::fs::write(&input, model.encode_to_vec()).unwrap();
+    std::fs::write(&output, b"previous model").unwrap();
+    let error = quantize_model(&input, &output).unwrap_err();
+    assert!(error.to_string().contains("No weights were quantized"));
+    assert_eq!(std::fs::read(output).unwrap(), b"previous model");
+}
+
+#[test]
+fn test_shared_weight_remains_available_to_float_consumers() {
+    let mut model = matmul_model("shared", vec![32, 32], 1024);
+    let graph = model.graph.as_mut().unwrap();
+    graph.node.push(NodeProto {
+        op_type: Some("Add".into()),
+        input: vec!["other".into(), "shared".into()],
+        output: vec!["float_output".into()],
+        ..Default::default()
+    });
+    let graph = quantize_roundtrip(model);
+    assert!(graph.initializer.iter().any(|t| t.name() == "shared"));
+    assert!(graph.node.iter().any(|n| n.op_type() == "MatMulInteger"));
+}
+
+#[test]
+fn test_gemm_bias_and_transpose_are_not_discarded() {
+    let mut model = matmul_model("weight", vec![32, 32], 1024);
+    let graph = model.graph.as_mut().unwrap();
+    let gemm = NodeProto {
+        op_type: Some("Gemm".into()),
+        input: vec!["input".into(), "weight".into(), "bias".into()],
+        output: vec!["gemm_output".into()],
+        attribute: vec![AttributeProto {
+            name: Some("transB".into()),
+            i: Some(1),
+            r#type: Some(ATTR_INT),
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    graph.node.push(gemm.clone());
+    let graph = quantize_roundtrip(model);
+    assert!(graph.node.contains(&gemm));
+    assert!(graph.initializer.iter().any(|t| t.name() == "weight"));
+}
+
 /// Round-trip a model through `quantize_model` and return the output graph.
 fn quantize_roundtrip(model: ModelProto) -> crate::onnx_proto::GraphProto {
+    quantize_roundtrip_with(model, QuantizeOps::default())
+}
+
+fn quantize_roundtrip_with(model: ModelProto, ops: QuantizeOps) -> crate::onnx_proto::GraphProto {
     let tmp_dir = tempfile::tempdir().unwrap();
     let input_path = tmp_dir.path().join("input.onnx");
     let output_path = tmp_dir.path().join("output.onnx");
     let mut bytes = Vec::new();
     model.encode(&mut bytes).unwrap();
     std::fs::write(&input_path, &bytes).unwrap();
-    quantize_model(&input_path, &output_path).unwrap();
+    quantize_model_with(&input_path, &output_path, ops).unwrap();
     let out_bytes = std::fs::read(&output_path).unwrap();
     ModelProto::decode(&out_bytes[..]).unwrap().graph.unwrap()
 }
@@ -137,7 +191,7 @@ fn test_skip_conv_keeps_float_conv_and_quantizes_matmul() {
     let mut bytes = Vec::new();
     model.encode(&mut bytes).unwrap();
     std::fs::write(&input, bytes).unwrap();
-    quantize_model_with(&input, &output, QuantizeOps { conv: false }).unwrap();
+    quantize_model_with(&input, &output, QuantizeOps::default()).unwrap();
 
     let decoded = ModelProto::decode(&std::fs::read(&output).unwrap()[..]).unwrap();
     let graph = decoded.graph.unwrap();
@@ -327,15 +381,22 @@ fn test_quantize_model_weight_types_and_scale_length() {
 
 #[test]
 fn test_quantize_model_small_tensor_skipped() {
-    let g = quantize_roundtrip(matmul_model("small_weight", vec![16, 16], 256));
+    let mut model = matmul_model("small_weight", vec![16, 16], 256);
+    let big = matmul_model("big_weight", vec![32, 32], 1024);
+    let mut big_graph = big.graph.unwrap();
+    big_graph.node[0].output = vec!["big_output".into()];
+    let graph = model.graph.as_mut().unwrap();
+    graph.node.extend(big_graph.node);
+    graph.initializer.extend(big_graph.initializer);
+    let g = quantize_roundtrip(model);
 
     assert_eq!(
         g.node
             .iter()
             .filter(|n| n.op_type() == "MatMulInteger")
             .count(),
-        0,
-        "Small tensor should be skipped"
+        1,
+        "Only the large tensor should be quantized"
     );
     // Original float MatMul + weight untouched.
     assert_eq!(g.node.iter().filter(|n| n.op_type() == "MatMul").count(), 1);
@@ -562,7 +623,7 @@ fn test_quantize_model_conv_chain() {
         }),
         ..Default::default()
     };
-    let g = quantize_roundtrip(model);
+    let g = quantize_roundtrip_with(model, QuantizeOps { conv: true });
 
     // No float Conv / no DequantizeLinear left.
     assert_eq!(g.node.iter().filter(|n| n.op_type() == "Conv").count(), 0);
@@ -656,7 +717,7 @@ fn test_quantize_model_conv_no_bias() {
         }),
         ..Default::default()
     };
-    let g = quantize_roundtrip(model);
+    let g = quantize_roundtrip_with(model, QuantizeOps { conv: true });
 
     // No bias: no Add, the final rescale Mul produces 'y' directly.
     assert_eq!(g.node.iter().filter(|n| n.op_type() == "Add").count(), 0);

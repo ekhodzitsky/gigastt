@@ -18,6 +18,8 @@ import re
 import statistics
 import subprocess
 import sys
+import time
+import urllib.error
 import urllib.request
 import wave
 
@@ -62,9 +64,31 @@ def checked_audio(path, expected):
         raise ValueError(f"audio checksum mismatch: {path}")
 
 
+def open_url(url):
+    for attempt in range(4):
+        try:
+            return urllib.request.urlopen(url, timeout=60)
+        except urllib.error.HTTPError as error:
+            if error.code not in (429, 500, 502, 503, 504) or attempt == 3:
+                raise
+            delay = 10 * 2 ** attempt
+            retry_after = error.headers.get('Retry-After')
+            if retry_after:
+                try:
+                    delay = int(retry_after)
+                except ValueError:
+                    from email.utils import parsedate_to_datetime
+                    delay = parsedate_to_datetime(retry_after).timestamp() - time.time()
+            if delay > 300:
+                raise  # Do not retry earlier than the server permits.
+            delay = max(1, delay)
+            print(f'HTTP {error.code}; retrying in {delay:.0f}s', file=sys.stderr, flush=True)
+            time.sleep(delay)
+
+
 def fetch(url, path):
     temporary = path.with_suffix(".partial")
-    with urllib.request.urlopen(url, timeout=60) as response, temporary.open("wb") as out:
+    with open_url(url) as response, temporary.open("wb") as out:
         while chunk := response.read(65536):
             out.write(chunk)
     temporary.replace(path)
@@ -110,14 +134,22 @@ def prepare(args, manifest):
                 fields = DATASETS[dataset]
                 rate, channels = layout(sample)
                 chunks = []
-                for part in sample["parts"]:
-                    part_path = parts_dir / Path(part.get("file", f"{sample['id']}-{part['row']:04d}.wav")).name
+                parts = [(part, parts_dir / Path(part.get("file", f"{sample['id']}-{part['row']:04d}.wav")).name)
+                         for part in sample['parts']]
+                missing = [part['row'] for part, path in parts if not path.exists()]
+                rows = {}
+                if missing:
+                    offset, length = min(missing), max(missing) - min(missing) + 1
+                    if length > 100:
+                        raise ValueError('corpus parts exceed the rows API page size')
+                    url = ("https://datasets-server.huggingface.co/rows?"
+                           f"dataset={dataset}&config=default&split={fields['split']}"
+                           f"&offset={offset}&length={length}")
+                    with open_url(url) as response:
+                        rows = {item['row_idx']: item['row'] for item in json.load(response)['rows']}
+                for part, part_path in parts:
                     if not part_path.exists():
-                        url = ("https://datasets-server.huggingface.co/rows?"
-                               f"dataset={dataset}&config=default&split={fields['split']}"
-                               f"&offset={part['row']}&length=1")
-                        with urllib.request.urlopen(url, timeout=60) as response:
-                            row = json.load(response)["rows"][0]["row"]
+                        row = rows[part['row']]
                         if "file" in part:
                             assert row["audio_filepath"] == part["file"]
                         if "episode" in sample:

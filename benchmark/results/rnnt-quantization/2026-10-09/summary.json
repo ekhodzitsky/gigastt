@@ -1,0 +1,22 @@
+{
+  "source_commit": "c57edf6a491b977138797ee4437b094d70a3d94f",
+  "platform_scope": "Linux x86_64 CPU; AMD Ryzen AI 9 HX 370",
+  "private_recording_available": false,
+  "corpus_seconds": 1154.03,
+  "heads": {
+    "rnnt": {
+      "reference_words": 2714,
+      "baseline_errors": 200,
+      "candidate_errors": 197,
+      "warm_wall_ratio_median": 0.5472308344299956,
+      "warm_peak_rss_ratio_median": 1.2325900275351054
+    },
+    "e2e_rnnt": {
+      "reference_words": 2714,
+      "baseline_errors": 160,
+      "candidate_errors": 158,
+      "warm_wall_ratio_median": 0.5596898763078999,
+      "warm_peak_rss_ratio_median": 1.221422686041186
+    }
+  }
+}
