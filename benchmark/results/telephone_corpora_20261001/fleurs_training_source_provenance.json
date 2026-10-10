@@ -1,0 +1,25 @@
+{
+  "source": "https://huggingface.co/datasets/google/fleurs",
+  "revision": "168de341b3db6859a9bac1c50a2ef5e3b47647e0",
+  "license": "CC BY 4.0",
+  "domain": "Human read speech, not real telephone calls",
+  "download_verified": true,
+  "files": [
+    {
+      "split": "train",
+      "local_path": "/home/ekhodzitsky/.cache/gigastt-training-data/fleurs_kk_train.parquet",
+      "size_bytes": 2661403409,
+      "sha256": "7f5d4a6c58db465dadfef9718dc4a61f1137f13196c3634cf803acd6eb859457",
+      "rows": 3200,
+      "url": "https://huggingface.co/datasets/google/fleurs/resolve/168de341b3db6859a9bac1c50a2ef5e3b47647e0/kk_kz/train/0000.parquet"
+    },
+    {
+      "split": "validation",
+      "local_path": "/home/ekhodzitsky/.cache/gigastt-training-data/fleurs_kk_validation.parquet",
+      "size_bytes": 341294160,
+      "sha256": "35f8de4d59af07b236a9174e64093f64cfa74e5a47bf488f909e4138a8d24315",
+      "rows": 369,
+      "url": "https://huggingface.co/datasets/google/fleurs/resolve/168de341b3db6859a9bac1c50a2ef5e3b47647e0/kk_kz/validation/0000.parquet"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "candidate_count": 3,
+  "independent_rebuilds_byte_identical": 3,
+  "original_u8_conversion_byte_identical": true,
+  "original_model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+  "script_sha256": "4db65ee984a0f89e5c4e8481304a27980a88597e6b4a6c5ca9ee4e3bfc54a688",
+  "quality_inference_performed_by_converter": false,
+  "training_or_data_calibration": false,
+  "conversion_environment": {
+    "python": "3.12",
+    "package_versions": {
+      "onnx": "1.17.0",
+      "onnxruntime": "1.30.0",
+      "numpy": "2.5.3",
+      "ml_dtypes": "0.5.4",
+      "protobuf": "7.36.2"
+    },
+    "isolated_added_dependency": "ml_dtypes==0.5.4, --no-deps",
+    "original_environment_modified": false
+  },
+  "rows": [
+    {
+      "candidate": "original_u8_conv_fp32",
+      "first_sha256": "803df45297b4af52af773ff059b2f19b715bc23114f9412a2a6ec68cd555b3dc",
+      "independent_rebuild_sha256": "803df45297b4af52af773ff059b2f19b715bc23114f9412a2a6ec68cd555b3dc",
+      "byte_identical": true,
+      "weight_integer_min": 0,
+      "weight_integer_max": 255,
+      "source_float_tensors_exact": 422,
+      "quantized_matrix_elements_fraction": 0.8565006011814522
+    },
+    {
+      "candidate": "s8_channel_full_conv_fp32",
+      "first_sha256": "5200a905577371495aba360b2c4332707c44316efa1963bf30b3b80d259e50ab",
+      "independent_rebuild_sha256": "5200a905577371495aba360b2c4332707c44316efa1963bf30b3b80d259e50ab",
+      "byte_identical": true,
+      "weight_integer_min": -127,
+      "weight_integer_max": 127,
+      "source_float_tensors_exact": 422,
+      "quantized_matrix_elements_fraction": 0.8565006011814522
+    },
+    {
+      "candidate": "s8_channel_reduced_conv_fp32",
+      "first_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+      "independent_rebuild_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+      "byte_identical": true,
+      "weight_integer_min": -64,
+      "weight_integer_max": 64,
+      "source_float_tensors_exact": 422,
+      "quantized_matrix_elements_fraction": 0.8565006011814522
+    }
+  ]
+}

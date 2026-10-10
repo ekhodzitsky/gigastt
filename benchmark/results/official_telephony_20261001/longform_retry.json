@@ -1,0 +1,30 @@
+{
+  "packages": {
+    "torch": "2.9.1+cpu",
+    "torchaudio": "2.9.1+cpu",
+    "pyannote.audio": "4.0.4",
+    "torchcodec": "0.8.1"
+  },
+  "warnings": [],
+  "attempts": [
+    {
+      "id": "ldc_kazakh_sample",
+      "status": "blocked",
+      "error_type": "RuntimeError",
+      "error": "Model pyannote/segmentation-3.0 was not found locally, and no HF_TOKEN was provided to download it."
+    },
+    {
+      "id": "material_kk_inLine",
+      "status": "blocked",
+      "error_type": "RuntimeError",
+      "error": "Model pyannote/segmentation-3.0 was not found locally, and no HF_TOKEN was provided to download it."
+    },
+    {
+      "id": "material_kk_outLine",
+      "status": "blocked",
+      "error_type": "RuntimeError",
+      "error": "Model pyannote/segmentation-3.0 was not found locally, and no HF_TOKEN was provided to download it."
+    }
+  ],
+  "runtime_setup": "LD_LIBRARY_PATH points to locally extracted Ubuntu libavdevice62 7:8.0.1-3ubuntu2; no system installation or production change"
+}

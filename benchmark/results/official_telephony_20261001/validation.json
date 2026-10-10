@@ -1,0 +1,12 @@
+{
+  "source_successful_short_executions": 147,
+  "unique_short_utterances": 49,
+  "length_rejections": 3,
+  "full_channel20s_controls": 3,
+  "unique_real_recordings": 2,
+  "private_transcripts_rescored": 150,
+  "source_audio_hashes_verified": 150,
+  "paired_ids_equal_across_conditions": true,
+  "public_rows_without_audio_paths_references_or_hypotheses": true,
+  "runner_sha256_matches": true
+}

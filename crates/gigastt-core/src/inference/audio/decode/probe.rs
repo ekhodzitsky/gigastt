@@ -1,4 +1,6 @@
-//! Header-only duration probe — no audio packet is decoded.
+//! Duration probe. WAVE and the symphonia containers are header-only.
+//! M4A reads `moov` plus one frame so the presentation rate (HE-AAC is
+//! twice the core rate) is known, then drops that frame.
 
 use std::io::{Seek as _, SeekFrom};
 
@@ -10,14 +12,14 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 
 use super::super::MAX_SAMPLE_RATE;
-use super::super::wave;
+use super::super::{aac, wave};
 use super::BytesMediaSource;
 
 /// Read an audio container's declared duration (seconds) from its header
 /// WITHOUT decoding a single audio packet.
 ///
-/// WAVE files go through ryf's header probe; other containers use
-/// symphonia's format probe. Both are an O(header) read, not the O(T)
+/// WAVE files go through ryf's header probe, AAC through syom, and other
+/// containers use symphonia's format probe. Each is an O(header) read, not the O(T)
 /// decode `decode_audio_bytes_shared` performs. Returns:
 /// - `Ok(Some(secs))` when the container declares a positive frame count and a
 ///   plausible sample rate (WAV, FLAC, M4A, and OGG usually do);
@@ -38,6 +40,9 @@ pub fn probe_duration_bytes(data: Bytes) -> Result<Option<f64>> {
     if ryf::sniff_wav(data.as_ref()) {
         return wave::probe_duration(data.as_ref());
     }
+    if let aac::ProbeHit::Duration(duration) = aac::probe_bytes(data.as_ref())? {
+        return Ok(duration);
+    }
     let source = BytesMediaSource::new(data);
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
     probe_duration_inner(mss, Hint::new())
@@ -56,6 +61,15 @@ pub fn probe_duration_file(path: &str) -> Result<Option<f64>> {
         file.seek(SeekFrom::Start(0))
             .with_context(|| format!("Failed to read audio file: {path}"))?;
         return wave::probe_duration_file(file);
+    }
+    if aac::sniff_file(&mut file).with_context(|| format!("Failed to read audio file: {path}"))? {
+        match aac::probe_file(file)? {
+            aac::ProbeHit::Duration(duration) => return Ok(duration),
+            aac::ProbeHit::FallThrough => {
+                file = std::fs::File::open(path)
+                    .with_context(|| format!("Failed to open audio file: {path}"))?;
+            }
+        }
     }
     file.seek(SeekFrom::Start(0))
         .with_context(|| format!("Failed to read audio file: {path}"))?;

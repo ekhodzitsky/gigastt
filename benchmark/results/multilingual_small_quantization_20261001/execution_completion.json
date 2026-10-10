@@ -1,0 +1,244 @@
+{
+  "completed": true,
+  "groups": 15,
+  "requests": 15000,
+  "failed_requests": 0,
+  "source_ledgers_match_final_results": true,
+  "wrapper_sha256": "1fda2bfd8334a090bfd551cfa11480586dda32da27e00fbcbe3b66e8d107207d",
+  "pack_metadata_sha256": "d7758e88c74d9a459df55b429a51e70a0f6ddf9c28f5608f7c448f09c2f7ba63",
+  "encoder_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+  "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "manifest_sha256": "6d6c127188579f49da03b04ca81c72e54cab6ebfca170bc111ada528a8ac2ae9",
+  "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+  "script_matches_pack_execution_metadata": true,
+  "full_log_sha256": "0fee8670f4403f39d726fc63e9111a6ce86cc75d57326ebd7350f08c92073ba4",
+  "final_log_marker_present": true,
+  "servers_terminated": true,
+  "servers": [
+    {
+      "condition": "original",
+      "pid": 2635705,
+      "original_process_exists": false,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "19921",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ]
+    },
+    {
+      "condition": "alaw",
+      "pid": 2635706,
+      "original_process_exists": false,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "19922",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ]
+    },
+    {
+      "condition": "mulaw",
+      "pid": 2635707,
+      "original_process_exists": false,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "19923",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ]
+    }
+  ],
+  "quality_audit": "Independent full_validation.json is owned by separate auditor; this report checks execution integrity only.",
+  "rows": [
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/ru_original.json",
+      "sha256": "12176e63eab01508444992cfe81f2604914a88b65a03ea137122071128bf931a",
+      "ledger_sha256": "e8c49fa3bce5b728f14b5bba9ddc2b1f260a02c2a0e3045b257bc7b99b6a4ecb",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/en_original.json",
+      "sha256": "7238faa21c1f094902f04d54c8e1d6a473666cf33a2cc6bd251f6e0651c7109b",
+      "ledger_sha256": "0677595d9db7b168dd762d99cfb6e1ce5e63baba7336811c457be288077a7878",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/kk_original.json",
+      "sha256": "2a7379b10537b4aa4fd2b751579d99ca427d5426f381bbd5cecf5d4720751dc9",
+      "ledger_sha256": "0a1748d4addc20d88228baf25207cba74b597c32f311f98937eb5d9dfbee897e",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/ky_original.json",
+      "sha256": "92ff2baba105e5a3348e42762e2e89ae0fe9a6323bd5d4fb234a18158dac045b",
+      "ledger_sha256": "27e724d7a132380ff9909a5054c88985f91fac299ecd15664148669c3ca65866",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/uz_original.json",
+      "sha256": "abac32aa0d5a913ee877a54df47bc5c9212f91382e1ce78116a69624c2b6887e",
+      "ledger_sha256": "efd15e48d5039808b4312e24b39e8ff1a42868b4c5c6ef11d893a81b71f2ee26",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/ru_alaw.json",
+      "sha256": "c9ff48484bbd9169eb3f61fe378c116a9de4fdcc4f288f54e91ac62b3e80bd25",
+      "ledger_sha256": "bf231a7ce64688fbd92988479920bb3cf0c9a92d9139e2f1c4e7365a13d7312c",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/en_alaw.json",
+      "sha256": "5db64d2efdcbdb8a1b5e59b9921aff4a8eb11f4375f9e1a011b25f5c72da6353",
+      "ledger_sha256": "6b738a3fd8ee524627b2017105920572f64a516407c727d7ae6eb7c7648c40c3",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/kk_alaw.json",
+      "sha256": "8c608fc857607d85e33f77e6ea8ed164b31e36bbf417f26a48177cb3df375b1a",
+      "ledger_sha256": "d9d70dcdabd05b5b374c17aef63bc3d4903352d7d29296b2dfcabf81bcc02912",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/ky_alaw.json",
+      "sha256": "44ddfcc942dc7359f98926ef0bebc8cde4dbf9518edb57bf910bd00764e19940",
+      "ledger_sha256": "7670f0f6ea8d822cfa3e27d0636da2626bfc6e0ae7472c7c711e91ba49ea3eca",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/uz_alaw.json",
+      "sha256": "03dfe4d3aa38fc4da1f0ca56ba884c29e21626e4377a1dff638995478b6c86ff",
+      "ledger_sha256": "5f566dbcd5828813219d1de30fb183bcc0a7ac7ad0145eb45fd8fa69ab578f15",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/ru_mulaw.json",
+      "sha256": "55b2db441f821e7c1f65fff5b5d906d8953a5e9149b504376716ffd9603dbb98",
+      "ledger_sha256": "5c2508c586e0d2ce69e6a5bc3707df4c333a33eca6083c6330f23aef29750d19",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/en_mulaw.json",
+      "sha256": "ea311c73e3b3b26410906f0d3fe93c0c37dd5e563527e28caa3cbbe9b4a04855",
+      "ledger_sha256": "deead22da57aff202d6c5fde63169f8c50467ab457be8d45d7c30018495ade1e",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/kk_mulaw.json",
+      "sha256": "1fa75d4294f09cbc8d24a1107f50025aaa70e199ffb7f9d4c4f5fc5231b86952",
+      "ledger_sha256": "97c285d653a36a3663502e62258af54e0fdba59d183689f35dc03ba006bcc0f3",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/ky_mulaw.json",
+      "sha256": "ceeaa0d3f14896a59d296c3eed4aaf958e69eab5037d802431af75abac7d7e3b",
+      "ledger_sha256": "bcae031442e1a61c9d598832259a3c0c3c4b46a63e4a451104b27f88a1308dfc",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    },
+    {
+      "file": "benchmark/results/multilingual_small_quantization_20261001/full/uz_mulaw.json",
+      "sha256": "25de0859737f82c4846d1c7924a2b6233074101bfdac18c0709ebd5dabf97155",
+      "ledger_sha256": "31e1b39b03005d0fda2d12dd32a8498b387f54baaf28f19f044b095b93ddadb6",
+      "n": 1000,
+      "failed_requests": 0,
+      "ledger_result_rows_identical": true,
+      "model_binary_scorer_identity_passed": true
+    }
+  ],
+  "execution_session": 21470,
+  "exit_code": 0,
+  "exit_code_evidence": "write_stdin completion for execution session21470 returned exit_code0"
+}

@@ -1,0 +1,37 @@
+{
+  "checkpoint_window_vs_smooth_periodic_max": 1.8698680587236893e-07,
+  "checkpoint_window_vs_onnx_asr_bf16_max": 0.0019456744194030762,
+  "checkpoint_filters_vs_onnx_asr_bf16_max": 0.0019512176513671875,
+  "same_pcm_frontend_comparisons": [
+    {
+      "input": "original",
+      "shape": [
+        1,
+        64,
+        729
+      ],
+      "mean_logmel_abs_difference": 0.009782209992408752,
+      "max_logmel_abs_difference": 3.9028797149658203
+    },
+    {
+      "input": "internal_mulaw8",
+      "shape": [
+        1,
+        64,
+        729
+      ],
+      "mean_logmel_abs_difference": 0.4715734124183655,
+      "max_logmel_abs_difference": 2.5675315856933594
+    },
+    {
+      "input": "external16",
+      "shape": [
+        1,
+        64,
+        729
+      ],
+      "mean_logmel_abs_difference": 0.010636529885232449,
+      "max_logmel_abs_difference": 3.0005264282226562
+    }
+  ]
+}

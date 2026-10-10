@@ -1,0 +1,200 @@
+{
+  "metadata": {
+    "model": "original_small",
+    "model_identity": {
+      "variant": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.gigastt/models",
+      "encoder_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    },
+    "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "protocol_sha256": "d2b393bb90477c8b92b5d2892fd86fc47fa1798c8ceb4bc40dd6f51ba89c095c",
+    "script_sha256": "580337f88116c111398170a11bb06a5c2339c98cecf8897a2995346a999d6381",
+    "server": {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "19944",
+        "--model-dir",
+        "/home/ekhodzitsky/.gigastt/models",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--vad",
+        "--vad-model-dir",
+        "/home/ekhodzitsky/.gigastt/models/vad"
+      ],
+      "health": {
+        "status": "ok",
+        "model": "gigaam-multilingual-ctc",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "punctuation": false,
+        "itn": false
+      },
+      "model_info": {
+        "id": "gigaam-multilingual-ctc",
+        "name": "GigaAM Multilingual CTC",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 2,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": true
+      }
+    },
+    "warmup_excluded": true,
+    "timing_caveat": "Concurrent host workload; not a resource benchmark",
+    "vad_evidence": {
+      "command_enabled": true,
+      "attached_engines": 1,
+      "fallback_warning_count": 0,
+      "log_sha256": "4c28d1a385f89576649a79ae42295d5fb37e4d4191fb898d73e4bda53d2374ec",
+      "health_exposes_vad": false,
+      "excluded_startup_synthetic_silence_fallbacks": 2
+    }
+  },
+  "complete": true,
+  "n": 3,
+  "groups": [
+    {
+      "group": "full_channel",
+      "recording": "babel",
+      "reference_words": 77,
+      "word_errors": 77,
+      "substitutions": 2,
+      "deletions": 75,
+      "insertions": 0,
+      "reference_chars": 488,
+      "char_errors": 477,
+      "n": 1,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 100.0,
+      "cer_pct": 97.74590163934427
+    },
+    {
+      "group": "full_channel",
+      "recording": "material",
+      "reference_words": 93,
+      "word_errors": 88,
+      "substitutions": 5,
+      "deletions": 83,
+      "insertions": 0,
+      "reference_chars": 574,
+      "char_errors": 519,
+      "n": 2,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 94.6236559139785,
+      "cer_pct": 90.41811846689896
+    },
+    {
+      "group": "full_channel",
+      "recording": "all",
+      "reference_words": 170,
+      "word_errors": 165,
+      "substitutions": 7,
+      "deletions": 158,
+      "insertions": 0,
+      "reference_chars": 1062,
+      "char_errors": 996,
+      "n": 3,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 97.05882352941177,
+      "cer_pct": 93.78531073446328
+    }
+  ],
+  "rows": [
+    {
+      "id": "babel_full_channel_ldc_kazakh_sample",
+      "recording": "babel",
+      "group": "full_channel",
+      "audio_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "reference_sha256": "a2ee17f6d0d4115784bddbfd2285248bff064b7d28e7b5b4f749e10d45c9abe9",
+      "duration_s": 110.04,
+      "scores": {
+        "reference_words": 77,
+        "word_errors": 77,
+        "substitutions": 2,
+        "deletions": 75,
+        "insertions": 0,
+        "reference_chars": 488,
+        "char_errors": 477
+      },
+      "elapsed_s": 1.5499343109986512,
+      "status": "ok"
+    },
+    {
+      "id": "material_full_channel_material_kk_inLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "reference_sha256": "84a337fc25b4bafa7f926d6c3c928a519380877b99149777b4d6a1c3695e30d6",
+      "duration_s": 56.14,
+      "scores": {
+        "reference_words": 44,
+        "word_errors": 44,
+        "substitutions": 2,
+        "deletions": 42,
+        "insertions": 0,
+        "reference_chars": 268,
+        "char_errors": 254
+      },
+      "elapsed_s": 0.6184978179990139,
+      "status": "ok"
+    },
+    {
+      "id": "material_full_channel_material_kk_outLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "reference_sha256": "583824f66a9c5595430874805be4bfd50bd7225ed73ef01c9c1e5b62d1ceb942",
+      "duration_s": 56.14,
+      "scores": {
+        "reference_words": 49,
+        "word_errors": 44,
+        "substitutions": 3,
+        "deletions": 41,
+        "insertions": 0,
+        "reference_chars": 306,
+        "char_errors": 265
+      },
+      "elapsed_s": 0.2945472890023666,
+      "status": "ok"
+    }
+  ]
+}

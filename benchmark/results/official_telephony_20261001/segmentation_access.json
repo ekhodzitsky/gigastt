@@ -1,0 +1,15 @@
+{
+  "hf_token_configured": false,
+  "cache_error": "LocalEntryNotFoundError",
+  "anonymous_error": "HTTP Error 401: Unauthorized",
+  "model": "pyannote/segmentation-3.0",
+  "weights_url": "https://huggingface.co/pyannote/segmentation-3.0/resolve/main/pytorch_model.bin",
+  "source_url": "https://github.com/salute-developers/GigaAM/blob/7447938d791c4f3e643386ee22c33777004293a5/gigaam/vad_utils.py",
+  "access_url": "https://huggingface.co/pyannote/segmentation-3.0",
+  "interpretation": "Official long-form API requires this gated model; missing Python package is not the only prerequisite. No access restriction was bypassed.",
+  "authorized_retry": {
+    "local_login_present": true,
+    "authenticated_resolve_status": 403,
+    "failure_classification": "Gated model conditions/access authorization; authentication token is present. No credentials or raw response persisted."
+  }
+}

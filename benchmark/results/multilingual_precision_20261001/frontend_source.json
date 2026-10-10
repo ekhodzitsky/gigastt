@@ -1,0 +1,243 @@
+{
+  "metadata": {
+    "stage": "official PyTorch source, FP32 CPU",
+    "torch": "2.14.1+cpu",
+    "torchaudio": "2.11.0+cpu",
+    "source_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+    "model_sha256": "24aa92be5994fa8b9f1ce40fe59fc9693de0ce6af415011b7c0b4480c7fcf733",
+    "threads": 3
+  },
+  "groups": {
+    "control_original/rust_features": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 0,
+      "empty": 0,
+      "elapsed_seconds": 0.9676704411394894,
+      "wer_percent": 0.0
+    },
+    "control_original/source_frontend_float": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 0,
+      "empty": 0,
+      "elapsed_seconds": 1.1681209600064903,
+      "wer_percent": 0.0
+    },
+    "control_original/source_frontend_pcm16": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 0,
+      "empty": 0,
+      "elapsed_seconds": 0.9201564849354327,
+      "wer_percent": 0.0
+    },
+    "control_internal_mulaw8/rust_features": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 17,
+      "empty": 1,
+      "elapsed_seconds": 0.6769860161002725,
+      "wer_percent": 100.0
+    },
+    "control_internal_mulaw8/source_frontend_float": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 17,
+      "empty": 1,
+      "elapsed_seconds": 0.7125541830901057,
+      "wer_percent": 100.0
+    },
+    "control_internal_mulaw8/source_frontend_pcm16": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 14,
+      "empty": 0,
+      "elapsed_seconds": 0.7432409899774939,
+      "wer_percent": 82.3529411764706
+    },
+    "control_external16/rust_features": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 5,
+      "empty": 0,
+      "elapsed_seconds": 4.442671424942091,
+      "wer_percent": 29.41176470588235
+    },
+    "control_external16/source_frontend_float": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 5,
+      "empty": 0,
+      "elapsed_seconds": 0.9430629799608141,
+      "wer_percent": 29.41176470588235
+    },
+    "control_external16/source_frontend_pcm16": {
+      "n": 1,
+      "ref_words": 17,
+      "errors": 5,
+      "empty": 0,
+      "elapsed_seconds": 1.9383046180009842,
+      "wer_percent": 29.41176470588235
+    },
+    "control_telephone/source_frontend_float": {
+      "n": 1,
+      "ref_words": 28,
+      "errors": 28,
+      "empty": 0,
+      "elapsed_seconds": 4.5087797730229795,
+      "wer_percent": 100.0
+    },
+    "control_telephone/source_frontend_pcm16": {
+      "n": 1,
+      "ref_words": 28,
+      "errors": 28,
+      "empty": 0,
+      "elapsed_seconds": 6.8656295069959015,
+      "wer_percent": 100.0
+    }
+  },
+  "rows": [
+    {
+      "id": "original_rust_features",
+      "language": "control_original",
+      "condition": "rust_features",
+      "pcm_f32": "/tmp/gigastt-narrowband/original.pcm.f32",
+      "audio_sha256": "e2f5b75dcb0bc42d57ffa71bab48d24b11fd6bacc3542f59f063042fb04ddfc6",
+      "features_f32": "/tmp/gigastt-narrowband/original.mel.f32",
+      "ref_words": 17,
+      "errors": 0,
+      "elapsed_seconds": 0.9676704411394894,
+      "feature_sha256": "e8237b8e24c366b6e058acb4e0ee5dda93b06164dad2ce31ab4a043b98e00331",
+      "frames": 729
+    },
+    {
+      "id": "original_source_frontend_float",
+      "language": "control_original",
+      "condition": "source_frontend_float",
+      "pcm_f32": "/tmp/gigastt-narrowband/original.pcm.f32",
+      "audio_sha256": "e2f5b75dcb0bc42d57ffa71bab48d24b11fd6bacc3542f59f063042fb04ddfc6",
+      "ref_words": 17,
+      "errors": 0,
+      "elapsed_seconds": 1.1681209600064903,
+      "feature_sha256": "ad30c00615853fe7a3a1d71a0bf7b308208aee564e2c1e55694c8646c61bc0b5",
+      "frames": 729
+    },
+    {
+      "id": "original_source_frontend_pcm16",
+      "language": "control_original",
+      "condition": "source_frontend_pcm16",
+      "pcm_f32": "/tmp/gigastt-narrowband/original.pcm.f32",
+      "audio_sha256": "e2f5b75dcb0bc42d57ffa71bab48d24b11fd6bacc3542f59f063042fb04ddfc6",
+      "round_pcm16": true,
+      "ref_words": 17,
+      "errors": 0,
+      "elapsed_seconds": 0.9201564849354327,
+      "feature_sha256": "cf0a10faf7f27f224885186505b4e455dfe53b2db1629bfcbaaf12ae02759ea9",
+      "frames": 729
+    },
+    {
+      "id": "internal_mulaw8_rust_features",
+      "language": "control_internal_mulaw8",
+      "condition": "rust_features",
+      "pcm_f32": "/tmp/gigastt-narrowband/internal_mulaw8.pcm.f32",
+      "audio_sha256": "f2053ccbe2d1395f18720d469e5cb436caf2512aa14484a5d1f8e6e4618ecb32",
+      "features_f32": "/tmp/gigastt-narrowband/internal_mulaw8.mel.f32",
+      "ref_words": 17,
+      "errors": 17,
+      "elapsed_seconds": 0.6769860161002725,
+      "feature_sha256": "76dde1e75974187d8944bf0cbc7a445210b8655f1f3c2bf65e7120288ef71122",
+      "frames": 729
+    },
+    {
+      "id": "internal_mulaw8_source_frontend_float",
+      "language": "control_internal_mulaw8",
+      "condition": "source_frontend_float",
+      "pcm_f32": "/tmp/gigastt-narrowband/internal_mulaw8.pcm.f32",
+      "audio_sha256": "f2053ccbe2d1395f18720d469e5cb436caf2512aa14484a5d1f8e6e4618ecb32",
+      "ref_words": 17,
+      "errors": 17,
+      "elapsed_seconds": 0.7125541830901057,
+      "feature_sha256": "07e7c6664ff7589143711d1959c57d3a0d0fcf6c5b2230e890465c42d0498643",
+      "frames": 729
+    },
+    {
+      "id": "internal_mulaw8_source_frontend_pcm16",
+      "language": "control_internal_mulaw8",
+      "condition": "source_frontend_pcm16",
+      "pcm_f32": "/tmp/gigastt-narrowband/internal_mulaw8.pcm.f32",
+      "audio_sha256": "f2053ccbe2d1395f18720d469e5cb436caf2512aa14484a5d1f8e6e4618ecb32",
+      "round_pcm16": true,
+      "ref_words": 17,
+      "errors": 14,
+      "elapsed_seconds": 0.7432409899774939,
+      "feature_sha256": "13d7afa13d57bb0078c0f870be482e43dd8b9c878d0b092ec4d22093116de3b1",
+      "frames": 729
+    },
+    {
+      "id": "external16_rust_features",
+      "language": "control_external16",
+      "condition": "rust_features",
+      "pcm_f32": "/tmp/gigastt-narrowband/external16.pcm.f32",
+      "audio_sha256": "b29080223206c1bbe0a04452bb2cf54ce0ba411eb8fe9630fe3a3582fb8b70f2",
+      "features_f32": "/tmp/gigastt-narrowband/external16.mel.f32",
+      "ref_words": 17,
+      "errors": 5,
+      "elapsed_seconds": 4.442671424942091,
+      "feature_sha256": "1b7979097c70c09457f8c3f9205faacd921d049bf21de5a54d9ab3bf531180d9",
+      "frames": 729
+    },
+    {
+      "id": "external16_source_frontend_float",
+      "language": "control_external16",
+      "condition": "source_frontend_float",
+      "pcm_f32": "/tmp/gigastt-narrowband/external16.pcm.f32",
+      "audio_sha256": "b29080223206c1bbe0a04452bb2cf54ce0ba411eb8fe9630fe3a3582fb8b70f2",
+      "ref_words": 17,
+      "errors": 5,
+      "elapsed_seconds": 0.9430629799608141,
+      "feature_sha256": "123b897abe42b14917560d28aad93a9a8f07c0675e10c7dea76df88a2de52f0f",
+      "frames": 729
+    },
+    {
+      "id": "external16_source_frontend_pcm16",
+      "language": "control_external16",
+      "condition": "source_frontend_pcm16",
+      "pcm_f32": "/tmp/gigastt-narrowband/external16.pcm.f32",
+      "audio_sha256": "b29080223206c1bbe0a04452bb2cf54ce0ba411eb8fe9630fe3a3582fb8b70f2",
+      "round_pcm16": true,
+      "ref_words": 17,
+      "errors": 5,
+      "elapsed_seconds": 1.9383046180009842,
+      "feature_sha256": "123b897abe42b14917560d28aad93a9a8f07c0675e10c7dea76df88a2de52f0f",
+      "frames": 729
+    },
+    {
+      "id": "telephone_source_frontend_float",
+      "language": "control_telephone",
+      "condition": "source_frontend_float",
+      "pcm_f32": "/tmp/gigastt-narrowband/telephone.pcm.f32",
+      "audio_sha256": "a20fdabe38f63aa7594159955f861427ac45f978a5f9dcfa98efce35df208baa",
+      "max_samples": 480000,
+      "ref_words": 28,
+      "errors": 28,
+      "elapsed_seconds": 4.5087797730229795,
+      "feature_sha256": "98d17253e829c87c09907014bffd13635531e0021f3a075fe4151d9ef2959b34",
+      "frames": 2999
+    },
+    {
+      "id": "telephone_source_frontend_pcm16",
+      "language": "control_telephone",
+      "condition": "source_frontend_pcm16",
+      "pcm_f32": "/tmp/gigastt-narrowband/telephone.pcm.f32",
+      "audio_sha256": "a20fdabe38f63aa7594159955f861427ac45f978a5f9dcfa98efce35df208baa",
+      "round_pcm16": true,
+      "max_samples": 480000,
+      "ref_words": 28,
+      "errors": 28,
+      "elapsed_seconds": 6.8656295069959015,
+      "feature_sha256": "e15aceed615614d9bf9895a375eac61d96aa49ab109a74552a9108df510f4e15",
+      "frames": 2999
+    }
+  ]
+}

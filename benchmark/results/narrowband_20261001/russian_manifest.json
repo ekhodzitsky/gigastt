@@ -1,0 +1,109 @@
+{
+  "samples": [
+    {
+      "id": "golos_00",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+      "reference": "шестьдесят тысяч тенге сколько будет стоить",
+      "dataset": "russian_golos_fixture",
+      "sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0"
+    },
+    {
+      "id": "golos_01",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+      "reference": "покажи мне на смотрешке телеканал синергия тв",
+      "dataset": "russian_golos_fixture",
+      "sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c"
+    },
+    {
+      "id": "golos_02",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+      "reference": "заказать яблоки зеленые",
+      "dataset": "russian_golos_fixture",
+      "sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f"
+    },
+    {
+      "id": "golos_03",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+      "reference": "алиса закажи килограммовый торт графские развалины",
+      "dataset": "russian_golos_fixture",
+      "sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240"
+    },
+    {
+      "id": "golos_04",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+      "reference": "ищи телеканал про бизнес на тиви",
+      "dataset": "russian_golos_fixture",
+      "sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758"
+    },
+    {
+      "id": "golos_05",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+      "reference": "михаила мурадяна",
+      "dataset": "russian_golos_fixture",
+      "sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04"
+    },
+    {
+      "id": "golos_06",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+      "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "dataset": "russian_golos_fixture",
+      "sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8"
+    },
+    {
+      "id": "golos_07",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+      "reference": "найди боевики",
+      "dataset": "russian_golos_fixture",
+      "sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867"
+    },
+    {
+      "id": "golos_08",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+      "reference": "гетто сезон три",
+      "dataset": "russian_golos_fixture",
+      "sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7"
+    },
+    {
+      "id": "golos_09",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+      "reference": "хочу посмотреть ростов папа на телевизоре",
+      "dataset": "russian_golos_fixture",
+      "sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68"
+    },
+    {
+      "id": "golos_10",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+      "reference": "сбер какое твое самое ненавистное занятие",
+      "dataset": "russian_golos_fixture",
+      "sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81"
+    },
+    {
+      "id": "golos_11",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+      "reference": "афина чем платят у китайцев",
+      "dataset": "russian_golos_fixture",
+      "sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72"
+    },
+    {
+      "id": "golos_12",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+      "reference": "джой как работает досрочное погашение кредита",
+      "dataset": "russian_golos_fixture",
+      "sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b"
+    },
+    {
+      "id": "golos_13",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+      "reference": "у тебя найдется люк кейдж",
+      "dataset": "russian_golos_fixture",
+      "sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0"
+    },
+    {
+      "id": "golos_14",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+      "reference": "у тебя будет лучшая часть пинк",
+      "dataset": "russian_golos_fixture",
+      "sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8"
+    }
+  ]
+}

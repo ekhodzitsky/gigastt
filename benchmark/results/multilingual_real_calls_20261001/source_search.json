@@ -1,0 +1,292 @@
+{
+  "checked_utc": "2026-10-01T19:51:54.447323+00:00",
+  "scope": "Bounded fresh primary-source search supplementing telephone_corpora_20261001; no training, purchase, contact or gated data access.",
+  "queries": [
+    "Uzbek telephone conversations speech dataset transcripts call center public dataset",
+    "Kazakh Russian code switching telephone conversations dataset public audio transcript",
+    "site:huggingface.co/datasets Uzbek call center audio transcript",
+    "Uzbek telephone dataset transcript download",
+    "узбекский звонков датасет",
+    "KSC2 radio dataset download",
+    "Uzbek Bank speech corpus download UBSC",
+    "Uzbek Russian code switching speech dataset"
+  ],
+  "new_verified_real_call_recordings_acquired": 0,
+  "conclusion": "No additional accessible real telephone recording with verified human ASR references was acquired among checked sources. This is a bounded search result, not evidence that no such dataset exists.",
+  "sources": [
+    {
+      "name": "KSC2 radio call-ins",
+      "url": "https://www.isca-archive.org/interspeech_2022/mussakhojayeva22_interspeech.pdf",
+      "evidence": "Primary paper section 3.1.5 describes audience telephone call-ins mixed with news, music, interviews and guest discussions. Publisher GitHub links the public HF archive; native speakers manually transcribed the corpus. Source labels identify radio, not individual call-in turns. Publisher GitHub uses CC BY4.0 while HF card says MIT.",
+      "decision": "Promising lead, not a verified call subset. Public listing has ten split archive parts (~80.8GB total), not per-call audio/ref metadata; no bulk download or telephone classification without segment provenance.",
+      "revision": "cececbec1049f93f34a7421552500da01971ead8",
+      "gated": false,
+      "api_snapshot_sha256": "19e945e27fc08e8eb6bad452f3d3a5f91e3f32e07697b0702e244a080894db49",
+      "api_snapshot_path": "/home/ekhodzitsky/.cache/gigastt-real-call-source-search/issai__Kazakh_Speech_Corpus_2.json"
+    },
+    {
+      "name": "Uzbek call-center named repository",
+      "url": "https://huggingface.co/datasets/dev-muhammad/call_center_voice_uz_1",
+      "evidence": "Anonymous metadata reports manual gating and only .gitattributes/README.md in file listing.",
+      "decision": "No accessible audio/human-reference pairs; repository name alone does not verify call origin.",
+      "revision": "c1a2333bb0e9717736840e2c1f33a94c58944c3d",
+      "gated": "manual",
+      "api_snapshot_sha256": "d0298986ac08afb6f86cb04603ceb0873a6b5e1475c8919046bde3f19fbcc838",
+      "api_snapshot_path": "/home/ekhodzitsky/.cache/gigastt-real-call-source-search/dev-muhammad__call_center_voice_uz_1.json"
+    },
+    {
+      "name": "Instinct Uzbek speech dataset",
+      "url": "https://huggingface.co/datasets/instinct-org/stt_dataset_uzbek",
+      "evidence": "Card requires manual approval and license review, metadata confirms manual gating; no verifiable public telephone provenance.",
+      "decision": "Excluded gated source; no access request or bypass.",
+      "revision": "f6e7c707b959e36ea0ff50993ba57e4a64db23df",
+      "gated": "manual",
+      "api_snapshot_sha256": "f73217c4b0734088aa0a9617240dfab8004ddccc172c1988701d6d0db72138e5",
+      "api_snapshot_path": "/home/ekhodzitsky/.cache/gigastt-real-call-source-search/instinct-org__stt_dataset_uzbek.json"
+    },
+    {
+      "name": "Biruniy Uzbek data",
+      "url": "https://www.biruniy.uz/",
+      "evidence": "Publisher describes podcasts/talk shows with human review and Uzbek-Russian switching. Dataset access requires pricing/contact, despite call-center use cases.",
+      "decision": "Not public telephone evaluation data; no contact or purchase."
+    },
+    {
+      "name": "Uzbek spontaneous ASR benchmark",
+      "url": "https://huggingface.co/datasets/rustam1221/uzbek-asr-benchmark-spontaneous",
+      "evidence": "311 YouTube podcast/interview/vlog clips, 118 human-reviewed and 193 auto-accepted Gemini references; no audio shipped, reconstruction from upstream. Annotations for research/evaluation, underlying audio terms separate.",
+      "decision": "Useful possible future natural-speech control, explicitly not telephone calls or fully human-reviewed reference set. Not downloaded for this bounded real-call search.",
+      "revision": "a271adb026b7c5fe1df50e730e1f7014f7bea48a",
+      "gated": false,
+      "api_snapshot_sha256": "65ff355bb4893ce68e58aa2e3d2af36311f1e413862320752692bebcd83049f0",
+      "api_snapshot_path": "/home/ekhodzitsky/.cache/gigastt-real-call-source-search/rustam1221__uzbek-asr-benchmark-spontaneous.json"
+    },
+    {
+      "name": "UzAssistant / UBSC paper",
+      "url": "https://mdpi-res.com/d_attachment/electronics/electronics-12-04850/article_deploy/electronics-12-04850.pdf",
+      "evidence": "Paper describes 108 hours and 863 speakers, call-center applications and live user tests. Data-availability statement points to article; inspected paper provides no downloadable real-call audio/reference collection.",
+      "decision": "No accessible verified real-call benchmark acquired; title/use case not sufficient evidence."
+    },
+    {
+      "name": "LoReHLT Uzbek LDC2025T08",
+      "url": "https://catalog.ldc.upenn.edu/LDC2025T08",
+      "evidence": "Official catalog describes 6.41 hours of broadcast news/amateur web recordings, topic annotations, and public audio demos. Full pack requires agreement.",
+      "decision": "Audio demos are not telephone conversations; no paired human ASR transcript established, so not acquired."
+    },
+    {
+      "name": "Sierra mu-bench",
+      "url": "https://huggingface.co/datasets/sierra-research/mu-bench",
+      "evidence": "Primary card describes phone interactions but supported locales are English, Spanish, Turkish, Vietnamese, and Mandarin. Manual access with additional limited-use conditions.",
+      "decision": "No Kazakh/Uzbek; gated; not acquired."
+    },
+    {
+      "name": "Elyordev Dataset_STT",
+      "url": "https://huggingface.co/datasets/Elyordev/Dataset_STT/blob/main/readme.md",
+      "evidence": "Card describes Uzbek audio/TSV structure but does not establish telephone origin or human-reference provenance.",
+      "decision": "Not defensible as a real-call source."
+    }
+  ],
+  "existing_verified_manifests": [
+    {
+      "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/babel/telephone_manifest.json",
+      "sha256": "842405de374e69681c27721ba0862a5ecfd6311a7a72f94c883bf2a97859a983",
+      "rows": [
+        {
+          "id": "ldc_kazakh_sample",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/babel/ldc_kazakh.wav",
+          "audio_exists": true,
+          "audio_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477"
+        }
+      ]
+    },
+    {
+      "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/telephone_expansion_manifest.json",
+      "sha256": "5e17207c470652dec87a817ab4043d209595389c0b264d7b8b5493186cd26e4a",
+      "rows": [
+        {
+          "id": "material_kk_inLine",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine.wav",
+          "audio_exists": true,
+          "audio_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956"
+        },
+        {
+          "id": "material_kk_outLine",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine.wav",
+          "audio_exists": true,
+          "audio_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c"
+        }
+      ]
+    },
+    {
+      "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/telephone_segments_manifest.json",
+      "sha256": "e5c44c567cfb6e55d342fd328dd1c1aa0d8bfcd1a9b83c21b0f6207d4013a5c7",
+      "rows": [
+        {
+          "id": "material_kk_inLine_01",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_01.wav",
+          "audio_exists": true,
+          "audio_sha256": "f4215fae4b426bae3f6fa6f7be74228318947bdcef14be855fb52faa67737544"
+        },
+        {
+          "id": "material_kk_inLine_02",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_02.wav",
+          "audio_exists": true,
+          "audio_sha256": "50a5ebe917e16d17d95950df32ccdfaac05078e64328d460b747b4a5f428118b"
+        },
+        {
+          "id": "material_kk_inLine_03",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_03.wav",
+          "audio_exists": true,
+          "audio_sha256": "4e294bc0bcc4d98d699b963859fc0ad62c8696576c701452bcba23678d5d08c6"
+        },
+        {
+          "id": "material_kk_inLine_05",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_05.wav",
+          "audio_exists": true,
+          "audio_sha256": "c47e58a91bbda7e21aed875c65cf5d3b931e9eed45d2075669c86e6bc67e49e0"
+        },
+        {
+          "id": "material_kk_inLine_07",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_07.wav",
+          "audio_exists": true,
+          "audio_sha256": "bda3762bdf9d723a7f35c3ba33f8d7061d6a5dc7120fd52b83416b7b2c4888f7"
+        },
+        {
+          "id": "material_kk_inLine_09",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_09.wav",
+          "audio_exists": true,
+          "audio_sha256": "772f5f31ba5500f3edcb2bf4295f94ae2115cc0bb800ab4420980bdbc3e9afb7"
+        },
+        {
+          "id": "material_kk_inLine_11",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_11.wav",
+          "audio_exists": true,
+          "audio_sha256": "a5054f467e36b677fbcb07db3abf6780270065fba9bba6c6f8c218fd9f736586"
+        },
+        {
+          "id": "material_kk_inLine_14",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_14.wav",
+          "audio_exists": true,
+          "audio_sha256": "29353f1673e07a0f143195ed62bc0016340d1dff76357ca5f5a90aee3e40650d"
+        },
+        {
+          "id": "material_kk_inLine_15",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_15.wav",
+          "audio_exists": true,
+          "audio_sha256": "30d8074eb3ab518749059ae9c7031eb4743b53c8c2ea82a6da2d2b9596441454"
+        },
+        {
+          "id": "material_kk_inLine_19",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_19.wav",
+          "audio_exists": true,
+          "audio_sha256": "958779ffd3a43695a3a4eba99edaf7008b231fc87f93950bfb16c9ff1273f2ee"
+        },
+        {
+          "id": "material_kk_inLine_20",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_20.wav",
+          "audio_exists": true,
+          "audio_sha256": "38047e5169802fc3454369faf0bc35876af004601f9d2e3353dd39fb0266ef0a"
+        },
+        {
+          "id": "material_kk_inLine_22",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_22.wav",
+          "audio_exists": true,
+          "audio_sha256": "f0e7473291b330719c6c095f384f133c364662d3e31bb4020cf26cebd9059888"
+        },
+        {
+          "id": "material_kk_inLine_24",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_24.wav",
+          "audio_exists": true,
+          "audio_sha256": "d2c9a2c6d0a68902a77e9291f077b5cd4e69a1536cedbf0d3a6a574906574017"
+        },
+        {
+          "id": "material_kk_inLine_25",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_inLine_25.wav",
+          "audio_exists": true,
+          "audio_sha256": "3a4edad066323e2a25911b9c38d0f0ea575c068f255be6e040f8718831f0e871"
+        },
+        {
+          "id": "material_kk_outLine_00",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_00.wav",
+          "audio_exists": true,
+          "audio_sha256": "b5385fcc7e441d0ae5be6750ce47c1dea3a87d6a10c49671c45309d49b777d6f"
+        },
+        {
+          "id": "material_kk_outLine_02",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_02.wav",
+          "audio_exists": true,
+          "audio_sha256": "51edbc0a49465b4f8fbd38766d036562b18d5cba77a5f1825a3cead551e92ca7"
+        },
+        {
+          "id": "material_kk_outLine_04",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_04.wav",
+          "audio_exists": true,
+          "audio_sha256": "8e423d11915f3013ef35a4767d36605edc8445568278e5957d138607b2433d86"
+        },
+        {
+          "id": "material_kk_outLine_08",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_08.wav",
+          "audio_exists": true,
+          "audio_sha256": "ee73f825eb8f47f4bd4ec6af383a09332a1e11799eab3f9a071923fdcae62087"
+        },
+        {
+          "id": "material_kk_outLine_10",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_10.wav",
+          "audio_exists": true,
+          "audio_sha256": "d2afdf6776125ff34e5c1f1efad31b8216ad27f65d69aed0d9293bd533257611"
+        },
+        {
+          "id": "material_kk_outLine_12",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_12.wav",
+          "audio_exists": true,
+          "audio_sha256": "fb38ae78fab0659ab953b7d8e7e3474cedae7b96b5e394426ec3ae782cc5d444"
+        },
+        {
+          "id": "material_kk_outLine_14",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_14.wav",
+          "audio_exists": true,
+          "audio_sha256": "09e72181c92fee9a811801e16042ebe180bbdddf9c4dc5d2036603f4bd8b1336"
+        },
+        {
+          "id": "material_kk_outLine_15",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_15.wav",
+          "audio_exists": true,
+          "audio_sha256": "5976da8f970ef4e343032670e472973068532b4a09cde9acf877a80414cace06"
+        },
+        {
+          "id": "material_kk_outLine_17",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_17.wav",
+          "audio_exists": true,
+          "audio_sha256": "66d66c601fa259cdafa019c588ddffb730931269535c3e51fac7b47be51f6d5d"
+        },
+        {
+          "id": "material_kk_outLine_19",
+          "path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/material/material_kk_outLine_19.wav",
+          "audio_exists": true,
+          "audio_sha256": "701535f3fa5b04250abe8ee9d73cd895ddc1362351ba316dbf50f22839b93838"
+        }
+      ]
+    }
+  ],
+  "existing_source_provenance": "../telephone_corpora_20261001/material_sample_provenance.json",
+  "existing_limitations": [
+    "Two existing Kazakh recording examples; three prepared channels are not three independent calls.",
+    "Oracle segments derive from human timestamps; not additional calls or a deployable automatic segmentation result.",
+    "Code-switching coverage is not certified at conversation level.",
+    "LDC example audio, references and hypotheses remain local, not redistributed.",
+    "Existing31Kazakh and100UzbekTelegram manifests point to absent/tmp audio; filename search in relevant persistent caches found no copies. These are natural speech controls, not telephone calls."
+  ],
+  "babel_source_files": [
+    {
+      "url": "https://catalog.ldc.upenn.edu/desc/addenda/LDC2018S13.sph",
+      "local_path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/babel/ldc_kazakh.sph",
+      "sha256": "e218866309cf3987b6e81456c29f04a9102a9d8011a204cf1a6891cde960ce47",
+      "role": "Publisher audio sample"
+    },
+    {
+      "url": "https://catalog.ldc.upenn.edu/desc/addenda/LDC2018S13.txt",
+      "local_path": "/home/ekhodzitsky/.cache/gigastt-official-telephony/babel/ldc_kazakh.txt",
+      "sha256": "7a79adb2d301f798ff88d45ea32d0302b72e11f100daf88a6d01c93f427dab27",
+      "role": "Publisher human transcript with timestamps"
+    }
+  ]
+}

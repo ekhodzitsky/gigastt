@@ -1,0 +1,41 @@
+{
+  "source": "https://catalog.ldc.upenn.edu/LDC2025S03",
+  "audio_url": "https://catalog.ldc.upenn.edu/desc/addenda/LDC2025S03.wav",
+  "transcript_url": "https://catalog.ldc.upenn.edu/desc/addenda/LDC2025S03.transcription.txt",
+  "license": "Public LDC demonstration; full corpus requires an agreement. No sample redistribution.",
+  "audio_sha256": "ebee68a1297efcb7b99d40b2b4aaa91b0e48461ff4fe913a105c9cc6d9c423a9",
+  "transcript_sha256": "ec4961caab734ff15009a09539b41d07da605ad2f02838d5b75adcafac0ae3e1",
+  "audio_original_seconds": 120,
+  "audio_original_channels": 2,
+  "audio_original_codec": "PCM A-law, 8000 Hz",
+  "reference_preparation": "Strip angle-bracket events; preserve words and filled pauses. Cut both channels at 56.140 s, before the last exchange; published transcript only covers approximately the first minute of a 120 s recording.",
+  "channel_mapping": "inLine=channel 0, outLine=channel 1; checked against speech/silence intervals at 0-1, 2.4-5.5 and 6-12 seconds, without ASR-based selection.",
+  "independence": "Distinct transcript from LDC2018S13 public sample; MATERIAL contains Babel material, so speakers/recordings cannot be certified independent of the full Babel corpus.",
+  "unique_calls": 1,
+  "not_confirmed_code_switching": true,
+  "oracle_segments_warning": "Human reference timestamps give privileged segmentation; report separately from full-channel/VAD inference, never as extra independent calls.",
+  "channels_evaluated": 2,
+  "channel_seconds": 112.28,
+  "oracle_segments": 24,
+  "oracle_segment_seconds": 47.403,
+  "samples": [
+    {
+      "id": "material_kk_inLine",
+      "dataset": "kazakh_material_real_telephone",
+      "sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "call_id": "ldc2025s03_public_sample",
+      "channel": "inLine",
+      "duration_seconds": 56.14,
+      "source_sample_rate": 8000
+    },
+    {
+      "id": "material_kk_outLine",
+      "dataset": "kazakh_material_real_telephone",
+      "sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "call_id": "ldc2025s03_public_sample",
+      "channel": "outLine",
+      "duration_seconds": 56.14,
+      "source_sample_rate": 8000
+    }
+  ]
+}

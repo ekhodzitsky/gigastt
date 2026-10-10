@@ -1,0 +1,90 @@
+{
+  "identity": {
+    "binary": {
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+      "sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566"
+    },
+    "int8": {
+      "path": "/home/ekhodzitsky/.gigastt/models/multilingual_ctc.int8.onnx",
+      "sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480"
+    },
+    "vocab": {
+      "path": "/home/ekhodzitsky/.gigastt/models/multilingual_vocab.txt",
+      "sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    },
+    "scorer": {
+      "path": "scripts/benchmark_multilingual_1000.py",
+      "sha256": "66324d0bd241085fa6b13bbdecec2780ca8654bc80efe96f448ce292d83f2880"
+    },
+    "word_scorer": {
+      "path": "scripts/wer_unicode.py",
+      "sha256": "71e0703f3b78182b63e9629c2b9963c5f08938e2d010d660eb1cb8cf16370be2"
+    },
+    "cases": {
+      "path": "benchmark/results/multilingual_small_diagnosis_20261001/cases.json",
+      "sha256": "083ad0560561861f47c3460de9872b55f07f4da63283eaeebf93accf87e1fce7"
+    },
+    "runner": {
+      "path": "scripts/diagnose_small_inputs.py",
+      "sha256": "a7355a4f916d9987d69b209f472ade13dd37213da8b07d6125886e7dbde61450"
+    },
+    "feature_source": {
+      "path": "crates/gigastt-core/src/inference/features.rs",
+      "sha256": "9ee7278072bc43147738bcfb73fa8ca382f741379d9f09dbb21a540b1013849d"
+    },
+    "resampler_source": {
+      "path": "crates/gigastt-core/src/inference/audio/resample.rs",
+      "sha256": "811e06e6f38371eb907bf8ce20ebf3528b7e6d92f05ffa0d39b03fee1e4fcf8d"
+    },
+    "inspect_audio": {
+      "path": "/home/ekhodzitsky/Projects/gigastt/target/release/examples/inspect_audio",
+      "sha256": "eb04adbf755794aee22f6cb11ab27fd4d69ec4d98c5bb4d621ca298d71a3bc4d"
+    }
+  },
+  "server": {
+    "pid": 1801923,
+    "command": [
+      "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+      "--offline",
+      "serve",
+      "--model-variant",
+      "ml_ctc",
+      "--execution-provider",
+      "cpu",
+      "--pool-size",
+      "2",
+      "--encoder-intra-threads",
+      "3",
+      "--punctuation",
+      "off",
+      "--itn",
+      "off",
+      "--port",
+      "19911"
+    ]
+  },
+  "completed_controls": 444,
+  "native_parity_verified": true,
+  "native_parity_n": 222,
+  "no_training": true,
+  "no_production_change": true,
+  "source_snapshot_note": "Server and weights are the exact immutable original benchmark artifacts; source tree hashes record diagnostic feature/resampling code.",
+  "checks": {
+    "unit_passed": 1117,
+    "unit_failed": 0,
+    "unit_ignored": 39,
+    "clippy": "passed",
+    "cargo_fmt_check": "passed",
+    "standalone_probe_rustfmt": "passed with skip_children; runtime copies production module into temporary crate",
+    "python_syntax_json_links": "passed",
+    "native_http_audit": "444 verified;222 baseline parity",
+    "native_precision_audit": "666 verified;333 canonical HTTP parity;111 original baseline parity",
+    "final_report_review": "independent pass",
+    "log_sha256": {
+      "tests.log": "bac4151ed961b24f209fc6a3968595d323abf660e4f4d2bccb698ab528972dde",
+      "clippy.log": "beed191cf5cd39a57477a6d66e9acb53f3b4efe7566a30e0ada805357a0fe6ff"
+    },
+    "strict_example_clippy": "passed: cargo clippy -p gigastt-core --example native_ctc_probe -- -D warnings",
+    "post_lint_equivalence": "15/15 original INT8 logit hashes identical; execution source and immutable probe snapshots retained"
+  }
+}

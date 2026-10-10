@@ -54,7 +54,7 @@ diarization = ["dep:polyvoice"]
 # side-load models and feed raw PCM).
 net = ["dep:reqwest", "dep:tokio", "dep:futures-util"]  # HTTP model download
 async-pool = ["dep:tokio"]                              # async Pool::checkout; blocking path needs neither
-file-decode = ["dep:symphonia", "dep:ryf", "dep:opus-rs"] # file transcription; raw-PCM streaming does not need it
+file-decode = ["dep:symphonia", "dep:ryf", "dep:opus-rs", "dep:syom"] # file transcription; raw-PCM streaming does not need it
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = ["dep:gigastt-quantize"]
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
@@ -85,7 +85,12 @@ thiserror = "2"
 rustfft = "6"
 rubato = "5.0"
 # 0.6.1 fixes APEv2 size overflow and unknown-size WebM Cluster termination.
-symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
+# AAC / M4A (including HE-AAC and AAC-LD) is syom; symphonia keeps MP3,
+# Vorbis, FLAC, PCM/WAV, and Matroska/WebM demux.
+symphonia = { version = "0.6.1", features = ["mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
+# AAC-LC, HE-AAC, and AAC-LD from ADTS, M4A, LATM/LOAS, and bounded fMP4.
+# Zero runtime dependencies. rust-version 1.89, below the workspace MSRV.
+syom = { version = "0.7.1", optional = true }
 # WAVE family ingest (PCM/IEEE, G.711, G.722, GSM 06.10, MS/IMA ADPCM,
 # RF64/RIFX/Wave64). Zero default-feature deps; default features are
 # `adpcm` + `simd`.
@@ -150,6 +155,10 @@ audio-codec = { version = "0.4", default-features = false }
 [[example]]
 name = "quantize_file"
 required-features = ["quantize"]
+
+[[example]]
+name = "inspect_audio"
+required-features = ["file-decode"]
 
 [[bench]]
 name = "mel"

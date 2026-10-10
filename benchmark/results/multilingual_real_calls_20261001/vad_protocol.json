@@ -1,0 +1,107 @@
+{
+  "status": "frozen_before_vad_inference",
+  "unique_real_recordings": 2,
+  "full_channels": 3,
+  "oracle_excerpts": 0,
+  "inputs_per_model": 3,
+  "measured_requests": 9,
+  "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "models": {
+    "original_small": {
+      "variant": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.gigastt/models",
+      "encoder_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    },
+    "candidate_small": {
+      "variant": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+      "encoder_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+      "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    },
+    "large": {
+      "variant": "ml_ctc_large",
+      "model_dir": "/home/ekhodzitsky/.gigastt/models",
+      "encoder_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+      "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    }
+  },
+  "cases_sha256": "344997b2fd5899cdb9bdc9c096b759983fffbf0150ca931db4187add0aa0e546",
+  "manifests": [
+    {
+      "recording": "babel",
+      "group": "full_channel",
+      "manifest_sha256": "842405de374e69681c27721ba0862a5ecfd6311a7a72f94c883bf2a97859a983",
+      "n": 1
+    },
+    {
+      "recording": "material",
+      "group": "full_channel",
+      "manifest_sha256": "5e17207c470652dec87a817ab4043d209595389c0b264d7b8b5493186cd26e4a",
+      "n": 2
+    },
+    {
+      "recording": "babel",
+      "group": "oracle_segments",
+      "manifest_sha256": "ae5aa7248354255f0a909188ddc69e99fdb4e4da6bf01fc9bce53f4901747010",
+      "n": 24
+    },
+    {
+      "recording": "material",
+      "group": "oracle_segments",
+      "manifest_sha256": "e5c44c567cfb6e55d342fd328dd1c1aa0d8bfcd1a9b83c21b0f6207d4013a5c7",
+      "n": 24
+    }
+  ],
+  "source_urls": [
+    "https://catalog.ldc.upenn.edu/LDC2018S13",
+    "https://catalog.ldc.upenn.edu/LDC2025S03"
+  ],
+  "inputs": [
+    {
+      "id": "babel_full_channel_ldc_kazakh_sample",
+      "recording": "babel",
+      "group": "full_channel",
+      "audio_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "reference_sha256": "a2ee17f6d0d4115784bddbfd2285248bff064b7d28e7b5b4f749e10d45c9abe9",
+      "duration_s": 110.04
+    },
+    {
+      "id": "material_full_channel_material_kk_inLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "reference_sha256": "84a337fc25b4bafa7f926d6c3c928a519380877b99149777b4d6a1c3695e30d6",
+      "duration_s": 56.14
+    },
+    {
+      "id": "material_full_channel_material_kk_outLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "reference_sha256": "583824f66a9c5595430874805be4bfd50bd7225ed73ef01c9c1e5b62d1ceb942",
+      "duration_s": 56.14
+    }
+  ],
+  "configuration": {
+    "pool_size": 2,
+    "encoder_intra_threads": 3,
+    "http_workers": 2,
+    "punctuation": false,
+    "itn": false,
+    "vad": true,
+    "execution_provider": "cpu",
+    "vad_threshold": 0.5,
+    "vad_min_silence_ms": 500
+  },
+  "conditions": "Separate operational VAD control: same three full channels, existing Silero defaults; no tuning or oracle clips.",
+  "limitations": "Two repeatedly inspected Kazakh conversations, three channels; not representative or certified independent speakers; not Uzbek real-call evidence. MATERIAL references cover only the retained first56.14s/channel. Oracle clips are not extra calls. No training, source-model API, gated data, purchase or outreach.",
+  "privacy": "Restricted audio, references and hypotheses remain in local cache; public results contain metrics and hashes only.",
+  "scorer_sha256": {
+    "benchmark_multilingual_public.py": "9d1558e90ab6d451fa37997faab20f45a1444963491fbdd321c860286b7966fb",
+    "wer_unicode.py": "71e0703f3b78182b63e9629c2b9963c5f08938e2d010d660eb1cb8cf16370be2"
+  },
+  "vad_model_sha256": "2623a2953f6ff3d2c1e61740c6cdb7168133479b267dfef114a4a3cc5bdd788f",
+  "vad_model_source": "https://github.com/snakers4/silero-vad/tree/v5.1.2",
+  "vad_verification": "Frozen health/model endpoints omit VAD; require explicit flag, attachment logs and absence of fallback warnings."
+}

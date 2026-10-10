@@ -1,0 +1,229 @@
+{
+  "scoring": "micro WER, normalized reference layer; all hypotheses included",
+  "checks": [
+    {
+      "dataset": "kazakh",
+      "variant": "ml_ctc",
+      "matched_inputs": 62,
+      "changed_original_hypotheses": 0
+    },
+    {
+      "dataset": "kazakh",
+      "variant": "ml_ctc_large",
+      "matched_inputs": 62,
+      "changed_original_hypotheses": 0
+    },
+    {
+      "dataset": "uzbek",
+      "variant": "ml_ctc",
+      "matched_inputs": 200,
+      "changed_original_hypotheses": 0
+    },
+    {
+      "dataset": "uzbek",
+      "variant": "ml_ctc_large",
+      "matched_inputs": 200,
+      "changed_original_hypotheses": 0
+    },
+    {
+      "dataset": "russian",
+      "variant": "rnnt",
+      "matched_inputs": 30,
+      "changed_original_hypotheses": 0
+    }
+  ],
+  "rows": [
+    {
+      "dataset": "kazakh",
+      "variant": "ml_ctc",
+      "condition": "original",
+      "n": 31,
+      "before_wer": 6.805293005671078,
+      "after_wer": 6.805293005671078,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "kazakh",
+      "variant": "ml_ctc",
+      "condition": "simulated_telephone",
+      "n": 31,
+      "before_wer": 93.95085066162571,
+      "after_wer": 51.60680529300567,
+      "before_empty": 6,
+      "after_empty": 2
+    },
+    {
+      "dataset": "kazakh",
+      "variant": "ml_ctc_large",
+      "condition": "original",
+      "n": 31,
+      "before_wer": 6.616257088846881,
+      "after_wer": 6.616257088846881,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "kazakh",
+      "variant": "ml_ctc_large",
+      "condition": "simulated_telephone",
+      "n": 31,
+      "before_wer": 85.25519848771266,
+      "after_wer": 45.36862003780718,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "uzbek",
+      "variant": "ml_ctc",
+      "condition": "original",
+      "n": 100,
+      "before_wer": 16.756176154672396,
+      "after_wer": 16.756176154672396,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "uzbek",
+      "variant": "ml_ctc",
+      "condition": "simulated_telephone",
+      "n": 100,
+      "before_wer": 58.807733619763695,
+      "after_wer": 17.830290010741138,
+      "before_empty": 1,
+      "after_empty": 0
+    },
+    {
+      "dataset": "uzbek",
+      "variant": "ml_ctc_large",
+      "condition": "original",
+      "n": 100,
+      "before_wer": 14.339419978517723,
+      "after_wer": 14.339419978517723,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "uzbek",
+      "variant": "ml_ctc_large",
+      "condition": "simulated_telephone",
+      "n": 100,
+      "before_wer": 23.46938775510204,
+      "after_wer": 15.091299677765843,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "russian",
+      "variant": "rnnt",
+      "condition": "original",
+      "n": 15,
+      "before_wer": 0.0,
+      "after_wer": 0.0,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "russian",
+      "variant": "rnnt",
+      "condition": "simulated_telephone",
+      "n": 15,
+      "before_wer": 1.3333333333333333,
+      "after_wer": 1.3333333333333333,
+      "before_empty": 0,
+      "after_empty": 0
+    },
+    {
+      "dataset": "telephone",
+      "variant": "ml_ctc",
+      "condition": "original",
+      "n": 1,
+      "before_wer": 97.40259740259741,
+      "after_wer": 96.1038961038961
+    },
+    {
+      "dataset": "telephone",
+      "variant": "ml_ctc",
+      "condition": "original_external_16k",
+      "n": 1,
+      "before_wer": 96.1038961038961,
+      "after_wer": 96.1038961038961
+    },
+    {
+      "dataset": "telephone",
+      "variant": "ml_ctc_large",
+      "condition": "original",
+      "n": 1,
+      "before_wer": 96.1038961038961,
+      "after_wer": 100.0
+    },
+    {
+      "dataset": "telephone",
+      "variant": "ml_ctc_large",
+      "condition": "original_external_16k",
+      "n": 1,
+      "before_wer": 98.7012987012987,
+      "after_wer": 98.7012987012987
+    },
+    {
+      "dataset": "telephone_vad",
+      "variant": "ml_ctc",
+      "condition": "original",
+      "n": 1,
+      "before_wer": 100.0,
+      "after_wer": 100.0
+    },
+    {
+      "dataset": "telephone_vad",
+      "variant": "ml_ctc",
+      "condition": "original_external_16k",
+      "n": 1,
+      "before_wer": 100.0,
+      "after_wer": 100.0
+    },
+    {
+      "dataset": "telephone_vad",
+      "variant": "ml_ctc_large",
+      "condition": "original",
+      "n": 1,
+      "before_wer": 100.0,
+      "after_wer": 62.33766233766234
+    },
+    {
+      "dataset": "telephone_vad",
+      "variant": "ml_ctc_large",
+      "condition": "original_external_16k",
+      "n": 1,
+      "before_wer": 94.8051948051948,
+      "after_wer": 94.8051948051948
+    }
+  ],
+  "oracle_segmentation": [
+    {
+      "variant": "ml_ctc",
+      "dataset": "kazakh_phone_oracle_segments",
+      "condition": "original",
+      "reference_layer": "normalized",
+      "n": 24,
+      "audio_s": 43.404,
+      "elapsed_s": 1.4536388712003827,
+      "rtf": 0.03349089648881169,
+      "wer_pct": 79.22077922077922,
+      "cer_pct": 36.344086021505376,
+      "empty_hypotheses": 1
+    },
+    {
+      "variant": "ml_ctc_large",
+      "dataset": "kazakh_phone_oracle_segments",
+      "condition": "original",
+      "reference_layer": "normalized",
+      "n": 24,
+      "audio_s": 43.404,
+      "elapsed_s": 3.618096041493118,
+      "rtf": 0.08335858541823606,
+      "wer_pct": 74.02597402597402,
+      "cer_pct": 36.12903225806452,
+      "empty_hypotheses": 4
+    }
+  ]
+}

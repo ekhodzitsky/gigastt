@@ -10,6 +10,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 
 use super::super::MAX_SAMPLE_RATE;
+use super::super::aac::{try_decode_planes_bytes, try_decode_planes_path};
 use super::super::opus::{OPUS_DECODE_RATE, decode_opus_channels_with_abort, next_demux_packet};
 use super::super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
 use super::super::{
@@ -35,6 +36,9 @@ pub(crate) fn load_audio_channels_bounded(
     path: &str,
     max_audio_secs: Option<f64>,
 ) -> Result<Vec<Vec<f32>>> {
+    if let Some(planes) = try_decode_planes_path(path, max_audio_secs)? {
+        return Ok(planes);
+    }
     let file =
         std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
@@ -87,6 +91,10 @@ pub fn decode_audio_bytes_shared_channels_bounded_with_abort(
     abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<Vec<Vec<f32>>> {
     check_decode_abort(abort)?;
+    if let Some(planes) = try_decode_planes_bytes(data.as_ref(), max_audio_secs)? {
+        check_decode_abort(abort)?;
+        return Ok(planes);
+    }
     let source = BytesMediaSource::new(data);
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
     decode_audio_inner_channels(mss, Hint::new(), "bytes", max_audio_secs, abort)

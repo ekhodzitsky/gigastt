@@ -1,0 +1,118 @@
+{
+  "source_sha256": "8bc803289f9cb5147ee95451fd9bdba219b1ecf1ddcd59a3651177c103c9eeec",
+  "original_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+  "source": {
+    "op_counts": {
+      "Add": 215,
+      "And": 1,
+      "Cast": 129,
+      "Concat": 131,
+      "Constant": 922,
+      "ConstantOfShape": 2,
+      "Conv": 51,
+      "Div": 35,
+      "Equal": 1,
+      "Expand": 2,
+      "Floor": 3,
+      "Gather": 101,
+      "GreaterOrEqual": 3,
+      "LayerNormalization": 96,
+      "Less": 1,
+      "LogSoftmax": 1,
+      "MatMul": 160,
+      "Mul": 129,
+      "Neg": 16,
+      "Not": 2,
+      "Range": 4,
+      "Relu": 2,
+      "Reshape": 113,
+      "Shape": 103,
+      "Sigmoid": 64,
+      "Slice": 66,
+      "Softmax": 16,
+      "Split": 16,
+      "Tile": 1,
+      "Transpose": 180,
+      "Unsqueeze": 242,
+      "Where": 52
+    },
+    "initializer_types": {
+      "FLOAT": 550
+    },
+    "quantized_weight_elements": 0,
+    "float_weight_elements": 220366080,
+    "quantized_weights": 0,
+    "scale_shapes": {},
+    "producer": [
+      "pytorch",
+      "2.13.0"
+    ],
+    "opsets": [
+      [
+        "",
+        17
+      ]
+    ]
+  },
+  "original": {
+    "op_counts": {
+      "Add": 266,
+      "And": 1,
+      "Cast": 308,
+      "Concat": 131,
+      "Constant": 922,
+      "ConstantOfShape": 2,
+      "ConvInteger": 51,
+      "Div": 35,
+      "DynamicQuantizeLinear": 163,
+      "Equal": 1,
+      "Expand": 2,
+      "Floor": 3,
+      "Gather": 101,
+      "GreaterOrEqual": 3,
+      "LayerNormalization": 96,
+      "Less": 1,
+      "LogSoftmax": 1,
+      "MatMul": 32,
+      "MatMulInteger": 128,
+      "Mul": 487,
+      "Neg": 16,
+      "Not": 2,
+      "Range": 4,
+      "Relu": 2,
+      "Reshape": 164,
+      "Shape": 103,
+      "Sigmoid": 64,
+      "Slice": 66,
+      "Softmax": 16,
+      "Split": 16,
+      "Tile": 1,
+      "Transpose": 180,
+      "Unsqueeze": 242,
+      "Where": 52
+    },
+    "initializer_types": {
+      "FLOAT": 550,
+      "UINT8": 358,
+      "INT64": 51
+    },
+    "quantized_weight_elements": 220366080,
+    "float_weight_elements": 0,
+    "quantized_weights": 179,
+    "scale_shapes": {
+      "[]": 179
+    },
+    "producer": [
+      "onnx.quantize",
+      "0.1.0"
+    ],
+    "opsets": [
+      [
+        "",
+        17
+      ]
+    ]
+  },
+  "reference": "https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html",
+  "restriction": "No training, gradients, calibration samples, or quality inference in this converter."
+}

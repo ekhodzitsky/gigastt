@@ -1,0 +1,16 @@
+{
+  "candidate": "s8_channel_reduced_conv_fp32",
+  "model_dir": "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+  "binary": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+  "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "encoder_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+  "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+  "manifest_sha256": "6d6c127188579f49da03b04ca81c72e54cab6ebfca170bc111ada528a8ac2ae9",
+  "bootstrap_presence_companion_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+  "bootstrap_presence_companion_loaded": false,
+  "custom_manifest_policy": "Supported custom basename; explicit external SHA verification; no production checksum code changed.",
+  "pool_size": 2,
+  "encoder_intra_threads": 3,
+  "http_workers_per_server": 2,
+  "script_sha256": "1fda2bfd8334a090bfd551cfa11480586dda32da27e00fbcbe3b66e8d107207d"
+}

@@ -1,0 +1,8 @@
+{
+  "executions_rescored": 135,
+  "feature_arrays_verified": 45,
+  "source_fp32_frame_and_normalized_hypothesis_matches": 45,
+  "public_rows_without_references_or_hypotheses": true,
+  "script_hash_matches": true,
+  "official_short_api_exact_hypothesis_matches": 15
+}

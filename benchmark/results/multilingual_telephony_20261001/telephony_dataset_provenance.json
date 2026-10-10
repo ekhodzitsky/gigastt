@@ -1,0 +1,95 @@
+{
+  "ffmpeg_version": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+  "soundfile_version": "0.14.0",
+  "libsndfile_version": "1.2.2",
+  "transform": "300 Hz high-pass then 3400 Hz low-pass; mono; resample 8000 Hz; G.711 WAV",
+  "command_template": "ffmpeg -nostdin -v error -y -threads 1 -i SOURCE -map_metadata -1 -ac 1 -af highpass=f=300,lowpass=f=3400 -ar 8000 -c:a pcm_{alaw,mulaw} -threads 1 OUTPUT.wav",
+  "normalization": "No gain, loudness normalization, denoising, or clipping normalization.",
+  "verification": "Every source SHA256, output SHA256, WAV format/subtype/channels/rate/frames, full libsndfile PCM16 decode, duration within one 8000 Hz sample; IDs/order/reference/split preserved.",
+  "limitations": "Simulated telephone degradation of read speech, not real calls. Bandpass filters are FFmpeg defaults (not brick-wall). Original baseline sampling and exposure limitations apply.",
+  "manifests": [
+    {
+      "path": "ru_alaw_manifest.json",
+      "sha256": "7c178b6f337554f4cb3c97de389d17fe95413df3d1e95c6d2e9b6634eb7b9e61",
+      "language": "ru",
+      "codec": "alaw",
+      "count": 1000,
+      "audio_seconds": 11477.58
+    },
+    {
+      "path": "ru_mulaw_manifest.json",
+      "sha256": "7eec992c638653e1ded08ccc6fcdc5acd28b04c38c4c28a55a92d4330ff17a81",
+      "language": "ru",
+      "codec": "mulaw",
+      "count": 1000,
+      "audio_seconds": 11477.58
+    },
+    {
+      "path": "en_alaw_manifest.json",
+      "sha256": "12a1ff439d95abef1058446e05628342f62e77455d61be5b7b23027d7a4772c8",
+      "language": "en",
+      "codec": "alaw",
+      "count": 1000,
+      "audio_seconds": 9753.12
+    },
+    {
+      "path": "en_mulaw_manifest.json",
+      "sha256": "9e8f08fc8b23dca01f3bf997c2a1fc1c91b6880efc0bcf1831456f9ae4437813",
+      "language": "en",
+      "codec": "mulaw",
+      "count": 1000,
+      "audio_seconds": 9753.12
+    },
+    {
+      "path": "kk_alaw_manifest.json",
+      "sha256": "115e966c3f826b1d55e7cf8383e29f7505c0185b6cae9e41513c31821c1d0255",
+      "language": "kk",
+      "codec": "alaw",
+      "count": 1000,
+      "audio_seconds": 16048.2
+    },
+    {
+      "path": "kk_mulaw_manifest.json",
+      "sha256": "0bd6a2b1ec25123e08127491a6a99efd2740d74e5c83b02e9b0e406dbd9076cb",
+      "language": "kk",
+      "codec": "mulaw",
+      "count": 1000,
+      "audio_seconds": 16048.2
+    },
+    {
+      "path": "ky_alaw_manifest.json",
+      "sha256": "462f8bd7988786cfd17c655514aa70f1db6e30af8d07aaa0be4e76ac7aa91e08",
+      "language": "ky",
+      "codec": "alaw",
+      "count": 1000,
+      "audio_seconds": 11926.14
+    },
+    {
+      "path": "ky_mulaw_manifest.json",
+      "sha256": "b859057b8f2ec586e3a9bf634ea5481b045ea8e0aef460c49a488535573d6a2f",
+      "language": "ky",
+      "codec": "mulaw",
+      "count": 1000,
+      "audio_seconds": 11926.14
+    },
+    {
+      "path": "uz_alaw_manifest.json",
+      "sha256": "e09722a47141510db6b1a63dd3b3eb1e3fb7e4b72d5c3fac47a4fcd46b6056f4",
+      "language": "uz",
+      "codec": "alaw",
+      "count": 1000,
+      "audio_seconds": 11787.36
+    },
+    {
+      "path": "uz_mulaw_manifest.json",
+      "sha256": "cbb651ce8e21e2915561a2099f41708b4854d65b77396c41c0d1ef08b1c8b249",
+      "language": "uz",
+      "codec": "mulaw",
+      "count": 1000,
+      "audio_seconds": 11787.36
+    }
+  ],
+  "complete": true,
+  "total_prepared_recordings": 10000,
+  "unique_baseline_recordings": 5000
+}

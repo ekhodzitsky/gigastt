@@ -212,7 +212,7 @@ OpenSLR download that does not fit the CI cache budget, so these never run in CI
 - **Keep internal planning private.** Internal task identifiers and tracker contents must never appear in tracked files, source comments, changelogs, public documentation, branch or tag names, commit messages, or PR titles/descriptions. There are no directory exceptions. Keep work-to-tracker mappings only in the ignored local backlog or an external private backup. Describe the change and its reason in plain English on every public surface. Run `python3 scripts/check-publication.py` before publication; the Git hooks and CI enforce this rule.
 
 ### Audio format support
-- File transcription: WAV family via `ryf` (PCM/IEEE, G.711, G.722, GSM 06.10, ADPCM, RF64); M4A/AAC, MP3, OGG/Vorbis, FLAC (via symphonia); OGG/Opus and WebM/Opus (symphonia demux + the pure-Rust `opus-rs` decoder)
+- File transcription: WAV family via `ryf` (PCM/IEEE, G.711, G.722, GSM 06.10, ADPCM, RF64); M4A/AAC (ADTS, LATM/LOAS, AAC-LC, HE-AAC, AAC-LD) via `syom`; MP3, OGG/Vorbis, FLAC via symphonia; OGG/Opus and WebM/Opus (symphonia demux + the pure-Rust `opus-rs` decoder)
 - WebSocket: raw PCM16 binary frames at configurable sample rate (8kHz/16kHz/24kHz/44.1kHz/48kHz, default 48kHz); resampled to 16kHz server-side via rubato
 - Auto mono mix for multi-channel files
 

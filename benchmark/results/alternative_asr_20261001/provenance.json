@@ -1,0 +1,13 @@
+{
+  "candidate": "abilmansplus/whisper-turbo-kaz-rus-v1",
+  "candidate_revision": "904d5d22339952909001d1abcbc1ecf29d26d706",
+  "base": "abilmansplus/whisper-turbo-ksc2",
+  "base_revision": "92847d02bbdb4311e4c85d9d3b4c7f82e31e59bf",
+  "base_weights_sha256": "95235871856d690c02c663d83d7099e89650877fcf57b48e0d1e5e4a278fecdf",
+  "adapter_weights_sha256": "f49c02568e5d37300f736ef2a325f9f6b356936d4378e2a8d842a09c8194dc23",
+  "model_card": "https://huggingface.co/abilmansplus/whisper-turbo-kaz-rus-v1/blob/904d5d22339952909001d1abcbc1ecf29d26d706/README.md",
+  "base_model_card": "https://huggingface.co/abilmansplus/whisper-turbo-ksc2/blob/92847d02bbdb4311e4c85d9d3b4c7f82e31e59bf/README.md",
+  "license": "MIT declared in both model cards; training data licenses are separate",
+  "training_overlap_caveat": "The adapter uses KSC2 and Golos. The 31 public clips and public telephone demonstrations are external to those declared training corpora, but absence from all pretraining data cannot be verified.",
+  "execution": "LoRA merged into FP32 base. Main limited suite uses PyTorch BF16; separately labelled FP32/dynamic-INT8/CTranslate2 smoke controls. CPU only, no cloud audio upload, no product model replacement."
+}

@@ -58,7 +58,7 @@ impl ChannelScan {
 /// per-packet staging cadence the whole-buffer decode used, so it is the same
 /// statistic on the same numbers — the verdict does not move.
 ///
-/// OGG/Opus is the exception: this scan materializes its decoded channels
+/// OGG/Opus and stereo AAC are exceptions: the scan materializes their channels
 /// before correlation, retaining the whole-buffer decode ceiling.
 #[cfg(feature = "file-decode")]
 pub fn scan_channels(data: Bytes, max_audio_secs: Option<f64>) -> Result<ChannelScan> {
@@ -72,6 +72,32 @@ fn scan_channels_inner(
     abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<PreparedChannels> {
     check_decode_abort(abort)?;
+    if let Some(hint) = super::super::aac::header_channels(data.as_ref())? {
+        check_decode_abort(abort)?;
+        if hint.channels != 2 {
+            return Ok(PreparedChannels {
+                scan: ChannelScan {
+                    channels: hint.channels,
+                    dual_mono: false,
+                },
+                decoded: None,
+            });
+        }
+        let decoded =
+            decode_audio_bytes_shared_channels_bounded_with_abort(data, max_audio_secs, abort)?;
+        check_decode_abort(abort)?;
+        let scan = ChannelScan {
+            channels: decoded.len(),
+            dual_mono: is_dual_mono(&decoded),
+        };
+        check_decode_abort(abort)?;
+        let decoded = if retain_decoded && scan.mono_fallback_reason().is_none() {
+            Some(decoded)
+        } else {
+            None
+        };
+        return Ok(PreparedChannels { scan, decoded });
+    }
     let source = BytesMediaSource::new(data.clone());
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
     let mut format = symphonia::default::get_probe()

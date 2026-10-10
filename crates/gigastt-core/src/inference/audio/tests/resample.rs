@@ -5,6 +5,62 @@ use rubato::Resampler;
 
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_narrowband_resampling_matches_author_pcm16_precision() {
+    // GigaAM's file loader emits s16le after resampling. Retaining sub-LSB
+    // float precision suppresses out-of-band energy and can make multilingual
+    // INT8 CTC return blanks on otherwise intelligible telephone speech.
+    let input: Vec<f32> = (0..8000).map(|i| 0.4 * (i as f32 * 0.317).sin()).collect();
+    let whole = resample(&input, SampleRate(8000), SampleRate(16000)).unwrap();
+    let mut cache = None;
+    let mut streamed = Vec::new();
+    let mut chunk = Vec::new();
+    for part in input.chunks(997) {
+        resample_with_cache(
+            part.to_vec(),
+            SampleRate(8000),
+            SampleRate(16000),
+            &mut cache,
+            &mut chunk,
+        )
+        .unwrap();
+        streamed.extend_from_slice(&chunk);
+    }
+    assert_eq!(
+        whole, streamed,
+        "PCM conversion must not depend on chunk boundaries"
+    );
+    assert!(whole.iter().any(|s| s.abs() > 0.3));
+    for sample in whole {
+        let pcm = sample * 32768.0;
+        assert_eq!(
+            pcm,
+            pcm.round(),
+            "narrowband output must have PCM16 precision"
+        );
+        assert!((-32768.0..=32767.0).contains(&pcm));
+    }
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
+fn test_narrowband_pcm16_preserves_silence_and_saturates_overload() {
+    let silence = resample(&vec![0.0; 800], SampleRate(8000), SampleRate(16000)).unwrap();
+    assert!(
+        silence.iter().all(|&s| s == 0.0),
+        "no artificial dither on silence"
+    );
+    for (input, expected) in [(2.0, 32767.0 / 32768.0), (-2.0, -1.0)] {
+        let output = resample(&vec![input; 8000], SampleRate(8000), SampleRate(16000)).unwrap();
+        assert_eq!(
+            output[output.len() / 2],
+            expected,
+            "saturate without wrapping"
+        );
+    }
+}
+
+#[test]
+#[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_resample_downsample_length() {
     let input: Vec<f32> = (0..4800).map(|i| (i as f32).sin()).collect();
     let output = resample(&input, SampleRate(48000), SampleRate(16000)).unwrap();

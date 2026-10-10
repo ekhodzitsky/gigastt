@@ -1,0 +1,530 @@
+{
+  "metadata": {
+    "intra_threads": 3,
+    "inter_threads": 1,
+    "inputs": 15,
+    "native_build": "ORT Build Info: git-branch=rel-1.28.0, git-commit-id=da9b5e3, fp8-kv-cache=1, build type=Release",
+    "python_build": "ORT Build Info: git-branch=HEAD, git-commit-id=45de2a8b06, fp8-kv-cache=1, build type=Release",
+    "same_library_sha256": "aa4079d18f4ea7a5f3a94d80cd4bbe0f2740436626622d64d793803a20381083",
+    "native_probe_sha256": "0340f402c09d948dbfdee7694fa11c1a086a50be21f76ab9f4f1b4b6911b15ff",
+    "dynamic_probe_sha256": "e91fab6e4476cd26a14e398e822f6e55b8b5064c8bd5986ae9db04a2b22cb950",
+    "source_sha256": "275d898d6c5c6e6b20edc5ec1290581878ff5bc409d5ea060002039fc641b980",
+    "product_join": [
+      {
+        "id": "fleurs_ru_ru_test_0000_original",
+        "matches": true
+      },
+      {
+        "id": "fleurs_ru_ru_test_0000_alaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_ru_ru_test_0000_mulaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_en_us_test_0000_original",
+        "matches": true
+      },
+      {
+        "id": "fleurs_en_us_test_0000_alaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_en_us_test_0000_mulaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_kk_kz_test_0000_original",
+        "matches": true
+      },
+      {
+        "id": "fleurs_kk_kz_test_0000_alaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_kk_kz_test_0000_mulaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_ky_kg_test_0000_original",
+        "matches": true
+      },
+      {
+        "id": "fleurs_ky_kg_test_0000_alaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_ky_kg_test_0000_mulaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_uz_uz_test_0000_original",
+        "matches": true
+      },
+      {
+        "id": "fleurs_uz_uz_test_0000_alaw",
+        "matches": true
+      },
+      {
+        "id": "fleurs_uz_uz_test_0000_mulaw",
+        "matches": true
+      }
+    ],
+    "scope": "Native process adapter with exact same feature bytes versus Python adapter, matching threads and shapes. Shared-library result isolates runtime binary build as cause; no specific upstream kernel/commit change is identified.",
+    "final_immutable_probe_replay_logits_bit_identical": 45,
+    "immutable_probe": "/home/ekhodzitsky/.cache/gigastt-small-diagnosis/bin/native_ctc_probe_0340f402c09d948d"
+  },
+  "rows": [
+    {
+      "id": "fleurs_ru_ru_test_0000_original",
+      "feature_sha256": "c2e4a510d7d3f40b650c108e46227ef54fa1c466fd089b0285e86c6e84fa270a",
+      "feature_shape": [
+        1,
+        64,
+        1691
+      ],
+      "output_shape": [
+        1,
+        423,
+        71
+      ],
+      "output_lengths": [
+        423
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 10.923702239990234,
+      "different_build_int8_frame_argmax_agreement": 0.983451536643026,
+      "different_build_fp32_max_logit_delta": 0.0002503395080566406,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000_alaw",
+      "feature_sha256": "a0307158ee8e1e81ed2413ad56653665c7e0870cb3e03734588458c1ac73f5c0",
+      "feature_shape": [
+        1,
+        64,
+        1690
+      ],
+      "output_shape": [
+        1,
+        423,
+        71
+      ],
+      "output_lengths": [
+        423
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 8.423935890197754,
+      "different_build_int8_frame_argmax_agreement": 0.9810874704491725,
+      "different_build_fp32_max_logit_delta": 0.00010156631469726562,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000_mulaw",
+      "feature_sha256": "336758cb917e6f10e5dc9da44cf68aa85a9aa5838a0159dc295cfbf485f633ba",
+      "feature_shape": [
+        1,
+        64,
+        1690
+      ],
+      "output_shape": [
+        1,
+        423,
+        71
+      ],
+      "output_lengths": [
+        423
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 7.1747212409973145,
+      "different_build_int8_frame_argmax_agreement": 0.9881796690307328,
+      "different_build_fp32_max_logit_delta": 2.6702880859375e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000_original",
+      "feature_sha256": "991e35c13eeaf52f5873696e1e3586d831802cf161fc563f3bef7569658cb523",
+      "feature_shape": [
+        1,
+        64,
+        1055
+      ],
+      "output_shape": [
+        1,
+        264,
+        71
+      ],
+      "output_lengths": [
+        264
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 9.95825481414795,
+      "different_build_int8_frame_argmax_agreement": 0.9621212121212122,
+      "different_build_fp32_max_logit_delta": 4.6253204345703125e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000_alaw",
+      "feature_sha256": "f974ed3ed354f299168b6366303d649c775a1825f1558100d1fb8e6964d2c294",
+      "feature_shape": [
+        1,
+        64,
+        1054
+      ],
+      "output_shape": [
+        1,
+        264,
+        71
+      ],
+      "output_lengths": [
+        264
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 8.070180892944336,
+      "different_build_int8_frame_argmax_agreement": 0.9659090909090909,
+      "different_build_fp32_max_logit_delta": 7.2479248046875e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000_mulaw",
+      "feature_sha256": "50b0b284a0868d745e2e3cb6d15c148593e7897f01f00d81853b48d474efa835",
+      "feature_shape": [
+        1,
+        64,
+        1054
+      ],
+      "output_shape": [
+        1,
+        264,
+        71
+      ],
+      "output_lengths": [
+        264
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 6.582633972167969,
+      "different_build_int8_frame_argmax_agreement": 0.9772727272727273,
+      "different_build_fp32_max_logit_delta": 7.534027099609375e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000_original",
+      "feature_sha256": "5c40ef20c25b14bcfc90238a343ffda8fed3efd63cce138de6a8ec05958649b1",
+      "feature_shape": [
+        1,
+        64,
+        1487
+      ],
+      "output_shape": [
+        1,
+        372,
+        71
+      ],
+      "output_lengths": [
+        372
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 9.996070861816406,
+      "different_build_int8_frame_argmax_agreement": 0.9838709677419355,
+      "different_build_fp32_max_logit_delta": 8.96453857421875e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000_alaw",
+      "feature_sha256": "30da8f831df7e5e195d44424c37a8ef26fe44cb8efcc84be74e8a38412fcdde4",
+      "feature_shape": [
+        1,
+        64,
+        1486
+      ],
+      "output_shape": [
+        1,
+        372,
+        71
+      ],
+      "output_lengths": [
+        372
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 2.4440102577209473,
+      "different_build_int8_frame_argmax_agreement": 0.9919354838709677,
+      "different_build_fp32_max_logit_delta": 0.0004363059997558594,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000_mulaw",
+      "feature_sha256": "ed1e1269a9cf44da2f8315134ba0a5347d9377853ee6104dfc19211de6151e96",
+      "feature_shape": [
+        1,
+        64,
+        1486
+      ],
+      "output_shape": [
+        1,
+        372,
+        71
+      ],
+      "output_lengths": [
+        372
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 2.446221351623535,
+      "different_build_int8_frame_argmax_agreement": 0.9865591397849462,
+      "different_build_fp32_max_logit_delta": 0.000133514404296875,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000_original",
+      "feature_sha256": "c88866febcde1dc6cfa5cba102bcd97919c43b1c5bb83fbb9be7f13f945f3f1d",
+      "feature_shape": [
+        1,
+        64,
+        1235
+      ],
+      "output_shape": [
+        1,
+        309,
+        71
+      ],
+      "output_lengths": [
+        309
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 6.980096817016602,
+      "different_build_int8_frame_argmax_agreement": 0.9902912621359223,
+      "different_build_fp32_max_logit_delta": 8.320808410644531e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000_alaw",
+      "feature_sha256": "abe3fc17d7470df19fe2f1e98c17d8d1a0bbf7678e5ce903f403fedb5a6d1662",
+      "feature_shape": [
+        1,
+        64,
+        1234
+      ],
+      "output_shape": [
+        1,
+        309,
+        71
+      ],
+      "output_lengths": [
+        309
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 4.583248615264893,
+      "different_build_int8_frame_argmax_agreement": 0.9902912621359223,
+      "different_build_fp32_max_logit_delta": 0.00015401840209960938,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000_mulaw",
+      "feature_sha256": "4184cfd10e60d732bc05407dbb65d85807e36487c8125943df1492c45dd24c61",
+      "feature_shape": [
+        1,
+        64,
+        1234
+      ],
+      "output_shape": [
+        1,
+        309,
+        71
+      ],
+      "output_lengths": [
+        309
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 2.3758606910705566,
+      "different_build_int8_frame_argmax_agreement": 0.9838187702265372,
+      "different_build_fp32_max_logit_delta": 7.677078247070312e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000_original",
+      "feature_sha256": "965c3747904f3157f76eea22661d6ffdcf3d2fbd385b2ff539d82824cb79d20f",
+      "feature_shape": [
+        1,
+        64,
+        1367
+      ],
+      "output_shape": [
+        1,
+        342,
+        71
+      ],
+      "output_lengths": [
+        342
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 8.808642387390137,
+      "different_build_int8_frame_argmax_agreement": 0.9824561403508771,
+      "different_build_fp32_max_logit_delta": 6.67572021484375e-05,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000_alaw",
+      "feature_sha256": "c0ca5827e867af5181589729ee2515af9f1effe2a06a85f43c4273b183a4baa8",
+      "feature_shape": [
+        1,
+        64,
+        1366
+      ],
+      "output_shape": [
+        1,
+        342,
+        71
+      ],
+      "output_lengths": [
+        342
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 13.774845123291016,
+      "different_build_int8_frame_argmax_agreement": 0.9824561403508771,
+      "different_build_fp32_max_logit_delta": 0.0001239776611328125,
+      "different_build_fp32_frame_argmax_identical": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000_mulaw",
+      "feature_sha256": "b274b10a1000efd67c725105febd46f29d6eaa9d45197261255f37432a8ef646",
+      "feature_shape": [
+        1,
+        64,
+        1366
+      ],
+      "output_shape": [
+        1,
+        342,
+        71
+      ],
+      "output_lengths": [
+        342
+      ],
+      "native_cpu_vs_cache_logits_bit_exact": true,
+      "same_library_rust_vs_python_logits_bit_exact": true,
+      "different_build_int8_max_logit_delta": 9.62151050567627,
+      "different_build_int8_frame_argmax_agreement": 0.9824561403508771,
+      "different_build_fp32_max_logit_delta": 0.0003788471221923828,
+      "different_build_fp32_frame_argmax_identical": true
+    }
+  ],
+  "post_lint_equivalence": {
+    "change": "chunks_exact(4) replaced with as_chunks::<4>().0.iter() after existing divisibility guard; no inference changes",
+    "old_source_sha256": "275d898d6c5c6e6b20edc5ec1290581878ff5bc409d5ea060002039fc641b980",
+    "old_source_snapshot": "/home/ekhodzitsky/.cache/gigastt-small-diagnosis/bin/native_ctc_probe_pre_lint.rs",
+    "old_immutable_probe_sha256": "0340f402c09d948dbfdee7694fa11c1a086a50be21f76ab9f4f1b4b6911b15ff",
+    "new_source_sha256": "051770705c9ec6da41156eaa2fada577ca138eaf9616cbc503f8791287486bdc",
+    "new_probe_sha256": "5c2f64d2cb09c50eb978e8161d04151dcd3c8775e30c3d975104ea18554866d3",
+    "new_immutable_probe": "/home/ekhodzitsky/.cache/gigastt-small-diagnosis/bin/native_ctc_probe_5c2f64d2cb09c50e",
+    "factory": "production",
+    "intra_threads": 3,
+    "inter_threads": 1,
+    "exact_logit_hash_matches": 15,
+    "checks": [
+      {
+        "id": "fleurs_en_us_test_0000_alaw",
+        "old_logits_sha256": "3ba3539a18c8928a895ec205c114b5d5435ef3c8e3e82158ac82dac05723ef3b",
+        "new_logits_sha256": "3ba3539a18c8928a895ec205c114b5d5435ef3c8e3e82158ac82dac05723ef3b",
+        "identical": true
+      },
+      {
+        "id": "fleurs_en_us_test_0000_mulaw",
+        "old_logits_sha256": "485d4b7c77b634d540c66865c18e8a592a502afd1c71938a366838e60d205289",
+        "new_logits_sha256": "485d4b7c77b634d540c66865c18e8a592a502afd1c71938a366838e60d205289",
+        "identical": true
+      },
+      {
+        "id": "fleurs_en_us_test_0000_original",
+        "old_logits_sha256": "79f7bc07786942df256804aa580954685cf7648aa1038cdd471177acfae7bd2d",
+        "new_logits_sha256": "79f7bc07786942df256804aa580954685cf7648aa1038cdd471177acfae7bd2d",
+        "identical": true
+      },
+      {
+        "id": "fleurs_kk_kz_test_0000_alaw",
+        "old_logits_sha256": "88ad15e0ce6bd90fcf3981c96d6d2d6ef4a721ee60508896ee2ba628a927ff3a",
+        "new_logits_sha256": "88ad15e0ce6bd90fcf3981c96d6d2d6ef4a721ee60508896ee2ba628a927ff3a",
+        "identical": true
+      },
+      {
+        "id": "fleurs_kk_kz_test_0000_mulaw",
+        "old_logits_sha256": "cbf7f7cdaa6968b092c45dfcd7c148fd3db32c0f529190e16ccbb9912ce8c06b",
+        "new_logits_sha256": "cbf7f7cdaa6968b092c45dfcd7c148fd3db32c0f529190e16ccbb9912ce8c06b",
+        "identical": true
+      },
+      {
+        "id": "fleurs_kk_kz_test_0000_original",
+        "old_logits_sha256": "01ecbb03d481a99eed8cfef60de4c2c497ef9d0385d6e94bfc915db9f42f031d",
+        "new_logits_sha256": "01ecbb03d481a99eed8cfef60de4c2c497ef9d0385d6e94bfc915db9f42f031d",
+        "identical": true
+      },
+      {
+        "id": "fleurs_ky_kg_test_0000_alaw",
+        "old_logits_sha256": "67e08396777c4eb97239aa95537b29d4b8dfd1fb93c03421ccf10dd8affad3c1",
+        "new_logits_sha256": "67e08396777c4eb97239aa95537b29d4b8dfd1fb93c03421ccf10dd8affad3c1",
+        "identical": true
+      },
+      {
+        "id": "fleurs_ky_kg_test_0000_mulaw",
+        "old_logits_sha256": "e0e1cbddcdc2daeaa45366fbffde391dcda7ef2140f26a6aba2e3ba39c6d68bb",
+        "new_logits_sha256": "e0e1cbddcdc2daeaa45366fbffde391dcda7ef2140f26a6aba2e3ba39c6d68bb",
+        "identical": true
+      },
+      {
+        "id": "fleurs_ky_kg_test_0000_original",
+        "old_logits_sha256": "3b718fdfb09c45548ce0b941a0aec787b784f33597d36ae910475996dc936927",
+        "new_logits_sha256": "3b718fdfb09c45548ce0b941a0aec787b784f33597d36ae910475996dc936927",
+        "identical": true
+      },
+      {
+        "id": "fleurs_ru_ru_test_0000_alaw",
+        "old_logits_sha256": "aa7f0cebcfe93ade9c1378b1f0d84d626466f3ffcdfc973bab3c95f96169180b",
+        "new_logits_sha256": "aa7f0cebcfe93ade9c1378b1f0d84d626466f3ffcdfc973bab3c95f96169180b",
+        "identical": true
+      },
+      {
+        "id": "fleurs_ru_ru_test_0000_mulaw",
+        "old_logits_sha256": "ae91000f25e094b3d76fb8ebb3846ee0e683e59245a2208503b2f38635c05bd0",
+        "new_logits_sha256": "ae91000f25e094b3d76fb8ebb3846ee0e683e59245a2208503b2f38635c05bd0",
+        "identical": true
+      },
+      {
+        "id": "fleurs_ru_ru_test_0000_original",
+        "old_logits_sha256": "fdf07284ed349e52bcceecd55f6a026f2adbf4a33c44a57670f5a8d45d666c40",
+        "new_logits_sha256": "fdf07284ed349e52bcceecd55f6a026f2adbf4a33c44a57670f5a8d45d666c40",
+        "identical": true
+      },
+      {
+        "id": "fleurs_uz_uz_test_0000_alaw",
+        "old_logits_sha256": "882eb2507ac7963ac5ae1c514479e240fc96ed612152bf2a9d50bf324155b130",
+        "new_logits_sha256": "882eb2507ac7963ac5ae1c514479e240fc96ed612152bf2a9d50bf324155b130",
+        "identical": true
+      },
+      {
+        "id": "fleurs_uz_uz_test_0000_mulaw",
+        "old_logits_sha256": "04905aaf871975233265a99a9bac7e732705e06588a3f63f4899b686f24bd447",
+        "new_logits_sha256": "04905aaf871975233265a99a9bac7e732705e06588a3f63f4899b686f24bd447",
+        "identical": true
+      },
+      {
+        "id": "fleurs_uz_uz_test_0000_original",
+        "old_logits_sha256": "987ddb253233712e35bd5480e1735113083df7b1c8e270d426dbd484fafc09af",
+        "new_logits_sha256": "987ddb253233712e35bd5480e1735113083df7b1c8e270d426dbd484fafc09af",
+        "identical": true
+      }
+    ]
+  }
+}

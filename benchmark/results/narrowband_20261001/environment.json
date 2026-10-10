@@ -1,0 +1,62 @@
+{
+  "source_revision": "ca661d5f642065d86cae75560dc36821823ffe0c",
+  "baseline_sha256": "c65f0a6d3e26f579a95e0fab44650a6e4b1a14ce36153857dc30e1fedf4875bb",
+  "candidate_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "candidate_change": "PCM16 rounding/saturation only on 8000 -> 16000 Hz resampler output, cached and whole-buffer paths",
+  "models": {
+    "multilingual_ctc.int8.onnx": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+    "multilingual_large_ctc.int8.onnx": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+    "multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+  },
+  "server_command": "target/release/gigastt --offline serve --model-variant MODEL --pool-size 1 --encoder-intra-threads 6 --punctuation off --itn off --port 19876",
+  "cpu": "AMD Ryzen AI 9 HX 370; CPU EP; six encoder threads; pool size one",
+  "timing_caveat": "Accuracy audit. Compilation and short diagnostic processes overlapped some baseline inference; do not compare these RTFs as performance measurements. Models/servers otherwise measured serially.",
+  "checks": {
+    "passed": 1117,
+    "ignored": 39,
+    "clippy": "passed",
+    "fmt": "passed"
+  },
+  "upstream_gigaam_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+  "onnx_asr_revision": "675f0e68c24d846ee1775743e92d9b4ed452380e",
+  "diagnostic_onnxruntime": "1.30.0",
+  "diagnostic_packages": {
+    "numpy": "2.5.3",
+    "onnxruntime": "1.30.0",
+    "onnx-asr": "0.12.0",
+    "jiwer": "4.0.0"
+  },
+  "diagnostic_inputs": {
+    "internal8": {
+      "pcm_sha256": "96e6a9395a2ceb11fb6bba25f90cd6e26698de348caad52c56df6ca471e803dc",
+      "samples": 116936
+    },
+    "internal_mulaw8": {
+      "pcm_sha256": "f2053ccbe2d1395f18720d469e5cb436caf2512aa14484a5d1f8e6e4618ecb32",
+      "samples": 116936,
+      "source": "kzaudio_1; FFmpeg highpass=f=300,lowpass=f=3400, -ar 8000 -c:a pcm_mulaw; baseline Rust decode to 16 kHz"
+    },
+    "external16": {
+      "pcm_sha256": "b29080223206c1bbe0a04452bb2cf54ce0ba411eb8fe9630fe3a3582fb8b70f2",
+      "samples": 116940
+    },
+    "original": {
+      "pcm_sha256": "e2f5b75dcb0bc42d57ffa71bab48d24b11fd6bacc3542f59f063042fb04ddfc6",
+      "samples": 116938
+    },
+    "telephone": {
+      "pcm_sha256": "a20fdabe38f63aa7594159955f861427ac45f978a5f9dcfa98efce35df208baa",
+      "samples": 1760636
+    }
+  },
+  "measured_http_requests": 1172,
+  "matched_original_hypotheses_unchanged": 277,
+  "scripts_sha256": {
+    "scripts/benchmark_multilingual_public.py": "9d1558e90ab6d451fa37997faab20f45a1444963491fbdd321c860286b7966fb",
+    "scripts/diagnose_narrowband.py": "91aa796791e020b6f0d11ebfe13f2eb6bff53d88624ce9f9cb9cf80f73e43461",
+    "scripts/prepare_telephone_segments.py": "a84fe68b571464c9a0e4cb42879d9148762c883a5b4fad700b93b68a61a6459a",
+    "crates/gigastt-core/examples/inspect_audio.rs": "306755f288a06474919d7cad2c4d4c85817ca4a8b4c54c129bc46ecea468f7b7"
+  },
+  "resample_source_sha256": "811e06e6f38371eb907bf8ce20ebf3528b7e6d92f05ffa0d39b03fee1e4fcf8d",
+  "example_validation": "cargo check --example inspect_audio passed; file-decode required, correctly skipped by no-default-features --examples"
+}

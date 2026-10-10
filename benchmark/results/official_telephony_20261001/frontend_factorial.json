@@ -1,0 +1,3274 @@
+{
+  "metadata": {
+    "protocol": "frontend_protocol.md: first one entry per language, three conditions, three chains, three precisions",
+    "checkpoint_sha256": "24aa92be5994fa8b9f1ce40fe59fc9693de0ce6af415011b7c0b4480c7fcf733",
+    "fp32_sha256": "8bc803289f9cb5147ee95451fd9bdba219b1ecf1ddcd59a3651177c103c9eeec",
+    "int8_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+    "inspect_audio_sha256": "adde9ee4aeedc5634b03797f51386ac1e579f77eab210f049075abee8fc4d683",
+    "script_sha256": "598a8278a0f60eb2ac614856d599e2879df5f4a35b17a25ec40ac71fe60a1750",
+    "rust_source_sha256": {
+      "crates/gigastt-core/src/inference/audio/resample.rs": "811e06e6f38371eb907bf8ce20ebf3528b7e6d92f05ffa0d39b03fee1e4fcf8d",
+      "crates/gigastt-core/src/inference/features.rs": "9ee7278072bc43147738bcfb73fa8ca382f741379d9f09dbb21a540b1013849d",
+      "crates/gigastt-core/examples/inspect_audio.rs": "306755f288a06474919d7cad2c4d4c85817ca4a8b4c54c129bc46ecea468f7b7"
+    },
+    "torch": "2.9.1+cpu",
+    "onnxruntime": "1.30.0",
+    "threads": 2,
+    "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers"
+  },
+  "groups": {
+    "original/official_pcm_official_mel/source": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/official_pcm_official_mel/fp32": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/official_pcm_official_mel/int8": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/rust_pcm_official_mel/source": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/rust_pcm_official_mel/fp32": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/rust_pcm_official_mel/int8": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/rust_pcm_rust_mel/source": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/rust_pcm_rust_mel/fp32": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "original/rust_pcm_rust_mel/int8": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "alaw/official_pcm_official_mel/source": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "alaw/official_pcm_official_mel/fp32": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "alaw/official_pcm_official_mel/int8": {
+      "n": 5,
+      "errors": 27,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 28.125
+    },
+    "alaw/rust_pcm_official_mel/source": {
+      "n": 5,
+      "errors": 8,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 8.333333333333334
+    },
+    "alaw/rust_pcm_official_mel/fp32": {
+      "n": 5,
+      "errors": 8,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 8.333333333333334
+    },
+    "alaw/rust_pcm_official_mel/int8": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "alaw/rust_pcm_rust_mel/source": {
+      "n": 5,
+      "errors": 10,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 10.416666666666666
+    },
+    "alaw/rust_pcm_rust_mel/fp32": {
+      "n": 5,
+      "errors": 10,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 10.416666666666666
+    },
+    "alaw/rust_pcm_rust_mel/int8": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "mulaw/official_pcm_official_mel/source": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "mulaw/official_pcm_official_mel/fp32": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "mulaw/official_pcm_official_mel/int8": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "mulaw/rust_pcm_official_mel/source": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "mulaw/rust_pcm_official_mel/fp32": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "mulaw/rust_pcm_official_mel/int8": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    },
+    "mulaw/rust_pcm_rust_mel/source": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "mulaw/rust_pcm_rust_mel/fp32": {
+      "n": 5,
+      "errors": 7,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 7.291666666666667
+    },
+    "mulaw/rust_pcm_rust_mel/int8": {
+      "n": 5,
+      "errors": 25,
+      "ref_words": 96,
+      "empty": 0,
+      "wer_percent": 26.041666666666668
+    }
+  },
+  "numerical_inputs": [
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          270720
+        ],
+        "right_shape": [
+          270720
+        ],
+        "aligned_shape": [
+          270720
+        ],
+        "mean_absolute_difference": 7.535762051702477e-06,
+        "max_absolute_difference": 1.52587890625e-05,
+        "identical_aligned_fraction": 0.012252511820330969
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1691
+        ],
+        "right_shape": [
+          1,
+          64,
+          1691
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1691
+        ],
+        "mean_absolute_difference": 0.020337747409939766,
+        "max_absolute_difference": 2.4687862396240234,
+        "identical_aligned_fraction": 0.009508057362507392
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1691
+        ],
+        "right_shape": [
+          1,
+          64,
+          1691
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1691
+        ],
+        "mean_absolute_difference": 0.029073065146803856,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 5.5440567711413366e-05
+      }
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          270720
+        ],
+        "right_shape": [
+          270716
+        ],
+        "aligned_shape": [
+          270716
+        ],
+        "mean_absolute_difference": 0.0059260232374072075,
+        "max_absolute_difference": 0.16668701171875,
+        "identical_aligned_fraction": 0.030116431980377962
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1691
+        ],
+        "right_shape": [
+          1,
+          64,
+          1690
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1690
+        ],
+        "mean_absolute_difference": 1.2116590738296509,
+        "max_absolute_difference": 16.63578987121582,
+        "identical_aligned_fraction": 0.008422707100591715
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1690
+        ],
+        "right_shape": [
+          1,
+          64,
+          1690
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1690
+        ],
+        "mean_absolute_difference": 0.028664713725447655,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 3.698224852071006e-05
+      }
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          270720
+        ],
+        "right_shape": [
+          270716
+        ],
+        "aligned_shape": [
+          270716
+        ],
+        "mean_absolute_difference": 0.005912497639656067,
+        "max_absolute_difference": 0.16705322265625,
+        "identical_aligned_fraction": 0.027914862808256623
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1691
+        ],
+        "right_shape": [
+          1,
+          64,
+          1690
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1690
+        ],
+        "mean_absolute_difference": 1.1849983930587769,
+        "max_absolute_difference": 16.62289047241211,
+        "identical_aligned_fraction": 0.008441198224852071
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1690
+        ],
+        "right_shape": [
+          1,
+          64,
+          1690
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1690
+        ],
+        "mean_absolute_difference": 0.0316421240568161,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 8.321005917159763e-05
+      }
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          168960
+        ],
+        "right_shape": [
+          168960
+        ],
+        "aligned_shape": [
+          168960
+        ],
+        "mean_absolute_difference": 7.639826435479335e-06,
+        "max_absolute_difference": 1.52587890625e-05,
+        "identical_aligned_fraction": 0.00204782196969697
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1055
+        ],
+        "right_shape": [
+          1,
+          64,
+          1055
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1055
+        ],
+        "mean_absolute_difference": 0.056437596678733826,
+        "max_absolute_difference": 1.8063831329345703,
+        "identical_aligned_fraction": 1.481042654028436e-05
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1055
+        ],
+        "right_shape": [
+          1,
+          64,
+          1055
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1055
+        ],
+        "mean_absolute_difference": 0.00656541483476758,
+        "max_absolute_difference": 2.291959762573242,
+        "identical_aligned_fraction": 2.962085308056872e-05
+      }
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          168960
+        ],
+        "right_shape": [
+          168956
+        ],
+        "aligned_shape": [
+          168956
+        ],
+        "mean_absolute_difference": 0.0018530249362811446,
+        "max_absolute_difference": 0.046173095703125,
+        "identical_aligned_fraction": 0.03899831908899359
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1055
+        ],
+        "right_shape": [
+          1,
+          64,
+          1054
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1054
+        ],
+        "mean_absolute_difference": 1.0584717988967896,
+        "max_absolute_difference": 10.23386001586914,
+        "identical_aligned_fraction": 0.0
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1054
+        ],
+        "right_shape": [
+          1,
+          64,
+          1054
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1054
+        ],
+        "mean_absolute_difference": 0.00673530250787735,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 0.00010377134724857685
+      }
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          168960
+        ],
+        "right_shape": [
+          168956
+        ],
+        "aligned_shape": [
+          168956
+        ],
+        "mean_absolute_difference": 0.0018432679353281856,
+        "max_absolute_difference": 0.045867919921875,
+        "identical_aligned_fraction": 0.029078576670849215
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1055
+        ],
+        "right_shape": [
+          1,
+          64,
+          1054
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1054
+        ],
+        "mean_absolute_difference": 1.0207829475402832,
+        "max_absolute_difference": 10.371573448181152,
+        "identical_aligned_fraction": 0.0
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1054
+        ],
+        "right_shape": [
+          1,
+          64,
+          1054
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1054
+        ],
+        "mean_absolute_difference": 0.007075203582644463,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 8.894686907020873e-05
+      }
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          238080
+        ],
+        "right_shape": [
+          238080
+        ],
+        "aligned_shape": [
+          238080
+        ],
+        "mean_absolute_difference": 7.634384019183926e-06,
+        "max_absolute_difference": 1.52587890625e-05,
+        "identical_aligned_fraction": 0.002037130376344086
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1487
+        ],
+        "right_shape": [
+          1,
+          64,
+          1487
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1487
+        ],
+        "mean_absolute_difference": 0.03880922496318817,
+        "max_absolute_difference": 1.8931035995483398,
+        "identical_aligned_fraction": 8.406186953597848e-05
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1487
+        ],
+        "right_shape": [
+          1,
+          64,
+          1487
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1487
+        ],
+        "mean_absolute_difference": 0.007158946245908737,
+        "max_absolute_difference": 0.6312103271484375,
+        "identical_aligned_fraction": 2.101546738399462e-05
+      }
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          238080
+        ],
+        "right_shape": [
+          238076
+        ],
+        "aligned_shape": [
+          238076
+        ],
+        "mean_absolute_difference": 0.002596016973257065,
+        "max_absolute_difference": 0.076873779296875,
+        "identical_aligned_fraction": 0.024601387792133604
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1487
+        ],
+        "right_shape": [
+          1,
+          64,
+          1486
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1486
+        ],
+        "mean_absolute_difference": 1.2600209712982178,
+        "max_absolute_difference": 11.027048110961914,
+        "identical_aligned_fraction": 0.0
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1486
+        ],
+        "right_shape": [
+          1,
+          64,
+          1486
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1486
+        ],
+        "mean_absolute_difference": 0.007062508724629879,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 0.00013669246298788693
+      }
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          238080
+        ],
+        "right_shape": [
+          238076
+        ],
+        "aligned_shape": [
+          238076
+        ],
+        "mean_absolute_difference": 0.002574881073087454,
+        "max_absolute_difference": 0.076507568359375,
+        "identical_aligned_fraction": 0.02593709571733396
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1487
+        ],
+        "right_shape": [
+          1,
+          64,
+          1486
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1486
+        ],
+        "mean_absolute_difference": 1.2601040601730347,
+        "max_absolute_difference": 10.966482162475586,
+        "identical_aligned_fraction": 0.0
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1486
+        ],
+        "right_shape": [
+          1,
+          64,
+          1486
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1486
+        ],
+        "mean_absolute_difference": 0.008550586178898811,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 6.308882907133244e-05
+      }
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          197760
+        ],
+        "right_shape": [
+          197760
+        ],
+        "aligned_shape": [
+          197760
+        ],
+        "mean_absolute_difference": 7.563859526271699e-06,
+        "max_absolute_difference": 1.52587890625e-05,
+        "identical_aligned_fraction": 0.008833940129449838
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1235
+        ],
+        "right_shape": [
+          1,
+          64,
+          1235
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1235
+        ],
+        "mean_absolute_difference": 0.2077762931585312,
+        "max_absolute_difference": 3.372468948364258,
+        "identical_aligned_fraction": 0.006490384615384616
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1235
+        ],
+        "right_shape": [
+          1,
+          64,
+          1235
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1235
+        ],
+        "mean_absolute_difference": 0.02342902310192585,
+        "max_absolute_difference": 2.3189220428466797,
+        "identical_aligned_fraction": 8.856275303643725e-05
+      }
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          197760
+        ],
+        "right_shape": [
+          197756
+        ],
+        "aligned_shape": [
+          197756
+        ],
+        "mean_absolute_difference": 0.0010016703745350242,
+        "max_absolute_difference": 0.017730712890625,
+        "identical_aligned_fraction": 0.12346528044661098
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1235
+        ],
+        "right_shape": [
+          1,
+          64,
+          1234
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1234
+        ],
+        "mean_absolute_difference": 1.0984671115875244,
+        "max_absolute_difference": 10.751616477966309,
+        "identical_aligned_fraction": 0.005052167747163695
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1234
+        ],
+        "right_shape": [
+          1,
+          64,
+          1234
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1234
+        ],
+        "mean_absolute_difference": 0.02213299088180065,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 0.00011395867098865478
+      }
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          197760
+        ],
+        "right_shape": [
+          197756
+        ],
+        "aligned_shape": [
+          197756
+        ],
+        "mean_absolute_difference": 0.0009736272040754557,
+        "max_absolute_difference": 0.017791748046875,
+        "identical_aligned_fraction": 0.14872873642266227
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1235
+        ],
+        "right_shape": [
+          1,
+          64,
+          1234
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1234
+        ],
+        "mean_absolute_difference": 1.0577459335327148,
+        "max_absolute_difference": 10.824533462524414,
+        "identical_aligned_fraction": 0.006546292544570503
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1234
+        ],
+        "right_shape": [
+          1,
+          64,
+          1234
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1234
+        ],
+        "mean_absolute_difference": 0.027181856334209442,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 7.597244732576986e-05
+      }
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          218880
+        ],
+        "right_shape": [
+          218880
+        ],
+        "aligned_shape": [
+          218880
+        ],
+        "mean_absolute_difference": 7.611185083078453e-06,
+        "max_absolute_difference": 1.52587890625e-05,
+        "identical_aligned_fraction": 0.0021381578947368422
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1367
+        ],
+        "right_shape": [
+          1,
+          64,
+          1367
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1367
+        ],
+        "mean_absolute_difference": 0.012602174654603004,
+        "max_absolute_difference": 1.335317611694336,
+        "identical_aligned_fraction": 1.1430138990490125e-05
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1367
+        ],
+        "right_shape": [
+          1,
+          64,
+          1367
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1367
+        ],
+        "mean_absolute_difference": 0.00803917832672596,
+        "max_absolute_difference": 8.2813138961792,
+        "identical_aligned_fraction": 3.429041697147037e-05
+      }
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          218880
+        ],
+        "right_shape": [
+          218876
+        ],
+        "aligned_shape": [
+          218876
+        ],
+        "mean_absolute_difference": 0.0074619390070438385,
+        "max_absolute_difference": 0.11077880859375,
+        "identical_aligned_fraction": 0.012417990094848225
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1367
+        ],
+        "right_shape": [
+          1,
+          64,
+          1366
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1366
+        ],
+        "mean_absolute_difference": 1.2718870639801025,
+        "max_absolute_difference": 13.881078720092773,
+        "identical_aligned_fraction": 0.0
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1366
+        ],
+        "right_shape": [
+          1,
+          64,
+          1366
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1366
+        ],
+        "mean_absolute_difference": 0.009246894158422947,
+        "max_absolute_difference": 2.302583694458008,
+        "identical_aligned_fraction": 8.006954612005857e-05
+      }
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "pcm_official_vs_rust": {
+        "left_shape": [
+          218880
+        ],
+        "right_shape": [
+          218876
+        ],
+        "aligned_shape": [
+          218876
+        ],
+        "mean_absolute_difference": 0.007455399725586176,
+        "max_absolute_difference": 0.111114501953125,
+        "identical_aligned_fraction": 0.00987773899376816
+      },
+      "mel_official_vs_rust_pcm_official": {
+        "left_shape": [
+          1,
+          64,
+          1367
+        ],
+        "right_shape": [
+          1,
+          64,
+          1366
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1366
+        ],
+        "mean_absolute_difference": 1.2704144716262817,
+        "max_absolute_difference": 14.139289855957031,
+        "identical_aligned_fraction": 0.0
+      },
+      "mel_rust_pcm_official_vs_rust": {
+        "left_shape": [
+          1,
+          64,
+          1366
+        ],
+        "right_shape": [
+          1,
+          64,
+          1366
+        ],
+        "aligned_shape": [
+          1,
+          64,
+          1366
+        ],
+        "mean_absolute_difference": 0.010619716718792915,
+        "max_absolute_difference": 3.8088912963867188,
+        "identical_aligned_fraction": 2.287701317715959e-05
+      }
+    }
+  ],
+  "rows": [
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "de3968d746ebd649067ed71bb8fa38e21f0d580676ec70f13e0be7e8d724b00d",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "de3968d746ebd649067ed71bb8fa38e21f0d580676ec70f13e0be7e8d724b00d",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 4.127566171518993e-06,
+      "source_logits_max_error": 0.0002002716064453125,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "de3968d746ebd649067ed71bb8fa38e21f0d580676ec70f13e0be7e8d724b00d",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.28734609484672546,
+      "source_logits_max_error": 7.254836082458496,
+      "source_frame_argmax_agreement": 0.983451536643026,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "ec326717b0f88c7625af282ab5c333d9a8f584cb0ff0a968a4b9c0d483db3514",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "ec326717b0f88c7625af282ab5c333d9a8f584cb0ff0a968a4b9c0d483db3514",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.980846486228984e-06,
+      "source_logits_max_error": 0.000308990478515625,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "ec326717b0f88c7625af282ab5c333d9a8f584cb0ff0a968a4b9c0d483db3514",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.2796745300292969,
+      "source_logits_max_error": 10.17774486541748,
+      "source_frame_argmax_agreement": 0.9763593380614657,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "47b35c6e6a5a0bc54ebd164cb7d5273a281302ef12e4b1be40e01ebf6f77b9aa",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "47b35c6e6a5a0bc54ebd164cb7d5273a281302ef12e4b1be40e01ebf6f77b9aa",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.865921371470904e-06,
+      "source_logits_max_error": 0.00019979476928710938,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "47b35c6e6a5a0bc54ebd164cb7d5273a281302ef12e4b1be40e01ebf6f77b9aa",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.26349693536758423,
+      "source_logits_max_error": 6.36865234375,
+      "source_frame_argmax_agreement": 0.983451536643026,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "2a307ea75968b96d868b28894e1ef6ce661403001f9dc5006ad5c8fe0d60f707",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "2a307ea75968b96d868b28894e1ef6ce661403001f9dc5006ad5c8fe0d60f707",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.802118726525805e-06,
+      "source_logits_max_error": 0.0004684925079345703,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "2a307ea75968b96d868b28894e1ef6ce661403001f9dc5006ad5c8fe0d60f707",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.2764987051486969,
+      "source_logits_max_error": 7.663812160491943,
+      "source_frame_argmax_agreement": 0.9787234042553191,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "7af37b69998f4d04bccc4cd81a24c8ca3cf3ff736b4be447057f9787c91a5514",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "7af37b69998f4d04bccc4cd81a24c8ca3cf3ff736b4be447057f9787c91a5514",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.1426286568603246e-06,
+      "source_logits_max_error": 4.6253204345703125e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "7af37b69998f4d04bccc4cd81a24c8ca3cf3ff736b4be447057f9787c91a5514",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.28681856393814087,
+      "source_logits_max_error": 9.453157424926758,
+      "source_frame_argmax_agreement": 0.9787234042553191,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "062ac4353325ea749c1ba7d50166c4d2e173cc918f139c5ab26cf163ef7129e2",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "062ac4353325ea749c1ba7d50166c4d2e173cc918f139c5ab26cf163ef7129e2",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.5707594179257285e-06,
+      "source_logits_max_error": 0.00016772747039794922,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "062ac4353325ea749c1ba7d50166c4d2e173cc918f139c5ab26cf163ef7129e2",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.27520039677619934,
+      "source_logits_max_error": 5.464936256408691,
+      "source_frame_argmax_agreement": 0.9810874704491725,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "2e9263db3bc4c63f2765878526ddf07ffa9b9ece316b0feb5a63c766e208f4db",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "2e9263db3bc4c63f2765878526ddf07ffa9b9ece316b0feb5a63c766e208f4db",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.3567696391401114e-06,
+      "source_logits_max_error": 7.104873657226562e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "2e9263db3bc4c63f2765878526ddf07ffa9b9ece316b0feb5a63c766e208f4db",
+      "frames": 1691,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.2814256548881531,
+      "source_logits_max_error": 9.485189437866211,
+      "source_frame_argmax_agreement": 0.9810874704491725,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "ae4336a819c095dd6254945e4ddf9898e6d3851106262d9c9e238296db178bd7",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "ae4336a819c095dd6254945e4ddf9898e6d3851106262d9c9e238296db178bd7",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.2249251944449497e-06,
+      "source_logits_max_error": 0.00012063980102539062,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "ae4336a819c095dd6254945e4ddf9898e6d3851106262d9c9e238296db178bd7",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.2762849032878876,
+      "source_logits_max_error": 8.383116722106934,
+      "source_frame_argmax_agreement": 0.9810874704491725,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "5c1ce4104bb453d914234d1c9011cac227eaf9addb3f436afdfa382737482f61",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "5c1ce4104bb453d914234d1c9011cac227eaf9addb3f436afdfa382737482f61",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 3.1748907076689648e-06,
+      "source_logits_max_error": 6.079673767089844e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "5c1ce4104bb453d914234d1c9011cac227eaf9addb3f436afdfa382737482f61",
+      "frames": 1690,
+      "ref_words": 21,
+      "errors": 0,
+      "source_logits_mae": 0.2892768979072571,
+      "source_logits_max_error": 10.284674644470215,
+      "source_frame_argmax_agreement": 0.9716312056737588,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "1d228989642277eece505f27130792f59e4ce2957ac3772f56d4fdd20aa3d6e6",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "1d228989642277eece505f27130792f59e4ce2957ac3772f56d4fdd20aa3d6e6",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 4.48783794126939e-06,
+      "source_logits_max_error": 0.0001385211944580078,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "1d228989642277eece505f27130792f59e4ce2957ac3772f56d4fdd20aa3d6e6",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 1.009899377822876,
+      "source_logits_max_error": 13.156404495239258,
+      "source_frame_argmax_agreement": 0.8636363636363636,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "819f09308538dfc9e8ef0dc470e625c79bdb9c03a995bfc022da26b98314587c",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "819f09308538dfc9e8ef0dc470e625c79bdb9c03a995bfc022da26b98314587c",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 6.678235422441503e-06,
+      "source_logits_max_error": 0.00021147727966308594,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "819f09308538dfc9e8ef0dc470e625c79bdb9c03a995bfc022da26b98314587c",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 1.0549530982971191,
+      "source_logits_max_error": 13.971694946289062,
+      "source_frame_argmax_agreement": 0.8484848484848485,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "7cfdd5c6f184712c6224bb6630d055425e217d208e43bb6bcbdd534db90d2471",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "7cfdd5c6f184712c6224bb6630d055425e217d208e43bb6bcbdd534db90d2471",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 3.5497303088050103e-06,
+      "source_logits_max_error": 6.246566772460938e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "7cfdd5c6f184712c6224bb6630d055425e217d208e43bb6bcbdd534db90d2471",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 1.1576238870620728,
+      "source_logits_max_error": 13.88891315460205,
+      "source_frame_argmax_agreement": 0.8068181818181818,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "7aba04ce9f68d57471e6d6045a02bb73549d2db4cc2325d304644461691d65e6",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "7aba04ce9f68d57471e6d6045a02bb73549d2db4cc2325d304644461691d65e6",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 3.89281012758147e-06,
+      "source_logits_max_error": 0.00011920928955078125,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "7aba04ce9f68d57471e6d6045a02bb73549d2db4cc2325d304644461691d65e6",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.414593905210495,
+      "source_logits_max_error": 13.183954238891602,
+      "source_frame_argmax_agreement": 0.9621212121212122,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "39e9a75107d10cf92aafb9ccf866919d401b43dba7982c8559f122552b106d09",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "39e9a75107d10cf92aafb9ccf866919d401b43dba7982c8559f122552b106d09",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 3.951962298742728e-06,
+      "source_logits_max_error": 0.00029087066650390625,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "39e9a75107d10cf92aafb9ccf866919d401b43dba7982c8559f122552b106d09",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.8018152117729187,
+      "source_logits_max_error": 11.763648986816406,
+      "source_frame_argmax_agreement": 0.8522727272727273,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "e7957f251d35a2b3554c456fbd41557207f5f209968fe0dc6fc4f2ea1b9fa138",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "e7957f251d35a2b3554c456fbd41557207f5f209968fe0dc6fc4f2ea1b9fa138",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 4.5539250095316675e-06,
+      "source_logits_max_error": 0.00011444091796875,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "e7957f251d35a2b3554c456fbd41557207f5f209968fe0dc6fc4f2ea1b9fa138",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.6010935306549072,
+      "source_logits_max_error": 11.988433837890625,
+      "source_frame_argmax_agreement": 0.8674242424242424,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "46b087852adf620a7f9347efaf4cd3baafbc51cb3442f3b7b987c4e0eb8b87dd",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "46b087852adf620a7f9347efaf4cd3baafbc51cb3442f3b7b987c4e0eb8b87dd",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 7.504491350118769e-06,
+      "source_logits_max_error": 0.0006732940673828125,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "46b087852adf620a7f9347efaf4cd3baafbc51cb3442f3b7b987c4e0eb8b87dd",
+      "frames": 1055,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.42985936999320984,
+      "source_logits_max_error": 10.30381965637207,
+      "source_frame_argmax_agreement": 0.9431818181818182,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "4d31041fe4b6b708545b76954e676c7cc77697e6aa7714ccafd5ed89646c3007",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "4d31041fe4b6b708545b76954e676c7cc77697e6aa7714ccafd5ed89646c3007",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 5.04192848893581e-06,
+      "source_logits_max_error": 0.0002613067626953125,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "4d31041fe4b6b708545b76954e676c7cc77697e6aa7714ccafd5ed89646c3007",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.8809729814529419,
+      "source_logits_max_error": 12.906377792358398,
+      "source_frame_argmax_agreement": 0.8446969696969697,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "7b4a62ea25e71c20f64e18f1681bf3d1d0db241009c93ed9fd2f4b82d0ba1469",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "7b4a62ea25e71c20f64e18f1681bf3d1d0db241009c93ed9fd2f4b82d0ba1469",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 4.5669262362935115e-06,
+      "source_logits_max_error": 0.00017595291137695312,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "7b4a62ea25e71c20f64e18f1681bf3d1d0db241009c93ed9fd2f4b82d0ba1469",
+      "frames": 1054,
+      "ref_words": 19,
+      "errors": 4,
+      "source_logits_mae": 0.9624875783920288,
+      "source_logits_max_error": 13.603498458862305,
+      "source_frame_argmax_agreement": 0.8295454545454546,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "10c3b32802326c71ee899440cc4f4d32a13a4c42cb0962b55dd894bd05cfd8d1",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "10c3b32802326c71ee899440cc4f4d32a13a4c42cb0962b55dd894bd05cfd8d1",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 4.159446234552888e-06,
+      "source_logits_max_error": 0.0005340576171875,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "10c3b32802326c71ee899440cc4f4d32a13a4c42cb0962b55dd894bd05cfd8d1",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.2644573152065277,
+      "source_logits_max_error": 10.254205703735352,
+      "source_frame_argmax_agreement": 0.9704301075268817,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "92c93edac06c742caa8547a1d61a17988d4756d204a53f57c787b6a0382e4957",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "92c93edac06c742caa8547a1d61a17988d4756d204a53f57c787b6a0382e4957",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 3.17221042678284e-06,
+      "source_logits_max_error": 0.0001227855682373047,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "92c93edac06c742caa8547a1d61a17988d4756d204a53f57c787b6a0382e4957",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.2756465673446655,
+      "source_logits_max_error": 10.2598237991333,
+      "source_frame_argmax_agreement": 0.9704301075268817,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "346240b4c5f4bb5f89a4ac050002b5125b1a7e40ee9847c100cd1e491dafe88f",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "346240b4c5f4bb5f89a4ac050002b5125b1a7e40ee9847c100cd1e491dafe88f",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 3.33244292960444e-06,
+      "source_logits_max_error": 8.106231689453125e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "346240b4c5f4bb5f89a4ac050002b5125b1a7e40ee9847c100cd1e491dafe88f",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.2599719166755676,
+      "source_logits_max_error": 8.093761444091797,
+      "source_frame_argmax_agreement": 0.9704301075268817,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "bf94739667122fec4fda25244d328cba43804d4039a2001940cf4c10edaa22a3",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "bf94739667122fec4fda25244d328cba43804d4039a2001940cf4c10edaa22a3",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 2.9145501230232185e-06,
+      "source_logits_max_error": 0.00010967254638671875,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "bf94739667122fec4fda25244d328cba43804d4039a2001940cf4c10edaa22a3",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 0.5715193152427673,
+      "source_logits_max_error": 10.066473007202148,
+      "source_frame_argmax_agreement": 0.9543010752688172,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "01915e20998a329c7c76572803793ea7456d576a19259c1b60af5560bd53c3e5",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 3,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "01915e20998a329c7c76572803793ea7456d576a19259c1b60af5560bd53c3e5",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 3,
+      "source_logits_mae": 1.0331531484553125e-05,
+      "source_logits_max_error": 0.0003046989440917969,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "01915e20998a329c7c76572803793ea7456d576a19259c1b60af5560bd53c3e5",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 1.473119854927063,
+      "source_logits_max_error": 11.124146461486816,
+      "source_frame_argmax_agreement": 0.5161290322580645,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "ad614341d1f35c37f076847f6981b09a8f229758122e30121636782cb76ee1ef",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 5,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "ad614341d1f35c37f076847f6981b09a8f229758122e30121636782cb76ee1ef",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 5,
+      "source_logits_mae": 6.907198439876083e-06,
+      "source_logits_max_error": 0.0001785755157470703,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "ad614341d1f35c37f076847f6981b09a8f229758122e30121636782cb76ee1ef",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 19,
+      "source_logits_mae": 1.3013615608215332,
+      "source_logits_max_error": 11.0833158493042,
+      "source_frame_argmax_agreement": 0.5591397849462365,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "b82292c2e504e1bb0c1bc9960ed11efbb403705df610912599dc820fa7ce404c",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "b82292c2e504e1bb0c1bc9960ed11efbb403705df610912599dc820fa7ce404c",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 2.6241611976729473e-06,
+      "source_logits_max_error": 0.00012159347534179688,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "b82292c2e504e1bb0c1bc9960ed11efbb403705df610912599dc820fa7ce404c",
+      "frames": 1487,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 0.5979478359222412,
+      "source_logits_max_error": 10.219982147216797,
+      "source_frame_argmax_agreement": 0.946236559139785,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "4150bf6bd5fa7ce8e01a7acb7ddc3850a8bbb602584d91df54234170ea37af83",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "4150bf6bd5fa7ce8e01a7acb7ddc3850a8bbb602584d91df54234170ea37af83",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 5.094731477583991e-06,
+      "source_logits_max_error": 0.00012373924255371094,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "4150bf6bd5fa7ce8e01a7acb7ddc3850a8bbb602584d91df54234170ea37af83",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 1.685644507408142,
+      "source_logits_max_error": 11.005738258361816,
+      "source_frame_argmax_agreement": 0.5080645161290323,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "f611edb464dce9bd181d9951fe8eb6481df5d4b01be333cfd394b9f1532bafc9",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "f611edb464dce9bd181d9951fe8eb6481df5d4b01be333cfd394b9f1532bafc9",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 8.643634828331415e-06,
+      "source_logits_max_error": 0.00020122528076171875,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "f611edb464dce9bd181d9951fe8eb6481df5d4b01be333cfd394b9f1532bafc9",
+      "frames": 1486,
+      "ref_words": 20,
+      "errors": 20,
+      "source_logits_mae": 1.587580680847168,
+      "source_logits_max_error": 11.07651424407959,
+      "source_frame_argmax_agreement": 0.543010752688172,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "f670ee25ef162b77b572deebd2efa010daca4491d34fdda8f6d8c791e2a3ff98",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "f670ee25ef162b77b572deebd2efa010daca4491d34fdda8f6d8c791e2a3ff98",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.1142290026764385e-06,
+      "source_logits_max_error": 0.00010967254638671875,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "f670ee25ef162b77b572deebd2efa010daca4491d34fdda8f6d8c791e2a3ff98",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.24629928171634674,
+      "source_logits_max_error": 4.482903480529785,
+      "source_frame_argmax_agreement": 0.9902912621359223,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "dc9ba61c97d3088000e7afa5463d9a19bc762cf68a074b0beecace6ace0dc88e",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "dc9ba61c97d3088000e7afa5463d9a19bc762cf68a074b0beecace6ace0dc88e",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.2245347938442137e-06,
+      "source_logits_max_error": 0.00013446807861328125,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "dc9ba61c97d3088000e7afa5463d9a19bc762cf68a074b0beecace6ace0dc88e",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.23393379151821136,
+      "source_logits_max_error": 7.499403953552246,
+      "source_frame_argmax_agreement": 0.9870550161812298,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "dac25ca07de4d2dd09212ff5a3445a5ae52aaec78aa6f55dff277fdec30cf763",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "dac25ca07de4d2dd09212ff5a3445a5ae52aaec78aa6f55dff277fdec30cf763",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.1210090583044803e-06,
+      "source_logits_max_error": 7.724761962890625e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "dac25ca07de4d2dd09212ff5a3445a5ae52aaec78aa6f55dff277fdec30cf763",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.2178458571434021,
+      "source_logits_max_error": 2.7437381744384766,
+      "source_frame_argmax_agreement": 0.9838187702265372,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "8543a192a870353dd4c087089549aad9d3b6d515660f1b2c99e5156afce4bbd9",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "8543a192a870353dd4c087089549aad9d3b6d515660f1b2c99e5156afce4bbd9",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 4.325721420173068e-06,
+      "source_logits_max_error": 0.00017118453979492188,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "8543a192a870353dd4c087089549aad9d3b6d515660f1b2c99e5156afce4bbd9",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 3,
+      "source_logits_mae": 0.5836904644966125,
+      "source_logits_max_error": 11.01552677154541,
+      "source_frame_argmax_agreement": 0.9288025889967637,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "55957d1d0187dd628d8ab91a8fca3d2165fe445154e398c6528e6fe1bee309b5",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "55957d1d0187dd628d8ab91a8fca3d2165fe445154e398c6528e6fe1bee309b5",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.2424040909972973e-06,
+      "source_logits_max_error": 9.679794311523438e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "55957d1d0187dd628d8ab91a8fca3d2165fe445154e398c6528e6fe1bee309b5",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.6509909629821777,
+      "source_logits_max_error": 10.638382911682129,
+      "source_frame_argmax_agreement": 0.941747572815534,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "1978f8b9066776826a38a2c878be7b7061ea794ddd3c731c47c5f1e6ab73b221",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "1978f8b9066776826a38a2c878be7b7061ea794ddd3c731c47c5f1e6ab73b221",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.596531314542517e-06,
+      "source_logits_max_error": 0.00010395050048828125,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "1978f8b9066776826a38a2c878be7b7061ea794ddd3c731c47c5f1e6ab73b221",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 2,
+      "source_logits_mae": 0.5738528370857239,
+      "source_logits_max_error": 10.613014221191406,
+      "source_frame_argmax_agreement": 0.9449838187702265,
+      "source_normalized_hypothesis_matches": false
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "bba666f0dd62730f1f3148dba8908257013c3a923d689fe699fa47bcccd2c69f",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "bba666f0dd62730f1f3148dba8908257013c3a923d689fe699fa47bcccd2c69f",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.5584348552220035e-06,
+      "source_logits_max_error": 0.00016546249389648438,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "bba666f0dd62730f1f3148dba8908257013c3a923d689fe699fa47bcccd2c69f",
+      "frames": 1235,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.6452117562294006,
+      "source_logits_max_error": 11.392440795898438,
+      "source_frame_argmax_agreement": 0.9029126213592233,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "00f401dbde85b0a9643becb98fdd497c6b0b29c6c1dbcd91b10f312e57c1307c",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "00f401dbde85b0a9643becb98fdd497c6b0b29c6c1dbcd91b10f312e57c1307c",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.6070064197701868e-06,
+      "source_logits_max_error": 7.724761962890625e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "00f401dbde85b0a9643becb98fdd497c6b0b29c6c1dbcd91b10f312e57c1307c",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.6070266366004944,
+      "source_logits_max_error": 10.850807189941406,
+      "source_frame_argmax_agreement": 0.9579288025889967,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "ba2f3d7b69462cbdb0178737521badc1a1c7be9f34bbe97565cca44538efe7b0",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "ba2f3d7b69462cbdb0178737521badc1a1c7be9f34bbe97565cca44538efe7b0",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 3.0015830816410016e-06,
+      "source_logits_max_error": 6.61611557006836e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "ba2f3d7b69462cbdb0178737521badc1a1c7be9f34bbe97565cca44538efe7b0",
+      "frames": 1234,
+      "ref_words": 20,
+      "errors": 1,
+      "source_logits_mae": 0.5872309803962708,
+      "source_logits_max_error": 10.53232479095459,
+      "source_frame_argmax_agreement": 0.948220064724919,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "05fc5298c38a9cd47b7d19038cc73f7c4d9229d2149338fee11efefded90a33c",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "05fc5298c38a9cd47b7d19038cc73f7c4d9229d2149338fee11efefded90a33c",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 3.342255922689219e-06,
+      "source_logits_max_error": 4.57763671875e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "05fc5298c38a9cd47b7d19038cc73f7c4d9229d2149338fee11efefded90a33c",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.28408583998680115,
+      "source_logits_max_error": 12.543989181518555,
+      "source_frame_argmax_agreement": 0.97953216374269,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "fd098c32ca51d69b7dd3c17f1087614490d34e8c40f068928f236815f55b9392",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "fd098c32ca51d69b7dd3c17f1087614490d34e8c40f068928f236815f55b9392",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 3.6222322705725674e-06,
+      "source_logits_max_error": 0.0002491474151611328,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "fd098c32ca51d69b7dd3c17f1087614490d34e8c40f068928f236815f55b9392",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.257416307926178,
+      "source_logits_max_error": 7.59364128112793,
+      "source_frame_argmax_agreement": 0.9912280701754386,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "4f916beb76478d5e0cf158baa2d6e56ddfedcda407950dc231ec3abfe6af5a1c",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "4f916beb76478d5e0cf158baa2d6e56ddfedcda407950dc231ec3abfe6af5a1c",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 3.588656454667216e-06,
+      "source_logits_max_error": 0.00020933151245117188,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "4f916beb76478d5e0cf158baa2d6e56ddfedcda407950dc231ec3abfe6af5a1c",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.2923315167427063,
+      "source_logits_max_error": 12.068222045898438,
+      "source_frame_argmax_agreement": 0.9766081871345029,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "9167d251b3c1a39469f3571aad62d0f7360624ed8c53e63ec8d3467811741656",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "9167d251b3c1a39469f3571aad62d0f7360624ed8c53e63ec8d3467811741656",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 4.211857685731957e-06,
+      "source_logits_max_error": 0.000286102294921875,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "9167d251b3c1a39469f3571aad62d0f7360624ed8c53e63ec8d3467811741656",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.3144342601299286,
+      "source_logits_max_error": 10.32113265991211,
+      "source_frame_argmax_agreement": 0.9766081871345029,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "4ae998f930c7bc497af515601bf82e1ecc59806081ef393f95718a78af15dd96",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "4ae998f930c7bc497af515601bf82e1ecc59806081ef393f95718a78af15dd96",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 3.7098895973031176e-06,
+      "source_logits_max_error": 0.00011754035949707031,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "4ae998f930c7bc497af515601bf82e1ecc59806081ef393f95718a78af15dd96",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.2774604260921478,
+      "source_logits_max_error": 12.426855087280273,
+      "source_frame_argmax_agreement": 0.97953216374269,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "2e69f3c8b4de700ac4fc9ee9cd086ab47c73df08e88f46356fe576b4f84b5d6e",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "2e69f3c8b4de700ac4fc9ee9cd086ab47c73df08e88f46356fe576b4f84b5d6e",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 3.5914540603698697e-06,
+      "source_logits_max_error": 9.34600830078125e-05,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "2e69f3c8b4de700ac4fc9ee9cd086ab47c73df08e88f46356fe576b4f84b5d6e",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.2797292470932007,
+      "source_logits_max_error": 13.074844360351562,
+      "source_frame_argmax_agreement": 0.97953216374269,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "c4fff707ff5ff72876b4d9291bba25d78938f43629347fdac1d0b86e128ade9d",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "c4fff707ff5ff72876b4d9291bba25d78938f43629347fdac1d0b86e128ade9d",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 4.514966349233873e-06,
+      "source_logits_max_error": 0.00034427642822265625,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "official_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "c4fff707ff5ff72876b4d9291bba25d78938f43629347fdac1d0b86e128ade9d",
+      "frames": 1367,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.3446637690067291,
+      "source_logits_max_error": 12.86062240600586,
+      "source_frame_argmax_agreement": 0.9736842105263158,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "source",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "743c3eb0d1dd7ccdcc56e1a1a996c1dea1a9d19efec71e0f1f0e37b77c9584c4",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "fp32",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "743c3eb0d1dd7ccdcc56e1a1a996c1dea1a9d19efec71e0f1f0e37b77c9584c4",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 5.531784609047463e-06,
+      "source_logits_max_error": 0.0006809234619140625,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "rust_pcm_official_mel",
+      "precision": "int8",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "743c3eb0d1dd7ccdcc56e1a1a996c1dea1a9d19efec71e0f1f0e37b77c9584c4",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.2849651277065277,
+      "source_logits_max_error": 14.44844913482666,
+      "source_frame_argmax_agreement": 0.9736842105263158,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "source",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "020cda83393fb158a0e55ed5f98f03e6febdf334881433f93068cccbe7b21e14",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.0,
+      "source_logits_max_error": 0.0,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "fp32",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "020cda83393fb158a0e55ed5f98f03e6febdf334881433f93068cccbe7b21e14",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 3.840752469841391e-06,
+      "source_logits_max_error": 0.0001819133758544922,
+      "source_frame_argmax_agreement": 1.0,
+      "source_normalized_hypothesis_matches": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "chain": "rust_pcm_rust_mel",
+      "precision": "int8",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "020cda83393fb158a0e55ed5f98f03e6febdf334881433f93068cccbe7b21e14",
+      "frames": 1366,
+      "ref_words": 16,
+      "errors": 0,
+      "source_logits_mae": 0.2598325312137604,
+      "source_logits_max_error": 14.238919258117676,
+      "source_frame_argmax_agreement": 0.9853801169590644,
+      "source_normalized_hypothesis_matches": true
+    }
+  ]
+}
