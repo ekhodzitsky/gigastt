@@ -16,27 +16,9 @@ name: Fresh Dependency Resolution
 # cargo-semver-checks happens to build rustdoc in a throwaway out-of-workspace
 # crate. This job makes that coverage deliberate instead of accidental.
 #
-# Triggers are intentionally narrow. This job can go red with NO change from us
-# — purely because a dependency published a new version — so it must never gate
-# unrelated PRs. It runs:
-#   - on every main push (catch a loosened pin the moment it lands),
-#   - nightly (catch the ecosystem moving between our commits — the rc.13 case),
-#   - on PRs only when they touch a manifest or the lockfile (catch a pin being
-#     re-loosened at review time, before merge), via the native paths filter so
-#     unrelated PRs don't even start it.
+# Run manually when reviewing dependency changes or checking ecosystem drift.
 on:
-  push:
-    branches: [main]
-  schedule:
-    # 05:37 UTC — off-peak, and a skewed minute distinct from the nightly soak
-    # (03:17) so the two don't contend for a runner slot.
-    - cron: '37 5 * * *'
-  pull_request:
-    branches: [main]
-    paths:
-      - '**/Cargo.toml'
-      - 'Cargo.lock'
-      - '.github/workflows/fresh-resolve.yml'
+  workflow_dispatch:
 
 concurrency:
   group: fresh-resolve-${{ github.ref }}

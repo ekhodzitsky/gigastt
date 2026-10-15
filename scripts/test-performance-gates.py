@@ -88,6 +88,15 @@ class ReleaseTests(unittest.TestCase):
             gates.check_release([self.run_record(), self.run_record(id=11, conclusion='failure')],
                                 self.jobs(), 'a' * 40)
 
+    def test_manual_main_ci_is_accepted_and_latest_failure_still_blocks(self):
+        manual = self.run_record(id=11, event='workflow_dispatch')
+        self.assertEqual(gates.check_release([manual], self.jobs(), 'a' * 40), 11)
+        with self.assertRaises(ValueError):
+            gates.check_release([self.run_record(), {**manual, 'conclusion': 'failure'}],
+                                self.jobs(), 'a' * 40)
+        with self.assertRaises(ValueError):
+            gates.check_release([{**manual, 'head_branch': 'topic'}], self.jobs(), 'a' * 40)
+
     def test_missing_or_skipped_gate_fails(self):
         with self.assertRaises(ValueError):
             gates.check_release([], self.jobs(), 'a' * 40)

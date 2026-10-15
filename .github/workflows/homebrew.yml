@@ -2,9 +2,6 @@ name: Homebrew Formula update
 
 # Propose pins from published assets through the protected main branch PR path.
 on:
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
   workflow_dispatch:
     inputs:
       tag:
@@ -17,12 +14,6 @@ permissions:
 
 jobs:
   resolve-tag:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_repository.full_name == github.repository &&
-       (github.event.workflow_run.event == 'push' ||
-        github.event.workflow_run.event == 'workflow_dispatch'))
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
@@ -32,28 +23,11 @@ jobs:
         with:
           ref: main
 
-      - name: Download current release attempt metadata
-        if: github.event_name == 'workflow_run'
-        uses: actions/download-artifact@v8
-        with:
-          name: release-source-${{ github.event.workflow_run.run_attempt }}
-          path: ${{ runner.temp }}/release-selection
-          github-token: ${{ github.token }}
-          repository: ${{ github.repository }}
-          run-id: ${{ github.event.workflow_run.id }}
-
       - name: Resolve and validate tag
         id: tag
         env:
           MANUAL_TAG: ${{ inputs.tag }}
-          METADATA_PATH: ${{ runner.temp }}/release-selection/release-source.json
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
-            python3 scripts/resolve-homebrew-release.py --tag "$MANUAL_TAG" --output "$GITHUB_OUTPUT"
-          else
-            python3 scripts/resolve-homebrew-release.py --metadata "$METADATA_PATH" \
-              --event "$GITHUB_EVENT_PATH" --repository "$GITHUB_REPOSITORY" --output "$GITHUB_OUTPUT"
-          fi
+        run: python3 scripts/resolve-homebrew-release.py --tag "$MANUAL_TAG" --output "$GITHUB_OUTPUT"
 
   update-formula:
     needs: resolve-tag
@@ -61,7 +35,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    # Serialize automatic and manual proposals for the same validated tag.
+    # Serialize manual proposals for the same validated tag.
     concurrency:
       group: homebrew-${{ needs.resolve-tag.outputs.tag }}
       cancel-in-progress: false
@@ -95,13 +69,13 @@ jobs:
             Update the formula from the published release SHA256SUMS.txt asset.
             Only Formula/gigastt.rb is included. Repeated runs update this same PR.
 
-            A maintainer must approve workflows to run if GitHub displays that banner
-            for this GITHUB_TOKEN-created PR, then review and merge after all checks pass.
+            A maintainer must manually dispatch CI and Publication hygiene for this branch,
+            then review and merge after all required checks pass.
             See docs/homebrew-release.md. This workflow never merges or pushes to main.
 
-      - name: Explain required workflow approval
+      - name: Explain manual verification
         if: steps.proposal.outputs.pull-request-number
         env:
           PR_URL: ${{ steps.proposal.outputs.pull-request-url }}
         run: |
-          printf 'Formula PR: %s\n\nApprove workflows to run on the PR if prompted, then wait for all required checks before merging.\n' "$PR_URL" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Formula PR: %s\n\nManually run CI and Publication hygiene for the PR branch, then wait for required checks before merging.\n' "$PR_URL" >> "$GITHUB_STEP_SUMMARY"

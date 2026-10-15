@@ -13,6 +13,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+### Changed
+
+- Run GitHub workflows only on manual dispatch to conserve Actions minutes.
+  Preserve protected checks and exact-source release validation; manual CI
+  requires an immutable comparison baseline and opts into full model/E2E checks.
+
 ### Fixed
 
 - Activate the verified 2026-10-09 RNN-T model bundle for fresh downloads.

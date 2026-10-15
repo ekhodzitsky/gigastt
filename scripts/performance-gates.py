@@ -51,10 +51,10 @@ def check_criterion(root):
 
 
 def latest_main_run(runs, commit):
-    matches = [run for run in runs if run['head_sha'] == commit and run['event'] == 'push'
+    matches = [run for run in runs if run['head_sha'] == commit and run['event'] in {'push', 'workflow_dispatch'}
                and run['head_branch'] == 'main']
     if not matches:
-        raise ValueError(f'no main-push CI run for release commit {commit}')
+        raise ValueError(f'no main CI run for release commit {commit}')
     return max(matches, key=lambda run: (run['id'], run.get('run_attempt', 1)))
 
 
@@ -134,7 +134,7 @@ def main():
         print(json.dumps(check_speaker_revisions(json.loads(args.report.read_text())), indent=2))
     else:
         repo = os.environ['GITHUB_REPOSITORY']
-        runs = api_pages(f'repos/{repo}/actions/workflows/ci.yml/runs?event=push&head_sha={args.commit}&per_page=100', 'workflow_runs')
+        runs = api_pages(f'repos/{repo}/actions/workflows/ci.yml/runs?head_sha={args.commit}&per_page=100', 'workflow_runs')
         run = latest_main_run(runs, args.commit)
         jobs = api_pages(f'repos/{repo}/actions/runs/{run["id"]}/attempts/{run.get("run_attempt", 1)}/jobs?per_page=100', 'jobs')
         print(f'Release commit {args.commit} validated by CI run {check_release(runs, jobs, args.commit)}')

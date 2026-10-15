@@ -23,7 +23,6 @@ on:
         type: boolean
         default: false
 
-# contents: write so the built AAR can be attached to an existing GitHub release.
 permissions:
   contents: write
 

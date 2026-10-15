@@ -1,4 +1,3 @@
-# Nightly memory-safety / data-race pass over the pure-Rust core.
 #
 # This job is deliberately narrow. What it DOES cover:
 #   * Miri (undefined-behaviour / aliasing / provenance / integer-overflow
@@ -49,13 +48,9 @@
 # on the ubuntu-latest / x86_64 runner. The 2026-09 budget pass was
 # re-measured on Linux x86_64.
 
-name: Nightly Miri + TSAN
+name: Miri + TSAN
 
 on:
-  schedule:
-    # 03:42 UTC daily — skewed off soak.yml's 03:17 so the two nightly jobs
-    # don't contend for runners.
-    - cron: '42 3 * * *'
   workflow_dispatch:
 
 concurrency:

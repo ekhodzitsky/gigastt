@@ -113,7 +113,7 @@ cargo build --release --no-default-features
 
 The project uses a three-tier test architecture:
 
-### Unit tests (no model required, run in CI on every PR)
+### Unit tests (no model required, run in manually dispatched CI)
 
 ```sh
 cargo test --workspace --lib --bins  # unit tests across the workspace (see note below)
@@ -124,7 +124,7 @@ cargo fmt --check                    # Format check
 Unit tests live in `#[cfg(test)] mod tests` at the bottom of each source file.
 They use synthetic data. Test naming convention: `test_<what>_<expected_behavior>`.
 
-### E2E tests (require model ~310 MiB INT8, run in CI on main push only)
+### E2E tests (require model ~310 MiB INT8, run in full manually dispatched CI)
 
 ```sh
 # Download model first
@@ -154,7 +154,7 @@ RuLS corpus). See `CLAUDE.md` for the command. Node in-process binding:
 `engines.node` in `crates/gigastt-node/package.json` is `>=18`; the WS client
 SDK is Node ≥ 20.
 
-### Load & soak tests (require model, run locally + nightly CI)
+### Load & soak tests (require model, run locally or in manually dispatched CI)
 
 ```sh
 cargo test -p gigastt --test load_test -- --ignored           # 3 load tests
@@ -316,17 +316,24 @@ The `e2e_rnnt` head (`--model-variant e2e_rnnt`) uses the parallel `v3_e2e_rnnt_
 
 ### Workflows
 
+All GitHub workflows use `workflow_dispatch` only. Pushes, PR events, schedules
+and completed workflows do not start Actions. Run local checks before pushing;
+manually dispatch `ci.yml` and `publication.yml` on the PR branch before merging.
+CI requires an explicit immutable ancestor `baseline_sha`; release validation
+requires successful full manual CI for the exact main commit. See
+[manual CI operation](docs/performance-regressions.md#manual-ci-operation).
+
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `.github/workflows/ci.yml` | PR + main push | fmt, clippy, unit tests, feature compile checks (coreml, cuda, diarization, candle, ane), `cargo audit`, `cargo deny` |
-| `.github/workflows/soak.yml` | Nightly 03:17 UTC + manual | soak_test + load_test with cached model |
-| `.github/workflows/release.yml` | Tag push `v*` + manual | Multi-arch build, tarball + SHA256, CycloneDX SBOM, SLSA provenance, minisign signatures |
-| `.github/workflows/homebrew.yml` | Successful tag release + manual | Propose Homebrew Formula PR; maintainer starts checks and merges |
+| `.github/workflows/ci.yml` | Manual only | fmt, clippy, unit tests, feature compile checks (coreml, cuda, diarization, candle, ane), `cargo audit`, `cargo deny` |
+| `.github/workflows/soak.yml` | Manual only | soak_test + load_test with cached model |
+| `.github/workflows/release.yml` | Manual only | Multi-arch build, tarball + SHA256, CycloneDX SBOM, SLSA provenance, minisign signatures |
+| `.github/workflows/homebrew.yml` | Manual only | Propose Homebrew Formula PR; maintainer starts checks and merges |
 
 ### E2E test strategy
 
-- Full E2E tests run **only on main push**. `Model smoke` also runs on every PR
-  (including forks): a pinned CPU encoder/transcript oracle and one real-speech
+- Full E2E tests run when manual CI selects **`full=true`**. `Model smoke` runs
+  in every manual CI invocation: a pinned CPU encoder/transcript oracle and one real-speech
   WebSocket finalization test, serially, with a 25-minute job limit.
 - Model is cached via `actions/cache` with key derived from `crates/gigastt-core/src/model/`
 - E2E tests run with `--test-threads=1` because each loads the full ONNX model
@@ -338,8 +345,8 @@ The following rules must be enabled in **GitHub Settings → Branches** for `mai
 
 - **Require a pull request before merging** — direct push to `main` is blocked.
 - **Require status checks to pass** — at minimum the `Format`, `Clippy`, `Unit Tests`, and `Model smoke` checks
-  from `ci.yml` must be green. Add `Model smoke` in repository settings after
-  the workflow introducing it has landed.
+  from `ci.yml`, plus `Public content` from `publication.yml`, must be green.
+  Start these workflows manually for the exact PR head; retain branch protection.
 - **Include administrators** — rules apply to everyone, no exceptions.
 
 This guarantees that a regression like a broken `cargo test` cannot reach `main` even if the local pre-commit hook is bypassed.
