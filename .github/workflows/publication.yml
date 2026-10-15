@@ -17,8 +17,26 @@ permissions:
   contents: read
   pull-requests: read
 
+# Serialize manual attempts so an older result cannot overwrite a newer failure.
+concurrency:
+  group: manual-publication-${{ github.sha }}
+  cancel-in-progress: false
+
 jobs:
+  status-start:
+    name: Initialize protected statuses
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/manual-statuses.py publication --start
+
   public-content:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Public content
     steps:
@@ -47,3 +65,18 @@ jobs:
           PYCODE
             python3 scripts/check-publication.py --event-file "$RUNNER_TEMP/publication-event.json"
           fi
+
+  status-finish:
+    name: Report protected statuses
+    if: always()
+    needs: [status-start, public-content]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: python3 scripts/manual-statuses.py publication

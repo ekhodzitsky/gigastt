@@ -85,6 +85,14 @@ and `pull_request_number`. It verifies the PR's exact head before checking its
 title, body, branch, commits and content. Wait for all protected checks before
 merging. A new commit requires another manual run; old checks do not approve it.
 
+GitHub does not count `workflow_dispatch` job checks toward PR protection. CI and
+Publication hygiene therefore also report their actual job results through the
+commit status API, with the same required names and GitHub Actions identity.
+Statuses start as pending; only a successful corresponding job reports success.
+Failure, cancellation, skipped or missing jobs report failure. Runs are serialized
+per workflow and commit to prevent an older result from overwriting a newer one.
+Keep the required checks and their GitHub Actions source restriction enabled.
+
 Equivalent CLI commands (replace the branch, SHA and PR number):
 
 ```sh

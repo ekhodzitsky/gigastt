@@ -16,8 +16,26 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+# Serialize manual attempts so an older result cannot overwrite a newer failure.
+concurrency:
+  group: manual-ci-${{ github.sha }}
+  cancel-in-progress: false
+
 jobs:
+  status-start:
+    name: Initialize protected statuses
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/manual-statuses.py ci --start
+
   comparison-base:
+    needs: status-start
     name: Comparison baseline
     runs-on: ubuntu-latest
     outputs:
@@ -35,6 +53,7 @@ jobs:
           printf 'sha=%s\n' "$BASE_SHA" >> "$GITHUB_OUTPUT"
 
   fmt:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Format
     steps:
@@ -52,6 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: python3 scripts/test-manual-workflows.py
+      - run: python3 scripts/test_manual_statuses.py
       - run: python3 scripts/test-performance-gates.py
       - run: python3 scripts/test-ci-prerequisites.py
       - run: python3 scripts/test-resolve-release.py
@@ -224,6 +244,7 @@ jobs:
             tests/test_cache.py -q --tb=short
 
   clippy:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Clippy
     steps:
@@ -245,6 +266,7 @@ jobs:
           python3 scripts/check-android-runtime.py --metadata "$RUNNER_TEMP/android-cargo-metadata.json"
 
   unit-tests:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Unit Tests
     steps:
@@ -1294,3 +1316,18 @@ jobs:
           npx tsc --noEmit
           npx vitest run
           npm run build
+
+  status-finish:
+    name: Report protected statuses
+    if: always()
+    needs: [status-start, fmt, clippy, unit-tests, model-smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: python3 scripts/manual-statuses.py ci
