@@ -1,14 +1,8 @@
-name: Nightly Soak
+name: Soak and load
 
-# Nightly soak + load sanity check. Runs on schedule so pool drift,
-# descriptor leaks, and memory growth surface outside the fast-CI envelope.
-# Also triggerable on demand via workflow_dispatch for hotfix verification.
+# Manually dispatched soak and load checks; no scheduled runner usage.
 
 on:
-  schedule:
-    # 03:17 UTC daily — off-peak for GitHub runners. Skewed minute keeps the
-    # job off the same slot as release/CI bursts.
-    - cron: '17 3 * * *'
   workflow_dispatch:
     inputs:
       duration_secs:
@@ -71,7 +65,7 @@ jobs:
 
   fuzz:
     # Continuous fuzzing: ci.yml only builds the targets, so the actual input
-    # exploration happens here nightly. All four targets run on synthetic /
+    # exploration happens here on demand. All four targets run on synthetic /
     # raw-byte input (no model on disk required).
     runs-on: ubuntu-latest
     name: Continuous Fuzz (60s/target)

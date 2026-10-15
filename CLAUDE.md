@@ -158,14 +158,14 @@ Audio (PCM16) → Mel Spectrogram → Conformer Encoder (ONNX)
 
 Three-tier test architecture:
 
-**Unit tests** (no model required, run in CI on every PR):
+**Unit tests** (no model required, run in manually dispatched CI):
 - Live in `#[cfg(test)] mod tests` at bottom of each file
 - Use synthetic data, test names: `test_<what>_<expected_behavior>`
 - 600+ unit tests across the workspace (`cargo test --workspace --lib --bins`)
 - Always pass `--lib --bins`. A bare `cargo test` (or `cargo test --workspace`) pulls in the
   ~2.5-hour WER benchmark: it is a `harness = false` target, so `--ignored` does not skip it.
 
-**E2E tests** (require model ~225 MB INT8, run in CI on main push only):
+**E2E tests** (require model ~225 MB INT8, run in full manually dispatched CI):
 - `tests/e2e_rest.rs` — REST API tests (health, transcribe, SSE streaming, error paths)
 - `tests/e2e_ws.rs` — WebSocket protocol tests (ready, audio, stop, configure, errors, concurrent)
 - `tests/e2e_errors.rs` — error path tests (oversized body/frame, pool saturation, idle timeout)
@@ -178,7 +178,7 @@ Three-tier test architecture:
 - `tests/common/mod.rs` — shared helpers (start_server with shutdown handle, WAV generation, WS connect)
 - `cargo test --test e2e_rest --test e2e_ws --test e2e_errors --test e2e_shutdown --test e2e_rate_limit --test e2e_jobs --test e2e_cli --test e2e_admin_reload --test e2e_http_cov -- --ignored --test-threads=1`
 
-**Load/soak tests** (require model, run locally + nightly CI via `.github/workflows/soak.yml`):
+**Load/soak tests** (require model, run locally or in manually dispatched CI via `.github/workflows/soak.yml`):
 - `tests/load_test.rs` — 3 load tests (concurrent WS, concurrent REST, burst connections)
 - `tests/soak_test.rs` — 1 soak test (continuous WS cycling, configurable via `GIGASTT_SOAK_DURATION_SECS`)
 - `cargo test --test load_test -- --ignored` / `cargo test --test soak_test -- --ignored`
@@ -196,11 +196,12 @@ OpenSLR download that does not fit the CI cache budget, so these never run in CI
 - `tests/benchmark.rs` — WER evaluation on Golos fixtures (custom harness, `harness = false`)
 
 ### CI structure
-- **PR CI** (`.github/workflows/ci.yml`, fast): fmt, clippy, unit tests, feature compile checks (CoreML, CUDA, Diarization, Candle/Metal, ANE), `cargo audit`, `cargo deny`
-- **Main push CI**: all PR checks + e2e tests with cached model (~225 MB INT8, OS-independent cache key) + CoreML runtime smoke on macos-14 (transcribes `golos_00.wav`, fails on inference error or silent CPU fallback)
-- **Nightly soak** (`.github/workflows/soak.yml`): `cargo test --test soak_test` at 03:17 UTC, reuses the main CI model cache
-- **Release** (`.github/workflows/release.yml`, tag-triggered): multi-arch tarballs, per-asset `.sha256` + `SHA256SUMS.txt`, CycloneDX SBOM, SLSA provenance, minisign signatures
-- Load tests are local-only, not in CI
+- All workflows are manual (`workflow_dispatch`); no push, PR, schedule or chained triggers.
+- **CI** (`.github/workflows/ci.yml`): explicitly select an immutable ancestor `baseline_sha`; unit, build, security, speaker/performance and model-smoke checks run on the selected branch.
+- **Full CI** (`full=true`): adds E2E, model quality/resources, E2E coverage, CoreML runtime smoke and additional Docker builds. Required on the exact main commit before release.
+- **Publication hygiene**: manually check the exact PR head and its metadata before merge.
+- **Soak**, **Miri**, dependency resolution, benchmarks and all release workflows are separately dispatched as needed.
+- See [manual operation](docs/performance-regressions.md#manual-ci-operation). Required status checks and local pre-commit checks remain enforced.
 
 ### Code style
 - Rust 2024 edition

@@ -1,17 +1,42 @@
 name: Publication hygiene
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened, edited]
+  workflow_dispatch:
+    inputs:
+      baseline_sha:
+        description: 'Full SHA of the ancestor to check commit metadata against'
+        required: true
+        type: string
+      pull_request_number:
+        description: 'Required for a branch run; checks the PR title, body and exact head SHA'
+        required: false
+        default: 0
+        type: number
 
 permissions:
   contents: read
+  pull-requests: read
+
+# Serialize manual attempts so an older result cannot overwrite a newer failure.
+concurrency:
+  group: manual-publication-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
+  status-start:
+    name: Initialize protected statuses
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/manual-statuses.py publication --start
+
   public-content:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Public content
     steps:
@@ -21,4 +46,37 @@ jobs:
       - name: Test publication guard
         run: python3 -m unittest discover -s scripts -p test_check_publication.py
       - name: Check content and publication metadata
-        run: python3 scripts/check-publication.py --event-file "$GITHUB_EVENT_PATH"
+        env:
+          BASE_SHA: ${{ inputs.baseline_sha }}
+          PR_NUMBER: ${{ inputs.pull_request_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BASE_SHA="$(python3 scripts/resolve-ci-baseline.py "$BASE_SHA")"
+          python3 scripts/check-publication.py --commit-range "$BASE_SHA..HEAD"
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]] || { echo 'A branch run requires its pull request number'; exit 1; }
+            gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '{pull_request: .}' > "$RUNNER_TEMP/publication-event.json"
+            python3 - "$RUNNER_TEMP/publication-event.json" <<'PYCODE'
+          import json, os, sys
+          pr = json.load(open(sys.argv[1]))['pull_request']
+          if pr['head']['sha'] != os.environ['GITHUB_SHA'] or pr['head']['repo']['full_name'] != os.environ['GITHUB_REPOSITORY']:
+              sys.exit('Pull request does not match this checked-out source')
+          PYCODE
+            python3 scripts/check-publication.py --event-file "$RUNNER_TEMP/publication-event.json"
+          fi
+
+  status-finish:
+    name: Report protected statuses
+    if: always()
+    needs: [status-start, public-content]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: python3 scripts/manual-statuses.py publication

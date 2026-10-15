@@ -29,8 +29,8 @@ missing, renamed and removed benchmark results require investigation.
   float-Conv transition is recorded by model hash, not a blanket relaxation.
   See [the quantization protocol](rnnt-quantization.md).
 
-- **Benchmarks (regression gate)** runs on every PR, including Dependabot, and
-  every main push. It measures the immutable PR base or previous main commit
+- **Benchmarks (regression gate)** runs in every manually dispatched CI.
+  It measures the explicitly selected immutable ancestor
   and the candidate on the same runner with locked dependencies. It fails if
   either build/run fails, any comparison is absent or invalid, or the lower
   confidence bound of a Criterion mean increase exceeds 5%. It uses structured
@@ -52,17 +52,63 @@ missing, renamed and removed benchmark results require investigation.
   necessary because a skipped required GitHub job can otherwise permit merge.
   Keep `Model smoke` required in branch protection.
 - **Quality Gate (WER/RTF/RSS)** continues to exercise the bundled recognition
-  fixtures on main pushes. A release requires this gate as well as the checks
+  fixtures in full manual CI (`full=true`). A release requires this gate as well as the checks
   above, Format, Clippy and Unit Tests to succeed.
 
-The release validator checks the latest `ci.yml` main-push run for the exact
+The release validator checks the latest `ci.yml` main run (manual, or a historical push run) for the exact
 release commit, including its latest attempt and named jobs. A successful run
 for another SHA, an earlier green run followed by failure, or missing/skipped
 jobs cannot authorize publication. GitHub binary/Docker releases and requested
-npm/PyPI publication use this validator. Wait for main CI before tagging;
+npm/PyPI publication use this validator. Manually run full main CI and wait for it before tagging;
 if CI is still pending, the release fails safely and can be rerun after success.
 Direct manual publication remains an operator responsibility; run the same
 validator before `cargo publish` or any publication outside these workflows.
+
+## Manual CI operation
+
+All workflows use `workflow_dispatch` only. Pushing branches or tags, opening or
+editing a PR, a timer, or finishing another workflow never starts Actions.
+Local checks and required GitHub status checks remain in place. Push first;
+start the checks deliberately when the revision is ready to review.
+
+In **Actions → CI → Run workflow**, select the PR branch and enter the full
+40-character SHA of its accepted ancestor as `baseline_sha`. The resolver rejects
+moving refs, missing commits, unrelated history and comparison against the
+candidate itself. Use the last accepted revision covering the entire change;
+do not replace a failing baseline with the candidate to hide a regression.
+The default `full=false` runs the branch checks, including both performance gates
+and Model smoke. It does not run full E2E, E2E coverage, CoreML runtime smoke or
+all Docker builds. These expensive checks are opt-in with `full=true`.
+
+Also run **Publication hygiene** on the same branch, providing `baseline_sha`
+and `pull_request_number`. It verifies the PR's exact head before checking its
+title, body, branch, commits and content. Wait for all protected checks before
+merging. A new commit requires another manual run; old checks do not approve it.
+
+GitHub does not count `workflow_dispatch` job checks toward PR protection. CI and
+Publication hygiene therefore also report their actual job results through the
+commit status API, with the same required names and GitHub Actions identity.
+Statuses start as pending; only a successful corresponding job reports success.
+Failure, cancellation, skipped or missing jobs report failure. Runs are serialized
+per workflow and commit to prevent an older result from overwriting a newer one.
+Keep the required checks and their GitHub Actions source restriction enabled.
+
+Equivalent CLI commands (replace the branch, SHA and PR number):
+
+```sh
+gh workflow run ci.yml --ref your-branch -f baseline_sha=FULL_ANCESTOR_SHA
+gh workflow run publication.yml --ref your-branch \
+  -f baseline_sha=FULL_ANCESTOR_SHA -F pull_request_number=123
+```
+
+After merging, explicitly run `ci.yml` on `main` with `full=true` and the accepted
+pre-change ancestor SHA. The release validator checks the exact commit, the
+latest completed run and successful required jobs; a quick run with skipped
+quality checks cannot authorize publication. Historical successful push runs
+remain valid evidence, but a newer failed manual run prevents reusing them.
+Release, model publication, Homebrew, platform builds, soak, Miri, dependency
+resolution and standalone benchmarks each require their own manual dispatch.
+A successful Release does not automatically start Homebrew.
 
 ## Running the speaker check locally
 

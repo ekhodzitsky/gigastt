@@ -1,22 +1,7 @@
 name: Multilingual benchmark evidence
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'benchmark/results/multilingual*/**'
-      - 'benchmark/results/multilingual_publication.json'
-      - 'scripts/**'
-      - 'benchmark/licenses/**'
-      - '.github/workflows/multilingual-benchmarks.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'benchmark/results/multilingual*/**'
-      - 'benchmark/results/multilingual_publication.json'
-      - 'scripts/**'
-      - 'benchmark/licenses/**'
-      - '.github/workflows/multilingual-benchmarks.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read

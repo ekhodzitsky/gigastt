@@ -1,16 +1,59 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      baseline_sha:
+        description: 'Full SHA of the accepted ancestor to compare against (not the candidate)'
+        required: true
+        type: string
+      full:
+        description: 'Include E2E, model quality, E2E coverage, CoreML smoke and all Docker builds'
+        required: false
+        default: false
+        type: boolean
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+# Serialize manual attempts so an older result cannot overwrite a newer failure.
+concurrency:
+  group: manual-ci-${{ github.sha }}
+  cancel-in-progress: false
+
 jobs:
+  status-start:
+    name: Initialize protected statuses
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/manual-statuses.py ci --start
+
+  comparison-base:
+    needs: status-start
+    name: Comparison baseline
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: resolve
+        env:
+          BASE_SHA: ${{ inputs.baseline_sha }}
+        run: |
+          set -euo pipefail
+          BASE_SHA="$(python3 scripts/resolve-ci-baseline.py "$BASE_SHA")"
+          printf 'sha=%s\n' "$BASE_SHA" >> "$GITHUB_OUTPUT"
+
   fmt:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Format
     steps:
@@ -27,6 +70,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
+      - run: python3 scripts/test-manual-workflows.py
+      - run: python3 scripts/test_manual_statuses.py
       - run: python3 scripts/test-performance-gates.py
       - run: python3 scripts/test-ci-prerequisites.py
       - run: python3 scripts/test-resolve-release.py
@@ -199,6 +244,7 @@ jobs:
             tests/test_cache.py -q --tb=short
 
   clippy:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Clippy
     steps:
@@ -220,6 +266,7 @@ jobs:
           python3 scripts/check-android-runtime.py --metadata "$RUNNER_TEMP/android-cargo-metadata.json"
 
   unit-tests:
+    needs: status-start
     runs-on: ubuntu-latest
     name: Unit Tests
     steps:
@@ -243,9 +290,9 @@ jobs:
         run: cargo test -p gigastt --test job_status_allocations
       # Long-duration resampler equivalence gate (~50 s in debug): the staged
       # decode path must not drift more than a whole-buffer resample over 300 s
-      # of 44.1 kHz audio. Too slow for every PR, so it runs on main push only.
+      # of 44.1 kHz audio. Reserved for full manual runs.
       - name: Long-duration resampler numeric gate
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: inputs.full
         run: cargo test -p gigastt-core --lib -- --ignored streaming_decode_long_44k1
       - name: Lean embedded build (no tokio/reqwest/symphonia)
         run: |
@@ -253,7 +300,7 @@ jobs:
           cargo test -p gigastt-core --test lean_build
       # Model-free self-test of the multi-metric quality-gate decision logic
       # (WER / RTF / RSS / cold-start ceilings + relative baselines). The full
-      # model-gated run is main-push only (quality-gate job).
+      # model-gated run is full-run only (quality-gate job).
       - run: cargo test --test benchmark -- --self-test
       - name: Model packaging and long-form gate self-tests
         run: |
@@ -295,13 +342,13 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build --release -p gigastt --features coreml
 
-      # Runtime smoke (main push only — the model is ~850 MB). Issue #42:
+      # Runtime smoke (full manual run only — the model is ~850 MB). Issue #42:
       # CoreML sessions can load fine and still fail at prediction time, so
       # a plain `cargo build` check is not enough. The smoke also fails when
       # the engine silently falls back to the CPU EP, because that would
       # mean the CoreML path regressed even though transcription still works.
       - name: Cache model
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: inputs.full
         id: cache-model
         uses: actions/cache@v6
         with:
@@ -309,11 +356,11 @@ jobs:
           key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/**') }}
 
       - name: Download model
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push' && steps.cache-model.outputs.cache-hit != 'true'
+        if: inputs.full && steps.cache-model.outputs.cache-hit != 'true'
         run: ./target/release/gigastt download
 
       - name: CoreML runtime smoke
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: inputs.full
         timeout-minutes: 20
         run: |
           set -uo pipefail
@@ -400,6 +447,7 @@ jobs:
       - run: cargo check -p gigastt-core --no-default-features --features ane
 
   speaker-performance:
+    needs: comparison-base
     runs-on: ubuntu-latest
     name: Speaker performance
     timeout-minutes: 60
@@ -447,7 +495,7 @@ jobs:
           done
       - name: Compare actual base and candidate speaker resources and quality
         env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
         run: python3 scripts/compare-speaker-revisions.py --base "$BASE_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -512,8 +560,8 @@ jobs:
           cargo test -p gigastt --test e2e_ws test_ws_commit_policies_preserve_legacy_text_through_window_slides -- --ignored --exact --test-threads=1
 
   e2e-tests:
-    # Only run on main push — PRs get fast feedback from unit tests + clippy
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Full manual run; ordinary manual branch checks retain the model smoke.
+    if: inputs.full
     runs-on: ubuntu-latest
     name: E2E Tests
     steps:
@@ -544,8 +592,8 @@ jobs:
 
   quality-gate:
     # Model-gated multi-metric gate (WER / RTF / RSS / cold-start). Runs on
-    # main push only — PRs get the model-free self-test in unit-tests.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Full manual run; every manual CI includes the model-free self-test.
+    if: inputs.full
     needs: [e2e-tests]
     runs-on: ubuntu-latest
     name: Quality Gate (WER/RTF/RSS)
@@ -632,7 +680,8 @@ jobs:
           path: quality_gate_output.txt
 
   semver:
-    if: github.event_name == 'pull_request'
+    needs: comparison-base
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     name: Semver Checks
     steps:
@@ -656,7 +705,7 @@ jobs:
           # release. This keeps the baseline in sync with the repo: a change
           # already merged to `main` (e.g. the additive `Segment.speaker` field
           # in 2.9.0) is not re-flagged on every subsequent PR.
-          baseline-rev: origin/main
+          baseline-rev: ${{ needs.comparison-base.outputs.sha }}
           # Check only the published *library* crates' API stability. `gigastt`
           # is a server binary / `cargo install` target whose Rust library
           # surface (ServerConfig, RuntimeLimits, http handlers) is an internal
@@ -761,12 +810,13 @@ jobs:
       pull-requests: read
     steps:
       - uses: actions/checkout@v7
-      # On pushes to main the gate always runs; on PRs only when a path the
+      # On main the gate always runs; on branches only when a path the
       # gate compares could have changed.
-      - if: github.event_name == 'pull_request'
+      - if: github.ref != 'refs/heads/main'
         uses: dorny/paths-filter@v4
         id: filter
         with:
+          base: ${{ inputs.baseline_sha }}
           filters: |
             docs:
               - 'docs/**'
@@ -786,14 +836,14 @@ jobs:
               - 'README*.md'
               - 'Cargo.toml'
               - 'packaging/**/README*'
-      - if: github.event_name != 'pull_request' || steps.filter.outputs.docs == 'true'
+      - if: github.ref == 'refs/heads/main' || steps.filter.outputs.docs == 'true'
         name: Check docs drift
         run: python3 scripts/check-docs-drift.py
 
   dependency-review:
-    # PR-only: compares the PR's dependency delta against the base branch,
-    # so it has nothing to diff on a direct push to main.
-    if: github.event_name == 'pull_request'
+    needs: comparison-base
+    # Branch check against the explicitly selected immutable baseline.
+    if: github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     name: Dependency Review
     permissions:
@@ -806,7 +856,9 @@ jobs:
       - uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: low
-          comment-summary-in-pr: on-failure
+          base-ref: ${{ needs.comparison-base.outputs.sha }}
+          head-ref: ${{ github.sha }}
+          comment-summary-in-pr: never
           # Mirrors the allowlist enforced by `deny.toml` so a new transitive
           # dep with an off-list license fails review instead of slipping in.
           allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, Zlib, CC0-1.0, MPL-2.0, OpenSSL, Unicode-3.0, Unicode-DFS-2016, CDLA-Permissive-2.0
@@ -964,7 +1016,8 @@ jobs:
           RUSTUP_TOOLCHAIN: nightly
 
   bench:
-    # Compare both revisions on this runner, including dependency-update PRs.
+    needs: comparison-base
+    # Compare both revisions on this runner, including dependency updates.
     # Model smoke depends on this job, so its existing required status covers it.
     runs-on: ubuntu-latest
     name: Benchmarks (regression gate)
@@ -988,7 +1041,7 @@ jobs:
 
       - name: Measure the immutable base revision
         env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
           BASE_WORKTREE: ${{ runner.temp }}/benchmark-base
         run: |
           set -euo pipefail
@@ -1015,9 +1068,9 @@ jobs:
           if-no-files-found: ignore
 
   coverage-e2e:
-    # E2E coverage runs only on main because it needs the ~850 MB model and
+    # E2E coverage runs in full mode because it needs the model and
     # serial execution (--test-threads=1), which makes the job slow (~20 min).
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: inputs.full
     needs: [e2e-tests]
     runs-on: ubuntu-latest
     name: Coverage (E2E)
@@ -1117,6 +1170,7 @@ jobs:
       - uses: dorny/paths-filter@v4
         id: filter
         with:
+          base: ${{ inputs.baseline_sha }}
           filters: |
             docker:
               - 'Dockerfile*'
@@ -1132,9 +1186,9 @@ jobs:
     # Dockerfiles rot silently unless CI builds them: an MSRV drift in the
     # builder pin and a phantom COPY both shipped unnoticed before this job
     # existed. PRs build the CPU image only when docker-relevant paths change;
-    # every main push rebuilds it unconditionally as the safety net.
+    # full manual runs rebuild it unconditionally as the safety net.
     needs: docker-changes
-    if: github.event_name == 'push' || needs.docker-changes.outputs.docker == 'true'
+    if: inputs.full || needs.docker-changes.outputs.docker == 'true'
     runs-on: ubuntu-latest
     name: Docker Build (CPU)
     timeout-minutes: 60
@@ -1147,11 +1201,11 @@ jobs:
       # The layer cache lives in ghcr.io (free for public repos), keeping the
       # 10 GB Actions cache budget untouched. GITHUB_TOKEN grants packages:read
       # on PRs (forks included), so warm reads work everywhere; writes happen
-      # on main pushes only.
+      # on full runs only.
       #
       # Login is best-effort: ghcr.io token timeouts (shared runner / network
       # blips) must not fail CI. An unreadable cache ref degrades to a cold
-      # build; cache-to is only attempted when login succeeded on a main push.
+      # build; cache-to is only attempted when login succeeded on a full manual run.
       - uses: docker/login-action@v4
         id: ghcr-login
         continue-on-error: true
@@ -1167,17 +1221,17 @@ jobs:
           load: true
           tags: gigastt:ci
           cache-from: type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cpu
-          cache-to: ${{ steps.ghcr-login.outcome == 'success' && github.event_name == 'push' && 'type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cpu,mode=max' || '' }}
+          cache-to: ${{ steps.ghcr-login.outcome == 'success' && inputs.full && 'type=registry,ref=ghcr.io/ekhodzitsky/gigastt-buildcache:cpu,mode=max' || '' }}
       - name: Smoke test (--version)
         run: |
           docker run --rm gigastt:ci --version | tee version.out
           grep -E '^gigastt [0-9]+\.[0-9]+\.[0-9]+' version.out
 
   docker-build-extras:
-    # Main push only: the CUDA + benchmark images exist to catch packaging
+    # Full manual run only: the CUDA + benchmark images exist to catch packaging
     # rot, not to gate PRs. No GPU is needed — the CUDA EP is link-time only;
     # the build just pulls the multi-GB nvidia base image.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: inputs.full
     runs-on: ubuntu-latest
     name: Docker Build (${{ matrix.name }})
     timeout-minutes: 90
@@ -1232,6 +1286,7 @@ jobs:
       - uses: dorny/paths-filter@v4
         id: filter
         with:
+          base: ${{ inputs.baseline_sha }}
           filters: |
             sdks:
               - 'sdks/**'
@@ -1261,3 +1316,18 @@ jobs:
           npx tsc --noEmit
           npx vitest run
           npm run build
+
+  status-finish:
+    name: Report protected statuses
+    if: always()
+    needs: [status-start, fmt, clippy, unit-tests, model-smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: python3 scripts/manual-statuses.py ci
