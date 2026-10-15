@@ -21,6 +21,9 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
+- Update locked rustls to 0.23.46 and quinn-proto to 0.11.18 for TLS/QUIC
+  security fixes without relaxing the advisory checks.
+
 - Activate the verified 2026-10-09 RNN-T model bundle for fresh downloads.
   Keep convolutions in FP32 for lower phrase loss and faster CPU inference;
   document the approved e2e short-form accuracy trade-off and higher memory
