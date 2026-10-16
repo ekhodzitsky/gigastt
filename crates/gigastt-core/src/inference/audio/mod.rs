@@ -1,5 +1,7 @@
 //! Audio decoding, resampling, and buffer management utilities.
 
+#[cfg(feature = "extended-aac")]
+mod aac;
 #[cfg(feature = "file-decode")]
 mod chunks;
 mod decode;

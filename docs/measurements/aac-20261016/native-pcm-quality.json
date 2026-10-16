@@ -1,0 +1,82 @@
+[
+  {
+    "file": "fmp4_he2.mp4",
+    "samples": 21844,
+    "oracle_samples": 21844,
+    "lag": 0,
+    "snr_db": 130.35396014206617,
+    "correlation": 0.9999999999999544
+  },
+  {
+    "file": "he48.adts",
+    "samples": 6143,
+    "oracle_samples": 6143,
+    "lag": 0,
+    "snr_db": 133.14729599801564,
+    "correlation": 0.9999999999999802
+  },
+  {
+    "file": "he48.m4a",
+    "samples": 5439,
+    "oracle_samples": 5439,
+    "lag": 0,
+    "snr_db": 133.14729599802013,
+    "correlation": 0.9999999999999805
+  },
+  {
+    "file": "ps48.adts",
+    "samples": 17748,
+    "oracle_samples": 17748,
+    "lag": 0,
+    "snr_db": 114.84346773752623,
+    "correlation": 0.9999999999983634
+  },
+  {
+    "file": "ps48.m4a",
+    "samples": 17044,
+    "oracle_samples": 17044,
+    "lag": 0,
+    "snr_db": 114.84346773752344,
+    "correlation": 0.9999999999983635
+  },
+  {
+    "file": "speech0.m4a",
+    "samples": 63999,
+    "oracle_samples": 64170,
+    "lag": 0,
+    "snr_db": 137.03619624862864,
+    "correlation": 0.9999999999999906
+  },
+  {
+    "file": "speech1.m4a",
+    "samples": 54879,
+    "oracle_samples": 54954,
+    "lag": 0,
+    "snr_db": 136.97863695847252,
+    "correlation": 0.9999999999999906
+  },
+  {
+    "file": "speech2.m4a",
+    "samples": 48959,
+    "oracle_samples": 49151,
+    "lag": 0,
+    "snr_db": 137.20864128230124,
+    "correlation": 0.9999999999999902
+  },
+  {
+    "file": "speech3.m4a",
+    "samples": 87039,
+    "oracle_samples": 87039,
+    "lag": 0,
+    "snr_db": 137.680780311747,
+    "correlation": 0.9999999999999928
+  },
+  {
+    "file": "speech4.m4a",
+    "samples": 83519,
+    "oracle_samples": 83626,
+    "lag": 0,
+    "snr_db": 137.20447556989936,
+    "correlation": 0.9999999999999907
+  }
+]

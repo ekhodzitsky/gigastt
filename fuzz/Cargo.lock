@@ -261,6 +261,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "symphonia",
+ "syom",
  "thiserror",
  "toml",
  "tracing",
@@ -1092,6 +1093,12 @@ dependencies = [
  "quote",
  "unicode-ident",
 ]
+
+[[package]]
+name = "syom"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "599d0459aea231fbafc3f1dd51743508d3414613a3aa067772a8c97eb327df7b"
 
 [[package]]
 name = "tempfile"

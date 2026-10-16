@@ -43,6 +43,10 @@ gigastt is a **6-crate** Cargo workspace:
 
 Embed inference in any Rust project with `gigastt-core = "2.22"`. For a lean embedded build, disable defaults (`default-features = false`) to drop `tokio` / `reqwest` / `symphonia` / `ryf` / polyvoice; opt capabilities back in via the `net`, `async-pool`, `file-decode`, `diarization`, and `quantize` features (`quantize` is packaging-only — the INT8 quantizer, not a runtime path).
 
+The optional `extended-aac` feature enables syom and implies `file-decode`. It is
+not enabled by default; see [the AAC audit](aac-audit.md) before choosing it.
+Symphonia retains AAC and MP4 support for compatibility in both configurations.
+
 Server surfaces (single process, one primary port unless metrics is enabled):
 
 | Surface | Path | Notes |

@@ -1,0 +1,402 @@
+{
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23
+  ],
+  "results": {
+    "speech0.m4a:file": {
+      "base": [
+        {
+          "seconds": 0.004294156,
+          "rss_kib": 15884
+        },
+        {
+          "seconds": 0.004295699,
+          "rss_kib": 13988
+        },
+        {
+          "seconds": 0.004903958,
+          "rss_kib": 15856
+        },
+        {
+          "seconds": 0.006805121,
+          "rss_kib": 15836
+        },
+        {
+          "seconds": 0.004311368,
+          "rss_kib": 13988
+        },
+        {
+          "seconds": 0.004657336,
+          "rss_kib": 15772
+        },
+        {
+          "seconds": 0.00446182,
+          "rss_kib": 15784
+        }
+      ],
+      "original": [
+        {
+          "seconds": 0.007266995,
+          "rss_kib": 14300
+        },
+        {
+          "seconds": 0.005526414,
+          "rss_kib": 14320
+        },
+        {
+          "seconds": 0.007156228,
+          "rss_kib": 14380
+        },
+        {
+          "seconds": 0.005546112,
+          "rss_kib": 14528
+        },
+        {
+          "seconds": 0.005490487,
+          "rss_kib": 14400
+        },
+        {
+          "seconds": 0.005633255,
+          "rss_kib": 14444
+        },
+        {
+          "seconds": 0.005685893,
+          "rss_kib": 14332
+        }
+      ]
+    },
+    "speech0.m4a:bytes": {
+      "base": [
+        {
+          "seconds": 0.004242589,
+          "rss_kib": 15708
+        },
+        {
+          "seconds": 0.00431775,
+          "rss_kib": 15792
+        },
+        {
+          "seconds": 0.007025213,
+          "rss_kib": 15824
+        },
+        {
+          "seconds": 0.006713719,
+          "rss_kib": 15648
+        },
+        {
+          "seconds": 0.004326105,
+          "rss_kib": 15832
+        },
+        {
+          "seconds": 0.004389144,
+          "rss_kib": 15712
+        },
+        {
+          "seconds": 0.004228192,
+          "rss_kib": 15740
+        }
+      ],
+      "original": [
+        {
+          "seconds": 0.005360734,
+          "rss_kib": 14364
+        },
+        {
+          "seconds": 0.007491737,
+          "rss_kib": 14136
+        },
+        {
+          "seconds": 0.005587358,
+          "rss_kib": 13548
+        },
+        {
+          "seconds": 0.005547253,
+          "rss_kib": 13832
+        },
+        {
+          "seconds": 0.005362688,
+          "rss_kib": 13608
+        },
+        {
+          "seconds": 0.005309118,
+          "rss_kib": 14020
+        },
+        {
+          "seconds": 0.005781943,
+          "rss_kib": 12592
+        }
+      ]
+    },
+    "lc.adts:file": {
+      "base": [
+        {
+          "seconds": 0.006802536,
+          "rss_kib": 15872
+        },
+        {
+          "seconds": 0.004336335,
+          "rss_kib": 15888
+        },
+        {
+          "seconds": 0.004245905,
+          "rss_kib": 15828
+        },
+        {
+          "seconds": 0.00443552,
+          "rss_kib": 15756
+        },
+        {
+          "seconds": 0.004417507,
+          "rss_kib": 15896
+        },
+        {
+          "seconds": 0.006733135,
+          "rss_kib": 15776
+        },
+        {
+          "seconds": 0.004304906,
+          "rss_kib": 15776
+        }
+      ],
+      "original": [
+        {
+          "seconds": 0.005457536,
+          "rss_kib": 14772
+        },
+        {
+          "seconds": 0.005522497,
+          "rss_kib": 14552
+        },
+        {
+          "seconds": 0.007371311,
+          "rss_kib": 14660
+        },
+        {
+          "seconds": 0.007238503,
+          "rss_kib": 14580
+        },
+        {
+          "seconds": 0.005341077,
+          "rss_kib": 14456
+        },
+        {
+          "seconds": 0.00713034,
+          "rss_kib": 14908
+        },
+        {
+          "seconds": 0.005404275,
+          "rss_kib": 14808
+        }
+      ]
+    },
+    "long-stereo.m4a:file": {
+      "base": [
+        {
+          "seconds": 0.06145245,
+          "rss_kib": 26236
+        },
+        {
+          "seconds": 0.061074913,
+          "rss_kib": 26268
+        },
+        {
+          "seconds": 0.061440879,
+          "rss_kib": 26028
+        },
+        {
+          "seconds": 0.061578086,
+          "rss_kib": 26172
+        },
+        {
+          "seconds": 0.062462563,
+          "rss_kib": 26160
+        },
+        {
+          "seconds": 0.062632652,
+          "rss_kib": 26204
+        },
+        {
+          "seconds": 0.064480182,
+          "rss_kib": 26092
+        }
+      ],
+      "original": [
+        {
+          "seconds": 0.08054374,
+          "rss_kib": 25268
+        },
+        {
+          "seconds": 0.089514889,
+          "rss_kib": 25072
+        },
+        {
+          "seconds": 0.080536677,
+          "rss_kib": 25248
+        },
+        {
+          "seconds": 0.073619988,
+          "rss_kib": 25304
+        },
+        {
+          "seconds": 0.07362661,
+          "rss_kib": 25280
+        },
+        {
+          "seconds": 0.072630834,
+          "rss_kib": 25172
+        },
+        {
+          "seconds": 0.074103363,
+          "rss_kib": 25072
+        }
+      ]
+    },
+    "long-stereo.m4a:split": {
+      "base": [
+        {
+          "seconds": 0.101378938,
+          "rss_kib": 36772
+        },
+        {
+          "seconds": 0.104253294,
+          "rss_kib": 37232
+        },
+        {
+          "seconds": 0.100682503,
+          "rss_kib": 37048
+        },
+        {
+          "seconds": 0.101224338,
+          "rss_kib": 36892
+        },
+        {
+          "seconds": 0.100911602,
+          "rss_kib": 36976
+        },
+        {
+          "seconds": 0.106198618,
+          "rss_kib": 36576
+        },
+        {
+          "seconds": 0.103325044,
+          "rss_kib": 36736
+        }
+      ],
+      "original": [
+        {
+          "seconds": 0.120816187,
+          "rss_kib": 76900
+        },
+        {
+          "seconds": 0.10886849,
+          "rss_kib": 76416
+        },
+        {
+          "seconds": 0.111039198,
+          "rss_kib": 76428
+        },
+        {
+          "seconds": 0.108230856,
+          "rss_kib": 76696
+        },
+        {
+          "seconds": 0.113743635,
+          "rss_kib": 76584
+        },
+        {
+          "seconds": 0.112009336,
+          "rss_kib": 76400
+        },
+        {
+          "seconds": 0.112111447,
+          "rss_kib": 76152
+        }
+      ]
+    },
+    "long-stereo.m4a:scan": {
+      "base": [
+        {
+          "seconds": 0.104217627,
+          "rss_kib": 17488
+        },
+        {
+          "seconds": 0.107822491,
+          "rss_kib": 17584
+        },
+        {
+          "seconds": 0.115897761,
+          "rss_kib": 17972
+        },
+        {
+          "seconds": 0.103404583,
+          "rss_kib": 17520
+        },
+        {
+          "seconds": 0.10366991,
+          "rss_kib": 17568
+        },
+        {
+          "seconds": 0.10340297,
+          "rss_kib": 17716
+        },
+        {
+          "seconds": 0.103238682,
+          "rss_kib": 14816
+        }
+      ],
+      "original": [
+        {
+          "seconds": 0.108449256,
+          "rss_kib": 57436
+        },
+        {
+          "seconds": 0.109547904,
+          "rss_kib": 57484
+        },
+        {
+          "seconds": 0.110433142,
+          "rss_kib": 57400
+        },
+        {
+          "seconds": 0.109172751,
+          "rss_kib": 57164
+        },
+        {
+          "seconds": 0.108669157,
+          "rss_kib": 57012
+        },
+        {
+          "seconds": 0.109639966,
+          "rss_kib": 57264
+        },
+        {
+          "seconds": 0.11031432,
+          "rss_kib": 57108
+        }
+      ]
+    }
+  }
+}
