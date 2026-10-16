@@ -1,0 +1,120 @@
+[
+  {
+    "frontend": "Rust dump",
+    "floor": 1e-10,
+    "words": 0,
+    "high_band_mean": -22.721472480870357,
+    "text": ""
+  },
+  {
+    "frontend": "Rust dump",
+    "floor": 1e-09,
+    "words": 0,
+    "high_band_mean": -20.65924366713772,
+    "text": ""
+  },
+  {
+    "frontend": "Rust dump",
+    "floor": 1e-08,
+    "words": 1,
+    "high_band_mean": -18.41388245371441,
+    "text": "ее"
+  },
+  {
+    "frontend": "Rust dump",
+    "floor": 1e-07,
+    "words": 6,
+    "high_band_mean": -16.118076739918944,
+    "text": "іөзмізеаймыөзімізбе жұмы жааймы де енмеебастаыбрекет алдым"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": null,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 0,
+    "high_band_mean": -20.659217834472656,
+    "text": ""
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": null,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 4,
+    "high_band_mean": -13.094900131225586,
+    "text": "іміміб мы аайдбстбрект алды"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 16,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 3,
+    "high_band_mean": -16.985042572021484,
+    "text": "мб астбрект алы"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 16,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 9,
+    "high_band_mean": -12.909664154052734,
+    "text": "біз өзімізге ени жаймызөімізбен жұмы жасаймыз деп  енменебастадыбрекит салдым"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 15,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 10,
+    "high_band_mean": -15.618279457092285,
+    "text": "біз өзімізге енижасаймызөімізбен жұмы жасаймыз деп  ен менен бастадыбрекет салдым"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 15,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 11,
+    "high_band_mean": -12.724647521972656,
+    "text": "біз өзімізге лжеие жасаймыз өзімізбен жұмыс жасаймыз деп вн оненменнбастадықбрекит салдым"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 14,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 15,
+    "high_band_mean": -14.256034851074219,
+    "text": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и вобмлоенен конено меннен бастадық брекет салдым"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 14,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 15,
+    "high_band_mean": -12.382197380065918,
+    "text": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и венн конечно менен бастадық брекит салдым"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 12,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 17,
+    "high_band_mean": -11.470657348632812,
+    "text": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениены конечно меннен бастадық брекит салдым"
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 12,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 17,
+    "high_band_mean": -10.996935844421387,
+    "text": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениены конечно меннен бастадық брекет салдым"
+  }
+]

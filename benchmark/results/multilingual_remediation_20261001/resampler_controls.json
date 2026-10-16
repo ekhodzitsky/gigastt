@@ -1,0 +1,102 @@
+{
+  "purpose": "Predeclared laboratory filter controls; no runtime-default change. All outputs rounded and saturated to PCM16.",
+  "presets": {
+    "current": [
+      256,
+      0.95
+    ],
+    "short32": [
+      32,
+      0.97
+    ],
+    "short64": [
+      64,
+      0.97
+    ]
+  },
+  "health": {
+    "status": "ok",
+    "model": "gigaam-multilingual-ctc",
+    "variant": "ml_ctc",
+    "version": "2.21.0",
+    "punctuation": false,
+    "itn": false
+  },
+  "summary": [
+    {
+      "dataset": "kazakh_filter_current",
+      "condition": "original",
+      "reference_layer": "verbatim",
+      "n": 31,
+      "audio_s": 221.923375,
+      "elapsed_s": 25.928098638309166,
+      "rtf": 0.11683356310847907,
+      "wer_pct": 51.60680529300567,
+      "cer_pct": 32.67992978349912,
+      "empty_hypotheses": 2
+    },
+    {
+      "dataset": "kazakh_filter_current",
+      "condition": "original",
+      "reference_layer": "normalized",
+      "n": 31,
+      "audio_s": 221.923375,
+      "elapsed_s": 25.928098638309166,
+      "rtf": 0.11683356310847907,
+      "wer_pct": 51.60680529300567,
+      "cer_pct": 32.67992978349912,
+      "empty_hypotheses": 2
+    },
+    {
+      "dataset": "kazakh_filter_short32",
+      "condition": "original",
+      "reference_layer": "verbatim",
+      "n": 31,
+      "audio_s": 221.923375,
+      "elapsed_s": 22.969944421900436,
+      "rtf": 0.10350394329529478,
+      "wer_pct": 36.86200378071834,
+      "cer_pct": 16.500877706260972,
+      "empty_hypotheses": 0
+    },
+    {
+      "dataset": "kazakh_filter_short32",
+      "condition": "original",
+      "reference_layer": "normalized",
+      "n": 31,
+      "audio_s": 221.923375,
+      "elapsed_s": 22.969944421900436,
+      "rtf": 0.10350394329529478,
+      "wer_pct": 36.86200378071834,
+      "cer_pct": 16.500877706260972,
+      "empty_hypotheses": 0
+    },
+    {
+      "dataset": "kazakh_filter_short64",
+      "condition": "original",
+      "reference_layer": "verbatim",
+      "n": 31,
+      "audio_s": 221.923375,
+      "elapsed_s": 25.34567912807688,
+      "rtf": 0.11420914596345194,
+      "wer_pct": 44.99054820415879,
+      "cer_pct": 25.19016968987712,
+      "empty_hypotheses": 0
+    },
+    {
+      "dataset": "kazakh_filter_short64",
+      "condition": "original",
+      "reference_layer": "normalized",
+      "n": 31,
+      "audio_s": 221.923375,
+      "elapsed_s": 25.34567912807688,
+      "rtf": 0.11420914596345194,
+      "wer_pct": 44.99054820415879,
+      "cer_pct": 25.19016968987712,
+      "empty_hypotheses": 0
+    }
+  ],
+  "scoring": "scripts/wer_unicode.py normalize; jiwer; micro WER/CER including spaces; no ITN",
+  "source_manifest_sha256": "e9622e40cbedbce172551de00f002a9b4f9176170ebc16988645426f7ed164cd",
+  "timing_note": "Concurrent CPU experiments; timings are not deployment throughput measurements."
+}

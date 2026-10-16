@@ -1,0 +1,31 @@
+{
+  "n": 132,
+  "source_fp32_feature_hashes_match": true,
+  "source_fp32_all_frame_argmax_identical": true,
+  "source_fp32_mean_of_sample_logit_mae": 4.533932033637305e-06,
+  "source_fp32_max_logit_error": 0.0009617805480957031,
+  "model_metadata": {
+    "source": {
+      "stage": "official PyTorch source, FP32 CPU",
+      "torch": "2.14.1+cpu",
+      "torchaudio": "2.11.0+cpu",
+      "source_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+      "model_sha256": "24aa92be5994fa8b9f1ce40fe59fc9693de0ce6af415011b7c0b4480c7fcf733",
+      "threads": 3
+    },
+    "fp32": {
+      "stage": "ONNX exact source features",
+      "onnxruntime": "1.30.0",
+      "model_sha256": "8bc803289f9cb5147ee95451fd9bdba219b1ecf1ddcd59a3651177c103c9eeec",
+      "threads": 3
+    },
+    "int8": {
+      "stage": "ONNX exact source features",
+      "onnxruntime": "1.30.0",
+      "model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "threads": 3
+    }
+  },
+  "source_fp32_transcriptions_equal_after_strip": true,
+  "raw_text_outer_whitespace_differences": 5
+}
