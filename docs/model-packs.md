@@ -8,7 +8,7 @@ The pack keeps MatMul weights in signed, per-channel reduced-range INT8 and
 the 51 convolutions in FP32. The encoder is 320,394,571 bytes. This is a
 conversion of the existing pretrained weights, with no training or calibration
 dataset. Quality measurements and limitations are in the
-[quantization report](../benchmark/results/multilingual_small_quantization_20261001/README.md).
+[quantization report](https://github.com/ekhodzitsky/gigastt/blob/117f64fa16847963fc06bd40439be6c99e6ba563/benchmark/results/multilingual_small_quantization_20261001/README.md).
 
 ## Package contents
 
@@ -102,7 +102,7 @@ python3 -m unittest discover -s scripts -p test_package_small_multilingual.py
 ## Real telephone evidence
 
 The simulated-channel gains do not establish real-call readiness. The
-[real-call comparison](../benchmark/results/multilingual_real_calls_20261001/README.md)
+[real-call comparison](https://github.com/ekhodzitsky/gigastt/blob/117f64fa16847963fc06bd40439be6c99e6ba563/benchmark/results/multilingual_real_calls_20261001/README.md)
 found unchanged full-call WER for the selective small model on two Kazakh
 recordings; enabling the existing VAD helped some cases but quality remained
 poor. No verified Uzbek real-call evaluation set was acquired. Keep these limits
@@ -113,8 +113,8 @@ separate from the successful packaging and startup checks.
 This checkout passed 1,119 workspace unit tests (39 ignored), clippy and format
 checks. A fresh release binary loaded the installed archive without the original
 encoder companion and reproduced all 111 frozen diagnostic transcripts exactly.
-See [standalone startup evidence](../benchmark/results/multilingual_small_quantization_20261001/standalone_smoke.json)
-and [archive validation](../benchmark/results/multilingual_small_quantization_20261001/package_validation.json).
+See [standalone startup evidence](https://github.com/ekhodzitsky/gigastt/blob/117f64fa16847963fc06bd40439be6c99e6ba563/benchmark/results/multilingual_small_quantization_20261001/standalone_smoke.json)
+and [archive validation](https://github.com/ekhodzitsky/gigastt/blob/117f64fa16847963fc06bd40439be6c99e6ba563/benchmark/results/multilingual_small_quantization_20261001/package_validation.json).
 
 The ready-to-run local installation can be started with:
 
