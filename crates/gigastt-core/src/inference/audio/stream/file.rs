@@ -12,6 +12,9 @@ use symphonia::core::formats::{FormatOptions, FormatReader, TrackType};
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 
+use super::super::aac::{
+    AacRecv, AacSource, try_open_bytes as try_open_aac_bytes, try_open_path as try_open_aac_path,
+};
 use super::super::decode::BytesMediaSource;
 use super::super::opus::{OPUS_DECODE_RATE, OpusStream, next_demux_packet};
 use super::super::resample::{RESAMPLE_STAGING_FRAMES, ResampleTo16k, SampleRate};
@@ -24,7 +27,7 @@ use super::{ChannelSelect, PcmWindow, PcmWindows, WindowCursor, WindowSpec};
 use crate::error::GigasttError;
 
 /// The decode engine behind [`FileWindows`]: a streaming symphonia loop, a
-/// WAVE-family ryf pull, or Opus via `opus-rs`.
+/// WAVE-family ryf pull, AAC via syom, or Opus via `opus-rs`.
 #[cfg(feature = "file-decode")]
 enum Source {
     /// Container decoded packet-by-packet, resampled to 16 kHz as it goes.
@@ -75,6 +78,8 @@ enum Source {
     },
     /// WAVE family (PCM/IEEE, G.711, G.722, ADPCM, RF64/RIFX/Wave64) via ryf.
     Wave(Box<WaveSource>),
+    /// ADTS, LATM/LOAS, M4A, and bounded fMP4 via syom.
+    Aac(Box<AacSource>),
 }
 
 /// A [`PcmWindows`] source that pulls overlapping decode windows straight from an
@@ -113,11 +118,14 @@ pub(crate) struct FileWindows {
 
 #[cfg(feature = "file-decode")]
 impl FileWindows {
-    /// Open a file for windowed decode. WAVE containers go through ryf; everything
-    /// else is probed by symphonia.
+    /// Open a file for windowed decode. WAVE containers go through ryf, AAC
+    /// through syom, and everything else is probed by symphonia.
     pub(crate) fn open(path: &str, spec: WindowSpec, max_audio_secs: Option<f64>) -> Result<Self> {
         if let Some(wave) = try_open_path(path, ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::Mono));
+        }
+        if let Some(aac) = try_open_aac_path(path, ChannelSelect::Mono, max_audio_secs)? {
+            return Ok(Self::from_aac(aac, spec, ChannelSelect::Mono));
         }
         let file = std::fs::File::open(path)
             .with_context(|| format!("Failed to open audio file: {path}"))?;
@@ -132,8 +140,9 @@ impl FileWindows {
         Self::from_mss(mss, hint, spec, max_audio_secs, ChannelSelect::Mono)
     }
 
-    /// Open a shared [`Bytes`] buffer for windowed decode. `BytesMediaSource` is
-    /// seekable, so the isomp4 demuxer's trailing-`moov` seek works; no spool.
+    /// Open a shared [`Bytes`] buffer for windowed decode. AAC (including a
+    /// trailing `moov`) is syom. What remains uses `BytesMediaSource`, which is
+    /// seekable, so no spool is required.
     pub(crate) fn from_bytes(
         data: Bytes,
         spec: WindowSpec,
@@ -141,6 +150,9 @@ impl FileWindows {
     ) -> Result<Self> {
         if let Some(wave) = try_open_bytes(data.clone(), ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::Mono));
+        }
+        if let Some(aac) = try_open_aac_bytes(data.clone(), ChannelSelect::Mono, max_audio_secs)? {
+            return Ok(Self::from_aac(aac, spec, ChannelSelect::Mono));
         }
         let source = BytesMediaSource::new(data);
         let mss = MediaSourceStream::new(Box::new(source), Default::default());
@@ -285,6 +297,11 @@ impl FileWindows {
         {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::One(channel)));
         }
+        if let Some(aac) =
+            try_open_aac_bytes(data.clone(), ChannelSelect::One(channel), max_audio_secs)?
+        {
+            return Ok(Self::from_aac(aac, spec, ChannelSelect::One(channel)));
+        }
         let source = BytesMediaSource::new(data);
         let mss = MediaSourceStream::new(Box::new(source), Default::default());
         Self::from_mss(
@@ -294,6 +311,19 @@ impl FileWindows {
             max_audio_secs,
             ChannelSelect::One(channel),
         )
+    }
+
+    fn from_aac(aac: AacSource, spec: WindowSpec, channel: ChannelSelect) -> Self {
+        Self {
+            src: Source::Aac(Box::new(aac)),
+            eof: false,
+            finished: false,
+            buf: Vec::new(),
+            buf_start_abs: 0,
+            decoded_16k_total: 0,
+            channel,
+            cursor: WindowCursor::new(spec),
+        }
     }
 
     fn from_wave(wave: WaveSource, spec: WindowSpec, channel: ChannelSelect) -> Self {
@@ -360,6 +390,7 @@ impl FileWindows {
             Source::Streaming { .. } => self.fill_streaming(target, abort),
             Source::Opus { .. } => self.fill_opus(target, abort),
             Source::Wave(_) => self.fill_wave(target, abort),
+            Source::Aac(_) => self.fill_aac(target, abort),
         }
     }
 
@@ -531,6 +562,49 @@ impl FileWindows {
             pending.clear();
             let before = self.buf.len();
             resampler.finish_into(&mut self.buf)?;
+            self.decoded_16k_total += self.buf.len() - before;
+            self.finished = true;
+        }
+        Ok(())
+    }
+
+    /// [`FileWindows::fill_to`] for AAC decoded by syom.
+    fn fill_aac(&mut self, target: usize, abort: Option<&(dyn Fn() -> bool + Sync)>) -> Result<()> {
+        let Source::Aac(aac) = &mut self.src else {
+            return Ok(());
+        };
+
+        while !self.eof && self.decoded_16k_total < target {
+            check_decode_abort(abort)?;
+            let block = aac.recv_block()?;
+            check_decode_abort(abort)?;
+            match block {
+                AacRecv::Block(block) => {
+                    aac.source_frames += block.frames;
+                    check_budget(
+                        aac.source_frames,
+                        aac.sample_rate,
+                        aac.max_samples,
+                        aac.limit_secs,
+                    )?;
+                    if !block.samples.is_empty() {
+                        aac.resampler.stage().extend_from_slice(&block.samples);
+                        aac.resampler.flush_full()?;
+                    }
+                    let before = self.buf.len();
+                    aac.resampler.drain_ready_into(&mut self.buf);
+                    self.decoded_16k_total += self.buf.len() - before;
+                }
+                AacRecv::Eof => {
+                    self.eof = true;
+                    break;
+                }
+            }
+        }
+
+        if self.eof && !self.finished {
+            let before = self.buf.len();
+            aac.resampler.finish_into(&mut self.buf)?;
             self.decoded_16k_total += self.buf.len() - before;
             self.finished = true;
         }

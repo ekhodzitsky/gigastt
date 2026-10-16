@@ -49,7 +49,7 @@ packaging tool that needs a local FP32 ONNX as source (not a runtime path).
 - **Serialization**: serde + serde_json
 - **Logging**: tracing + tracing-subscriber (env-filter)
 - **Error handling**: anyhow (internal), `GigasttError` (public API)
-- **Audio decoding**: ryf (WAVE family), symphonia (AAC, MP3, OGG, FLAC), opus-rs (Opus)
+- **Audio decoding**: ryf (WAVE family), syom (AAC), symphonia (MP3, OGG, FLAC), opus-rs (Opus)
 - **Audio resampling**: rubato 5
 - **FFT**: rustfft 6
 - **Protobuf**: prost 0.14 + prost-build 0.14 (build-time)
@@ -196,7 +196,7 @@ crates/
       bias.rs             # Hotword biasing
       diarization.rs      # polyvoice glue: Embedder adapter, offline + streaming pipelines
       types.rs            # TranscribeRequest / TranscribeResult and friends
-      audio/              # Decode (WAVE via ryf, else symphonia), resample, windowing, telephony
+      audio/              # Decode (WAVE via ryf, AAC via syom, else symphonia), resample, windowing, telephony
     runtime/              # Backend seam — THIS is where execution providers are chosen
       factory.rs          # RuntimeFactory / Runtime traits only
       ort/factory.rs      # cfg-gated EP/backend selection (coreml / cuda / nnapi / ane / candle / CPU)
@@ -296,7 +296,8 @@ The `e2e_rnnt` head (`--model-variant e2e_rnnt`) uses the parallel `v3_e2e_rnnt_
 ### Audio format support
 
 - **File transcription**: WAV family (PCM/IEEE, G.711, G.722, GSM 06.10,
-  MS/IMA ADPCM, RF64/RIFX/BW64/Wave64) via `ryf`; M4A/AAC, MP3, OGG/Vorbis, FLAC via
+  MS/IMA ADPCM, RF64/RIFX/BW64/Wave64) via `ryf`; M4A/AAC (ADTS, LATM/LOAS,
+  AAC-LC, HE-AAC, AAC-LD) via `syom`; MP3, OGG/Vorbis, FLAC via
   symphonia; OGG/Opus and `.opus` (Telegram voice) plus WebM/Opus and Matroska
   (a browser's `MediaRecorder` emits nothing else) — symphonia demuxes the
   container, packets are decoded by the pure-Rust BSD-3 `opus-rs` crate,

@@ -15,6 +15,9 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Changed
 
+- Decode AAC and M4A through syom 0.7.1, including ADTS, LATM/LOAS,
+  HE-AAC, AAC-LD and bounded fragmented MP4. HE-AAC uses the presentation
+  sample rate; other supported codecs remain on their existing decoders.
 - Run GitHub workflows only on manual dispatch to conserve Actions minutes.
   Preserve protected checks and exact-source release validation; manual CI
   requires an immutable comparison baseline and opts into full model/E2E checks.

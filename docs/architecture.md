@@ -41,7 +41,7 @@ gigastt is a **6-crate** Cargo workspace:
 | [`gigastt-uniffi`](../crates/gigastt-uniffi) | lib (cdylib) | UniFFI bindings (Python wheels / Swift / Kotlin path) |
 | [`gigastt-node`](../crates/gigastt-node) | lib (cdylib) | napi-rs Node.js / Electron binding |
 
-Embed inference in any Rust project with `gigastt-core = "2.22"`. For a lean embedded build, disable defaults (`default-features = false`) to drop `tokio` / `reqwest` / `symphonia` / `ryf` / polyvoice; opt capabilities back in via the `net`, `async-pool`, `file-decode`, `diarization`, and `quantize` features (`quantize` is packaging-only — the INT8 quantizer, not a runtime path).
+Embed inference in any Rust project with `gigastt-core = "2.22"`. For a lean embedded build, disable defaults (`default-features = false`) to drop `tokio` / `reqwest` / `symphonia` / `syom` / `ryf` / polyvoice; opt capabilities back in via the `net`, `async-pool`, `file-decode`, `diarization`, and `quantize` features (`quantize` is packaging-only — the INT8 quantizer, not a runtime path).
 
 Server surfaces (single process, one primary port unless metrics is enabled):
 
