@@ -87,8 +87,22 @@ pub fn resample(samples: &[f32], from_rate: SampleRate, to_rate: SampleRate) -> 
             .process_into_buffer(&input, &mut output, None)
             .map_err(|e| anyhow::anyhow!("Resampling failed: {e}"))?;
     }
-    let [out_vec] = output_data;
+    let [mut out_vec] = output_data;
+    match_narrowband_pcm16(&mut out_vec, from_rate, to_rate);
     Ok(out_vec)
+}
+
+/// Match GigaAM's s16le file loader after telephone upsampling. A float sinc
+/// output has almost no energy above 4 kHz; multilingual INT8 inference can
+/// collapse to blanks on that input. PCM16 rounding restores the reference
+/// input precision, without random dither or a change to the sinc filter.
+/// Keep other rate conversions and native 16 kHz input unchanged.
+fn match_narrowband_pcm16(samples: &mut [f32], from_rate: SampleRate, to_rate: SampleRate) {
+    if from_rate.0 == 8_000 && to_rate.0 == 16_000 {
+        for sample in samples {
+            *sample = (*sample * 32768.0).round().clamp(-32768.0, 32767.0) / 32768.0;
+        }
+    }
 }
 
 /// Lower bound for the cached streaming resampler's chunk capacity.
@@ -187,6 +201,7 @@ pub fn resample_with_cache(
             out_buf.extend_from_slice(&piece_out);
         }
     }
+    match_narrowband_pcm16(out_buf, from_rate, to_rate);
     Ok(())
 }
 
