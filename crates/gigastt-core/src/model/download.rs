@@ -191,6 +191,11 @@ pub async fn ensure_model(model_dir: &str) -> Result<()> {
 /// the default (`Rnnt`) **pre-quantized INT8** set. FP32-only installs are
 /// ignored (not considered usable).
 ///
+/// A present `manifest.toml` selects a local custom INT8 pack. Its declared
+/// files must exist and its architecture must match an explicit request.
+/// Invalid or incomplete custom packs are errors, never download fallbacks.
+/// File integrity is still verified by the engine for pinned model basenames.
+///
 /// Returns the variant that is now ready in `model_dir`.
 #[cfg(feature = "net")]
 pub async fn ensure_model_variant(
@@ -198,6 +203,36 @@ pub async fn ensure_model_variant(
     model_dir: &str,
 ) -> Result<ModelVariant> {
     let dir = Path::new(model_dir);
+
+    if let Some(manifest) = super::manifest::ModelManifest::load(dir)? {
+        anyhow::ensure!(
+            requested.is_none_or(|variant| variant == manifest.architecture),
+            "requested model variant conflicts with manifest architecture '{}'",
+            manifest.architecture.as_str()
+        );
+        anyhow::ensure!(
+            manifest.prefers_int8(dir),
+            "custom model pack requires an existing encoder_int8 file"
+        );
+        let files = [
+            Some(manifest.preferred_encoder_path(dir)),
+            Some(manifest.vocab_path(dir)),
+            manifest.decoder_path(dir),
+            manifest.joint_path(dir),
+        ];
+        for path in files.into_iter().flatten() {
+            anyhow::ensure!(
+                path.is_file(),
+                "custom model pack file missing: {}",
+                path.display()
+            );
+        }
+        tracing::info!(
+            "Using custom {:?} model pack at {model_dir}",
+            manifest.architecture
+        );
+        return Ok(manifest.architecture);
+    }
 
     // Determine the variant that is fully usable on disk. `detect_in_dir` only
     // checks for an encoder file, so we filter to variants whose complete INT8
