@@ -161,8 +161,10 @@ pub(super) fn best_lag_rmse(a: &[f32], b: &[f32], max_lag: usize) -> f64 {
     best
 }
 
-#[cfg(feature = "file-decode")]
+#[cfg(feature = "extended-aac")]
 mod aac;
+#[cfg(feature = "file-decode")]
+mod aac_compat;
 mod decode;
 mod opus;
 mod pcm;

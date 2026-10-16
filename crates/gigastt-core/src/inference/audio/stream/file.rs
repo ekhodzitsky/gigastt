@@ -12,6 +12,7 @@ use symphonia::core::formats::{FormatOptions, FormatReader, TrackType};
 use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 
+#[cfg(feature = "extended-aac")]
 use super::super::aac::{
     AacRecv, AacSource, try_open_bytes as try_open_aac_bytes, try_open_path as try_open_aac_path,
 };
@@ -27,7 +28,7 @@ use super::{ChannelSelect, PcmWindow, PcmWindows, WindowCursor, WindowSpec};
 use crate::error::GigasttError;
 
 /// The decode engine behind [`FileWindows`]: a streaming symphonia loop, a
-/// WAVE-family ryf pull, AAC via syom, or Opus via `opus-rs`.
+/// WAVE-family ryf pull, optional AAC via syom, or Opus via `opus-rs`.
 #[cfg(feature = "file-decode")]
 enum Source {
     /// Container decoded packet-by-packet, resampled to 16 kHz as it goes.
@@ -79,6 +80,7 @@ enum Source {
     /// WAVE family (PCM/IEEE, G.711, G.722, ADPCM, RF64/RIFX/Wave64) via ryf.
     Wave(Box<WaveSource>),
     /// ADTS, LATM/LOAS, M4A, and bounded fMP4 via syom.
+    #[cfg(feature = "extended-aac")]
     Aac(Box<AacSource>),
 }
 
@@ -119,11 +121,12 @@ pub(crate) struct FileWindows {
 #[cfg(feature = "file-decode")]
 impl FileWindows {
     /// Open a file for windowed decode. WAVE containers go through ryf, AAC
-    /// through syom, and everything else is probed by symphonia.
+    /// through syom with `extended-aac`, and everything else through symphonia.
     pub(crate) fn open(path: &str, spec: WindowSpec, max_audio_secs: Option<f64>) -> Result<Self> {
         if let Some(wave) = try_open_path(path, ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::Mono));
         }
+        #[cfg(feature = "extended-aac")]
         if let Some(aac) = try_open_aac_path(path, ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_aac(aac, spec, ChannelSelect::Mono));
         }
@@ -141,7 +144,8 @@ impl FileWindows {
     }
 
     /// Open a shared [`Bytes`] buffer for windowed decode. AAC (including a
-    /// trailing `moov`) is syom. What remains uses `BytesMediaSource`, which is
+    /// trailing `moov`) uses syom with `extended-aac`. Other inputs use
+    /// `BytesMediaSource`, which is
     /// seekable, so no spool is required.
     pub(crate) fn from_bytes(
         data: Bytes,
@@ -151,6 +155,7 @@ impl FileWindows {
         if let Some(wave) = try_open_bytes(data.clone(), ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::Mono));
         }
+        #[cfg(feature = "extended-aac")]
         if let Some(aac) = try_open_aac_bytes(data.clone(), ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_aac(aac, spec, ChannelSelect::Mono));
         }
@@ -297,6 +302,7 @@ impl FileWindows {
         {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::One(channel)));
         }
+        #[cfg(feature = "extended-aac")]
         if let Some(aac) =
             try_open_aac_bytes(data.clone(), ChannelSelect::One(channel), max_audio_secs)?
         {
@@ -313,6 +319,7 @@ impl FileWindows {
         )
     }
 
+    #[cfg(feature = "extended-aac")]
     fn from_aac(aac: AacSource, spec: WindowSpec, channel: ChannelSelect) -> Self {
         Self {
             src: Source::Aac(Box::new(aac)),
@@ -390,6 +397,7 @@ impl FileWindows {
             Source::Streaming { .. } => self.fill_streaming(target, abort),
             Source::Opus { .. } => self.fill_opus(target, abort),
             Source::Wave(_) => self.fill_wave(target, abort),
+            #[cfg(feature = "extended-aac")]
             Source::Aac(_) => self.fill_aac(target, abort),
         }
     }
@@ -569,6 +577,7 @@ impl FileWindows {
     }
 
     /// [`FileWindows::fill_to`] for AAC decoded by syom.
+    #[cfg(feature = "extended-aac")]
     fn fill_aac(&mut self, target: usize, abort: Option<&(dyn Fn() -> bool + Sync)>) -> Result<()> {
         let Source::Aac(aac) = &mut self.src else {
             return Ok(());

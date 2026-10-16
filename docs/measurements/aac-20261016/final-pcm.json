@@ -1,0 +1,77 @@
+[
+  {
+    "file": "speech0.m4a",
+    "pcm_sha256": "197e46ba871090cf04ec366bc956165206ed80045b56410e6ac42e6a3c815f7f",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech1.m4a",
+    "pcm_sha256": "2c6a46b1f8812b0d2bc5d03aabd64a0196ef770950c304328a6e7dfd3f562a4e",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech2.m4a",
+    "pcm_sha256": "2625f32978f1e8e28a17225d02fbe278e06524c0b1cfed8d0f366b2c89e46d5b",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech3.m4a",
+    "pcm_sha256": "7347902557f8e896cc296cbc6663c5d1dc22d6316b3a6ef8ad4b95e14021453d",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech4.m4a",
+    "pcm_sha256": "7af9f6a29d0ddd76584c16f17cf12f44fa1b5636a669501903c16cb5bd3d0c45",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech5.m4a",
+    "pcm_sha256": "f55ec07a3bdd2a53d0c2a377b5e1786d09eacaf2483aa29586216f849df62fab",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech6.m4a",
+    "pcm_sha256": "fb93cb9b6cea0cb72018c78fb21bbfbab25fc3e2d2d78f4dcdbc9ab25c23f007",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech7.m4a",
+    "pcm_sha256": "4d8e7a71e6e0e13cf354d3a37b4af246219847cea4384bb540ecc2d3ac7a35dc",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech8.m4a",
+    "pcm_sha256": "39231d296dd64d50b2667f37d4e41093610394acd89855dc0758136bb9958504",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech9.m4a",
+    "pcm_sha256": "35d38d9ee21083e654ae15e538aeb99a8029eae5abecc134f0ec6ecaed11c407",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech10.m4a",
+    "pcm_sha256": "d16f00d0586ba0f86c709acb3ce3da3107cdfa7be4f97335d0558651773c1910",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech11.m4a",
+    "pcm_sha256": "7a727ebb57cf99bee5fef7b6173d9c1486aaa864c74a699593815b63b794cf6b",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech12.m4a",
+    "pcm_sha256": "b80c01efe2312cd84f839797aa506acb2baabd962a806c61cc516c174db009e7",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech13.m4a",
+    "pcm_sha256": "90875c14e3687b46358274649cb95d54db8b0624b19fa06d678d53ce213a2cb6",
+    "identical_to_asr_candidate": true
+  },
+  {
+    "file": "speech14.m4a",
+    "pcm_sha256": "d1c4113748087deed0d5c430e8c9a12c641325d0eca1fb45a7f1611155e88ea9",
+    "identical_to_asr_candidate": true
+  }
+]

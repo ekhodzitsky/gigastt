@@ -1,5 +1,6 @@
 //! AAC via syom. Fixtures are encoded in the test: the roundtrip proves the
-//! gigastt wiring (resample, budget, probe, split). Bitstream goldens live in syom.
+//! gigastt wiring (resample, budget, probe, split). Independent FFmpeg fixtures
+//! cover transport regressions; their provenance is recorded beside the files.
 
 use super::*;
 
@@ -105,6 +106,7 @@ fn test_stereo_split_keeps_distinct_channels() {
     let scan = scan_channels(bytes::Bytes::from(again), None).expect("scan");
     assert_eq!(scan.channels, 2);
     assert!(!scan.dual_mono);
+    assert_eq!(scan.dual_mono, is_dual_mono(&planes));
 }
 
 #[test]
@@ -153,4 +155,36 @@ fn test_dropping_aac_windows_joins_the_decoder() {
     )
     .expect("open");
     drop(windows);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_aac_scan_checks_cancellation_between_frames() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let left = sine(48_000, 0.05);
+    let right = sine(48_000, 0.13);
+    let adts = syom::encode(&[&left, &right], 48_000).expect("encode stereo");
+    let checks = AtomicUsize::new(0);
+    let abort = || checks.fetch_add(1, Ordering::Relaxed) >= 3;
+    let error = scan_channels_with_abort(bytes::Bytes::from(adts), None, Some(&abort))
+        .expect_err("scan must stop between frames");
+    assert!(matches!(decode_error(error), GigasttError::Cancelled));
+    assert_eq!(checks.load(Ordering::Relaxed), 4);
+}
+
+#[test]
+#[cfg_attr(miri, ignore)]
+fn test_implicit_he_stereo_scan_uses_decoded_layout() {
+    let left = sine(48_000, 0.05);
+    let right = sine(48_000, 0.13);
+    let options = syom::EncodeOptions::adts()
+        .with_he_v2(true)
+        .with_bitrate_bps(32_000);
+    let adts = syom::encode_with(&[&left, &right], 48_000, &options).expect("encode HE v2");
+    let data = bytes::Bytes::from(adts);
+    let planes = decode_audio_bytes_shared_channels(data.clone()).expect("split HE v2");
+    let scan = scan_channels(data, None).expect("scan HE v2");
+    assert_eq!(planes.len(), 2);
+    assert_eq!(scan.channels, planes.len());
+    assert_eq!(scan.dual_mono, is_dual_mono(&planes));
 }

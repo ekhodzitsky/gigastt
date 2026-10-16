@@ -1,0 +1,92 @@
+[
+  {
+    "file": "speech0.m4a",
+    "pcm_sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc",
+    "samples": 64511,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech1.m4a",
+    "pcm_sha256": "87b910cf2a73b2edb7b3d65847b9f26451fb6a146467a06408d86c42cc6b02c5",
+    "samples": 55295,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech2.m4a",
+    "pcm_sha256": "0a7902db09f67ef97119f57ab9699ff4681ba1ec939ad49d402214816c558087",
+    "samples": 49492,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech3.m4a",
+    "pcm_sha256": "732561af4188b4c5a493d723cfaa27830c6c98febe769b00dbb4b3ad16d6216b",
+    "samples": 87380,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech4.m4a",
+    "pcm_sha256": "d0f71e4a7bdd3b157940dbc007037a1f15700a0bdaaf25cb39716d9f9316f192",
+    "samples": 83967,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech5.m4a",
+    "pcm_sha256": "07bd41ce768fd9d388e52c97fb208c30526a6bfdeea089e4214bca72304de127",
+    "samples": 51882,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech6.m4a",
+    "pcm_sha256": "7516b34161fc26845bf6771a133e24467aaa4342a081a19aca487708e6b291fa",
+    "samples": 80554,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech7.m4a",
+    "pcm_sha256": "49838715345b3efce108867bf39116d64e303ef45ec27575186db24cacbc1b19",
+    "samples": 33108,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech8.m4a",
+    "pcm_sha256": "b901c81a747cfcee12283f44f48f69c9bc801e1bc8daeb6d2b4ca15f565c6d31",
+    "samples": 79188,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech9.m4a",
+    "pcm_sha256": "69493fb6bc67e41d2949fba06f70cce8a3afe10fe0c93bf931d87acba03d3513",
+    "samples": 53930,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech10.m4a",
+    "pcm_sha256": "7dc50d36469526fb5aad276200b0a93c7184f66bcbd10f4442009515f9be0368",
+    "samples": 63146,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech11.m4a",
+    "pcm_sha256": "750e34c2db15343eb73a9e6e7ac52b31037734e97219ac88279ccea281fe949a",
+    "samples": 90794,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech12.m4a",
+    "pcm_sha256": "f9af5bda664f9cd90e2cc7c3302ba678f7c88e68352605f4bbeecb993091ad97",
+    "samples": 95572,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech13.m4a",
+    "pcm_sha256": "19a24363183c142a729ea2061f9d41f21018250254ac22971180f19bdbaf3d9e",
+    "samples": 51540,
+    "identical_to_base": true
+  },
+  {
+    "file": "speech14.m4a",
+    "pcm_sha256": "d17aecc9bbd50527689952f7800953821121a97cc2ae967ff301dcd85a4e8115",
+    "samples": 54954,
+    "identical_to_base": true
+  }
+]

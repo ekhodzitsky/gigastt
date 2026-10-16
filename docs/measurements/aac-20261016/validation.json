@@ -1,0 +1,34 @@
+{
+  "default": {
+    "passed": 1240,
+    "failed": 0,
+    "ignored": 48,
+    "command": "cargo test --locked --workspace --lib --bins",
+    "strict_clippy_passed": true
+  },
+  "extended": {
+    "passed": 1249,
+    "failed": 0,
+    "ignored": 48,
+    "command": "cargo test --locked --workspace --lib --bins --features gigastt/extended-aac",
+    "strict_clippy_passed": true
+  },
+  "source_sha256": {
+    "crates/gigastt-core/src/inference/audio/mod.rs": "56341fb3c98d79b187214edeb81067c8978dd89980291e1c58e0a8918db48757",
+    "crates/gigastt-core/src/inference/audio/decode.rs": "05623d155c21080b5889818149e2516e73d70ff9ce8ce12d19dfacb9ac1eac91",
+    "crates/gigastt-core/src/inference/audio/aac.rs": "8bff096160fb137eccc33eb529af822aa48f85e9173b9ba2f16e77c10cd508d0",
+    "crates/gigastt-core/src/inference/audio/aac/input.rs": "106c4aad5a946f61860c876a1e4c74ed5bd4f712ff22f7c5850d048331dcec1f",
+    "crates/gigastt-core/src/inference/audio/aac/probe.rs": "5a5dd75fbb8a905ec6d09caa234f73ce9c76093eeee7df256ac845e80ae18d23",
+    "crates/gigastt-core/src/inference/audio/aac/channels.rs": "332f07e6fccbb3726c2dbeae97bdb88b6965a5b13b3b7706502353b0671761ce",
+    "crates/gigastt-core/src/inference/audio/stream/file.rs": "b7cdbd9f051ec6e6a72d28fc8df6afd842638d6ea8d5b9b443b59b91132a5ae6",
+    "crates/gigastt-core/src/inference/audio/decode/scan.rs": "831019b0fa2e7e73e6431dd20cd46c190f1bd4ad2f0155bf34cb762b79e57a7d",
+    "crates/gigastt-core/src/inference/audio/decode/probe.rs": "98eb6f475e5fa2c2fdcbecc69ffd5812bfc1b691d34f4ea34183ea7f35dfec9f",
+    "crates/gigastt-core/src/inference/audio/decode/channels.rs": "ac8ba880d63dbd585fe546de13499afdb8d345f3c27326fe4fe7589fb70048af",
+    "crates/gigastt-core/src/inference/audio/tests/mod.rs": "b607ce32edea93d4e3ffc1fbae442dd3117dc4d8cd8e15e9b7960906925cd7fc",
+    "crates/gigastt-core/src/inference/audio/tests/aac_compat.rs": "51f1c066f0ee78aaacd397243040577ee48d7c62fdd7857816b38f25092127aa",
+    "crates/gigastt-core/src/inference/audio/tests/decode.rs": "f2cd6c81fee336d9c0492f2d182b15eea967d6403519d9f07407631201d5ef70",
+    "crates/gigastt-core/src/inference/audio/tests/aac.rs": "08de8fb96332df8d461ac9bf07163381b1bff42afdcd6e50f04295b70aa498ab",
+    "crates/gigastt-core/Cargo.toml": "1b89e458b6cee1a369e152e6a6b115044f7836f00bca94a2e7b9b499c593a14d",
+    "crates/gigastt/Cargo.toml": "11d169362052ad9a7bfd65f494660fbaf79fc32c2f18d1b8b877e6dfe623e861"
+  }
+}

@@ -12,7 +12,9 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 
 use super::super::MAX_SAMPLE_RATE;
-use super::super::{aac, wave};
+#[cfg(feature = "extended-aac")]
+use super::super::aac;
+use super::super::wave;
 use super::BytesMediaSource;
 
 /// Read an audio container's declared duration (seconds) from its header
@@ -40,6 +42,7 @@ pub fn probe_duration_bytes(data: Bytes) -> Result<Option<f64>> {
     if ryf::sniff_wav(data.as_ref()) {
         return wave::probe_duration(data.as_ref());
     }
+    #[cfg(feature = "extended-aac")]
     if let aac::ProbeHit::Duration(duration) = aac::probe_bytes(data.as_ref())? {
         return Ok(duration);
     }
@@ -48,8 +51,8 @@ pub fn probe_duration_bytes(data: Bytes) -> Result<Option<f64>> {
     probe_duration_inner(mss, Hint::new())
 }
 
-/// Path twin of [`probe_duration_bytes`]: read a file's declared duration from
-/// its header without decoding. Seeds the probe hint from the extension exactly
+/// Path twin of [`probe_duration_bytes`]. M4A also decodes one frame to establish
+/// the HE-AAC presentation rate. Seeds the probe hint from the extension exactly
 /// as [`decode_audio_file`](super::decode_audio_file) does.
 pub fn probe_duration_file(path: &str) -> Result<Option<f64>> {
     let mut file =
@@ -62,6 +65,7 @@ pub fn probe_duration_file(path: &str) -> Result<Option<f64>> {
             .with_context(|| format!("Failed to read audio file: {path}"))?;
         return wave::probe_duration_file(file);
     }
+    #[cfg(feature = "extended-aac")]
     if aac::sniff_file(&mut file).with_context(|| format!("Failed to read audio file: {path}"))? {
         match aac::probe_file(file)? {
             aac::ProbeHit::Duration(duration) => return Ok(duration),

@@ -54,7 +54,9 @@ diarization = ["dep:polyvoice"]
 # side-load models and feed raw PCM).
 net = ["dep:reqwest", "dep:tokio", "dep:futures-util"]  # HTTP model download
 async-pool = ["dep:tokio"]                              # async Pool::checkout; blocking path needs neither
-file-decode = ["dep:symphonia", "dep:ryf", "dep:opus-rs", "dep:syom"] # file transcription; raw-PCM streaming does not need it
+file-decode = ["dep:symphonia", "dep:ryf", "dep:opus-rs"] # file transcription; raw-PCM streaming does not need it
+# Opt-in AAC transport/profile expansion; see docs/aac-audit.md for measured costs.
+extended-aac = ["file-decode", "dep:syom"]
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = ["dep:gigastt-quantize"]
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
@@ -85,9 +87,9 @@ thiserror = "2"
 rustfft = "6"
 rubato = "5.0"
 # 0.6.1 fixes APEv2 size overflow and unknown-size WebM Cluster termination.
-# AAC / M4A (including HE-AAC and AAC-LD) is syom; symphonia keeps MP3,
-# Vorbis, FLAC, PCM/WAV, and Matroska/WebM demux.
-symphonia = { version = "0.6.1", features = ["mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
+# The default AAC/MP4 path stays on Symphonia. Keep these features even when
+# extended-aac is enabled: Matroska AAC and non-AAC MP4 still need them.
+symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
 # AAC-LC, HE-AAC, and AAC-LD from ADTS, M4A, LATM/LOAS, and bounded fMP4.
 # Zero runtime dependencies. rust-version 1.89, below the workspace MSRV.
 syom = { version = "0.7.1", optional = true }
@@ -151,6 +153,14 @@ criterion = "0.8"
 # Encoders for telephony fixtures (ryf is decode-only for G.711/G.722).
 # `default-features = false` drops the bundled Opus next to opus-rs.
 audio-codec = { version = "0.4", default-features = false }
+
+[[example]]
+name = "aac_probe"
+required-features = ["file-decode"]
+
+[[example]]
+name = "aac_asr_probe"
+required-features = ["file-decode"]
 
 [[example]]
 name = "quantize_file"

@@ -192,3 +192,14 @@ The Engine uses gigastt's CPU runtime for speaker inference. The historical
 public `SpeakerEncoder` alias still names polyvoice's extractor, so its tract
 feature remains for Rust source compatibility. Engine inference must not use
 that alias; removing the public dependency surface belongs in a major release.
+
+## AAC decoder changes
+
+Keep `extended-aac` opt-in until the same production-path comparison passes
+for both short and long inputs. The [AAC audit](aac-audit.md) records the
+initial regression, fixes, quality evidence and reproduction commands.
+`scripts/compare-aac-decoders.py` rejects missing/error measurements and a
+median paired latency increase above 5%; its threshold also applies to the
+optional decoder. Enabling a feature does not waive acceptance for standard
+builds. Manual CI exercises optional AAC correctness tests; it does not run
+this local paired codec comparison automatically.

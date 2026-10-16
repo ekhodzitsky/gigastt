@@ -1,4 +1,4 @@
-//! Container decode (WAVE via ryf, AAC via syom, other formats via symphonia),
+//! Container decode (WAVE via ryf, optional AAC via syom, other formats via symphonia),
 //! channel mix, and dual-mono detection.
 
 #[cfg(feature = "file-decode")]

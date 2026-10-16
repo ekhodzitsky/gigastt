@@ -22,7 +22,7 @@ use super::{
 #[cfg(feature = "file-decode")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChannelScan {
-    /// Channels the container declares.
+    /// Decoded channel count for AAC; container channel count for other formats.
     pub channels: usize,
     /// True only when there are exactly two and they are near-identical — a PBX
     /// that recorded the same mix to both. Transcribing those as two speakers
@@ -51,15 +51,16 @@ impl ChannelScan {
 /// file and correlating the two in full, which is what pinned it to a duration
 /// ceiling. Almost all of the answer is in the header: anything that is not
 /// exactly two channels falls back to the mono mix, and that needs no decode at
-/// all. Only the two-channel case has to look at the audio, and
+/// all (AAC checks its first decoded frame for implicit HE-AAC stereo). Only
+/// the two-channel case has to look at the remaining audio, and
 /// [`DualMonoDetector`] does that in one pass over six accumulators.
 ///
 /// The correlation is taken on the **16 kHz resampled** channels, on the same
 /// per-packet staging cadence the whole-buffer decode used, so it is the same
 /// statistic on the same numbers — the verdict does not move.
 ///
-/// OGG/Opus and stereo AAC are exceptions: the scan materializes their channels
-/// before correlation, retaining the whole-buffer decode ceiling.
+/// OGG/Opus materializes its channels before correlation. AAC scans resample
+/// incrementally and retain only correlation state, like the other streaming paths.
 #[cfg(feature = "file-decode")]
 pub fn scan_channels(data: Bytes, max_audio_secs: Option<f64>) -> Result<ChannelScan> {
     scan_channels_inner(data, max_audio_secs, false, None).map(|prepared| prepared.scan)
@@ -72,31 +73,12 @@ fn scan_channels_inner(
     abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<PreparedChannels> {
     check_decode_abort(abort)?;
-    if let Some(hint) = super::super::aac::header_channels(data.as_ref())? {
-        check_decode_abort(abort)?;
-        if hint.channels != 2 {
-            return Ok(PreparedChannels {
-                scan: ChannelScan {
-                    channels: hint.channels,
-                    dual_mono: false,
-                },
-                decoded: None,
-            });
-        }
-        let decoded =
-            decode_audio_bytes_shared_channels_bounded_with_abort(data, max_audio_secs, abort)?;
-        check_decode_abort(abort)?;
-        let scan = ChannelScan {
-            channels: decoded.len(),
-            dual_mono: is_dual_mono(&decoded),
-        };
-        check_decode_abort(abort)?;
-        let decoded = if retain_decoded && scan.mono_fallback_reason().is_none() {
-            Some(decoded)
-        } else {
-            None
-        };
-        return Ok(PreparedChannels { scan, decoded });
+    #[cfg(feature = "extended-aac")]
+    if let Some(scan) = super::super::aac::try_scan_bytes(data.clone(), max_audio_secs, abort)? {
+        return Ok(PreparedChannels {
+            scan,
+            decoded: None,
+        });
     }
     let source = BytesMediaSource::new(data.clone());
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
