@@ -109,7 +109,9 @@ dots. Native GEMM has `RAYON_NUM_THREADS=1`; adapter window workers remain 1.
 
 Word Levenshtein alignment uses lowercase alphanumeric tokens and normalizes
 `ё` to `е`. Punctuation events are anchored after their preceding word, including
-repeated marks and initial quotation marks. Substituted words can retain aligned
+repeated marks and initial quotation marks. The counted marks are
+`. , ! ? ; : — … « » " ( )`; hyphens and apostrophes are excluded from sentence
+punctuation scoring. Substituted words can retain aligned
 word-end punctuation; marks on deleted/inserted words count as unmatched.
 Capitalization events match at character offsets inside lexically equal aligned
 words. Missing, duplicate and unexpected hypotheses fail evaluation. This avoids
