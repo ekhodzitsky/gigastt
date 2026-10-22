@@ -1,0 +1,335 @@
+{
+  "onnx_asr": "0.12.0",
+  "ort": "1.30.0",
+  "method": "Identical bytes; FP32 decoder/joint aliased to .int8 filenames for oracle file discovery only. NumPy preprocessing; serial CPU; native greedy budget=10; upstream default=3 control. Diagnostic selection: 16 largest normalized E2E-versus-RNN-T crowd error gaps, not a representative cohort.",
+  "cases": [
+    {
+      "id": "golos_crowd_1k:38bf4f3c89e0507ee921a669fec12e9d.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/38bf4f3c89e0507ee921a669fec12e9d.wav",
+      "reference": "ноль триста восемь триста восемнадцать триста четыре шестьдесят девять",
+      "duration": 8.8231875,
+      "sha256": "794843001f614290c8aae476638d6fef999aa0f94add252d6cd7484f9aad3ae9"
+    },
+    {
+      "id": "golos_crowd_1k:85d03d0cbc8c24c9798498d58fca4dd6.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/85d03d0cbc8c24c9798498d58fca4dd6.wav",
+      "reference": "один два два три девять два восемь шесть три ноль",
+      "duration": 5.8975,
+      "sha256": "3c4c98ea33dee23f094cdb3ed1444c499ebb331f25c7503964151ac174d46097"
+    },
+    {
+      "id": "golos_crowd_1k:a660f244bc2e55685984398dd57fa7f8.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/a660f244bc2e55685984398dd57fa7f8.wav",
+      "reference": "ты можешь показать на смотрешке передачу фэшн ти ви четыре ка",
+      "duration": 4.72,
+      "sha256": "59311e48eea7efc4cf402df8c11cb1fd583213da7db39dcb7a8ba6880ce4c477"
+    },
+    {
+      "id": "golos_crowd_1k:1fde5bb67dfa702d2685ec3a71fc6290.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/1fde5bb67dfa702d2685ec3a71fc6290.wav",
+      "reference": "киношка окко смарт бокс на окко",
+      "duration": 6.570875,
+      "sha256": "ce2cb4da0f2eb35108f946d4d16a3408d4644f4193432d609eb2ec1703e6eb20"
+    },
+    {
+      "id": "golos_crowd_1k:4e77d8a2634c6f129cdad58e9f8431eb.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/4e77d8a2634c6f129cdad58e9f8431eb.wav",
+      "reference": "в ютьюбе включай зэ смокерс мэгазин о сигарах и табаке о чае и кофе",
+      "duration": 9.482,
+      "sha256": "0a8c410d5dd9f2e1da3778adde7b3bcac3533c0109642e871b3c71ea973b56aa"
+    },
+    {
+      "id": "golos_crowd_1k:5cd8cf78e1f435acdc008c41648584a6.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/5cd8cf78e1f435acdc008c41648584a6.wav",
+      "reference": "закажи пожалуйста пепси два с половиной литра",
+      "duration": 6.38,
+      "sha256": "5be83fc685931bf82f30a2d6acbb16c37f96c49ee4be561a46e171f686633cb2"
+    },
+    {
+      "id": "golos_crowd_1k:62eafce5f2f86932e9e21eb6baa453cd.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/62eafce5f2f86932e9e21eb6baa453cd.wav",
+      "reference": "пять семьсот шесть триста пятьдесят девять пятьдесят ноль шестьдесят три",
+      "duration": 9.02,
+      "sha256": "dc829d0a7eeedd4a288af0ef47122759c94d1b964087c5267ed5df973f1e9445"
+    },
+    {
+      "id": "golos_crowd_1k:9d901ea90dc0e685b88cea25a30f0895.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/9d901ea90dc0e685b88cea25a30f0895.wav",
+      "reference": "сколько стоит двадцать одна американских долларов перевести в гуарани курс тринадцатое июня двадцатый год",
+      "duration": 8.92,
+      "sha256": "b26bd84989d0a89d511814b18a0230bf8d071e0723c6345ae05d3fc6c8977a7c"
+    },
+    {
+      "id": "golos_crowd_1k:a790301a15650756451d359ecf48a4a0.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/a790301a15650756451d359ecf48a4a0.wav",
+      "reference": "покажи на смотрешке телеканал фэшн ти ви четыре ка",
+      "duration": 3.97,
+      "sha256": "0613cf84216326aae4e393f34b8e4185a4e643e4834ffcf2449a7c405ba5b51a"
+    },
+    {
+      "id": "golos_crowd_1k:af06a763d6f981b6095728fa49857c0c.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/af06a763d6f981b6095728fa49857c0c.wav",
+      "reference": "ты можешь показать энимал контэр страйк в ютюбе",
+      "duration": 4.048,
+      "sha256": "13222291d8f0d380158a8739a2acce12971ea20f60a49c6e8a91846bc88a8790"
+    },
+    {
+      "id": "golos_crowd_1k:af8a0583db553eb085f5681575c3278e.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/af8a0583db553eb085f5681575c3278e.wav",
+      "reference": "два девятьсот девяносто один девятьсот двадцать девять тридцать восемь девяносто ноль",
+      "duration": 10.72725,
+      "sha256": "4a4db89b27fbb9609b11152a8dec7fd447841b11c74fd8b2f6583760060e4179"
+    },
+    {
+      "id": "golos_crowd_1k:1b0c63bd2fb3e381016c1aa2beff8eee.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/1b0c63bd2fb3e381016c1aa2beff8eee.wav",
+      "reference": "инглиш клаб на смотрешке",
+      "duration": 1.73,
+      "sha256": "5917991a629731f448037bb2d87ffb5c342ec26af852ceeee3d35de7ce0e2026"
+    },
+    {
+      "id": "golos_crowd_1k:2e5b765fe39f77a0c0ff458085e3fc83.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/2e5b765fe39f77a0c0ff458085e3fc83.wav",
+      "reference": "тичинг менс фэшэн ютюб",
+      "duration": 2.706,
+      "sha256": "d3b741a585f2bc3716e7f3735160bb2eba7a1b344f0c73aa619a58b2c6e3d717"
+    },
+    {
+      "id": "golos_crowd_1k:3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+      "reference": "масло подсолнечное олейна один литр две штуки",
+      "duration": 6.12,
+      "sha256": "87193d82203cfa89ce609c3a3d3c544b32d4ca6e64a29c224056eef3378f7090"
+    },
+    {
+      "id": "golos_crowd_1k:53ac71eac4dab9630ff49249a709a789.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/53ac71eac4dab9630ff49249a709a789.wav",
+      "reference": "включай чем заняться мертвецу в денвере фулл эйч ди на окко",
+      "duration": 7.56,
+      "sha256": "72b4eec54c9131db3cee22b19d69355937b430835ec3e33239fef7085939343c"
+    },
+    {
+      "id": "golos_crowd_1k:53e1dc025489c85008c540bd07af0432.wav",
+      "dataset": "golos_crowd_1k",
+      "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/53e1dc025489c85008c540bd07af0432.wav",
+      "reference": "ультра эйч ди",
+      "duration": 2.39125,
+      "sha256": "4b61325cad9acd13b3d77994d67615649f401b327747e2c53511e65d34597e74"
+    }
+  ],
+  "outputs": {
+    "e2e_rnnt-budget-10": [
+      {
+        "id": "golos_crowd_1k:38bf4f3c89e0507ee921a669fec12e9d.wav",
+        "text": "Ноль, 308, 318, 304, 69"
+      },
+      {
+        "id": "golos_crowd_1k:85d03d0cbc8c24c9798498d58fca4dd6.wav",
+        "text": "1 2 39 286 3 0"
+      },
+      {
+        "id": "golos_crowd_1k:a660f244bc2e55685984398dd57fa7f8.wav",
+        "text": "Ты можешь показать на смотрёшках передачу Fashion TV четыре копейки."
+      },
+      {
+        "id": "golos_crowd_1k:1fde5bb67dfa702d2685ec3a71fc6290.wav",
+        "text": "Киношка Okko Смартбокс на Okko."
+      },
+      {
+        "id": "golos_crowd_1k:4e77d8a2634c6f129cdad58e9f8431eb.wav",
+        "text": "В YouTube включай The Smokers Magazine о сигарах и табаке, о чае и кофе."
+      },
+      {
+        "id": "golos_crowd_1k:5cd8cf78e1f435acdc008c41648584a6.wav",
+        "text": "Закажи, пожалуйста, Pepsi 2,5 л."
+      },
+      {
+        "id": "golos_crowd_1k:62eafce5f2f86932e9e21eb6baa453cd.wav",
+        "text": "5 706 359 5063"
+      },
+      {
+        "id": "golos_crowd_1k:9d901ea90dc0e685b88cea25a30f0895.wav",
+        "text": "Сколько стоит$21 перевести в гуарани, курс 13 июня 2020 года?"
+      },
+      {
+        "id": "golos_crowd_1k:a790301a15650756451d359ecf48a4a0.wav",
+        "text": "Покажи на смотрешке телеканал Fashion TV четыре копейки."
+      },
+      {
+        "id": "golos_crowd_1k:af06a763d6f981b6095728fa49857c0c.wav",
+        "text": "Ты можешь показать Animal Counter Strike в YouTube?"
+      },
+      {
+        "id": "golos_crowd_1k:af8a0583db553eb085f5681575c3278e.wav",
+        "text": "2 991 929 3890"
+      },
+      {
+        "id": "golos_crowd_1k:1b0c63bd2fb3e381016c1aa2beff8eee.wav",
+        "text": "English Club на смотрёшках."
+      },
+      {
+        "id": "golos_crowd_1k:2e5b765fe39f77a0c0ff458085e3fc83.wav",
+        "text": "Teaching Mells Fashion YouTube."
+      },
+      {
+        "id": "golos_crowd_1k:3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+        "text": "Масло подсолнечное Олейна, 1 л, 2 шт."
+      },
+      {
+        "id": "golos_crowd_1k:53ac71eac4dab9630ff49249a709a789.wav",
+        "text": "Включай чем заняться мертвецу в Денвере Full HD на Okko."
+      },
+      {
+        "id": "golos_crowd_1k:53e1dc025489c85008c540bd07af0432.wav",
+        "text": "Ultra HD"
+      }
+    ],
+    "e2e_rnnt-budget-3": [
+      {
+        "id": "golos_crowd_1k:38bf4f3c89e0507ee921a669fec12e9d.wav",
+        "text": "Ноль, 308, 318, 304, 69"
+      },
+      {
+        "id": "golos_crowd_1k:85d03d0cbc8c24c9798498d58fca4dd6.wav",
+        "text": "1 2 39 286 3 0"
+      },
+      {
+        "id": "golos_crowd_1k:a660f244bc2e55685984398dd57fa7f8.wav",
+        "text": "Ты можешь показать на смотрёшках передачу Fashion TV четыре копейки."
+      },
+      {
+        "id": "golos_crowd_1k:1fde5bb67dfa702d2685ec3a71fc6290.wav",
+        "text": "Киношка Okko Смартбокс на Okko."
+      },
+      {
+        "id": "golos_crowd_1k:4e77d8a2634c6f129cdad58e9f8431eb.wav",
+        "text": "В YouTube включай The Smokers Magazine о сигарах и табаке, о чае и кофе."
+      },
+      {
+        "id": "golos_crowd_1k:5cd8cf78e1f435acdc008c41648584a6.wav",
+        "text": "Закажи, пожалуйста, Pepsi 2,5 л."
+      },
+      {
+        "id": "golos_crowd_1k:62eafce5f2f86932e9e21eb6baa453cd.wav",
+        "text": "5 706 359 5063"
+      },
+      {
+        "id": "golos_crowd_1k:9d901ea90dc0e685b88cea25a30f0895.wav",
+        "text": "Сколько стоит$21 перевести в гуарани, курс 13 июня 2020 года?"
+      },
+      {
+        "id": "golos_crowd_1k:a790301a15650756451d359ecf48a4a0.wav",
+        "text": "Покажи на смотрешке телеканал Fashion TV четыре копейки."
+      },
+      {
+        "id": "golos_crowd_1k:af06a763d6f981b6095728fa49857c0c.wav",
+        "text": "Ты можешь показать Animal Counter Strike в YouTube?"
+      },
+      {
+        "id": "golos_crowd_1k:af8a0583db553eb085f5681575c3278e.wav",
+        "text": "2 991 929 3890"
+      },
+      {
+        "id": "golos_crowd_1k:1b0c63bd2fb3e381016c1aa2beff8eee.wav",
+        "text": "English Club на смотрёшках."
+      },
+      {
+        "id": "golos_crowd_1k:2e5b765fe39f77a0c0ff458085e3fc83.wav",
+        "text": "Teaching Mells Fashion YouTube."
+      },
+      {
+        "id": "golos_crowd_1k:3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+        "text": "Масло подсолнечное Олейна, 1 л, 2 шт."
+      },
+      {
+        "id": "golos_crowd_1k:53ac71eac4dab9630ff49249a709a789.wav",
+        "text": "Включай чем заняться мертвецу в Денвере Full HD на Okko."
+      },
+      {
+        "id": "golos_crowd_1k:53e1dc025489c85008c540bd07af0432.wav",
+        "text": "Ultra HD"
+      }
+    ],
+    "v3_e2e_ctc-budget-None": [
+      {
+        "id": "golos_crowd_1k:38bf4f3c89e0507ee921a669fec12e9d.wav",
+        "text": "0 308 318 304 69"
+      },
+      {
+        "id": "golos_crowd_1k:85d03d0cbc8c24c9798498d58fca4dd6.wav",
+        "text": "1 22 39 2 8630"
+      },
+      {
+        "id": "golos_crowd_1k:a660f244bc2e55685984398dd57fa7f8.wav",
+        "text": "Ты можешь показать на смотрёшках передачу Fashion TV? 4 копейки."
+      },
+      {
+        "id": "golos_crowd_1k:1fde5bb67dfa702d2685ec3a71fc6290.wav",
+        "text": "Киношка Okko, Смартбокс на Okko."
+      },
+      {
+        "id": "golos_crowd_1k:4e77d8a2634c6f129cdad58e9f8431eb.wav",
+        "text": "В YouTube включай The Smokers Magazine о сигарах и табаке, о чае и кофе."
+      },
+      {
+        "id": "golos_crowd_1k:5cd8cf78e1f435acdc008c41648584a6.wav",
+        "text": "Закажи, пожалуйста, Pepsi, 2,5 л."
+      },
+      {
+        "id": "golos_crowd_1k:62eafce5f2f86932e9e21eb6baa453cd.wav",
+        "text": "5 706 359 050063"
+      },
+      {
+        "id": "golos_crowd_1k:9d901ea90dc0e685b88cea25a30f0895.wav",
+        "text": "Сколько стоит$21 перевести в гуарани, курс 13 июня 2020 года?"
+      },
+      {
+        "id": "golos_crowd_1k:a790301a15650756451d359ecf48a4a0.wav",
+        "text": "Покажи на смотрёшке телеканал Fashion TV четыре копейки."
+      },
+      {
+        "id": "golos_crowd_1k:af06a763d6f981b6095728fa49857c0c.wav",
+        "text": "Ты можешь показать Animal Counter Strike в YouTube?"
+      },
+      {
+        "id": "golos_crowd_1k:af8a0583db553eb085f5681575c3278e.wav",
+        "text": "2 991 929 038 90"
+      },
+      {
+        "id": "golos_crowd_1k:1b0c63bd2fb3e381016c1aa2beff8eee.wav",
+        "text": "English Club на смотрёшках."
+      },
+      {
+        "id": "golos_crowd_1k:2e5b765fe39f77a0c0ff458085e3fc83.wav",
+        "text": "Tiaching Mels Fashion YouTube."
+      },
+      {
+        "id": "golos_crowd_1k:3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+        "text": "Масло подсолнечное«Лейна», 1 л, 2 шт."
+      },
+      {
+        "id": "golos_crowd_1k:53ac71eac4dab9630ff49249a709a789.wav",
+        "text": "Включай«Чем заняться мертвецу в Денвере» Full HD на Okko."
+      },
+      {
+        "id": "golos_crowd_1k:53e1dc025489c85008c540bd07af0432.wav",
+        "text": "Ultra HD"
+      }
+    ]
+  }
+}

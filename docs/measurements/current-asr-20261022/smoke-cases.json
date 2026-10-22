@@ -1,0 +1,74 @@
+[
+  {
+    "id": "fleurs_ru_punct:10000611681338527501.wav",
+    "dataset": "fleurs_ru_punct",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/fleurs_ru/10000611681338527501.wav",
+    "reference": "В древнем Китае использовали уникальный способ обозначения периодов времени; каждый этап Китая или каждая семья, находившаяся у власти, были особой династией.",
+    "duration": 16.92,
+    "sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4"
+  },
+  {
+    "id": "fleurs_ru_punct:10002861505982796062.wav",
+    "dataset": "fleurs_ru_punct",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/fleurs_ru/10002861505982796062.wav",
+    "reference": "Мадагаскар намного больше других и  является самобытным континентом в том, что касается дикой природы.",
+    "duration": 11.52,
+    "sha256": "81673ad2f0eb6a463e13fd9d5a442d1469e745f9a67565a3b9d20fbff395599a"
+  },
+  {
+    "id": "fleurs_ru_punct:10008070632189747443.wav",
+    "dataset": "fleurs_ru_punct",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/fleurs_ru/10008070632189747443.wav",
+    "reference": "Во всех научных вопросах, включая психологию, были приняты взгляды Аристотеля.",
+    "duration": 8.64,
+    "sha256": "78e9c886fbfc247dc7743f9dc7473006b7a50b9401f1db9af16926cf9dae0d04"
+  },
+  {
+    "id": "golos_crowd_1k:e8469687438d14833b7b282a1a0192e7.wav",
+    "dataset": "golos_crowd_1k",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/e8469687438d14833b7b282a1a0192e7.wav",
+    "reference": "мидлсбро",
+    "duration": 2.3,
+    "sha256": "ebf9fd640237e296f28fe27aa584e3c022b4f60a6694a15fd09b7ee45aa2c69a"
+  },
+  {
+    "id": "golos_crowd_1k:ebce154f9d0c19abe06bf18d0b521e76.wav",
+    "dataset": "golos_crowd_1k",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/ebce154f9d0c19abe06bf18d0b521e76.wav",
+    "reference": "посоветуй мне сериал отчаянные домохозяйки",
+    "duration": 4.2953125,
+    "sha256": "213cdd0d0907c30425248098a659e734369fc1fd9d60d8c03f7601eaa88f90ee"
+  },
+  {
+    "id": "golos_crowd_1k:8b614e680adac55fc31b145ba662598d.wav",
+    "dataset": "golos_crowd_1k",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_wav/8b614e680adac55fc31b145ba662598d.wav",
+    "reference": "сбер здравствуйте я забыл пароль защиты карты",
+    "duration": 4.55775,
+    "sha256": "c30e79adc06c6b8f5f8bafd45e559cbcaac60713db304daf50f9163760720c91"
+  },
+  {
+    "id": "golos_farfield:f3b8e7750060342614c1cdc70e272816.wav",
+    "dataset": "golos_farfield",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_farfield_wav/f3b8e7750060342614c1cdc70e272816.wav",
+    "reference": "сбер как работает телефон",
+    "duration": 2.4173125,
+    "sha256": "967ced08e6179833c472024687c33391e319fbafa4147729018593d9d5dca50d"
+  },
+  {
+    "id": "golos_farfield:1bac7fb54697703e786ca377da6c5d83.wav",
+    "dataset": "golos_farfield",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_farfield_wav/1bac7fb54697703e786ca377da6c5d83.wav",
+    "reference": "сбер стоп",
+    "duration": 1.3241875,
+    "sha256": "ea2c47e9995ef0de6f223991da49755a0c4ccbf677f698ae758a1285b0751b8d"
+  },
+  {
+    "id": "golos_farfield:257a891f3c5ff62c00335d4f0325914e.wav",
+    "dataset": "golos_farfield",
+    "audio": "/home/ekhodzitsky/.gigastt/benchmarks/golos_farfield_wav/257a891f3c5ff62c00335d4f0325914e.wav",
+    "reference": "джой громче",
+    "duration": 1.5470625,
+    "sha256": "9166ee06057bc8782c35c05e3f40b2c110d1b6d73d92fba8569b6d040de7a62a"
+  }
+]

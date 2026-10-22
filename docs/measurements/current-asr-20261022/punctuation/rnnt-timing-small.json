@@ -1,0 +1,1988 @@
+{
+  "active": {
+    "peak_rss_kib": 53476,
+    "rss_kib": 53476,
+    "threads": 2
+  },
+  "backend": "native",
+  "before": {
+    "peak_rss_kib": 10752,
+    "rss_kib": 10752,
+    "threads": 1
+  },
+  "concurrency": 1,
+  "finished": {
+    "peak_rss_kib": 53300,
+    "rss_kib": 28412,
+    "threads": 2
+  },
+  "load_seconds": 0.034139166,
+  "loaded": {
+    "peak_rss_kib": 30220,
+    "rss_kib": 29752,
+    "threads": 1
+  },
+  "mode": "timing",
+  "rows": [
+    {
+      "first_seconds": 0.004443741,
+      "id": "fleurs_ru_punct:18363036360322471934.wav",
+      "output": "Важно различать глаголы и дополнения.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001304606
+          ],
+          "wall_seconds": 0.001374076
+        },
+        {
+          "request_seconds": [
+            0.001057853
+          ],
+          "wall_seconds": 0.001080736
+        },
+        {
+          "request_seconds": [
+            0.001033517
+          ],
+          "wall_seconds": 0.001049438
+        },
+        {
+          "request_seconds": [
+            0.001052724
+          ],
+          "wall_seconds": 0.00106645
+        },
+        {
+          "request_seconds": [
+            0.001036052
+          ],
+          "wall_seconds": 0.001047394
+        },
+        {
+          "request_seconds": [
+            0.00102981
+          ],
+          "wall_seconds": 0.001043206
+        },
+        {
+          "request_seconds": [
+            0.001048816
+          ],
+          "wall_seconds": 0.001077851
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001423639,
+      "id": "fleurs_ru_punct:2535619911625676737.wav",
+      "output": "Она, тоньше под лунными морями и толще поднагорьями.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.00145622
+          ],
+          "wall_seconds": 0.001468713
+        },
+        {
+          "request_seconds": [
+            0.001384165
+          ],
+          "wall_seconds": 0.001399494
+        },
+        {
+          "request_seconds": [
+            0.001435972
+          ],
+          "wall_seconds": 0.00145597
+        },
+        {
+          "request_seconds": [
+            0.001393924
+          ],
+          "wall_seconds": 0.001409874
+        },
+        {
+          "request_seconds": [
+            0.001379356
+          ],
+          "wall_seconds": 0.00139241
+        },
+        {
+          "request_seconds": [
+            0.00137614
+          ],
+          "wall_seconds": 0.001388233
+        },
+        {
+          "request_seconds": [
+            0.001403821
+          ],
+          "wall_seconds": 0.001423659
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001796278,
+      "id": "fleurs_ru_punct:10981727002898332181.wav",
+      "output": "Вопервых большинство наездников носят сапоги для верховой езды с каблуком, имеющие гладкую и довольно тонкую подошву.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001729212
+          ],
+          "wall_seconds": 0.00174401
+        },
+        {
+          "request_seconds": [
+            0.001720696
+          ],
+          "wall_seconds": 0.001741996
+        },
+        {
+          "request_seconds": [
+            0.001692033
+          ],
+          "wall_seconds": 0.001705107
+        },
+        {
+          "request_seconds": [
+            0.001693355
+          ],
+          "wall_seconds": 0.001707181
+        },
+        {
+          "request_seconds": [
+            0.00168564
+          ],
+          "wall_seconds": 0.001699626
+        },
+        {
+          "request_seconds": [
+            0.001691421
+          ],
+          "wall_seconds": 0.001704545
+        },
+        {
+          "request_seconds": [
+            0.001712912
+          ],
+          "wall_seconds": 0.001725766
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.0016481,
+      "id": "fleurs_ru_punct:6376400483343360134.wav",
+      "output": "В них обычно предлагается особая еда, напитки и развлечения, чтобы гости оставались в хорошем настроении и не покидали заведение.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.00162662
+          ],
+          "wall_seconds": 0.001638522
+        },
+        {
+          "request_seconds": [
+            0.001628222
+          ],
+          "wall_seconds": 0.001643551
+        },
+        {
+          "request_seconds": [
+            0.001617953
+          ],
+          "wall_seconds": 0.001629575
+        },
+        {
+          "request_seconds": [
+            0.001616531
+          ],
+          "wall_seconds": 0.001630156
+        },
+        {
+          "request_seconds": [
+            0.001628873
+          ],
+          "wall_seconds": 0.00164308
+        },
+        {
+          "request_seconds": [
+            0.001635056
+          ],
+          "wall_seconds": 0.00164811
+        },
+        {
+          "request_seconds": [
+            0.001642018
+          ],
+          "wall_seconds": 0.00166434
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001919168,
+      "id": "fleurs_ru_punct:14814168892867377907.wav",
+      "output": "Он является 1 из главных достопримечательностей Южной Африки и считается ведущим среди южноафриканских национальных парков Санпаркс.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001778284
+          ],
+          "wall_seconds": 0.001818719
+        },
+        {
+          "request_seconds": [
+            0.001692403
+          ],
+          "wall_seconds": 0.001724102
+        },
+        {
+          "request_seconds": [
+            0.00165361
+          ],
+          "wall_seconds": 0.00168538
+        },
+        {
+          "request_seconds": [
+            0.00164807
+          ],
+          "wall_seconds": 0.00166404
+        },
+        {
+          "request_seconds": [
+            0.00163222
+          ],
+          "wall_seconds": 0.001652037
+        },
+        {
+          "request_seconds": [
+            0.001624676
+          ],
+          "wall_seconds": 0.001639053
+        },
+        {
+          "request_seconds": [
+            0.001626138
+          ],
+          "wall_seconds": 0.001639423
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001900663,
+      "id": "fleurs_ru_punct:3867413265291599525.wav",
+      "output": "Путешественникам настоятельно рекомендуется принимать во внимание любые риски, связанные с суровой погодой в их районе, поскольку они могут повлиять на любые планы поездки.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001840591
+          ],
+          "wall_seconds": 0.001852212
+        },
+        {
+          "request_seconds": [
+            0.001840481
+          ],
+          "wall_seconds": 0.001854307
+        },
+        {
+          "request_seconds": [
+            0.001835752
+          ],
+          "wall_seconds": 0.001848186
+        },
+        {
+          "request_seconds": [
+            0.001835161
+          ],
+          "wall_seconds": 0.001850039
+        },
+        {
+          "request_seconds": [
+            0.001846572
+          ],
+          "wall_seconds": 0.001857943
+        },
+        {
+          "request_seconds": [
+            0.001851321
+          ],
+          "wall_seconds": 0.001866709
+        },
+        {
+          "request_seconds": [
+            0.00191984
+          ],
+          "wall_seconds": 0.001940999
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001502096,
+      "id": "fleurs_ru_punct:847319919963451248.wav",
+      "output": "Цивилизация — это отдельная культура, носителями которой является достаточно большая группа людей, живущих и работающих вместе обществ.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001420213
+          ],
+          "wall_seconds": 0.001435491
+        },
+        {
+          "request_seconds": [
+            0.001421014
+          ],
+          "wall_seconds": 0.001434339
+        },
+        {
+          "request_seconds": [
+            0.001416275
+          ],
+          "wall_seconds": 0.001428779
+        },
+        {
+          "request_seconds": [
+            0.001428919
+          ],
+          "wall_seconds": 0.001441953
+        },
+        {
+          "request_seconds": [
+            0.001416295
+          ],
+          "wall_seconds": 0.00142982
+        },
+        {
+          "request_seconds": [
+            0.001421816
+          ],
+          "wall_seconds": 0.001434209
+        },
+        {
+          "request_seconds": [
+            0.001411537
+          ],
+          "wall_seconds": 0.001423258
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.00193587,
+      "id": "fleurs_ru_punct:17134246977828656746.wav",
+      "output": "Официальными языками барселоны являются каталанский и испанский. Примерно половина населения предпочитает разговаривать на каталанском. Большинство понимают его и практически все знают испанский.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001901034
+          ],
+          "wall_seconds": 0.001914199
+        },
+        {
+          "request_seconds": [
+            0.001902968
+          ],
+          "wall_seconds": 0.001916102
+        },
+        {
+          "request_seconds": [
+            0.001892247
+          ],
+          "wall_seconds": 0.001903759
+        },
+        {
+          "request_seconds": [
+            0.001894282
+          ],
+          "wall_seconds": 0.001907717
+        },
+        {
+          "request_seconds": [
+            0.001889543
+          ],
+          "wall_seconds": 0.001900944
+        },
+        {
+          "request_seconds": [
+            0.001887539
+          ],
+          "wall_seconds": 0.00189903
+        },
+        {
+          "request_seconds": [
+            0.001899822
+          ],
+          "wall_seconds": 0.001912005
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.003033196,
+      "id": "fleurs_ru_punct:7967174134639302471.wav",
+      "output": "Аналогичным образом, если у вас есть шенгенская виза, вам не нужно подавать заявление на получение визы в каждой из странучастниц Шенгенского соглашения отдельно, что позволит вам сэкономить время и деньги, а также избежать бумажной волокиты.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.002789961
+          ],
+          "wall_seconds": 0.002812573
+        },
+        {
+          "request_seconds": [
+            0.002767658
+          ],
+          "wall_seconds": 0.002783628
+        },
+        {
+          "request_seconds": [
+            0.002753693
+          ],
+          "wall_seconds": 0.002767659
+        },
+        {
+          "request_seconds": [
+            0.00274676
+          ],
+          "wall_seconds": 0.002759093
+        },
+        {
+          "request_seconds": [
+            0.002750397
+          ],
+          "wall_seconds": 0.002763171
+        },
+        {
+          "request_seconds": [
+            0.002781685
+          ],
+          "wall_seconds": 0.002802775
+        },
+        {
+          "request_seconds": [
+            0.002741741
+          ],
+          "wall_seconds": 0.002753964
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.003678376,
+      "id": "fleurs_ru_punct:10388523902227354213.wav",
+      "output": "Начиная с 1980 восьмого года урны для избирательных бюллетеней должны быть прозрачными, чтобы избиратели и наблюдатели могли убедиться в том, что в начале голосования внутри нет конвертов и что к ним не добавлены какие либо другие конверты, кроме конвертов, тех людей, которых допустили к участию в голосовании и голоса которых подсчитали надлежащим образом.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.003696671
+          ],
+          "wall_seconds": 0.003743909
+        },
+        {
+          "request_seconds": [
+            0.003577468
+          ],
+          "wall_seconds": 0.003607273
+        },
+        {
+          "request_seconds": [
+            0.003578138
+          ],
+          "wall_seconds": 0.003594679
+        },
+        {
+          "request_seconds": [
+            0.003522094
+          ],
+          "wall_seconds": 0.003542401
+        },
+        {
+          "request_seconds": [
+            0.003534186
+          ],
+          "wall_seconds": 0.003555907
+        },
+        {
+          "request_seconds": [
+            0.003503439
+          ],
+          "wall_seconds": 0.003516122
+        },
+        {
+          "request_seconds": [
+            0.003544215
+          ],
+          "wall_seconds": 0.003565805
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.000879189,
+      "id": "golos_crowd_1k:ea6895153d9122be9138541f00d80366.wav",
+      "output": "Запусти боевик.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.000855494
+          ],
+          "wall_seconds": 0.000867586
+        },
+        {
+          "request_seconds": [
+            0.000870061
+          ],
+          "wall_seconds": 0.000883997
+        },
+        {
+          "request_seconds": [
+            0.000889758
+          ],
+          "wall_seconds": 0.000901219
+        },
+        {
+          "request_seconds": [
+            0.000870773
+          ],
+          "wall_seconds": 0.000881543
+        },
+        {
+          "request_seconds": [
+            0.000879479
+          ],
+          "wall_seconds": 0.000891011
+        },
+        {
+          "request_seconds": [
+            0.000867026
+          ],
+          "wall_seconds": 0.000896952
+        },
+        {
+          "request_seconds": [
+            0.00095977
+          ],
+          "wall_seconds": 0.000977733
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001206993,
+      "id": "golos_crowd_1k:0ca9581708b15f3bdcb37491dd6dda4b.wav",
+      "output": "Поищи. ТВ, Центр на смотрешке.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001180012
+          ],
+          "wall_seconds": 0.00119984
+        },
+        {
+          "request_seconds": [
+            0.001154955
+          ],
+          "wall_seconds": 0.001167589
+        },
+        {
+          "request_seconds": [
+            0.00115171
+          ],
+          "wall_seconds": 0.001164484
+        },
+        {
+          "request_seconds": [
+            0.001160396
+          ],
+          "wall_seconds": 0.001178439
+        },
+        {
+          "request_seconds": [
+            0.00114707
+          ],
+          "wall_seconds": 0.001160425
+        },
+        {
+          "request_seconds": [
+            0.001151318
+          ],
+          "wall_seconds": 0.00116308
+        },
+        {
+          "request_seconds": [
+            0.001152601
+          ],
+          "wall_seconds": 0.001166767
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.000891342,
+      "id": "golos_crowd_1k:c93a45feb8abd98955c7aaf5f77c8a5e.wav",
+      "output": "Ассистент Закажи сыр.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.000889227
+          ],
+          "wall_seconds": 0.000904316
+        },
+        {
+          "request_seconds": [
+            0.000889959
+          ],
+          "wall_seconds": 0.000902442
+        },
+        {
+          "request_seconds": [
+            0.000894167
+          ],
+          "wall_seconds": 0.000909155
+        },
+        {
+          "request_seconds": [
+            0.000888616
+          ],
+          "wall_seconds": 0.000900699
+        },
+        {
+          "request_seconds": [
+            0.000887063
+          ],
+          "wall_seconds": 0.000899526
+        },
+        {
+          "request_seconds": [
+            0.000886903
+          ],
+          "wall_seconds": 0.000898695
+        },
+        {
+          "request_seconds": [
+            0.000908253
+          ],
+          "wall_seconds": 0.000920486
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001158632,
+      "id": "golos_crowd_1k:d8df61573109a8e43b1a42b662e08359.wav",
+      "output": "Купить швейцарские франки в Норвегии почем.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001149415
+          ],
+          "wall_seconds": 0.001161207
+        },
+        {
+          "request_seconds": [
+            0.001160105
+          ],
+          "wall_seconds": 0.001173791
+        },
+        {
+          "request_seconds": [
+            0.001153803
+          ],
+          "wall_seconds": 0.001166327
+        },
+        {
+          "request_seconds": [
+            0.001155436
+          ],
+          "wall_seconds": 0.001174963
+        },
+        {
+          "request_seconds": [
+            0.001145958
+          ],
+          "wall_seconds": 0.001163321
+        },
+        {
+          "request_seconds": [
+            0.001159323
+          ],
+          "wall_seconds": 0.001172168
+        },
+        {
+          "request_seconds": [
+            0.001148633
+          ],
+          "wall_seconds": 0.001160596
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001015193,
+      "id": "golos_crowd_1k:470c1f86207a140733c8c2c159be44dd.wav",
+      "output": "Можешь показать научную фантастику.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001009583
+          ],
+          "wall_seconds": 0.001022427
+        },
+        {
+          "request_seconds": [
+            0.001010655
+          ],
+          "wall_seconds": 0.001022918
+        },
+        {
+          "request_seconds": [
+            0.001033538
+          ],
+          "wall_seconds": 0.001045981
+        },
+        {
+          "request_seconds": [
+            0.001057422
+          ],
+          "wall_seconds": 0.001092389
+        },
+        {
+          "request_seconds": [
+            0.001011185
+          ],
+          "wall_seconds": 0.00102449
+        },
+        {
+          "request_seconds": [
+            0.001011827
+          ],
+          "wall_seconds": 0.00102401
+        },
+        {
+          "request_seconds": [
+            0.001031353
+          ],
+          "wall_seconds": 0.00105594
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001097036,
+      "id": "golos_crowd_1k:caf17582f0261025bbbab8006529c21d.wav",
+      "output": "А поставь мне фильм Гильчетай.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001081358
+          ],
+          "wall_seconds": 0.001092448
+        },
+        {
+          "request_seconds": [
+            0.001103218
+          ],
+          "wall_seconds": 0.001123998
+        },
+        {
+          "request_seconds": [
+            0.001076218
+          ],
+          "wall_seconds": 0.001087659
+        },
+        {
+          "request_seconds": [
+            0.001083141
+          ],
+          "wall_seconds": 0.001095424
+        },
+        {
+          "request_seconds": [
+            0.001076458
+          ],
+          "wall_seconds": 0.001087538
+        },
+        {
+          "request_seconds": [
+            0.001083402
+          ],
+          "wall_seconds": 0.001101035
+        },
+        {
+          "request_seconds": [
+            0.001078041
+          ],
+          "wall_seconds": 0.001088962
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001058495,
+      "id": "golos_crowd_1k:875fbf709e45278189183d18248ee1f6.wav",
+      "output": "Афина, Сбер мне, Джой нужна!",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001060449
+          ],
+          "wall_seconds": 0.001072451
+        },
+        {
+          "request_seconds": [
+            0.001059847
+          ],
+          "wall_seconds": 0.001071008
+        },
+        {
+          "request_seconds": [
+            0.001058876
+          ],
+          "wall_seconds": 0.001070297
+        },
+        {
+          "request_seconds": [
+            0.001070367
+          ],
+          "wall_seconds": 0.001082179
+        },
+        {
+          "request_seconds": [
+            0.001059596
+          ],
+          "wall_seconds": 0.001074144
+        },
+        {
+          "request_seconds": [
+            0.001055649
+          ],
+          "wall_seconds": 0.001067551
+        },
+        {
+          "request_seconds": [
+            0.001053866
+          ],
+          "wall_seconds": 0.001064877
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001159113,
+      "id": "golos_crowd_1k:6c45ef1f0e91ec3863caedd9bcc9c6f3.wav",
+      "output": "Салют, Какие координаты у план Астраханского Кремля?",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001193477
+          ],
+          "wall_seconds": 0.001204899
+        },
+        {
+          "request_seconds": [
+            0.001156959
+          ],
+          "wall_seconds": 0.00116824
+        },
+        {
+          "request_seconds": [
+            0.001149054
+          ],
+          "wall_seconds": 0.001159453
+        },
+        {
+          "request_seconds": [
+            0.001152531
+          ],
+          "wall_seconds": 0.001163882
+        },
+        {
+          "request_seconds": [
+            0.001159163
+          ],
+          "wall_seconds": 0.001168982
+        },
+        {
+          "request_seconds": [
+            0.001158893
+          ],
+          "wall_seconds": 0.001171165
+        },
+        {
+          "request_seconds": [
+            0.001288566
+          ],
+          "wall_seconds": 0.001307581
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001388103,
+      "id": "golos_crowd_1k:63515f2484f132e6aa688ec704edbc3c.wav",
+      "output": "Скилл, съедобное несъедобное на английском сыграть в.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001370449
+          ],
+          "wall_seconds": 0.001389535
+        },
+        {
+          "request_seconds": [
+            0.001358236
+          ],
+          "wall_seconds": 0.001370098
+        },
+        {
+          "request_seconds": [
+            0.00134985
+          ],
+          "wall_seconds": 0.001362104
+        },
+        {
+          "request_seconds": [
+            0.001355581
+          ],
+          "wall_seconds": 0.001368626
+        },
+        {
+          "request_seconds": [
+            0.001366843
+          ],
+          "wall_seconds": 0.001386339
+        },
+        {
+          "request_seconds": [
+            0.001347135
+          ],
+          "wall_seconds": 0.00136013
+        },
+        {
+          "request_seconds": [
+            0.001351344
+          ],
+          "wall_seconds": 0.00137095
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001367494,
+      "id": "golos_crowd_1k:705e2c2553317dafb96db326e65b24e8.wav",
+      "output": "Положи деньги на номер мобильного счета плюс 79193358931.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001356704
+          ],
+          "wall_seconds": 0.001373375
+        },
+        {
+          "request_seconds": [
+            0.001352485
+          ],
+          "wall_seconds": 0.001364318
+        },
+        {
+          "request_seconds": [
+            0.001345974
+          ],
+          "wall_seconds": 0.001358207
+        },
+        {
+          "request_seconds": [
+            0.001351724
+          ],
+          "wall_seconds": 0.001364018
+        },
+        {
+          "request_seconds": [
+            0.001345863
+          ],
+          "wall_seconds": 0.001357154
+        },
+        {
+          "request_seconds": [
+            0.001347086
+          ],
+          "wall_seconds": 0.001360441
+        },
+        {
+          "request_seconds": [
+            0.001354059
+          ],
+          "wall_seconds": 0.001367424
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.000815629,
+      "id": "golos_farfield:3415000e91b1c22d145b7d4f83810334.wav",
+      "output": "Салют, Стоп.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.000827061
+          ],
+          "wall_seconds": 0.000839534
+        },
+        {
+          "request_seconds": [
+            0.000822622
+          ],
+          "wall_seconds": 0.000834745
+        },
+        {
+          "request_seconds": [
+            0.000839844
+          ],
+          "wall_seconds": 0.000852108
+        },
+        {
+          "request_seconds": [
+            0.00082123
+          ],
+          "wall_seconds": 0.000832842
+        },
+        {
+          "request_seconds": [
+            0.000822332
+          ],
+          "wall_seconds": 0.000847749
+        },
+        {
+          "request_seconds": [
+            0.000818995
+          ],
+          "wall_seconds": 0.000830717
+        },
+        {
+          "request_seconds": [
+            0.000836188
+          ],
+          "wall_seconds": 0.000850755
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.000912892,
+      "id": "golos_farfield:6ee3225342cc827fa0b425c67ae494ca.wav",
+      "output": "Сбер остановить!",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.000858921
+          ],
+          "wall_seconds": 0.000873448
+        },
+        {
+          "request_seconds": [
+            0.000839514
+          ],
+          "wall_seconds": 0.000858129
+        },
+        {
+          "request_seconds": [
+            0.000834264
+          ],
+          "wall_seconds": 0.000855013
+        },
+        {
+          "request_seconds": [
+            0.000820298
+          ],
+          "wall_seconds": 0.000832371
+        },
+        {
+          "request_seconds": [
+            0.000820789
+          ],
+          "wall_seconds": 0.000831299
+        },
+        {
+          "request_seconds": [
+            0.000829355
+          ],
+          "wall_seconds": 0.000841809
+        },
+        {
+          "request_seconds": [
+            0.000823254
+          ],
+          "wall_seconds": 0.000834294
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.000881092,
+      "id": "golos_farfield:caa85f3bdd7286e51418f6cf24b75b8f.wav",
+      "output": "Салют надоел мне!",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.00089601
+          ],
+          "wall_seconds": 0.000907361
+        },
+        {
+          "request_seconds": [
+            0.000895529
+          ],
+          "wall_seconds": 0.000907952
+        },
+        {
+          "request_seconds": [
+            0.000889859
+          ],
+          "wall_seconds": 0.000901691
+        },
+        {
+          "request_seconds": [
+            0.00088519
+          ],
+          "wall_seconds": 0.000896361
+        },
+        {
+          "request_seconds": [
+            0.000886432
+          ],
+          "wall_seconds": 0.000896882
+        },
+        {
+          "request_seconds": [
+            0.000888375
+          ],
+          "wall_seconds": 0.000899186
+        },
+        {
+          "request_seconds": [
+            0.000887203
+          ],
+          "wall_seconds": 0.000897543
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001062442,
+      "id": "golos_farfield:41f4521fcc3bab9cc89b18e911837746.wav",
+      "output": "Афина, набери Володю.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001057012
+          ],
+          "wall_seconds": 0.001067642
+        },
+        {
+          "request_seconds": [
+            0.001057393
+          ],
+          "wall_seconds": 0.001068463
+        },
+        {
+          "request_seconds": [
+            0.001061089
+          ],
+          "wall_seconds": 0.001073202
+        },
+        {
+          "request_seconds": [
+            0.001064857
+          ],
+          "wall_seconds": 0.00107724
+        },
+        {
+          "request_seconds": [
+            0.001056901
+          ],
+          "wall_seconds": 0.001067662
+        },
+        {
+          "request_seconds": [
+            0.001074695
+          ],
+          "wall_seconds": 0.00108804
+        },
+        {
+          "request_seconds": [
+            0.001053976
+          ],
+          "wall_seconds": 0.001065558
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.000886161,
+      "id": "golos_farfield:a20600f2b7177b2f0d4068b8c371aea1.wav",
+      "output": "Сбер, Как делать печенье?",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.000884639
+          ],
+          "wall_seconds": 0.000895649
+        },
+        {
+          "request_seconds": [
+            0.000920015
+          ],
+          "wall_seconds": 0.000940203
+        },
+        {
+          "request_seconds": [
+            0.000886522
+          ],
+          "wall_seconds": 0.000898764
+        },
+        {
+          "request_seconds": [
+            0.000891441
+          ],
+          "wall_seconds": 0.000909044
+        },
+        {
+          "request_seconds": [
+            0.000888876
+          ],
+          "wall_seconds": 0.000900799
+        },
+        {
+          "request_seconds": [
+            0.000895619
+          ],
+          "wall_seconds": 0.000907622
+        },
+        {
+          "request_seconds": [
+            0.000906861
+          ],
+          "wall_seconds": 0.000920034
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001388964,
+      "id": "golos_farfield:74b8356af7c8342141d3cb9f2e8e5878.wav",
+      "output": "Сбер. Найди мне фильм с Леонардо Ди Каприо.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001342086
+          ],
+          "wall_seconds": 0.001369087
+        },
+        {
+          "request_seconds": [
+            0.001303904
+          ],
+          "wall_seconds": 0.001316278
+        },
+        {
+          "request_seconds": [
+            0.001303403
+          ],
+          "wall_seconds": 0.001315817
+        },
+        {
+          "request_seconds": [
+            0.001298265
+          ],
+          "wall_seconds": 0.001310016
+        },
+        {
+          "request_seconds": [
+            0.001301611
+          ],
+          "wall_seconds": 0.001319484
+        },
+        {
+          "request_seconds": [
+            0.001297924
+          ],
+          "wall_seconds": 0.001310427
+        },
+        {
+          "request_seconds": [
+            0.001318562
+          ],
+          "wall_seconds": 0.001330945
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001061491,
+      "id": "golos_farfield:a507d80a59f7536f80225ef84a4e5851.wav",
+      "output": "Афина, как стать Русалкой?",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001070296
+          ],
+          "wall_seconds": 0.001091726
+        },
+        {
+          "request_seconds": [
+            0.001058514
+          ],
+          "wall_seconds": 0.001069976
+        },
+        {
+          "request_seconds": [
+            0.001060378
+          ],
+          "wall_seconds": 0.001072791
+        },
+        {
+          "request_seconds": [
+            0.001059557
+          ],
+          "wall_seconds": 0.001071158
+        },
+        {
+          "request_seconds": [
+            0.001066369
+          ],
+          "wall_seconds": 0.001076879
+        },
+        {
+          "request_seconds": [
+            0.001058214
+          ],
+          "wall_seconds": 0.001070086
+        },
+        {
+          "request_seconds": [
+            0.001056972
+          ],
+          "wall_seconds": 0.001068122
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001136781,
+      "id": "golos_farfield:ac4c44758d3a2a56dccf7bee86c44790.wav",
+      "output": "Салют, какая валюта пользуется в городе Вашингтон.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001113167
+          ],
+          "wall_seconds": 0.001124439
+        },
+        {
+          "request_seconds": [
+            0.001117485
+          ],
+          "wall_seconds": 0.001129488
+        },
+        {
+          "request_seconds": [
+            0.001119228
+          ],
+          "wall_seconds": 0.00113099
+        },
+        {
+          "request_seconds": [
+            0.001115312
+          ],
+          "wall_seconds": 0.001127855
+        },
+        {
+          "request_seconds": [
+            0.001118807
+          ],
+          "wall_seconds": 0.001130269
+        },
+        {
+          "request_seconds": [
+            0.001126322
+          ],
+          "wall_seconds": 0.00114691
+        },
+        {
+          "request_seconds": [
+            0.001111464
+          ],
+          "wall_seconds": 0.001122815
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001212042,
+      "id": "golos_farfield:8a99d444c50378db996f4d5fc2980f80.wav",
+      "output": "Салют переключи на телевизионный канал еда.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001084263
+          ],
+          "wall_seconds": 0.001106896
+        },
+        {
+          "request_seconds": [
+            0.001115441
+          ],
+          "wall_seconds": 0.001126813
+        },
+        {
+          "request_seconds": [
+            0.001060609
+          ],
+          "wall_seconds": 0.001078572
+        },
+        {
+          "request_seconds": [
+            0.001066309
+          ],
+          "wall_seconds": 0.001080335
+        },
+        {
+          "request_seconds": [
+            0.001060128
+          ],
+          "wall_seconds": 0.00107206
+        },
+        {
+          "request_seconds": [
+            0.001064737
+          ],
+          "wall_seconds": 0.001083251
+        },
+        {
+          "request_seconds": [
+            0.001055479
+          ],
+          "wall_seconds": 0.001066119
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.001624616,
+      "id": "golos_farfield:d0ee46550aef28f5dd65d224706b1766.wav",
+      "output": "Афина, сделай бронирование на послезавтра на 2 часа дня столика на четверых в кафе урожай.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001601612
+          ],
+          "wall_seconds": 0.001615428
+        },
+        {
+          "request_seconds": [
+            0.001598537
+          ],
+          "wall_seconds": 0.001611561
+        },
+        {
+          "request_seconds": [
+            0.0015946
+          ],
+          "wall_seconds": 0.001606662
+        },
+        {
+          "request_seconds": [
+            0.001600441
+          ],
+          "wall_seconds": 0.001613545
+        },
+        {
+          "request_seconds": [
+            0.001590332
+          ],
+          "wall_seconds": 0.001602214
+        },
+        {
+          "request_seconds": [
+            0.001588859
+          ],
+          "wall_seconds": 0.00160015
+        },
+        {
+          "request_seconds": [
+            0.001596242
+          ],
+          "wall_seconds": 0.001608195
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.00189392,
+      "id": "podlodka:train_sound_001.wav",
+      "output": "Всем привет, друзья с вами подкаст! Подлодка Меня зовут Женя Кателла. Со мной сегодня Стас Цыганов. Стас. Привет!",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.001864786
+          ],
+          "wall_seconds": 0.00187732
+        },
+        {
+          "request_seconds": [
+            0.001882049
+          ],
+          "wall_seconds": 0.001898229
+        },
+        {
+          "request_seconds": [
+            0.001871719
+          ],
+          "wall_seconds": 0.001884503
+        },
+        {
+          "request_seconds": [
+            0.001905132
+          ],
+          "wall_seconds": 0.001918156
+        },
+        {
+          "request_seconds": [
+            0.001940689
+          ],
+          "wall_seconds": 0.001962559
+        },
+        {
+          "request_seconds": [
+            0.001923457
+          ],
+          "wall_seconds": 0.001943393
+        },
+        {
+          "request_seconds": [
+            0.001870097
+          ],
+          "wall_seconds": 0.001884002
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.002163186,
+      "id": "podlodka:train_sound_035.wav",
+      "output": "Что если зуб в результате развития кариеса разрушен до 40 процентов, то его, возможно, восстановить пломбой, то есть композитным материалом реставрации— это пластмасса по существу.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.002135915
+          ],
+          "wall_seconds": 0.002150842
+        },
+        {
+          "request_seconds": [
+            0.002129532
+          ],
+          "wall_seconds": 0.002141525
+        },
+        {
+          "request_seconds": [
+            0.002130113
+          ],
+          "wall_seconds": 0.002142818
+        },
+        {
+          "request_seconds": [
+            0.002863549
+          ],
+          "wall_seconds": 0.002884548
+        },
+        {
+          "request_seconds": [
+            0.002126217
+          ],
+          "wall_seconds": 0.00213898
+        },
+        {
+          "request_seconds": [
+            0.002123441
+          ],
+          "wall_seconds": 0.002134071
+        },
+        {
+          "request_seconds": [
+            0.002134302
+          ],
+          "wall_seconds": 0.002159439
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.00232589,
+      "id": "podlodka:train_sound_021.wav",
+      "output": "Ничего страшного не произойдет. Я так понимаю, Мы, наверное, скорее всего, 1 только совет дадим, вставим ОБКОД и, в общем, смотрим, что ОБКОД указал серым, удаляем это все.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.002265407
+          ],
+          "wall_seconds": 0.002278372
+        },
+        {
+          "request_seconds": [
+            0.002374582
+          ],
+          "wall_seconds": 0.002388818
+        },
+        {
+          "request_seconds": [
+            0.002339987
+          ],
+          "wall_seconds": 0.002360586
+        },
+        {
+          "request_seconds": [
+            0.002260438
+          ],
+          "wall_seconds": 0.002271759
+        },
+        {
+          "request_seconds": [
+            0.002260939
+          ],
+          "wall_seconds": 0.002273943
+        },
+        {
+          "request_seconds": [
+            0.002257763
+          ],
+          "wall_seconds": 0.002270517
+        },
+        {
+          "request_seconds": [
+            0.002271469
+          ],
+          "wall_seconds": 0.002283932
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.003438958,
+      "id": "podlodka:train_sound_047.wav",
+      "output": "Ну или даже больше у меня могло быть 3 часа нагрузки. 3 часа бега в сутках. это уже много. Я там действительно мог бургер съесть Так что тут тоже, если вы захотите, потом уже профессионально еще сильнее упарываться, то, возможно, там уже можно будет и забить на питание. Мне кажется.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.003396748
+          ],
+          "wall_seconds": 0.003413239
+        },
+        {
+          "request_seconds": [
+            0.003393692
+          ],
+          "wall_seconds": 0.003412128
+        },
+        {
+          "request_seconds": [
+            0.003360991
+          ],
+          "wall_seconds": 0.003377582
+        },
+        {
+          "request_seconds": [
+            0.003442284
+          ],
+          "wall_seconds": 0.003465828
+        },
+        {
+          "request_seconds": [
+            0.003723762
+          ],
+          "wall_seconds": 0.00374435
+        },
+        {
+          "request_seconds": [
+            0.003401047
+          ],
+          "wall_seconds": 0.003421535
+        },
+        {
+          "request_seconds": [
+            0.003370229
+          ],
+          "wall_seconds": 0.00338666
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.003550507,
+      "id": "podlodka:train_sound_007.wav",
+      "output": "Когда у тебя система либо становится распределенной, либо ассинхронной внутри, что, по большому счету, для целей нашего разговора практически 1 и тоже у тебя вот эта последовательность выполнения она теряется, То есть, грубо говоря, тебе пришел какой то запрос, ты можешь его положить в очередь для клиента, и потом что то сделать?",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.003512425
+          ],
+          "wall_seconds": 0.003526311
+        },
+        {
+          "request_seconds": [
+            0.003513778
+          ],
+          "wall_seconds": 0.003528695
+        },
+        {
+          "request_seconds": [
+            0.003494231
+          ],
+          "wall_seconds": 0.003516894
+        },
+        {
+          "request_seconds": [
+            0.003505422
+          ],
+          "wall_seconds": 0.003519599
+        },
+        {
+          "request_seconds": [
+            0.003532172
+          ],
+          "wall_seconds": 0.00356851
+        },
+        {
+          "request_seconds": [
+            0.003519979
+          ],
+          "wall_seconds": 0.003536942
+        },
+        {
+          "request_seconds": [
+            0.003505653
+          ],
+          "wall_seconds": 0.003535118
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.004031749,
+      "id": "podlodka:train_sound_067.wav",
+      "output": "А это подробности получается именно того, как работают форматы музыкально для, соответственно, звука или как ты имеешь ввиду про перекодировку И почему возникают расхождения или что? да? Да, да? Ну то есть Вот ты сказал то, что даже если мы возьмем, там, не знаю, битрейт, поменяем, у нас уже изменится, и у нас побитого сравнения не получится.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.003924718
+          ],
+          "wall_seconds": 0.003951067
+        },
+        {
+          "request_seconds": [
+            0.003907546
+          ],
+          "wall_seconds": 0.003941219
+        },
+        {
+          "request_seconds": [
+            0.00392013
+          ],
+          "wall_seconds": 0.003937282
+        },
+        {
+          "request_seconds": [
+            0.003918236
+          ],
+          "wall_seconds": 0.003934857
+        },
+        {
+          "request_seconds": [
+            0.003893069
+          ],
+          "wall_seconds": 0.003918407
+        },
+        {
+          "request_seconds": [
+            0.003889923
+          ],
+          "wall_seconds": 0.003904069
+        },
+        {
+          "request_seconds": [
+            0.003877119
+          ],
+          "wall_seconds": 0.003896936
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.004316763,
+      "id": "podlodka:train_sound_064.wav",
+      "output": "Ну просто чтобы какое то разумное ее было количество, чтобы можно было не искать и для скорости. Да, просто это нужно делать там за какие, то не знаю, сотни миллисекунд там до секунды, То есть сам поиск работает достаточно быстро. И если мы будем вальяжно с каждым треком сравнивать. это просто неподъемно даже на каком то кластере поисковом это невозможно. Так.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.004263784
+          ],
+          "wall_seconds": 0.004285705
+        },
+        {
+          "request_seconds": [
+            0.00475266
+          ],
+          "wall_seconds": 0.004781445
+        },
+        {
+          "request_seconds": [
+            0.004328386
+          ],
+          "wall_seconds": 0.004351338
+        },
+        {
+          "request_seconds": [
+            0.004265948
+          ],
+          "wall_seconds": 0.004283521
+        },
+        {
+          "request_seconds": [
+            0.004224471
+          ],
+          "wall_seconds": 0.004241883
+        },
+        {
+          "request_seconds": [
+            0.004220233
+          ],
+          "wall_seconds": 0.004234198
+        },
+        {
+          "request_seconds": [
+            0.004204614
+          ],
+          "wall_seconds": 0.00421889
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.006638746,
+      "id": "podlodka:train_sound_034.wav",
+      "output": "На 2 маленьких снимках видно сразу 8 поверхностей контактных зубов, то есть без корней только коронки, на которых видно скрытый кариес. В самом самом его начале, который ты раньше ты по другому никак не увидишь. Вот это делает врач гигиенист. Если вот он так делает, видит этот маленький кариес, и он может сказать, врачу терапевту о том, что слушай, ну и пациенту. Что давайте вот эту маленькую дырочку вылечим и все будет хорошо, чтобы не ждать, пока что ну, разовьется воспаление нерва. Там боль и вы будете бегать в поисках стоматолога, который вам вылечит.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.00659735
+          ],
+          "wall_seconds": 0.006635461
+        },
+        {
+          "request_seconds": [
+            0.006539831
+          ],
+          "wall_seconds": 0.006575007
+        },
+        {
+          "request_seconds": [
+            0.006705211
+          ],
+          "wall_seconds": 0.006726601
+        },
+        {
+          "request_seconds": [
+            0.006615985
+          ],
+          "wall_seconds": 0.006657201
+        },
+        {
+          "request_seconds": [
+            0.007011415
+          ],
+          "wall_seconds": 0.007053504
+        },
+        {
+          "request_seconds": [
+            0.00705085
+          ],
+          "wall_seconds": 0.007092968
+        },
+        {
+          "request_seconds": [
+            0.006594394
+          ],
+          "wall_seconds": 0.006630992
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.005640625,
+      "id": "podlodka:train_sound_048.wav",
+      "output": "Собственно, да, возвращаясь к чистоте через букву, а насколько часто вот начинающим бегунам стоит начинать, потому что, как бывает такой все с нового года с понедельничка, короче, начинаю новую жизнь буду бегать и потом начинают хвастаться о том, что, смотрите, 30 дней 6090 дней тренировок подряд закрываю кольца Прохожу 300000 шагов по 30 километров в день пробегаю. И вот это вот все начинается, какая частота должна быть для того, чтобы это было безопасно и полезно.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.006439723
+          ],
+          "wall_seconds": 0.006490779
+        },
+        {
+          "request_seconds": [
+            0.005500673
+          ],
+          "wall_seconds": 0.005545217
+        },
+        {
+          "request_seconds": [
+            0.005709544
+          ],
+          "wall_seconds": 0.005768456
+        },
+        {
+          "request_seconds": [
+            0.005282154
+          ],
+          "wall_seconds": 0.005336094
+        },
+        {
+          "request_seconds": [
+            0.006474228
+          ],
+          "wall_seconds": 0.0065182
+        },
+        {
+          "request_seconds": [
+            0.005155886
+          ],
+          "wall_seconds": 0.005180362
+        },
+        {
+          "request_seconds": [
+            0.005123486
+          ],
+          "wall_seconds": 0.005145868
+        }
+      ]
+    },
+    {
+      "first_seconds": 0.008547986,
+      "id": "podlodka:train_sound_066.wav",
+      "output": "Эмпирически значит, заметили, что вот если взять 2 спектрограммы, которые соответствуют 1 и тому же сигналу, предположим, для простоты, что мы их даже еще выровняли. Вот у нас типа оригинал 10 секунд и запрос, который мы записали с микрофона ровно те же 10 секунд. Ну, вот просто на микрофон записали он на самом деле будет сильно искажен. Вот там шумами микрофона. Микрофон еще имеет свои частотные характеристики, и он тоже как то там его меняет звук. И тем не менее было замечено, что вот если построить себе спектрограммы этих сигналов 2, то можно выделить в них особые такие ключевые точки, и они будут соответствовать ярким всплескам вот этим пикам, которые мы обсуждали на спектрограмм.",
+      "rounds": [
+        {
+          "request_seconds": [
+            0.008873637
+          ],
+          "wall_seconds": 0.008916677
+        },
+        {
+          "request_seconds": [
+            0.009441802
+          ],
+          "wall_seconds": 0.009508528
+        },
+        {
+          "request_seconds": [
+            0.008694812
+          ],
+          "wall_seconds": 0.008732842
+        },
+        {
+          "request_seconds": [
+            0.008958847
+          ],
+          "wall_seconds": 0.009000064
+        },
+        {
+          "request_seconds": [
+            0.008823212
+          ],
+          "wall_seconds": 0.008883876
+        },
+        {
+          "request_seconds": [
+            0.009045158
+          ],
+          "wall_seconds": 0.009107064
+        },
+        {
+          "request_seconds": [
+            0.008466123
+          ],
+          "wall_seconds": 0.008510606
+        }
+      ]
+    }
+  ]
+}

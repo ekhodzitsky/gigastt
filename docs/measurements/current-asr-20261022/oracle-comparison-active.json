@@ -1,0 +1,18 @@
+{
+  "v3_ctc": {
+    "total": 9,
+    "exact": 9,
+    "differences": []
+  },
+  "v3_e2e_ctc": {
+    "total": 9,
+    "exact": 8,
+    "differences": [
+      {
+        "id": "golos_crowd_1k:ebce154f9d0c19abe06bf18d0b521e76.wav",
+        "onnx_asr": "Посоветуй мне сериал«Отчаянные домохозяйки».",
+        "gigastt": "Посоветуй мне сериал «Отчаянные домохозяйки»."
+      }
+    ]
+  }
+}

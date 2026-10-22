@@ -1,0 +1,43 @@
+{
+  "repository": "istupakov/gigaam-v3-onnx",
+  "revision": "322c3b29492673eb7d0b434bfa9dfb8653e34d02",
+  "files": {
+    "v3_ctc.int8.onnx": {
+      "sha256": "ceb61454e2e1a2dec5872cbac1de0fe0a4271d1148f6b26b5bda53ff30a12acd",
+      "bytes": 224721181,
+      "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_ctc.int8.onnx",
+      "upstream_lfs_sha256": "ceb61454e2e1a2dec5872cbac1de0fe0a4271d1148f6b26b5bda53ff30a12acd"
+    },
+    "v3_e2e_ctc.int8.onnx": {
+      "sha256": "2e3fcb7a7b66030336fd10c2fcfb033bd1dc7e1bf238fe5cfd83b1d0cfc9d28e",
+      "bytes": 224893347,
+      "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_e2e_ctc.int8.onnx",
+      "upstream_lfs_sha256": "2e3fcb7a7b66030336fd10c2fcfb033bd1dc7e1bf238fe5cfd83b1d0cfc9d28e"
+    },
+    "v3_e2e_ctc_vocab.txt": {
+      "sha256": "142de7570b3de5b3035ce111a89c228e80e6085273731d944093ddf24fa539cd",
+      "bytes": 2007,
+      "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_e2e_ctc_vocab.txt"
+    },
+    "v3_ctc.yaml": {
+      "sha256": "37790b3abd82bcd090db277b2ec79489a20fdabfc3d205463f0c4ad17022fbf0",
+      "bytes": 1007,
+      "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_ctc.yaml"
+    },
+    "v3_e2e_ctc.yaml": {
+      "sha256": "e67eca3a311ad7c8813d36dff6b8eeba7ad3459fd811d6faea2a26535754a358",
+      "bytes": 899,
+      "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_e2e_ctc.yaml"
+    },
+    "v3_vocab.txt": {
+      "sha256": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+      "bytes": 198,
+      "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_vocab.txt"
+    },
+    "config.json": {
+      "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/config.json",
+      "sha256": "0641fcf73f4af791c73f05083e38a658ff5dcbee3534a0c61396c10f4b97f0fe",
+      "bytes": 135
+    }
+  }
+}

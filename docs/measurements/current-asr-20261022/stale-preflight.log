@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/home/ekhodzitsky/Projects/gigastt-rupunct-audit/scripts/prepare-current-asr.py", line 88, in <module>
+    print(json.dumps(prepare(Path(__file__).resolve().parents[1], args.models, args.v3, args.output, args.probe), ensure_ascii=False, indent=2))
+                     ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ekhodzitsky/Projects/gigastt-rupunct-audit/scripts/prepare-current-asr.py", line 21, in prepare
+    verified = {entry['head']: scoring.verify_assets(source, entry['assets']) for entry in catalog}
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ekhodzitsky/Projects/gigastt-rupunct-audit/scripts/score-current-asr.py", line 35, in verify_assets
+    raise ValueError(f'nonmatching model asset {path}: expected {digest}, got {actual}')
+ValueError: nonmatching model asset /home/ekhodzitsky/.gigastt/models/v3_rnnt_encoder_int8.onnx: expected 1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f, got c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f

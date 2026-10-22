@@ -1,5 +1,13 @@
 # Punctuation after real RNN-T recognition
 
+> Measurement correction: audio/Engine results below used older locally cached
+> RNN-T encoders, not the active October quality bundle. They are historical
+> and must not determine current-head selection. See the
+> [release-pinned comparison](current-asr-comparison.md) for the identity check
+> and corrected campaign. Isolated text-restoration measurements are independent
+> of ASR weights, with the documented ONNX alignment caveat.
+
+
 This follow-up to the [native adapter experiment](rupunct-evaluation.md) compares
 complete text results on the same 775 FLEURS Russian test recordings, including
 built-in `e2e_rnnt` punctuation. It leaves product defaults unchanged: automatic

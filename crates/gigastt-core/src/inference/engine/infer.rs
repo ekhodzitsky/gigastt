@@ -52,11 +52,11 @@ impl Engine {
             "encoder_inference"
         );
 
-        let enc_len = match encoder_outputs[1].view().data() {
-            TensorDataView::I32(v) => usize::try_from(v[0]).context("Negative encoder length")?,
-            TensorDataView::I64(v) => usize::try_from(v[0]).context("Negative encoder length")?,
-            _ => anyhow::bail!("Unexpected encoder length tensor type"),
-        };
+        let enc_len = encoder_output_frames(
+            &encoder_outputs,
+            self.variant.is_ctc(),
+            self.tokenizer.vocab_size(),
+        )?;
 
         tracing::debug!("Encoder output: {} frames", enc_len);
 
@@ -145,5 +145,85 @@ impl Engine {
         frame_offset: usize,
     ) -> Vec<WordInfo> {
         TokenFormatter::tokens_to_words(&self.tokenizer, tokens, frame_offset)
+    }
+}
+
+/// Encoder-only CTC exports may omit the explicit output-length tensor.
+/// Batch-one inference then uses the time dimension, after validating layout.
+fn encoder_output_frames(
+    outputs: &[crate::runtime::Tensor],
+    ctc: bool,
+    vocab: usize,
+) -> anyhow::Result<usize> {
+    let shape = outputs
+        .first()
+        .context("Encoder returned no outputs")?
+        .shape()
+        .dims();
+    if ctc {
+        anyhow::ensure!(
+            shape.len() == 3 && shape[0] == 1 && shape[2] == vocab,
+            "Expected CTC logits [1, T, {vocab}], got {shape:?}"
+        );
+    }
+    let frames = match outputs.get(1) {
+        Some(length) => match length.view().data() {
+            TensorDataView::I32(v) => usize::try_from(*v.first().context("Empty encoder length")?)
+                .context("Negative encoder length")?,
+            TensorDataView::I64(v) => usize::try_from(*v.first().context("Empty encoder length")?)
+                .context("Negative encoder length")?,
+            _ => anyhow::bail!("Unexpected encoder length tensor type"),
+        },
+        None if ctc => shape[1],
+        None => anyhow::bail!("RNN-T encoder returned no length tensor"),
+    };
+    if ctc {
+        anyhow::ensure!(
+            frames <= shape[1],
+            "CTC length {frames} exceeds logits time dimension {}",
+            shape[1]
+        );
+    }
+    Ok(frames)
+}
+
+#[cfg(test)]
+mod output_shape_tests {
+    use super::*;
+    use crate::runtime::{Tensor, TensorData};
+
+    fn scores(shape: &[usize]) -> Tensor {
+        Tensor::new(
+            Shape::new(shape.to_vec()),
+            TensorData::F32(vec![0.0; shape.iter().product()]),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn test_ctc_single_output_uses_validated_frame_dimension() {
+        assert_eq!(
+            encoder_output_frames(&[scores(&[1, 7, 34])], true, 34).unwrap(),
+            7
+        );
+        for shape in [&[1, 7, 33][..], &[1, 34, 7], &[2, 7, 34], &[7, 34]] {
+            assert!(encoder_output_frames(&[scores(shape)], true, 34).is_err());
+        }
+        assert!(encoder_output_frames(&[], true, 34).is_err());
+        assert!(encoder_output_frames(&[scores(&[1, 7, 34])], false, 34).is_err());
+    }
+
+    #[test]
+    fn test_ctc_explicit_length_is_preserved_and_checked() {
+        let length = |n| Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![n])).unwrap();
+        assert_eq!(
+            encoder_output_frames(&[scores(&[1, 7, 34]), length(5)], true, 34).unwrap(),
+            5
+        );
+        for n in [-1, 8] {
+            assert!(encoder_output_frames(&[scores(&[1, 7, 34]), length(n)], true, 34).is_err());
+        }
+        let empty = Tensor::new(Shape::new(vec![0]), TensorData::I64(vec![])).unwrap();
+        assert!(encoder_output_frames(&[scores(&[1, 7, 34]), empty], true, 34).is_err());
     }
 }

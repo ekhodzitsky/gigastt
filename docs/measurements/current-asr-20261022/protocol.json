@@ -1,0 +1,254 @@
+{
+  "datasets": {
+    "fleurs_ru_punct": {
+      "source": "https://huggingface.co/datasets/google/fleurs",
+      "license": "CC BY 4.0",
+      "attribution": "FLEURS (Conneau et al., 2022)",
+      "manifest_sha256": "932d2ef642722a37bd73e76c1551e8b8d7caf4814dbac8a5746825ab8179f6be",
+      "requested": 775,
+      "missing": [],
+      "included": 775
+    },
+    "golos_crowd_1k": {
+      "source": "https://github.com/sberdevices/golos",
+      "license": "Sber Public License (attribution/non-commercial/share-alike)",
+      "attribution": "Golos by SberDevices",
+      "manifest_sha256": "8e8cb2befa2fb1204b97d327a6a9b3ff578c388f422d4c710f6d93d0d56a6751",
+      "requested": 1000,
+      "missing": [
+        "5f920efea584b6c2cfabeffbbfcfcea4.wav",
+        "9150a51cef0bf44410264097b40325f3.wav",
+        "4bbbde615acc4b98cfcdf700d2238b52.wav",
+        "7428ca4bc91837055e32eeceeea6f39b.wav",
+        "9929ca6926e1f4176a573237b4d7cca2.wav",
+        "aa4bb4794b6cb736c16117da33da488d.wav",
+        "74fbb1c406d938e680c7e7925d68b34a.wav",
+        "628dd64936da40f8688e706728b9110b.wav"
+      ],
+      "included": 992
+    },
+    "golos_farfield": {
+      "source": "https://github.com/sberdevices/golos",
+      "license": "Sber Public License (attribution/non-commercial/share-alike)",
+      "attribution": null,
+      "manifest_sha256": "8f4353107e7da347a0578a3095bf9460eba38464ad714b3a1dafde510d0b27a4",
+      "requested": 1000,
+      "missing": [],
+      "included": 1000
+    },
+    "podlodka": {
+      "source": "https://huggingface.co/datasets/bond005/podlodka_speech",
+      "license": "see HF card bond005/podlodka_speech",
+      "attribution": "bond005/podlodka_speech (Podlodka podcast ASR corpus)",
+      "manifest_sha256": "89dfe09e8ac7b43aa11e67fadda7d47d40e2f888779b9376d12f2471a22c2da3",
+      "requested": 67,
+      "missing": [],
+      "included": 67
+    }
+  },
+  "profiles": [
+    {
+      "head": "rnnt",
+      "architecture": "rnnt",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+      "builtin_punctuation": false,
+      "assets": {
+        "v3_rnnt_decoder.onnx": {
+          "sha256": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+          "bytes": 3331429
+        },
+        "v3_rnnt_encoder_int8.onnx": {
+          "sha256": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+          "bytes": 319665270
+        },
+        "v3_rnnt_joint.onnx": {
+          "sha256": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+          "bytes": 1440448
+        },
+        "v3_vocab.txt": {
+          "sha256": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+          "bytes": 198
+        }
+      },
+      "manifest": "architecture = \"rnnt\"\n[files]\nencoder = \"v3_rnnt_encoder_int8.onnx\"\nencoder_int8 = \"v3_rnnt_encoder_int8.onnx\"\nvocab = \"v3_vocab.txt\"\ndecoder = \"v3_rnnt_decoder.onnx\"\njoint = \"v3_rnnt_joint.onnx\"\n"
+    },
+    {
+      "head": "e2e_rnnt",
+      "architecture": "e2e_rnnt",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+      "builtin_punctuation": true,
+      "assets": {
+        "v3_e2e_rnnt_decoder.onnx": {
+          "sha256": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+          "bytes": 4599910
+        },
+        "v3_e2e_rnnt_encoder_int8.onnx": {
+          "sha256": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091",
+          "bytes": 319665270
+        },
+        "v3_e2e_rnnt_joint.onnx": {
+          "sha256": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c",
+          "bytes": 2712896
+        },
+        "v3_e2e_rnnt_vocab.txt": {
+          "sha256": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7",
+          "bytes": 13354
+        }
+      },
+      "manifest": "architecture = \"e2e_rnnt\"\n[files]\nencoder = \"v3_e2e_rnnt_encoder_int8.onnx\"\nencoder_int8 = \"v3_e2e_rnnt_encoder_int8.onnx\"\nvocab = \"v3_e2e_rnnt_vocab.txt\"\ndecoder = \"v3_e2e_rnnt_decoder.onnx\"\njoint = \"v3_e2e_rnnt_joint.onnx\"\n"
+    },
+    {
+      "head": "v3_ctc",
+      "architecture": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+      "builtin_punctuation": false,
+      "assets": {
+        "v3_ctc.int8.onnx": {
+          "sha256": "ceb61454e2e1a2dec5872cbac1de0fe0a4271d1148f6b26b5bda53ff30a12acd",
+          "bytes": 224721181
+        },
+        "v3_vocab.txt": {
+          "sha256": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+          "bytes": 198
+        }
+      },
+      "manifest": "architecture = \"ml_ctc\"\n[files]\nencoder = \"v3_ctc.int8.onnx\"\nencoder_int8 = \"v3_ctc.int8.onnx\"\nvocab = \"v3_vocab.txt\"\n"
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "architecture": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+      "builtin_punctuation": true,
+      "assets": {
+        "v3_e2e_ctc.int8.onnx": {
+          "sha256": "2e3fcb7a7b66030336fd10c2fcfb033bd1dc7e1bf238fe5cfd83b1d0cfc9d28e",
+          "bytes": 224893347
+        },
+        "v3_e2e_ctc_vocab.txt": {
+          "sha256": "142de7570b3de5b3035ce111a89c228e80e6085273731d944093ddf24fa539cd",
+          "bytes": 2007
+        }
+      },
+      "manifest": "architecture = \"ml_ctc\"\n[files]\nencoder = \"v3_e2e_ctc.int8.onnx\"\nencoder_int8 = \"v3_e2e_ctc.int8.onnx\"\nvocab = \"v3_e2e_ctc_vocab.txt\"\n"
+    },
+    {
+      "head": "ml_ctc",
+      "architecture": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+      "builtin_punctuation": false,
+      "assets": {
+        "multilingual_ctc.int8.onnx": {
+          "sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+          "bytes": 224762204
+        },
+        "multilingual_vocab.txt": {
+          "sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+          "bytes": 393
+        }
+      },
+      "manifest": "architecture = \"ml_ctc\"\n[files]\nencoder = \"multilingual_ctc.int8.onnx\"\nencoder_int8 = \"multilingual_ctc.int8.onnx\"\nvocab = \"multilingual_vocab.txt\"\n"
+    },
+    {
+      "head": "ml_ctc_large",
+      "architecture": "ml_ctc_large",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+      "builtin_punctuation": false,
+      "assets": {
+        "multilingual_large_ctc.int8.onnx": {
+          "sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+          "bytes": 591644782
+        },
+        "multilingual_vocab.txt": {
+          "sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+          "bytes": 393
+        }
+      },
+      "manifest": "architecture = \"ml_ctc_large\"\n[files]\nencoder = \"multilingual_large_ctc.int8.onnx\"\nencoder_int8 = \"multilingual_large_ctc.int8.onnx\"\nvocab = \"multilingual_vocab.txt\"\n"
+    }
+  ],
+  "active_catalog": [
+    {
+      "assets": {
+        "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+        "v3_rnnt_encoder_int8.onnx": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+        "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+        "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+      },
+      "head": "rnnt",
+      "model_id": "gigaam-v3-rnnt"
+    },
+    {
+      "assets": {
+        "v3_e2e_rnnt_decoder.onnx": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+        "v3_e2e_rnnt_encoder_int8.onnx": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091",
+        "v3_e2e_rnnt_joint.onnx": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c",
+        "v3_e2e_rnnt_vocab.txt": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7"
+      },
+      "head": "e2e_rnnt",
+      "model_id": "gigaam-v3-e2e-rnnt"
+    },
+    {
+      "assets": {
+        "multilingual_ctc.int8.onnx": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+        "multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+      },
+      "head": "ml_ctc",
+      "model_id": "gigaam-multilingual-ctc"
+    },
+    {
+      "assets": {
+        "multilingual_large_ctc.int8.onnx": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+        "multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+      },
+      "head": "ml_ctc_large",
+      "model_id": "gigaam-multilingual-large-ctc"
+    }
+  ],
+  "upstream_ctc": {
+    "repository": "istupakov/gigaam-v3-onnx",
+    "revision": "322c3b29492673eb7d0b434bfa9dfb8653e34d02",
+    "files": {
+      "v3_ctc.int8.onnx": {
+        "sha256": "ceb61454e2e1a2dec5872cbac1de0fe0a4271d1148f6b26b5bda53ff30a12acd",
+        "bytes": 224721181,
+        "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_ctc.int8.onnx",
+        "upstream_lfs_sha256": "ceb61454e2e1a2dec5872cbac1de0fe0a4271d1148f6b26b5bda53ff30a12acd"
+      },
+      "v3_e2e_ctc.int8.onnx": {
+        "sha256": "2e3fcb7a7b66030336fd10c2fcfb033bd1dc7e1bf238fe5cfd83b1d0cfc9d28e",
+        "bytes": 224893347,
+        "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_e2e_ctc.int8.onnx",
+        "upstream_lfs_sha256": "2e3fcb7a7b66030336fd10c2fcfb033bd1dc7e1bf238fe5cfd83b1d0cfc9d28e"
+      },
+      "v3_e2e_ctc_vocab.txt": {
+        "sha256": "142de7570b3de5b3035ce111a89c228e80e6085273731d944093ddf24fa539cd",
+        "bytes": 2007,
+        "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_e2e_ctc_vocab.txt"
+      },
+      "v3_ctc.yaml": {
+        "sha256": "37790b3abd82bcd090db277b2ec79489a20fdabfc3d205463f0c4ad17022fbf0",
+        "bytes": 1007,
+        "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_ctc.yaml"
+      },
+      "v3_e2e_ctc.yaml": {
+        "sha256": "e67eca3a311ad7c8813d36dff6b8eeba7ad3459fd811d6faea2a26535754a358",
+        "bytes": 899,
+        "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_e2e_ctc.yaml"
+      },
+      "v3_vocab.txt": {
+        "sha256": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+        "bytes": 198,
+        "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/v3_vocab.txt"
+      },
+      "config.json": {
+        "url": "https://huggingface.co/istupakov/gigaam-v3-onnx/resolve/322c3b29492673eb7d0b434bfa9dfb8653e34d02/config.json",
+        "sha256": "0641fcf73f4af791c73f05083e38a658ff5dcbee3534a0c61396c10f4b97f0fe",
+        "bytes": 135
+      }
+    }
+  },
+  "encoder_threads": 4,
+  "pool_size": 1,
+  "audio_seconds": 17039.481726615646,
+  "timing_cases": 40
+}

@@ -1,0 +1,43 @@
+{
+  "checks": {
+    "unit-final": {
+      "passed": 1240,
+      "failed": 0,
+      "ignored": 48
+    },
+    "unit-native-final": {
+      "passed": 1243,
+      "failed": 0,
+      "ignored": 49
+    },
+    "clippy-final": "passed: --workspace --all-targets -- -D warnings",
+    "clippy-native-final": "passed: --workspace --all-targets -- -D warnings"
+  },
+  "python_tests": {
+    "current_asr": 10,
+    "punctuation_heads": 8,
+    "punctuation_gold": 4
+  },
+  "docs_drift": "passed",
+  "format": "passed",
+  "probe_bytes_unchanged_since_timing": true,
+  "native_ort": "1.28.0; rel-1.28.0; da9b5e3; Release",
+  "oracle_ort": "1.30.0; Python oracle only, no speed comparison",
+  "ci": "Manual workflows only. No Actions dispatched.",
+  "excluded_attempt": {
+    "reason": "Local canonical filenames held historical INT8-Conv encoders. Entire initial campaign excluded and rerun with compiled active release pins. Not mixed into accepted measurements.",
+    "old_rnnt_sha256": "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f",
+    "old_e2e_rnnt_sha256": "cf51b300af47cea099e17c806f8fecce2c46e9e8deb4709ec203f8970a067389",
+    "real_stale_preflight": "rejected before output directory creation"
+  },
+  "limitations": [
+    "Russian only; public training overlap unknown.",
+    "40-file speed cohort; single request, CPU pool=1 only.",
+    "CTC/RNN-T packages use different convolution quantization.",
+    "Normalized WER is not an acoustic-only score.",
+    "E2E CTC difficult-slice oracle has two small lexical discrepancies, unresolved.",
+    "Composite ASR+punctuation excludes ITN/model load/API handling and is not an integrated-server benchmark.",
+    "Existing ONNX punctuation internal-hyphen alignment defect remains."
+  ],
+  "exported_summary_recompute": "byte-identical to summary.json"
+}

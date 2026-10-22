@@ -1,0 +1,393 @@
+{
+  "cases": 775,
+  "cpu_affinity": "0-3",
+  "rayon_threads": 1,
+  "probe_sha256": "26bf9d85d765926ae33c31fe095f9f7e1769b18981a793a99808d5042d731c16",
+  "paths": {
+    "rnnt-raw": {
+      "errors": 1077,
+      "words": 15098,
+      "wer": 0.07133395151675719,
+      "punctuation": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2850,
+        "f1": 0.0
+      },
+      "casing": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1961,
+        "f1": 0.0
+      },
+      "matched_punctuation": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 2595,
+        "f1": 0.0
+      },
+      "matched_casing": {
+        "tp": 0,
+        "fp": 0,
+        "fn": 1633,
+        "f1": 0.0
+      }
+    },
+    "rnnt-product-onnx": {
+      "errors": 972,
+      "words": 15098,
+      "wer": 0.06437938799841039,
+      "punctuation": {
+        "tp": 2009,
+        "fp": 337,
+        "fn": 841,
+        "f1": 0.7732871439568899
+      },
+      "casing": {
+        "tp": 1404,
+        "fp": 374,
+        "fn": 557,
+        "f1": 0.7510029419630917
+      },
+      "matched_punctuation": {
+        "tp": 1885,
+        "fp": 291,
+        "fn": 733,
+        "f1": 0.7863996662494785
+      },
+      "matched_casing": {
+        "tp": 1404,
+        "fp": 109,
+        "fn": 216,
+        "f1": 0.8962655601659751
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 0.387779405,
+      "punctuation_peak_rss_kib": 93220
+    },
+    "rnnt-product-small": {
+      "errors": 972,
+      "words": 15098,
+      "wer": 0.06437938799841039,
+      "punctuation": {
+        "tp": 2012,
+        "fp": 343,
+        "fn": 838,
+        "f1": 0.773102785782901
+      },
+      "casing": {
+        "tp": 1399,
+        "fp": 373,
+        "fn": 562,
+        "f1": 0.7495312081435842
+      },
+      "matched_punctuation": {
+        "tp": 1888,
+        "fp": 296,
+        "fn": 730,
+        "f1": 0.7863390254060808
+      },
+      "matched_casing": {
+        "tp": 1399,
+        "fp": 110,
+        "fn": 221,
+        "f1": 0.8942154042825183
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 1.427563738,
+      "punctuation_peak_rss_kib": 60288
+    },
+    "rnnt-product-big": {
+      "errors": 972,
+      "words": 15098,
+      "wer": 0.06437938799841039,
+      "punctuation": {
+        "tp": 2229,
+        "fp": 288,
+        "fn": 621,
+        "f1": 0.8306316377864729
+      },
+      "casing": {
+        "tp": 1498,
+        "fp": 362,
+        "fn": 463,
+        "f1": 0.7840879350955248
+      },
+      "matched_punctuation": {
+        "tp": 2089,
+        "fp": 243,
+        "fn": 529,
+        "f1": 0.844040404040404
+      },
+      "matched_casing": {
+        "tp": 1498,
+        "fp": 90,
+        "fn": 122,
+        "f1": 0.9339152119700748
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 45.025759443,
+      "punctuation_peak_rss_kib": 202280
+    },
+    "e2e_rnnt-raw": {
+      "errors": 681,
+      "words": 15098,
+      "wer": 0.04510531196184925,
+      "punctuation": {
+        "tp": 2238,
+        "fp": 269,
+        "fn": 612,
+        "f1": 0.8355422811274967
+      },
+      "casing": {
+        "tp": 1524,
+        "fp": 438,
+        "fn": 437,
+        "f1": 0.7769564109100179
+      },
+      "matched_punctuation": {
+        "tp": 2095,
+        "fp": 240,
+        "fn": 523,
+        "f1": 0.845951948314153
+      },
+      "matched_casing": {
+        "tp": 1524,
+        "fp": 159,
+        "fn": 102,
+        "f1": 0.9211242067089755
+      }
+    },
+    "e2e_rnnt-direct-small": {
+      "errors": 681,
+      "words": 15098,
+      "wer": 0.04510531196184925,
+      "punctuation": {
+        "tp": 2259,
+        "fp": 2619,
+        "fn": 591,
+        "f1": 0.5846273291925466
+      },
+      "casing": {
+        "tp": 1518,
+        "fp": 500,
+        "fn": 443,
+        "f1": 0.7630057803468208
+      },
+      "matched_punctuation": {
+        "tp": 2112,
+        "fp": 2443,
+        "fn": 506,
+        "f1": 0.588874947720619
+      },
+      "matched_casing": {
+        "tp": 1518,
+        "fp": 204,
+        "fn": 108,
+        "f1": 0.9068100358422939
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 1.59848808,
+      "punctuation_peak_rss_kib": 58684
+    },
+    "e2e_rnnt-direct-big": {
+      "errors": 681,
+      "words": 15098,
+      "wer": 0.04510531196184925,
+      "punctuation": {
+        "tp": 2288,
+        "fp": 2102,
+        "fn": 562,
+        "f1": 0.6320441988950276
+      },
+      "casing": {
+        "tp": 1519,
+        "fp": 417,
+        "fn": 442,
+        "f1": 0.7795740313061329
+      },
+      "matched_punctuation": {
+        "tp": 2139,
+        "fp": 1963,
+        "fn": 479,
+        "f1": 0.6366071428571428
+      },
+      "matched_casing": {
+        "tp": 1519,
+        "fp": 121,
+        "fn": 107,
+        "f1": 0.9301898346601347
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 49.150849314,
+      "punctuation_peak_rss_kib": 202272
+    },
+    "e2e_rnnt-clean-onnx": {
+      "errors": 714,
+      "words": 15098,
+      "wer": 0.047291031924758246,
+      "punctuation": {
+        "tp": 1890,
+        "fp": 387,
+        "fn": 960,
+        "f1": 0.7372732592159157
+      },
+      "casing": {
+        "tp": 1355,
+        "fp": 455,
+        "fn": 606,
+        "f1": 0.7186422699549191
+      },
+      "matched_punctuation": {
+        "tp": 1776,
+        "fp": 372,
+        "fn": 829,
+        "f1": 0.7473174836945087
+      },
+      "matched_casing": {
+        "tp": 1355,
+        "fp": 216,
+        "fn": 271,
+        "f1": 0.8476696903346888
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 0.391962536,
+      "punctuation_peak_rss_kib": 93416
+    },
+    "e2e_rnnt-clean-small": {
+      "errors": 714,
+      "words": 15098,
+      "wer": 0.047291031924758246,
+      "punctuation": {
+        "tp": 2031,
+        "fp": 358,
+        "fn": 819,
+        "f1": 0.77533880511548
+      },
+      "casing": {
+        "tp": 1407,
+        "fp": 369,
+        "fn": 554,
+        "f1": 0.753010436178753
+      },
+      "matched_punctuation": {
+        "tp": 1899,
+        "fp": 331,
+        "fn": 706,
+        "f1": 0.785522233712513
+      },
+      "matched_casing": {
+        "tp": 1407,
+        "fp": 105,
+        "fn": 219,
+        "f1": 0.8967495219885278
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 1.433950802,
+      "punctuation_peak_rss_kib": 60292
+    },
+    "e2e_rnnt-clean-big": {
+      "errors": 714,
+      "words": 15098,
+      "wer": 0.047291031924758246,
+      "punctuation": {
+        "tp": 2243,
+        "fp": 316,
+        "fn": 607,
+        "f1": 0.8293584766130523
+      },
+      "casing": {
+        "tp": 1503,
+        "fp": 366,
+        "fn": 458,
+        "f1": 0.7848563968668407
+      },
+      "matched_punctuation": {
+        "tp": 2097,
+        "fp": 277,
+        "fn": 508,
+        "f1": 0.8423378188391243
+      },
+      "matched_casing": {
+        "tp": 1503,
+        "fp": 76,
+        "fn": 123,
+        "f1": 0.9379095163806552
+      },
+      "lexical_mutations": 0,
+      "punctuation_seconds": 45.213795758,
+      "punctuation_peak_rss_kib": 202252
+    }
+  },
+  "composites": {
+    "onnx": {
+      "rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "punctuation_seconds": [
+        0.025556728,
+        0.023530127,
+        0.024963732,
+        0.02331465,
+        0.023853851,
+        0.024255856
+      ],
+      "reconstructed_rtf_median": 0.016603607655174667,
+      "reconstructed_rtf_range": [
+        0.016386450829969732,
+        0.017373166093205123
+      ]
+    },
+    "small": {
+      "rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "punctuation_seconds": [
+        0.084274507,
+        0.083217058,
+        0.083618702,
+        0.084500563,
+        0.083102297,
+        0.082341033
+      ],
+      "reconstructed_rtf_median": 0.01674048392427637,
+      "reconstructed_rtf_range": [
+        0.01652851455937044,
+        0.017509499217250632
+      ]
+    },
+    "big": {
+      "rounds": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "punctuation_seconds": [
+        2.6352862839999998,
+        2.61513049,
+        2.589784405,
+        2.595084941,
+        2.5987781500000002,
+        2.606567001
+      ],
+      "reconstructed_rtf_median": 0.02257882111076305,
+      "reconstructed_rtf_range": [
+        0.022357682781700288,
+        0.023432533278795954
+      ]
+    }
+  }
+}
