@@ -1,5 +1,13 @@
 # Native RUPunct evaluation
 
+> Measurement correction: audio/Engine results below used older locally cached
+> RNN-T encoders, not the active October quality bundle. They are historical
+> and must not determine current-head selection. See the
+> [release-pinned comparison](current-asr-comparison.md) for the identity check
+> and corrected campaign. Isolated text-restoration measurements are independent
+> of ASR weights, with the documented ONNX alignment caveat.
+
+
 This experiment compares the accepted gigastt ONNX punctuation path with
 [rupunct 0.19.1](https://github.com/ekhodzitsky/rupunct-rs/releases/tag/v0.19.1).
 Standard model selection/downloads remain unchanged. The native adapter is

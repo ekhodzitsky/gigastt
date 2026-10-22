@@ -10,10 +10,11 @@
 //! axis, the vocab the inner. This differs from the RNN-T encoder's channels-first
 //! `[1, D, T]` layout (see [`super::decode::extract_encoder_frame`]).
 
+use super::WordInfo;
 use super::bias::{BiasPath, Biaser};
 use super::decode::{TokenInfo, argmax, token_confidence};
-use super::tokenizer::{Tokenizer, WORD_BOUNDARY};
-use super::{SECONDS_PER_FRAME, WordInfo};
+use super::token_format::TokenFormatter;
+use super::tokenizer::Tokenizer;
 
 /// Hypotheses kept per frame by [`ctc_prefix_beam_decode_with_abort`].
 ///
@@ -381,79 +382,17 @@ pub(crate) fn ctc_greedy_decode_with_abort(
     out
 }
 
-/// Group CTC-decoded tokens into words with timestamps and confidence.
+/// Group CTC-decoded character or BPE tokens into words with alignment.
 ///
-/// istupakov's CTC vocab encodes the inter-word space as the `▁` word-boundary
-/// marker at `vocab[0]` (mirroring the RNN-T vocab), NOT a literal `' '`. Words
-/// split on that marker; every other token is a single character concatenated
-/// into the current word. The blank token never appears here (it is dropped in
-/// [`ctc_greedy_decode_with_abort`]).
+/// A standalone `▁` separates character words; a BPE token such as `▁Привет`
+/// starts a word and also carries text. Both share the RNN-T formatter so the
+/// boundary marker never causes the BPE content to be discarded.
 pub(crate) fn ctc_tokens_to_words(
     tokenizer: &Tokenizer,
     tokens: &[TokenInfo],
     frame_offset: usize,
 ) -> Vec<WordInfo> {
-    let mut words = Vec::new();
-    let mut current_word = String::new();
-    let mut word_start_frame: Option<usize> = None;
-    let mut word_end_frame: usize = 0;
-    let mut word_confidences: Vec<f32> = Vec::new();
-
-    let flush = |word: &mut String,
-                 start: &mut Option<usize>,
-                 end: usize,
-                 confs: &mut Vec<f32>,
-                 out: &mut Vec<WordInfo>| {
-        if word.is_empty() {
-            return;
-        }
-        let avg_conf: f32 = if confs.is_empty() {
-            1.0
-        } else {
-            confs.iter().sum::<f32>() / confs.len() as f32
-        };
-        out.push(WordInfo {
-            word: std::mem::take(word),
-            start: (start.unwrap_or(0) + frame_offset) as f64 * SECONDS_PER_FRAME,
-            end: (end + frame_offset) as f64 * SECONDS_PER_FRAME,
-            confidence: avg_conf,
-            speaker: None,
-        });
-        *start = None;
-        confs.clear();
-    };
-
-    for token in tokens {
-        let ch = tokenizer.token_text(token.token_id);
-        if ch.starts_with(WORD_BOUNDARY) {
-            flush(
-                &mut current_word,
-                &mut word_start_frame,
-                word_end_frame,
-                &mut word_confidences,
-                &mut words,
-            );
-            continue;
-        }
-        if !ch.is_empty() {
-            current_word.push_str(ch);
-            if word_start_frame.is_none() {
-                word_start_frame = Some(token.frame_index);
-            }
-            word_end_frame = token.frame_index;
-            word_confidences.push(token.confidence);
-        }
-    }
-
-    flush(
-        &mut current_word,
-        &mut word_start_frame,
-        word_end_frame,
-        &mut word_confidences,
-        &mut words,
-    );
-
-    words
+    TokenFormatter::tokens_to_words(tokenizer, tokens, frame_offset)
 }
 
 /// Private benchmark access; not part of the stable library API.

@@ -1,4 +1,5 @@
 use super::*;
+use crate::inference::SECONDS_PER_FRAME;
 
 #[test]
 fn test_abort_between_ctc_frames_keeps_prefix() {
@@ -298,4 +299,25 @@ fn test_observer_preserves_alignment_ties_and_abort_boundaries() {
             );
         }
     }
+}
+
+#[test]
+fn test_ctc_bpe_boundary_keeps_word_content_and_alignment() {
+    let tokenizer = Tokenizer::from_tokens(
+        ["▁Привет", ",", "▁мир", ".", "▁", "<blk>"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect(),
+    );
+    let mut tokens = vec![tok(0, 2), tok(1, 3), tok(4, 4), tok(2, 6), tok(3, 7)];
+    tokens[0].confidence = 0.8;
+    let words = ctc_tokens_to_words(&tokenizer, &tokens, 10);
+    assert_eq!(
+        words.iter().map(|w| w.word.as_str()).collect::<Vec<_>>(),
+        ["Привет,", "мир."]
+    );
+    assert!((words[0].start - 12.0 * SECONDS_PER_FRAME).abs() < 1e-9);
+    assert!((words[0].end - 13.0 * SECONDS_PER_FRAME).abs() < 1e-9);
+    assert!((words[0].confidence - 0.9).abs() < 1e-6);
+    assert!((words[1].start - 16.0 * SECONDS_PER_FRAME).abs() < 1e-9);
 }

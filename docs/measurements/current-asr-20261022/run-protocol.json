@@ -1,0 +1,942 @@
+{
+  "cpus": "0-3",
+  "rayon_threads": 1,
+  "probe_sha256": "a64f8902a01d1fc87b57b85f1175c29974fc2c594484127c13e64020c87ae706",
+  "runs": [
+    {
+      "head": "rnnt",
+      "mode": "timing-0",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-timing-0.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 8.165581933000794,
+      "parallel_quality": false,
+      "process_cpu_seconds": 28.748565
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "timing-0",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-timing-0.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 8.186178891000964,
+      "parallel_quality": false,
+      "process_cpu_seconds": 28.582541999999997
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "timing-0",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-timing-0.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 11.201593320000029,
+      "parallel_quality": false,
+      "process_cpu_seconds": 41.597276
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "timing-0",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-timing-0.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 11.089763065001534,
+      "parallel_quality": false,
+      "process_cpu_seconds": 40.847885999999995
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "timing-0",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-timing-0.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 14.182179178000297,
+      "parallel_quality": false,
+      "process_cpu_seconds": 53.631731999999985
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "timing-0",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-timing-0.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 31.727838876000533,
+      "parallel_quality": false,
+      "process_cpu_seconds": 119.10962099999999
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "timing-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-timing-1.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 9.427594867000153,
+      "parallel_quality": false,
+      "process_cpu_seconds": 34.88052499999999
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "timing-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-timing-1.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.746297539999432,
+      "parallel_quality": false,
+      "process_cpu_seconds": 41.96453100000001
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "timing-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-timing-1.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 9.868201986999338,
+      "parallel_quality": false,
+      "process_cpu_seconds": 38.557262999999985
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "timing-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-timing-1.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 12.580663178001487,
+      "parallel_quality": false,
+      "process_cpu_seconds": 49.39871500000003
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "timing-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-timing-1.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 32.90247409100084,
+      "parallel_quality": false,
+      "process_cpu_seconds": 128.94693699999993
+    },
+    {
+      "head": "rnnt",
+      "mode": "timing-1",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-timing-1.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 8.034130599999116,
+      "parallel_quality": false,
+      "process_cpu_seconds": 30.447218000000024
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "timing-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-timing-2.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.42737203499928,
+      "parallel_quality": false,
+      "process_cpu_seconds": 40.763709000000034
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "timing-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-timing-2.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.326472022999951,
+      "parallel_quality": false,
+      "process_cpu_seconds": 40.34286099999998
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "timing-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-timing-2.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 13.456361755999751,
+      "parallel_quality": false,
+      "process_cpu_seconds": 52.81359999999991
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "timing-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-timing-2.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 32.91309424300016,
+      "parallel_quality": false,
+      "process_cpu_seconds": 129.16358899999997
+    },
+    {
+      "head": "rnnt",
+      "mode": "timing-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-timing-2.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.907924742999967,
+      "parallel_quality": false,
+      "process_cpu_seconds": 29.90086500000005
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "timing-2",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-timing-2.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.900718590999531,
+      "parallel_quality": false,
+      "process_cpu_seconds": 30.04571900000012
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "timing-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-timing-3.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.742569649999496,
+      "parallel_quality": false,
+      "process_cpu_seconds": 41.92521300000004
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "timing-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-timing-3.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 13.869994421000229,
+      "parallel_quality": false,
+      "process_cpu_seconds": 54.44254699999992
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "timing-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-timing-3.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 29.599598982000316,
+      "parallel_quality": false,
+      "process_cpu_seconds": 116.19085700000002
+    },
+    {
+      "head": "rnnt",
+      "mode": "timing-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-timing-3.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.6901240600000165,
+      "parallel_quality": false,
+      "process_cpu_seconds": 29.210729000000143
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "timing-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-timing-3.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.645824481000091,
+      "parallel_quality": false,
+      "process_cpu_seconds": 29.145928000000026
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "timing-3",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-timing-3.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.508334363999893,
+      "parallel_quality": false,
+      "process_cpu_seconds": 41.06498800000008
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "timing-4",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-timing-4.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 13.734598592000111,
+      "parallel_quality": false,
+      "process_cpu_seconds": 53.8598560000001
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "timing-4",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-timing-4.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 30.126820207999117,
+      "parallel_quality": false,
+      "process_cpu_seconds": 118.2591609999998
+    },
+    {
+      "head": "rnnt",
+      "mode": "timing-4",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-timing-4.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.52166539099926,
+      "parallel_quality": false,
+      "process_cpu_seconds": 28.683658999999928
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "timing-4",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-timing-4.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.6287424830006785,
+      "parallel_quality": false,
+      "process_cpu_seconds": 29.00275900000011
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "timing-4",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-timing-4.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.420414398999128,
+      "parallel_quality": false,
+      "process_cpu_seconds": 40.810221
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "timing-4",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-timing-4.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.41287626600024,
+      "parallel_quality": false,
+      "process_cpu_seconds": 40.667283000000076
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "timing-5",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-timing-5.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 29.521421093000754,
+      "parallel_quality": false,
+      "process_cpu_seconds": 115.80026299999997
+    },
+    {
+      "head": "rnnt",
+      "mode": "timing-5",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-timing-5.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.605642230999365,
+      "parallel_quality": false,
+      "process_cpu_seconds": 28.79807599999996
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "timing-5",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-timing-5.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.905784249000135,
+      "parallel_quality": false,
+      "process_cpu_seconds": 29.837461999999853
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "timing-5",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-timing-5.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.53789336599948,
+      "parallel_quality": false,
+      "process_cpu_seconds": 41.162119000000125
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "timing-5",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-timing-5.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.6046576739991,
+      "parallel_quality": false,
+      "process_cpu_seconds": 41.384741999999925
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "timing-5",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-timing-5.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 14.041508889000397,
+      "parallel_quality": false,
+      "process_cpu_seconds": 55.06961900000004
+    },
+    {
+      "head": "rnnt",
+      "mode": "timing-6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-timing-6.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.5738228330010315,
+      "parallel_quality": false,
+      "process_cpu_seconds": 28.67236399999979
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "timing-6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-timing-6.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 7.721276969999963,
+      "parallel_quality": false,
+      "process_cpu_seconds": 29.32919000000009
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "timing-6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-timing-6.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.583143305000704,
+      "parallel_quality": false,
+      "process_cpu_seconds": 41.26107499999993
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "timing-6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-timing-6.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 10.441772665000826,
+      "parallel_quality": false,
+      "process_cpu_seconds": 40.75786300000026
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "timing-6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-timing-6.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 13.132047897999655,
+      "parallel_quality": false,
+      "process_cpu_seconds": 51.5522390000002
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "timing-6",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/timing-cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-timing-6.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 29.79316664900034,
+      "parallel_quality": false,
+      "process_cpu_seconds": 116.31449399999994
+    },
+    {
+      "head": "v3_ctc",
+      "mode": "quality",
+      "command": [
+        "taskset",
+        "-c",
+        "8-11",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_ctc-quality.jsonl"
+      ],
+      "cpus": "8-11",
+      "wall_seconds": 575.381072696,
+      "parallel_quality": true,
+      "process_cpu_seconds": null
+    },
+    {
+      "head": "ml_ctc",
+      "mode": "quality",
+      "command": [
+        "taskset",
+        "-c",
+        "4-7",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc-quality.jsonl"
+      ],
+      "cpus": "4-7",
+      "wall_seconds": 621.4771988869998,
+      "parallel_quality": true,
+      "process_cpu_seconds": null
+    },
+    {
+      "head": "rnnt",
+      "mode": "quality",
+      "command": [
+        "taskset",
+        "-c",
+        "4-7",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "rnnt",
+        "rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/rnnt-quality.jsonl"
+      ],
+      "cpus": "4-7",
+      "wall_seconds": 387.289914564999,
+      "parallel_quality": true,
+      "process_cpu_seconds": null
+    },
+    {
+      "head": "ml_ctc_large",
+      "mode": "quality",
+      "command": [
+        "taskset",
+        "-c",
+        "0-3",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "ml_ctc_large",
+        "ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/ml_ctc_large",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/ml_ctc_large-quality.jsonl"
+      ],
+      "cpus": "0-3",
+      "wall_seconds": 1061.0810556380002,
+      "parallel_quality": true,
+      "process_cpu_seconds": null
+    },
+    {
+      "head": "v3_e2e_ctc",
+      "mode": "quality",
+      "command": [
+        "taskset",
+        "-c",
+        "8-11",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "v3_e2e_ctc",
+        "ml_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/v3_e2e_ctc",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/v3_e2e_ctc-quality.jsonl"
+      ],
+      "cpus": "8-11",
+      "wall_seconds": 591.4465033970009,
+      "parallel_quality": true,
+      "process_cpu_seconds": null
+    },
+    {
+      "head": "e2e_rnnt",
+      "mode": "quality",
+      "command": [
+        "taskset",
+        "-c",
+        "4-7",
+        "/home/ekhodzitsky/Projects/gigastt-diarization-performance/target/release/examples/current_asr_probe",
+        "e2e_rnnt",
+        "e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/models/e2e_rnnt",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/cases.json",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/full/runs/e2e_rnnt-quality.jsonl"
+      ],
+      "cpus": "4-7",
+      "wall_seconds": 405.59674380899924,
+      "parallel_quality": true,
+      "process_cpu_seconds": null
+    }
+  ],
+  "active_asset_preflight": "passed",
+  "active_catalog": {
+    "rnnt": {
+      "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+      "v3_rnnt_encoder_int8.onnx": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+      "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+      "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+    },
+    "e2e_rnnt": {
+      "v3_e2e_rnnt_decoder.onnx": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+      "v3_e2e_rnnt_encoder_int8.onnx": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091",
+      "v3_e2e_rnnt_joint.onnx": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c",
+      "v3_e2e_rnnt_vocab.txt": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7"
+    },
+    "ml_ctc": {
+      "multilingual_ctc.int8.onnx": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    },
+    "ml_ctc_large": {
+      "multilingual_large_ctc.int8.onnx": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+      "multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    }
+  }
+}

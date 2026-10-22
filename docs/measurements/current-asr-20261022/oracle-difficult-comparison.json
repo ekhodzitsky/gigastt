@@ -1,0 +1,83 @@
+{
+  "e2e_rnnt-budget-10": {
+    "total": 16,
+    "exact": 14,
+    "lexical_equal": 16,
+    "differences": [
+      {
+        "id": "golos_crowd_1k:9d901ea90dc0e685b88cea25a30f0895.wav",
+        "oracle": "Сколько стоит$21 перевести в гуарани, курс 13 июня 2020 года?",
+        "gigastt": "Сколько стоит $21 перевести в гуарани, курс 13 июня 2020 года?",
+        "lexical_errors": 0
+      },
+      {
+        "id": "golos_crowd_1k:3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+        "oracle": "Масло подсолнечное Олейна, 1 л, 2 шт.",
+        "gigastt": "Масло подсолнечное «Олейна», 1 л, 2 шт.",
+        "lexical_errors": 0
+      }
+    ]
+  },
+  "e2e_rnnt-budget-3": {
+    "total": 16,
+    "exact": 14,
+    "lexical_equal": 16,
+    "differences": [
+      {
+        "id": "golos_crowd_1k:9d901ea90dc0e685b88cea25a30f0895.wav",
+        "oracle": "Сколько стоит$21 перевести в гуарани, курс 13 июня 2020 года?",
+        "gigastt": "Сколько стоит $21 перевести в гуарани, курс 13 июня 2020 года?",
+        "lexical_errors": 0
+      },
+      {
+        "id": "golos_crowd_1k:3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+        "oracle": "Масло подсолнечное Олейна, 1 л, 2 шт.",
+        "gigastt": "Масло подсолнечное «Олейна», 1 л, 2 шт.",
+        "lexical_errors": 0
+      }
+    ]
+  },
+  "v3_e2e_ctc-budget-None": {
+    "total": 16,
+    "exact": 10,
+    "lexical_equal": 14,
+    "differences": [
+      {
+        "id": "golos_crowd_1k:a660f244bc2e55685984398dd57fa7f8.wav",
+        "oracle": "Ты можешь показать на смотрёшках передачу Fashion TV? 4 копейки.",
+        "gigastt": "Ты можешь показать на смотрёшкх передачу Fashion TV? 4 копейки.",
+        "lexical_errors": 1
+      },
+      {
+        "id": "golos_crowd_1k:5cd8cf78e1f435acdc008c41648584a6.wav",
+        "oracle": "Закажи, пожалуйста, Pepsi, 2,5 л.",
+        "gigastt": "Закажи, пожалуйста, Pepsi 2,5 л.",
+        "lexical_errors": 0
+      },
+      {
+        "id": "golos_crowd_1k:62eafce5f2f86932e9e21eb6baa453cd.wav",
+        "oracle": "5 706 359 050063",
+        "gigastt": "5 706 359 05063",
+        "lexical_errors": 1
+      },
+      {
+        "id": "golos_crowd_1k:9d901ea90dc0e685b88cea25a30f0895.wav",
+        "oracle": "Сколько стоит$21 перевести в гуарани, курс 13 июня 2020 года?",
+        "gigastt": "Сколько стоит $21 перевести в гуарани, курс 13 июня 2020 года?",
+        "lexical_errors": 0
+      },
+      {
+        "id": "golos_crowd_1k:3f7d079b4ef2dc069a51608ccaa1bcf8.wav",
+        "oracle": "Масло подсолнечное«Лейна», 1 л, 2 шт.",
+        "gigastt": "Масло подсолнечное «Лейна», 1 л, 2 шт.",
+        "lexical_errors": 0
+      },
+      {
+        "id": "golos_crowd_1k:53ac71eac4dab9630ff49249a709a789.wav",
+        "oracle": "Включай«Чем заняться мертвецу в Денвере» Full HD на Okko.",
+        "gigastt": "Включай «Чем заняться мертвецу в Денвере» Full HD на Okko.",
+        "lexical_errors": 0
+      }
+    ]
+  }
+}

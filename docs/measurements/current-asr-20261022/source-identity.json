@@ -1,0 +1,25 @@
+{
+  "base_commit": "9229a6053a6b50fa522e82c17d1031318c596e9b",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "source_sha256": {
+    ".github/workflows/ci.yml": "0b7ed308627d3c60d0d48d6fc1847a30f54959fd8a6da1a840b9037452e9d3fa",
+    "Cargo.lock": "8cb39e3df05ca1269bad7522444fac4f5da086fda954b6d494e8b08b22173ba1",
+    "benchmark/common.py": "125fc985ac19a329aebcde5f10d2270b9b4d1db6f12b449cf3e25785a9d858f9",
+    "crates/gigastt-core/Cargo.toml": "faaa4968a63d29dd61fe939519b625d64266f7a4f0d0ab0023d22238b4e60d8e",
+    "crates/gigastt-core/examples/current_asr_probe.rs": "0fa62cfe461b86beae05fe1937fb14f6e868a75dfb8926e9d971b2ec34495d5c",
+    "crates/gigastt-core/src/inference/ctc/tests.rs": "063fc679815141dd1bee990dc8ac1f4f8554afcf8abb65b21a4592b662ed3de8",
+    "crates/gigastt-core/src/inference/ctc.rs": "6f4136e58da5c17c9acd39fe8f71bc8f92ae36a7a484c03f43fde8936cbdcdec",
+    "crates/gigastt-core/src/inference/engine/infer.rs": "e2269050b03b7a0e331beda8c7fd95e8e9d123ad50e8d923fd396ce4df2444df",
+    "crates/gigastt-core/src/model/variant.rs": "9c13b7cfd6a550691432be6187811b8136816ff4af345b1da4be0195c72b7501",
+    "crates/gigastt-quantize/examples/inspect_ops.rs": "e2932c5441e8be5741cd0b245c9c466f928f4b768c8f7546578397e7768d0b56",
+    "docs/current-asr-comparison.md": "25fc696b18aa112022736735aca77a3314dcafc8aeaf0aec3c49f73fa8c2362b",
+    "docs/punctuation-heads-evaluation.md": "4668742af0fc8f13d2c28940de1033044a32ea3b9de28d2c2748d2a1f52b0e1f",
+    "docs/rupunct-evaluation.md": "41c26f488ccf6e9b6b60c5bc6b66fed2429c2ed14d49946af7507d3dda18caae",
+    "scripts/export-current-asr.py": "7c4927eee5cd499c4386361a8aced23b27abe0893d91fe7ff39c878bcaa3ff37",
+    "scripts/prepare-current-asr.py": "cdc24faf643d84f604e24197f4ddc14bb7c3f417e0f498c6e387344e7959cabc",
+    "scripts/replay-current-punctuation.py": "01168b6ff700cfd56e7f94d3059b8ab2f9fde8af35ea06adde617058553143d8",
+    "scripts/run-current-asr.py": "12637b2968ae073e296c14195336627add18bb22a2e6f06c3bd2103fb08f7a39",
+    "scripts/score-current-asr.py": "7a8d32acd2865579ecf4d121dc7273eed7b60195cec6b9e4d1bebd5b5399c957",
+    "scripts/test-current-asr.py": "9c5d41a99b99ff97d5155ce35f76047b457331986eb27c16ff1e3f6b9b3164d2"
+  }
+}

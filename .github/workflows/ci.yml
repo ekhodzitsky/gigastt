@@ -238,6 +238,7 @@ jobs:
         run: |
           python3 scripts/test-compare-punctuation.py
           python3 scripts/test-punctuation-heads.py
+          python3 scripts/test-current-asr.py
       - name: Validate Homebrew release pins
         run: python scripts/test_homebrew_formula.py
       - name: Run benchmark unit tests
