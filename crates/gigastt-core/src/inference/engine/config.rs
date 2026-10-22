@@ -23,7 +23,19 @@ impl Engine {
     /// of finalized streaming segments ([`Engine::process_chunk`] /
     /// [`Engine::flush_state`]).
     pub fn with_punctuator(mut self, punctuator: Option<crate::punctuation::Punctuator>) -> Self {
-        self.punctuator = punctuator;
+        self.punctuator = punctuator.map(crate::punctuation::Backend::Onnx);
+        self
+    }
+
+    /// Attach an explicitly provisioned native RUPunct restorer for experiments.
+    /// The standard `with_punctuator` path remains ONNX; both builders replace
+    /// the same optional postprocessor and honor request punctuation overrides.
+    #[cfg(feature = "rupunct")]
+    pub fn with_native_punctuator(
+        mut self,
+        model: Option<crate::punctuation::NativePunctuator>,
+    ) -> Self {
+        self.punctuator = model.map(|model| crate::punctuation::Backend::Native(Box::new(model)));
         self
     }
 

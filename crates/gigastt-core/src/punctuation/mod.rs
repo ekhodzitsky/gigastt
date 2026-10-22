@@ -438,3 +438,23 @@ fn load_id2label(config_path: &Path) -> Result<Vec<String>> {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "rupunct")]
+mod native;
+#[cfg(feature = "rupunct")]
+pub use native::NativePunctuator;
+
+pub(crate) enum Backend {
+    Onnx(Punctuator),
+    #[cfg(feature = "rupunct")]
+    Native(Box<NativePunctuator>),
+}
+impl Backend {
+    pub(crate) fn restore(&self, text: &str) -> String {
+        match self {
+            Self::Onnx(model) => model.restore(text),
+            #[cfg(feature = "rupunct")]
+            Self::Native(model) => model.restore(text),
+        }
+    }
+}

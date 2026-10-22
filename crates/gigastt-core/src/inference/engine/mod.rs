@@ -149,7 +149,7 @@ pub struct Engine {
     /// output and to finalized streaming segments. `None` = pass-through (the
     /// default, and the only behaviour when no punct model is installed).
     /// Attached via [`Engine::with_punctuator`].
-    punctuator: Option<crate::punctuation::Punctuator>,
+    punctuator: Option<crate::punctuation::Backend>,
     /// Whether to run inverse text normalization (Russian number-words →
     /// digits) on file-transcription output and finalized streaming segments,
     /// *before* the punctuation pass. Off by default; toggled via

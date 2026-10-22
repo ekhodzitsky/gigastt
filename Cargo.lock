@@ -1760,6 +1760,7 @@ dependencies = [
  "proptest",
  "reqwest",
  "rubato",
+ "rupunct",
  "rustfft",
  "ryf",
  "safetensors 0.8.0",
@@ -3618,6 +3619,17 @@ dependencies = [
  "realfft",
  "visibility",
  "windowfunctions",
+]
+
+[[package]]
+name = "rupunct"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9f5e5f25eea59b1b2ba8c6abdc4684f7ef4691e30e9e65ebd57e765507c11a9"
+dependencies = [
+ "gemm 0.19.0",
+ "memmap2",
+ "serde_json",
 ]
 
 [[package]]

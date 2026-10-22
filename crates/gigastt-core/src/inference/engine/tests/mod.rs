@@ -21,3 +21,6 @@ mod transcribe;
 
 #[cfg(feature = "file-decode")]
 mod runtime_workspace;
+
+#[cfg(feature = "rupunct")]
+mod native_punctuation;
