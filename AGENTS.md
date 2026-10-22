@@ -495,6 +495,11 @@ bundle and are not a sizing guarantee for the current 305 MiB encoder. Pool > 1
 splits encoder threads between slots and can slow a serial job. Leave
 `--encoder-intra-threads` unset (auto); explicit `1` is allowed for debugging.
 
+The optional `rupunct` Cargo feature enables the experimental native punctuation
+adapter (`punctuation::NativePunctuator`, `Engine::with_native_punctuator`). It
+requires explicitly provisioned local weights and does not change CLI defaults
+or model downloads. See [the evaluation](docs/rupunct-evaluation.md).
+
 ## Useful Commands for Agents
 
 ```sh

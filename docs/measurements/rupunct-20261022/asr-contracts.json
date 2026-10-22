@@ -1,0 +1,413 @@
+{
+  "onnx-small": {
+    "rows": [
+      {
+        "id": "golos_00.wav",
+        "text": "Шестьдесят тысяч тенге, сколько будет стоить?",
+        "seconds": 0.366634514,
+        "words_sha256": "5e7e2bb2055fc16c193fdea1c938f4ec9c8ebae7fafa0e99f6b3ac208fb827c6",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_01.wav",
+        "text": "Покажи мне на смотрешке телеканал Синергия ТВ.",
+        "seconds": 0.306827628,
+        "words_sha256": "7279375604c2372092ad956ade3b928cdc3c158d015456d7a343ca9301cf3f2c",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_02.wav",
+        "text": "Заказать яблоки зеленые.",
+        "seconds": 0.28433366,
+        "words_sha256": "31d9b6f519386d3abc0726108413585ac7604fdfce44243ac3c777cf9ca639b2",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_03.wav",
+        "text": "Алиса закажи килограммовый торт, графские развалины.",
+        "seconds": 0.47648898,
+        "words_sha256": "10cf716ee5a9d1ce6c35298f5ab6b81ffdf1f117dbe9d534a37342d8d1a4392c",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_04.wav",
+        "text": "Ищи телеканал про бизнес на тиви.",
+        "seconds": 0.473482224,
+        "words_sha256": "5085ee006eff5866f9d40903c52ad99e552f57574bb13562d8353960dba713e9",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_05.wav",
+        "text": "Михаила Мурадяна.",
+        "seconds": 0.294123252,
+        "words_sha256": "aa9a3a4f380f053a5f93b0b3e204e70348e7888be068f6c81b4868c86dce14b8",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_06.wav",
+        "text": "Любовницы — две тысячи— тринадцать— пятнадцатый сезон.",
+        "seconds": 0.443014417,
+        "words_sha256": "dae038b4d7ef144b135f45025dcf86a71f5a14ee46a77fbab48074764143ae69",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_07.wav",
+        "text": "Найди боевики!",
+        "seconds": 0.187405446,
+        "words_sha256": "7f537b34563ec7ccace025fc11bc3b28ee103ebd24b8efcdf5d3a6faaedefa6a",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_08.wav",
+        "text": "Гетто, Сезон три.",
+        "seconds": 0.420464065,
+        "words_sha256": "c8096e229d9cb0a8a83dfa88ace1ef69e7ed6fd56eeee3e03c2a97a6939ea045",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_09.wav",
+        "text": "Хочу посмотреть Ростов, папа на телевизоре.",
+        "seconds": 0.303365538,
+        "words_sha256": "968ea068cb45741fac10fb5752f339ff993148eaae42fdf7229d01ea40781001",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_10.wav",
+        "text": "Сбер, какое твое самое ненавистное занятие?",
+        "seconds": 0.357450868,
+        "words_sha256": "83b214d9c59cbcfbbf6b08ab0f354ade8a99f706a1a8db2a2227a80299f0eb49",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_11.wav",
+        "text": "Афина, чем платят у китайцев?",
+        "seconds": 0.491192114,
+        "words_sha256": "e448b4bff4bc297541d8781f168f141375e4753a382ec664f97b674614d05dc4",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_12.wav",
+        "text": "Джой, как работает досрочное погашение кредита?",
+        "seconds": 0.517605408,
+        "words_sha256": "aa8821f93b13cd4a8eecab95ca48c9e57fd7db5326b81f007eceb7f47131c3a4",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_13.wav",
+        "text": "У тебя найдется люк Кейдж.",
+        "seconds": 0.279074652,
+        "words_sha256": "cdcb9effbe2bd4c5b9a54fbbf0c11d7365dea85dba719e2aedb389538e5cf238",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_14.wav",
+        "text": "У тебя будет лучшая часть пинк.",
+        "seconds": 0.309836529,
+        "words_sha256": "17cd550092a04fa97b078a9def8e59b2799e035634ac90d65009166312e0b8ab",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      }
+    ],
+    "resources": {
+      "load_seconds": 0.042345091,
+      "loaded": {
+        "peak_rss_kib": 92424,
+        "rss_kib": 70796,
+        "threads": 1
+      },
+      "active": {
+        "peak_rss_kib": 338420,
+        "rss_kib": 338420,
+        "threads": 1
+      }
+    }
+  },
+  "native-small": {
+    "rows": [
+      {
+        "id": "golos_00.wav",
+        "text": "Шестьдесят тысяч тенге, сколько будет стоить?",
+        "seconds": 0.36384761,
+        "words_sha256": "5e7e2bb2055fc16c193fdea1c938f4ec9c8ebae7fafa0e99f6b3ac208fb827c6",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_01.wav",
+        "text": "Покажи мне на смотрешке телеканал Синергия ТВ.",
+        "seconds": 0.299701309,
+        "words_sha256": "7279375604c2372092ad956ade3b928cdc3c158d015456d7a343ca9301cf3f2c",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_02.wav",
+        "text": "Заказать яблоки зеленые.",
+        "seconds": 0.280500865,
+        "words_sha256": "31d9b6f519386d3abc0726108413585ac7604fdfce44243ac3c777cf9ca639b2",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_03.wav",
+        "text": "Алиса закажи килограммовый торт, графские развалины.",
+        "seconds": 0.464808214,
+        "words_sha256": "10cf716ee5a9d1ce6c35298f5ab6b81ffdf1f117dbe9d534a37342d8d1a4392c",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_04.wav",
+        "text": "Ищи телеканал про бизнес на тиви.",
+        "seconds": 0.451299639,
+        "words_sha256": "5085ee006eff5866f9d40903c52ad99e552f57574bb13562d8353960dba713e9",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_05.wav",
+        "text": "Михаила Мурадяна.",
+        "seconds": 0.279896603,
+        "words_sha256": "aa9a3a4f380f053a5f93b0b3e204e70348e7888be068f6c81b4868c86dce14b8",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_06.wav",
+        "text": "Любовницы — две тысячи— тринадцать— пятнадцатый сезон.",
+        "seconds": 0.429353649,
+        "words_sha256": "dae038b4d7ef144b135f45025dcf86a71f5a14ee46a77fbab48074764143ae69",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_07.wav",
+        "text": "Найди боевики!",
+        "seconds": 0.186900339,
+        "words_sha256": "7f537b34563ec7ccace025fc11bc3b28ee103ebd24b8efcdf5d3a6faaedefa6a",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_08.wav",
+        "text": "Гетто, Сезон три.",
+        "seconds": 0.418582337,
+        "words_sha256": "c8096e229d9cb0a8a83dfa88ace1ef69e7ed6fd56eeee3e03c2a97a6939ea045",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_09.wav",
+        "text": "Хочу посмотреть Ростов, папа на телевизоре.",
+        "seconds": 0.300471553,
+        "words_sha256": "968ea068cb45741fac10fb5752f339ff993148eaae42fdf7229d01ea40781001",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_10.wav",
+        "text": "Сбер, какое твое самое ненавистное занятие?",
+        "seconds": 0.33615156,
+        "words_sha256": "83b214d9c59cbcfbbf6b08ab0f354ade8a99f706a1a8db2a2227a80299f0eb49",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_11.wav",
+        "text": "Афина, чем платят у китайцев?",
+        "seconds": 0.48721603,
+        "words_sha256": "e448b4bff4bc297541d8781f168f141375e4753a382ec664f97b674614d05dc4",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_12.wav",
+        "text": "Джой, как работает досрочное погашение кредита?",
+        "seconds": 0.511669831,
+        "words_sha256": "aa8821f93b13cd4a8eecab95ca48c9e57fd7db5326b81f007eceb7f47131c3a4",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_13.wav",
+        "text": "У тебя найдется люк Кейдж.",
+        "seconds": 0.283764733,
+        "words_sha256": "cdcb9effbe2bd4c5b9a54fbbf0c11d7365dea85dba719e2aedb389538e5cf238",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_14.wav",
+        "text": "У тебя будет лучшая часть пинк.",
+        "seconds": 0.302916727,
+        "words_sha256": "17cd550092a04fa97b078a9def8e59b2799e035634ac90d65009166312e0b8ab",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      }
+    ],
+    "resources": {
+      "load_seconds": 0.033606129,
+      "loaded": {
+        "peak_rss_kib": 30388,
+        "rss_kib": 29764,
+        "threads": 1
+      },
+      "active": {
+        "peak_rss_kib": 303040,
+        "rss_kib": 299904,
+        "threads": 2
+      }
+    }
+  },
+  "native-big": {
+    "rows": [
+      {
+        "id": "golos_00.wav",
+        "text": "Шестьдесят тысяч тенге сколько будет стоить?",
+        "seconds": 0.378303228,
+        "words_sha256": "5e7e2bb2055fc16c193fdea1c938f4ec9c8ebae7fafa0e99f6b3ac208fb827c6",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_01.wav",
+        "text": "Покажи мне на смотрешке телеканал Синергия ТВ.",
+        "seconds": 0.326813865,
+        "words_sha256": "7279375604c2372092ad956ade3b928cdc3c158d015456d7a343ca9301cf3f2c",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_02.wav",
+        "text": "Заказать яблоки зеленые?",
+        "seconds": 0.293386972,
+        "words_sha256": "31d9b6f519386d3abc0726108413585ac7604fdfce44243ac3c777cf9ca639b2",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_03.wav",
+        "text": "Алиса, закажи килограммовый торт— графские развалины!",
+        "seconds": 0.483050962,
+        "words_sha256": "10cf716ee5a9d1ce6c35298f5ab6b81ffdf1f117dbe9d534a37342d8d1a4392c",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_04.wav",
+        "text": "Ищи телеканал про бизнес на Тиви!",
+        "seconds": 0.480690156,
+        "words_sha256": "5085ee006eff5866f9d40903c52ad99e552f57574bb13562d8353960dba713e9",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_05.wav",
+        "text": "Михаила Мурадяна.",
+        "seconds": 0.31410488,
+        "words_sha256": "aa9a3a4f380f053a5f93b0b3e204e70348e7888be068f6c81b4868c86dce14b8",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_06.wav",
+        "text": "Любовницы. Две тысячи тринадцать. Пятнадцатый сезон.",
+        "seconds": 0.476994508,
+        "words_sha256": "dae038b4d7ef144b135f45025dcf86a71f5a14ee46a77fbab48074764143ae69",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_07.wav",
+        "text": "Найди боевики!",
+        "seconds": 0.225903205,
+        "words_sha256": "7f537b34563ec7ccace025fc11bc3b28ee103ebd24b8efcdf5d3a6faaedefa6a",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_08.wav",
+        "text": "Гетто. Сезон три.",
+        "seconds": 0.455817049,
+        "words_sha256": "c8096e229d9cb0a8a83dfa88ace1ef69e7ed6fd56eeee3e03c2a97a6939ea045",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_09.wav",
+        "text": "Хочу посмотреть: Ростов папа на телевизоре.",
+        "seconds": 0.336674269,
+        "words_sha256": "968ea068cb45741fac10fb5752f339ff993148eaae42fdf7229d01ea40781001",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_10.wav",
+        "text": "Сбер — какое твое самое ненавистное занятие!",
+        "seconds": 0.379863494,
+        "words_sha256": "83b214d9c59cbcfbbf6b08ab0f354ade8a99f706a1a8db2a2227a80299f0eb49",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_11.wav",
+        "text": "Афина. Чем платят у китайцев?",
+        "seconds": 0.518549639,
+        "words_sha256": "e448b4bff4bc297541d8781f168f141375e4753a382ec664f97b674614d05dc4",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_12.wav",
+        "text": "Джой, как работает досрочное погашение кредита?",
+        "seconds": 0.54563862,
+        "words_sha256": "aa8821f93b13cd4a8eecab95ca48c9e57fd7db5326b81f007eceb7f47131c3a4",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_13.wav",
+        "text": "У тебя найдется люк, Кейдж?",
+        "seconds": 0.317029163,
+        "words_sha256": "cdcb9effbe2bd4c5b9a54fbbf0c11d7365dea85dba719e2aedb389538e5cf238",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      },
+      {
+        "id": "golos_14.wav",
+        "text": "У тебя будет лучшая часть, Пинк.",
+        "seconds": 0.344903937,
+        "words_sha256": "17cd550092a04fa97b078a9def8e59b2799e035634ac90d65009166312e0b8ab",
+        "same_words_and_timestamps": true,
+        "same_lexical_content": true
+      }
+    ],
+    "resources": {
+      "load_seconds": 0.057081647,
+      "loaded": {
+        "peak_rss_kib": 43508,
+        "rss_kib": 43508,
+        "threads": 1
+      },
+      "active": {
+        "peak_rss_kib": 394112,
+        "rss_kib": 394112,
+        "threads": 2
+      }
+    }
+  }
+}

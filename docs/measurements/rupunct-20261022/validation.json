@@ -1,0 +1,15 @@
+{
+  "default": {
+    "passed": 1237,
+    "failed": 0,
+    "ignored": 48,
+    "strict_clippy": true
+  },
+  "native": {
+    "passed": 1240,
+    "failed": 0,
+    "ignored": 49,
+    "strict_clippy": true
+  },
+  "model_backed_engine_test": "1 passed, including size rejection, formatting, ITN, punctuation override and cancellation"
+}

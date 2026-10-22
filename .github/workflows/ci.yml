@@ -234,6 +234,8 @@ jobs:
           python-version: "3.12"
       - name: Install test deps
         run: python -m pip install pytest websockets
+      - name: Validate punctuation comparison scoring
+        run: python3 scripts/test-compare-punctuation.py
       - name: Validate Homebrew release pins
         run: python scripts/test_homebrew_formula.py
       - name: Run benchmark unit tests
@@ -260,6 +262,8 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Lint optional native punctuation
+        run: cargo clippy -p gigastt-core --all-targets --features rupunct -- -D warnings
       - name: Check Android runtime API compatibility
         run: |
           cargo metadata --locked --offline --filter-platform x86_64-unknown-linux-gnu --format-version 1 > "$RUNNER_TEMP/android-cargo-metadata.json"
@@ -282,6 +286,8 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo test --workspace --lib --bins
+      - name: Native punctuation adapter regressions
+        run: cargo test -p gigastt-core --features rupunct --lib punctuation::native
       - name: Model-free CLI integration tests
         run: cargo test -p gigastt --test e2e_cli
       - name: Runtime output allocation regression

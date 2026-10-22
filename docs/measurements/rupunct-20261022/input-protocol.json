@@ -1,0 +1,7 @@
+{
+  "source": "google/fleurs ru_ru test, CC BY 4.0, Conneau et al. (2022)",
+  "manifest_sha256": "932d2ef642722a37bd73e76c1551e8b8d7caf4814dbac8a5746825ab8179f6be",
+  "cases": 775,
+  "normalization": "asr_text in scripts/compare-punctuation.py",
+  "scoring": "punctuation character events/capital letters at alphanumeric boundaries; lexical changes conservatively fail the entire row"
+}

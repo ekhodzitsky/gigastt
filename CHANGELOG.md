@@ -15,6 +15,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Changed
 
+- Add an opt-in native punctuation integration for local comparison with rupunct
+  0.19.1, including explicit model attachment, fail-soft behavior and reproducible
+  punctuation/casing, resource and concurrency measurements. Standard punctuation
+  remains on the existing ONNX model.
+
 - Run GitHub workflows only on manual dispatch to conserve Actions minutes.
   Preserve protected checks and exact-source release validation; manual CI
   requires an immutable comparison baseline and opts into full model/E2E checks.
