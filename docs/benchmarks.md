@@ -183,6 +183,11 @@ has written the manifest and the wavs.
 
 ### Punctuation quality — `e2e_rnnt` vs `rnnt` + RuPunct restore
 
+The table below is historical and uses a position-based metric. For the current
+frozen-audio comparison with word alignment, native small/big and `e2e_rnnt`
+reprocessing, see [Punctuation after real recognition](punctuation-heads-evaluation.md).
+The two scoring protocols are not interchangeable.
+
 The `rnnt` head is bare lowercase, so readable Russian comes two ways: bake it in
 with the `e2e_rnnt` head (one pass), or restore it on top of `rnnt` with the `--punctuation`
 RuPunct model plus `--itn` (two passes). Measured on **775 punctuated FLEURS-ru references**

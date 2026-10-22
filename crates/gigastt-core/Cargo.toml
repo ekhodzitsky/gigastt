@@ -194,3 +194,7 @@ required-features = ["file-decode"]
 [[example]]
 name = "punctuation_probe"
 required-features = ["rupunct", "file-decode"]
+
+[[example]]
+name = "punctuation_heads_probe"
+required-features = ["file-decode"]
