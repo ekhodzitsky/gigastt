@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Compare readable-Russian punctuation quality between the two production paths:
+"""Legacy position-based comparison of two readable-Russian paths.
+
+For alignment-aware scoring and the native rupunct comparison, use
+``scripts/compare-punctuation-heads.py`` and
+``docs/punctuation-heads-evaluation.md``. These legacy scores must not be used
+to rank heads with different recognition errors.
+
+Historical paths:
 
   1. ``e2e_rnnt``            — punctuation/casing/ITN baked into the head (one pass)
   2. ``rnnt`` + RuPunct      — low-WER bare head, punctuation restored as a second pass
@@ -7,7 +14,7 @@
 
 Reports position-based punctuation / capitalization F1 using the same primitives as
 ``benchmark_punctuation.py``. This backs the "Punctuation quality" table in
-``docs/benchmarks.md`` and is the evidence for keeping the ``e2e_rnnt`` head.
+``docs/benchmarks.md``; it does not isolate punctuation accuracy from ASR errors.
 
 Data — a punctuated reference manifest, produced by::
 
@@ -15,17 +22,15 @@ Data — a punctuated reference manifest, produced by::
 
 which writes ``benchmark/manifests/fleurs_ru_punct.json`` + the WAVs under
 ``~/.gigastt/benchmarks/fleurs_ru_punct/``. FLEURS Russian ``raw_transcription`` writes
-numbers as digits, so BOTH configs run with ``--itn on`` to match the reference style —
-otherwise number-word vs digit output shifts every downstream punctuation position and
-unfairly penalizes whichever config differs.
+numbers as digits. Number-word versus digit differences can shift every downstream
+punctuation position in this legacy metric, independently of punctuation accuracy.
 
 Caveat: the F1 metric is position-based, so it conflates recognition errors with
-punctuation placement. ``e2e_rnnt`` has the higher WER, so misrecognized words shift its
-positions and *handicap its own score* — any lead it shows is therefore a lower bound.
+punctuation placement. Misrecognized words can shift downstream positions for either
+head. This does not establish a mathematical lower bound on either head's lead.
 
-Model dirs come from the environment (a single ``--model-dir`` + ``--model-variant``
-would be cleaner, but that flag is currently ignored when one dir holds multiple heads,
-so each head lives in its own dir)::
+This legacy harness uses separate model directories from the environment. Current
+Engine explicit-variant loading also supports a directory containing both heads::
 
     GIGASTT_RNNT_DIR   dir holding the ``rnnt`` head     (default ~/.gigastt/models)
     GIGASTT_E2E_DIR    dir holding the ``e2e_rnnt`` head (default ~/.gigastt/models-e2e)

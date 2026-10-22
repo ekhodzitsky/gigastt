@@ -1,0 +1,19 @@
+{
+  "unit-default": {
+    "passed": 1237,
+    "failed": 0,
+    "ignored": 48
+  },
+  "unit-native": {
+    "passed": 1240,
+    "failed": 0,
+    "ignored": 49
+  },
+  "clippy-default": true,
+  "clippy-native": true,
+  "scoring_tests": 8,
+  "existing_gold_scoring_tests": 4,
+  "format": "passed",
+  "docs_drift": "passed",
+  "ci_dispatched": false
+}

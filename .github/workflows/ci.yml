@@ -235,7 +235,9 @@ jobs:
       - name: Install test deps
         run: python -m pip install pytest websockets
       - name: Validate punctuation comparison scoring
-        run: python3 scripts/test-compare-punctuation.py
+        run: |
+          python3 scripts/test-compare-punctuation.py
+          python3 scripts/test-punctuation-heads.py
       - name: Validate Homebrew release pins
         run: python scripts/test_homebrew_formula.py
       - name: Run benchmark unit tests

@@ -11,6 +11,10 @@ let model = gigastt_core::punctuation::NativePunctuator::load(model_dir)?;
 let engine = engine.with_native_punctuator(Some(model));
 ```
 
+Attach this adapter to bare-text heads under an explicit caller policy. It does
+not infer the CLI auto policy; feeding already punctuated text directly can
+duplicate punctuation, as the [head comparison](punctuation-heads-evaluation.md) shows.
+
 The library consumes locally provisioned `model.safetensors`, `tokenizer.json`
 and `config.json`. It neither fetches weights nor selects a model implicitly.
 The adapter preserves gigastt's fail-soft policy: restore failures log a warning,
@@ -20,11 +24,16 @@ postprocessing path. Native restore calls are synchronous and cannot be interrup
 inside inference. The native library caps input at 8 MiB and returns a whole-call
 error, whereas the existing ONNX restorer can retain successful individual windows.
 
+For actual audio recognition, explicit head selection and reprocessing of
+`e2e_rnnt`, see the [head comparison](punctuation-heads-evaluation.md). Its
+alignment-aware metrics differ from the gold-input metrics below.
+
 ## Results and recommendation
 
-Keep ONNX small as the standard low-latency path. Native small is interesting
-when punctuation/casing quality and RAM matter more than single-request speed.
-Big offers a larger quality gain, but is an explicit accuracy/compute trade-off;
+Keep ONNX small as the standard low-latency path. Native small reduces RAM, but
+its gold-input quality gain below does not transfer to the actual `rnnt` output
+in the [audio comparison](punctuation-heads-evaluation.md). Big improves actual
+bare-head punctuation, but is an explicit accuracy/compute trade-off;
 it is not a speed upgrade. The experiment adds an opt-in Engine API, not a CLI
 backend switch or automatic replacement in releases.
 
@@ -43,7 +52,10 @@ and [structured summary](measurements/rupunct-20261022/summary.json) accompany t
 No lexical mutations were found in any of the 775 outputs per backend. The
 native small gain is **4.16 percentage points of punctuation F1**; big gains
 10.27 points. Big changes the checkpoint as well as the execution path. These
-numbers do not establish that the native compute kernel alone improves accuracy.
+numbers include an existing ONNX word-alignment limitation on internal punctuation.
+Most of the small-model gain concentrates in hyphen-bearing gold inputs, absent
+from actual bare-head outputs here; see the [stratified audio audit](punctuation-heads-evaluation.md#why-the-earlier-small-model-gain-does-not-transfer-directly).
+They do not establish that the native compute kernel alone improves accuracy.
 They also are not directly comparable with the library README's different
 corpus/word-label metric. Per-sentence outputs:
 [ONNX](measurements/rupunct-20261022/onnx-small-quality.jsonl),
