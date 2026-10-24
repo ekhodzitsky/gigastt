@@ -3,7 +3,6 @@ use super::super::state::WordInfo;
 use super::super::tokenizer::Tokenizer;
 use super::super::windows::CHUNK_OVERLAP_SAMPLES;
 use super::super::{ENCODER_SUBSAMPLING, HOP_LENGTH};
-use super::stitch::reconcile_seam_case;
 use super::*;
 
 #[test]
@@ -378,43 +377,137 @@ fn test_token_formatter_last_word_empty_confidences_defaults_to_one() {
 }
 
 #[test]
-fn test_seam_case_lowers_a_window_start_capital_mid_sentence() {
-    // A window that began in the middle of a sentence comes back with its
-    // first word capitalised; the previous word continues the sentence.
-    let mut words = vec![word("короткие,", 21.28, 21.56), word("И", 21.76, 21.9)];
-    reconcile_seam_case(&mut words, 1);
-    assert_eq!(words[1].word, "и");
+fn test_stitch_seam_case_preserves_russian_names() {
+    for name in ["Москве", "Иван", "Яндекс", "Ёлки"] {
+        let old = vec![word("в", 22.5, 22.7), word(name, 23.1, 23.3)];
+        let next = vec![word(name, 23.1, 23.3), word("сегодня", 23.5, 23.8)];
+        let (out, retained) = stitch_chunk_words_retained(old, next, 23.0);
+        assert_eq!(retained, 1);
+        assert_eq!(out[1].word, name);
+    }
 }
 
 #[test]
-fn test_seam_case_keeps_a_capital_after_a_sentence_end() {
-    let mut words = vec![word("конец.", 21.2, 21.5), word("И", 21.7, 21.9)];
-    reconcile_seam_case(&mut words, 1);
-    assert_eq!(words[1].word, "И");
-    let mut after_quote = vec![word("сказал.»", 21.2, 21.5), word("Он", 21.7, 21.9)];
-    reconcile_seam_case(&mut after_quote, 1);
-    assert_eq!(after_quote[1].word, "Он");
+fn test_stitch_seam_case_requires_the_first_decoded_word() {
+    let old = vec![word("и", 22.7, 22.9), word("он", 23.1, 23.3)];
+    let next = vec![word("и", 22.7, 22.9), word("Он", 23.1, 23.3)];
+    let (out, retained) = stitch_chunk_words_retained(old, next, 23.0);
+    assert_eq!(retained, 1);
+    assert_eq!(out[1].word, "Он");
 }
 
 #[test]
-fn test_seam_case_keeps_acronyms_and_latin_brands() {
-    let mut acronym = vec![word("это", 21.2, 21.5), word("ПО", 21.7, 21.9)];
-    reconcile_seam_case(&mut acronym, 1);
-    assert_eq!(acronym[1].word, "ПО");
-    let mut latin = vec![word("и", 21.2, 21.5), word("Kubernetes", 21.7, 21.9)];
-    reconcile_seam_case(&mut latin, 1);
-    assert_eq!(latin[1].word, "Kubernetes");
-    let mut acronym_latin = vec![word("и", 21.2, 21.5), word("HTML,", 21.7, 21.9)];
-    reconcile_seam_case(&mut acronym_latin, 1);
-    assert_eq!(acronym_latin[1].word, "HTML,");
+fn test_stitch_seam_case_preserves_unmatched_capital() {
+    let out = stitch_chunk_words(
+        vec![word("сказал", 22.7, 22.9)],
+        vec![word("Иван", 23.1, 23.3)],
+        23.0,
+    );
+    assert_eq!(out[1].word, "Иван");
 }
 
 #[test]
-fn test_seam_case_is_a_no_op_at_the_edges() {
-    let mut first = vec![word("И", 0.5, 0.9)];
-    reconcile_seam_case(&mut first, 0);
-    assert_eq!(first[0].word, "И");
-    let mut beyond = vec![word("и", 0.5, 0.9)];
-    reconcile_seam_case(&mut beyond, 3);
-    assert_eq!(beyond[0].word, "и");
+fn test_stitch_seam_case_uses_older_context_and_preserves_metadata() {
+    for (lower, capital) in [("и", "И"), ("ёлки,", "Ёлки,"), ("«если", "«Если")]
+    {
+        let prefix = word("короткие,", 22.5, 22.7);
+        let old = vec![prefix.clone(), word(lower, 23.08, 23.3)];
+        let mut first = WordInfo::new(capital, 23.12, 23.4, 0.75, Some(2));
+        let tail = word("дальше", 23.6, 23.9);
+        let next = vec![first.clone(), tail.clone()];
+        let (out, retained) = stitch_chunk_words_retained(old, next, 23.0);
+        first.word = lower.into();
+        assert_eq!(retained, 1);
+        assert_eq!(
+            serde_json::to_value(out).unwrap(),
+            serde_json::to_value(vec![prefix, first, tail]).unwrap()
+        );
+    }
+}
+
+#[test]
+fn test_stitch_seam_case_preserves_sentence_starts() {
+    for previous in [
+        "конец.",
+        "конец!",
+        "конец?",
+        "конец…",
+        "конец.»",
+        "конец!\")",
+    ] {
+        let out = stitch_chunk_words(
+            vec![word(previous, 22.5, 22.7), word("он", 23.1, 23.3)],
+            vec![word("Он", 23.1, 23.3)],
+            23.0,
+        );
+        assert_eq!(out[1].word, "Он", "{previous}");
+    }
+}
+
+#[test]
+fn test_stitch_seam_case_preserves_acronyms_latin_and_punctuation() {
+    for (old, new) in [
+        ("по", "ПО"),
+        ("gpu", "GPU"),
+        ("kubernetes", "Kubernetes"),
+        ("он,", "Он."),
+        ("елки", "Ёлки"),
+        ("яНдекс", "Яндекс"),
+    ] {
+        let out = stitch_chunk_words(
+            vec![word("и", 22.5, 22.7), word(old, 23.1, 23.3)],
+            vec![word(new, 23.1, 23.3)],
+            23.0,
+        );
+        assert_eq!(out[1].word, new);
+    }
+}
+
+#[test]
+fn test_stitch_seam_case_preserves_ambiguous_repetitions() {
+    let out = stitch_chunk_words(
+        vec![
+            word("и", 22.5, 22.7),
+            word("да", 23.1, 23.2),
+            word("да", 23.3, 23.4),
+        ],
+        vec![word("Да", 23.1, 23.2)],
+        23.0,
+    );
+    assert_eq!(out[1].word, "Да");
+}
+
+#[test]
+fn test_stitch_seam_case_preserves_unaligned_and_unbounded_overlap() {
+    for old in [
+        vec![word("и", 22.4, 22.5), word("он", 22.6, 22.7)],
+        (0..100).map(|_| word("он", 22.9, 23.0)).collect(),
+    ] {
+        let out = stitch_chunk_words(old, vec![word("Он", 23.1, 23.3)], 23.0);
+        assert_eq!(out.last().unwrap().word, "Он");
+    }
+}
+
+#[test]
+fn test_stitch_seam_case_preserves_edges_and_older_winner() {
+    let first = vec![word("Он", 23.1, 23.3)];
+    let (out, retained) = stitch_chunk_words_retained(Vec::new(), first.clone(), 23.0);
+    assert_eq!(retained, 0);
+    assert_eq!(out[0].word, "Он");
+    let (out, retained) = stitch_chunk_words_retained(first, Vec::new(), 23.0);
+    assert_eq!(retained, 1);
+    assert_eq!(out[0].word, "Он");
+    let (out, retained) = stitch_chunk_words_retained(
+        vec![word("он", 23.1, 23.3)],
+        vec![word("Он", 23.1, 23.3)],
+        23.0,
+    );
+    assert_eq!(retained, 0);
+    assert_eq!(out[0].word, "Он");
+    let out = stitch_chunk_words(
+        vec![word("и", 22.5, 22.7), word("Он", 22.9, 23.0)],
+        vec![word("он", 22.9, 23.0), word("ушёл", 23.5, 23.8)],
+        23.0,
+    );
+    assert_eq!(out[1].word, "Он");
 }

@@ -27,13 +27,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
-- Keep a long-form window seam from capitalising a word it did not start. A
-  window that begins in the middle of a sentence decodes its first word as if it
-  opened one, and the stitch keeps the winning `WordInfo` verbatim, so a capital
-  landed in the middle of the merged sentence. The first word taken from the
-  newer window is now lower-cased when the previous word does not end a
-  sentence; acronyms and Latin brands are left alone. Four unit tests cover the
-  rule and its guards.
+- Correct a Cyrillic window-start capital at a long-form seam only when an
+  unambiguous aligned word from the older window confirms the lowercase form.
+  Preserve sentence starts, acronyms, unsupported proper-name casing, and words
+  that did not begin the decoded window. Timing, confidence, speaker labels and
+  the retained transcript prefix are unchanged.
 
 - Update locked rustls to 0.23.46 and quinn-proto to 0.11.18 for TLS/QUIC
   security fixes without relaxing the advisory checks.

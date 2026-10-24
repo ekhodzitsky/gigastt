@@ -90,8 +90,8 @@ fn aligned_cut(merged: &[WordInfo], next: &[WordInfo], seam: f64) -> Option<(usi
         if matches(i - 1, j - 1) && score == scores[(i - 1) * width + j - 1].with_match(drift) {
             let center = (old[i - 1].start + new[j - 1].start) / 2.0;
             // Keep the copy with more encoder context: old before the
-            // midpoint, new after it. The text, punctuation and confidence
-            // of the chosen WordInfo stay intact.
+            // midpoint, new after it. Preserve the chosen WordInfo; the caller
+            // may reconcile initial case using both aligned hypotheses.
             let distance = (center - seam).abs();
             let preferred = usize::from(center <= seam);
             // If timestamps move past the neighbouring word, the other
@@ -135,7 +135,7 @@ pub(crate) fn stitch_chunk_words(
 /// Return the exact unchanged prefix length alongside the stitched words.
 pub(crate) fn stitch_chunk_words_retained(
     mut merged: Vec<WordInfo>,
-    next: Vec<WordInfo>,
+    mut next: Vec<WordInfo>,
     seam_s: f64,
 ) -> (Vec<WordInfo>, usize) {
     if merged.is_empty() {
@@ -145,7 +145,11 @@ pub(crate) fn stitch_chunk_words_retained(
         let retained = merged.len();
         return (merged, retained);
     }
-    let (old_end, new_start) = aligned_cut(&merged, &next, seam_s).unwrap_or_else(|| {
+    let aligned = aligned_cut(&merged, &next, seam_s);
+    if let Some((old_end, 0)) = aligned {
+        reconcile_seam_case(&merged, old_end, &mut next[0], seam_s);
+    }
+    let (old_end, new_start) = aligned.unwrap_or_else(|| {
         (
             merged.partition_point(|w| w.start <= seam_s),
             next.partition_point(|w| w.start <= seam_s),
@@ -153,27 +157,49 @@ pub(crate) fn stitch_chunk_words_retained(
     });
     merged.truncate(old_end);
     merged.extend(next.into_iter().skip(new_start));
-    reconcile_seam_case(&mut merged, old_end);
     (merged, old_end)
 }
 
-/// A window that starts in the middle of a sentence decodes its first word as
-/// if it opened one, and the stitch keeps whichever side won the alignment —
-/// so its capital lands in the middle of the merged sentence. (Measured in
-/// voxd: the same audio cut into a single window returns that word lower case.)
-///
-/// Undo it at the seam only, and only where the rule cannot be wrong by much:
-/// the previous word must not end a sentence, and the word itself must start
-/// with a Cyrillic capital that is not an acronym, so a Latin brand
-/// (`Kubernetes`) and an all-caps term (`ПО`, `GPU`) keep their form.
-pub(crate) fn reconcile_seam_case(words: &mut [WordInfo], boundary: usize) {
-    if boundary == 0 || boundary >= words.len() {
+/// Only the first decoded word can carry a window-start capital. Require its
+/// aligned older copy to differ solely in that initial case: guessing from the
+/// preceding punctuation alone would lowercase proper names. Ambiguous repeated
+/// words and fallback cuts retain the selected hypothesis unchanged.
+fn reconcile_seam_case(old: &[WordInfo], boundary: usize, first: &mut WordInfo, seam: f64) {
+    if boundary == 0 || boundary >= old.len() || ends_sentence(&old[boundary - 1].word) {
         return;
     }
-    if ends_sentence(&words[boundary - 1].word) {
+    let Some((idx, ch)) = first.word.char_indices().find(|(_, c)| c.is_alphabetic()) else {
+        return;
+    };
+    if !matches!(ch, 'А'..='Я' | 'Ё') {
         return;
     }
-    lower_cyrillic_initial(&mut words[boundary].word);
+    let mut letters = first.word.chars().filter(|c| c.is_alphabetic());
+    letters.next();
+    // Preserve multi-letter acronyms, including ones followed by punctuation.
+    if letters.clone().next().is_some() && letters.all(char::is_uppercase) {
+        return;
+    }
+    let mut lower = first.word.clone();
+    lower.replace_range(idx..idx + ch.len_utf8(), &ch.to_lowercase().to_string());
+    if old[boundary].word != lower {
+        return;
+    }
+
+    // aligned_cut already bounds this slice to MAX_OVERLAP_WORDS. Do not use
+    // the case of a different occurrence of a rapidly repeated word.
+    let half_overlap = CHUNK_OVERLAP_SAMPLES as f64 / 32_000.0;
+    let start = old.partition_point(|w| w.start < seam - half_overlap);
+    let end = old.partition_point(|w| w.start <= seam + half_overlap);
+    let key = word_key(&first.word);
+    let matches = old[start..end]
+        .iter()
+        .filter(|w| (w.start - first.start).abs() <= MAX_START_DRIFT && word_key(&w.word) == key)
+        .take(2)
+        .count();
+    if matches == 1 {
+        first.word = lower;
+    }
 }
 
 /// Does `word` end a sentence, ignoring closing quotes and brackets?
@@ -182,26 +208,4 @@ fn ends_sentence(word: &str) -> bool {
         .chars()
         .last()
         .is_some_and(|c| matches!(c, '.' | '!' | '?' | '…'))
-}
-
-/// Lowercase the leading Cyrillic capital of `word` when it is a capitalised
-/// word rather than an acronym. Returns whether it changed anything.
-fn lower_cyrillic_initial(word: &mut String) -> bool {
-    let letters: Vec<char> = word.chars().filter(|c| c.is_alphabetic()).collect();
-    if letters.is_empty() {
-        return false;
-    }
-    // An all-caps token is an acronym, not a sentence start.
-    if letters.len() > 1 && letters.iter().all(|c| c.is_uppercase()) {
-        return false;
-    }
-    let Some((idx, ch)) = word.char_indices().find(|(_, c)| c.is_alphabetic()) else {
-        return false;
-    };
-    if !matches!(ch, 'А'..='Я' | 'Ё') {
-        return false;
-    }
-    let lower: String = ch.to_lowercase().collect();
-    word.replace_range(idx..idx + ch.len_utf8(), &lower);
-    true
 }
