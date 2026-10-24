@@ -11,6 +11,10 @@ A later [targeted real-audio search](../seam_reproduction_20261024/README.md)
 reproduced three corrected casing failures on individual public source excerpts.
 That enriched diagnostic set is separate from the unchanged 42-pair corpus below.
 
+A [final 21-pair-per-group comparison](../seam_final_20261024/README.md)
+repeated the full corpus on the audited runtime and reduced latency uncertainty.
+The historical measurements below remain unchanged.
+
 ## Quality result
 
 All **42 baseline/candidate responses were identical**, including case,

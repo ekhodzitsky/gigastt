@@ -80,6 +80,13 @@ The default `full=false` runs the branch checks, including both performance gate
 and Model smoke. It does not run full E2E, E2E coverage, CoreML runtime smoke or
 all Docker builds. These expensive checks are opt-in with `full=true`.
 
+For a PR from a fork, a maintainer may push its reviewed head to a temporary
+branch in the destination repository and dispatch on that branch. The mirrored
+commit must match the PR head exactly; do not merge or rebase it onto another
+commit for validation. Publication hygiene verifies both that SHA and the PR
+destination repository. This preserves the same checks for external contributors
+without requiring write access to Actions in their fork.
+
 Also run **Publication hygiene** on the same branch, providing `baseline_sha`
 and `pull_request_number`. It verifies the PR's exact head before checking its
 title, body, branch, commits and content. Wait for all protected checks before

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Keep GitHub Actions opt-in and manual performance comparisons meaningful."""
 import importlib.util
+import json
+import os
+import sys
+import textwrap
 from pathlib import Path
 import re
 import subprocess
@@ -29,6 +33,37 @@ class WorkflowPolicyTests(unittest.TestCase):
         self.assertNotRegex(workflow, r"github.event_name\s*[!=]=\s*'(push|pull_request)'")
         self.assertIn('inputs.baseline_sha', workflow)
         self.assertIn('inputs.full', workflow)
+
+
+class PublicationSourceTests(unittest.TestCase):
+    def run_source_guard(self, head_repo, base_repo, head_sha):
+        workflow = (ROOT / '.github/workflows/publication.yml').read_text()
+        snippet = textwrap.dedent(workflow.split("<<'PYCODE'\n", 1)[1].split('          PYCODE', 1)[0])
+        event = {'pull_request': {
+            'head': {'sha': head_sha, 'repo': {'full_name': head_repo}},
+            'base': {'repo': {'full_name': base_repo}},
+        }}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'event.json'
+            path.write_text(json.dumps(event))
+            return subprocess.run([sys.executable, '-c', snippet, str(path)],
+                                  env={**os.environ, 'GITHUB_SHA': 'a' * 40,
+                                       'GITHUB_REPOSITORY': 'owner/project'},
+                                  capture_output=True, text=True)
+
+    def test_accepts_exact_head_from_same_repo_or_reviewed_fork_mirror(self):
+        for head_repo in ['owner/project', 'contributor/project']:
+            with self.subTest(head_repo=head_repo):
+                result = self.run_source_guard(head_repo, 'owner/project', 'a' * 40)
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_rejects_stale_head_even_from_the_same_repository(self):
+        result = self.run_source_guard('owner/project', 'owner/project', 'b' * 40)
+        self.assertNotEqual(result.returncode, 0)
+
+    def test_rejects_another_target_repository_even_with_matching_head(self):
+        result = self.run_source_guard('owner/project', 'elsewhere/project', 'a' * 40)
+        self.assertNotEqual(result.returncode, 0)
 
 
 class BaselineTests(unittest.TestCase):

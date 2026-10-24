@@ -548,12 +548,10 @@ fn test_stitch_seam_case_ignores_distant_repetitions() {
 fn test_stitch_seam_case_matches_public_audio_reproductions() {
     // Captured independent-window hypotheses from the pinned CPU/e2e_rnnt run.
     // Expected corrections follow the reference; the unmatched control keeps
-    // its capital. The adjacent report records checksums and audio preparation.
-    let cases: serde_json::Value = serde_json::from_str(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../benchmark/results/seam_reproduction_20261024/stitch-fixtures.json"
-    )))
-    .unwrap();
+    // its capital. The reproduction report records checksums and audio preparation.
+    // Keep the fixture inside the crate so published source tests can compile.
+    let cases: serde_json::Value =
+        serde_json::from_str(include_str!("seam_case_fixtures.json")).unwrap();
     let words = |value: &serde_json::Value| -> Vec<WordInfo> {
         value
             .as_array()

@@ -52,7 +52,8 @@ unfixed. No speed or memory conclusions follow from this targeted run.
 
 `summary.json` records every full-response difference, `response-checksums.json`
 records all 60 saved responses, and `provenance.json` identifies the measured
-binaries and script. `stitch-fixtures.json` captures four real window pairs
+binaries and script. [`seam_case_fixtures.json`](../../../crates/gigastt-core/src/inference/token_format/seam_case_fixtures.json)
+captures four real window pairs
 (three fixes and the unmatched control) for a model-free Rust regression test.
 The newer timestamps are offset by 550 encoder frames of 0.04 seconds using the
 same frame-grid arithmetic as production. Only the first three newer words are
