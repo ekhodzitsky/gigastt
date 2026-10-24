@@ -89,20 +89,37 @@ def casing(reference, hypothesis):
             'capitalization_tp_fp_fn': [tp, fp, fn]}
 
 
+def require(condition, message):
+    """Validation must remain active under python -O / PYTHONOPTIMIZE."""
+    if not condition:
+        raise ValueError(message)
+
+
+def warmup_pair(ports, audio, output, head, sample):
+    expected = {}
+    for arm, port in ports.items():
+        expected[arm], _ = request(port, audio)
+        save(output / f'warmup-{head}-{arm}-{sample}.json', expected[arm])
+    # Timing-only runs must not silently accept a faster but incorrect result.
+    changes = delta(expected['baseline'], expected['candidate'])
+    save(output / f'warmup-{head}-{sample}-changes.json', changes)
+    return expected
+
+
 def delta(base, candidate):
     differences = []
-    assert len(base['words']) == len(candidate['words']), 'word count changed'
+    require(len(base['words']) == len(candidate['words']), 'word count changed')
     for index, (a, b) in enumerate(zip(base['words'], candidate['words'])):
-        assert {k: v for k, v in a.items() if k != 'word'} == {
-            k: v for k, v in b.items() if k != 'word'}, 'word metadata changed'
-        assert a['word'].lower() == b['word'].lower(), 'lexical/punctuation change'
+        require({k: v for k, v in a.items() if k != 'word'} == {
+            k: v for k, v in b.items() if k != 'word'}, 'word metadata changed')
+        require(a['word'].lower() == b['word'].lower(), 'lexical/punctuation change')
         if a['word'] != b['word']:
             differences.append({'index': index, 'start': a['start'], 'base': a['word'],
                                 'candidate': b['word'], 'context': ' '.join(
                                     w['word'] for w in base['words'][max(0, index - 5):index + 6])})
-    assert base['text'].lower() == candidate['text'].lower(), 'rendered text changed beyond case'
-    assert {k: v for k, v in base.items() if k not in ('words', 'text')} == {
-        k: v for k, v in candidate.items() if k not in ('words', 'text')}, 'response metadata changed'
+    require(base['text'].lower() == candidate['text'].lower(), 'rendered text changed beyond case')
+    require({k: v for k, v in base.items() if k not in ('words', 'text')} == {
+        k: v for k, v in candidate.items() if k not in ('words', 'text')}, 'response metadata changed')
     return differences
 
 
@@ -171,9 +188,11 @@ def main():
     os.sched_setaffinity(0, cpus)
     manifest = json.loads(args.manifest.read_text())
     for sample in manifest['samples']:
-        assert digest(args.audio / sample['file']) == sample['sha256'], sample['id']
+        require(digest(args.audio / sample['file']) == sample['sha256'],
+                f"audio checksum mismatch: {sample['id']}")
     for head, checksum in ENCODERS.items():
-        assert digest(args.models / f'v3_{head}_encoder_int8.onnx') == checksum, head
+        require(digest(args.models / f'v3_{head}_encoder_int8.onnx') == checksum,
+                f'encoder checksum mismatch: {head}')
     metadata = {'created_utc': datetime.now(timezone.utc).isoformat(),
                 'rustc': subprocess.check_output(['rustc', '-Vv'], text=True),
                 'baseline_revision': args.baseline_revision, 'candidate_revision': args.candidate_revision,
@@ -235,10 +254,7 @@ def main():
             perf_samples = [s for s in manifest['samples'] if s['id'] in ('long_example', 'podlodka-306')]
             for sample in (perf_samples if args.phase != 'quality' else []):
                 audio, seconds = shifted_wav(args.audio / sample['file'], 0)
-                expected = {}
-                for arm, port in ports.items():
-                    expected[arm], _ = request(port, audio)
-                    save(args.output / f"warmup-{head}-{arm}-{sample['id']}.json", expected[arm])
+                expected = warmup_pair(ports, audio, args.output, head, sample['id'])
                 for round_index in range(args.rounds):
                     order = ['baseline', 'candidate'] if round_index % 2 == 0 else ['candidate', 'baseline']
                     for arm in order:

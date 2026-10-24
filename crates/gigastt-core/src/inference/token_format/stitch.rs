@@ -147,7 +147,7 @@ pub(crate) fn stitch_chunk_words_retained(
     }
     let aligned = aligned_cut(&merged, &next, seam_s);
     if let Some((old_end, 0)) = aligned {
-        reconcile_seam_case(&merged, old_end, &mut next[0], seam_s);
+        reconcile_seam_case(&merged, old_end, &mut next, seam_s);
     }
     let (old_end, new_start) = aligned.unwrap_or_else(|| {
         (
@@ -164,7 +164,10 @@ pub(crate) fn stitch_chunk_words_retained(
 /// aligned older copy to differ solely in that initial case: guessing from the
 /// preceding punctuation alone would lowercase proper names. Ambiguous repeated
 /// words and fallback cuts retain the selected hypothesis unchanged.
-fn reconcile_seam_case(old: &[WordInfo], boundary: usize, first: &mut WordInfo, seam: f64) {
+fn reconcile_seam_case(old: &[WordInfo], boundary: usize, next: &mut [WordInfo], seam: f64) {
+    let Some(first) = next.first() else {
+        return;
+    };
     if boundary == 0 || boundary >= old.len() || ends_sentence(&old[boundary - 1].word) {
         return;
     }
@@ -186,20 +189,27 @@ fn reconcile_seam_case(old: &[WordInfo], boundary: usize, first: &mut WordInfo, 
         return;
     }
 
-    // aligned_cut already bounds this slice to MAX_OVERLAP_WORDS. Do not use
-    // the case of a different occurrence of a rapidly repeated word.
-    let half_overlap = CHUNK_OVERLAP_SAMPLES as f64 / 32_000.0;
-    let start = old.partition_point(|w| w.start < seam - half_overlap);
-    let end = old.partition_point(|w| w.start <= seam + half_overlap);
+    // Require a unique correspondence in both windows. An insertion or deletion
+    // among rapid repetitions can otherwise lend case from another occurrence.
+    // aligned_cut already bounds both overlap slices to MAX_OVERLAP_WORDS.
     let key = word_key(&first.word);
-    let matches = old[start..end]
-        .iter()
-        .filter(|w| (w.start - first.start).abs() <= MAX_START_DRIFT && word_key(&w.word) == key)
-        .take(2)
-        .count();
-    if matches == 1 {
-        first.word = lower;
+    if unique_overlap_match(old, first, &key, seam)
+        && unique_overlap_match(next, &old[boundary], &key, seam)
+    {
+        next[0].word = lower;
     }
+}
+
+fn unique_overlap_match(words: &[WordInfo], anchor: &WordInfo, key: &str, seam: f64) -> bool {
+    let half_overlap = CHUNK_OVERLAP_SAMPLES as f64 / 32_000.0;
+    let start = words.partition_point(|w| w.start < seam - half_overlap);
+    let end = words.partition_point(|w| w.start <= seam + half_overlap);
+    words[start..end]
+        .iter()
+        .filter(|w| (w.start - anchor.start).abs() <= MAX_START_DRIFT && word_key(&w.word) == key)
+        .take(2)
+        .count()
+        == 1
 }
 
 /// Does `word` end a sentence, ignoring closing quotes and brackets?

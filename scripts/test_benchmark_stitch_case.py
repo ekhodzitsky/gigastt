@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Protect comparison metrics against lexical alignment and metadata mistakes."""
-import unittest
 import io
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
@@ -13,6 +17,41 @@ from benchmark_stitch_case import casing, delta
 
 
 class ComparisonTests(unittest.TestCase):
+    def test_optimized_python_still_rejects_lexical_changes(self):
+        code = """
+from benchmark_stitch_case import delta
+base = {'text': 'да', 'words': [{'word': 'да', 'start': 0.1}]}
+candidate = {'text': 'нет', 'words': [{'word': 'нет', 'start': 0.1}]}
+delta(base, candidate)
+"""
+        result = subprocess.run([sys.executable, '-O', '-c', code],
+                                cwd=Path(__file__).parent, capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('lexical/punctuation change', result.stderr)
+
+    def test_timing_warmups_compare_arms_and_preserve_failed_evidence(self):
+        base = {'text': 'да', 'words': [{'word': 'да', 'start': 0.1}]}
+        candidate = {'text': 'нет', 'words': [{'word': 'нет', 'start': 0.1}]}
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch.object(benchmark, 'request', side_effect=[(base, 1), (candidate, 1)]):
+                with self.assertRaisesRegex(ValueError, 'lexical/punctuation change'):
+                    benchmark.warmup_pair({'baseline': 1, 'candidate': 2}, b'audio',
+                                          output, 'rnnt', 'sample')
+            self.assertEqual(len(list(output.glob('warmup-*.json'))), 2)
+
+    def test_timing_warmups_record_allowed_case_changes(self):
+        base = {'text': 'Да', 'words': [{'word': 'Да', 'start': 0.1}]}
+        candidate = {'text': 'да', 'words': [{'word': 'да', 'start': 0.1}]}
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            with patch.object(benchmark, 'request', side_effect=[(base, 1), (candidate, 1)]):
+                expected = benchmark.warmup_pair({'baseline': 1, 'candidate': 2}, b'audio',
+                                                output, 'rnnt', 'sample')
+            self.assertEqual(expected, {'baseline': base, 'candidate': candidate})
+            changes = json.loads((output / 'warmup-rnnt-sample-changes.json').read_text())
+            self.assertEqual(changes[0]['candidate'], 'да')
+
     def test_startup_waits_for_model_readiness(self):
         ready = MagicMock()
         ready.__enter__.return_value.status = 200
@@ -51,13 +90,13 @@ class ComparisonTests(unittest.TestCase):
         b = {'text': 'и', 'duration': 1, 'words': [{'word': 'и', 'start': 0.1, 'end': 0.2}]}
         self.assertEqual(len(delta(a, b)), 1)
         b['words'][0]['end'] = 0.3
-        with self.assertRaisesRegex(AssertionError, 'metadata'):
+        with self.assertRaisesRegex(ValueError, 'metadata'):
             delta(a, b)
 
     def test_delta_rejects_punctuation_change(self):
         a = {'text': 'Да.', 'words': [{'word': 'Да.', 'start': 0.1}]}
         b = {'text': 'Да!', 'words': [{'word': 'Да!', 'start': 0.1}]}
-        with self.assertRaisesRegex(AssertionError, 'punctuation'):
+        with self.assertRaisesRegex(ValueError, 'punctuation'):
             delta(a, b)
 
 

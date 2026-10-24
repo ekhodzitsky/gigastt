@@ -3,6 +3,10 @@
 This comparison evaluates the runtime change in PR #455 against its `main`
 ancestor. It does not qualify unrelated model, decoder or punctuation changes.
 
+A [follow-up audit](audit.md) tightened repetition guards and benchmark validation.
+The measurements below remain tied to runtime revision `36ddb57`; they are not
+new measurements of that follow-up.
+
 ## Quality result
 
 All **42 baseline/candidate responses were identical**, including case,

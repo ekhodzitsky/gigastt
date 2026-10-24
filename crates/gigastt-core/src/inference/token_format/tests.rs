@@ -511,3 +511,35 @@ fn test_stitch_seam_case_preserves_edges_and_older_winner() {
     );
     assert_eq!(out[1].word, "Он");
 }
+
+#[test]
+fn test_stitch_seam_case_preserves_repetitions_in_new_window() {
+    let prefix = word("и", 22.5, 22.7);
+    let next = vec![word("Да", 23.1, 23.2), word("да", 23.3, 23.4)];
+    let (out, retained) = stitch_chunk_words_retained(
+        vec![prefix.clone(), word("да", 23.1, 23.2)],
+        next.clone(),
+        23.0,
+    );
+    assert_eq!(retained, 1);
+    assert_eq!(
+        serde_json::to_value(out).unwrap(),
+        serde_json::to_value([vec![prefix], next].concat()).unwrap()
+    );
+}
+
+#[test]
+fn test_stitch_seam_case_ignores_distant_repetitions() {
+    for repeat_start in [23.6, 24.1, 40.0] {
+        let out = stitch_chunk_words(
+            vec![word("и", 22.5, 22.7), word("да", 23.08, 23.2)],
+            vec![
+                word("Да", 23.12, 23.3),
+                word("да", repeat_start, repeat_start + 0.1),
+            ],
+            23.0,
+        );
+        assert_eq!(out[1].word, "да", "repeat at {repeat_start}");
+        assert_eq!(out[2].start, repeat_start);
+    }
+}
