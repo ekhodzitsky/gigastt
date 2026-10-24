@@ -1,0 +1,72 @@
+[
+  {
+    "id": "podlodka-200-005",
+    "search_index": 5,
+    "file": "single-part-005.wav",
+    "part": "podlodka-200-0039.wav",
+    "part_sha256": "df1d968024df8392ef7b5f3dc1cd3241024619b0d97c74820d59237ea1e58628",
+    "source_offset_frames": 0,
+    "source_frames": 427405,
+    "leading_silence_frames": 308595,
+    "total_frames": 736000,
+    "sample_rate": 16000,
+    "channels": 2,
+    "wav_sha256": "d5ffecc25e0eafd812ef7f2272c64695182a47040486c8be2cc4e7398bd8be5a"
+  },
+  {
+    "id": "podlodka-200-006",
+    "search_index": 6,
+    "file": "single-part-006.wav",
+    "part": "podlodka-200-0039.wav",
+    "part_sha256": "df1d968024df8392ef7b5f3dc1cd3241024619b0d97c74820d59237ea1e58628",
+    "source_offset_frames": 0,
+    "source_frames": 436100,
+    "leading_silence_frames": 246515,
+    "total_frames": 736000,
+    "sample_rate": 16000,
+    "channels": 2,
+    "wav_sha256": "740923eb0c146c99991934878eb8e220fb57cd9610ef094b59b1d42cb1b5a2d7"
+  },
+  {
+    "id": "podlodka-200-008",
+    "search_index": 8,
+    "file": "single-part-008.wav",
+    "part": "podlodka-200-0040.wav",
+    "part_sha256": "2ff4a3c1bcc61ac9af5b9e0e757517df6c452471475bc980bbaf6f7271f5d50d",
+    "source_offset_frames": 0,
+    "source_frames": 461348,
+    "leading_silence_frames": 152695,
+    "total_frames": 736000,
+    "sample_rate": 16000,
+    "channels": 2,
+    "wav_sha256": "1b6e7c931695217a05ccbeeb4cb5e3dca7b50601c8ebf7c6223aad42833d4275"
+  },
+  {
+    "id": "podlodka-200-011",
+    "search_index": 11,
+    "file": "single-part-011.wav",
+    "part": "podlodka-200-0042.wav",
+    "part_sha256": "e50b0b2b84eabdd718f3d4ca51c2bfd8f3176fba9c8aaa58ca202cf20d222e8c",
+    "source_offset_frames": 0,
+    "source_frames": 407573,
+    "leading_silence_frames": 328427,
+    "total_frames": 736000,
+    "sample_rate": 16000,
+    "channels": 2,
+    "wav_sha256": "c622bd3371fd48b256e69a3cb6b54b8bf6e701194b5ecbd6eb8f42dfca1259bb"
+  },
+  {
+    "id": "podlodka-200-013",
+    "search_index": 13,
+    "file": "single-part-013.wav",
+    "part": "podlodka-200-0043.wav",
+    "part_sha256": "0ddacd18581a1bf9d8c9ad65e0df14ca596d019ba17dc15dfdc625290f91ddbf",
+    "source_offset_frames": 0,
+    "source_frames": 416132,
+    "leading_silence_frames": 319868,
+    "total_frames": 736000,
+    "sample_rate": 16000,
+    "channels": 2,
+    "wav_sha256": "4169590956e46d3c0fac0f43eea9e9202ac20d3b3712b80f773d4271154c39c8"
+  }
+]

@@ -543,3 +543,43 @@ fn test_stitch_seam_case_ignores_distant_repetitions() {
         assert_eq!(out[2].start, repeat_start);
     }
 }
+
+#[test]
+fn test_stitch_seam_case_matches_public_audio_reproductions() {
+    // Captured independent-window hypotheses from the pinned CPU/e2e_rnnt run.
+    // Expected corrections follow the reference; the unmatched control keeps
+    // its capital. The adjacent report records checksums and audio preparation.
+    let cases: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../benchmark/results/seam_reproduction_20261024/stitch-fixtures.json"
+    )))
+    .unwrap();
+    let words = |value: &serde_json::Value| -> Vec<WordInfo> {
+        value
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|w| {
+                WordInfo::new(
+                    w["word"].as_str().unwrap(),
+                    w["start"].as_f64().unwrap(),
+                    w["end"].as_f64().unwrap(),
+                    w["confidence"].as_f64().unwrap() as f32,
+                    serde_json::from_value(w["speaker"].clone()).unwrap(),
+                )
+            })
+            .collect()
+    };
+    for case in cases.as_array().unwrap() {
+        let old = words(&case["old"]);
+        let next = words(&case["new"]);
+        let (out, retained) = stitch_chunk_words_retained(old, next, 23.0);
+        assert_eq!(
+            serde_json::to_value(out).unwrap(),
+            serde_json::to_value(words(&case["expected"])).unwrap(),
+            "{}",
+            case["id"]
+        );
+        assert_eq!(retained, case["retained"].as_u64().unwrap() as usize);
+    }
+}

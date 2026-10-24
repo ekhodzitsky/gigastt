@@ -7,6 +7,10 @@ A [follow-up audit](audit.md) tightened repetition guards and benchmark validati
 The measurements below remain tied to runtime revision `36ddb57`; they are not
 new measurements of that follow-up.
 
+A later [targeted real-audio search](../seam_reproduction_20261024/README.md)
+reproduced three corrected casing failures on individual public source excerpts.
+That enriched diagnostic set is separate from the unchanged 42-pair corpus below.
+
 ## Quality result
 
 All **42 baseline/candidate responses were identical**, including case,

@@ -48,3 +48,10 @@ latency spread also prevents a strict 5% non-inferiority claim.
 - Strict workspace/all-target Clippy, formatting, documentation drift and
   publication checks pass.
 - No GitHub workflow was dispatched and the PR was not merged.
+
+## Subsequent reproduction search
+
+A later [targeted search](../seam_reproduction_20261024/README.md) found three
+real casing failures corrected by runtime `968f3e6`, plus an unresolved control.
+This supplies the positive reproduction missing at audit time; it does not
+change the historical corpus scores or certify performance non-inferiority.

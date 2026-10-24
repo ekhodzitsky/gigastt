@@ -1,0 +1,152 @@
+[
+  {
+    "sample": "podlodka-132",
+    "start": 19.32,
+    "target": "вселенский",
+    "source_sha256": "73504de68da4d9df2d17ae26b1bb634150c45155c8d176a6cea0703d668674c1"
+  },
+  {
+    "sample": "podlodka-132",
+    "start": 20.68,
+    "target": "разум",
+    "source_sha256": "73504de68da4d9df2d17ae26b1bb634150c45155c8d176a6cea0703d668674c1"
+  },
+  {
+    "sample": "podlodka-132",
+    "start": 22.04,
+    "target": "ноосфера",
+    "source_sha256": "73504de68da4d9df2d17ae26b1bb634150c45155c8d176a6cea0703d668674c1"
+  },
+  {
+    "sample": "podlodka-132",
+    "start": 141.76,
+    "target": "выбрали",
+    "source_sha256": "73504de68da4d9df2d17ae26b1bb634150c45155c8d176a6cea0703d668674c1"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 7.88,
+    "target": "навыком,",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 22.96,
+    "target": "вот",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 26.84,
+    "target": "широты",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 43.12,
+    "target": "очень",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 59.96,
+    "target": "сказывается.",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 96.2,
+    "target": "внешней",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 107.32,
+    "target": "по-разному,",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 124.84,
+    "target": "и",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 143.8,
+    "target": "четвёртом.",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-200",
+    "start": 167.12,
+    "target": "недооценённые",
+    "source_sha256": "db9aeb7ea12012df8943ebaac0f3f9f9867bd621bccdd401b793defb0e9b8914"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 4.28,
+    "target": "отказались",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 14.32,
+    "target": "сравнивать",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 22.08,
+    "target": "по",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 37.04,
+    "target": "здесь",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 48.24,
+    "target": "какое-то",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 61.36,
+    "target": "сам",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 68.36,
+    "target": "просто",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 69.52,
+    "target": "неподъёмно",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 79.36,
+    "target": "обучения,",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 81.68,
+    "target": "лидировали,",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  },
+  {
+    "sample": "podlodka-275",
+    "start": 107.76,
+    "target": "на",
+    "source_sha256": "06450ea4dc053bb555614da96dd714e7613e99094e6aaa2121052d7199999cf6"
+  }
+]
