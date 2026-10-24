@@ -153,5 +153,55 @@ pub(crate) fn stitch_chunk_words_retained(
     });
     merged.truncate(old_end);
     merged.extend(next.into_iter().skip(new_start));
+    reconcile_seam_case(&mut merged, old_end);
     (merged, old_end)
+}
+
+/// A window that starts in the middle of a sentence decodes its first word as
+/// if it opened one, and the stitch keeps whichever side won the alignment —
+/// so its capital lands in the middle of the merged sentence. (Measured in
+/// voxd: the same audio cut into a single window returns that word lower case.)
+///
+/// Undo it at the seam only, and only where the rule cannot be wrong by much:
+/// the previous word must not end a sentence, and the word itself must start
+/// with a Cyrillic capital that is not an acronym, so a Latin brand
+/// (`Kubernetes`) and an all-caps term (`ПО`, `GPU`) keep their form.
+pub(crate) fn reconcile_seam_case(words: &mut [WordInfo], boundary: usize) {
+    if boundary == 0 || boundary >= words.len() {
+        return;
+    }
+    if ends_sentence(&words[boundary - 1].word) {
+        return;
+    }
+    lower_cyrillic_initial(&mut words[boundary].word);
+}
+
+/// Does `word` end a sentence, ignoring closing quotes and brackets?
+fn ends_sentence(word: &str) -> bool {
+    word.trim_end_matches(['"', '\'', '»', ')', ']', '”', '’', ' '])
+        .chars()
+        .last()
+        .is_some_and(|c| matches!(c, '.' | '!' | '?' | '…'))
+}
+
+/// Lowercase the leading Cyrillic capital of `word` when it is a capitalised
+/// word rather than an acronym. Returns whether it changed anything.
+fn lower_cyrillic_initial(word: &mut String) -> bool {
+    let letters: Vec<char> = word.chars().filter(|c| c.is_alphabetic()).collect();
+    if letters.is_empty() {
+        return false;
+    }
+    // An all-caps token is an acronym, not a sentence start.
+    if letters.len() > 1 && letters.iter().all(|c| c.is_uppercase()) {
+        return false;
+    }
+    let Some((idx, ch)) = word.char_indices().find(|(_, c)| c.is_alphabetic()) else {
+        return false;
+    };
+    if !matches!(ch, 'А'..='Я' | 'Ё') {
+        return false;
+    }
+    let lower: String = ch.to_lowercase().collect();
+    word.replace_range(idx..idx + ch.len_utf8(), &lower);
+    true
 }

@@ -3,6 +3,7 @@ use super::super::state::WordInfo;
 use super::super::tokenizer::Tokenizer;
 use super::super::windows::CHUNK_OVERLAP_SAMPLES;
 use super::super::{ENCODER_SUBSAMPLING, HOP_LENGTH};
+use super::stitch::reconcile_seam_case;
 use super::*;
 
 #[test]
@@ -374,4 +375,46 @@ fn test_token_formatter_last_word_empty_confidences_defaults_to_one() {
     assert_eq!(words.len(), 1);
     assert_eq!(words[0].word, "real");
     assert!((words[0].confidence - 0.7).abs() < 1e-6);
+}
+
+#[test]
+fn test_seam_case_lowers_a_window_start_capital_mid_sentence() {
+    // A window that began in the middle of a sentence comes back with its
+    // first word capitalised; the previous word continues the sentence.
+    let mut words = vec![word("короткие,", 21.28, 21.56), word("И", 21.76, 21.9)];
+    reconcile_seam_case(&mut words, 1);
+    assert_eq!(words[1].word, "и");
+}
+
+#[test]
+fn test_seam_case_keeps_a_capital_after_a_sentence_end() {
+    let mut words = vec![word("конец.", 21.2, 21.5), word("И", 21.7, 21.9)];
+    reconcile_seam_case(&mut words, 1);
+    assert_eq!(words[1].word, "И");
+    let mut after_quote = vec![word("сказал.»", 21.2, 21.5), word("Он", 21.7, 21.9)];
+    reconcile_seam_case(&mut after_quote, 1);
+    assert_eq!(after_quote[1].word, "Он");
+}
+
+#[test]
+fn test_seam_case_keeps_acronyms_and_latin_brands() {
+    let mut acronym = vec![word("это", 21.2, 21.5), word("ПО", 21.7, 21.9)];
+    reconcile_seam_case(&mut acronym, 1);
+    assert_eq!(acronym[1].word, "ПО");
+    let mut latin = vec![word("и", 21.2, 21.5), word("Kubernetes", 21.7, 21.9)];
+    reconcile_seam_case(&mut latin, 1);
+    assert_eq!(latin[1].word, "Kubernetes");
+    let mut acronym_latin = vec![word("и", 21.2, 21.5), word("HTML,", 21.7, 21.9)];
+    reconcile_seam_case(&mut acronym_latin, 1);
+    assert_eq!(acronym_latin[1].word, "HTML,");
+}
+
+#[test]
+fn test_seam_case_is_a_no_op_at_the_edges() {
+    let mut first = vec![word("И", 0.5, 0.9)];
+    reconcile_seam_case(&mut first, 0);
+    assert_eq!(first[0].word, "И");
+    let mut beyond = vec![word("и", 0.5, 0.9)];
+    reconcile_seam_case(&mut beyond, 3);
+    assert_eq!(beyond[0].word, "и");
 }
