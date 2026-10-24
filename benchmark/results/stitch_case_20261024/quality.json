@@ -1,0 +1,1688 @@
+[
+  {
+    "id": "rnnt-long_example-0",
+    "head": "rnnt",
+    "sample": "long_example",
+    "shift": 0,
+    "audio_seconds": 71.25,
+    "reference_words": 124,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "rnnt-long_example-3",
+    "head": "rnnt",
+    "sample": "long_example",
+    "shift": 3,
+    "audio_seconds": 74.25,
+    "reference_words": 124,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        2,
+        0,
+        0
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        2,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "rnnt-long_example-22",
+    "head": "rnnt",
+    "sample": "long_example",
+    "shift": 22,
+    "audio_seconds": 93.25,
+    "reference_words": 124,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "rnnt-ruls-0000-0010-0",
+    "head": "rnnt",
+    "sample": "ruls-0000-0010",
+    "shift": 0,
+    "audio_seconds": 69.62,
+    "reference_words": 154,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "rnnt-ruls-0000-0010-3",
+    "head": "rnnt",
+    "sample": "ruls-0000-0010",
+    "shift": 3,
+    "audio_seconds": 72.62,
+    "reference_words": 154,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "rnnt-ruls-0000-0010-22",
+    "head": "rnnt",
+    "sample": "ruls-0000-0010",
+    "shift": 22,
+    "audio_seconds": 91.62,
+    "reference_words": 154,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "rnnt-ruls-0013-0024-0",
+    "head": "rnnt",
+    "sample": "ruls-0013-0024",
+    "shift": 0,
+    "audio_seconds": 83.43,
+    "reference_words": 177,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        5,
+        0,
+        1
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        5,
+        0,
+        1
+      ]
+    }
+  },
+  {
+    "id": "rnnt-ruls-0013-0024-3",
+    "head": "rnnt",
+    "sample": "ruls-0013-0024",
+    "shift": 3,
+    "audio_seconds": 86.43,
+    "reference_words": 177,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        4,
+        0,
+        1
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        4,
+        0,
+        1
+      ]
+    }
+  },
+  {
+    "id": "rnnt-ruls-0013-0024-22",
+    "head": "rnnt",
+    "sample": "ruls-0013-0024",
+    "shift": 22,
+    "audio_seconds": 105.43,
+    "reference_words": 177,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        6,
+        0,
+        1
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        6,
+        0,
+        1
+      ]
+    }
+  },
+  {
+    "id": "rnnt-podlodka-306-0",
+    "head": "rnnt",
+    "sample": "podlodka-306",
+    "shift": 0,
+    "audio_seconds": 243.65714583333335,
+    "reference_words": 696,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        59,
+        17,
+        8
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          137,
+          17,
+          8
+        ],
+        "aligned_words": 620,
+        "initial_case_errors": 64,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          64
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        59,
+        17,
+        8
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          137,
+          17,
+          8
+        ],
+        "aligned_words": 620,
+        "initial_case_errors": 64,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          64
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-306-3",
+    "head": "rnnt",
+    "sample": "podlodka-306",
+    "shift": 3,
+    "audio_seconds": 246.65714583333335,
+    "reference_words": 696,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        57,
+        17,
+        8
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          135,
+          17,
+          8
+        ],
+        "aligned_words": 622,
+        "initial_case_errors": 64,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          64
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        57,
+        17,
+        8
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          135,
+          17,
+          8
+        ],
+        "aligned_words": 622,
+        "initial_case_errors": 64,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          64
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-306-22",
+    "head": "rnnt",
+    "sample": "podlodka-306",
+    "shift": 22,
+    "audio_seconds": 265.65714583333335,
+    "reference_words": 696,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        59,
+        17,
+        8
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          137,
+          17,
+          8
+        ],
+        "aligned_words": 620,
+        "initial_case_errors": 64,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          64
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        59,
+        17,
+        8
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          137,
+          17,
+          8
+        ],
+        "aligned_words": 620,
+        "initial_case_errors": 64,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          64
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-132-0",
+    "head": "rnnt",
+    "sample": "podlodka-132",
+    "shift": 0,
+    "audio_seconds": 266.6194557823129,
+    "reference_words": 722,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        61,
+        8,
+        1
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          132,
+          8,
+          1
+        ],
+        "aligned_words": 653,
+        "initial_case_errors": 59,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          59
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        61,
+        8,
+        1
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          132,
+          8,
+          1
+        ],
+        "aligned_words": 653,
+        "initial_case_errors": 59,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          59
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-132-3",
+    "head": "rnnt",
+    "sample": "podlodka-132",
+    "shift": 3,
+    "audio_seconds": 269.6194557823129,
+    "reference_words": 722,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        61,
+        8,
+        2
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          132,
+          8,
+          2
+        ],
+        "aligned_words": 653,
+        "initial_case_errors": 59,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          59
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        61,
+        8,
+        2
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          132,
+          8,
+          2
+        ],
+        "aligned_words": 653,
+        "initial_case_errors": 59,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          59
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-132-22",
+    "head": "rnnt",
+    "sample": "podlodka-132",
+    "shift": 22,
+    "audio_seconds": 288.6194557823129,
+    "reference_words": 722,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        60,
+        8,
+        1
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          131,
+          8,
+          1
+        ],
+        "aligned_words": 654,
+        "initial_case_errors": 59,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          59
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        60,
+        8,
+        1
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          131,
+          8,
+          1
+        ],
+        "aligned_words": 654,
+        "initial_case_errors": 59,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          59
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-200-0",
+    "head": "rnnt",
+    "sample": "podlodka-200",
+    "shift": 0,
+    "audio_seconds": 237.6314375,
+    "reference_words": 431,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        6,
+        2,
+        1
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          54,
+          2,
+          1
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 43,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          43
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        6,
+        2,
+        1
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          54,
+          2,
+          1
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 43,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          43
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-200-3",
+    "head": "rnnt",
+    "sample": "podlodka-200",
+    "shift": 3,
+    "audio_seconds": 240.6314375,
+    "reference_words": 431,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        6,
+        2,
+        1
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          54,
+          2,
+          1
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 43,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          43
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        6,
+        2,
+        1
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          54,
+          2,
+          1
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 43,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          43
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-200-22",
+    "head": "rnnt",
+    "sample": "podlodka-200",
+    "shift": 22,
+    "audio_seconds": 259.6314375,
+    "reference_words": 431,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        6,
+        2,
+        1
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          54,
+          2,
+          1
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 43,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          43
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        6,
+        2,
+        1
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          54,
+          2,
+          1
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 43,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          43
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-275-0",
+    "head": "rnnt",
+    "sample": "podlodka-275",
+    "shift": 0,
+    "audio_seconds": 181.824875,
+    "reference_words": 410,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        13,
+        8,
+        5
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          43,
+          8,
+          5
+        ],
+        "aligned_words": 389,
+        "initial_case_errors": 23,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          23
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        13,
+        8,
+        5
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          43,
+          8,
+          5
+        ],
+        "aligned_words": 389,
+        "initial_case_errors": 23,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          23
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-275-3",
+    "head": "rnnt",
+    "sample": "podlodka-275",
+    "shift": 3,
+    "audio_seconds": 184.824875,
+    "reference_words": 410,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        13,
+        9,
+        5
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          43,
+          9,
+          5
+        ],
+        "aligned_words": 388,
+        "initial_case_errors": 23,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          23
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        13,
+        9,
+        5
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          43,
+          9,
+          5
+        ],
+        "aligned_words": 388,
+        "initial_case_errors": 23,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          23
+        ]
+      }
+    }
+  },
+  {
+    "id": "rnnt-podlodka-275-22",
+    "head": "rnnt",
+    "sample": "podlodka-275",
+    "shift": 22,
+    "audio_seconds": 203.824875,
+    "reference_words": 410,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        13,
+        8,
+        5
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          43,
+          8,
+          5
+        ],
+        "aligned_words": 389,
+        "initial_case_errors": 23,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          23
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        13,
+        8,
+        5
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          43,
+          8,
+          5
+        ],
+        "aligned_words": 389,
+        "initial_case_errors": 23,
+        "capitalization_tp_fp_fn": [
+          0,
+          0,
+          23
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-long_example-0",
+    "head": "e2e_rnnt",
+    "sample": "long_example",
+    "shift": 0,
+    "audio_seconds": 71.25,
+    "reference_words": 124,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        4,
+        0,
+        0
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        4,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-long_example-3",
+    "head": "e2e_rnnt",
+    "sample": "long_example",
+    "shift": 3,
+    "audio_seconds": 74.25,
+    "reference_words": 124,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        4,
+        0,
+        0
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        4,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-long_example-22",
+    "head": "e2e_rnnt",
+    "sample": "long_example",
+    "shift": 22,
+    "audio_seconds": 93.25,
+    "reference_words": 124,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        4,
+        0,
+        0
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        4,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-ruls-0000-0010-0",
+    "head": "e2e_rnnt",
+    "sample": "ruls-0000-0010",
+    "shift": 0,
+    "audio_seconds": 69.62,
+    "reference_words": 154,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-ruls-0000-0010-3",
+    "head": "e2e_rnnt",
+    "sample": "ruls-0000-0010",
+    "shift": 3,
+    "audio_seconds": 72.62,
+    "reference_words": 154,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-ruls-0000-0010-22",
+    "head": "e2e_rnnt",
+    "sample": "ruls-0000-0010",
+    "shift": 22,
+    "audio_seconds": 91.62,
+    "reference_words": 154,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        1,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-ruls-0013-0024-0",
+    "head": "e2e_rnnt",
+    "sample": "ruls-0013-0024",
+    "shift": 0,
+    "audio_seconds": 83.43,
+    "reference_words": 177,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        5,
+        1,
+        1
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        5,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-ruls-0013-0024-3",
+    "head": "e2e_rnnt",
+    "sample": "ruls-0013-0024",
+    "shift": 3,
+    "audio_seconds": 86.43,
+    "reference_words": 177,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        6,
+        1,
+        1
+      ]
+    },
+    "candidate": {
+      "normalized_sdi": [
+        6,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-ruls-0013-0024-22",
+    "head": "e2e_rnnt",
+    "sample": "ruls-0013-0024",
+    "shift": 22,
+    "audio_seconds": 105.43,
+    "reference_words": 177,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        5,
+        1,
+        1
+      ]
+    },
+    "baseline": {
+      "normalized_sdi": [
+        5,
+        1,
+        1
+      ]
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-306-0",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-306",
+    "shift": 0,
+    "audio_seconds": 243.65714583333335,
+    "reference_words": 696,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        47,
+        9,
+        7
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          66,
+          9,
+          7
+        ],
+        "aligned_words": 640,
+        "initial_case_errors": 20,
+        "capitalization_tp_fp_fn": [
+          57,
+          9,
+          11
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        47,
+        9,
+        7
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          66,
+          9,
+          7
+        ],
+        "aligned_words": 640,
+        "initial_case_errors": 20,
+        "capitalization_tp_fp_fn": [
+          57,
+          9,
+          11
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-306-3",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-306",
+    "shift": 3,
+    "audio_seconds": 246.65714583333335,
+    "reference_words": 696,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        43,
+        7,
+        5
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          64,
+          7,
+          5
+        ],
+        "aligned_words": 646,
+        "initial_case_errors": 19,
+        "capitalization_tp_fp_fn": [
+          60,
+          8,
+          11
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        43,
+        7,
+        5
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          64,
+          7,
+          5
+        ],
+        "aligned_words": 646,
+        "initial_case_errors": 19,
+        "capitalization_tp_fp_fn": [
+          60,
+          8,
+          11
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-306-22",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-306",
+    "shift": 22,
+    "audio_seconds": 265.65714583333335,
+    "reference_words": 696,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        47,
+        9,
+        7
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          66,
+          9,
+          7
+        ],
+        "aligned_words": 640,
+        "initial_case_errors": 20,
+        "capitalization_tp_fp_fn": [
+          57,
+          9,
+          11
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        47,
+        9,
+        7
+      ],
+      "casing": {
+        "reference_words": 696,
+        "case_sensitive_sdi": [
+          66,
+          9,
+          7
+        ],
+        "aligned_words": 640,
+        "initial_case_errors": 20,
+        "capitalization_tp_fp_fn": [
+          57,
+          9,
+          11
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-132-0",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-132",
+    "shift": 0,
+    "audio_seconds": 266.6194557823129,
+    "reference_words": 722,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        32,
+        11,
+        2
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          72,
+          11,
+          2
+        ],
+        "aligned_words": 679,
+        "initial_case_errors": 40,
+        "capitalization_tp_fp_fn": [
+          47,
+          27,
+          13
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        32,
+        11,
+        2
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          72,
+          11,
+          2
+        ],
+        "aligned_words": 679,
+        "initial_case_errors": 40,
+        "capitalization_tp_fp_fn": [
+          47,
+          27,
+          13
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-132-3",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-132",
+    "shift": 3,
+    "audio_seconds": 269.6194557823129,
+    "reference_words": 722,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        33,
+        8,
+        1
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          69,
+          8,
+          1
+        ],
+        "aligned_words": 681,
+        "initial_case_errors": 36,
+        "capitalization_tp_fp_fn": [
+          47,
+          23,
+          13
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        33,
+        8,
+        1
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          69,
+          8,
+          1
+        ],
+        "aligned_words": 681,
+        "initial_case_errors": 36,
+        "capitalization_tp_fp_fn": [
+          47,
+          23,
+          13
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-132-22",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-132",
+    "shift": 22,
+    "audio_seconds": 288.6194557823129,
+    "reference_words": 722,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        33,
+        10,
+        2
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          75,
+          10,
+          2
+        ],
+        "aligned_words": 679,
+        "initial_case_errors": 42,
+        "capitalization_tp_fp_fn": [
+          47,
+          29,
+          13
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        33,
+        10,
+        2
+      ],
+      "casing": {
+        "reference_words": 722,
+        "case_sensitive_sdi": [
+          75,
+          10,
+          2
+        ],
+        "aligned_words": 679,
+        "initial_case_errors": 42,
+        "capitalization_tp_fp_fn": [
+          47,
+          29,
+          13
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-200-0",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-200",
+    "shift": 0,
+    "audio_seconds": 237.6314375,
+    "reference_words": 431,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        4,
+        2,
+        7
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          16,
+          2,
+          7
+        ],
+        "aligned_words": 425,
+        "initial_case_errors": 14,
+        "capitalization_tp_fp_fn": [
+          33,
+          3,
+          11
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        4,
+        2,
+        7
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          16,
+          2,
+          7
+        ],
+        "aligned_words": 425,
+        "initial_case_errors": 14,
+        "capitalization_tp_fp_fn": [
+          33,
+          3,
+          11
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-200-3",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-200",
+    "shift": 3,
+    "audio_seconds": 240.6314375,
+    "reference_words": 431,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        6,
+        2,
+        9
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          17,
+          2,
+          9
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 13,
+        "capitalization_tp_fp_fn": [
+          33,
+          3,
+          10
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        6,
+        2,
+        9
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          17,
+          2,
+          9
+        ],
+        "aligned_words": 423,
+        "initial_case_errors": 13,
+        "capitalization_tp_fp_fn": [
+          33,
+          3,
+          10
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-200-22",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-200",
+    "shift": 22,
+    "audio_seconds": 259.6314375,
+    "reference_words": 431,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        4,
+        2,
+        7
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          16,
+          2,
+          7
+        ],
+        "aligned_words": 425,
+        "initial_case_errors": 14,
+        "capitalization_tp_fp_fn": [
+          33,
+          3,
+          11
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        4,
+        2,
+        7
+      ],
+      "casing": {
+        "reference_words": 431,
+        "case_sensitive_sdi": [
+          16,
+          2,
+          7
+        ],
+        "aligned_words": 425,
+        "initial_case_errors": 14,
+        "capitalization_tp_fp_fn": [
+          33,
+          3,
+          11
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-275-0",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-275",
+    "shift": 0,
+    "audio_seconds": 181.824875,
+    "reference_words": 410,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        11,
+        8,
+        6
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          16,
+          8,
+          6
+        ],
+        "aligned_words": 391,
+        "initial_case_errors": 5,
+        "capitalization_tp_fp_fn": [
+          20,
+          2,
+          3
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        11,
+        8,
+        6
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          16,
+          8,
+          6
+        ],
+        "aligned_words": 391,
+        "initial_case_errors": 5,
+        "capitalization_tp_fp_fn": [
+          20,
+          2,
+          3
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-275-3",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-275",
+    "shift": 3,
+    "audio_seconds": 184.824875,
+    "reference_words": 410,
+    "changes": [],
+    "baseline": {
+      "normalized_sdi": [
+        10,
+        8,
+        6
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          16,
+          8,
+          6
+        ],
+        "aligned_words": 392,
+        "initial_case_errors": 6,
+        "capitalization_tp_fp_fn": [
+          19,
+          2,
+          4
+        ]
+      }
+    },
+    "candidate": {
+      "normalized_sdi": [
+        10,
+        8,
+        6
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          16,
+          8,
+          6
+        ],
+        "aligned_words": 392,
+        "initial_case_errors": 6,
+        "capitalization_tp_fp_fn": [
+          19,
+          2,
+          4
+        ]
+      }
+    }
+  },
+  {
+    "id": "e2e_rnnt-podlodka-275-22",
+    "head": "e2e_rnnt",
+    "sample": "podlodka-275",
+    "shift": 22,
+    "audio_seconds": 203.824875,
+    "reference_words": 410,
+    "changes": [],
+    "candidate": {
+      "normalized_sdi": [
+        11,
+        8,
+        6
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          16,
+          8,
+          6
+        ],
+        "aligned_words": 391,
+        "initial_case_errors": 5,
+        "capitalization_tp_fp_fn": [
+          20,
+          2,
+          3
+        ]
+      }
+    },
+    "baseline": {
+      "normalized_sdi": [
+        11,
+        8,
+        6
+      ],
+      "casing": {
+        "reference_words": 410,
+        "case_sensitive_sdi": [
+          16,
+          8,
+          6
+        ],
+        "aligned_words": 391,
+        "initial_case_errors": 5,
+        "capitalization_tp_fp_fn": [
+          20,
+          2,
+          3
+        ]
+      }
+    }
+  }
+]

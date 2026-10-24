@@ -1,0 +1,5 @@
+{
+  "reason": "Initial rnnt baseline built its ORT graph while candidate loaded the cache. Core affinity also mixed fast and compact CPU cores. Warm request timing cannot isolate the PR under these conditions.",
+  "action": "Stopped after rnnt quality and partial timing; retain all raw evidence. Repeat full campaign after cache priming/restart on cores 2 and 3.",
+  "quality": "21 rnnt pairs had exactly identical complete responses; do not use this run to claim performance acceptance."
+}
