@@ -106,3 +106,23 @@ Merge remains conditional on the single final manual CI run. Existing strict
 comparison gates are not relaxed: the archived exploratory collection wrapper
 records runtime numerical differences for review, while production CI retains
 its recognition, speaker and performance checks.
+
+## First full CI findings
+
+The first full manual run ([40670427842](https://github.com/ekhodzitsky/gigastt/actions/runs/40670427842))
+exposed a macOS static CoreML link failure: `__isPlatformVersionAtLeast` was
+unresolved in ONNX Runtime 1.31's CoreML objects. A target/feature-gated core build
+script now links the selected Apple Clang compiler runtime; SDK discovery,
+missing-archive/error handling and unaffected configurations have local tests.
+This changes macOS linking only; Linux measurement binaries above are unaffected.
+The semver job separately lost its download of the **baseline** ORT 1.28 archive
+(`Peer disconnected`); it did not report an API incompatibility. The semver
+action now skips native ORT downloads for its rustdoc-only comparison. Runtime
+build and inference jobs still download, link and execute the real library.
+These failures are retained rather than treated as a successful CI run. The
+updated head requires another manual validation before merge.
+
+The manual CI also exposes `coreml_smoke` for a focused follow-up: it runs the
+normal required checks plus real CoreML inference, without repeating all full
+E2E/coverage/quality/Docker jobs after a macOS-only link correction. `full=true`
+continues to include the same CoreML smoke. Neither input enables automatic CI.

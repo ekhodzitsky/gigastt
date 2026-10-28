@@ -54,6 +54,16 @@ cargo build -p gigastt-core --no-default-features --features "file-decode,ort-lo
 ORT_DYLIB_PATH=/opt/onnxruntime/lib/libonnxruntime.so ./your-app
 ```
 
+## Static CoreML builds on macOS
+
+ONNX Runtime 1.31's static CoreML objects require Clang's availability-check
+builtin ([LLVM implementation](https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/os_version_check.c)).
+The core build script locates `libclang_rt.osx.a` through the selected
+Apple toolchain (`xcrun --sdk macosx clang --print-resource-dir`) and links that
+archive. Xcode or Command Line Tools must therefore be installed and selected;
+`DEVELOPER_DIR` and `TOOLCHAINS` are honored. CPU-only and dynamic-ORT builds do
+not need this additional link step. No OS-version checks are stubbed out.
+
 ## Rust hosts that initialize `ort` themselves
 
 The pinned `ort` 2.0.0-rc.15 uses explicit environment handles and permits only

@@ -12,6 +12,11 @@ on:
         required: false
         default: false
         type: boolean
+      coreml_smoke:
+        description: 'Include CoreML runtime smoke without repeating all full-run jobs'
+        required: false
+        default: false
+        type: boolean
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -281,6 +286,8 @@ jobs:
         with:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Test Apple compiler runtime link setup
+        run: python3 scripts/test_apple_runtime_link.py
       - run: cargo test --workspace --lib --bins
       - name: Model-free CLI integration tests
         run: cargo test -p gigastt --test e2e_cli
@@ -342,13 +349,13 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build --release -p gigastt --features coreml
 
-      # Runtime smoke (full manual run only — the model is ~850 MB). Issue #42:
+      # Runtime smoke (full run or explicitly requested — the model is ~850 MB). Issue #42:
       # CoreML sessions can load fine and still fail at prediction time, so
       # a plain `cargo build` check is not enough. The smoke also fails when
       # the engine silently falls back to the CPU EP, because that would
       # mean the CoreML path regressed even though transcription still works.
       - name: Cache model
-        if: inputs.full
+        if: inputs.full || inputs.coreml_smoke
         id: cache-model
         uses: actions/cache@v6
         with:
@@ -356,11 +363,11 @@ jobs:
           key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/**') }}
 
       - name: Download model
-        if: inputs.full && steps.cache-model.outputs.cache-hit != 'true'
+        if: (inputs.full || inputs.coreml_smoke) && steps.cache-model.outputs.cache-hit != 'true'
         run: ./target/release/gigastt download
 
       - name: CoreML runtime smoke
-        if: inputs.full
+        if: inputs.full || inputs.coreml_smoke
         timeout-minutes: 20
         run: |
           set -uo pipefail
@@ -728,6 +735,10 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: obi1kenobi/cargo-semver-checks-action@v2
+        env:
+          # Rustdoc compares APIs without linking or running native inference.
+          # Do not download both ORT archives just to generate the API schemas.
+          ORT_SKIP_DOWNLOAD: "1"
         with:
           # coreml+cuda are mutually exclusive; --all-features is impossible.
           feature-group: default-features
