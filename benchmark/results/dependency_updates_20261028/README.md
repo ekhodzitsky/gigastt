@@ -155,4 +155,32 @@ The warning about requiring macOS 14.4 is misleading upstream text: the native
 [availability macro](https://github.com/microsoft/onnxruntime/blob/402979ac1bef89dcd55add41eaa7277c407599eb/onnxruntime/core/providers/coreml/model/host_utils.h)
 actually requires macOS 15 for CoreML 8 optimization hints. The warning alone
 is not evidence that the compiler-runtime availability implementation is broken.
-The integration remains unmerged pending the paired CoreML investigation.
+The paired investigation confirms an introduced regression, so the ORT update
+is deferred. The other five updates are isolated in [PR #465](https://github.com/ekhodzitsky/gigastt/pull/465).
+
+## Confirmed CoreML regression
+
+[Paired run 40681440536](https://github.com/ekhodzitsky/gigastt/actions/runs/40681440536)
+uses the same macOS runner, release RNNT model and `golos_00.wav`. The small
+public-API probe requests each execution provider explicitly, preventing an
+automatic CPU fallback from counting as CoreML success. It uses one pool slot
+and two encoder threads; punctuation/ITN are not initialized.
+
+| Revision | Explicit CPU | Explicit CoreML |
+|---|---|---|
+| main `29c42e7`, ort rc.13 / native 1.28 | Pass | Pass |
+| candidate runtime code, ort rc.15 / native 1.31 | Pass | Encoder prediction fails |
+
+All successful arms recognize `шестьдесят тысяч тенге сколько будет стоить`.
+Logs, exit statuses and the probe source are retained in `coreml-comparison/`.
+The diagnostic branch `10f3323` contains the candidate runtime code from
+`e7e4896` plus only a workflow/probe addition; the baseline is checked out at
+its exact SHA and compiled using the same probe. Each native runtime gets its
+version-scoped CoreML cache. The baseline passes after the candidate fails on
+the same runner, ruling out a generally unusable CoreML runner as the cause.
+
+The exact failing CoreML operation is not yet isolated. Linking is repaired,
+but that does not make the native runtime safe to upgrade. The Linux speed
+improvement does not justify introducing a failure on a supported backend.
+No CPU fallback, relaxed quality threshold or newer-macOS-only gate is used to
+make this update pass. PR #464 remains a draft investigation, not a merge candidate.
