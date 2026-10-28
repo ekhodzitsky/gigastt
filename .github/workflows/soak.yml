@@ -10,9 +10,11 @@ permissions:
 jobs:
   coreml:
     runs-on: macos-14
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
       - run: brew install protobuf
       - uses: Swatinem/rust-cache@v2
@@ -29,15 +31,35 @@ jobs:
           key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/**') }}
       - if: steps.models.outputs.cache-hit != 'true'
         run: ./target/release/gigastt download
-      - name: CoreML inference and CPU diagnostic control
-        run: bash scripts/coreml-smoke.sh
+      - name: Compare explicit CPU and CoreML with main
+        run: |
+          set -euo pipefail
+          mkdir provider-results
+          cp crates/gigastt-core/examples/provider_smoke.rs /tmp/provider_smoke.rs
+          cargo build --release --locked -p gigastt-core --features coreml,quantize --example provider_smoke
+          failed=0
+          for provider in cpu coreml; do
+            status=0
+            ./target/release/examples/provider_smoke "$HOME/.gigastt/models" crates/gigastt/tests/fixtures/golos_00.wav "$provider" >"provider-results/candidate-$provider.log" 2>&1 || status=$?
+            echo "$status" >"provider-results/candidate-$provider.status"
+            cat "provider-results/candidate-$provider.log"
+            if [ "$status" -ne 0 ]; then failed=1; fi
+          done
+          git worktree add /tmp/gigastt-base 29c42e71606e25c539b5303c3aa9da00528b70d1
+          cp /tmp/provider_smoke.rs /tmp/gigastt-base/crates/gigastt-core/examples/provider_smoke.rs
+          CARGO_TARGET_DIR="$PWD/target" cargo build --manifest-path /tmp/gigastt-base/Cargo.toml --release --locked -p gigastt-core --features coreml,quantize --example provider_smoke
+          for provider in cpu coreml; do
+            status=0
+            ./target/release/examples/provider_smoke "$HOME/.gigastt/models" crates/gigastt/tests/fixtures/golos_00.wav "$provider" >"provider-results/base-$provider.log" 2>&1 || status=$?
+            echo "$status" >"provider-results/base-$provider.status"
+            cat "provider-results/base-$provider.log"
+            if [ "$status" -ne 0 ]; then failed=1; fi
+          done
+          exit "$failed"
       - if: always()
         uses: actions/upload-artifact@v6
         with:
           name: coreml-diagnostics
           path: |
-            transcript.txt
-            stderr.log
-            cpu-transcript.txt
-            cpu-stderr.log
+            provider-results/
           if-no-files-found: ignore
