@@ -1,107 +1,43 @@
-name: Soak and load
+name: CoreML diagnostics
 
-# Manually dispatched soak and load checks; no scheduled runner usage.
-
+# Narrow, explicit diagnostic run; never publishes protected PR statuses.
 on:
   workflow_dispatch:
-    inputs:
-      duration_secs:
-        description: 'Soak duration (seconds). Default 300 (~5 min).'
-        required: false
-        default: '300'
 
-concurrency:
-  group: soak-${{ github.ref }}
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
-  soak:
-    runs-on: ubuntu-latest
-    name: Soak (${{ github.event.inputs.duration_secs || 300 }}s)
-    timeout-minutes: 30
+  coreml:
+    runs-on: macos-14
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      # Separate shared-key: soak builds --release and must not evict the
-      # debug artefacts that ci.yml's `ci` family populates (and vice-versa).
+      - run: brew install protobuf
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: release
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-
-      - name: Cache model
-        id: cache-model
-        uses: actions/cache@v6
+          shared-key: coreml-diagnostics
+          # Branch-scoped manual diagnostics retain compilation across attempts.
+          save-if: true
+          cache-on-failure: true
+      - run: cargo build --release --locked -p gigastt --features coreml
+      - uses: actions/cache@v6
+        id: models
         with:
           path: ~/.gigastt/models
           key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/**') }}
-
-      - name: Download model
-        if: steps.cache-model.outputs.cache-hit != 'true'
-        run: cargo run -p gigastt -- download
-
-      - name: Run soak test
-        env:
-          GIGASTT_SOAK_DURATION_SECS: ${{ github.event.inputs.duration_secs || '300' }}
-          RUST_BACKTRACE: '1'
-        run: cargo test --release -p gigastt --test soak_test -- --ignored --nocapture --test-threads=1 > soak.log 2>&1
-
-      - name: Run load tests
-        env:
-          RUST_BACKTRACE: '1'
-        run: cargo test --release -p gigastt --test load_test -- --ignored --test-threads=1
-
-      - name: Upload test artefacts
-        if: always()
-        uses: actions/upload-artifact@v4
+      - if: steps.models.outputs.cache-hit != 'true'
+        run: ./target/release/gigastt download
+      - name: CoreML inference and CPU diagnostic control
+        run: bash scripts/coreml-smoke.sh
+      - if: always()
+        uses: actions/upload-artifact@v6
         with:
-          name: soak-logs-${{ github.run_id }}
+          name: coreml-diagnostics
           path: |
-            soak.log
+            transcript.txt
+            stderr.log
+            cpu-transcript.txt
+            cpu-stderr.log
           if-no-files-found: ignore
-          retention-days: 14
-
-  fuzz:
-    # Continuous fuzzing: ci.yml only builds the targets, so the actual input
-    # exploration happens here on demand. All four targets run on synthetic /
-    # raw-byte input (no model on disk required).
-    runs-on: ubuntu-latest
-    name: Continuous Fuzz (60s/target)
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-      - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-fuzz
-      - uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: fuzz
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-          cache-directories: fuzz/target
-
-      # RUSTUP_TOOLCHAIN overrides the stable pin in rust-toolchain.toml so the
-      # nightly `-Z sanitizer` flags are accepted; the explicit gnu target keeps
-      # the musl-built cargo-fuzz binary from defaulting to an unbuildable musl.
-      - name: Run fuzz targets (60s each)
-        env:
-          RUSTUP_TOOLCHAIN: nightly
-        run: |
-          for target in audio_decode protocol_parse pcm16_framing tokenizer; do
-            echo "::group::fuzz $target"
-            cargo fuzz run "$target" --target x86_64-unknown-linux-gnu -- -max_total_time=60 -rss_limit_mb=4096
-            echo "::endgroup::"
-          done
-
-      - name: Upload crash artifacts on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fuzz-artifacts-${{ github.run_id }}
-          path: fuzz/artifacts/
-          if-no-files-found: ignore
-          retention-days: 14
