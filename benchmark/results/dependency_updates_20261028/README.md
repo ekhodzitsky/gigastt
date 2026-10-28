@@ -126,3 +126,33 @@ The manual CI also exposes `coreml_smoke` for a focused follow-up: it runs the
 normal required checks plus real CoreML inference, without repeating all full
 E2E/coverage/quality/Docker jobs after a macOS-only link correction. `full=true`
 continues to include the same CoreML smoke. Neither input enables automatic CI.
+
+## Follow-up validation
+
+[The second manual CI run](https://github.com/ekhodzitsky/gigastt/actions/runs/40673817532)
+passed the non-CoreML checks, including semver, model smoke, speaker performance
+and the benchmark regression gate. The 14 microbenchmark mean changes range
+from -4.91% to +1.47%; the earlier incomplete run's mel slowdown did not repeat.
+Seven paired speaker measurements give median candidate/base ratios of 1.00643
+for embedding, 1.00592 for offline diarization, 1.00613 for streaming, and 0.99465
+for RSS/peak RSS. These small changes do not establish a speed improvement.
+
+Additional local `ml_ctc` and `ml_ctc_large` CPU smoke checks on `golos_00.wav`
+succeed for both revisions and produce the same reference text. Word-level
+numeric fields differ. This is one short fixture, not a multilingual WER study;
+raw responses and their hashes are retained alongside `followup-summary.json`.
+The Linux binaries are the same baseline/final binaries described above.
+
+CoreML now links, but its encoder probe fails at inference on macOS 14.8.9.
+[The focused diagnostic run](https://github.com/ekhodzitsky/gigastt/actions/runs/40678427152)
+retains the error: `Unable to compute the prediction using a neural network model`.
+Its attempted CLI CPU control was invalid (`transcribe` has no execution-provider
+flag) and supplies no CPU evidence. Subsequent comparisons must use the explicit
+provider API. The smoke harness now prints errors under `bash -e`, checks both
+output streams for fallback warnings, and retains failure artifacts.
+
+The warning about requiring macOS 14.4 is misleading upstream text: the native
+[availability macro](https://github.com/microsoft/onnxruntime/blob/402979ac1bef89dcd55add41eaa7277c407599eb/onnxruntime/core/providers/coreml/model/host_utils.h)
+actually requires macOS 15 for CoreML 8 optimization hints. The warning alone
+is not evidence that the compiler-runtime availability implementation is broken.
+The integration remains unmerged pending the paired CoreML investigation.

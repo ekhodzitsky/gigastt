@@ -29,7 +29,7 @@ jobs:
           key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/**') }}
       - if: steps.models.outputs.cache-hit != 'true'
         run: ./target/release/gigastt download
-      - name: CoreML inference and CPU diagnostic control
+      - name: CoreML inference
         run: bash scripts/coreml-smoke.sh
       - if: always()
         uses: actions/upload-artifact@v6
@@ -38,6 +38,4 @@ jobs:
           path: |
             transcript.txt
             stderr.log
-            cpu-transcript.txt
-            cpu-stderr.log
           if-no-files-found: ignore

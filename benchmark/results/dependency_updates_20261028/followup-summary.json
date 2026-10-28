@@ -1,0 +1,203 @@
+{
+  "manual_ci_run": 40673817532,
+  "candidate_revision": "217731fb719d12b5845528268c67be309090254e",
+  "overall_result": "failure: CoreML runtime smoke",
+  "benchmarks": [
+    {
+      "name": "decode_audio/g711_alaw_wav_8k",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.01489002691194576,
+          "upper_bound": -0.01025603690885551
+        },
+        "point_estimate": -0.012182330741601133,
+        "standard_error": 0.0011979742301672226
+      }
+    },
+    {
+      "name": "decode_audio/g711_mulaw_wav_8k",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.011862757366536062,
+          "upper_bound": -0.0004208873102423993
+        },
+        "point_estimate": -0.0076744369079359,
+        "standard_error": 0.0030503006390808635
+      }
+    },
+    {
+      "name": "decode_audio/g722_wav_3s",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 0.008194000549872283,
+          "upper_bound": 0.020671369530868098
+        },
+        "point_estimate": 0.014734117498188981,
+        "standard_error": 0.003184224155584736
+      }
+    },
+    {
+      "name": "decode_audio/pcm16_wav_3s",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.06170535370729968,
+          "upper_bound": -0.03749588651513587
+        },
+        "point_estimate": -0.049103162815788415,
+        "standard_error": 0.006184022866882176
+      }
+    },
+    {
+      "name": "decode_telephony_raw/raw_g722_3s",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.008438165028046821,
+          "upper_bound": -0.0003431890873368112
+        },
+        "point_estimate": -0.004691127368946502,
+        "standard_error": 0.002092712546135178
+      }
+    },
+    {
+      "name": "decode_telephony_raw/raw_pcmu_8k",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.05178920893526716,
+          "upper_bound": -0.020461575786419484
+        },
+        "point_estimate": -0.034507373283704346,
+        "standard_error": 0.008065997797147456
+      }
+    },
+    {
+      "name": "mel_spectrogram/1s_16khz",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.017595198651006887,
+          "upper_bound": -0.003801755578365855
+        },
+        "point_estimate": -0.011291190346651603,
+        "standard_error": 0.003524854754913982
+      }
+    },
+    {
+      "name": "mel_spectrogram/1s_16khz_reused",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.006755836277871404,
+          "upper_bound": 0.005664679476089005
+        },
+        "point_estimate": -0.0010437810500499856,
+        "standard_error": 0.0031926504749641964
+      }
+    },
+    {
+      "name": "mel_spectrogram/5s_16khz",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.01374387553970044,
+          "upper_bound": -0.004663350773612728
+        },
+        "point_estimate": -0.009310906282768538,
+        "standard_error": 0.0023077593342230238
+      }
+    },
+    {
+      "name": "mel_spectrogram/5s_16khz_reused",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.021447184580744395,
+          "upper_bound": -0.008281808890355218
+        },
+        "point_estimate": -0.015487062043910593,
+        "standard_error": 0.003366778054852642
+      }
+    },
+    {
+      "name": "resample/48k_to_16k_1s",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.018439912729902655,
+          "upper_bound": -0.0010695373478054391
+        },
+        "point_estimate": -0.008832219876929948,
+        "standard_error": 0.004470932895189046
+      }
+    },
+    {
+      "name": "resample/8k_to_16k_1s",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 0.007910334071379527,
+          "upper_bound": 0.010805050762909812
+        },
+        "point_estimate": 0.009302231409422435,
+        "standard_error": 0.0007466620363074998
+      }
+    },
+    {
+      "name": "tokenizer_decode/decode_1024_ids",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": 0.009998996334472732,
+          "upper_bound": 0.014164593569343508
+        },
+        "point_estimate": 0.012224362903487718,
+        "standard_error": 0.0010642474532752716
+      }
+    },
+    {
+      "name": "tokenizer_decode/decode_64_ids",
+      "mean_change": {
+        "confidence_interval": {
+          "confidence_level": 0.95,
+          "lower_bound": -0.021144975933871015,
+          "upper_bound": -0.015289840881448982
+        },
+        "point_estimate": -0.018053778194330072,
+        "standard_error": 0.0014867454716505628
+      }
+    }
+  ],
+  "ctc_smoke": [
+    {
+      "variant": "ml_ctc",
+      "fixture": "golos_00.wav",
+      "base_text": "шестьдесят тысяч тенге сколько будет стоить",
+      "candidate_text": "шестьдесят тысяч тенге сколько будет стоить",
+      "different_top_level_fields": [
+        "words"
+      ],
+      "response_sha256": [
+        "e0df3c84e3f5756ec10be5ee93cf1adb9654b812d01ff9c234318bb30b3ca16c",
+        "e9eaa834f55de17f6d06df2310d03e726d2d4e0571297e19a2704a5fe25e6aaa"
+      ]
+    },
+    {
+      "variant": "ml_ctc_large",
+      "fixture": "golos_00.wav",
+      "base_text": "шестьдесят тысяч тенге сколько будет стоить",
+      "candidate_text": "шестьдесят тысяч тенге сколько будет стоить",
+      "different_top_level_fields": [
+        "words"
+      ],
+      "response_sha256": [
+        "d597c9557f83b1e0692c5d1dd325766155b944d9ea560097931d33b7029da017",
+        "43e276af7803680e31b988a4df5d2ccdbc908e3fe8a5be1a0e357d4cb9f06b5f"
+      ]
+    }
+  ]
+}

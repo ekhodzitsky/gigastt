@@ -34,6 +34,10 @@ class CoreMLSmokeTests(unittest.TestCase):
         result = self.run_smoke(stderr='falling back to CPU execution provider')
         self.assertNotEqual(result.returncode, 0)
 
+    def test_cpu_fallback_on_stdout_is_not_success(self):
+        result = self.run_smoke(text='falling back to CPU execution provider: шестьдесят тысяч тенге')
+        self.assertNotEqual(result.returncode, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

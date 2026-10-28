@@ -379,8 +379,6 @@ jobs:
           path: |
             transcript.txt
             stderr.log
-            cpu-transcript.txt
-            cpu-stderr.log
           if-no-files-found: ignore
 
   build-cuda:
