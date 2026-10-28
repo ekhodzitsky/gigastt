@@ -24,7 +24,7 @@ pub(super) use probe::{ProbeHit, probe_bytes, probe_file, sniff_file};
 
 // Amortize thread handoffs without retaining duration-sized PCM. Two queued
 // batches plus the producer's current batch retain PCM independent of duration.
-const BATCH_FRAMES: usize = 8192;
+const BATCH_FRAMES: usize = 24 * 1024;
 
 pub(super) struct AacBlock {
     pub(super) frames: usize,

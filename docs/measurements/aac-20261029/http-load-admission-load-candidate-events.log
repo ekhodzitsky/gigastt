@@ -1,0 +1,3 @@
+2026-10-28T22:03:48.501436Z  INFO gigastt::server::listen: gigastt server listening on http://127.0.0.1:46847
+2026-10-28T22:04:55.958885Z  INFO gigastt::server::listen: Shutting down server
+2026-10-28T22:04:56.000859Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

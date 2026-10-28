@@ -1,0 +1,1133 @@
+{
+  "cases": [
+    {
+      "id": "golos_00-wav",
+      "kind": "wav",
+      "sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 170.19509300007485,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.0,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "475844 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 171.28509600297548,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.0,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "475940 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_00-aac",
+      "kind": "m4a",
+      "sha256": "a662b21e9eb8e5987a2c4e6fc87ed953e3d72e1b0a4e94a12fe93aff5126e870",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 163.63361000549048,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.0,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "476620 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 194.7027109854389,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.0,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "476484 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_01-wav",
+      "kind": "wav",
+      "sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 149.1103800071869,
+          "text_sha256": "382b9b563f862767819be113cafe19e97b03e9767ce2236dd13dc8df4cf23cea",
+          "word_count": 7,
+          "duration": 3.43,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "479652 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 153.82512300857343,
+          "text_sha256": "382b9b563f862767819be113cafe19e97b03e9767ce2236dd13dc8df4cf23cea",
+          "word_count": 7,
+          "duration": 3.43,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "476980 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_01-aac",
+      "kind": "m4a",
+      "sha256": "87bf8aa989a2e35661649af67e9729980301aeb0e9b72868637d73e48e355758",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 139.6596329868771,
+          "text_sha256": "382b9b563f862767819be113cafe19e97b03e9767ce2236dd13dc8df4cf23cea",
+          "word_count": 7,
+          "duration": 3.43,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "480272 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 144.2261089978274,
+          "text_sha256": "382b9b563f862767819be113cafe19e97b03e9767ce2236dd13dc8df4cf23cea",
+          "word_count": 7,
+          "duration": 3.43,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "479656 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_02-wav",
+      "kind": "wav",
+      "sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 117.93563101673499,
+          "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f",
+          "word_count": 3,
+          "duration": 3.06,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "479848 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 131.4381500124,
+          "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f",
+          "word_count": 3,
+          "duration": 3.06,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "480472 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_02-aac",
+      "kind": "m4a",
+      "sha256": "bbae30dd1eafd2899db2fb9faa5c650a444693d7a0ec343df4d07dfeb236244a",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 118.80502998246811,
+          "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f",
+          "word_count": 3,
+          "duration": 3.06,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "480472 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 131.5786630148068,
+          "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f",
+          "word_count": 3,
+          "duration": 3.06,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "479848 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_03-wav",
+      "kind": "wav",
+      "sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 207.4532489932608,
+          "text_sha256": "806a2068cd793f00d38cc97fcd854148544ce49426f99aa4606eac05e741d6c0",
+          "word_count": 6,
+          "duration": 5.44,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "477732 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 226.6772669972852,
+          "text_sha256": "806a2068cd793f00d38cc97fcd854148544ce49426f99aa4606eac05e741d6c0",
+          "word_count": 6,
+          "duration": 5.44,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "486592 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_03-aac",
+      "kind": "m4a",
+      "sha256": "041043a8beddbce68a5b357b68e46920010a58a047b232f65f19a8e071cb75eb",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 213.017834990751,
+          "text_sha256": "806a2068cd793f00d38cc97fcd854148544ce49426f99aa4606eac05e741d6c0",
+          "word_count": 6,
+          "duration": 5.44,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "486592 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 227.61469401302747,
+          "text_sha256": "806a2068cd793f00d38cc97fcd854148544ce49426f99aa4606eac05e741d6c0",
+          "word_count": 6,
+          "duration": 5.44,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "477748 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_04-wav",
+      "kind": "wav",
+      "sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 209.39624999300577,
+          "text_sha256": "124eb2de844ac71a5dea5946d353394a6d7d279be953ecbf6fd6dc5f26811a65",
+          "word_count": 6,
+          "duration": 5.22,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "483720 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 212.85807600361295,
+          "text_sha256": "124eb2de844ac71a5dea5946d353394a6d7d279be953ecbf6fd6dc5f26811a65",
+          "word_count": 6,
+          "duration": 5.22,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "489544 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_04-aac",
+      "kind": "m4a",
+      "sha256": "d681d1c01582c90765ccf186c2faed4daeb9ecc0aa020736539adb0c61189a6f",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 197.49789699562825,
+          "text_sha256": "124eb2de844ac71a5dea5946d353394a6d7d279be953ecbf6fd6dc5f26811a65",
+          "word_count": 6,
+          "duration": 5.22,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "490976 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 203.014793980401,
+          "text_sha256": "124eb2de844ac71a5dea5946d353394a6d7d279be953ecbf6fd6dc5f26811a65",
+          "word_count": 6,
+          "duration": 5.22,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "483720 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_05-wav",
+      "kind": "wav",
+      "sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 121.17814598605037,
+          "text_sha256": "2a3ba6fbcebe3b20725480c35a54673a551e91b7eb6fcb5a2f838fb44b260cb1",
+          "word_count": 2,
+          "duration": 3.2039375,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "483736 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 138.64723598817363,
+          "text_sha256": "2a3ba6fbcebe3b20725480c35a54673a551e91b7eb6fcb5a2f838fb44b260cb1",
+          "word_count": 2,
+          "duration": 3.2039375,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "490976 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_05-aac",
+      "kind": "m4a",
+      "sha256": "c353c6b45afb5093d4303562cd671e99233456b573ad3d7b8a129f9eb95c2134",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 122.60719400364906,
+          "text_sha256": "2a3ba6fbcebe3b20725480c35a54673a551e91b7eb6fcb5a2f838fb44b260cb1",
+          "word_count": 2,
+          "duration": 3.204,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "490976 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 136.81077500223182,
+          "text_sha256": "2a3ba6fbcebe3b20725480c35a54673a551e91b7eb6fcb5a2f838fb44b260cb1",
+          "word_count": 2,
+          "duration": 3.204,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "483736 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_06-wav",
+      "kind": "wav",
+      "sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 190.51152799511328,
+          "text_sha256": "464b0f5782fc95a61cd0f8cb1d600dce8ffc1699bcb4290d4656ab861a8509aa",
+          "word_count": 6,
+          "duration": 5.0,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "477992 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 198.14515998587012,
+          "text_sha256": "464b0f5782fc95a61cd0f8cb1d600dce8ffc1699bcb4290d4656ab861a8509aa",
+          "word_count": 6,
+          "duration": 5.0,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "490976 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_06-aac",
+      "kind": "m4a",
+      "sha256": "d248805919d4dc8965d00195edb59bfd534824f68dcfad4e48dcbcece165cbe3",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 186.6452139802277,
+          "text_sha256": "464b0f5782fc95a61cd0f8cb1d600dce8ffc1699bcb4290d4656ab861a8509aa",
+          "word_count": 6,
+          "duration": 5.0,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "490980 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 199.30597601342015,
+          "text_sha256": "464b0f5782fc95a61cd0f8cb1d600dce8ffc1699bcb4290d4656ab861a8509aa",
+          "word_count": 6,
+          "duration": 5.0,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "477992 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_07-wav",
+      "kind": "wav",
+      "sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 82.42714300286025,
+          "text_sha256": "292e28a67a3553644cadb58a39e31aed19ff02ed9bceca92129eddf6fd30c708",
+          "word_count": 2,
+          "duration": 2.04,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "477992 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 96.6366569919046,
+          "text_sha256": "292e28a67a3553644cadb58a39e31aed19ff02ed9bceca92129eddf6fd30c708",
+          "word_count": 2,
+          "duration": 2.04,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "490980 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_07-aac",
+      "kind": "m4a",
+      "sha256": "f55166821815750878af9052af29fb4f70368521f6615e79f02fddf7dcfeface",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 82.44790200842544,
+          "text_sha256": "292e28a67a3553644cadb58a39e31aed19ff02ed9bceca92129eddf6fd30c708",
+          "word_count": 2,
+          "duration": 2.04,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "490980 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 89.93792600813322,
+          "text_sha256": "292e28a67a3553644cadb58a39e31aed19ff02ed9bceca92129eddf6fd30c708",
+          "word_count": 2,
+          "duration": 2.04,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "477992 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_08-wav",
+      "kind": "wav",
+      "sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 183.7597679987084,
+          "text_sha256": "1489486fd673f5665c2f95176f5020c6b9029bfc3349dbbfe72a58a2f86f6eb8",
+          "word_count": 3,
+          "duration": 4.928,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "478064 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 195.39204202010296,
+          "text_sha256": "1489486fd673f5665c2f95176f5020c6b9029bfc3349dbbfe72a58a2f86f6eb8",
+          "word_count": 3,
+          "duration": 4.928,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491092 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_08-aac",
+      "kind": "m4a",
+      "sha256": "671e862060e8febec6f76e9c2aa5213685879c42057898b9070737bdd7c88735",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 190.8814809867181,
+          "text_sha256": "1489486fd673f5665c2f95176f5020c6b9029bfc3349dbbfe72a58a2f86f6eb8",
+          "word_count": 3,
+          "duration": 4.928,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491092 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 200.0955650000833,
+          "text_sha256": "1489486fd673f5665c2f95176f5020c6b9029bfc3349dbbfe72a58a2f86f6eb8",
+          "word_count": 3,
+          "duration": 4.928,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "478064 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_09-wav",
+      "kind": "wav",
+      "sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 130.47288099187426,
+          "text_sha256": "6d9356c8d41e87e6e933a3e64400488d0e05a405c5eaa506f2ebacbb6fa47eec",
+          "word_count": 6,
+          "duration": 3.34325,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "480960 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 143.09401699574664,
+          "text_sha256": "6d9356c8d41e87e6e933a3e64400488d0e05a405c5eaa506f2ebacbb6fa47eec",
+          "word_count": 6,
+          "duration": 3.34325,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491092 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_09-aac",
+      "kind": "m4a",
+      "sha256": "51b7b6d7c8d39a79356eec609180575749d4e4dbcbfd684987966544d31589ac",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 132.14086601510644,
+          "text_sha256": "6d9356c8d41e87e6e933a3e64400488d0e05a405c5eaa506f2ebacbb6fa47eec",
+          "word_count": 6,
+          "duration": 3.344,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491092 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 142.8991029970348,
+          "text_sha256": "6d9356c8d41e87e6e933a3e64400488d0e05a405c5eaa506f2ebacbb6fa47eec",
+          "word_count": 6,
+          "duration": 3.344,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "480960 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_10-wav",
+      "kind": "wav",
+      "sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 151.67486399877816,
+          "text_sha256": "b6e9462a66842f7bd1037ce4b1d39cb1137bf99d67a1ec25070f5adcff967541",
+          "word_count": 6,
+          "duration": 3.9061875,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "485872 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 163.5003210103605,
+          "text_sha256": "b6e9462a66842f7bd1037ce4b1d39cb1137bf99d67a1ec25070f5adcff967541",
+          "word_count": 6,
+          "duration": 3.9061875,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491092 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_10-aac",
+      "kind": "m4a",
+      "sha256": "ee8b94dde3d282459849af00038043976989706011cfd5479a687fb247565eb3",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 150.08656901773065,
+          "text_sha256": "b6e9462a66842f7bd1037ce4b1d39cb1137bf99d67a1ec25070f5adcff967541",
+          "word_count": 6,
+          "duration": 3.907,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491092 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 161.22385501512326,
+          "text_sha256": "b6e9462a66842f7bd1037ce4b1d39cb1137bf99d67a1ec25070f5adcff967541",
+          "word_count": 6,
+          "duration": 3.907,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "485872 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_11-wav",
+      "kind": "wav",
+      "sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 211.5925659891218,
+          "text_sha256": "f35c562a0c04ce2ad1c99ebbe55ecd6d4b10f1fbdb82757d8083955e4f0816c4",
+          "word_count": 5,
+          "duration": 5.64,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "480160 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 240.7245959911961,
+          "text_sha256": "f35c562a0c04ce2ad1c99ebbe55ecd6d4b10f1fbdb82757d8083955e4f0816c4",
+          "word_count": 5,
+          "duration": 5.64,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491128 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_11-aac",
+      "kind": "m4a",
+      "sha256": "948602e6ce2fa9bd193d118204481d0ce72c2bcd1660cedf9393f24458bd7488",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 209.19644500827417,
+          "text_sha256": "f35c562a0c04ce2ad1c99ebbe55ecd6d4b10f1fbdb82757d8083955e4f0816c4",
+          "word_count": 5,
+          "duration": 5.64,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491128 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 218.4448030020576,
+          "text_sha256": "f35c562a0c04ce2ad1c99ebbe55ecd6d4b10f1fbdb82757d8083955e4f0816c4",
+          "word_count": 5,
+          "duration": 5.64,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "480160 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_12-wav",
+      "kind": "wav",
+      "sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 224.53817899804562,
+          "text_sha256": "43634d1865c061d1a1a95779ea9e8667a82dd87566e355d5f2772396536371f0",
+          "word_count": 6,
+          "duration": 5.9439375,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "480412 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 235.8227020013146,
+          "text_sha256": "43634d1865c061d1a1a95779ea9e8667a82dd87566e355d5f2772396536371f0",
+          "word_count": 6,
+          "duration": 5.9439375,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491360 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_12-aac",
+      "kind": "m4a",
+      "sha256": "f88e12f972469a03a13a2364058668fb1ecf9334842dc485a81d2601b6405dca",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 233.54152799583972,
+          "text_sha256": "43634d1865c061d1a1a95779ea9e8667a82dd87566e355d5f2772396536371f0",
+          "word_count": 6,
+          "duration": 5.944,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491360 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 239.02736601303332,
+          "text_sha256": "43634d1865c061d1a1a95779ea9e8667a82dd87566e355d5f2772396536371f0",
+          "word_count": 6,
+          "duration": 5.944,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "480412 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_13-wav",
+      "kind": "wav",
+      "sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 124.65454000630416,
+          "text_sha256": "883169ea8ca91b065a46727d4f83303918e7ca3690604846dfcf913f27ee9d26",
+          "word_count": 5,
+          "duration": 3.2,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "482536 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 131.60984101705253,
+          "text_sha256": "883169ea8ca91b065a46727d4f83303918e7ca3690604846dfcf913f27ee9d26",
+          "word_count": 5,
+          "duration": 3.2,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491360 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_13-aac",
+      "kind": "m4a",
+      "sha256": "d08ec4308ec3e217b9bc387c4681296407caed9c6c48eb14be080ff29a30314d",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 124.30348197813146,
+          "text_sha256": "883169ea8ca91b065a46727d4f83303918e7ca3690604846dfcf913f27ee9d26",
+          "word_count": 5,
+          "duration": 3.2,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491360 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 134.98994399560615,
+          "text_sha256": "883169ea8ca91b065a46727d4f83303918e7ca3690604846dfcf913f27ee9d26",
+          "word_count": 5,
+          "duration": 3.2,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "482536 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_14-wav",
+      "kind": "wav",
+      "sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 132.6440580014605,
+          "text_sha256": "9cae8320d734c50451e2ab8316118df970afc53da5c8bf1cf04ad11d9c39f2a7",
+          "word_count": 6,
+          "duration": 3.41,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "482536 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 144.53962599509396,
+          "text_sha256": "9cae8320d734c50451e2ab8316118df970afc53da5c8bf1cf04ad11d9c39f2a7",
+          "word_count": 6,
+          "duration": 3.41,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491360 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_14-aac",
+      "kind": "m4a",
+      "sha256": "a064c203afd9aa8abc0a6d565ea92b76f1e94fbba88e7b9f10b37e26bf36bd0e",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 129.87281702226028,
+          "text_sha256": "9cae8320d734c50451e2ab8316118df970afc53da5c8bf1cf04ad11d9c39f2a7",
+          "word_count": 6,
+          "duration": 3.41,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491360 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 139.25648797885515,
+          "text_sha256": "9cae8320d734c50451e2ab8316118df970afc53da5c8bf1cf04ad11d9c39f2a7",
+          "word_count": 6,
+          "duration": 3.41,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "482584 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_00-he1",
+      "kind": "adts",
+      "sha256": "0ad243e2a85435b51de75e81567490fca460caca6e424691972b4241eded9fb8",
+      "responses": {
+        "baseline": {
+          "status": 200,
+          "wall_ms": 160.4648029897362,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.05325,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "482648 kB"
+          }
+        },
+        "candidate": {
+          "status": 200,
+          "wall_ms": 173.58014598721638,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.05325,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491424 kB"
+          }
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "golos_00-he2",
+      "kind": "adts",
+      "sha256": "f6a368393b086b38192590d854c5b260c46a775cc46433bc4a70ea6f5cc4fe1d",
+      "responses": {
+        "candidate": {
+          "status": 200,
+          "wall_ms": 162.62734500924125,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.05325,
+          "process_memory": {
+            "VmHWM": "903124 kB",
+            "VmRSS": "491532 kB"
+          }
+        },
+        "baseline": {
+          "status": 200,
+          "wall_ms": 163.83120100363158,
+          "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0",
+          "word_count": 6,
+          "duration": 4.05325,
+          "process_memory": {
+            "VmHWM": "902128 kB",
+            "VmRSS": "484140 kB"
+          }
+        }
+      },
+      "pass": true
+    }
+  ],
+  "load_before": "2.22 4.60 7.52 2/5398 3331860",
+  "runtime_sha256": "aa4079d18f4ea7a5f3a94d80cd4bbe0f2740436626622d64d793803a20381083",
+  "instances": {
+    "baseline": {
+      "binary_sha256": "ab79334bbf8eff3a557c4729e16b0bb8468ea1a28d0f537bfa46de5833f04362",
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/baseline-server",
+        "serve",
+        "--offline",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "46237",
+        "--model-dir",
+        "/home/ekhodzitsky/.gigastt/models",
+        "--model-variant",
+        "rnnt",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--execution-provider",
+        "cpu",
+        "--metrics",
+        "--metrics-listen",
+        "127.0.0.1:35515",
+        "--shutdown-drain-secs",
+        "1"
+      ],
+      "health": {
+        "status": "ok",
+        "model": "gigaam-v3-rnnt",
+        "variant": "rnnt",
+        "version": "2.22.0",
+        "punctuation": false,
+        "itn": false
+      },
+      "warmup_ms": 163.70628599543124,
+      "timing_ms": {
+        "count": 32,
+        "median": 161.22385501512326,
+        "p95": 227.61469401302747,
+        "p99": 239.02736601303332
+      },
+      "final_memory": {
+        "VmHWM": "902128 kB",
+        "VmRSS": "484396 kB"
+      },
+      "health_after": {
+        "status": "ok",
+        "model": "gigaam-v3-rnnt",
+        "variant": "rnnt",
+        "version": "2.22.0",
+        "punctuation": false,
+        "itn": false
+      },
+      "healthy_after": true,
+      "exit_code": 0
+    },
+    "candidate": {
+      "binary_sha256": "23c72ad283e261b18b58883da421d35fa2100cdebead8a1ad2eeee59f06dc895",
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-syom-081/batched-server",
+        "serve",
+        "--offline",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "37243",
+        "--model-dir",
+        "/home/ekhodzitsky/.gigastt/models",
+        "--model-variant",
+        "rnnt",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--execution-provider",
+        "cpu",
+        "--metrics",
+        "--metrics-listen",
+        "127.0.0.1:36747",
+        "--shutdown-drain-secs",
+        "1"
+      ],
+      "health": {
+        "status": "ok",
+        "model": "gigaam-v3-rnnt",
+        "variant": "rnnt",
+        "version": "2.22.0",
+        "punctuation": false,
+        "itn": false
+      },
+      "warmup_ms": 172.574922995409,
+      "timing_ms": {
+        "count": 32,
+        "median": 163.5003210103605,
+        "p95": 235.8227020013146,
+        "p99": 240.7245959911961
+      },
+      "final_memory": {
+        "VmHWM": "903124 kB",
+        "VmRSS": "491788 kB"
+      },
+      "health_after": {
+        "status": "ok",
+        "model": "gigaam-v3-rnnt",
+        "variant": "rnnt",
+        "version": "2.22.0",
+        "punctuation": false,
+        "itn": false
+      },
+      "healthy_after": true,
+      "exit_code": 0
+    }
+  },
+  "thresholds": {
+    "max_latency_ratio": 1.5,
+    "max_rss_ratio": 1.25,
+    "rss_slack_mib": 32
+  },
+  "negative": [
+    {
+      "id": "garbage",
+      "responses": {
+        "baseline": {
+          "status": 422,
+          "wall_ms": 0.6463710160460323
+        },
+        "candidate": {
+          "status": 422,
+          "wall_ms": 0.5889039894100279
+        }
+      },
+      "pass": true
+    },
+    {
+      "id": "truncated-m4a",
+      "responses": {
+        "baseline": {
+          "status": 422,
+          "wall_ms": 0.5342010117601603
+        },
+        "candidate": {
+          "status": 422,
+          "wall_ms": 0.4768040089402348
+        }
+      },
+      "pass": true
+    }
+  ],
+  "gates": {
+    "responses_and_transcripts": true,
+    "duration_parity": true,
+    "health_after": true,
+    "p95": true,
+    "p99": true,
+    "peak_rss": true
+  },
+  "pass": true,
+  "load_after": "2.70 4.59 7.47 3/5391 3332075"
+}

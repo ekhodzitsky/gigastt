@@ -24,6 +24,8 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   path while broader workload/platform qualification remains open. Bound AAC
   scan memory, batch decoder handoffs, and preserve cancellation and existing
   container support; record matched performance and recognition measurements.
+  Qualify the published 0.8.1 package and amortize worker handoffs to remove
+  measured short-file and stereo decode overhead; retain exact PCM results.
 
 - Reorganize the README and documentation around installation, model selection,
   operation and validation. Distinguish published bundles from main, correct SDK

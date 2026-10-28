@@ -11,6 +11,10 @@ Standard builds keep the existing Symphonia AAC/MP4 path and do not compile
 syom. No download, runtime flag or release workflow enables this feature.
 The default and optional paths retain AAC in Matroska and non-AAC MP4 tracks.
 
+The follow-up [published syom 0.8.1 qualification](measurements/aac-20261029/README.md)
+updates this integration against current main. The measurements below retain
+their original syom 0.7.1 provenance; they are not relabeled as 0.8.1 results.
+
 ## What the dependency adds
 
 Review covered syom 0.7.1 and Symphonia 0.6.1, their locked Cargo features,
