@@ -94,7 +94,7 @@ regression. These short fixtures do not cover every Opus mode or transition.
 
 - Workspace unit/bin tests, strict all-target Clippy and formatting pass.
 - Rust 1.94 workspace and default/lean/CoreML/CUDA/NNAPI compile checks pass.
-- 127 model-backed API/CLI tests pass across the serial E2E suites. An obsolete
+- 126 model-backed API/CLI tests pass across the serial E2E suites. An obsolete
   automatic-quantization test was replaced with a passing model-free test of
   the current offline/INT8 contract. The first diarization attempt lacked the
   speaker asset; the affected suite passed with the verified speaker model.
@@ -102,7 +102,7 @@ regression. These short fixtures do not cover every Opus mode or transition.
 - Fuzz dependency graph compiles; workspace/fuzz audits and Cargo Deny pass.
 - Both supported Node test versions pass again against the final addon.
 
-Merge remains conditional on the single final manual CI run. Existing strict
+This runtime upgrade is deferred after the paired CoreML failure below. Existing strict
 comparison gates are not relaxed: the archived exploratory collection wrapper
 records runtime numerical differences for review, while production CI retains
 its recognition, speaker and performance checks.
