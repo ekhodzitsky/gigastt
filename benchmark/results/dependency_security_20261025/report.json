@@ -1,0 +1,3057 @@
+{
+  "baseline_main": "06ce99e680a915a10c947cd07d65281bb5e83a29",
+  "baseline_note": "Saved f29d057 binary; crates/, Cargo.toml and Cargo.lock are identical to accepted main 06ce99e. Candidate uses the same local toolchain.",
+  "metadata": {
+    "created_utc": "2026-10-25T10:49:57.975487+00:00",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: x86_64-unknown-linux-gnu\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+    "baseline_revision": "f29d057515a7a399a546f875e686f194b8c40b4d",
+    "candidate_revision": "e9fa93b0d4705c4a25c044f899b708557f81d01f",
+    "binaries": {
+      "baseline": "f20de0b834248aa7741ef370012f3c2259294de62750e3bfdf3dd03b2c5f4298",
+      "candidate": "73060aa367aaa3aad7cba336e449056cd4d05d30ab5ba0a7d92d953b7f4f2bd0"
+    },
+    "manifest_sha256": "c482c7fa458065e2c9d8a410fa4fd46af734f0c5697fb1820d2cff9279477dc2",
+    "script_sha256": "7437dd3178cd1f68300e35ecee5990ac1c8998e431d15c57b7b59dc0a276514d",
+    "models": {
+      "v3_e2e_rnnt_vocab.txt": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7",
+      "v3_rnnt_encoder.onnx": "7ae7509c3f1128369564df0b00e2ee4950adf539de2392ac5c800a5bc04c7132",
+      "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+      "v3_e2e_rnnt_decoder.onnx": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+      "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+      "v3_rnnt_encoder_int8.onnx": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+      "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+      "v3_e2e_rnnt_encoder_int8.onnx": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091",
+      "v3_e2e_rnnt_joint.onnx": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c",
+      "v3_e2e_rnnt_encoder.onnx": "cd60b3764a832e8560ae6d3ad0b10adc1a42ffae412b9476f25620aae4f4a508"
+    },
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.43",
+    "cpu": "Architecture:                            x86_64\nCPU op-mode(s):                          32-bit, 64-bit\nAddress sizes:                           48 bits physical, 48 bits virtual\nByte Order:                              Little Endian\nCPU(s):                                  24\nOn-line CPU(s) list:                     0-23\nVendor ID:                               AuthenticAMD\nModel name:                              AMD Ryzen AI 9 HX 370 w/ Radeon 890M\nCPU family:                              26\nModel:                                   36\nThread(s) per core:                      2\nCore(s) per socket:                      12\nSocket(s):                               1\nStepping:                                0\nFrequency boost:                         enabled\nCPU(s) scaling MHz:                      79%\nCPU max MHz:                             5157.8950\nCPU min MHz:                             605.2640\nBogoMIPS:                                3992.32\nFlags:                                   fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze\nVirtualization:                          AMD-V\nL1d cache:                               576 KiB (12 instances)\nL1i cache:                               384 KiB (12 instances)\nL2 cache:                                12 MiB (12 instances)\nL3 cache:                                24 MiB (2 instances)\nNUMA node(s):                            1\nNUMA node0 CPU(s):                       0-23\nVulnerability Gather data sampling:      Not affected\nVulnerability Ghostwrite:                Not affected\nVulnerability Indirect target selection: Not affected\nVulnerability Itlb multihit:             Not affected\nVulnerability L1tf:                      Not affected\nVulnerability Mds:                       Not affected\nVulnerability Meltdown:                  Not affected\nVulnerability Mmio stale data:           Not affected\nVulnerability Old microcode:             Not affected\nVulnerability Reg file data sampling:    Not affected\nVulnerability Retbleed:                  Not affected\nVulnerability Spec rstack overflow:      Mitigation; IBPB on VMEXIT only\nVulnerability Spec store bypass:         Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:                Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:                Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP always-on; PBRSB-eIBRS Not affected; BHI Not affected\nVulnerability Srbds:                     Not affected\nVulnerability Tsa:                       Not affected\nVulnerability Tsx async abort:           Not affected\nVulnerability Vmscape:                   Mitigation; IBPB on VMEXIT\n",
+    "affinity": [
+      2,
+      3
+    ],
+    "rounds": 7,
+    "phase": "all",
+    "timing": "Warm sequential REST; alternating AB/BA rounds; one warmup per file and arm; no concurrent requests",
+    "startup": "Optimized cache primed before both servers; OS page cache uncontrolled; startup timings descriptive only"
+  },
+  "summary": {
+    "quality": {
+      "rnnt": {
+        "cases": 21,
+        "audio_seconds": 3637.0987423469387,
+        "reference_words": 8142,
+        "changed_words": 0,
+        "baseline": {
+          "normalized_sdi": [
+            436,
+            106,
+            49
+          ],
+          "case_errors_on_aligned_podcast_words": 567
+        },
+        "candidate": {
+          "normalized_sdi": [
+            436,
+            106,
+            49
+          ],
+          "case_errors_on_aligned_podcast_words": 567
+        }
+      },
+      "e2e_rnnt": {
+        "cases": 21,
+        "audio_seconds": 3637.0987423469387,
+        "reference_words": 8142,
+        "changed_words": 0,
+        "baseline": {
+          "normalized_sdi": [
+            312,
+            87,
+            68
+          ],
+          "case_errors_on_aligned_podcast_words": 234
+        },
+        "candidate": {
+          "normalized_sdi": [
+            312,
+            87,
+            68
+          ],
+          "case_errors_on_aligned_podcast_words": 234
+        }
+      }
+    },
+    "timing": {
+      "rnnt/long_example": {
+        "median_paired_ratio": 1.0010559404984984,
+        "baseline": {
+          "seconds": 2.0911904690001393,
+          "rtf": 0.029350041670177393,
+          "cpu_seconds": 4.1299999999999955,
+          "VmRSS": 564756,
+          "VmHWM": 671452
+        },
+        "candidate": {
+          "seconds": 2.0939706819917774,
+          "rtf": 0.029389062203393365,
+          "cpu_seconds": 4.139999999999986,
+          "VmRSS": 565964,
+          "VmHWM": 670084
+        }
+      },
+      "rnnt/podlodka-306": {
+        "median_paired_ratio": 1.0002292858497925,
+        "baseline": {
+          "seconds": 7.534457478992408,
+          "rtf": 0.030922374360184524,
+          "cpu_seconds": 14.699999999999989,
+          "VmRSS": 570888,
+          "VmHWM": 671452
+        },
+        "candidate": {
+          "seconds": 7.542469003004953,
+          "rtf": 0.030955254676438514,
+          "cpu_seconds": 14.70999999999998,
+          "VmRSS": 566332,
+          "VmHWM": 670084
+        }
+      },
+      "e2e_rnnt/long_example": {
+        "median_paired_ratio": 0.9790254536074559,
+        "baseline": {
+          "seconds": 2.47534410499793,
+          "rtf": 0.03474167164909375,
+          "cpu_seconds": 4.850000000000023,
+          "VmRSS": 573844,
+          "VmHWM": 678564
+        },
+        "candidate": {
+          "seconds": 2.411326793007902,
+          "rtf": 0.03384318305976003,
+          "cpu_seconds": 4.75,
+          "VmRSS": 576068,
+          "VmHWM": 669352
+        }
+      },
+      "e2e_rnnt/podlodka-306": {
+        "median_paired_ratio": 0.9985356269526169,
+        "baseline": {
+          "seconds": 8.841636105004,
+          "rtf": 0.036287202145312274,
+          "cpu_seconds": 17.25999999999999,
+          "VmRSS": 575896,
+          "VmHWM": 678564
+        },
+        "candidate": {
+          "seconds": 8.837335756004904,
+          "rtf": 0.03626955296459817,
+          "cpu_seconds": 17.210000000000036,
+          "VmRSS": 576104,
+          "VmHWM": 675520
+        }
+      }
+    }
+  },
+  "quality": [
+    {
+      "id": "rnnt-long_example-0",
+      "head": "rnnt",
+      "sample": "long_example",
+      "shift": 0,
+      "audio_seconds": 71.25,
+      "reference_words": 124,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rnnt-long_example-3",
+      "head": "rnnt",
+      "sample": "long_example",
+      "shift": 3,
+      "audio_seconds": 74.25,
+      "reference_words": 124,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          2,
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          2,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rnnt-long_example-22",
+      "head": "rnnt",
+      "sample": "long_example",
+      "shift": 22,
+      "audio_seconds": 93.25,
+      "reference_words": 124,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rnnt-ruls-0000-0010-0",
+      "head": "rnnt",
+      "sample": "ruls-0000-0010",
+      "shift": 0,
+      "audio_seconds": 69.62,
+      "reference_words": 154,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rnnt-ruls-0000-0010-3",
+      "head": "rnnt",
+      "sample": "ruls-0000-0010",
+      "shift": 3,
+      "audio_seconds": 72.62,
+      "reference_words": 154,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rnnt-ruls-0000-0010-22",
+      "head": "rnnt",
+      "sample": "ruls-0000-0010",
+      "shift": 22,
+      "audio_seconds": 91.62,
+      "reference_words": 154,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rnnt-ruls-0013-0024-0",
+      "head": "rnnt",
+      "sample": "ruls-0013-0024",
+      "shift": 0,
+      "audio_seconds": 83.43,
+      "reference_words": 177,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          5,
+          0,
+          1
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          5,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "id": "rnnt-ruls-0013-0024-3",
+      "head": "rnnt",
+      "sample": "ruls-0013-0024",
+      "shift": 3,
+      "audio_seconds": 86.43,
+      "reference_words": 177,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          4,
+          0,
+          1
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          4,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "id": "rnnt-ruls-0013-0024-22",
+      "head": "rnnt",
+      "sample": "ruls-0013-0024",
+      "shift": 22,
+      "audio_seconds": 105.43,
+      "reference_words": 177,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          6,
+          0,
+          1
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          6,
+          0,
+          1
+        ]
+      }
+    },
+    {
+      "id": "rnnt-podlodka-306-0",
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "shift": 0,
+      "audio_seconds": 243.65714583333335,
+      "reference_words": 696,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          59,
+          17,
+          8
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            137,
+            17,
+            8
+          ],
+          "aligned_words": 620,
+          "initial_case_errors": 64,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            64
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          59,
+          17,
+          8
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            137,
+            17,
+            8
+          ],
+          "aligned_words": 620,
+          "initial_case_errors": 64,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            64
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-306-3",
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "shift": 3,
+      "audio_seconds": 246.65714583333335,
+      "reference_words": 696,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          57,
+          17,
+          8
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            135,
+            17,
+            8
+          ],
+          "aligned_words": 622,
+          "initial_case_errors": 64,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            64
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          57,
+          17,
+          8
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            135,
+            17,
+            8
+          ],
+          "aligned_words": 622,
+          "initial_case_errors": 64,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            64
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-306-22",
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "shift": 22,
+      "audio_seconds": 265.65714583333335,
+      "reference_words": 696,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          59,
+          17,
+          8
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            137,
+            17,
+            8
+          ],
+          "aligned_words": 620,
+          "initial_case_errors": 64,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            64
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          59,
+          17,
+          8
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            137,
+            17,
+            8
+          ],
+          "aligned_words": 620,
+          "initial_case_errors": 64,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            64
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-132-0",
+      "head": "rnnt",
+      "sample": "podlodka-132",
+      "shift": 0,
+      "audio_seconds": 266.6194557823129,
+      "reference_words": 722,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          61,
+          8,
+          1
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            132,
+            8,
+            1
+          ],
+          "aligned_words": 653,
+          "initial_case_errors": 59,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            59
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          61,
+          8,
+          1
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            132,
+            8,
+            1
+          ],
+          "aligned_words": 653,
+          "initial_case_errors": 59,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            59
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-132-3",
+      "head": "rnnt",
+      "sample": "podlodka-132",
+      "shift": 3,
+      "audio_seconds": 269.6194557823129,
+      "reference_words": 722,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          61,
+          8,
+          2
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            132,
+            8,
+            2
+          ],
+          "aligned_words": 653,
+          "initial_case_errors": 59,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            59
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          61,
+          8,
+          2
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            132,
+            8,
+            2
+          ],
+          "aligned_words": 653,
+          "initial_case_errors": 59,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            59
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-132-22",
+      "head": "rnnt",
+      "sample": "podlodka-132",
+      "shift": 22,
+      "audio_seconds": 288.6194557823129,
+      "reference_words": 722,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          60,
+          8,
+          1
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            131,
+            8,
+            1
+          ],
+          "aligned_words": 654,
+          "initial_case_errors": 59,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            59
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          60,
+          8,
+          1
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            131,
+            8,
+            1
+          ],
+          "aligned_words": 654,
+          "initial_case_errors": 59,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            59
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-200-0",
+      "head": "rnnt",
+      "sample": "podlodka-200",
+      "shift": 0,
+      "audio_seconds": 237.6314375,
+      "reference_words": 431,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          6,
+          2,
+          1
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            54,
+            2,
+            1
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 43,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            43
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          6,
+          2,
+          1
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            54,
+            2,
+            1
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 43,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            43
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-200-3",
+      "head": "rnnt",
+      "sample": "podlodka-200",
+      "shift": 3,
+      "audio_seconds": 240.6314375,
+      "reference_words": 431,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          6,
+          2,
+          1
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            54,
+            2,
+            1
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 43,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            43
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          6,
+          2,
+          1
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            54,
+            2,
+            1
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 43,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            43
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-200-22",
+      "head": "rnnt",
+      "sample": "podlodka-200",
+      "shift": 22,
+      "audio_seconds": 259.6314375,
+      "reference_words": 431,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          6,
+          2,
+          1
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            54,
+            2,
+            1
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 43,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            43
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          6,
+          2,
+          1
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            54,
+            2,
+            1
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 43,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            43
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-275-0",
+      "head": "rnnt",
+      "sample": "podlodka-275",
+      "shift": 0,
+      "audio_seconds": 181.824875,
+      "reference_words": 410,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          13,
+          8,
+          5
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            43,
+            8,
+            5
+          ],
+          "aligned_words": 389,
+          "initial_case_errors": 23,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            23
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          13,
+          8,
+          5
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            43,
+            8,
+            5
+          ],
+          "aligned_words": 389,
+          "initial_case_errors": 23,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            23
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-275-3",
+      "head": "rnnt",
+      "sample": "podlodka-275",
+      "shift": 3,
+      "audio_seconds": 184.824875,
+      "reference_words": 410,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          13,
+          9,
+          5
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            43,
+            9,
+            5
+          ],
+          "aligned_words": 388,
+          "initial_case_errors": 23,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            23
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          13,
+          9,
+          5
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            43,
+            9,
+            5
+          ],
+          "aligned_words": 388,
+          "initial_case_errors": 23,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            23
+          ]
+        }
+      }
+    },
+    {
+      "id": "rnnt-podlodka-275-22",
+      "head": "rnnt",
+      "sample": "podlodka-275",
+      "shift": 22,
+      "audio_seconds": 203.824875,
+      "reference_words": 410,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          13,
+          8,
+          5
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            43,
+            8,
+            5
+          ],
+          "aligned_words": 389,
+          "initial_case_errors": 23,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            23
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          13,
+          8,
+          5
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            43,
+            8,
+            5
+          ],
+          "aligned_words": 389,
+          "initial_case_errors": 23,
+          "capitalization_tp_fp_fn": [
+            0,
+            0,
+            23
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-long_example-0",
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "shift": 0,
+      "audio_seconds": 71.25,
+      "reference_words": 124,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          4,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-long_example-3",
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "shift": 3,
+      "audio_seconds": 74.25,
+      "reference_words": 124,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          4,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-long_example-22",
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "shift": 22,
+      "audio_seconds": 93.25,
+      "reference_words": 124,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          4,
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          4,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-ruls-0000-0010-0",
+      "head": "e2e_rnnt",
+      "sample": "ruls-0000-0010",
+      "shift": 0,
+      "audio_seconds": 69.62,
+      "reference_words": 154,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-ruls-0000-0010-3",
+      "head": "e2e_rnnt",
+      "sample": "ruls-0000-0010",
+      "shift": 3,
+      "audio_seconds": 72.62,
+      "reference_words": 154,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-ruls-0000-0010-22",
+      "head": "e2e_rnnt",
+      "sample": "ruls-0000-0010",
+      "shift": 22,
+      "audio_seconds": 91.62,
+      "reference_words": 154,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-ruls-0013-0024-0",
+      "head": "e2e_rnnt",
+      "sample": "ruls-0013-0024",
+      "shift": 0,
+      "audio_seconds": 83.43,
+      "reference_words": 177,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          5,
+          1,
+          1
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          5,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-ruls-0013-0024-3",
+      "head": "e2e_rnnt",
+      "sample": "ruls-0013-0024",
+      "shift": 3,
+      "audio_seconds": 86.43,
+      "reference_words": 177,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          6,
+          1,
+          1
+        ]
+      },
+      "candidate": {
+        "normalized_sdi": [
+          6,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-ruls-0013-0024-22",
+      "head": "e2e_rnnt",
+      "sample": "ruls-0013-0024",
+      "shift": 22,
+      "audio_seconds": 105.43,
+      "reference_words": 177,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          5,
+          1,
+          1
+        ]
+      },
+      "baseline": {
+        "normalized_sdi": [
+          5,
+          1,
+          1
+        ]
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-306-0",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "shift": 0,
+      "audio_seconds": 243.65714583333335,
+      "reference_words": 696,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          47,
+          9,
+          7
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            66,
+            9,
+            7
+          ],
+          "aligned_words": 640,
+          "initial_case_errors": 20,
+          "capitalization_tp_fp_fn": [
+            57,
+            9,
+            11
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          47,
+          9,
+          7
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            66,
+            9,
+            7
+          ],
+          "aligned_words": 640,
+          "initial_case_errors": 20,
+          "capitalization_tp_fp_fn": [
+            57,
+            9,
+            11
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-306-3",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "shift": 3,
+      "audio_seconds": 246.65714583333335,
+      "reference_words": 696,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          43,
+          7,
+          5
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            64,
+            7,
+            5
+          ],
+          "aligned_words": 646,
+          "initial_case_errors": 19,
+          "capitalization_tp_fp_fn": [
+            60,
+            8,
+            11
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          43,
+          7,
+          5
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            64,
+            7,
+            5
+          ],
+          "aligned_words": 646,
+          "initial_case_errors": 19,
+          "capitalization_tp_fp_fn": [
+            60,
+            8,
+            11
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-306-22",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "shift": 22,
+      "audio_seconds": 265.65714583333335,
+      "reference_words": 696,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          47,
+          9,
+          7
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            66,
+            9,
+            7
+          ],
+          "aligned_words": 640,
+          "initial_case_errors": 20,
+          "capitalization_tp_fp_fn": [
+            57,
+            9,
+            11
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          47,
+          9,
+          7
+        ],
+        "casing": {
+          "reference_words": 696,
+          "case_sensitive_sdi": [
+            66,
+            9,
+            7
+          ],
+          "aligned_words": 640,
+          "initial_case_errors": 20,
+          "capitalization_tp_fp_fn": [
+            57,
+            9,
+            11
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-132-0",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-132",
+      "shift": 0,
+      "audio_seconds": 266.6194557823129,
+      "reference_words": 722,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          32,
+          11,
+          2
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            72,
+            11,
+            2
+          ],
+          "aligned_words": 679,
+          "initial_case_errors": 40,
+          "capitalization_tp_fp_fn": [
+            47,
+            27,
+            13
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          32,
+          11,
+          2
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            72,
+            11,
+            2
+          ],
+          "aligned_words": 679,
+          "initial_case_errors": 40,
+          "capitalization_tp_fp_fn": [
+            47,
+            27,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-132-3",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-132",
+      "shift": 3,
+      "audio_seconds": 269.6194557823129,
+      "reference_words": 722,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          33,
+          8,
+          1
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            69,
+            8,
+            1
+          ],
+          "aligned_words": 681,
+          "initial_case_errors": 36,
+          "capitalization_tp_fp_fn": [
+            47,
+            23,
+            13
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          33,
+          8,
+          1
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            69,
+            8,
+            1
+          ],
+          "aligned_words": 681,
+          "initial_case_errors": 36,
+          "capitalization_tp_fp_fn": [
+            47,
+            23,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-132-22",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-132",
+      "shift": 22,
+      "audio_seconds": 288.6194557823129,
+      "reference_words": 722,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          33,
+          10,
+          2
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            75,
+            10,
+            2
+          ],
+          "aligned_words": 679,
+          "initial_case_errors": 42,
+          "capitalization_tp_fp_fn": [
+            47,
+            29,
+            13
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          33,
+          10,
+          2
+        ],
+        "casing": {
+          "reference_words": 722,
+          "case_sensitive_sdi": [
+            75,
+            10,
+            2
+          ],
+          "aligned_words": 679,
+          "initial_case_errors": 42,
+          "capitalization_tp_fp_fn": [
+            47,
+            29,
+            13
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-200-0",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-200",
+      "shift": 0,
+      "audio_seconds": 237.6314375,
+      "reference_words": 431,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          4,
+          2,
+          7
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            16,
+            2,
+            7
+          ],
+          "aligned_words": 425,
+          "initial_case_errors": 14,
+          "capitalization_tp_fp_fn": [
+            33,
+            3,
+            11
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          4,
+          2,
+          7
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            16,
+            2,
+            7
+          ],
+          "aligned_words": 425,
+          "initial_case_errors": 14,
+          "capitalization_tp_fp_fn": [
+            33,
+            3,
+            11
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-200-3",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-200",
+      "shift": 3,
+      "audio_seconds": 240.6314375,
+      "reference_words": 431,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          6,
+          2,
+          9
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            17,
+            2,
+            9
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 13,
+          "capitalization_tp_fp_fn": [
+            33,
+            3,
+            10
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          6,
+          2,
+          9
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            17,
+            2,
+            9
+          ],
+          "aligned_words": 423,
+          "initial_case_errors": 13,
+          "capitalization_tp_fp_fn": [
+            33,
+            3,
+            10
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-200-22",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-200",
+      "shift": 22,
+      "audio_seconds": 259.6314375,
+      "reference_words": 431,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          4,
+          2,
+          7
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            16,
+            2,
+            7
+          ],
+          "aligned_words": 425,
+          "initial_case_errors": 14,
+          "capitalization_tp_fp_fn": [
+            33,
+            3,
+            11
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          4,
+          2,
+          7
+        ],
+        "casing": {
+          "reference_words": 431,
+          "case_sensitive_sdi": [
+            16,
+            2,
+            7
+          ],
+          "aligned_words": 425,
+          "initial_case_errors": 14,
+          "capitalization_tp_fp_fn": [
+            33,
+            3,
+            11
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-275-0",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-275",
+      "shift": 0,
+      "audio_seconds": 181.824875,
+      "reference_words": 410,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          11,
+          8,
+          6
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            16,
+            8,
+            6
+          ],
+          "aligned_words": 391,
+          "initial_case_errors": 5,
+          "capitalization_tp_fp_fn": [
+            20,
+            2,
+            3
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          11,
+          8,
+          6
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            16,
+            8,
+            6
+          ],
+          "aligned_words": 391,
+          "initial_case_errors": 5,
+          "capitalization_tp_fp_fn": [
+            20,
+            2,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-275-3",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-275",
+      "shift": 3,
+      "audio_seconds": 184.824875,
+      "reference_words": 410,
+      "changes": [],
+      "baseline": {
+        "normalized_sdi": [
+          10,
+          8,
+          6
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            16,
+            8,
+            6
+          ],
+          "aligned_words": 392,
+          "initial_case_errors": 6,
+          "capitalization_tp_fp_fn": [
+            19,
+            2,
+            4
+          ]
+        }
+      },
+      "candidate": {
+        "normalized_sdi": [
+          10,
+          8,
+          6
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            16,
+            8,
+            6
+          ],
+          "aligned_words": 392,
+          "initial_case_errors": 6,
+          "capitalization_tp_fp_fn": [
+            19,
+            2,
+            4
+          ]
+        }
+      }
+    },
+    {
+      "id": "e2e_rnnt-podlodka-275-22",
+      "head": "e2e_rnnt",
+      "sample": "podlodka-275",
+      "shift": 22,
+      "audio_seconds": 203.824875,
+      "reference_words": 410,
+      "changes": [],
+      "candidate": {
+        "normalized_sdi": [
+          11,
+          8,
+          6
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            16,
+            8,
+            6
+          ],
+          "aligned_words": 391,
+          "initial_case_errors": 5,
+          "capitalization_tp_fp_fn": [
+            20,
+            2,
+            3
+          ]
+        }
+      },
+      "baseline": {
+        "normalized_sdi": [
+          11,
+          8,
+          6
+        ],
+        "casing": {
+          "reference_words": 410,
+          "case_sensitive_sdi": [
+            16,
+            8,
+            6
+          ],
+          "aligned_words": 391,
+          "initial_case_errors": 5,
+          "capitalization_tp_fp_fn": [
+            20,
+            2,
+            3
+          ]
+        }
+      }
+    }
+  ],
+  "timings": [
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 0,
+      "arm": "baseline",
+      "seconds": 2.136064927006373,
+      "rtf": 0.02997985862465085,
+      "cpu_seconds": 4.219999999999999,
+      "system_loadavg": [
+        4.61669921875,
+        7.6689453125,
+        7.9755859375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 0,
+      "arm": "candidate",
+      "seconds": 2.0939706819917774,
+      "rtf": 0.029389062203393365,
+      "cpu_seconds": 4.139999999999986,
+      "system_loadavg": [
+        4.61669921875,
+        7.6689453125,
+        7.9755859375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 565964,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 1,
+      "arm": "candidate",
+      "seconds": 2.077232270996319,
+      "rtf": 0.029154137136790444,
+      "cpu_seconds": 4.110000000000014,
+      "system_loadavg": [
+        4.61669921875,
+        7.6689453125,
+        7.9755859375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 565964,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 1,
+      "arm": "baseline",
+      "seconds": 2.075041151008918,
+      "rtf": 0.029123384575563762,
+      "cpu_seconds": 4.110000000000014,
+      "system_loadavg": [
+        4.56689453125,
+        7.60791015625,
+        7.9541015625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 2,
+      "arm": "baseline",
+      "seconds": 2.075681071000872,
+      "rtf": 0.02913236590878417,
+      "cpu_seconds": 4.109999999999985,
+      "system_loadavg": [
+        4.56689453125,
+        7.60791015625,
+        7.9541015625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 2,
+      "arm": "candidate",
+      "seconds": 2.121608544999617,
+      "rtf": 0.029776962035082347,
+      "cpu_seconds": 4.189999999999998,
+      "system_loadavg": [
+        4.361328125,
+        7.5146484375,
+        7.921875
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 565964,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 3,
+      "arm": "candidate",
+      "seconds": 2.1171048489923123,
+      "rtf": 0.02971375226655877,
+      "cpu_seconds": 4.189999999999998,
+      "system_loadavg": [
+        4.361328125,
+        7.5146484375,
+        7.921875
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 565964,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 3,
+      "arm": "baseline",
+      "seconds": 2.102943359990604,
+      "rtf": 0.02951499452618392,
+      "cpu_seconds": 4.150000000000006,
+      "system_loadavg": [
+        4.251953125,
+        7.439453125,
+        7.89501953125
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 4,
+      "arm": "baseline",
+      "seconds": 2.1031953420024365,
+      "rtf": 0.02951853111582367,
+      "cpu_seconds": 4.170000000000016,
+      "system_loadavg": [
+        4.251953125,
+        7.439453125,
+        7.89501953125
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 4,
+      "arm": "candidate",
+      "seconds": 2.0895186929992633,
+      "rtf": 0.029326578147358083,
+      "cpu_seconds": 4.1200000000000045,
+      "system_loadavg": [
+        4.251953125,
+        7.439453125,
+        7.89501953125
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 565964,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 5,
+      "arm": "candidate",
+      "seconds": 2.109728334005922,
+      "rtf": 0.029610222231662063,
+      "cpu_seconds": 4.170000000000016,
+      "system_loadavg": [
+        4.2314453125,
+        7.38232421875,
+        7.8740234375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 565964,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 5,
+      "arm": "baseline",
+      "seconds": 2.0876810460031265,
+      "rtf": 0.029300786610570197,
+      "cpu_seconds": 4.129999999999967,
+      "system_loadavg": [
+        4.2314453125,
+        7.38232421875,
+        7.8740234375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 6,
+      "arm": "baseline",
+      "seconds": 2.0911904690001393,
+      "rtf": 0.029350041670177393,
+      "cpu_seconds": 4.1299999999999955,
+      "system_loadavg": [
+        4.1328125,
+        7.3095703125,
+        7.84765625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "long_example",
+      "round": 6,
+      "arm": "candidate",
+      "seconds": 2.034342993996688,
+      "rtf": 0.028552182371883342,
+      "cpu_seconds": 4.029999999999973,
+      "system_loadavg": [
+        4.1328125,
+        7.3095703125,
+        7.84765625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 565964,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 0,
+      "arm": "baseline",
+      "seconds": 7.446016132002114,
+      "rtf": 0.03055939979324615,
+      "cpu_seconds": 14.53000000000003,
+      "system_loadavg": [
+        4.07666015625,
+        7.09375,
+        7.7646484375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 564756,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 0,
+      "arm": "candidate",
+      "seconds": 7.535037587003899,
+      "rtf": 0.03092475519744463,
+      "cpu_seconds": 14.699999999999989,
+      "system_loadavg": [
+        4.28564453125,
+        7.0400390625,
+        7.73974609375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 566332,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 1,
+      "arm": "candidate",
+      "seconds": 7.551809291006066,
+      "rtf": 0.030993588409558338,
+      "cpu_seconds": 14.720000000000027,
+      "system_loadavg": [
+        4.1025390625,
+        6.9560546875,
+        7.70849609375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 566332,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 1,
+      "arm": "baseline",
+      "seconds": 7.550639346998651,
+      "rtf": 0.030988786810149407,
+      "cpu_seconds": 14.729999999999961,
+      "system_loadavg": [
+        4.52880859375,
+        6.95654296875,
+        7.701171875
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 570344,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 2,
+      "arm": "baseline",
+      "seconds": 7.533478441997431,
+      "rtf": 0.030918356267500936,
+      "cpu_seconds": 14.689999999999998,
+      "system_loadavg": [
+        4.72705078125,
+        6.95751953125,
+        7.697265625
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 570344,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 2,
+      "arm": "candidate",
+      "seconds": 7.535205762003898,
+      "rtf": 0.030925445409091912,
+      "cpu_seconds": 14.689999999999998,
+      "system_loadavg": [
+        5.15673828125,
+        6.97607421875,
+        7.6953125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 566332,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 3,
+      "arm": "candidate",
+      "seconds": 7.564227590002702,
+      "rtf": 0.031044554692341318,
+      "cpu_seconds": 14.759999999999991,
+      "system_loadavg": [
+        5.568359375,
+        7.00830078125,
+        7.69873046875
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 566332,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 3,
+      "arm": "baseline",
+      "seconds": 7.822114961993066,
+      "rtf": 0.032102957355264916,
+      "cpu_seconds": 15.110000000000014,
+      "system_loadavg": [
+        6.32373046875,
+        7.14111328125,
+        7.73828125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 570888,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 4,
+      "arm": "baseline",
+      "seconds": 7.534457478992408,
+      "rtf": 0.030922374360184524,
+      "cpu_seconds": 14.699999999999989,
+      "system_loadavg": [
+        5.8857421875,
+        7.0205078125,
+        7.6923828125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 570920,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 4,
+      "arm": "candidate",
+      "seconds": 7.542469003004953,
+      "rtf": 0.030955254676438514,
+      "cpu_seconds": 14.70999999999998,
+      "system_loadavg": [
+        5.734375,
+        6.97021484375,
+        7.67236328125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 566332,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 5,
+      "arm": "candidate",
+      "seconds": 7.492269437992945,
+      "rtf": 0.030749229259698446,
+      "cpu_seconds": 14.590000000000032,
+      "system_loadavg": [
+        5.39990234375,
+        6.85595703125,
+        7.626953125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 566332,
+      "VmHWM": 670084
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 5,
+      "arm": "baseline",
+      "seconds": 7.462251901000855,
+      "rtf": 0.030626033459758218,
+      "cpu_seconds": 14.550000000000011,
+      "system_loadavg": [
+        5.28759765625,
+        6.80810546875,
+        7.607421875
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 571644,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 6,
+      "arm": "baseline",
+      "seconds": 7.592522905993974,
+      "rtf": 0.031160682277660022,
+      "cpu_seconds": 14.810000000000002,
+      "system_loadavg": [
+        5.31689453125,
+        6.76416015625,
+        7.58447265625
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 571644,
+      "VmHWM": 671452
+    },
+    {
+      "head": "rnnt",
+      "sample": "podlodka-306",
+      "round": 6,
+      "arm": "candidate",
+      "seconds": 7.554479338010424,
+      "rtf": 0.031004546622974267,
+      "cpu_seconds": 14.759999999999991,
+      "system_loadavg": [
+        5.29150390625,
+        6.73486328125,
+        7.5703125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 566332,
+      "VmHWM": 670084
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 0,
+      "arm": "baseline",
+      "seconds": 2.377016526996158,
+      "rtf": 0.03336163546661274,
+      "cpu_seconds": 4.680000000000007,
+      "system_loadavg": [
+        9.9248046875,
+        8.9951171875,
+        8.30712890625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 573844,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 0,
+      "arm": "candidate",
+      "seconds": 2.3644589360046666,
+      "rtf": 0.03318538857550409,
+      "cpu_seconds": 4.669999999999959,
+      "system_loadavg": [
+        9.5302734375,
+        8.9287109375,
+        8.2890625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 576068,
+      "VmHWM": 669352
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 1,
+      "arm": "candidate",
+      "seconds": 2.4237777649977943,
+      "rtf": 0.03401793354382869,
+      "cpu_seconds": 4.759999999999991,
+      "system_loadavg": [
+        9.5302734375,
+        8.9287109375,
+        8.2890625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 576068,
+      "VmHWM": 669352
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 1,
+      "arm": "baseline",
+      "seconds": 2.3599197630101116,
+      "rtf": 0.033121680884352446,
+      "cpu_seconds": 4.660000000000025,
+      "system_loadavg": [
+        9.16748046875,
+        8.86328125,
+        8.27099609375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 573844,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 2,
+      "arm": "baseline",
+      "seconds": 2.398076803990989,
+      "rtf": 0.03365721830162791,
+      "cpu_seconds": 4.729999999999961,
+      "system_loadavg": [
+        9.16748046875,
+        8.86328125,
+        8.27099609375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 573844,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 2,
+      "arm": "candidate",
+      "seconds": 2.342040371004259,
+      "rtf": 0.03287074204918258,
+      "cpu_seconds": 4.6200000000000045,
+      "system_loadavg": [
+        8.91357421875,
+        8.8154296875,
+        8.2587890625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 576068,
+      "VmHWM": 669352
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 3,
+      "arm": "candidate",
+      "seconds": 2.396473597997101,
+      "rtf": 0.03363471716487159,
+      "cpu_seconds": 4.7000000000000455,
+      "system_loadavg": [
+        8.91357421875,
+        8.8154296875,
+        8.2587890625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 576068,
+      "VmHWM": 669352
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 3,
+      "arm": "baseline",
+      "seconds": 2.47534410499793,
+      "rtf": 0.03474167164909375,
+      "cpu_seconds": 4.850000000000023,
+      "system_loadavg": [
+        8.9208984375,
+        8.81884765625,
+        8.26318359375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 573844,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 4,
+      "arm": "baseline",
+      "seconds": 2.5267439919989556,
+      "rtf": 0.035463073571915166,
+      "cpu_seconds": 4.980000000000018,
+      "system_loadavg": [
+        8.9208984375,
+        8.81884765625,
+        8.26318359375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 573844,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 4,
+      "arm": "candidate",
+      "seconds": 2.411326793007902,
+      "rtf": 0.03384318305976003,
+      "cpu_seconds": 4.75,
+      "system_loadavg": [
+        9.00732421875,
+        8.8388671875,
+        8.27294921875
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 576068,
+      "VmHWM": 669352
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 5,
+      "arm": "candidate",
+      "seconds": 2.4436706929991487,
+      "rtf": 0.03429713253332139,
+      "cpu_seconds": 4.829999999999984,
+      "system_loadavg": [
+        9.00732421875,
+        8.8388671875,
+        8.27294921875
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 576068,
+      "VmHWM": 669352
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 5,
+      "arm": "baseline",
+      "seconds": 2.496023656989564,
+      "rtf": 0.03503191097529213,
+      "cpu_seconds": 4.909999999999968,
+      "system_loadavg": [
+        9.3271484375,
+        8.908203125,
+        8.29833984375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 573844,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 6,
+      "arm": "baseline",
+      "seconds": 2.480342798997299,
+      "rtf": 0.03481182875785683,
+      "cpu_seconds": 4.8799999999999955,
+      "system_loadavg": [
+        9.3271484375,
+        8.908203125,
+        8.29833984375
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 573844,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "long_example",
+      "round": 6,
+      "arm": "candidate",
+      "seconds": 2.5079592219990445,
+      "rtf": 0.035199427677179575,
+      "cpu_seconds": 4.930000000000007,
+      "system_loadavg": [
+        9.78173828125,
+        9.009765625,
+        8.33447265625
+      ],
+      "audio_seconds": 71.25,
+      "VmRSS": 576068,
+      "VmHWM": 669352
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 0,
+      "arm": "baseline",
+      "seconds": 8.860818597007892,
+      "rtf": 0.036365929538831915,
+      "cpu_seconds": 17.25999999999999,
+      "system_loadavg": [
+        11.20458984375,
+        9.39794921875,
+        8.4814453125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 573848,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 0,
+      "arm": "candidate",
+      "seconds": 9.264683549990878,
+      "rtf": 0.038023442810612734,
+      "cpu_seconds": 18.060000000000002,
+      "system_loadavg": [
+        11.0,
+        9.4169921875,
+        8.49755859375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 576104,
+      "VmHWM": 675520
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 1,
+      "arm": "candidate",
+      "seconds": 8.85880168400763,
+      "rtf": 0.03635765187066272,
+      "cpu_seconds": 17.25999999999999,
+      "system_loadavg": [
+        11.0732421875,
+        9.48583984375,
+        8.5302734375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 576104,
+      "VmHWM": 675520
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 1,
+      "arm": "baseline",
+      "seconds": 8.871793298996636,
+      "rtf": 0.03641097111539315,
+      "cpu_seconds": 17.29000000000002,
+      "system_loadavg": [
+        11.2275390625,
+        9.54443359375,
+        8.5546875
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 574640,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 2,
+      "arm": "baseline",
+      "seconds": 8.780506577008055,
+      "rtf": 0.036036318766592246,
+      "cpu_seconds": 17.129999999999995,
+      "system_loadavg": [
+        11.099609375,
+        9.5751953125,
+        8.5751953125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 575896,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 2,
+      "arm": "candidate",
+      "seconds": 8.837335756004904,
+      "rtf": 0.03626955296459817,
+      "cpu_seconds": 17.170000000000016,
+      "system_loadavg": [
+        10.2412109375,
+        9.44091796875,
+        8.54150390625
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 576104,
+      "VmHWM": 675520
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 3,
+      "arm": "candidate",
+      "seconds": 8.883160778001184,
+      "rtf": 0.03645762469891794,
+      "cpu_seconds": 17.279999999999973,
+      "system_loadavg": [
+        10.12353515625,
+        9.44287109375,
+        8.55224609375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 576104,
+      "VmHWM": 675520
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 3,
+      "arm": "baseline",
+      "seconds": 8.929414373997133,
+      "rtf": 0.03664745535558823,
+      "cpu_seconds": 17.439999999999998,
+      "system_loadavg": [
+        9.873046875,
+        9.40185546875,
+        8.54345703125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 575896,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 4,
+      "arm": "baseline",
+      "seconds": 8.788025928006391,
+      "rtf": 0.036067179142029296,
+      "cpu_seconds": 17.159999999999968,
+      "system_loadavg": [
+        9.0498046875,
+        9.240234375,
+        8.5
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 575896,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 4,
+      "arm": "candidate",
+      "seconds": 8.656551295993268,
+      "rtf": 0.035527590485339315,
+      "cpu_seconds": 16.889999999999986,
+      "system_loadavg": [
+        8.20556640625,
+        9.05078125,
+        8.44580078125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 576104,
+      "VmHWM": 675544
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 5,
+      "arm": "candidate",
+      "seconds": 8.805293491997872,
+      "rtf": 0.03613804742677598,
+      "cpu_seconds": 17.210000000000036,
+      "system_loadavg": [
+        8.41455078125,
+        9.06591796875,
+        8.45751953125
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 576364,
+      "VmHWM": 675776
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 5,
+      "arm": "baseline",
+      "seconds": 8.841636105004,
+      "rtf": 0.036287202145312274,
+      "cpu_seconds": 17.27000000000004,
+      "system_loadavg": [
+        8.38134765625,
+        9.0478515625,
+        8.45458984375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 575896,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 6,
+      "arm": "baseline",
+      "seconds": 8.717848469008459,
+      "rtf": 0.03577916190059803,
+      "cpu_seconds": 17.019999999999982,
+      "system_loadavg": [
+        7.78759765625,
+        8.89794921875,
+        8.41162109375
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 575896,
+      "VmHWM": 678564
+    },
+    {
+      "head": "e2e_rnnt",
+      "sample": "podlodka-306",
+      "round": 6,
+      "arm": "candidate",
+      "seconds": 8.71765395499824,
+      "rtf": 0.0357783635902938,
+      "cpu_seconds": 16.96999999999997,
+      "system_loadavg": [
+        8.48974609375,
+        9.015625,
+        8.4560546875
+      ],
+      "audio_seconds": 243.65714583333335,
+      "VmRSS": 576364,
+      "VmHWM": 675848
+    }
+  ],
+  "servers": [
+    {
+      "head": "rnnt",
+      "arm": "baseline",
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/overlap-fix-20261025/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/overlap-fix-20261025/models",
+        "--model-variant",
+        "rnnt",
+        "--execution-provider",
+        "cpu",
+        "--port",
+        "19876",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--file-window-concurrency",
+        "1",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "startup_seconds": 0.5155678849987453,
+      "model_status": {
+        "id": "gigaam-v3-rnnt",
+        "name": "GigaAM v3 RNN-T",
+        "variant": "rnnt",
+        "version": "2.22.0",
+        "encoder": "int8",
+        "vocab_size": 34,
+        "sample_rate": 16000,
+        "pool_size": 1,
+        "pool_available": 1,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": false
+      }
+    },
+    {
+      "head": "rnnt",
+      "arm": "candidate",
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/security-fix-20261025/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/overlap-fix-20261025/models",
+        "--model-variant",
+        "rnnt",
+        "--execution-provider",
+        "cpu",
+        "--port",
+        "19877",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--file-window-concurrency",
+        "1",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "startup_seconds": 0.5311073689954355,
+      "model_status": {
+        "id": "gigaam-v3-rnnt",
+        "name": "GigaAM v3 RNN-T",
+        "variant": "rnnt",
+        "version": "2.22.0",
+        "encoder": "int8",
+        "vocab_size": 34,
+        "sample_rate": 16000,
+        "pool_size": 1,
+        "pool_available": 1,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": false
+      }
+    },
+    {
+      "head": "e2e_rnnt",
+      "arm": "baseline",
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/overlap-fix-20261025/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/overlap-fix-20261025/models",
+        "--model-variant",
+        "e2e_rnnt",
+        "--execution-provider",
+        "cpu",
+        "--port",
+        "19876",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--file-window-concurrency",
+        "1",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "startup_seconds": 0.41093806899152696,
+      "model_status": {
+        "id": "gigaam-v3-e2e-rnnt",
+        "name": "GigaAM v3 E2E RNN-T",
+        "variant": "e2e_rnnt",
+        "version": "2.22.0",
+        "encoder": "int8",
+        "vocab_size": 1025,
+        "sample_rate": 16000,
+        "pool_size": 1,
+        "pool_available": 1,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": false
+      }
+    },
+    {
+      "head": "e2e_rnnt",
+      "arm": "candidate",
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/security-fix-20261025/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/overlap-fix-20261025/models",
+        "--model-variant",
+        "e2e_rnnt",
+        "--execution-provider",
+        "cpu",
+        "--port",
+        "19877",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--file-window-concurrency",
+        "1",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "startup_seconds": 0.41429702800814994,
+      "model_status": {
+        "id": "gigaam-v3-e2e-rnnt",
+        "name": "GigaAM v3 E2E RNN-T",
+        "variant": "e2e_rnnt",
+        "version": "2.22.0",
+        "encoder": "int8",
+        "vocab_size": 1025,
+        "sample_rate": 16000,
+        "pool_size": 1,
+        "pool_available": 1,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": false
+      }
+    }
+  ],
+  "full_json_equal_pairs": 42,
+  "responses": {
+    "file": "responses.json.gz",
+    "sha256": "c78059c615d1afc8e06d765ddc47a9ba7ad049276d67216b42c60b9e99c82fb5",
+    "uncompressed_sha256": "c37dd439179b2a6cb400c1631e6d302e78fa7d7ae610d6eaaa7a3cc22ed6cec5"
+  },
+  "binary_bytes": {
+    "baseline": 51318872,
+    "candidate": 51323224
+  },
+  "validation": {
+    "workspace_tests_passed": 1256,
+    "workspace_tests_ignored": 48,
+    "clippy": "workspace all-targets, warnings denied: passed",
+    "msrv": "Rust 1.94 workspace and patched Candle CPU: passed",
+    "askama_config_tests": 17,
+    "candle_serialization_tests": 6,
+    "docker_cache_tests": 2,
+    "manual_workflow_tests": 7,
+    "bindings": "Python/Swift/Kotlin generated; Python syntax/import/native ABI passed; Swift/Kotlin compilers and formatters not exercised",
+    "network": "Release binary downloaded missing v3_vocab.txt over HTTPS from the pinned GitHub release and verified SHA-256; existing ONNX files symlinked from verified bundle",
+    "vendor_provenance": "Both trees match checksum-verified crates.io archives plus declared patches, excluding documented registry metadata and lockfiles"
+  },
+  "limitations": [
+    "Single Linux x86_64 host, two pinned CPU cores, warm REST, seven alternating timing pairs per head/duration; background host load is recorded. No statistical upper confidence bound or speedup claim.",
+    "No Apple hardware runtime/performance measurement. Candle kernels and gigastt tensor-loading paths unchanged; patched archive readers tested on CPU.",
+    "Root Cargo patches protect repository builds and are not inherited by downstream crates.io users.",
+    "Public corpus results do not prove absence of regressions on all recordings."
+  ]
+}

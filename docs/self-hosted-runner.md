@@ -8,7 +8,8 @@ representative hardware for performance work:
 - **macOS** — hosted runners are shared, variably loaded VMs; RTF (real-time
   factor) timings fluctuate run to run, so CoreML / Neural Engine speedups
   cannot be measured meaningfully there.
-- **Linux** — hosted runners have no NVIDIA GPU, so CUDA builds cannot run at all.
+- **Linux** — a CPU-only runner can compile a CUDA build but cannot validate
+  GPU inference or its performance without a compatible NVIDIA GPU.
 
 For accurate RTF (real-time factor) measurements you need self-hosted runners on your actual target hardware.
 
@@ -104,7 +105,7 @@ source ~/.cargo/env
 
 # System
 sudo apt update
-sudo apt install -y build-essential cmake protobuf-compiler ffmpeg python3.12 python3.12-venv
+sudo apt install -y build-essential cmake pkg-config libssl-dev protobuf-compiler ffmpeg python3.12 python3.12-venv
 
 # CUDA 12 (already present on most GPU servers)
 nvidia-smi
@@ -155,8 +156,9 @@ Self-hosted runners execute arbitrary code from PRs. Mitigations:
 1. **Require approval** for first-time contributors:  
    Settings → Actions → General → "Require approval for all outside collaborators"
 
-2. **Run benchmark workflow only on `main` push / schedule**, not on PRs.  
-   (Current `benchmark.yml` already uses `schedule` + `workflow_dispatch` only.)
+2. **Dispatch benchmarks manually on a reviewed revision.** The current
+   workflow uses only `workflow_dispatch`; keep it that way when adapting runner
+   labels. Approval of a workflow run is not a review of arbitrary source code.
 
 3. **Network isolation** — place the runner in a restricted VLAN with no access to internal infrastructure.
 

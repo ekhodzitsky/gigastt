@@ -52,6 +52,10 @@ def missing_targets(directory, result):
     # Cargo metadata can silently omit missing explicit targets, while cargo
     # build rejects them. Check declarations independently of that behavior.
     workspace = tomllib.loads((directory / 'Cargo.toml').read_text())
+    for patches in workspace.get('patch', {}).values():
+        for name, patch in patches.items():
+            if 'path' in patch and not (directory / patch['path'] / 'Cargo.toml').is_file():
+                missing.append(f"patch {name}: {patch['path']}/Cargo.toml")
     for member in workspace['workspace']['members']:
         crate = directory / member
         manifest = tomllib.loads((crate / 'Cargo.toml').read_text())

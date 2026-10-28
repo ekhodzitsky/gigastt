@@ -1,0 +1,181 @@
+{
+  "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "servers": [
+    {
+      "label": "small",
+      "variant": "ml_ctc",
+      "port": 19891,
+      "pid": 376668,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--port",
+        "19891"
+      ],
+      "actual_model_configuration": {
+        "id": "gigaam-multilingual-ctc",
+        "name": "GigaAM Multilingual CTC",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 0,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": true
+      }
+    },
+    {
+      "label": "large_alaw",
+      "variant": "ml_ctc_large",
+      "port": 19892,
+      "pid": 376669,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--model-variant",
+        "ml_ctc_large",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--port",
+        "19892"
+      ],
+      "actual_model_configuration": {
+        "id": "gigaam-multilingual-large-ctc",
+        "name": "GigaAM Multilingual CTC (large)",
+        "variant": "ml_ctc_large",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 0,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": true
+      }
+    },
+    {
+      "label": "large_mulaw",
+      "variant": "ml_ctc_large",
+      "port": 19893,
+      "pid": 376670,
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--model-variant",
+        "ml_ctc_large",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--port",
+        "19893"
+      ],
+      "actual_model_configuration": {
+        "id": "gigaam-multilingual-large-ctc",
+        "name": "GigaAM Multilingual CTC (large)",
+        "variant": "ml_ctc_large",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 0,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": true
+      }
+    }
+  ],
+  "scoring_note": "Same Unicode normalization and jiwer as clean baseline; runner additionally preserves manifest condition and guards it on resume.",
+  "runner_sha256": "66324d0bd241085fa6b13bbdecec2780ca8654bc80efe96f448ce292d83f2880",
+  "baseline": "../multilingual_1000_20261001/",
+  "timing_note": "Three model servers and source-control work run concurrently with unrelated workloads; elapsed times are not comparable model throughput.",
+  "no_training": true,
+  "checks": {
+    "unit_passed": 1117,
+    "unit_failed": 0,
+    "unit_ignored": 39,
+    "clippy": "passed",
+    "fmt": "passed",
+    "build_note": "System lacked OpenSSL development headers; matching Ubuntu3.5.5 packages extracted to persistent usercache for checks. No system installation or runtime model change."
+  }
+}

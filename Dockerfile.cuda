@@ -24,6 +24,7 @@ WORKDIR /build
 
 # Dependency-compilation cache (see Dockerfile for rationale).
 COPY Cargo.toml Cargo.lock ./
+COPY vendor/ vendor/
 COPY crates/gigastt-core/Cargo.toml crates/gigastt-core/
 COPY crates/gigastt-quantize/Cargo.toml crates/gigastt-quantize/
 COPY crates/gigastt-quantize/build.rs crates/gigastt-quantize/

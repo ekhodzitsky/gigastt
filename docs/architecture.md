@@ -5,7 +5,7 @@
                   |
           Mel Spectrogram            64 bins, FFT=320, hop=160 @ 16 kHz
                   |
-        Conformer Encoder (ONNX)     16 layers, 768-dim · ort CPU | CoreML | CUDA | ANE | Candle
+        Conformer Encoder (ONNX)     model-dependent geometry · CPU / accelerated backends
                   |
      ┌────────────┴────────────┐
      │                         │
@@ -16,12 +16,13 @@
                   |
         Tokenizer (char 34 / BPE 1025 / multilingual 71)
                   |
-     optional: punctuation · ITN · hotword bias · VAD endpointing
+     optional text postprocessing: ITN → punctuation
                   |
              transcript (+ optional word times / speaker labels)
 ```
 
-Optional parallel paths (not on the ASR critical path by default):
+VAD selects speech regions before ASR; hotword bias affects decoding. Optional
+request paths include:
 
 - **Speaker diarization** — WeSpeaker ResNet34 fbank embeddings + polyvoice clustering; opt-in per REST request (`?diarization=true`) or WS `Configure`. Offline matches word midpoints to turns; streaming assigns the latest turn to the current word tail.
 - **Stereo channel-speakers** — `channels=split` / `--stereo-speakers` runs ASR per channel and labels `speaker_0` / `speaker_1` (mutually exclusive with ML diarization).
@@ -60,36 +61,17 @@ Server surfaces (single process, one primary port unless metrics is enabled):
 | Admin | `POST /v1/admin/reload` | **Loopback peers only** |
 | Metrics | `GET /metrics` | Separate `--metrics-listen` (default `127.0.0.1:9090`) |
 
-## Model
+## Models
 
-[**GigaAM v3**](https://huggingface.co/istupakov/gigaam-v3-onnx) by
-[SberDevices](https://github.com/salute-developers/GigaAM) — RNN-T (Conformer encoder +
-LSTM decoder + joiner), 16-layer 768-dim encoder (240M params); the vocab depends on the
-head (`rnnt` 34-token char — the default since v2.3 — or `e2e_rnnt` 1025-token BPE), 16 kHz
-mono input, MIT licensed. Default install is lean INT8 (~310 MiB total: encoder
-~305 MiB + decoder/joiner/vocab) via `gigastt download` / first `serve` from
-**GitHub Releases**. Runtime loads the prequantized bundle only — there is no
-FP32-only encoder download or inference mode. Convolutions remain FP32 inside the INT8 bundle;
-MatMul weights are quantized per channel. See [quality evidence and upgrade
-instructions](rnnt-quantization.md). Trained on 700K+ hours of Russian speech.
+The supported catalog, exact file sets, formatting policy and current bundle
+sizes are documented in [Models](models.md). The standard ONNX path loads
+prequantized encoders; RNN-T convolutions and decoder/joiner remain floating
+point. Multilingual CTC is encoder-only and has different output geometry and
+vocabulary. No per-request language field changes the loaded head.
 
-Two opt-in heads (`--model-variant ml_ctc` / `ml_ctc_large`) use
-[**GigaAM Multilingual**](https://huggingface.co/istupakov/gigaam-multilingual-ctc-onnx)
-instead: an encoder-only charwise-CTC model (no LSTM decoder / joiner, greedy CTC
-decoding), MIT licensed, sharing the 64-mel / FFT 320 / hop 160 / 16 kHz frontend above.
-`ml_ctc` has a 220M-param encoder, `ml_ctc_large`
-([`istupakov/gigaam-multilingual-large-ctc-onnx`](https://huggingface.co/istupakov/gigaam-multilingual-large-ctc-onnx))
-600M; both use a shared 71-class multilingual character vocabulary (blank id 70) and
-emit bare lowercase text. Trained across 70+ languages, best-in-class on Russian,
-Kazakh, Kyrgyz, and Uzbek. Both download istupakov's pre-quantized INT8 encoder
-directly — no FP32 download, no on-device quantization (`ml_ctc` ~225 MB, `ml_ctc_large`
-~592 MB).
-
-**Historical SKU note (old RNN-T ConvInteger bundle; not remeasured for the
-current 305 MiB encoder):** `ml_ctc` is a **speed** head (~**1.5×** better RTF than default `rnnt` in
-lab measurements), **not** a lean-RAM SKU — ready RSS is about the same class as `rnnt`
-when both INT8 encoders are present. Prefer `--pool-size 1` for low RAM, not a head
-switch.
+Use [Languages](languages.md) and [Benchmarks](benchmarks.md) for measured
+quality. Larger models and built-in formatting do not establish a universal
+accuracy or speed advantage.
 
 ## Long recordings
 
@@ -111,40 +93,39 @@ reproduction commands.
 | macOS ARM64 (M1–M4) | `--features coreml` | CoreML + Neural Engine |
 | Linux x86_64 + NVIDIA | `--features cuda` | CUDA 12+ |
 | Android / ARM64 | `--features nnapi` | NNAPI (NPU/DSP) |
-| macOS ARM64 | `--features ane` | Apple Neural Engine `.mlpackage` (file mode; see [ane-backend.md](ane-backend.md)) |
+| macOS ARM64 | `--features ane` | Apple Neural Engine `.mlpackage` (bucketed file/live decoding; see [ane-backend.md](ane-backend.md)) |
 | macOS ARM64 | `--features candle` | Candle/Metal, experimental parity (see [candle-backend.md](candle-backend.md)) |
 | Any platform | _(default)_ | CPU |
 
-`coreml` and `cuda` are mutually exclusive. `ane` and `candle` select a non-`ort`
-backend rather than an ORT EP. `nnapi` can be combined with `coreml` or `cuda`.
+`coreml` and `cuda` are mutually exclusive. `ane` and `candle` are each
+mutually exclusive with the other and with `coreml`, `cuda`, and `nnapi`.
+They select a separate backend rather than an ORT execution provider. `nnapi`
+can be combined with the ORT `coreml` or `cuda` build features.
 
-**CoreML path.** The Conformer encoder has a dynamic time axis, and CoreML cannot
-reliably execute dynamic-shape partitions (they fail at prediction time, issue #42).
-gigastt compiles the model as `MLProgram` and restricts CoreML to statically-shaped
-subgraphs — heavy conv/matmul on the Neural Engine, dynamic-shape ops on CPU. On an
-M1 Pro (INT8, release, median of 5): **~3× faster encoder** on a 4 s clip (~210 ms vs
-~690 ms) and **~5.6×** on a 2-minute file vs the pure-CPU build. On startup a ~1 s
-silent warmup probe verifies CoreML; on failure the engine logs `falling back to CPU
-execution provider` and transparently rebuilds sessions on CPU — it degrades, never
-crashes.
+**CoreML path.** Dynamic-shape partitions can fail during prediction, so the
+provider is restricted to static-shape subgraphs. Startup warmup tests actual
+execution. With `--execution-provider auto`, provider failure can rebuild the
+pool on CPU; an explicitly requested provider fails boot instead. Confirm the
+provider returned by `/v1/models` before attributing a result to acceleration.
+Historical speedups on older weights are not guarantees for current bundles.
 
 ## INT8 quantization
 
-Native-Rust quantization (compiled by default via the `quantize` feature;
-`--no-default-features` builds drop it). The encoder shrinks ~3.9× and runs as true
-INT8 integer compute (`DynamicQuantizeLinear` + `MatMulInteger`/`ConvInteger`), so the CPU
-EP executes fast integer kernels instead of dequantizing the weights back to float — RTF
-well below 1.0 on CPU — with negligible WER change. Runtime always loads the lean
-prequantized INT8 bundle from `gigastt download` / first `serve` — there is no FP32
-inference path. `gigastt quantize [--force]` remains a packaging tool that needs a local
-FP32 ONNX as source.
+The optional `quantize` feature is a packaging tool, enabled by default. It
+requires local FP32 ONNX sources and `protoc`; normal installation downloads
+already prepared models. The accepted RNN-T recipe quantizes matrix weights
+while retaining floating convolutions. The old all-ConvInteger recipe could
+be both slower and less accurate. See the [quantization report](rnnt-quantization.md)
+for the acceptance measurements and [quantizer crate](../crates/gigastt-quantize/README.md)
+for the API. Quantization quality and resource costs must be measured per model.
 
 ## Air-gapped / offline builds
 
 `ort`'s default `download-binaries` feature fetches a prebuilt onnxruntime over the
 network at build time (verified by an embedded checksum) — outside `Cargo.lock`. The
 "no cloud / full privacy" guarantee covers **runtime inference**, not the build. For
-air-gapped builds, use `ort` with `default-features = false` + `load-dynamic` (or a
-vendored onnxruntime) and pin the native library via `ORT_*` env vars / `.cargo/config.toml`.
+air-gapped builds, use the documented [`ort-load-dynamic` configuration](embedding-packaging.md)
+and a compatible locally provisioned native library. Cargo dependencies and
+other build inputs must also be available locally.
 `protoc` must also be on `PATH` (the in-tree ONNX quantization pipeline regenerates
 types via `prost-build`).

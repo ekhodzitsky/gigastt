@@ -1,0 +1,963 @@
+{
+  "completed": true,
+  "binary_sha256": "b875baf0e31371bd3e4aa8272616c8749d6681081ff8a674e495e1382197786a",
+  "script_sha256": "ba35257d4d738e341eb0c7e4e7813ecd37cf3f39e3540ab153ad8c758bbb6188",
+  "pack_files": {
+    "manifest.toml": "3adda86bf5a5d7114233e07f466860945d99ee9b36bf4333d3ec6e2fb4ca0412",
+    "multilingual_small_selective.int8.onnx": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+    "multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+  },
+  "prepared_sha256": "db4d8957c91f342e1f685e956b33ee04cbf0c034b6d941bf10429af0fa910061",
+  "native_private_sha256": "a8aee7c1b37ad15984346e7f2a3dee095a0544c8aa085d1b7ea59a94ed9643a2",
+  "command": [
+    "/home/ekhodzitsky/Projects/gigastt/target/release/gigastt",
+    "--offline",
+    "serve",
+    "--model-dir",
+    "/home/ekhodzitsky/.cache/gigastt-small-package/installed-small",
+    "--model-variant",
+    "ml_ctc",
+    "--execution-provider",
+    "cpu",
+    "--pool-size",
+    "2",
+    "--encoder-intra-threads",
+    "3",
+    "--punctuation",
+    "off",
+    "--itn",
+    "off",
+    "--port",
+    "49451"
+  ],
+  "health": {
+    "status": "ok",
+    "model": "gigaam-multilingual-ctc",
+    "variant": "ml_ctc",
+    "version": "2.21.0",
+    "punctuation": false,
+    "itn": false
+  },
+  "models": {
+    "id": "gigaam-multilingual-ctc",
+    "name": "GigaAM Multilingual CTC",
+    "variant": "ml_ctc",
+    "version": "2.21.0",
+    "encoder": "int8",
+    "vocab_size": 71,
+    "sample_rate": 16000,
+    "pool_size": 2,
+    "pool_available": 2,
+    "supported_formats": [
+      "wav",
+      "mp3",
+      "m4a",
+      "ogg",
+      "flac"
+    ],
+    "supported_rates": [
+      8000,
+      16000,
+      24000,
+      44100,
+      48000
+    ],
+    "punctuation": false,
+    "itn": false,
+    "execution_provider": "cpu",
+    "diarization": false
+  },
+  "n": 111,
+  "exact_matches": 111,
+  "original_companion_present": false,
+  "rows": [
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "condition": "original",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "hypothesis_sha256": "8ea2cc5114e213681522b3ba14d2c850381228f6abbcd749648d99f83247b6ad",
+      "expected_hypothesis_sha256": "8ea2cc5114e213681522b3ba14d2c850381228f6abbcd749648d99f83247b6ad",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "hypothesis_sha256": "8ea2cc5114e213681522b3ba14d2c850381228f6abbcd749648d99f83247b6ad",
+      "expected_hypothesis_sha256": "8ea2cc5114e213681522b3ba14d2c850381228f6abbcd749648d99f83247b6ad",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "hypothesis_sha256": "8ea2cc5114e213681522b3ba14d2c850381228f6abbcd749648d99f83247b6ad",
+      "expected_hypothesis_sha256": "8ea2cc5114e213681522b3ba14d2c850381228f6abbcd749648d99f83247b6ad",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "condition": "original",
+      "audio_sha256": "81673ad2f0eb6a463e13fd9d5a442d1469e745f9a67565a3b9d20fbff395599a",
+      "hypothesis_sha256": "ac43e389ba638e44f17407ec990fdddc1ae84d1ea6898c4525b7bb37480d1a2c",
+      "expected_hypothesis_sha256": "ac43e389ba638e44f17407ec990fdddc1ae84d1ea6898c4525b7bb37480d1a2c",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "aa1855165eacf5490fc30c44da36f1f21897348c51906eda2f5fa949b4205a28",
+      "hypothesis_sha256": "ac43e389ba638e44f17407ec990fdddc1ae84d1ea6898c4525b7bb37480d1a2c",
+      "expected_hypothesis_sha256": "ac43e389ba638e44f17407ec990fdddc1ae84d1ea6898c4525b7bb37480d1a2c",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "6710c6470ce7757c91f41e9f63e088a218f1b09bbf7a0a502247b25d5bd3a26a",
+      "hypothesis_sha256": "ac43e389ba638e44f17407ec990fdddc1ae84d1ea6898c4525b7bb37480d1a2c",
+      "expected_hypothesis_sha256": "ac43e389ba638e44f17407ec990fdddc1ae84d1ea6898c4525b7bb37480d1a2c",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "condition": "original",
+      "audio_sha256": "78e9c886fbfc247dc7743f9dc7473006b7a50b9401f1db9af16926cf9dae0d04",
+      "hypothesis_sha256": "beb70f2f31a2666eee1419fcadc1a714f9231bcd9b304375ad8a607b56d2ec43",
+      "expected_hypothesis_sha256": "beb70f2f31a2666eee1419fcadc1a714f9231bcd9b304375ad8a607b56d2ec43",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "e7deccb7c578ed70c3ed80918c837a42885c54a087e8ce68144e3d1a88b93de7",
+      "hypothesis_sha256": "beb70f2f31a2666eee1419fcadc1a714f9231bcd9b304375ad8a607b56d2ec43",
+      "expected_hypothesis_sha256": "beb70f2f31a2666eee1419fcadc1a714f9231bcd9b304375ad8a607b56d2ec43",
+      "match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "08b0001dcba76c2b807e701f5a9ac124b04ea979cd0cc4a59cef873d605b2b80",
+      "hypothesis_sha256": "beb70f2f31a2666eee1419fcadc1a714f9231bcd9b304375ad8a607b56d2ec43",
+      "expected_hypothesis_sha256": "beb70f2f31a2666eee1419fcadc1a714f9231bcd9b304375ad8a607b56d2ec43",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "condition": "original",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "hypothesis_sha256": "3b4d4825af3fe5c3cf488c7a76d331f09d589d5769e9d342ec3adc8313d12c09",
+      "expected_hypothesis_sha256": "3b4d4825af3fe5c3cf488c7a76d331f09d589d5769e9d342ec3adc8313d12c09",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "hypothesis_sha256": "3b4d4825af3fe5c3cf488c7a76d331f09d589d5769e9d342ec3adc8313d12c09",
+      "expected_hypothesis_sha256": "3b4d4825af3fe5c3cf488c7a76d331f09d589d5769e9d342ec3adc8313d12c09",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "hypothesis_sha256": "3b4d4825af3fe5c3cf488c7a76d331f09d589d5769e9d342ec3adc8313d12c09",
+      "expected_hypothesis_sha256": "3b4d4825af3fe5c3cf488c7a76d331f09d589d5769e9d342ec3adc8313d12c09",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "condition": "original",
+      "audio_sha256": "7603cae3294309ef70d234180cefccc3b13865ee525262228a636069b9b62841",
+      "hypothesis_sha256": "01bf9b4a6ac3339e16befcea54b2e23bd0bca9a523a3bb41950e5598625d3e8b",
+      "expected_hypothesis_sha256": "01bf9b4a6ac3339e16befcea54b2e23bd0bca9a523a3bb41950e5598625d3e8b",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "aebd7dcdb506a692c0d287a4b4c5f6e125664fa5aa623ccb8589fc5df25b4b43",
+      "hypothesis_sha256": "7148340d7f1f02e1544ff6703ec0fe4bba210dc638661c63584eb8d661fd71a1",
+      "expected_hypothesis_sha256": "7148340d7f1f02e1544ff6703ec0fe4bba210dc638661c63584eb8d661fd71a1",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "ba09794690a21ee6531351f0f6b50396f1b17ef6ac2bdb573e412aff3c302b54",
+      "hypothesis_sha256": "7148340d7f1f02e1544ff6703ec0fe4bba210dc638661c63584eb8d661fd71a1",
+      "expected_hypothesis_sha256": "7148340d7f1f02e1544ff6703ec0fe4bba210dc638661c63584eb8d661fd71a1",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "condition": "original",
+      "audio_sha256": "260bdd1a15e1d35bcc5d91667516ca3bc659285e10f94872182715bcd7880398",
+      "hypothesis_sha256": "f0c5576c14918873e3b8f48e7bcaf7e0ab8a7b62a8f1ca351b5e6c260a9f694e",
+      "expected_hypothesis_sha256": "f0c5576c14918873e3b8f48e7bcaf7e0ab8a7b62a8f1ca351b5e6c260a9f694e",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "eac72ce14c4d98ad104a6bb93b3dfe74eb8343c043f14a65dce9e9f2b92c0fcf",
+      "hypothesis_sha256": "b2d8be704e0936d7a4b40367e820d7e68ccef40d209848d4d4624ce097757b8e",
+      "expected_hypothesis_sha256": "b2d8be704e0936d7a4b40367e820d7e68ccef40d209848d4d4624ce097757b8e",
+      "match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "3f5ed538f903eb7b3926dd500335ff392a73cb21f97bdb610a2a06680a3f684e",
+      "hypothesis_sha256": "6220ba5f8ce4f1c54d12ee398b5c178c40cdb9875e47561f3e3ba9744e1737b6",
+      "expected_hypothesis_sha256": "6220ba5f8ce4f1c54d12ee398b5c178c40cdb9875e47561f3e3ba9744e1737b6",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "condition": "original",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "hypothesis_sha256": "3b12b04b077d4a602525e3ec7eaa0e5b183ceb281389b5b811fe4e54b0c85666",
+      "expected_hypothesis_sha256": "3b12b04b077d4a602525e3ec7eaa0e5b183ceb281389b5b811fe4e54b0c85666",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "hypothesis_sha256": "45a855bb91300c04b0ead4a185fe005172795f9bd6631fabb4aac2cb95509f8c",
+      "expected_hypothesis_sha256": "45a855bb91300c04b0ead4a185fe005172795f9bd6631fabb4aac2cb95509f8c",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "hypothesis_sha256": "3b12b04b077d4a602525e3ec7eaa0e5b183ceb281389b5b811fe4e54b0c85666",
+      "expected_hypothesis_sha256": "3b12b04b077d4a602525e3ec7eaa0e5b183ceb281389b5b811fe4e54b0c85666",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0094",
+      "condition": "original",
+      "audio_sha256": "cfcc02bb4c5bf5d6bc1fb0483fa61bd605e7fd8b3237133a286d48d714e6f0f7",
+      "hypothesis_sha256": "b9b3e778dcfe1b0711a460e02386e524ed6b87dc287476a3ef8fbe86d9994768",
+      "expected_hypothesis_sha256": "b9b3e778dcfe1b0711a460e02386e524ed6b87dc287476a3ef8fbe86d9994768",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0094",
+      "condition": "alaw",
+      "audio_sha256": "c5b15fa9fa4ff58bff7f5389225070a46e71df9cb258c42619cdac045bc5f72a",
+      "hypothesis_sha256": "b9b3e778dcfe1b0711a460e02386e524ed6b87dc287476a3ef8fbe86d9994768",
+      "expected_hypothesis_sha256": "b9b3e778dcfe1b0711a460e02386e524ed6b87dc287476a3ef8fbe86d9994768",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0094",
+      "condition": "mulaw",
+      "audio_sha256": "d70ffe0482b3f41a374169b5e2c5a854112ed27d8c324d1f9afa7df397624cfd",
+      "hypothesis_sha256": "b9b3e778dcfe1b0711a460e02386e524ed6b87dc287476a3ef8fbe86d9994768",
+      "expected_hypothesis_sha256": "b9b3e778dcfe1b0711a460e02386e524ed6b87dc287476a3ef8fbe86d9994768",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0111",
+      "condition": "original",
+      "audio_sha256": "44e53f51be9b04f6d5c0eaba111b40c0ae83083ac0ace0da97c20162248c42d0",
+      "hypothesis_sha256": "5764d22ff4946c2533c99fcc9e933e5637dcfc20a42aff07f39499d1783a93a8",
+      "expected_hypothesis_sha256": "5764d22ff4946c2533c99fcc9e933e5637dcfc20a42aff07f39499d1783a93a8",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0111",
+      "condition": "alaw",
+      "audio_sha256": "5613b7d97916799a2a62d2ae1f08bf9a45b3eb8c5e8a670b9923e561a5dfe7a5",
+      "hypothesis_sha256": "5764d22ff4946c2533c99fcc9e933e5637dcfc20a42aff07f39499d1783a93a8",
+      "expected_hypothesis_sha256": "5764d22ff4946c2533c99fcc9e933e5637dcfc20a42aff07f39499d1783a93a8",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0111",
+      "condition": "mulaw",
+      "audio_sha256": "fc323dda9b7b9fa8bc1049226344c046274c2e569b1eece168011feba8f6478b",
+      "hypothesis_sha256": "5764d22ff4946c2533c99fcc9e933e5637dcfc20a42aff07f39499d1783a93a8",
+      "expected_hypothesis_sha256": "5764d22ff4946c2533c99fcc9e933e5637dcfc20a42aff07f39499d1783a93a8",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0113",
+      "condition": "original",
+      "audio_sha256": "d346b78cb21212e4b46a9be2c62133a80dca119c081dc7582eee22c48471195d",
+      "hypothesis_sha256": "e398a1c9f464c2da77e143238cefca92a85096598da299b519ebb1c434e3bba9",
+      "expected_hypothesis_sha256": "e398a1c9f464c2da77e143238cefca92a85096598da299b519ebb1c434e3bba9",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0113",
+      "condition": "alaw",
+      "audio_sha256": "38ef2713b96543bdebbd8a551c20aa2f8eede6ad2f57c4737f0a1df719bb7799",
+      "hypothesis_sha256": "1342c69a01a3d6bd7a7d262cfa6f86d973630b7bcc574fb9cf154b3e69b50001",
+      "expected_hypothesis_sha256": "1342c69a01a3d6bd7a7d262cfa6f86d973630b7bcc574fb9cf154b3e69b50001",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0113",
+      "condition": "mulaw",
+      "audio_sha256": "6f272309b4e14b2dea5ea0201c48f223f0b54b95163f1bbfd0cd745247e3b76e",
+      "hypothesis_sha256": "e396e0925530ffdeceabfbc80fbaf45c65064a1d3025228ddb169d474b211d39",
+      "expected_hypothesis_sha256": "e396e0925530ffdeceabfbc80fbaf45c65064a1d3025228ddb169d474b211d39",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "original",
+      "audio_sha256": "6751a78f4c4afb62430604e63aedbb5b0fc04d87ec0c6af24c7aefac13ab2eef",
+      "hypothesis_sha256": "54b0a1620cc66d338e84ad13291361eaae610c234e01f4649541aa075152c1ea",
+      "expected_hypothesis_sha256": "54b0a1620cc66d338e84ad13291361eaae610c234e01f4649541aa075152c1ea",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "alaw",
+      "audio_sha256": "6ea643d9a80eed14e59302ce59c2f47dbd33d540d906fe8f6b65cd824876fe98",
+      "hypothesis_sha256": "6c83044d85b99aa51f14cf85ed6d27daaa0780c1b06df2d9f097d3b821f79575",
+      "expected_hypothesis_sha256": "6c83044d85b99aa51f14cf85ed6d27daaa0780c1b06df2d9f097d3b821f79575",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "mulaw",
+      "audio_sha256": "51875e796b933981bd72243215ccaadb67c1d918ff2dff137800fdb0b9860f76",
+      "hypothesis_sha256": "6b6f900a4abffec28b85a7fb9775c2c3bfbbbd182e5d4f218f99db5a14794a18",
+      "expected_hypothesis_sha256": "6b6f900a4abffec28b85a7fb9775c2c3bfbbbd182e5d4f218f99db5a14794a18",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0141",
+      "condition": "original",
+      "audio_sha256": "692dcd900cacfaf5e2385a3f287ce3fa11ae7971d141e70c19fa40231e3432f1",
+      "hypothesis_sha256": "dbdfc9a23018b44e1288c76267389795de776f68284e7a6d09f77a2b4d22be24",
+      "expected_hypothesis_sha256": "dbdfc9a23018b44e1288c76267389795de776f68284e7a6d09f77a2b4d22be24",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0141",
+      "condition": "alaw",
+      "audio_sha256": "d43cffa650557d7ec6b3e6f6bae8b812f27dec9c340b8175ff69cf64949fea82",
+      "hypothesis_sha256": "dbdfc9a23018b44e1288c76267389795de776f68284e7a6d09f77a2b4d22be24",
+      "expected_hypothesis_sha256": "dbdfc9a23018b44e1288c76267389795de776f68284e7a6d09f77a2b4d22be24",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0141",
+      "condition": "mulaw",
+      "audio_sha256": "4a2c4592b99254f79cff151e5118d17d73ff3f662b94238f0a1b813cabb58f27",
+      "hypothesis_sha256": "dbdfc9a23018b44e1288c76267389795de776f68284e7a6d09f77a2b4d22be24",
+      "expected_hypothesis_sha256": "dbdfc9a23018b44e1288c76267389795de776f68284e7a6d09f77a2b4d22be24",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "original",
+      "audio_sha256": "a2fb33466f1e035d0299ebf68820a46b6e9a0caaf6760031379ad5b9d0218809",
+      "hypothesis_sha256": "7d7442703d12835dab3e4fd34ceba87a1aff2d889b1ebeb02cb0e605562479d1",
+      "expected_hypothesis_sha256": "7d7442703d12835dab3e4fd34ceba87a1aff2d889b1ebeb02cb0e605562479d1",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "alaw",
+      "audio_sha256": "f17f0df69cdb4a6a532c568ce477a6837f5bc00291dbe0bb5a540f268a694b5a",
+      "hypothesis_sha256": "1716acf09507dbf00ae07ccae7ddc827ffbe099cc9a71f70ac8ff7ccbf293357",
+      "expected_hypothesis_sha256": "1716acf09507dbf00ae07ccae7ddc827ffbe099cc9a71f70ac8ff7ccbf293357",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "mulaw",
+      "audio_sha256": "0a917720721114a5ab746502db21abc8d8d810f76b7cab633ff02f52b87af132",
+      "hypothesis_sha256": "d7e69b49ad1a2b891b9bab89aef32abec6cccfac4278ea4e006a6fca1b5f1acb",
+      "expected_hypothesis_sha256": "d7e69b49ad1a2b891b9bab89aef32abec6cccfac4278ea4e006a6fca1b5f1acb",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "original",
+      "audio_sha256": "0cbaa8f36f6c60782e7c28d18ad3ea9ceaace283bb713ae8b3c0647aca39e1d1",
+      "hypothesis_sha256": "50443c8a4362546b1936efa95459a0d1bf42b23183424a65a3faaffbf64bede1",
+      "expected_hypothesis_sha256": "50443c8a4362546b1936efa95459a0d1bf42b23183424a65a3faaffbf64bede1",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "alaw",
+      "audio_sha256": "d2efce3bbcf1da7c395538683d8f70b2104f01ea1ddef50cf138975c8ad93f60",
+      "hypothesis_sha256": "a4e6875db5c9780e7d4a7837a99978b32393fcc1459a968893484575dc62386d",
+      "expected_hypothesis_sha256": "a4e6875db5c9780e7d4a7837a99978b32393fcc1459a968893484575dc62386d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "mulaw",
+      "audio_sha256": "1eb8c3058bc6a539d6b6c960f541434803feafa390dc4ec628790827d2c601c4",
+      "hypothesis_sha256": "73f194ffb2dfde266c8baa06659a3da8618cbc37906c07b77b599db81bc051d4",
+      "expected_hypothesis_sha256": "73f194ffb2dfde266c8baa06659a3da8618cbc37906c07b77b599db81bc051d4",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0345",
+      "condition": "original",
+      "audio_sha256": "4062175f8254d19141100f15bbd6ea5a85e57a997255ccfe0bf37ff2bd536bb5",
+      "hypothesis_sha256": "967eac8f3fe158f95a707017cb54a18cb516ae269cc64f82c49e9473156bd436",
+      "expected_hypothesis_sha256": "967eac8f3fe158f95a707017cb54a18cb516ae269cc64f82c49e9473156bd436",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0345",
+      "condition": "alaw",
+      "audio_sha256": "c9cb67af9d387f74fe737167ddcb8d4565a36479bb39f879c065f94c45fb4569",
+      "hypothesis_sha256": "eafabd93227ca9a79c1ab5f840a9218b70272a7a09f2c959a24d3bf11e88e999",
+      "expected_hypothesis_sha256": "eafabd93227ca9a79c1ab5f840a9218b70272a7a09f2c959a24d3bf11e88e999",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0345",
+      "condition": "mulaw",
+      "audio_sha256": "f9f25022fb8161fecf8d643b503fc30448026a7ff43f54ab0d30c7cafdafd8a6",
+      "hypothesis_sha256": "29115d9667db83585e6410b56a094743c7e6ddf3ed5fe2b2ada2aff00298180d",
+      "expected_hypothesis_sha256": "29115d9667db83585e6410b56a094743c7e6ddf3ed5fe2b2ada2aff00298180d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0380",
+      "condition": "original",
+      "audio_sha256": "15e9be0f3a4b79dc6f1afba65948dccefee4042db3d7cbb772abe5c50df7a3bd",
+      "hypothesis_sha256": "6286abe2521b96c4d18a1e7c5882f7632b2827e70f50a4b3ff2e138d60cf1352",
+      "expected_hypothesis_sha256": "6286abe2521b96c4d18a1e7c5882f7632b2827e70f50a4b3ff2e138d60cf1352",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0380",
+      "condition": "alaw",
+      "audio_sha256": "c03045d4d7d10d9147ebef03f8eedd191ceceec999bca7d55fcf779960cf2b73",
+      "hypothesis_sha256": "6286abe2521b96c4d18a1e7c5882f7632b2827e70f50a4b3ff2e138d60cf1352",
+      "expected_hypothesis_sha256": "6286abe2521b96c4d18a1e7c5882f7632b2827e70f50a4b3ff2e138d60cf1352",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0380",
+      "condition": "mulaw",
+      "audio_sha256": "4bc6f618f6b2866b2b79d520cfa508b6d14b0e4ed072c9eec38b529bd7965f85",
+      "hypothesis_sha256": "6286abe2521b96c4d18a1e7c5882f7632b2827e70f50a4b3ff2e138d60cf1352",
+      "expected_hypothesis_sha256": "6286abe2521b96c4d18a1e7c5882f7632b2827e70f50a4b3ff2e138d60cf1352",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0484",
+      "condition": "original",
+      "audio_sha256": "ea5cc00b0acc7adbc427b24b3bd1c88ebb322eacf3b43f6e8b24b707fd7db7c6",
+      "hypothesis_sha256": "97e57eff5d99af881fafcdf410d3bda3761debd835525665c40e4a27d21f376d",
+      "expected_hypothesis_sha256": "97e57eff5d99af881fafcdf410d3bda3761debd835525665c40e4a27d21f376d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0484",
+      "condition": "alaw",
+      "audio_sha256": "f0a36a6b262937b83a6bc3480c7f8c98418816625aed5bfac104c00d5faf7271",
+      "hypothesis_sha256": "97e57eff5d99af881fafcdf410d3bda3761debd835525665c40e4a27d21f376d",
+      "expected_hypothesis_sha256": "97e57eff5d99af881fafcdf410d3bda3761debd835525665c40e4a27d21f376d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0484",
+      "condition": "mulaw",
+      "audio_sha256": "3a4c6b2a655b773160504960e8aa198c998557d00ae32c223ce2d93d75b4fbcd",
+      "hypothesis_sha256": "97e57eff5d99af881fafcdf410d3bda3761debd835525665c40e4a27d21f376d",
+      "expected_hypothesis_sha256": "97e57eff5d99af881fafcdf410d3bda3761debd835525665c40e4a27d21f376d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0613",
+      "condition": "original",
+      "audio_sha256": "bb62729f7adc3a0a9a1d9f947e4fa3c8f8b751b4acda8e242786fe1184736f8f",
+      "hypothesis_sha256": "edead05ccf96404bbdb09acf4f9def84aa7d2bce4f5c348df39eb2a0c7a33d7c",
+      "expected_hypothesis_sha256": "edead05ccf96404bbdb09acf4f9def84aa7d2bce4f5c348df39eb2a0c7a33d7c",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0613",
+      "condition": "alaw",
+      "audio_sha256": "dcac4411ead1b3cf52a63ce40d3b83721c2768be0f21ce553651bae098f285ff",
+      "hypothesis_sha256": "edead05ccf96404bbdb09acf4f9def84aa7d2bce4f5c348df39eb2a0c7a33d7c",
+      "expected_hypothesis_sha256": "edead05ccf96404bbdb09acf4f9def84aa7d2bce4f5c348df39eb2a0c7a33d7c",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0613",
+      "condition": "mulaw",
+      "audio_sha256": "1064568fa7d69919058f63c3a5bd3e7b361f72f57d25a7ff2e33f22fec7ca17b",
+      "hypothesis_sha256": "edead05ccf96404bbdb09acf4f9def84aa7d2bce4f5c348df39eb2a0c7a33d7c",
+      "expected_hypothesis_sha256": "edead05ccf96404bbdb09acf4f9def84aa7d2bce4f5c348df39eb2a0c7a33d7c",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0659",
+      "condition": "original",
+      "audio_sha256": "9f6733dbdc5e299daa59b54df20e26b53d94560a24779753d58fba5277a248de",
+      "hypothesis_sha256": "bf05e292e61625fa46f3b041546aaf3c81843c14991723e1ff0b96d8c288816d",
+      "expected_hypothesis_sha256": "bf05e292e61625fa46f3b041546aaf3c81843c14991723e1ff0b96d8c288816d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0659",
+      "condition": "alaw",
+      "audio_sha256": "b9dd6c68ae17df81b6eb626436cf436bf548a2c42227033d7e4e8d37a6decd3c",
+      "hypothesis_sha256": "ca877646e8e181dcae758c5f23b5375af40455d48f304b5f2658be87704b613a",
+      "expected_hypothesis_sha256": "ca877646e8e181dcae758c5f23b5375af40455d48f304b5f2658be87704b613a",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0659",
+      "condition": "mulaw",
+      "audio_sha256": "4dfab656c5aa33882cf5c2ba1595c61710f0b1e7160188a8de32ab519d4b32c1",
+      "hypothesis_sha256": "bf05e292e61625fa46f3b041546aaf3c81843c14991723e1ff0b96d8c288816d",
+      "expected_hypothesis_sha256": "bf05e292e61625fa46f3b041546aaf3c81843c14991723e1ff0b96d8c288816d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0666",
+      "condition": "original",
+      "audio_sha256": "73e198e53843fa829a1aeb3f33e2593b9e37906eba37cedb6f965922823423de",
+      "hypothesis_sha256": "5eab4e0f7024250197c71d9cfea90da9329befa9a9073b561c53b8d6fdc18fd1",
+      "expected_hypothesis_sha256": "5eab4e0f7024250197c71d9cfea90da9329befa9a9073b561c53b8d6fdc18fd1",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0666",
+      "condition": "alaw",
+      "audio_sha256": "c540db93aed0fdaf66faf0c6dd94f1f32e41b8e1628da02bae780cc5b7d093df",
+      "hypothesis_sha256": "5eab4e0f7024250197c71d9cfea90da9329befa9a9073b561c53b8d6fdc18fd1",
+      "expected_hypothesis_sha256": "5eab4e0f7024250197c71d9cfea90da9329befa9a9073b561c53b8d6fdc18fd1",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0666",
+      "condition": "mulaw",
+      "audio_sha256": "ae8b4b31fb9f3cbd96e97a53a7a160e25b77e0c26c02a61603e22eaafd32c49d",
+      "hypothesis_sha256": "5eab4e0f7024250197c71d9cfea90da9329befa9a9073b561c53b8d6fdc18fd1",
+      "expected_hypothesis_sha256": "5eab4e0f7024250197c71d9cfea90da9329befa9a9073b561c53b8d6fdc18fd1",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0694",
+      "condition": "original",
+      "audio_sha256": "abd939bbe101cce4cbab9fe9e8621b6dfb78f52dffb37bfff9be3f4a8523e566",
+      "hypothesis_sha256": "1103ea3c2cbc74ce8e2b2be1dc11253291e337ea3362b2daa90bb447f1337d24",
+      "expected_hypothesis_sha256": "1103ea3c2cbc74ce8e2b2be1dc11253291e337ea3362b2daa90bb447f1337d24",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0694",
+      "condition": "alaw",
+      "audio_sha256": "de5204b6bec16ab275cf1b3a876bc7a6f2ce58f5133341c94cac723d02116c07",
+      "hypothesis_sha256": "b0a181e647eeb3846537806052462367520bf80cc109ec9c1aebbdfa1b168fa3",
+      "expected_hypothesis_sha256": "b0a181e647eeb3846537806052462367520bf80cc109ec9c1aebbdfa1b168fa3",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0694",
+      "condition": "mulaw",
+      "audio_sha256": "92aedc2126d210f14444dc9175579a54e129f5b186105b8a40d20bfff204143f",
+      "hypothesis_sha256": "b0a181e647eeb3846537806052462367520bf80cc109ec9c1aebbdfa1b168fa3",
+      "expected_hypothesis_sha256": "b0a181e647eeb3846537806052462367520bf80cc109ec9c1aebbdfa1b168fa3",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0763",
+      "condition": "original",
+      "audio_sha256": "85167da56d66a7fa978328d76a280519e545d7389e5d2ba8b78dcca4988d546b",
+      "hypothesis_sha256": "7d28b70cf3fbbe10adfdb1f3555425422ec0cb720cd6586a1607f9435ffb4c33",
+      "expected_hypothesis_sha256": "7d28b70cf3fbbe10adfdb1f3555425422ec0cb720cd6586a1607f9435ffb4c33",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0763",
+      "condition": "alaw",
+      "audio_sha256": "a9a84694bae9b2496803ab420d34dd9f5966de3af4e73d2309942bf3fb0c1d3e",
+      "hypothesis_sha256": "1fac8f2f16accc6dd00fcbd812201e15a9128b3a010727c57e7f55adcaa4ce72",
+      "expected_hypothesis_sha256": "1fac8f2f16accc6dd00fcbd812201e15a9128b3a010727c57e7f55adcaa4ce72",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0763",
+      "condition": "mulaw",
+      "audio_sha256": "ab2aa4433e6b3ce93bdc29f86536004235271995e411130ab069552126b29541",
+      "hypothesis_sha256": "1b0376246995d094633c5a10bebfe3b6ab3562398cd1d97299cc537c790aabdc",
+      "expected_hypothesis_sha256": "1b0376246995d094633c5a10bebfe3b6ab3562398cd1d97299cc537c790aabdc",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0773",
+      "condition": "original",
+      "audio_sha256": "f778e78eb9a18feb55f2ae2404344d612cca1e2378f36ffa4673b1047b427945",
+      "hypothesis_sha256": "0f0ad0629746a744538458f555a36514a5f84a536b1dfb6b14445a8d8215f57f",
+      "expected_hypothesis_sha256": "0f0ad0629746a744538458f555a36514a5f84a536b1dfb6b14445a8d8215f57f",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0773",
+      "condition": "alaw",
+      "audio_sha256": "cb2e90aebe78470b91f1d7ba6f0b61a3c87ec175b7c547364f0540db80e27106",
+      "hypothesis_sha256": "676b3935b1d238b6905f74f441ee113c1997d490da876ae1aaf0f71eb2287b02",
+      "expected_hypothesis_sha256": "676b3935b1d238b6905f74f441ee113c1997d490da876ae1aaf0f71eb2287b02",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0773",
+      "condition": "mulaw",
+      "audio_sha256": "d2d9c2accaa4545c2a6b8fe380c8aa85df10725b4d9645a232cb1c2397d02e76",
+      "hypothesis_sha256": "0f0ad0629746a744538458f555a36514a5f84a536b1dfb6b14445a8d8215f57f",
+      "expected_hypothesis_sha256": "0f0ad0629746a744538458f555a36514a5f84a536b1dfb6b14445a8d8215f57f",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0803",
+      "condition": "original",
+      "audio_sha256": "b6120905bca73d09e60c4de353af6484728ee208e906d2f5ee400590ed4f0f8b",
+      "hypothesis_sha256": "c2ee929816901cbb92737ec8a9ea6d69c45b6b3f9306726060b401dc99e661ab",
+      "expected_hypothesis_sha256": "c2ee929816901cbb92737ec8a9ea6d69c45b6b3f9306726060b401dc99e661ab",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0803",
+      "condition": "alaw",
+      "audio_sha256": "cff72206f4727c16588dd466fba7ee493e11bd2912077895a6bf40e944ff8973",
+      "hypothesis_sha256": "c2ee929816901cbb92737ec8a9ea6d69c45b6b3f9306726060b401dc99e661ab",
+      "expected_hypothesis_sha256": "c2ee929816901cbb92737ec8a9ea6d69c45b6b3f9306726060b401dc99e661ab",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0803",
+      "condition": "mulaw",
+      "audio_sha256": "1ecebc2cbd2bdcdd60ce0016dddbb9fb6bba88a11a30181fe0bc28e75097e673",
+      "hypothesis_sha256": "c2ee929816901cbb92737ec8a9ea6d69c45b6b3f9306726060b401dc99e661ab",
+      "expected_hypothesis_sha256": "c2ee929816901cbb92737ec8a9ea6d69c45b6b3f9306726060b401dc99e661ab",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0833",
+      "condition": "original",
+      "audio_sha256": "29372d3c4fa3037fef3b8d284fa660c3af9068e166dddf2227bf6869487259f5",
+      "hypothesis_sha256": "d5bc1385581deb67cd27e705f8ffe76d48f1fdc2e153edaaf18b14e1f144c83d",
+      "expected_hypothesis_sha256": "d5bc1385581deb67cd27e705f8ffe76d48f1fdc2e153edaaf18b14e1f144c83d",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0833",
+      "condition": "alaw",
+      "audio_sha256": "9c9f47bb99f6ed9fdcefbe39b53f633b2450f5f33a1c51a13e0873a5d0fa3cfc",
+      "hypothesis_sha256": "998903d7fdc929f46691f2e78643114d197ca8d79548b9dfc36519b204ae6691",
+      "expected_hypothesis_sha256": "998903d7fdc929f46691f2e78643114d197ca8d79548b9dfc36519b204ae6691",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0833",
+      "condition": "mulaw",
+      "audio_sha256": "d04b6d4ad0e5071e989b1e24c63d815c71eecbbd7de9b3ba0fbd4efc3ae3b997",
+      "hypothesis_sha256": "0461e73846b479f01c66792f572ccf5255abf9f78fc0a795d5b69caad3606962",
+      "expected_hypothesis_sha256": "0461e73846b479f01c66792f572ccf5255abf9f78fc0a795d5b69caad3606962",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0053",
+      "condition": "original",
+      "audio_sha256": "7dbf9a53f98ddc61461861db5a9363e64680eda435265d5fbd85b1464a29b0be",
+      "hypothesis_sha256": "6b8c733d03560d93641bf67d258e7cb7e6f6171951a87c94b2eec6397e594ea4",
+      "expected_hypothesis_sha256": "6b8c733d03560d93641bf67d258e7cb7e6f6171951a87c94b2eec6397e594ea4",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0053",
+      "condition": "alaw",
+      "audio_sha256": "914799ef45a8365dc7def802525e5e2f4f689c6d0bc9af1f283aef23d01a8f03",
+      "hypothesis_sha256": "2d6455c3c763f035750179d30296212f47662edbf003be0e6a345a933aefa4c3",
+      "expected_hypothesis_sha256": "2d6455c3c763f035750179d30296212f47662edbf003be0e6a345a933aefa4c3",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0053",
+      "condition": "mulaw",
+      "audio_sha256": "1edc6e1b039f0e13c3ee6d595f5dea9334cfbbbfa11b7ca80c19f8e3d0412d5d",
+      "hypothesis_sha256": "6b8c733d03560d93641bf67d258e7cb7e6f6171951a87c94b2eec6397e594ea4",
+      "expected_hypothesis_sha256": "6b8c733d03560d93641bf67d258e7cb7e6f6171951a87c94b2eec6397e594ea4",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "original",
+      "audio_sha256": "9e31182049e5fbb9aa7c5a2f0def0f262b5534fbf84afd2d24c45ee72b4442ec",
+      "hypothesis_sha256": "f37609c5da2dca134e5ee6e89c9993a20dfb42006f6037b1756fe99051328703",
+      "expected_hypothesis_sha256": "f37609c5da2dca134e5ee6e89c9993a20dfb42006f6037b1756fe99051328703",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "alaw",
+      "audio_sha256": "79d175de05cc8e9fac2565c37479c7bfd64b7235c6a307bd91526db0eaa9b5fa",
+      "hypothesis_sha256": "f37609c5da2dca134e5ee6e89c9993a20dfb42006f6037b1756fe99051328703",
+      "expected_hypothesis_sha256": "f37609c5da2dca134e5ee6e89c9993a20dfb42006f6037b1756fe99051328703",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "mulaw",
+      "audio_sha256": "0820cccf3a5a21c9d24b6650896a0ce40630fd581dbe4ef6e1a17bc36cb4c2a0",
+      "hypothesis_sha256": "f37609c5da2dca134e5ee6e89c9993a20dfb42006f6037b1756fe99051328703",
+      "expected_hypothesis_sha256": "f37609c5da2dca134e5ee6e89c9993a20dfb42006f6037b1756fe99051328703",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "condition": "original",
+      "audio_sha256": "cdd6026f47961257d1c475aef91a0bd742a84a4c5af1848e714617d51f6825f5",
+      "hypothesis_sha256": "1849c71afb4ebedcf03b0770a102bcc58751f65166c2b682f52d21aa61bb5bcb",
+      "expected_hypothesis_sha256": "1849c71afb4ebedcf03b0770a102bcc58751f65166c2b682f52d21aa61bb5bcb",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "7cb029e24b630e17af9f566bab1fccc2974979f43a967db604f490d25993effc",
+      "hypothesis_sha256": "1849c71afb4ebedcf03b0770a102bcc58751f65166c2b682f52d21aa61bb5bcb",
+      "expected_hypothesis_sha256": "1849c71afb4ebedcf03b0770a102bcc58751f65166c2b682f52d21aa61bb5bcb",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "1dfc0c9c26cb2e0237c4bc439966d919f1ea3a5f1e51b0f3c93c3dc04c90b725",
+      "hypothesis_sha256": "1849c71afb4ebedcf03b0770a102bcc58751f65166c2b682f52d21aa61bb5bcb",
+      "expected_hypothesis_sha256": "1849c71afb4ebedcf03b0770a102bcc58751f65166c2b682f52d21aa61bb5bcb",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "condition": "original",
+      "audio_sha256": "e8f13c4491e0ea8ed53ffdd60e9463251de3c82e0a039a54bfde1c8ae23e5da2",
+      "hypothesis_sha256": "681bad9d7cd32d374ec6dfde35ff366074748fe4c28f28604eb2f094ffcab950",
+      "expected_hypothesis_sha256": "681bad9d7cd32d374ec6dfde35ff366074748fe4c28f28604eb2f094ffcab950",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "95a4d0835c803d9be778df0b04c886cbbf0b2e6f45a2046ad86271d42f9747c8",
+      "hypothesis_sha256": "681bad9d7cd32d374ec6dfde35ff366074748fe4c28f28604eb2f094ffcab950",
+      "expected_hypothesis_sha256": "681bad9d7cd32d374ec6dfde35ff366074748fe4c28f28604eb2f094ffcab950",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "900419fa51554d8747fd882f94e5780dd80fc11993ba1ca5760903a581b6940c",
+      "hypothesis_sha256": "681bad9d7cd32d374ec6dfde35ff366074748fe4c28f28604eb2f094ffcab950",
+      "expected_hypothesis_sha256": "681bad9d7cd32d374ec6dfde35ff366074748fe4c28f28604eb2f094ffcab950",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "condition": "original",
+      "audio_sha256": "13433ff7ae3df78c5bf662c86ce0f238062c16cd42850aabbb662faa3f7a1318",
+      "hypothesis_sha256": "365189912673a77f16100190bd2df2c930228e4bd56dc58272fe9f944ba8a16b",
+      "expected_hypothesis_sha256": "365189912673a77f16100190bd2df2c930228e4bd56dc58272fe9f944ba8a16b",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "condition": "alaw",
+      "audio_sha256": "61c64e57060462d6b22517ad0628b1cb13e57a4bbdb0837c585731f76c89877f",
+      "hypothesis_sha256": "c488d25524c5a3da5038362dff4b30f2318bb019ae180d369cecda8f36b492d1",
+      "expected_hypothesis_sha256": "c488d25524c5a3da5038362dff4b30f2318bb019ae180d369cecda8f36b492d1",
+      "match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "condition": "mulaw",
+      "audio_sha256": "5d754bdb9aea73d2c129ac89cd7545c06461bd45752d871441e871d3ccd31c7c",
+      "hypothesis_sha256": "4cb721551412ac3a08c817c434c4df7e9c5ef1405a41ae05859ce91e38a64852",
+      "expected_hypothesis_sha256": "4cb721551412ac3a08c817c434c4df7e9c5ef1405a41ae05859ce91e38a64852",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "original",
+      "audio_sha256": "c7dfb8d475e97d4ca3937780d725d039b584f6edf0fe6f665dbbf69bb0a38cbb",
+      "hypothesis_sha256": "6afc27ee39fae4028f4319975329934ea6761f20ecfb67cb79602c980c64312f",
+      "expected_hypothesis_sha256": "6afc27ee39fae4028f4319975329934ea6761f20ecfb67cb79602c980c64312f",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "alaw",
+      "audio_sha256": "12d7b07efa372e12f5749bceed0bf83ea53444e5263fc9c797f242ad0bfece92",
+      "hypothesis_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected_hypothesis_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "mulaw",
+      "audio_sha256": "2cc5db825480f7f1b67807748ae1f33388563174696533aa95c48cf33b57ef7d",
+      "hypothesis_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected_hypothesis_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "condition": "original",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "hypothesis_sha256": "e2ff8b2ad4e32160671975aa220ac23c2d9cbce2c2eeca2b3d548472d74c381f",
+      "expected_hypothesis_sha256": "e2ff8b2ad4e32160671975aa220ac23c2d9cbce2c2eeca2b3d548472d74c381f",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "hypothesis_sha256": "e2ff8b2ad4e32160671975aa220ac23c2d9cbce2c2eeca2b3d548472d74c381f",
+      "expected_hypothesis_sha256": "e2ff8b2ad4e32160671975aa220ac23c2d9cbce2c2eeca2b3d548472d74c381f",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "hypothesis_sha256": "e2ff8b2ad4e32160671975aa220ac23c2d9cbce2c2eeca2b3d548472d74c381f",
+      "expected_hypothesis_sha256": "e2ff8b2ad4e32160671975aa220ac23c2d9cbce2c2eeca2b3d548472d74c381f",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "condition": "original",
+      "audio_sha256": "ff2a6d058aaa2ed3efe514a554b81841dc227b44444df7a9cf7e8500bd7f8304",
+      "hypothesis_sha256": "c13a431b247c77d4cf7f5d0308af997aa57d3b739a00bca8650d0c40d7a2ba63",
+      "expected_hypothesis_sha256": "c13a431b247c77d4cf7f5d0308af997aa57d3b739a00bca8650d0c40d7a2ba63",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "d63f6b58f4681f1ec3deb5233e4215e1d77e1cb75d7a26c24815b6ae62b38fda",
+      "hypothesis_sha256": "c13a431b247c77d4cf7f5d0308af997aa57d3b739a00bca8650d0c40d7a2ba63",
+      "expected_hypothesis_sha256": "c13a431b247c77d4cf7f5d0308af997aa57d3b739a00bca8650d0c40d7a2ba63",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "1bf0379c797e3fc9ac8b1897151c6d23bd0656f18ceca9d931a0262bda3cead5",
+      "hypothesis_sha256": "c13a431b247c77d4cf7f5d0308af997aa57d3b739a00bca8650d0c40d7a2ba63",
+      "expected_hypothesis_sha256": "c13a431b247c77d4cf7f5d0308af997aa57d3b739a00bca8650d0c40d7a2ba63",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "condition": "original",
+      "audio_sha256": "a2eb48632fe02f9a6aba3d47a9eb22a70faf428fb1da3d207136eeb34f930504",
+      "hypothesis_sha256": "94a2af40eb4b9c80fdbdee3913da3ac26cb693d7f1be807ed49c57b29df00df3",
+      "expected_hypothesis_sha256": "94a2af40eb4b9c80fdbdee3913da3ac26cb693d7f1be807ed49c57b29df00df3",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "f810f266ebc495cdfc08826d6546468e85fac9f51b2f1d1551d0ca8d5991d47f",
+      "hypothesis_sha256": "1cdbf9f3b35ddaee45e7e506b38e52b2c3157109481136c59796963591ad0c67",
+      "expected_hypothesis_sha256": "1cdbf9f3b35ddaee45e7e506b38e52b2c3157109481136c59796963591ad0c67",
+      "match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "7823d5d29903e31e548ab1fd0d3a310b830847ba3626515e82989566655526d1",
+      "hypothesis_sha256": "94a2af40eb4b9c80fdbdee3913da3ac26cb693d7f1be807ed49c57b29df00df3",
+      "expected_hypothesis_sha256": "94a2af40eb4b9c80fdbdee3913da3ac26cb693d7f1be807ed49c57b29df00df3",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "condition": "original",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "hypothesis_sha256": "0c3be58782bcf62ea922c9a5da28287896f0cd8f11c5d1fef9f4e8cc801e3c76",
+      "expected_hypothesis_sha256": "0c3be58782bcf62ea922c9a5da28287896f0cd8f11c5d1fef9f4e8cc801e3c76",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "hypothesis_sha256": "0c3be58782bcf62ea922c9a5da28287896f0cd8f11c5d1fef9f4e8cc801e3c76",
+      "expected_hypothesis_sha256": "0c3be58782bcf62ea922c9a5da28287896f0cd8f11c5d1fef9f4e8cc801e3c76",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "hypothesis_sha256": "0c3be58782bcf62ea922c9a5da28287896f0cd8f11c5d1fef9f4e8cc801e3c76",
+      "expected_hypothesis_sha256": "0c3be58782bcf62ea922c9a5da28287896f0cd8f11c5d1fef9f4e8cc801e3c76",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "condition": "original",
+      "audio_sha256": "58c7c10b111f26ead0151433d4547de4e508195b1c63d0d44c810cf92ef5d6b1",
+      "hypothesis_sha256": "195136978899ea7527f467055373476be021b7415c9d69c8934d6330f701b997",
+      "expected_hypothesis_sha256": "195136978899ea7527f467055373476be021b7415c9d69c8934d6330f701b997",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "09fc92fc8b3a18520ae16432842be1579bc730a1e188e20a1e40ed1966d1da2d",
+      "hypothesis_sha256": "195136978899ea7527f467055373476be021b7415c9d69c8934d6330f701b997",
+      "expected_hypothesis_sha256": "195136978899ea7527f467055373476be021b7415c9d69c8934d6330f701b997",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "957e4abc9fdd4c2b2b4d323ea7ff83b4e8ae432f7b4deb562b5916c38fa4dedf",
+      "hypothesis_sha256": "195136978899ea7527f467055373476be021b7415c9d69c8934d6330f701b997",
+      "expected_hypothesis_sha256": "195136978899ea7527f467055373476be021b7415c9d69c8934d6330f701b997",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "condition": "original",
+      "audio_sha256": "52eb190cc681fa92a110e567f3b0d3a7c2e5ab50f2c403dabfa1157740d1e2d0",
+      "hypothesis_sha256": "e3a7a722fc4e423703f462141423c8447a497e1958514e9410cb5b818ccb2feb",
+      "expected_hypothesis_sha256": "e3a7a722fc4e423703f462141423c8447a497e1958514e9410cb5b818ccb2feb",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "d67f7ed33f19bd60e51c43c311225772f17ef7ee9700bb6842381f0ee962b957",
+      "hypothesis_sha256": "e3a7a722fc4e423703f462141423c8447a497e1958514e9410cb5b818ccb2feb",
+      "expected_hypothesis_sha256": "e3a7a722fc4e423703f462141423c8447a497e1958514e9410cb5b818ccb2feb",
+      "match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "f00a1f12f02cb93a7d66ff4501db121437290dafab011d51af181d1e3d28cac6",
+      "hypothesis_sha256": "e3a7a722fc4e423703f462141423c8447a497e1958514e9410cb5b818ccb2feb",
+      "expected_hypothesis_sha256": "e3a7a722fc4e423703f462141423c8447a497e1958514e9410cb5b818ccb2feb",
+      "match": true
+    }
+  ]
+}

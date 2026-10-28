@@ -1,0 +1,29 @@
+{
+  "benchmark_source_revision": "293845a6677dcd8d492c6be58d6281319688e3c8",
+  "benchmark_source": "crates/gigastt-core/benches/decode.rs",
+  "benchmark_encoder": {
+    "crate": "audio-codec",
+    "version": "0.4.7",
+    "sha256": "0ed17b200d60e7981699bc7b43317ddc8c33c57231cc5a164e3f429d12c6e940"
+  },
+  "benchmark_preparation": "Read little-endian i16 samples from tone_src.wav data chunk, keep every other sample, encode with PcmaEncoder/PcmuEncoder using encode_into. Each payload is 24000 samples at 8000 Hz.",
+  "oracle_preparation": "FFmpeg 7.0.2-static decoded all mu-law bytes 0..255 at 8000 Hz to little-endian signed PCM16.",
+  "files": {
+    "tone_src.wav": {
+      "bytes": 96078,
+      "sha256": "01bdcf408b68cc34bb540599fc9c43b73cfc3322018e3bb815c7449de7aabcb1"
+    },
+    "g711_alaw_benchmark.alaw": {
+      "bytes": 24000,
+      "sha256": "7d763fbc12a50dc20682c9de917487de50f53c26a8fa2236fdd0cdfb407ac211"
+    },
+    "g711_mulaw_benchmark.ulaw": {
+      "bytes": 24000,
+      "sha256": "68fadc2b4b48b500b5b24f1125b1d0e0b0e4ba9efb8e0ccd2163bdd066b5404f"
+    },
+    "pcmu_codepoints_ffmpeg.pcm": {
+      "bytes": 512,
+      "sha256": "3dab54339e520bb2c924826e3b72a917a2b612e9fd12fc867500f1d983a75827"
+    }
+  }
+}

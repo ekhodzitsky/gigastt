@@ -24,7 +24,7 @@ use super::state::{
     CommitPolicy, DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
     TranscriptAssembler, TranscriptSegment, WordInfo, aggregate_confidence,
 };
-use super::token_format::{TokenFormatter, seam_seconds, stitch_chunk_words_retained};
+use super::token_format::{TokenFormatter, overlap_seconds, stitch_chunk_words_retained};
 use super::tokenizer::Tokenizer;
 use super::types::{
     DEFAULT_HOTWORDS_BOOST, DiarizationOutcome, HotwordError, HotwordOverride,

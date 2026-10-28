@@ -703,7 +703,8 @@ them in.
   diarization. The mutual-exclusion check with `channels=split` treats `diarization=true`
   as an explicit request; returns `400` with code `conflicting_modes` if both are set.
   Actual diarization output requires the speaker-encoder model to be loaded on the
-  server (downloaded automatically when the `diarization` feature is enabled).
+  server (provisioned by `gigastt download` unless `--skip-diarization` is set;
+  loading for recognition is lazy).
 
 Per-request overrides of the boot defaults (all optional; absent means "use the
 server default", so a request that sets none is byte-identical to before these
@@ -831,6 +832,7 @@ This applies to every file-transcription endpoint (`/v1/transcribe`,
 | WAV (PCM 8–32 bit, IEEE float, RF64/BW64/RIFX/Wave64, MS/IMA ADPCM) | ryf |
 | WAV with G.711 A-law / μ-law (8 kHz typical) | ryf |
 | WAV with G.722 ADPCM (tags `0x0064`, `0x0065`, `0x028F`) | ryf |
+| WAV with G.726 ADPCM (tag `0x0045`, mono 8 kHz, 16/24/32/40 kbit/s) | ryf |
 | WAV with GSM 06.10 (wav49 / tag `0x0031`) | ryf |
 | MP3, M4A/AAC-LC, OGG/Vorbis, FLAC | symphonia |
 | ADTS, LATM/LOAS, M4A, bounded fragmented MP4 (AAC-LC, HE-AAC, AAC-LD) | syom, only with `--features extended-aac`; [measured limitations](aac-audit.md) |
@@ -855,7 +857,12 @@ This applies to every file-transcription endpoint (`/v1/transcribe`,
   the model's 16 kHz.
 - **G.722 in WAV** (what Asterisk, Cisco, and Teams-player exports write —
   format tag `0x0064`, mmreg `0x0065`, ffmpeg writes `0x028F`) decodes to its
-  native 16 kHz.
+  native 16 kHz. The shared tag `0x0064` is accepted as G.722 only when
+  the header declares 8000 bytes/second per channel; other byte rates are
+  ambiguous with G.726 and are rejected instead of guessing the codec.
+- **G.726 in WAV** uses tag `0x0045` with AAL2 packing, mono 8 kHz and
+  16/24/32/40 kbit/s. Audio is resampled to 16 kHz. Headerless G.726 and
+  explicit codec overrides for ambiguous tag `0x0064` are not exposed.
 - **GSM 06.10 in WAV** (Asterisk wav49, tag `0x0031`) decodes natively; 8 kHz
   is resampled to 16 kHz. Headerless GSM is not a `?codec=` option.
 - **Headerless streams** (RTP dumps, Asterisk Monitor raw) carry no container

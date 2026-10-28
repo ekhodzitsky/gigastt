@@ -14,12 +14,13 @@ mod stitch;
 pub(crate) use stitch::stitch_chunk_words;
 pub(crate) use stitch::stitch_chunk_words_retained;
 
-/// Absolute-seconds seam between the previous window, which ended at
-/// `prev_end_sample`, and the window starting at `start_sample`: the midpoint of
-/// their actual overlap (2 s on the regular grid, more for the end-anchored
-/// trailing window). Without overlap the seam is the window start.
-pub(crate) fn seam_seconds(prev_end_sample: usize, start_sample: usize) -> f64 {
-    (start_sample as f64 + prev_end_sample.saturating_sub(start_sample) as f64 / 2.0) / 16_000.0
+/// Actual overlap in absolute seconds, including end-anchored trailing windows.
+/// Without overlap, both bounds are the new window start.
+pub(crate) fn overlap_seconds(
+    prev_end_sample: usize,
+    start_sample: usize,
+) -> std::ops::RangeInclusive<f64> {
+    start_sample as f64 / 16_000.0..=prev_end_sample.max(start_sample) as f64 / 16_000.0
 }
 
 /// Groups RNN-T decoded tokens into words at BPE word boundaries (`▁`).

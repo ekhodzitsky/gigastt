@@ -47,7 +47,8 @@ missing, renamed and removed benchmark results require investigation.
   turns. Median paired increases above 20% for load, embedding, offline or streaming
   time, or above 10% for RSS/peak RSS, fail the check. This catches changes shared
   by the live oracle and candidate, including an ONNX Runtime upgrade.
-- **Model smoke** explicitly requires both performance jobs to succeed. It
+- **Model smoke** explicitly requires both Linux performance jobs and the macOS
+  bridge job to succeed. It
   runs even if a dependency fails, and fails itself in that case. This is
   necessary because a skipped required GitHub job can otherwise permit merge.
   Keep `Model smoke` required in branch protection.
@@ -77,8 +78,17 @@ moving refs, missing commits, unrelated history and comparison against the
 candidate itself. Use the last accepted revision covering the entire change;
 do not replace a failing baseline with the candidate to hide a regression.
 The default `full=false` runs the branch checks, including both performance gates
-and Model smoke. It does not run full E2E, E2E coverage, CoreML runtime smoke or
-all Docker builds. These expensive checks are opt-in with `full=true`.
+and Model smoke. It does not run full E2E, E2E coverage, the ORT CoreML execution-provider
+smoke or all Docker builds. These expensive checks are opt-in with `full=true`.
+The ANE bridge comparison below runs in ordinary manual CI when its code or
+Objective-C dependencies change.
+
+For a PR from a fork, a maintainer may push its reviewed head to a temporary
+branch in the destination repository and dispatch on that branch. The mirrored
+commit must match the PR head exactly; do not merge or rebase it onto another
+commit for validation. Publication hygiene verifies both that SHA and the PR
+destination repository. This preserves the same checks for external contributors
+without requiring write access to Actions in their fork.
 
 Also run **Publication hygiene** on the same branch, providing `baseline_sha`
 and `pull_request_number`. It verifies the PR's exact head before checking its
@@ -192,6 +202,29 @@ The Engine uses gigastt's CPU runtime for speaker inference. The historical
 public `SpeakerEncoder` alias still names polyvoice's extractor, so its tract
 feature remains for Rust source compatibility. Engine inference must not use
 that alias; removing the public dependency surface belongs in a major release.
+
+### Objective-C bridge updates
+
+The manual CI ANE job compares the base and candidate when `objc2*` locked
+dependencies or production Core ML bridge sources change.
+`scripts/compare-objc-revisions.py` builds both revisions with the same release
+probe and checksum-verified encoder package. Three speech fixtures must produce
+identical encoder output shapes and hashes. Seven alternating paired process
+runs measure cached model loading, inference and peak RSS; a median latency
+regression above 5% or RSS increase above 10% fails the check. Cold compilation
+is retained separately and excluded from the cached comparison. Raw logs and
+measurements are uploaded as the `objc-revisions` artifact.
+
+Both CPU-only and CPUAndNeuralEngine policies are exercised. The latter does
+not establish that a hosted runner used physical ANE hardware. This bridge
+check measures encoder equivalence, not end-to-end WER. Unaffected changes skip
+the optimized ownership build, model download and comparison. The macOS job
+feeds the required Model smoke status, so failure, cancellation or a skipped job
+blocks merge. CI remains manually dispatched.
+
+The pinned Core ML bridge comparison model uses the CoreML8 opset and requires
+macOS 15 or newer. The manual ANE job uses macOS 15; the comparison rejects an
+older host before downloading assets or building either revision.
 
 ## AAC decoder changes
 

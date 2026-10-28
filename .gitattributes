@@ -1,0 +1,2 @@
+# Preserve the archived upstream CSV bytes, including their CRLF endings.
+benchmark/results/multilingual_public_20261001/upstream_scoring/*.csv -text whitespace=cr-at-eol

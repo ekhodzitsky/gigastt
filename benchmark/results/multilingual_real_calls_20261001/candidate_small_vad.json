@@ -1,0 +1,199 @@
+{
+  "metadata": {
+    "model": "candidate_small",
+    "model_identity": {
+      "variant": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+      "encoder_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+      "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    },
+    "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "protocol_sha256": "d2b393bb90477c8b92b5d2892fd86fc47fa1798c8ceb4bc40dd6f51ba89c095c",
+    "script_sha256": "05a1dc165730a8ee8c9e0fafca27cbbe6749f90511bff4cd0284748e06c67e95",
+    "server": {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "19945",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--vad",
+        "--vad-model-dir",
+        "/home/ekhodzitsky/.gigastt/models/vad"
+      ],
+      "health": {
+        "status": "ok",
+        "model": "gigaam-multilingual-ctc",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "punctuation": false,
+        "itn": false
+      },
+      "model_info": {
+        "id": "gigaam-multilingual-ctc",
+        "name": "GigaAM Multilingual CTC",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 2,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": false
+      }
+    },
+    "warmup_excluded": true,
+    "timing_caveat": "Concurrent host workload; not a resource benchmark",
+    "vad_evidence": {
+      "command_enabled": true,
+      "attached_engines": 1,
+      "fallback_warning_count": 0,
+      "log_sha256": "e95c7ef166915e35aca9a4ef5c69540826bfe2cbb958ba6aa10f2565c1c73782",
+      "health_exposes_vad": false
+    }
+  },
+  "complete": true,
+  "n": 3,
+  "groups": [
+    {
+      "group": "full_channel",
+      "recording": "babel",
+      "reference_words": 77,
+      "word_errors": 75,
+      "substitutions": 4,
+      "deletions": 71,
+      "insertions": 0,
+      "reference_chars": 488,
+      "char_errors": 439,
+      "n": 1,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 97.40259740259741,
+      "cer_pct": 89.95901639344262
+    },
+    {
+      "group": "full_channel",
+      "recording": "material",
+      "reference_words": 93,
+      "word_errors": 87,
+      "substitutions": 7,
+      "deletions": 80,
+      "insertions": 0,
+      "reference_chars": 574,
+      "char_errors": 492,
+      "n": 2,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 93.54838709677419,
+      "cer_pct": 85.71428571428571
+    },
+    {
+      "group": "full_channel",
+      "recording": "all",
+      "reference_words": 170,
+      "word_errors": 162,
+      "substitutions": 11,
+      "deletions": 151,
+      "insertions": 0,
+      "reference_chars": 1062,
+      "char_errors": 931,
+      "n": 3,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 95.29411764705883,
+      "cer_pct": 87.6647834274953
+    }
+  ],
+  "rows": [
+    {
+      "id": "babel_full_channel_ldc_kazakh_sample",
+      "recording": "babel",
+      "group": "full_channel",
+      "audio_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "reference_sha256": "a2ee17f6d0d4115784bddbfd2285248bff064b7d28e7b5b4f749e10d45c9abe9",
+      "duration_s": 110.04,
+      "scores": {
+        "reference_words": 77,
+        "word_errors": 75,
+        "substitutions": 4,
+        "deletions": 71,
+        "insertions": 0,
+        "reference_chars": 488,
+        "char_errors": 439
+      },
+      "elapsed_s": 2.460940386998118,
+      "status": "ok"
+    },
+    {
+      "id": "material_full_channel_material_kk_inLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "reference_sha256": "84a337fc25b4bafa7f926d6c3c928a519380877b99149777b4d6a1c3695e30d6",
+      "duration_s": 56.14,
+      "scores": {
+        "reference_words": 44,
+        "word_errors": 43,
+        "substitutions": 4,
+        "deletions": 39,
+        "insertions": 0,
+        "reference_chars": 268,
+        "char_errors": 227
+      },
+      "elapsed_s": 0.9840632659979747,
+      "status": "ok"
+    },
+    {
+      "id": "material_full_channel_material_kk_outLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "reference_sha256": "583824f66a9c5595430874805be4bfd50bd7225ed73ef01c9c1e5b62d1ceb942",
+      "duration_s": 56.14,
+      "scores": {
+        "reference_words": 49,
+        "word_errors": 44,
+        "substitutions": 3,
+        "deletions": 41,
+        "insertions": 0,
+        "reference_chars": 306,
+        "char_errors": 265
+      },
+      "elapsed_s": 0.47284712599866907,
+      "status": "ok"
+    }
+  ]
+}

@@ -1,9 +1,14 @@
 # In-process quickstarts
 
 Embed gigastt directly in your app — on-device, no server, no cloud. Each
-binding wraps the same engine: load a model directory once, then transcribe a
+binding wraps the core engine: load a model directory once, then transcribe a
 file or stream PCM16 from a microphone. Errors are native (exceptions / `throws`
 / rejected promises); the model is **side-loaded** (not bundled in the package).
+
+Bindings and the server are released independently. Use the package version
+and model files tested together; the current catalog is in [Models](models.md).
+Python/Swift/Kotlin operations are synchronous. Node inference is asynchronous,
+but its engine constructor still loads synchronously.
 
 ## Get a model (once)
 
@@ -17,6 +22,11 @@ gigastt download            # -> ~/.gigastt/models (no protoc, no on-device quan
 
 On a device, ship that directory with your app (or download it on first run) and
 pass its path to the engine constructor.
+
+## Rust
+
+Use the [gigastt-core examples](../crates/gigastt-core/README.md#usage) for file
+recognition, session checkout and streaming finalization.
 
 ## Python — `pip install gigastt`
 
@@ -122,13 +132,14 @@ engine's serde field names verbatim: `word` / `start` / `end` / `confidence` /
 | Binding | Package | Status |
 |---|---|---|
 | Python | `gigastt` (PyPI) | published — `pip install gigastt` |
-| Node | `gigastt` (npm) | published — `npm install gigastt` |
+| Node | `gigastt` (npm) | published independently — `npm install gigastt` |
 | Swift | SwiftPM (xcframework) | published — mirror repo [ekhodzitsky/gigastt-swift](https://github.com/ekhodzitsky/gigastt-swift), xcframework asset attached to releases |
 | Kotlin | Maven (AAR) | packaging in progress |
 
-Packages are self-contained (onnxruntime is statically linked — see
-[embedding-packaging.md](embedding-packaging.md)); only the model directory is
-side-loaded.
+CPU desktop packages normally link ONNX Runtime statically. Android and the
+Swift x86_64 simulator have additional native-library requirements; use their
+packaging guides and [linking reference](embedding-packaging.md). Models are
+side-provisioned in every case.
 
 ## Client SDKs for the server (Go / TypeScript)
 
@@ -151,7 +162,9 @@ backoff that honors the server's `retry_after_ms` hint on pool saturation.
   // client.SendPCM(pcm16) ... client.Stop()
   ```
 
-- **TypeScript** — package `@gigastt/client` (Node ≥ 20 and browsers), see
+- **TypeScript** — source package `@gigastt/client` (Node ≥ 20 and browsers).
+  It is not currently available from the public npm registry; build/install
+  the local package as described in
   [sdks/js/README.md](../sdks/js/README.md):
 
   ```ts

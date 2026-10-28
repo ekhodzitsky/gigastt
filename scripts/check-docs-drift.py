@@ -24,8 +24,8 @@ Ten checks, all stdlib-only (no third-party deps, no network):
      marker block in crates/gigastt-core/src/inference/audio/decode.rs, and every format
      is named in docs/api.md and docs/cli.md. When adding a codec, update all
      three places (marker, FORMATS, docs) in the same commit.
-  6. Relative links: every relative markdown link in docs/**, .github/*.md,
-     the root README*, and packaging/**/README* resolves to an existing file/directory, and
+  6. Relative links: every relative markdown link in public Markdown files
+     (tracked or unignored, including crate/SDK/benchmark READMEs) resolves, and
      #anchors resolve to a heading in the target file.
   7. OpenAPI paths: every `paths:` key in docs/openapi.yaml is registered in
      crates/gigastt/src/server/{mod,router,listen}.rs (or is the separate metrics listener),
@@ -45,6 +45,7 @@ from __future__ import annotations
 import argparse
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from urllib.parse import unquote
@@ -567,11 +568,13 @@ def heading_slugs(path: Path) -> set[str]:
 
 
 def link_check_files() -> list[Path]:
-    files = sorted((ROOT / "docs").rglob("*.md"))
-    files += sorted((ROOT / ".github").glob("*.md"))
-    files += sorted(ROOT.glob("README*.md"))
-    files += sorted((ROOT / "packaging").rglob("README*"))
-    return [f for f in files if f.is_file()]
+    # Git excludes local planning, virtualenvs and generated ignored state while
+    # including new public docs before staging. A deleted tracked file is skipped.
+    names = subprocess.check_output(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z", "--", "*.md"],
+        cwd=ROOT,
+    ).decode().split("\0")
+    return sorted({ROOT / name for name in names if name and (ROOT / name).is_file()})
 
 
 def check_links() -> list[str]:

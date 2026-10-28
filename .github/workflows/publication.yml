@@ -44,7 +44,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Test publication guard
-        run: python3 -m unittest discover -s scripts -p test_check_publication.py
+        run: |
+          python3 -m unittest discover -s scripts -p test_check_publication.py
+          python3 scripts/test-manual-workflows.py
       - name: Check content and publication metadata
         env:
           BASE_SHA: ${{ inputs.baseline_sha }}
@@ -60,7 +62,9 @@ jobs:
             python3 - "$RUNNER_TEMP/publication-event.json" <<'PYCODE'
           import json, os, sys
           pr = json.load(open(sys.argv[1]))['pull_request']
-          if pr['head']['sha'] != os.environ['GITHUB_SHA'] or pr['head']['repo']['full_name'] != os.environ['GITHUB_REPOSITORY']:
+          # Fork heads may be mirrored by a maintainer for manual CI. Require
+          # the exact reviewed commit and this repository as the PR destination.
+          if pr['head']['sha'] != os.environ['GITHUB_SHA'] or pr['base']['repo']['full_name'] != os.environ['GITHUB_REPOSITORY']:
               sys.exit('Pull request does not match this checked-out source')
           PYCODE
             python3 scripts/check-publication.py --event-file "$RUNNER_TEMP/publication-event.json"

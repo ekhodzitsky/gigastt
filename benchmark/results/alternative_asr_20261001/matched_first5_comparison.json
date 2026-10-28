@@ -1,0 +1,180 @@
+{
+  "selection": "First five entries of the existing 31-clip Kazakh manifest, fixed before this subset run. First clip had served as implementation smoke test. This is a small nonrandom pilot, not the complete benchmark.",
+  "ids": [
+    "kzaudio_1",
+    "kzaudio_2",
+    "kzaudio_3",
+    "kzaudio_4",
+    "kzaudio_5"
+  ],
+  "conditions": [
+    "original",
+    "simulated_telephone"
+  ],
+  "comparison": "Exact same audio file SHA256 and reference strings verified for every paired request; metric is normalized single-reference micro WER/CER.",
+  "timing": "Do not compare timing across these runs; host load, threads and inference frameworks differ.",
+  "runs": [
+    {
+      "model": "Whisper Kazakh/Russian LoRA, PyTorch BF16, beam5",
+      "source": "kazakh_first5_bf16.json",
+      "summary": [
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "verbatim",
+          "n": 5,
+          "audio_s": 35.171,
+          "elapsed_s": 183.59725030325353,
+          "rtf": 5.220131651168677,
+          "wer_pct": 28.72340425531915,
+          "cer_pct": 8.842443729903536,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "normalized",
+          "n": 5,
+          "audio_s": 35.171,
+          "elapsed_s": 183.59725030325353,
+          "rtf": 5.220131651168677,
+          "wer_pct": 10.638297872340425,
+          "cer_pct": 3.2102728731942216,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "simulated_telephone",
+          "reference_layer": "verbatim",
+          "n": 5,
+          "audio_s": 35.171124999999996,
+          "elapsed_s": 168.77982374024577,
+          "rtf": 4.798817886554547,
+          "wer_pct": 27.659574468085108,
+          "cer_pct": 9.32475884244373,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "simulated_telephone",
+          "reference_layer": "normalized",
+          "n": 5,
+          "audio_s": 35.171124999999996,
+          "elapsed_s": 168.77982374024577,
+          "rtf": 4.798817886554547,
+          "wer_pct": 10.638297872340425,
+          "cer_pct": 4.012841091492777,
+          "empty_hypotheses": 0
+        }
+      ]
+    },
+    {
+      "model": "gigastt ml_ctc INT8, previous PCM16-resampling candidate",
+      "source": "benchmark/results/narrowband_20261001/candidate_kazakh_ml_ctc.json",
+      "summary": [
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "verbatim",
+          "n": 5,
+          "audio_s": 35.1706875,
+          "elapsed_s": 0.9785606118384749,
+          "rtf": 0.027823186903539344,
+          "wer_pct": 28.72340425531915,
+          "cer_pct": 8.520900321543408,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "normalized",
+          "n": 5,
+          "audio_s": 35.1706875,
+          "elapsed_s": 0.9785606118384749,
+          "rtf": 0.027823186903539344,
+          "wer_pct": 9.574468085106384,
+          "cer_pct": 2.407704654895666,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "simulated_telephone",
+          "reference_layer": "verbatim",
+          "n": 5,
+          "audio_s": 35.169875000000005,
+          "elapsed_s": 0.9510977568570524,
+          "rtf": 0.02704296665419062,
+          "wer_pct": 60.638297872340424,
+          "cer_pct": 38.10289389067524,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "simulated_telephone",
+          "reference_layer": "normalized",
+          "n": 5,
+          "audio_s": 35.169875000000005,
+          "elapsed_s": 0.9510977568570524,
+          "rtf": 0.02704296665419062,
+          "wer_pct": 55.319148936170215,
+          "cer_pct": 34.99197431781702,
+          "empty_hypotheses": 0
+        }
+      ]
+    },
+    {
+      "model": "gigastt ml_ctc_large INT8, previous PCM16-resampling candidate",
+      "source": "benchmark/results/narrowband_20261001/candidate_kazakh_ml_ctc_large.json",
+      "summary": [
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "verbatim",
+          "n": 5,
+          "audio_s": 35.1706875,
+          "elapsed_s": 2.1120195055846125,
+          "rtf": 0.060050560728578666,
+          "wer_pct": 29.78723404255319,
+          "cer_pct": 9.32475884244373,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "normalized",
+          "n": 5,
+          "audio_s": 35.1706875,
+          "elapsed_s": 2.1120195055846125,
+          "rtf": 0.060050560728578666,
+          "wer_pct": 9.574468085106384,
+          "cer_pct": 3.2102728731942216,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "simulated_telephone",
+          "reference_layer": "verbatim",
+          "n": 5,
+          "audio_s": 35.169875000000005,
+          "elapsed_s": 2.3450187996495515,
+          "rtf": 0.0666769159586024,
+          "wer_pct": 45.744680851063826,
+          "cer_pct": 24.115755627009648,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "simulated_telephone",
+          "reference_layer": "normalized",
+          "n": 5,
+          "audio_s": 35.169875000000005,
+          "elapsed_s": 2.3450187996495515,
+          "rtf": 0.0666769159586024,
+          "wer_pct": 36.170212765957444,
+          "cer_pct": 20.545746388443018,
+          "empty_hypotheses": 0
+        }
+      ]
+    }
+  ]
+}

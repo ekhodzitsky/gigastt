@@ -8,6 +8,8 @@
 # dialect / archaic / misrecognized spellings ("nothin", "answerd", "jus") that
 # are the data, not typos we own — spell-checking them is meaningless.
 extend-exclude = [
+    # Upstream sources are kept verbatim apart from the documented security patches.
+    "vendor/",
     "benchmark/manifests/",
     "benchmark/results/",
     "benchmark/results_full/",

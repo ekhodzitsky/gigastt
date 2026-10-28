@@ -8,7 +8,7 @@ and run is inside this tarball: no HuggingFace, no GitHub, no network at all.
 
 ```
 bin/gigastt                          the server / CLI binary (statically linked onnxruntime)
-models/v3_rnnt_encoder_int8.onnx     pre-quantized INT8 Conformer encoder (~215 MB)
+models/v3_rnnt_encoder_int8.onnx     pre-quantized INT8 Conformer encoder (~305 MiB in the current model bundle)
 models/v3_rnnt_decoder.onnx          LSTM prediction network
 models/v3_rnnt_joint.onnx            RNN-T joiner
 models/v3_vocab.txt                  34-token character vocabulary
@@ -28,14 +28,15 @@ tar xf gigastt-<version>-offline-<target>.tar.gz -C gigastt-offline
 cd gigastt-offline
 sudo ./install.sh
 sudo systemctl enable --now gigastt
-curl http://127.0.0.1:9876/health
-# {"status":"ok","model":"gigaam-v3-rnnt","variant":"rnnt",...}
+curl --fail http://127.0.0.1:9876/ready
+# Wait for HTTP 200 before transcribing; /health can answer during startup.
 ```
 
 Transcribe a file to verify the full pipeline:
 
 ```sh
-gigastt transcribe sample.wav            # add --model-dir /usr/share/gigastt/models if running uninstalled
+gigastt --offline transcribe sample.wav --model-dir /usr/share/gigastt/models \
+  --punct-model-dir /usr/share/gigastt/models/punct
 ```
 
 `install.sh` options: `--prefix`, `--model-root`, `--systemd`, `--no-systemd`, `--user`
@@ -44,15 +45,15 @@ gigastt transcribe sample.wav            # add --model-dir /usr/share/gigastt/mo
 
 ## Verify before you install
 
-The tarball itself is signed exactly like every other gigastt release
-artifact — verify it **before** unpacking on the target machine
-(see `docs/verifying-releases.md` for the full story):
+Verify the tarball before unpacking on the target machine. Checksums and build
+provenance are published; minisign signatures are optional when signing is not
+configured. See the [release verification guide](https://github.com/ekhodzitsky/gigastt/blob/main/docs/verifying-releases.md):
 
 ```sh
 # 1. SHA-256 sidecar published next to the tarball on the release page:
 sha256sum -c gigastt-<version>-offline-<target>.tar.gz.sha256
 
-# 2. minisign signature (protects against a compromised release):
+# 2. If this release provides a minisign signature:
 minisign -Vm gigastt-<version>-offline-<target>.tar.gz -p gigastt.pub
 
 # 3. SLSA build provenance:

@@ -1,0 +1,2857 @@
+{
+  "metadata": {
+    "source_model_sha256": "24aa92be5994fa8b9f1ce40fe59fc9693de0ce6af415011b7c0b4480c7fcf733",
+    "selected_head_sha256": "978357449500128a1c4ac346258774258d12dc44f04a2328a2a180cf74b3ff4e",
+    "selected_epoch": 0,
+    "selection": "Lowest validation combined clean/telephone micro WER; unmodified epoch zero included; ties retain earlier checkpoint",
+    "train_count": 256,
+    "eligible_training_count": 196,
+    "excluded_training": [
+      {
+        "id": "fleurs_kk_777_5",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_777_5",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_548_10",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "2",
+          "4",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_548_10",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "2",
+          "4",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_249_14",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "id": "fleurs_kk_249_14",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1073_16",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1073_16",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_6_18",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_6_18",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_436_31",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5",
+          "7",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_436_31",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5",
+          "7",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_470_38",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "4",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_470_38",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "4",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_436_54",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5",
+          "7",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_436_54",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5",
+          "7",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_576_56",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "7"
+        ]
+      },
+      {
+        "id": "fleurs_kk_576_56",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "7"
+        ]
+      },
+      {
+        "id": "fleurs_kk_305_58",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "6",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_305_58",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "6",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_886_63",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2"
+        ]
+      },
+      {
+        "id": "fleurs_kk_886_63",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2"
+        ]
+      },
+      {
+        "id": "fleurs_kk_433_65",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "3",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_433_65",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "3",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1098_66",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1098_66",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_722_78",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "id": "fleurs_kk_722_78",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1249_87",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "2"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1249_87",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "2"
+        ]
+      },
+      {
+        "id": "fleurs_kk_304_89",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_304_89",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_98_96",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "6",
+          "7"
+        ]
+      },
+      {
+        "id": "fleurs_kk_98_96",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "6",
+          "7"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1014_99",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "2",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "id": "fleurs_kk_1014_99",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "2",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      {
+        "id": "fleurs_kk_195_100",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "2",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_195_100",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "2",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_7_105",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "4",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_7_105",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "4",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_298_110",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "id": "fleurs_kk_298_110",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "id": "fleurs_kk_279_111",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2",
+          "3"
+        ]
+      },
+      {
+        "id": "fleurs_kk_279_111",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2",
+          "3"
+        ]
+      },
+      {
+        "id": "fleurs_kk_314_112",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_314_112",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_28_118",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_28_118",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "id": "fleurs_kk_421_120",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_421_120",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_8_123",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "id": "fleurs_kk_8_123",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1"
+        ]
+      },
+      {
+        "id": "fleurs_kk_6_127",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_6_127",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "2",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_188_132",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "3",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_188_132",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "1",
+          "3",
+          "5"
+        ]
+      },
+      {
+        "id": "fleurs_kk_429_140",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "5",
+          "6",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_429_140",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "0",
+          "1",
+          "5",
+          "6",
+          "8"
+        ]
+      },
+      {
+        "id": "fleurs_kk_703_142",
+        "condition": "original",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "6"
+        ]
+      },
+      {
+        "id": "fleurs_kk_703_142",
+        "condition": "simulated_telephone",
+        "reason": "characters outside model vocabulary",
+        "characters": [
+          "6"
+        ]
+      }
+    ],
+    "validation_count": 64,
+    "test_count": 132,
+    "train_manifest_sha256": "1ebff9b8fc6805f47fde4272425e6f80629a351e1af4d3383343fcd5b17b1011",
+    "validation_manifest_sha256": "ed18225595713fbda85c1c18a39baae090fa94a707b9ec79f7c06bd6ccb5b1e7",
+    "test_manifest_sha256": "e9622e40cbedbce172551de00f002a9b4f9176170ebc16988645426f7ed164cd",
+    "epochs": 3,
+    "learning_rate": 2e-05,
+    "batch_size": 8,
+    "seed": 42,
+    "torch": "2.14.1+cpu",
+    "trainable_parameters": 54599,
+    "frozen_encoder": true,
+    "checkpoint_scope": "CTC head only; laboratory artifact; not exported or deployed"
+  },
+  "before": {
+    "wer_percent": 29.38701923076923,
+    "groups": {
+      "kazakh/original": {
+        "n": 31,
+        "errors": 36,
+        "ref_words": 529,
+        "empty": 0,
+        "wer_percent": 6.805293005671078
+      },
+      "kazakh/simulated_telephone": {
+        "n": 31,
+        "errors": 218,
+        "ref_words": 529,
+        "empty": 0,
+        "wer_percent": 41.209829867674856
+      },
+      "telephone_first30_diagnostic/original": {
+        "n": 1,
+        "errors": 28,
+        "ref_words": 28,
+        "empty": 0,
+        "wer_percent": 100.0
+      },
+      "uzbek/original": {
+        "n": 10,
+        "errors": 37,
+        "ref_words": 190,
+        "empty": 0,
+        "wer_percent": 19.473684210526315
+      },
+      "uzbek/simulated_telephone": {
+        "n": 10,
+        "errors": 40,
+        "ref_words": 190,
+        "empty": 0,
+        "wer_percent": 21.05263157894737
+      },
+      "telephone_oracle_segments/original": {
+        "n": 24,
+        "errors": 60,
+        "ref_words": 77,
+        "empty": 1,
+        "wer_percent": 77.92207792207792
+      },
+      "material_telephone_oracle_segments/original": {
+        "n": 24,
+        "errors": 42,
+        "ref_words": 93,
+        "empty": 1,
+        "wer_percent": 45.16129032258065
+      },
+      "telephone_first24_815_diagnostic/original": {
+        "n": 1,
+        "errors": 28,
+        "ref_words": 28,
+        "empty": 0,
+        "wer_percent": 100.0
+      }
+    },
+    "details": [
+      {
+        "id": "kazakh_kzaudio_1_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 17,
+        "audio_sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23"
+      },
+      {
+        "id": "kazakh_kzaudio_1_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 5,
+        "ref_words": 17,
+        "audio_sha256": "9611a649df4eda78a89bbd083bb75c4d3198edbc678246b05680c0226c527e04"
+      },
+      {
+        "id": "telephone_first30",
+        "condition": "original",
+        "group": "telephone_first30_diagnostic/original",
+        "errors": 28,
+        "ref_words": 28,
+        "audio_sha256": "3bd5b8f65575b5ef3dea0b5b688fcc4ef411d609714019dc855afa192069ee74"
+      },
+      {
+        "id": "kazakh_kzaudio_2_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 5,
+        "ref_words": 27,
+        "audio_sha256": "d134cb07b5ba7bf729fe292343ebbf8818f6d32974663bf2029d3cf4b2855610"
+      },
+      {
+        "id": "kazakh_kzaudio_2_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 5,
+        "ref_words": 27,
+        "audio_sha256": "3ba803fa3f3d7ef90e36be4e2f0ae8445cd5caad93480ac2ce577259c2a2d53e"
+      },
+      {
+        "id": "kazakh_kzaudio_3_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 3,
+        "ref_words": 14,
+        "audio_sha256": "cfdffd097e768d7f06c0ee693751786df41e132e31be3d41e7b12e7b3e973a11"
+      },
+      {
+        "id": "kazakh_kzaudio_3_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 3,
+        "ref_words": 14,
+        "audio_sha256": "adc08b474617c41ca7cea9d2b95a5e18777a789f49bf8507e1a0068d02b6d994"
+      },
+      {
+        "id": "kazakh_kzaudio_4_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 17,
+        "audio_sha256": "89914316cd562d25ecfbf58e591c9719bc559b05ba948e64ef4f89fb43dc0525"
+      },
+      {
+        "id": "kazakh_kzaudio_4_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 4,
+        "ref_words": 17,
+        "audio_sha256": "08356565974edcc1c98e858b8af717201a231c6068c66d78acd975528f595cda"
+      },
+      {
+        "id": "kazakh_kzaudio_5_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 19,
+        "audio_sha256": "91b326e15609d60b3aa873dc45a47dad9e80e0476e6ecb8f0c640c0983d2cdf6"
+      },
+      {
+        "id": "kazakh_kzaudio_5_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 19,
+        "ref_words": 19,
+        "audio_sha256": "3035c5608334d5a2c7e28b9c3425c762dd0d0212b4e07b90f20f53b34358dbfb"
+      },
+      {
+        "id": "kazakh_kzaudio_6_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 3,
+        "ref_words": 20,
+        "audio_sha256": "8315d017f07938cbbaae272e45cd07f7c149cf98ab171c859d1f3f64879f79d2"
+      },
+      {
+        "id": "kazakh_kzaudio_6_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 3,
+        "ref_words": 20,
+        "audio_sha256": "c6a7298d32183e991bdd7d6ed3edad2a22e5c6d7fc5ca3590e81d0b404937940"
+      },
+      {
+        "id": "kazakh_kzaudio_7_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 25,
+        "audio_sha256": "358481caa369a06e14e74326f812c702871239be9c780b63f59e80a38aed181d"
+      },
+      {
+        "id": "kazakh_kzaudio_7_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 25,
+        "audio_sha256": "1e2b3c9f33ecc423972a6e6c8fe9a75677ffe44945a4452973956b759d7c66e5"
+      },
+      {
+        "id": "kazakh_kzaudio_8_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 13,
+        "audio_sha256": "746aa1a2efa5335976e005c4d126de096d3a3994219370985725ada6d5b8defb"
+      },
+      {
+        "id": "kazakh_kzaudio_8_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 13,
+        "audio_sha256": "8d21e1d34fc2df5f7f3651b1fbd0adb82e04d234591c0bac56371261602c97b2"
+      },
+      {
+        "id": "kazakh_kzaudio_9_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 15,
+        "audio_sha256": "4d842786273bec362e5ca8e7f6e5f651e5bc5299835b79c8fd30a9efecad8f5c"
+      },
+      {
+        "id": "kazakh_kzaudio_9_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 1,
+        "ref_words": 15,
+        "audio_sha256": "3376c22220d77f8c15cb2a279a284c8f6fa37d56a09670c970aed06fdd14045c"
+      },
+      {
+        "id": "kazakh_kzaudio_10_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "0250327eed31a59b90d4846acb5969445404a50f875584dea4cf64afb63c5de1"
+      },
+      {
+        "id": "kazakh_kzaudio_10_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "681076ebc2d8b830e88d6ed98441cf9c4b6d0e29e368937f391e89e317d6f141"
+      },
+      {
+        "id": "kazakh_kzaudio_11_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 8,
+        "audio_sha256": "72c8776a1206687a0afc6d258f2eafe5a5b78b9ee099c064924486fdcd42ddaf"
+      },
+      {
+        "id": "kazakh_kzaudio_11_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 8,
+        "audio_sha256": "87140b17b61c6722ba13f987412d018b84a6cf8a092dc2121da59fde86e549ab"
+      },
+      {
+        "id": "kazakh_kzaudio_12_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 19,
+        "audio_sha256": "92e9453ab7eaac310cd11fe57248f89a3b2184b9a982bbf41588d3621b4d4f5e"
+      },
+      {
+        "id": "kazakh_kzaudio_12_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 3,
+        "ref_words": 19,
+        "audio_sha256": "48c087d8d052b1f57ff2df68f27b522b659640f2617bb491ec9b21d5f78543db"
+      },
+      {
+        "id": "kazakh_kzaudio_13_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 10,
+        "audio_sha256": "f23d33cfcb09191e71df20ebc856da53676e73dfd2755b493fa6755098972250"
+      },
+      {
+        "id": "kazakh_kzaudio_13_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 10,
+        "audio_sha256": "0183a50160f51b1f6a4ddeccfed8fbb6bda50dcc35c0b2eb3bca40dcd6c7a983"
+      },
+      {
+        "id": "kazakh_kzaudio_14_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 18,
+        "audio_sha256": "81da06b2e66d588eaa8c135d62ef4e10510647e56e3365c213cf5d173e1bbb87"
+      },
+      {
+        "id": "kazakh_kzaudio_14_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 18,
+        "ref_words": 18,
+        "audio_sha256": "608c95687ec7acb54c333f4f10f627ed7827800195288e4d9df1865099a307cf"
+      },
+      {
+        "id": "kazakh_kzaudio_15_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 14,
+        "audio_sha256": "a94179cd397e4ecca7c5ce37ca9d7e9e991c6006616de5b1327bacb604640cc7"
+      },
+      {
+        "id": "kazakh_kzaudio_15_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 5,
+        "ref_words": 14,
+        "audio_sha256": "c7895978c945e1d1bedbe73407ced05242297bc5c14187b21fc53df4e2bf0454"
+      },
+      {
+        "id": "kazakh_kzaudio_16_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 11,
+        "audio_sha256": "ae917a4a9435e9d6e7c73e18bbab5224be32fa82c59662cdf46784d85d4768d0"
+      },
+      {
+        "id": "kazakh_kzaudio_16_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 1,
+        "ref_words": 11,
+        "audio_sha256": "3552405f7110ae8c7ca89d1081c914cceac29b06e32efeaeef4ddfb909a3063e"
+      },
+      {
+        "id": "kazakh_kzaudio_17_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 32,
+        "audio_sha256": "2e18368f76ceb7214f1aa8302dd56919fc711b181ae64bb41c1ebd93cb144dc8"
+      },
+      {
+        "id": "kazakh_kzaudio_17_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 7,
+        "ref_words": 32,
+        "audio_sha256": "9f3398e674acb4684abacb131e0cb593326dcc87edebbbf44bffe7724f84bbec"
+      },
+      {
+        "id": "kazakh_kzaudio_18_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 19,
+        "audio_sha256": "cfba504999465cae00378a5c439a8196dd2ee0aff3249cc110716a4e8d0320ba"
+      },
+      {
+        "id": "kazakh_kzaudio_18_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 19,
+        "ref_words": 19,
+        "audio_sha256": "91c977a2269b513cd69a1643249f539f3085e3ca4d423eeb601cd0bac48e0403"
+      },
+      {
+        "id": "kazakh_kzaudio_19_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 14,
+        "audio_sha256": "4013f9159a0fe3cf4de177150150550033472995eed8352eea5c0cf98e442985"
+      },
+      {
+        "id": "kazakh_kzaudio_19_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 9,
+        "ref_words": 14,
+        "audio_sha256": "5b5c47d4445443ad2a7a08b613e4e91c13c375374f87ae7f2f672c7df07b9bf5"
+      },
+      {
+        "id": "kazakh_kzaudio_20_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 4,
+        "ref_words": 13,
+        "audio_sha256": "b3e7408214f1662154be5708ca12b97067f5885f80ae8624f57970aba65842b0"
+      },
+      {
+        "id": "kazakh_kzaudio_20_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 1,
+        "ref_words": 13,
+        "audio_sha256": "7c3539418a726af005760630de39d4783424555532e8893c41bc8f82ff480ae1"
+      },
+      {
+        "id": "kazakh_kzaudio_21_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 28,
+        "audio_sha256": "967245c3d151cfe53f7c61d04cf6e6d9839d59c87aae59de4fc4df9487ab0bf3"
+      },
+      {
+        "id": "kazakh_kzaudio_21_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 28,
+        "audio_sha256": "0e1ccff5b4a22960b0c3b55b93b9abb7d70e53262091991fdfa6170988d99d45"
+      },
+      {
+        "id": "kazakh_kzaudio_22_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 28,
+        "audio_sha256": "75ed5c17a0c224215f9f6868a9c67a6e23baaea6ff5cf6a6f16866149ec9078d"
+      },
+      {
+        "id": "kazakh_kzaudio_22_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 26,
+        "ref_words": 28,
+        "audio_sha256": "d195464f59ca74f40b6c2d53fe48318fb6c3d31780a7146b004da289ea4323f7"
+      },
+      {
+        "id": "kazakh_kzaudio_23_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 3,
+        "ref_words": 17,
+        "audio_sha256": "e310bae5081898f4682c93926b51758ef8e97174cb38c9b1a17bba55e71a632e"
+      },
+      {
+        "id": "kazakh_kzaudio_23_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 17,
+        "ref_words": 17,
+        "audio_sha256": "3f1f55d31fb4bbd53a46c55d3978a79c76395dccd8f2c05354daf7ebe95650dc"
+      },
+      {
+        "id": "kazakh_kzaudio_24_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 16,
+        "audio_sha256": "53bf36436bf2de6d8b06c44e1182a430a14fca67e58b2a366c57180a41b75d8d"
+      },
+      {
+        "id": "kazakh_kzaudio_24_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 9,
+        "ref_words": 16,
+        "audio_sha256": "7d76eea4bbb8e6951b0095d8270ca4db85eaf303a9ad6ce79214384546ac7d2b"
+      },
+      {
+        "id": "kazakh_kzaudio_25_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 21,
+        "audio_sha256": "2c036f75c0504d6de98b89c578ef76a0ca524806eddb434d1c23c7f12d8aa2ab"
+      },
+      {
+        "id": "kazakh_kzaudio_25_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 21,
+        "audio_sha256": "1e8b880eb76dc61ef9ecfa7d3cb44ed964a716df02ba36a49ad7c350af9d6e75"
+      },
+      {
+        "id": "kazakh_kzaudio_26_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 18,
+        "audio_sha256": "b90f2a39a4e0c56fbc3b3cd89adad882b4359f8ca9155b4f86b87590919316d2"
+      },
+      {
+        "id": "kazakh_kzaudio_26_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 17,
+        "ref_words": 18,
+        "audio_sha256": "cb9174f8fac598a0b649facc359625d04094162dc8dcb56fda9e91b5ae70a36e"
+      },
+      {
+        "id": "kazakh_kzaudio_27_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 11,
+        "audio_sha256": "23af5c986894406e6b367190696ed0d874b237c48238254bb930c2991dd9b5a8"
+      },
+      {
+        "id": "kazakh_kzaudio_27_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 9,
+        "ref_words": 11,
+        "audio_sha256": "ca443e0c907b1a536b35bd09be7dd93b0c3d294bdc58b6c38c254abb27fbcc00"
+      },
+      {
+        "id": "kazakh_kzaudio_28_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 12,
+        "audio_sha256": "ca204f8844d9201e588db2b92fbe38b1327193b757a29ec4caed712d327829f5"
+      },
+      {
+        "id": "kazakh_kzaudio_28_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 10,
+        "ref_words": 12,
+        "audio_sha256": "6fd18da772657c8a92b69f150c0dd8ffbba6b4c8fed67958f01f88db4e0c8f0c"
+      },
+      {
+        "id": "kazakh_kzaudio_29_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 19,
+        "audio_sha256": "0dfd4b9b597a95d79c5501fd3c959bf2a56e0e7418c82827ff30552719ca6450"
+      },
+      {
+        "id": "kazakh_kzaudio_29_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 11,
+        "ref_words": 19,
+        "audio_sha256": "f7d29d5fd559a088a84cb75c637d38594794d96c1e0712199167484c24340404"
+      },
+      {
+        "id": "kazakh_kzaudio_30_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 8,
+        "audio_sha256": "fea0c5b5c3fcf7c9277af69ae7212fe42eda8a0853596e388dee9508da8be2a0"
+      },
+      {
+        "id": "kazakh_kzaudio_30_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 8,
+        "audio_sha256": "b3c30b9bb607d31517e06a60d560d7b755b793de888aabb83cd3571b55c18575"
+      },
+      {
+        "id": "kazakh_kzaudio_31_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 13,
+        "audio_sha256": "d2cbcffc28fb8012cca76533e4d69d2d84a02492e563f11a9898287b3de5150a"
+      },
+      {
+        "id": "kazakh_kzaudio_31_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 8,
+        "ref_words": 13,
+        "audio_sha256": "27a4f7faa5fdf0aaf820a8827dae14fe20a7b7b4350262068e9868501995595e"
+      },
+      {
+        "id": "uzbek_fleurs_uz_2004_6_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 2,
+        "ref_words": 18,
+        "audio_sha256": "d8f3e0efb3c4b19bf7293c06efb61811c347109c0798f645de759199d038c951"
+      },
+      {
+        "id": "uzbek_fleurs_uz_2004_6_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 2,
+        "ref_words": 18,
+        "audio_sha256": "838d29c39e642bd6c121650d11daf39d046a7d2cdbaedc6a9aee77391be46497"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1977_25_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 1,
+        "ref_words": 18,
+        "audio_sha256": "9243f137d156deab28075af3881a7b8e05ebc56e965286d6a8c77d9985a19fe0"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1977_25_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 1,
+        "ref_words": 18,
+        "audio_sha256": "eb9f60a64dc65977936d609cd27b6487e7e8de3367cc763df0b4bfc63505239a"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1721_27_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 12,
+        "ref_words": 13,
+        "audio_sha256": "560192e88bfaa1b941e427a21074734a17e9747ec7bfb9ae5b826613600e94df"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1721_27_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 12,
+        "ref_words": 13,
+        "audio_sha256": "2bb8e263ce33e993f6d79559df3ea20e99abf8f92f370acc0ddfe75572387e74"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1706_30_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 4,
+        "ref_words": 23,
+        "audio_sha256": "8e92097520b326ac829906d630216795da10b2993402a9253f8a4015daec5742"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1706_30_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 5,
+        "ref_words": 23,
+        "audio_sha256": "d733f0937edb6feb1922bef842cc2e174774ca15215c47d517cb767fe27b7379"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1711_32_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 1,
+        "ref_words": 23,
+        "audio_sha256": "f91ad68db16446757bc454139cd296b661f78bbfffd2768dcf86b4ad740c3073"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1711_32_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 2,
+        "ref_words": 23,
+        "audio_sha256": "bf23c6ba9c38297d8c72b93187ef05a0c8425573893a2308546f381d40e57b2b"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1798_44_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 0,
+        "ref_words": 20,
+        "audio_sha256": "35e1a8e5b18f14d07cd0dcf5dd6e828dd336bf9a5faec9953ab5fd0d3c65cc99"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1798_44_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 2,
+        "ref_words": 20,
+        "audio_sha256": "90a523ae8991fc44e8532b14ca46f0642b42efc5b0ff8b05e09f6219f17d8b45"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1927_46_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 4,
+        "ref_words": 15,
+        "audio_sha256": "45402dca172bfb558e1e0f49245cba4f3a9bcff25fd8025adc75166c652adf9d"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1927_46_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 3,
+        "ref_words": 15,
+        "audio_sha256": "ba7b2769dfea3a5c1c8f95ee9f42eddb4302c1ec3372876db063137723cf1314"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1961_71_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 5,
+        "ref_words": 32,
+        "audio_sha256": "9113e9e6e2ccd8c52b61f967541e1660e44a59d04297acdbee3bc3a4fd6abe8b"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1961_71_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 5,
+        "ref_words": 32,
+        "audio_sha256": "a362488b464539f9f147ae6e23e8850e55acedbe1b01d8869a3931654f133637"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1951_73_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 8,
+        "ref_words": 15,
+        "audio_sha256": "112b8628e14997794ec27cb426ab6d8a82f751b10f97b4f87560ba8cef267b1a"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1951_73_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 8,
+        "ref_words": 15,
+        "audio_sha256": "698617a784c98a33ab91d71fabeb9e3836941fe1a6d22a1404e63b3fd2a7e190"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1966_80_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "e7fee9008c85fb57a3ae9ef387e4cdf7392a6abb23410dfbfd532e79a7d49fab"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1966_80_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "f2d19d2f32e0c70d4141a20b8d87f77d8b76f9cc854734bc7c1793b948b7a50f"
+      },
+      {
+        "id": "telephone_oracle_segments_00_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "2e8afd7f806efc9367e115b4e289fec6e9d576288018e8de2c6d89579f869ce5"
+      },
+      {
+        "id": "telephone_oracle_segments_01_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "f71c8d9c78889aca4b8c352c682a1a097412e1a57a1c96f482a708c2d2f8436e"
+      },
+      {
+        "id": "telephone_oracle_segments_02_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "79abecba0295b73eca00f07c8eca14fbe5573139cbf0ac967b66897d7d10c5f3"
+      },
+      {
+        "id": "telephone_oracle_segments_03_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "0051f30a9428c9223f24f04fc8b7bdcf4b498390d90cedb37aa227084d9760ca"
+      },
+      {
+        "id": "telephone_oracle_segments_04_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "4df49044d5b8ccc360deb45d1ce250d86d53101516b57f05f22ef7ff7ad99511"
+      },
+      {
+        "id": "telephone_oracle_segments_05_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 9,
+        "ref_words": 15,
+        "audio_sha256": "1573e7c7add8149c52d9dd428f58e4683f602ef83287468c2706284f30e41a98"
+      },
+      {
+        "id": "telephone_oracle_segments_06_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 6,
+        "audio_sha256": "c21dc1bd728923dc42e1bbae5524eb1adeb6958959d8b854b5f78321857eb15b"
+      },
+      {
+        "id": "telephone_oracle_segments_07_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "26baa6fb7c94778649b08d92f54899ae7130801cb93838fa9e0c63e8b5b55993"
+      },
+      {
+        "id": "telephone_oracle_segments_08_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "aa672bf8ffe3e8f02a0dc8991d48cb12cb10ec5d2eb621eabdd92a02449a461b"
+      },
+      {
+        "id": "telephone_oracle_segments_09_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "6a255d212029d08c90ecd4019bd56930ae2ccde83e334da0d1179a7f2b34d202"
+      },
+      {
+        "id": "telephone_oracle_segments_10_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "0c4c49d6b4618165718d4481e304a43c19e18351291b68497ab47d0009008daf"
+      },
+      {
+        "id": "telephone_oracle_segments_11_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "f2c06fc352bab915606582259425f2fa98ec03c725ddfd6a21b7dea58ad92ad1"
+      },
+      {
+        "id": "telephone_oracle_segments_12_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 12,
+        "ref_words": 13,
+        "audio_sha256": "b2eb08fd79b8a4549fc2fd081dc7d77f70ca893f87b18da0a9a2b9b81b82cfec"
+      },
+      {
+        "id": "telephone_oracle_segments_13_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "635d216a1adf6e8a33f371fd789bf157f7887b3a4f448b3bce18e897bb591f79"
+      },
+      {
+        "id": "telephone_oracle_segments_14_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 5,
+        "ref_words": 5,
+        "audio_sha256": "58f26c44d60f486c831bbd5fdeaaaa29c943c69872be8a0dba21ace002f8f9bd"
+      },
+      {
+        "id": "telephone_oracle_segments_15_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "058e6db41f10e243ac4f14ba62513b5b635a38eb6e90ed234a6379b4a0e89442"
+      },
+      {
+        "id": "telephone_oracle_segments_16_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 7,
+        "ref_words": 7,
+        "audio_sha256": "66c16751da0dd9210b3e7e5ba43819111f3c305595eba3b741ee882c8dd4b715"
+      },
+      {
+        "id": "telephone_oracle_segments_17_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "8df56bbb0311fcfc4ce023512157f10f15229785d4602d4ab87141b4f2399431"
+      },
+      {
+        "id": "telephone_oracle_segments_18_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "df54fc4f6f96e4f4ecd939979ef46ff361d3342995199b74610738ffa44c7fa7"
+      },
+      {
+        "id": "telephone_oracle_segments_19_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "7e3b23f6e9ee163ed003ff1aa9ead4a16d87911a84fa3db5ce7687ebeb7fb1bc"
+      },
+      {
+        "id": "telephone_oracle_segments_20_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 3,
+        "audio_sha256": "7f9335fc29167cf2c2a83cdd07058d05f25fa05928cd4e9e643e2c9a2e95693e"
+      },
+      {
+        "id": "telephone_oracle_segments_21_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 5,
+        "ref_words": 5,
+        "audio_sha256": "5be9e57806b5e786fc658721f5a98699625223f31d04c9a84df4f30ed5bcaf85"
+      },
+      {
+        "id": "telephone_oracle_segments_22_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "4a919d5886026547363935e2069ffd28befe414c5b62056c9a39f4fe3b0dd879"
+      },
+      {
+        "id": "telephone_oracle_segments_23_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "9420298db29e54c5f8deb222902ffe38da3a2faaa038281790c56a7997f4e492"
+      },
+      {
+        "id": "material_kk_inLine_01",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 2,
+        "audio_sha256": "f4215fae4b426bae3f6fa6f7be74228318947bdcef14be855fb52faa67737544"
+      },
+      {
+        "id": "material_kk_inLine_02",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 2,
+        "audio_sha256": "50a5ebe917e16d17d95950df32ccdfaac05078e64328d460b747b4a5f428118b"
+      },
+      {
+        "id": "material_kk_inLine_03",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 3,
+        "audio_sha256": "4e294bc0bcc4d98d699b963859fc0ad62c8696576c701452bcba23678d5d08c6"
+      },
+      {
+        "id": "material_kk_inLine_05",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 5,
+        "audio_sha256": "c47e58a91bbda7e21aed875c65cf5d3b931e9eed45d2075669c86e6bc67e49e0"
+      },
+      {
+        "id": "material_kk_inLine_07",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "bda3762bdf9d723a7f35c3ba33f8d7061d6a5dc7120fd52b83416b7b2c4888f7"
+      },
+      {
+        "id": "material_kk_inLine_09",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 5,
+        "audio_sha256": "772f5f31ba5500f3edcb2bf4295f94ae2115cc0bb800ab4420980bdbc3e9afb7"
+      },
+      {
+        "id": "material_kk_inLine_11",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "a5054f467e36b677fbcb07db3abf6780270065fba9bba6c6f8c218fd9f736586"
+      },
+      {
+        "id": "material_kk_inLine_14",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 2,
+        "audio_sha256": "29353f1673e07a0f143195ed62bc0016340d1dff76357ca5f5a90aee3e40650d"
+      },
+      {
+        "id": "material_kk_inLine_15",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 4,
+        "audio_sha256": "30d8074eb3ab518749059ae9c7031eb4743b53c8c2ea82a6da2d2b9596441454"
+      },
+      {
+        "id": "material_kk_inLine_19",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 4,
+        "ref_words": 4,
+        "audio_sha256": "958779ffd3a43695a3a4eba99edaf7008b231fc87f93950bfb16c9ff1273f2ee"
+      },
+      {
+        "id": "material_kk_inLine_20",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 3,
+        "audio_sha256": "38047e5169802fc3454369faf0bc35876af004601f9d2e3353dd39fb0266ef0a"
+      },
+      {
+        "id": "material_kk_inLine_22",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 3,
+        "audio_sha256": "f0e7473291b330719c6c095f384f133c364662d3e31bb4020cf26cebd9059888"
+      },
+      {
+        "id": "material_kk_inLine_24",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "d2c9a2c6d0a68902a77e9291f077b5cd4e69a1536cedbf0d3a6a574906574017"
+      },
+      {
+        "id": "material_kk_inLine_25",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 6,
+        "audio_sha256": "3a4edad066323e2a25911b9c38d0f0ea575c068f255be6e040f8718831f0e871"
+      },
+      {
+        "id": "material_kk_outLine_00",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "b5385fcc7e441d0ae5be6750ce47c1dea3a87d6a10c49671c45309d49b777d6f"
+      },
+      {
+        "id": "material_kk_outLine_02",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 13,
+        "audio_sha256": "51edbc0a49465b4f8fbd38766d036562b18d5cba77a5f1825a3cead551e92ca7"
+      },
+      {
+        "id": "material_kk_outLine_04",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 4,
+        "audio_sha256": "8e423d11915f3013ef35a4767d36605edc8445568278e5957d138607b2433d86"
+      },
+      {
+        "id": "material_kk_outLine_08",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 9,
+        "audio_sha256": "ee73f825eb8f47f4bd4ec6af383a09332a1e11799eab3f9a071923fdcae62087"
+      },
+      {
+        "id": "material_kk_outLine_10",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "d2afdf6776125ff34e5c1f1efad31b8216ad27f65d69aed0d9293bd533257611"
+      },
+      {
+        "id": "material_kk_outLine_12",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 4,
+        "ref_words": 3,
+        "audio_sha256": "fb38ae78fab0659ab953b7d8e7e3474cedae7b96b5e394426ec3ae782cc5d444"
+      },
+      {
+        "id": "material_kk_outLine_14",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 5,
+        "audio_sha256": "09e72181c92fee9a811801e16042ebe180bbdddf9c4dc5d2036603f4bd8b1336"
+      },
+      {
+        "id": "material_kk_outLine_15",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 6,
+        "audio_sha256": "5976da8f970ef4e343032670e472973068532b4a09cde9acf877a80414cace06"
+      },
+      {
+        "id": "material_kk_outLine_17",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "66d66c601fa259cdafa019c588ddffb730931269535c3e51fac7b47be51f6d5d"
+      },
+      {
+        "id": "material_kk_outLine_19",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 4,
+        "audio_sha256": "701535f3fa5b04250abe8ee9d73cd895ddc1362351ba316dbf50f22839b93838"
+      },
+      {
+        "id": "telephone_first24_815",
+        "condition": "original",
+        "group": "telephone_first24_815_diagnostic/original",
+        "errors": 28,
+        "ref_words": 28,
+        "audio_sha256": "10008c70754084dfbe0ca239b903032866b3117b6922e8c99920a77f017b5d5e"
+      }
+    ]
+  },
+  "after": {
+    "wer_percent": 29.38701923076923,
+    "groups": {
+      "kazakh/original": {
+        "n": 31,
+        "errors": 36,
+        "ref_words": 529,
+        "empty": 0,
+        "wer_percent": 6.805293005671078
+      },
+      "kazakh/simulated_telephone": {
+        "n": 31,
+        "errors": 218,
+        "ref_words": 529,
+        "empty": 0,
+        "wer_percent": 41.209829867674856
+      },
+      "telephone_first30_diagnostic/original": {
+        "n": 1,
+        "errors": 28,
+        "ref_words": 28,
+        "empty": 0,
+        "wer_percent": 100.0
+      },
+      "uzbek/original": {
+        "n": 10,
+        "errors": 37,
+        "ref_words": 190,
+        "empty": 0,
+        "wer_percent": 19.473684210526315
+      },
+      "uzbek/simulated_telephone": {
+        "n": 10,
+        "errors": 40,
+        "ref_words": 190,
+        "empty": 0,
+        "wer_percent": 21.05263157894737
+      },
+      "telephone_oracle_segments/original": {
+        "n": 24,
+        "errors": 60,
+        "ref_words": 77,
+        "empty": 1,
+        "wer_percent": 77.92207792207792
+      },
+      "material_telephone_oracle_segments/original": {
+        "n": 24,
+        "errors": 42,
+        "ref_words": 93,
+        "empty": 1,
+        "wer_percent": 45.16129032258065
+      },
+      "telephone_first24_815_diagnostic/original": {
+        "n": 1,
+        "errors": 28,
+        "ref_words": 28,
+        "empty": 0,
+        "wer_percent": 100.0
+      }
+    },
+    "details": [
+      {
+        "id": "kazakh_kzaudio_1_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 17,
+        "audio_sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23"
+      },
+      {
+        "id": "kazakh_kzaudio_1_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 5,
+        "ref_words": 17,
+        "audio_sha256": "9611a649df4eda78a89bbd083bb75c4d3198edbc678246b05680c0226c527e04"
+      },
+      {
+        "id": "telephone_first30",
+        "condition": "original",
+        "group": "telephone_first30_diagnostic/original",
+        "errors": 28,
+        "ref_words": 28,
+        "audio_sha256": "3bd5b8f65575b5ef3dea0b5b688fcc4ef411d609714019dc855afa192069ee74"
+      },
+      {
+        "id": "kazakh_kzaudio_2_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 5,
+        "ref_words": 27,
+        "audio_sha256": "d134cb07b5ba7bf729fe292343ebbf8818f6d32974663bf2029d3cf4b2855610"
+      },
+      {
+        "id": "kazakh_kzaudio_2_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 5,
+        "ref_words": 27,
+        "audio_sha256": "3ba803fa3f3d7ef90e36be4e2f0ae8445cd5caad93480ac2ce577259c2a2d53e"
+      },
+      {
+        "id": "kazakh_kzaudio_3_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 3,
+        "ref_words": 14,
+        "audio_sha256": "cfdffd097e768d7f06c0ee693751786df41e132e31be3d41e7b12e7b3e973a11"
+      },
+      {
+        "id": "kazakh_kzaudio_3_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 3,
+        "ref_words": 14,
+        "audio_sha256": "adc08b474617c41ca7cea9d2b95a5e18777a789f49bf8507e1a0068d02b6d994"
+      },
+      {
+        "id": "kazakh_kzaudio_4_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 17,
+        "audio_sha256": "89914316cd562d25ecfbf58e591c9719bc559b05ba948e64ef4f89fb43dc0525"
+      },
+      {
+        "id": "kazakh_kzaudio_4_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 4,
+        "ref_words": 17,
+        "audio_sha256": "08356565974edcc1c98e858b8af717201a231c6068c66d78acd975528f595cda"
+      },
+      {
+        "id": "kazakh_kzaudio_5_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 19,
+        "audio_sha256": "91b326e15609d60b3aa873dc45a47dad9e80e0476e6ecb8f0c640c0983d2cdf6"
+      },
+      {
+        "id": "kazakh_kzaudio_5_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 19,
+        "ref_words": 19,
+        "audio_sha256": "3035c5608334d5a2c7e28b9c3425c762dd0d0212b4e07b90f20f53b34358dbfb"
+      },
+      {
+        "id": "kazakh_kzaudio_6_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 3,
+        "ref_words": 20,
+        "audio_sha256": "8315d017f07938cbbaae272e45cd07f7c149cf98ab171c859d1f3f64879f79d2"
+      },
+      {
+        "id": "kazakh_kzaudio_6_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 3,
+        "ref_words": 20,
+        "audio_sha256": "c6a7298d32183e991bdd7d6ed3edad2a22e5c6d7fc5ca3590e81d0b404937940"
+      },
+      {
+        "id": "kazakh_kzaudio_7_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 25,
+        "audio_sha256": "358481caa369a06e14e74326f812c702871239be9c780b63f59e80a38aed181d"
+      },
+      {
+        "id": "kazakh_kzaudio_7_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 25,
+        "audio_sha256": "1e2b3c9f33ecc423972a6e6c8fe9a75677ffe44945a4452973956b759d7c66e5"
+      },
+      {
+        "id": "kazakh_kzaudio_8_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 13,
+        "audio_sha256": "746aa1a2efa5335976e005c4d126de096d3a3994219370985725ada6d5b8defb"
+      },
+      {
+        "id": "kazakh_kzaudio_8_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 13,
+        "audio_sha256": "8d21e1d34fc2df5f7f3651b1fbd0adb82e04d234591c0bac56371261602c97b2"
+      },
+      {
+        "id": "kazakh_kzaudio_9_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 15,
+        "audio_sha256": "4d842786273bec362e5ca8e7f6e5f651e5bc5299835b79c8fd30a9efecad8f5c"
+      },
+      {
+        "id": "kazakh_kzaudio_9_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 1,
+        "ref_words": 15,
+        "audio_sha256": "3376c22220d77f8c15cb2a279a284c8f6fa37d56a09670c970aed06fdd14045c"
+      },
+      {
+        "id": "kazakh_kzaudio_10_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "0250327eed31a59b90d4846acb5969445404a50f875584dea4cf64afb63c5de1"
+      },
+      {
+        "id": "kazakh_kzaudio_10_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "681076ebc2d8b830e88d6ed98441cf9c4b6d0e29e368937f391e89e317d6f141"
+      },
+      {
+        "id": "kazakh_kzaudio_11_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 8,
+        "audio_sha256": "72c8776a1206687a0afc6d258f2eafe5a5b78b9ee099c064924486fdcd42ddaf"
+      },
+      {
+        "id": "kazakh_kzaudio_11_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 8,
+        "audio_sha256": "87140b17b61c6722ba13f987412d018b84a6cf8a092dc2121da59fde86e549ab"
+      },
+      {
+        "id": "kazakh_kzaudio_12_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 19,
+        "audio_sha256": "92e9453ab7eaac310cd11fe57248f89a3b2184b9a982bbf41588d3621b4d4f5e"
+      },
+      {
+        "id": "kazakh_kzaudio_12_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 3,
+        "ref_words": 19,
+        "audio_sha256": "48c087d8d052b1f57ff2df68f27b522b659640f2617bb491ec9b21d5f78543db"
+      },
+      {
+        "id": "kazakh_kzaudio_13_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 10,
+        "audio_sha256": "f23d33cfcb09191e71df20ebc856da53676e73dfd2755b493fa6755098972250"
+      },
+      {
+        "id": "kazakh_kzaudio_13_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 10,
+        "audio_sha256": "0183a50160f51b1f6a4ddeccfed8fbb6bda50dcc35c0b2eb3bca40dcd6c7a983"
+      },
+      {
+        "id": "kazakh_kzaudio_14_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 18,
+        "audio_sha256": "81da06b2e66d588eaa8c135d62ef4e10510647e56e3365c213cf5d173e1bbb87"
+      },
+      {
+        "id": "kazakh_kzaudio_14_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 18,
+        "ref_words": 18,
+        "audio_sha256": "608c95687ec7acb54c333f4f10f627ed7827800195288e4d9df1865099a307cf"
+      },
+      {
+        "id": "kazakh_kzaudio_15_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 14,
+        "audio_sha256": "a94179cd397e4ecca7c5ce37ca9d7e9e991c6006616de5b1327bacb604640cc7"
+      },
+      {
+        "id": "kazakh_kzaudio_15_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 5,
+        "ref_words": 14,
+        "audio_sha256": "c7895978c945e1d1bedbe73407ced05242297bc5c14187b21fc53df4e2bf0454"
+      },
+      {
+        "id": "kazakh_kzaudio_16_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 11,
+        "audio_sha256": "ae917a4a9435e9d6e7c73e18bbab5224be32fa82c59662cdf46784d85d4768d0"
+      },
+      {
+        "id": "kazakh_kzaudio_16_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 1,
+        "ref_words": 11,
+        "audio_sha256": "3552405f7110ae8c7ca89d1081c914cceac29b06e32efeaeef4ddfb909a3063e"
+      },
+      {
+        "id": "kazakh_kzaudio_17_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 32,
+        "audio_sha256": "2e18368f76ceb7214f1aa8302dd56919fc711b181ae64bb41c1ebd93cb144dc8"
+      },
+      {
+        "id": "kazakh_kzaudio_17_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 7,
+        "ref_words": 32,
+        "audio_sha256": "9f3398e674acb4684abacb131e0cb593326dcc87edebbbf44bffe7724f84bbec"
+      },
+      {
+        "id": "kazakh_kzaudio_18_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 19,
+        "audio_sha256": "cfba504999465cae00378a5c439a8196dd2ee0aff3249cc110716a4e8d0320ba"
+      },
+      {
+        "id": "kazakh_kzaudio_18_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 19,
+        "ref_words": 19,
+        "audio_sha256": "91c977a2269b513cd69a1643249f539f3085e3ca4d423eeb601cd0bac48e0403"
+      },
+      {
+        "id": "kazakh_kzaudio_19_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 14,
+        "audio_sha256": "4013f9159a0fe3cf4de177150150550033472995eed8352eea5c0cf98e442985"
+      },
+      {
+        "id": "kazakh_kzaudio_19_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 9,
+        "ref_words": 14,
+        "audio_sha256": "5b5c47d4445443ad2a7a08b613e4e91c13c375374f87ae7f2f672c7df07b9bf5"
+      },
+      {
+        "id": "kazakh_kzaudio_20_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 4,
+        "ref_words": 13,
+        "audio_sha256": "b3e7408214f1662154be5708ca12b97067f5885f80ae8624f57970aba65842b0"
+      },
+      {
+        "id": "kazakh_kzaudio_20_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 1,
+        "ref_words": 13,
+        "audio_sha256": "7c3539418a726af005760630de39d4783424555532e8893c41bc8f82ff480ae1"
+      },
+      {
+        "id": "kazakh_kzaudio_21_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 28,
+        "audio_sha256": "967245c3d151cfe53f7c61d04cf6e6d9839d59c87aae59de4fc4df9487ab0bf3"
+      },
+      {
+        "id": "kazakh_kzaudio_21_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 28,
+        "audio_sha256": "0e1ccff5b4a22960b0c3b55b93b9abb7d70e53262091991fdfa6170988d99d45"
+      },
+      {
+        "id": "kazakh_kzaudio_22_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 28,
+        "audio_sha256": "75ed5c17a0c224215f9f6868a9c67a6e23baaea6ff5cf6a6f16866149ec9078d"
+      },
+      {
+        "id": "kazakh_kzaudio_22_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 26,
+        "ref_words": 28,
+        "audio_sha256": "d195464f59ca74f40b6c2d53fe48318fb6c3d31780a7146b004da289ea4323f7"
+      },
+      {
+        "id": "kazakh_kzaudio_23_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 3,
+        "ref_words": 17,
+        "audio_sha256": "e310bae5081898f4682c93926b51758ef8e97174cb38c9b1a17bba55e71a632e"
+      },
+      {
+        "id": "kazakh_kzaudio_23_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 17,
+        "ref_words": 17,
+        "audio_sha256": "3f1f55d31fb4bbd53a46c55d3978a79c76395dccd8f2c05354daf7ebe95650dc"
+      },
+      {
+        "id": "kazakh_kzaudio_24_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 16,
+        "audio_sha256": "53bf36436bf2de6d8b06c44e1182a430a14fca67e58b2a366c57180a41b75d8d"
+      },
+      {
+        "id": "kazakh_kzaudio_24_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 9,
+        "ref_words": 16,
+        "audio_sha256": "7d76eea4bbb8e6951b0095d8270ca4db85eaf303a9ad6ce79214384546ac7d2b"
+      },
+      {
+        "id": "kazakh_kzaudio_25_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 21,
+        "audio_sha256": "2c036f75c0504d6de98b89c578ef76a0ca524806eddb434d1c23c7f12d8aa2ab"
+      },
+      {
+        "id": "kazakh_kzaudio_25_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 2,
+        "ref_words": 21,
+        "audio_sha256": "1e8b880eb76dc61ef9ecfa7d3cb44ed964a716df02ba36a49ad7c350af9d6e75"
+      },
+      {
+        "id": "kazakh_kzaudio_26_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 18,
+        "audio_sha256": "b90f2a39a4e0c56fbc3b3cd89adad882b4359f8ca9155b4f86b87590919316d2"
+      },
+      {
+        "id": "kazakh_kzaudio_26_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 17,
+        "ref_words": 18,
+        "audio_sha256": "cb9174f8fac598a0b649facc359625d04094162dc8dcb56fda9e91b5ae70a36e"
+      },
+      {
+        "id": "kazakh_kzaudio_27_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 11,
+        "audio_sha256": "23af5c986894406e6b367190696ed0d874b237c48238254bb930c2991dd9b5a8"
+      },
+      {
+        "id": "kazakh_kzaudio_27_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 9,
+        "ref_words": 11,
+        "audio_sha256": "ca443e0c907b1a536b35bd09be7dd93b0c3d294bdc58b6c38c254abb27fbcc00"
+      },
+      {
+        "id": "kazakh_kzaudio_28_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 12,
+        "audio_sha256": "ca204f8844d9201e588db2b92fbe38b1327193b757a29ec4caed712d327829f5"
+      },
+      {
+        "id": "kazakh_kzaudio_28_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 10,
+        "ref_words": 12,
+        "audio_sha256": "6fd18da772657c8a92b69f150c0dd8ffbba6b4c8fed67958f01f88db4e0c8f0c"
+      },
+      {
+        "id": "kazakh_kzaudio_29_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 0,
+        "ref_words": 19,
+        "audio_sha256": "0dfd4b9b597a95d79c5501fd3c959bf2a56e0e7418c82827ff30552719ca6450"
+      },
+      {
+        "id": "kazakh_kzaudio_29_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 11,
+        "ref_words": 19,
+        "audio_sha256": "f7d29d5fd559a088a84cb75c637d38594794d96c1e0712199167484c24340404"
+      },
+      {
+        "id": "kazakh_kzaudio_30_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 1,
+        "ref_words": 8,
+        "audio_sha256": "fea0c5b5c3fcf7c9277af69ae7212fe42eda8a0853596e388dee9508da8be2a0"
+      },
+      {
+        "id": "kazakh_kzaudio_30_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 0,
+        "ref_words": 8,
+        "audio_sha256": "b3c30b9bb607d31517e06a60d560d7b755b793de888aabb83cd3571b55c18575"
+      },
+      {
+        "id": "kazakh_kzaudio_31_original",
+        "condition": "original",
+        "group": "kazakh/original",
+        "errors": 2,
+        "ref_words": 13,
+        "audio_sha256": "d2cbcffc28fb8012cca76533e4d69d2d84a02492e563f11a9898287b3de5150a"
+      },
+      {
+        "id": "kazakh_kzaudio_31_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "kazakh/simulated_telephone",
+        "errors": 8,
+        "ref_words": 13,
+        "audio_sha256": "27a4f7faa5fdf0aaf820a8827dae14fe20a7b7b4350262068e9868501995595e"
+      },
+      {
+        "id": "uzbek_fleurs_uz_2004_6_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 2,
+        "ref_words": 18,
+        "audio_sha256": "d8f3e0efb3c4b19bf7293c06efb61811c347109c0798f645de759199d038c951"
+      },
+      {
+        "id": "uzbek_fleurs_uz_2004_6_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 2,
+        "ref_words": 18,
+        "audio_sha256": "838d29c39e642bd6c121650d11daf39d046a7d2cdbaedc6a9aee77391be46497"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1977_25_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 1,
+        "ref_words": 18,
+        "audio_sha256": "9243f137d156deab28075af3881a7b8e05ebc56e965286d6a8c77d9985a19fe0"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1977_25_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 1,
+        "ref_words": 18,
+        "audio_sha256": "eb9f60a64dc65977936d609cd27b6487e7e8de3367cc763df0b4bfc63505239a"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1721_27_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 12,
+        "ref_words": 13,
+        "audio_sha256": "560192e88bfaa1b941e427a21074734a17e9747ec7bfb9ae5b826613600e94df"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1721_27_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 12,
+        "ref_words": 13,
+        "audio_sha256": "2bb8e263ce33e993f6d79559df3ea20e99abf8f92f370acc0ddfe75572387e74"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1706_30_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 4,
+        "ref_words": 23,
+        "audio_sha256": "8e92097520b326ac829906d630216795da10b2993402a9253f8a4015daec5742"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1706_30_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 5,
+        "ref_words": 23,
+        "audio_sha256": "d733f0937edb6feb1922bef842cc2e174774ca15215c47d517cb767fe27b7379"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1711_32_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 1,
+        "ref_words": 23,
+        "audio_sha256": "f91ad68db16446757bc454139cd296b661f78bbfffd2768dcf86b4ad740c3073"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1711_32_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 2,
+        "ref_words": 23,
+        "audio_sha256": "bf23c6ba9c38297d8c72b93187ef05a0c8425573893a2308546f381d40e57b2b"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1798_44_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 0,
+        "ref_words": 20,
+        "audio_sha256": "35e1a8e5b18f14d07cd0dcf5dd6e828dd336bf9a5faec9953ab5fd0d3c65cc99"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1798_44_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 2,
+        "ref_words": 20,
+        "audio_sha256": "90a523ae8991fc44e8532b14ca46f0642b42efc5b0ff8b05e09f6219f17d8b45"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1927_46_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 4,
+        "ref_words": 15,
+        "audio_sha256": "45402dca172bfb558e1e0f49245cba4f3a9bcff25fd8025adc75166c652adf9d"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1927_46_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 3,
+        "ref_words": 15,
+        "audio_sha256": "ba7b2769dfea3a5c1c8f95ee9f42eddb4302c1ec3372876db063137723cf1314"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1961_71_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 5,
+        "ref_words": 32,
+        "audio_sha256": "9113e9e6e2ccd8c52b61f967541e1660e44a59d04297acdbee3bc3a4fd6abe8b"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1961_71_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 5,
+        "ref_words": 32,
+        "audio_sha256": "a362488b464539f9f147ae6e23e8850e55acedbe1b01d8869a3931654f133637"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1951_73_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 8,
+        "ref_words": 15,
+        "audio_sha256": "112b8628e14997794ec27cb426ab6d8a82f751b10f97b4f87560ba8cef267b1a"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1951_73_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 8,
+        "ref_words": 15,
+        "audio_sha256": "698617a784c98a33ab91d71fabeb9e3836941fe1a6d22a1404e63b3fd2a7e190"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1966_80_original",
+        "condition": "original",
+        "group": "uzbek/original",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "e7fee9008c85fb57a3ae9ef387e4cdf7392a6abb23410dfbfd532e79a7d49fab"
+      },
+      {
+        "id": "uzbek_fleurs_uz_1966_80_simulated_telephone",
+        "condition": "simulated_telephone",
+        "group": "uzbek/simulated_telephone",
+        "errors": 0,
+        "ref_words": 13,
+        "audio_sha256": "f2d19d2f32e0c70d4141a20b8d87f77d8b76f9cc854734bc7c1793b948b7a50f"
+      },
+      {
+        "id": "telephone_oracle_segments_00_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "2e8afd7f806efc9367e115b4e289fec6e9d576288018e8de2c6d89579f869ce5"
+      },
+      {
+        "id": "telephone_oracle_segments_01_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "f71c8d9c78889aca4b8c352c682a1a097412e1a57a1c96f482a708c2d2f8436e"
+      },
+      {
+        "id": "telephone_oracle_segments_02_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "79abecba0295b73eca00f07c8eca14fbe5573139cbf0ac967b66897d7d10c5f3"
+      },
+      {
+        "id": "telephone_oracle_segments_03_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "0051f30a9428c9223f24f04fc8b7bdcf4b498390d90cedb37aa227084d9760ca"
+      },
+      {
+        "id": "telephone_oracle_segments_04_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "4df49044d5b8ccc360deb45d1ce250d86d53101516b57f05f22ef7ff7ad99511"
+      },
+      {
+        "id": "telephone_oracle_segments_05_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 9,
+        "ref_words": 15,
+        "audio_sha256": "1573e7c7add8149c52d9dd428f58e4683f602ef83287468c2706284f30e41a98"
+      },
+      {
+        "id": "telephone_oracle_segments_06_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 6,
+        "audio_sha256": "c21dc1bd728923dc42e1bbae5524eb1adeb6958959d8b854b5f78321857eb15b"
+      },
+      {
+        "id": "telephone_oracle_segments_07_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "26baa6fb7c94778649b08d92f54899ae7130801cb93838fa9e0c63e8b5b55993"
+      },
+      {
+        "id": "telephone_oracle_segments_08_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "aa672bf8ffe3e8f02a0dc8991d48cb12cb10ec5d2eb621eabdd92a02449a461b"
+      },
+      {
+        "id": "telephone_oracle_segments_09_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "6a255d212029d08c90ecd4019bd56930ae2ccde83e334da0d1179a7f2b34d202"
+      },
+      {
+        "id": "telephone_oracle_segments_10_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "0c4c49d6b4618165718d4481e304a43c19e18351291b68497ab47d0009008daf"
+      },
+      {
+        "id": "telephone_oracle_segments_11_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "f2c06fc352bab915606582259425f2fa98ec03c725ddfd6a21b7dea58ad92ad1"
+      },
+      {
+        "id": "telephone_oracle_segments_12_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 12,
+        "ref_words": 13,
+        "audio_sha256": "b2eb08fd79b8a4549fc2fd081dc7d77f70ca893f87b18da0a9a2b9b81b82cfec"
+      },
+      {
+        "id": "telephone_oracle_segments_13_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "635d216a1adf6e8a33f371fd789bf157f7887b3a4f448b3bce18e897bb591f79"
+      },
+      {
+        "id": "telephone_oracle_segments_14_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 5,
+        "ref_words": 5,
+        "audio_sha256": "58f26c44d60f486c831bbd5fdeaaaa29c943c69872be8a0dba21ace002f8f9bd"
+      },
+      {
+        "id": "telephone_oracle_segments_15_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "058e6db41f10e243ac4f14ba62513b5b635a38eb6e90ed234a6379b4a0e89442"
+      },
+      {
+        "id": "telephone_oracle_segments_16_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 7,
+        "ref_words": 7,
+        "audio_sha256": "66c16751da0dd9210b3e7e5ba43819111f3c305595eba3b741ee882c8dd4b715"
+      },
+      {
+        "id": "telephone_oracle_segments_17_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "8df56bbb0311fcfc4ce023512157f10f15229785d4602d4ab87141b4f2399431"
+      },
+      {
+        "id": "telephone_oracle_segments_18_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "df54fc4f6f96e4f4ecd939979ef46ff361d3342995199b74610738ffa44c7fa7"
+      },
+      {
+        "id": "telephone_oracle_segments_19_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "7e3b23f6e9ee163ed003ff1aa9ead4a16d87911a84fa3db5ce7687ebeb7fb1bc"
+      },
+      {
+        "id": "telephone_oracle_segments_20_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 3,
+        "audio_sha256": "7f9335fc29167cf2c2a83cdd07058d05f25fa05928cd4e9e643e2c9a2e95693e"
+      },
+      {
+        "id": "telephone_oracle_segments_21_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 5,
+        "ref_words": 5,
+        "audio_sha256": "5be9e57806b5e786fc658721f5a98699625223f31d04c9a84df4f30ed5bcaf85"
+      },
+      {
+        "id": "telephone_oracle_segments_22_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "4a919d5886026547363935e2069ffd28befe414c5b62056c9a39f4fe3b0dd879"
+      },
+      {
+        "id": "telephone_oracle_segments_23_original",
+        "condition": "original",
+        "group": "telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 1,
+        "audio_sha256": "9420298db29e54c5f8deb222902ffe38da3a2faaa038281790c56a7997f4e492"
+      },
+      {
+        "id": "material_kk_inLine_01",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 2,
+        "audio_sha256": "f4215fae4b426bae3f6fa6f7be74228318947bdcef14be855fb52faa67737544"
+      },
+      {
+        "id": "material_kk_inLine_02",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 2,
+        "audio_sha256": "50a5ebe917e16d17d95950df32ccdfaac05078e64328d460b747b4a5f428118b"
+      },
+      {
+        "id": "material_kk_inLine_03",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 3,
+        "audio_sha256": "4e294bc0bcc4d98d699b963859fc0ad62c8696576c701452bcba23678d5d08c6"
+      },
+      {
+        "id": "material_kk_inLine_05",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 5,
+        "audio_sha256": "c47e58a91bbda7e21aed875c65cf5d3b931e9eed45d2075669c86e6bc67e49e0"
+      },
+      {
+        "id": "material_kk_inLine_07",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "bda3762bdf9d723a7f35c3ba33f8d7061d6a5dc7120fd52b83416b7b2c4888f7"
+      },
+      {
+        "id": "material_kk_inLine_09",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 5,
+        "audio_sha256": "772f5f31ba5500f3edcb2bf4295f94ae2115cc0bb800ab4420980bdbc3e9afb7"
+      },
+      {
+        "id": "material_kk_inLine_11",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "a5054f467e36b677fbcb07db3abf6780270065fba9bba6c6f8c218fd9f736586"
+      },
+      {
+        "id": "material_kk_inLine_14",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 2,
+        "audio_sha256": "29353f1673e07a0f143195ed62bc0016340d1dff76357ca5f5a90aee3e40650d"
+      },
+      {
+        "id": "material_kk_inLine_15",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 4,
+        "audio_sha256": "30d8074eb3ab518749059ae9c7031eb4743b53c8c2ea82a6da2d2b9596441454"
+      },
+      {
+        "id": "material_kk_inLine_19",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 4,
+        "ref_words": 4,
+        "audio_sha256": "958779ffd3a43695a3a4eba99edaf7008b231fc87f93950bfb16c9ff1273f2ee"
+      },
+      {
+        "id": "material_kk_inLine_20",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 3,
+        "audio_sha256": "38047e5169802fc3454369faf0bc35876af004601f9d2e3353dd39fb0266ef0a"
+      },
+      {
+        "id": "material_kk_inLine_22",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 3,
+        "audio_sha256": "f0e7473291b330719c6c095f384f133c364662d3e31bb4020cf26cebd9059888"
+      },
+      {
+        "id": "material_kk_inLine_24",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "d2c9a2c6d0a68902a77e9291f077b5cd4e69a1536cedbf0d3a6a574906574017"
+      },
+      {
+        "id": "material_kk_inLine_25",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 6,
+        "audio_sha256": "3a4edad066323e2a25911b9c38d0f0ea575c068f255be6e040f8718831f0e871"
+      },
+      {
+        "id": "material_kk_outLine_00",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "b5385fcc7e441d0ae5be6750ce47c1dea3a87d6a10c49671c45309d49b777d6f"
+      },
+      {
+        "id": "material_kk_outLine_02",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 13,
+        "audio_sha256": "51edbc0a49465b4f8fbd38766d036562b18d5cba77a5f1825a3cead551e92ca7"
+      },
+      {
+        "id": "material_kk_outLine_04",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 4,
+        "audio_sha256": "8e423d11915f3013ef35a4767d36605edc8445568278e5957d138607b2433d86"
+      },
+      {
+        "id": "material_kk_outLine_08",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 3,
+        "ref_words": 9,
+        "audio_sha256": "ee73f825eb8f47f4bd4ec6af383a09332a1e11799eab3f9a071923fdcae62087"
+      },
+      {
+        "id": "material_kk_outLine_10",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 2,
+        "ref_words": 2,
+        "audio_sha256": "d2afdf6776125ff34e5c1f1efad31b8216ad27f65d69aed0d9293bd533257611"
+      },
+      {
+        "id": "material_kk_outLine_12",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 4,
+        "ref_words": 3,
+        "audio_sha256": "fb38ae78fab0659ab953b7d8e7e3474cedae7b96b5e394426ec3ae782cc5d444"
+      },
+      {
+        "id": "material_kk_outLine_14",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 5,
+        "audio_sha256": "09e72181c92fee9a811801e16042ebe180bbdddf9c4dc5d2036603f4bd8b1336"
+      },
+      {
+        "id": "material_kk_outLine_15",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 6,
+        "audio_sha256": "5976da8f970ef4e343032670e472973068532b4a09cde9acf877a80414cace06"
+      },
+      {
+        "id": "material_kk_outLine_17",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 1,
+        "ref_words": 1,
+        "audio_sha256": "66d66c601fa259cdafa019c588ddffb730931269535c3e51fac7b47be51f6d5d"
+      },
+      {
+        "id": "material_kk_outLine_19",
+        "condition": "original",
+        "group": "material_telephone_oracle_segments/original",
+        "errors": 0,
+        "ref_words": 4,
+        "audio_sha256": "701535f3fa5b04250abe8ee9d73cd895ddc1362351ba316dbf50f22839b93838"
+      },
+      {
+        "id": "telephone_first24_815",
+        "condition": "original",
+        "group": "telephone_first24_815_diagnostic/original",
+        "errors": 28,
+        "ref_words": 28,
+        "audio_sha256": "10008c70754084dfbe0ca239b903032866b3117b6922e8c99920a77f017b5d5e"
+      }
+    ]
+  }
+}

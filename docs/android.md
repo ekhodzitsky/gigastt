@@ -125,7 +125,7 @@ names; multilingual heads ship `multilingual[_large]_ctc.int8.onnx` +
 | `v3_rnnt_joint.onnx` | ~1.4 MB |
 | `v3_vocab.txt` | ~200 B |
 
-> **Always ship INT8 on mobile.** Do not bundle FP32 (~844 MB encoder); it will OOM on most devices.
+> **Ship the prequantized ONNX bundle on mobile.** The standard runtime requires it; measure peak memory on the target device, including session pools and side models.
 
 You have two strategies for shipping models:
 

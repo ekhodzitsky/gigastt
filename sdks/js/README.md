@@ -19,14 +19,33 @@ Typed TypeScript WebSocket client for the
 ## Install
 
 ```sh
-npm install @gigastt/client
+git clone https://github.com/ekhodzitsky/gigastt
+cd gigastt/sdks/js
+npm ci
+npm run build
+npm pack
+# From your application directory:
+# npm install /absolute/path/to/gigastt/sdks/js/gigastt-client-0.1.0.tgz
 ```
+
+The public npm registry does not currently publish `@gigastt/client` (checked
+2026-10-22). Install the built source package above; `npm install gigastt` installs
+the separate native engine binding, not this WebSocket client.
 
 The `ws` package is a regular dependency but is only loaded (via dynamic
 import) when no global `WebSocket` exists; browser bundlers can safely mark it
 external — it is never imported on the browser path.
 
 ## Quickstart
+
+Feed raw little-endian mono PCM16, not a container. For example, prepare a file:
+
+```sh
+ffmpeg -i recording.wav -f s16le -acodec pcm_s16le -ac 1 -ar 16000 recording.pcm
+```
+
+A WAV header is not always 44 bytes; removing a fixed prefix is not WAV decoding.
+
 
 ```ts
 import { GigasttClient, DEFAULT_URL } from "@gigastt/client";
@@ -55,10 +74,10 @@ const client = await GigasttClient.connect(DEFAULT_URL, {
 
 console.log(`connected: ${client.ready.model} @ ${client.ready.sample_rate} Hz`);
 
-// Stream a 16 kHz mono PCM16 WAV file (skipping the 44-byte header) in chunks.
-const wav = await readFile("recording.wav");
-for (let offset = 44; offset < wav.byteLength; offset += 32768) {
-  client.sendPCM(wav.subarray(offset, offset + 32768));
+// Stream the prepared raw 16 kHz mono PCM16 file in chunks.
+const pcm = await readFile("recording.pcm");
+for (let offset = 0; offset < pcm.byteLength; offset += 32768) {
+  client.sendPCM(pcm.subarray(offset, offset + 32768));
 }
 
 client.stop(); // ask the server to flush and emit the final transcript
@@ -106,10 +125,10 @@ npm run build     # emit dist/ (ESM + .d.ts)
 
 ### Integration test against a live server
 
-Requires a running server with the model (~225 MB INT8):
+Requires a running server with the model (~310 MiB for the current main ASR bundle):
 
 ```sh
-# once: download the model (~225 MB INT8), then start the server from the repository root
+# once: download the model (~310 MiB for the current main ASR bundle), then start the server from the repository root
 cargo run -- download
 cargo run --release -- serve
 
@@ -123,7 +142,7 @@ ready → audio → stop → final session.
 
 ## Publishing
 
-The package manifest (`package.json`) is release-ready:
+For a maintainer publishing the source package:
 `npm publish --access public` from this directory (runs `prepublishOnly` →
 `npm run build`). Versioning follows the monorepo release process; publishing
 is done by a human during the release, **not** from CI.

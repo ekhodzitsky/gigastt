@@ -1,0 +1,2512 @@
+{
+  "protocol": "All 22 unique recordings with empty small output or >=80% reference deletions in either completed telephone condition; plus first three baseline-ordered nonfailure recordings per language (15 controls). All original/A-law/mu-law versions retained. Failure-enriched diagnostics, not a representative WER benchmark. Frozen before new interventions.",
+  "unique_recordings": 37,
+  "inputs": 111,
+  "failure_recordings": 22,
+  "control_recordings": 15,
+  "baseline_binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "rows": [
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/ru/fleurs_ru_ru_test_0000.wav",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "reference": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+      "baseline_hypothesis": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 154,
+        "char_errors": 0
+      },
+      "duration_s": 16.92
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ru/alaw/fleurs_ru_ru_test_0000.wav",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "reference": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+      "baseline_hypothesis": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 154,
+        "char_errors": 0
+      },
+      "duration_s": 16.92
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ru/mulaw/fleurs_ru_ru_test_0000.wav",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "reference": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+      "baseline_hypothesis": "в древнем китае использовали уникальный способ обозначения периодов времени каждый этап китая или каждая семья находившаяся у власти были особой династией",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 154,
+        "char_errors": 0
+      },
+      "duration_s": 16.92
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/ru/fleurs_ru_ru_test_0001.wav",
+      "audio_sha256": "81673ad2f0eb6a463e13fd9d5a442d1469e745f9a67565a3b9d20fbff395599a",
+      "reference": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+      "baseline_hypothesis": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+      "baseline_scores": {
+        "reference_words": 14,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 99,
+        "char_errors": 0
+      },
+      "duration_s": 11.52
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ru/alaw/fleurs_ru_ru_test_0001.wav",
+      "audio_sha256": "aa1855165eacf5490fc30c44da36f1f21897348c51906eda2f5fa949b4205a28",
+      "reference": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+      "baseline_hypothesis": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+      "baseline_scores": {
+        "reference_words": 14,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 99,
+        "char_errors": 0
+      },
+      "duration_s": 11.52
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ru/mulaw/fleurs_ru_ru_test_0001.wav",
+      "audio_sha256": "6710c6470ce7757c91f41e9f63e088a218f1b09bbf7a0a502247b25d5bd3a26a",
+      "reference": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+      "baseline_hypothesis": "мадагаскар намного больше других и является самобытным континентом в том что касается дикой природы",
+      "baseline_scores": {
+        "reference_words": 14,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 99,
+        "char_errors": 0
+      },
+      "duration_s": 11.52
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/ru/fleurs_ru_ru_test_0002.wav",
+      "audio_sha256": "78e9c886fbfc247dc7743f9dc7473006b7a50b9401f1db9af16926cf9dae0d04",
+      "reference": "во всех научных вопросах включая психологию были приняты взгляды аристотеля",
+      "baseline_hypothesis": "во всех научных вопросах включая психологию были приняты взгляды аристотеля",
+      "baseline_scores": {
+        "reference_words": 10,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 75,
+        "char_errors": 0
+      },
+      "duration_s": 8.64
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ru/alaw/fleurs_ru_ru_test_0002.wav",
+      "audio_sha256": "e7deccb7c578ed70c3ed80918c837a42885c54a087e8ce68144e3d1a88b93de7",
+      "reference": "во всех научных вопросах включая психологию были приняты взгляды аристотеля",
+      "baseline_hypothesis": "во всех научных вопросах включая психологию были приняты взгляды аристотеля",
+      "baseline_scores": {
+        "reference_words": 10,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 75,
+        "char_errors": 0
+      },
+      "duration_s": 8.64
+    },
+    {
+      "language": "ru",
+      "id": "fleurs_ru_ru_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ru/mulaw/fleurs_ru_ru_test_0002.wav",
+      "audio_sha256": "08b0001dcba76c2b807e701f5a9ac124b04ea979cd0cc4a59cef873d605b2b80",
+      "reference": "во всех научных вопросах включая психологию были приняты взгляды аристотеля",
+      "baseline_hypothesis": "во всех научных вопросах включая психологию были приняты взгляды аристотеля",
+      "baseline_scores": {
+        "reference_words": 10,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 75,
+        "char_errors": 0
+      },
+      "duration_s": 8.64
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/en/fleurs_en_us_test_0000.wav",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "reference": "however due to the slow communication channels styles in the west could lag behind by 25 to 30 year",
+      "baseline_hypothesis": "however due to the slow communication channels styles in the west could lag behind by двадnцаtyь fяve to thirty years",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 4,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 99,
+        "char_errors": 22
+      },
+      "duration_s": 10.56
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/en/alaw/fleurs_en_us_test_0000.wav",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "reference": "however due to the slow communication channels styles in the west could lag behind by 25 to 30 year",
+      "baseline_hypothesis": "however due to the slow communication channels styles in the west could lag behind by двадцаtть fяveь to thirty years",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 4,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 99,
+        "char_errors": 22
+      },
+      "duration_s": 10.56
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/en/mulaw/fleurs_en_us_test_0000.wav",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "reference": "however due to the slow communication channels styles in the west could lag behind by 25 to 30 year",
+      "baseline_hypothesis": "however due to the slow communication channels styles in the west could lag behind by двадцать fять to thirty years",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 4,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 99,
+        "char_errors": 20
+      },
+      "duration_s": 10.56
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/en/fleurs_en_us_test_0001.wav",
+      "audio_sha256": "7603cae3294309ef70d234180cefccc3b13865ee525262228a636069b9b62841",
+      "reference": "all nouns alongside the word sie for you always begin with a capital letter even in the middle of a sentence",
+      "baseline_hypothesis": "all nowns alongside the world saye for you always begin with a capital letter even in the middle of a sentence",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 108,
+        "char_errors": 4
+      },
+      "duration_s": 8.76
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/en/alaw/fleurs_en_us_test_0001.wav",
+      "audio_sha256": "aebd7dcdb506a692c0d287a4b4c5f6e125664fa5aa623ccb8589fc5df25b4b43",
+      "reference": "all nouns alongside the word sie for you always begin with a capital letter even in the middle of a sentence",
+      "baseline_hypothesis": "all nouns alongside the world say for you always begin with a capital letter even in the middle of a sentence",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 2,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 108,
+        "char_errors": 3
+      },
+      "duration_s": 8.76
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/en/mulaw/fleurs_en_us_test_0001.wav",
+      "audio_sha256": "ba09794690a21ee6531351f0f6b50396f1b17ef6ac2bdb573e412aff3c302b54",
+      "reference": "all nouns alongside the word sie for you always begin with a capital letter even in the middle of a sentence",
+      "baseline_hypothesis": "all nouns alongside the world say for you always begin with a capital letter even in the middle of a sentence",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 2,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 108,
+        "char_errors": 3
+      },
+      "duration_s": 8.76
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/en/fleurs_en_us_test_0002.wav",
+      "audio_sha256": "260bdd1a15e1d35bcc5d91667516ca3bc659285e10f94872182715bcd7880398",
+      "reference": "to the north and within easy reach is the romantic and fascinating town of sintra and which was made famous to foreigners after a glowing account of its splendours recorded by lord byron",
+      "baseline_hypothesis": "to the north and within easy reach is a romantic and fascinating town of centra and which was made famous to foreigners after a glowing account of its splenderous recorded by lord byron",
+      "baseline_scores": {
+        "reference_words": 33,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 186,
+        "char_errors": 8
+      },
+      "duration_s": 11.46
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/en/alaw/fleurs_en_us_test_0002.wav",
+      "audio_sha256": "eac72ce14c4d98ad104a6bb93b3dfe74eb8343c043f14a65dce9e9f2b92c0fcf",
+      "reference": "to the north and within easy reach is the romantic and fascinating town of sintra and which was made famous to foreigners after a glowing account of its splendours recorded by lord byron",
+      "baseline_hypothesis": "to the north and with an easy reach is a romantic and fascinating town of pentra and which was made famous to forners after a growing account of the splenderis recorded by lord bylan",
+      "baseline_scores": {
+        "reference_words": 33,
+        "word_errors": 9,
+        "substitutions": 8,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 186,
+        "char_errors": 19
+      },
+      "duration_s": 11.46
+    },
+    {
+      "language": "en",
+      "id": "fleurs_en_us_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/en/mulaw/fleurs_en_us_test_0002.wav",
+      "audio_sha256": "3f5ed538f903eb7b3926dd500335ff392a73cb21f97bdb610a2a06680a3f684e",
+      "reference": "to the north and within easy reach is the romantic and fascinating town of sintra and which was made famous to foreigners after a glowing account of its splendours recorded by lord byron",
+      "baseline_hypothesis": "to the north and with an easy reach is the romantic and fascinating town of pintra and which was made famous to foriners after a growing account of the splenderis recorded by lord bylon",
+      "baseline_scores": {
+        "reference_words": 33,
+        "word_errors": 8,
+        "substitutions": 7,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 186,
+        "char_errors": 13
+      },
+      "duration_s": 11.46
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0000",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0000.wav",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "reference": "ақш-тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+      "baseline_hypothesis": "ақш тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 183,
+        "char_errors": 1
+      },
+      "duration_s": 14.88
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0000",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0000.wav",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "reference": "ақш-тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+      "baseline_hypothesis": "настикдоихораныңқауіпсіздігін",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 20,
+        "substitutions": 1,
+        "deletions": 19,
+        "insertions": 0,
+        "reference_chars": 183,
+        "char_errors": 154
+      },
+      "duration_s": 14.88
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0000",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0000.wav",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "reference": "ақш-тың гимнастика федерациясы ақш олимпиада комитетінің хатын қолдайды және біздің барлық спортсмендер үшін қоршаған ортаның қауіпсіздігін арттырудың абсолютті қажеттілігін мойындайды",
+      "baseline_hypothesis": "қинастикаедмкоиенхынораныңқауіпсіздігін",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 20,
+        "substitutions": 1,
+        "deletions": 19,
+        "insertions": 0,
+        "reference_chars": 183,
+        "char_errors": 144
+      },
+      "duration_s": 14.88
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0094",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0094.wav",
+      "audio_sha256": "cfcc02bb4c5bf5d6bc1fb0483fa61bd605e7fd8b3237133a286d48d714e6f0f7",
+      "reference": "нәтижесінде балықтың екі түрі жойылып кетті ал қалған екеуіне жойылып кету қаупі төнді оның ішінде бүкір балық та бар",
+      "baseline_hypothesis": "нәтижесінде балықтың екі түрі жойылып кетті ал қалған екеуіне жойылып кету қауіп төнді оның ішінде бүкір балық та бар",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 117,
+        "char_errors": 2
+      },
+      "duration_s": 11.58
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0094",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0094.wav",
+      "audio_sha256": "c5b15fa9fa4ff58bff7f5389225070a46e71df9cb258c42619cdac045bc5f72a",
+      "reference": "нәтижесінде балықтың екі түрі жойылып кетті ал қалған екеуіне жойылып кету қаупі төнді оның ішінде бүкір балық та бар",
+      "baseline_hypothesis": "қтыңаушнд",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 19,
+        "substitutions": 1,
+        "deletions": 18,
+        "insertions": 0,
+        "reference_chars": 117,
+        "char_errors": 108
+      },
+      "duration_s": 11.58
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0094",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0094.wav",
+      "audio_sha256": "d70ffe0482b3f41a374169b5e2c5a854112ed27d8c324d1f9afa7df397624cfd",
+      "reference": "нәтижесінде балықтың екі түрі жойылып кетті ал қалған екеуіне жойылып кету қаупі төнді оның ішінде бүкір балық та бар",
+      "baseline_hypothesis": "ндблықтыңітүріуқауіптөның ішндеү",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 19,
+        "substitutions": 2,
+        "deletions": 17,
+        "insertions": 0,
+        "reference_chars": 117,
+        "char_errors": 86
+      },
+      "duration_s": 11.58
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0111",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0111.wav",
+      "audio_sha256": "44e53f51be9b04f6d5c0eaba111b40c0ae83083ac0ace0da97c20162248c42d0",
+      "reference": "реконструкция әрекеттерін либералдық сынау реконструкция келісімшарттарын солай деп саналатын вашингтон инсайдерлеріне беруге баса көңіл бөлді",
+      "baseline_hypothesis": "реконструкция әрекеттерін либералдық сынау реконструкция келісімшарттарын солай деп саналатын вашингтон инсайдерлеріне беруге баса көңіл бөлді",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 142,
+        "char_errors": 0
+      },
+      "duration_s": 14.28
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0111",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0111.wav",
+      "audio_sha256": "5613b7d97916799a2a62d2ae1f08bf9a45b3eb8c5e8a670b9923e561a5dfe7a5",
+      "reference": "реконструкция әрекеттерін либералдық сынау реконструкция келісімшарттарын солай деп саналатын вашингтон инсайдерлеріне беруге баса көңіл бөлді",
+      "baseline_hypothesis": "реконструцияәрекеттерінлибералдық сынауреконтуиякелісімшарттарынерглбөл",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 15,
+        "substitutions": 2,
+        "deletions": 13,
+        "insertions": 0,
+        "reference_chars": 142,
+        "char_errors": 71
+      },
+      "duration_s": 14.28
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0111",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0111.wav",
+      "audio_sha256": "fc323dda9b7b9fa8bc1049226344c046274c2e569b1eece168011feba8f6478b",
+      "reference": "реконструкция әрекеттерін либералдық сынау реконструкция келісімшарттарын солай деп саналатын вашингтон инсайдерлеріне беруге баса көңіл бөлді",
+      "baseline_hypothesis": "реконструкция әрекеттерін либералдық сынау реконструкция келісімшарттарын солайдеп санаатынваинтон инсайдерлеріне беруге баса көңіл бөлді",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 4,
+        "substitutions": 2,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 142,
+        "char_errors": 5
+      },
+      "duration_s": 14.28
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0113",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0113.wav",
+      "audio_sha256": "d346b78cb21212e4b46a9be2c62133a80dca119c081dc7582eee22c48471195d",
+      "reference": "оқиғалар еуропа тарихындағы 11 12 және 13 ғасырларды қамтитын орта ғасырлардың ортаңғы кезеңінде б.з. 1000-1300 жылдар орын алған",
+      "baseline_hypothesis": "оқиғалар еуропа тарихындағы он бір он екі және он үшінші ғасырларды қамтитын орта ғасырлардың ортаңғы кезеңінде біздің заманымыздың мыңыншы мың үш жүзінші жылдары орын алған",
+      "baseline_scores": {
+        "reference_words": 18,
+        "word_errors": 13,
+        "substitutions": 6,
+        "deletions": 0,
+        "insertions": 7,
+        "reference_chars": 126,
+        "char_errors": 61
+      },
+      "duration_s": 14.64
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0113",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0113.wav",
+      "audio_sha256": "38ef2713b96543bdebbd8a551c20aa2f8eede6ad2f57c4737f0a1df719bb7799",
+      "reference": "оқиғалар еуропа тарихындағы 11 12 және 13 ғасырларды қамтитын орта ғасырлардың ортаңғы кезеңінде б.з. 1000-1300 жылдар орын алған",
+      "baseline_hypothesis": "роахнитағылдорыалған",
+      "baseline_scores": {
+        "reference_words": 18,
+        "word_errors": 18,
+        "substitutions": 1,
+        "deletions": 17,
+        "insertions": 0,
+        "reference_chars": 126,
+        "char_errors": 106
+      },
+      "duration_s": 14.64
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0113",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0113.wav",
+      "audio_sha256": "6f272309b4e14b2dea5ea0201c48f223f0b54b95163f1bbfd0cd745247e3b76e",
+      "reference": "оқиғалар еуропа тарихындағы 11 12 және 13 ғасырларды қамтитын орта ғасырлардың ортаңғы кезеңінде б.з. 1000-1300 жылдар орын алған",
+      "baseline_hypothesis": "оеропахнғиортағыдоыналған",
+      "baseline_scores": {
+        "reference_words": 18,
+        "word_errors": 18,
+        "substitutions": 1,
+        "deletions": 17,
+        "insertions": 0,
+        "reference_chars": 126,
+        "char_errors": 101
+      },
+      "duration_s": 14.64
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0121",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0121.wav",
+      "audio_sha256": "6751a78f4c4afb62430604e63aedbb5b0fc04d87ec0c6af24c7aefac13ab2eef",
+      "reference": "теңіз әскери күштерінің жұмысы дәстүр бойынша елдің адамдарды және тауарларды жылжыту қабілетін сақтау сонымен бірге жаудың өз адамдары мен тауарларын жылжыту қабілетіне кедергі жасау болатын",
+      "baseline_hypothesis": "теңіз әскери күштерінің жұмысы дәстүр бойынша елдің адамдарды және тауарларды жылжыту қабілетін сақтау сонымен бірге жаудың өз адамдары мен тауарларын жылжыту қабілетіне кедергі жасау болатын",
+      "baseline_scores": {
+        "reference_words": 25,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 191,
+        "char_errors": 0
+      },
+      "duration_s": 15.24
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0121",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0121.wav",
+      "audio_sha256": "6ea643d9a80eed14e59302ce59c2f47dbd33d540d906fe8f6b65cd824876fe98",
+      "reference": "теңіз әскери күштерінің жұмысы дәстүр бойынша елдің адамдарды және тауарларды жылжыту қабілетін сақтау сонымен бірге жаудың өз адамдары мен тауарларын жылжыту қабілетіне кедергі жасау болатын",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 25,
+        "word_errors": 25,
+        "substitutions": 0,
+        "deletions": 25,
+        "insertions": 0,
+        "reference_chars": 191,
+        "char_errors": 191
+      },
+      "duration_s": 15.24
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0121",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0121.wav",
+      "audio_sha256": "51875e796b933981bd72243215ccaadb67c1d918ff2dff137800fdb0b9860f76",
+      "reference": "теңіз әскери күштерінің жұмысы дәстүр бойынша елдің адамдарды және тауарларды жылжыту қабілетін сақтау сонымен бірге жаудың өз адамдары мен тауарларын жылжыту қабілетіне кедергі жасау болатын",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 25,
+        "word_errors": 25,
+        "substitutions": 0,
+        "deletions": 25,
+        "insertions": 0,
+        "reference_chars": 191,
+        "char_errors": 191
+      },
+      "duration_s": 15.24
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0141",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0141.wav",
+      "audio_sha256": "692dcd900cacfaf5e2385a3f287ce3fa11ae7971d141e70c19fa40231e3432f1",
+      "reference": "1966 жылдан бері сундарбан жабайы жануарлар қорығы болған есептеулер бойынша қазіргі уақыта бұл аумақта 400 корольдік бенгал жолбарысы және шамамен 30 000 дақты бұғы бар",
+      "baseline_hypothesis": "мың тоғыз жүз алпыс алтыншы жылдан бері сундарбан жабайы жануарлар қорығы болған есептеулер бойынша қазіргі уақытта бұл аумақта төрт жүз корольдік бенгал жолбарысы және шамамен отыз мың дақты бұғы бар",
+      "baseline_scores": {
+        "reference_words": 25,
+        "word_errors": 10,
+        "substitutions": 5,
+        "deletions": 0,
+        "insertions": 5,
+        "reference_chars": 169,
+        "char_errors": 43
+      },
+      "duration_s": 19.32
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0141",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0141.wav",
+      "audio_sha256": "d43cffa650557d7ec6b3e6f6bae8b812f27dec9c340b8175ff69cf64949fea82",
+      "reference": "1966 жылдан бері сундарбан жабайы жануарлар қорығы болған есептеулер бойынша қазіргі уақыта бұл аумақта 400 корольдік бенгал жолбарысы және шамамен 30 000 дақты бұғы бар",
+      "baseline_hypothesis": "ан берідбнжабайы жануарлар қоғыболған",
+      "baseline_scores": {
+        "reference_words": 25,
+        "word_errors": 24,
+        "substitutions": 3,
+        "deletions": 21,
+        "insertions": 0,
+        "reference_chars": 169,
+        "char_errors": 132
+      },
+      "duration_s": 19.32
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0141",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0141.wav",
+      "audio_sha256": "4a2c4592b99254f79cff151e5118d17d73ff3f662b94238f0a1b813cabb58f27",
+      "reference": "1966 жылдан бері сундарбан жабайы жануарлар қорығы болған есептеулер бойынша қазіргі уақыта бұл аумақта 400 корольдік бенгал жолбарысы және шамамен 30 000 дақты бұғы бар",
+      "baseline_hypothesis": "лтжылдан беріударбан жабайы жануарлар қорығы болғанептуршқуобарс",
+      "baseline_scores": {
+        "reference_words": 25,
+        "word_errors": 22,
+        "substitutions": 3,
+        "deletions": 19,
+        "insertions": 0,
+        "reference_chars": 169,
+        "char_errors": 107
+      },
+      "duration_s": 19.32
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0162",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0162.wav",
+      "audio_sha256": "a2fb33466f1e035d0299ebf68820a46b6e9a0caaf6760031379ad5b9d0218809",
+      "reference": "виртуалдық дамытатын оқыту бағдарламалық құралға кірістірілген олар оқушының өз бетімен түсінуіне қиын болған болуы мүмкін процедуралар туралы сұрақтар қоюға кеңестер беруге және түсіндіруге арналған",
+      "baseline_hypothesis": "виртуалдық дамытатын оқыту бағдарламалық құралға кірістірілген олар оқушының өз бетімен түсінуіне қиын болған болуы мүмкін процедуралар туралы сұрақтар қоюға кеңестер беруге және түсіндіруге арналған",
+      "baseline_scores": {
+        "reference_words": 24,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 199,
+        "char_errors": 0
+      },
+      "duration_s": 15.72
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0162",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0162.wav",
+      "audio_sha256": "f17f0df69cdb4a6a532c568ce477a6837f5bc00291dbe0bb5a540f268a694b5a",
+      "reference": "виртуалдық дамытатын оқыту бағдарламалық құралға кірістірілген олар оқушының өз бетімен түсінуіне қиын болған болуы мүмкін процедуралар туралы сұрақтар қоюға кеңестер беруге және түсіндіруге арналған",
+      "baseline_hypothesis": "ғррн",
+      "baseline_scores": {
+        "reference_words": 24,
+        "word_errors": 24,
+        "substitutions": 1,
+        "deletions": 23,
+        "insertions": 0,
+        "reference_chars": 199,
+        "char_errors": 195
+      },
+      "duration_s": 15.72
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0162",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0162.wav",
+      "audio_sha256": "0a917720721114a5ab746502db21abc8d8d810f76b7cab633ff02f52b87af132",
+      "reference": "виртуалдық дамытатын оқыту бағдарламалық құралға кірістірілген олар оқушының өз бетімен түсінуіне қиын болған болуы мүмкін процедуралар туралы сұрақтар қоюға кеңестер беруге және түсіндіруге арналған",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 24,
+        "word_errors": 24,
+        "substitutions": 0,
+        "deletions": 24,
+        "insertions": 0,
+        "reference_chars": 199,
+        "char_errors": 199
+      },
+      "duration_s": 15.72
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0295",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0295.wav",
+      "audio_sha256": "0cbaa8f36f6c60782e7c28d18ad3ea9ceaace283bb713ae8b3c0647aca39e1d1",
+      "reference": "ол негізгі тақырыптың ең тиімді орны сызықтардың қиылысуында деп айтады. бұл кескінді тігінен және көлденеңінен үштіктерге бөледі мысалды қараңыз",
+      "baseline_hypothesis": "ол негізгі тақырыптың ең тиімді орны сызықтардың қиылысуында деп айтады бұл кескінді тігінен және көлденеңінен үштіктерге бөледі мысалды қараңыз",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 144,
+        "char_errors": 0
+      },
+      "duration_s": 14.7
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0295",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0295.wav",
+      "audio_sha256": "d2efce3bbcf1da7c395538683d8f70b2104f01ea1ddef50cf138975c8ad93f60",
+      "reference": "ол негізгі тақырыптың ең тиімді орны сызықтардың қиылысуында деп айтады. бұл кескінді тігінен және көлденеңінен үштіктерге бөледі мысалды қараңыз",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 19,
+        "substitutions": 0,
+        "deletions": 19,
+        "insertions": 0,
+        "reference_chars": 144,
+        "char_errors": 144
+      },
+      "duration_s": 14.7
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0295",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0295.wav",
+      "audio_sha256": "1eb8c3058bc6a539d6b6c960f541434803feafa390dc4ec628790827d2c601c4",
+      "reference": "ол негізгі тақырыптың ең тиімді орны сызықтардың қиылысуында деп айтады. бұл кескінді тігінен және көлденеңінен үштіктерге бөледі мысалды қараңыз",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 19,
+        "substitutions": 0,
+        "deletions": 19,
+        "insertions": 0,
+        "reference_chars": 144,
+        "char_errors": 144
+      },
+      "duration_s": 14.7
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0345",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0345.wav",
+      "audio_sha256": "4062175f8254d19141100f15bbd6ea5a85e57a997255ccfe0bf37ff2bd536bb5",
+      "reference": "мұнда осы уақытқа дейін осында өмір сүрген көптеген ерлер мен әйелдер сондай-ақ жақындары қаза болған немесе соңғы демі қалғанша қызмет еткен еврей еврей емес тірі адамдар көп",
+      "baseline_hypothesis": "мұнда осы уақытқа дейін осында өмір сүрген көптеген ерлер мен әйелдер сондай ақ жақындары қаза болған немесе соңғы демі қалғанша қызмет еткен еврей еврейемс емес тірі адамдар көп",
+      "baseline_scores": {
+        "reference_words": 27,
+        "word_errors": 3,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 174,
+        "char_errors": 4
+      },
+      "duration_s": 18.6
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0345",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0345.wav",
+      "audio_sha256": "c9cb67af9d387f74fe737167ddcb8d4565a36479bb39f879c065f94c45fb4569",
+      "reference": "мұнда осы уақытқа дейін осында өмір сүрген көптеген ерлер мен әйелдер сондай-ақ жақындары қаза болған немесе соңғы демі қалғанша қызмет еткен еврей еврей емес тірі адамдар көп",
+      "baseline_hypothesis": "срвтіід",
+      "baseline_scores": {
+        "reference_words": 27,
+        "word_errors": 27,
+        "substitutions": 1,
+        "deletions": 26,
+        "insertions": 0,
+        "reference_chars": 174,
+        "char_errors": 167
+      },
+      "duration_s": 18.6
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0345",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0345.wav",
+      "audio_sha256": "f9f25022fb8161fecf8d643b503fc30448026a7ff43f54ab0d30c7cafdafd8a6",
+      "reference": "мұнда осы уақытқа дейін осында өмір сүрген көптеген ерлер мен әйелдер сондай-ақ жақындары қаза болған немесе соңғы демі қалғанша қызмет еткен еврей еврей емес тірі адамдар көп",
+      "baseline_hypothesis": "срдаввтіріда",
+      "baseline_scores": {
+        "reference_words": 27,
+        "word_errors": 27,
+        "substitutions": 1,
+        "deletions": 26,
+        "insertions": 0,
+        "reference_chars": 174,
+        "char_errors": 162
+      },
+      "duration_s": 18.6
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0380",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0380.wav",
+      "audio_sha256": "15e9be0f3a4b79dc6f1afba65948dccefee4042db3d7cbb772abe5c50df7a3bd",
+      "reference": "екі құрғақ ұнтақты араластырыңыз содан кейін таза ылғалды қолдармен оларды қысып шарик жасаңыз",
+      "baseline_hypothesis": "екі құрғақ ұнтақты араластырыңыз содан кейін таза ылғалды қолдармен оларды қысып шарик жасаңыз",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 94,
+        "char_errors": 0
+      },
+      "duration_s": 9.96
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0380",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0380.wav",
+      "audio_sha256": "c03045d4d7d10d9147ebef03f8eedd191ceceec999bca7d55fcf779960cf2b73",
+      "reference": "екі құрғақ ұнтақты араластырыңыз содан кейін таза ылғалды қолдармен оларды қысып шарик жасаңыз",
+      "baseline_hypothesis": "еіқұрғаұнтақтығ",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 13,
+        "substitutions": 1,
+        "deletions": 12,
+        "insertions": 0,
+        "reference_chars": 94,
+        "char_errors": 79
+      },
+      "duration_s": 9.96
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0380",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0380.wav",
+      "audio_sha256": "4bc6f618f6b2866b2b79d520cfa508b6d14b0e4ed072c9eec38b529bd7965f85",
+      "reference": "екі құрғақ ұнтақты араластырыңыз содан кейін таза ылғалды қолдармен оларды қысып шарик жасаңыз",
+      "baseline_hypothesis": "құрғаұнтақтғ",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 13,
+        "substitutions": 1,
+        "deletions": 12,
+        "insertions": 0,
+        "reference_chars": 94,
+        "char_errors": 82
+      },
+      "duration_s": 9.96
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0484",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0484.wav",
+      "audio_sha256": "ea5cc00b0acc7adbc427b24b3bd1c88ebb322eacf3b43f6e8b24b707fd7db7c6",
+      "reference": "италияның көптеген қалаларында және әлемдегі басқа да қалаларда әсіресе польшада соған ұқсас қондырмалар орнатылды және бұған көптеген адамдар куә болды",
+      "baseline_hypothesis": "италияның көптеген қалаларында және әлемдегі басқа да қалаларда әсіресе польшада соған ұқсас қондырмалар орнатылды және бұған көптеген адамдар куә болды",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 152,
+        "char_errors": 0
+      },
+      "duration_s": 15.3
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0484",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0484.wav",
+      "audio_sha256": "f0a36a6b262937b83a6bc3480c7f8c98418816625aed5bfac104c00d5faf7271",
+      "reference": "италияның көптеген қалаларында және әлемдегі басқа да қалаларда әсіресе польшада соған ұқсас қондырмалар орнатылды және бұған көптеген адамдар куә болды",
+      "baseline_hypothesis": "яж әлеқард",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 20,
+        "substitutions": 2,
+        "deletions": 18,
+        "insertions": 0,
+        "reference_chars": 152,
+        "char_errors": 142
+      },
+      "duration_s": 15.3
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0484",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0484.wav",
+      "audio_sha256": "3a4c6b2a655b773160504960e8aa198c998557d00ae32c223ce2d93d75b4fbcd",
+      "reference": "италияның көптеген қалаларында және әлемдегі басқа да қалаларда әсіресе польшада соған ұқсас қондырмалар орнатылды және бұған көптеген адамдар куә болды",
+      "baseline_hypothesis": "иаяыңкқжә әлемдіқалрдолғ",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 20,
+        "substitutions": 2,
+        "deletions": 18,
+        "insertions": 0,
+        "reference_chars": 152,
+        "char_errors": 128
+      },
+      "duration_s": 15.3
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0613",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0613.wav",
+      "audio_sha256": "bb62729f7adc3a0a9a1d9f947e4fa3c8f8b751b4acda8e242786fe1184736f8f",
+      "reference": "губернатордың кеңсесі жарақат алғандардың он тоғызы полиция қызметкері болғанын айтты",
+      "baseline_hypothesis": "губернатордың кеңсесі жарақат алғандардың он тоғызы полиция қызметкері болғанын айтты",
+      "baseline_scores": {
+        "reference_words": 10,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 85,
+        "char_errors": 0
+      },
+      "duration_s": 9.36
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0613",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0613.wav",
+      "audio_sha256": "dcac4411ead1b3cf52a63ce40d3b83721c2768be0f21ce553651bae098f285ff",
+      "reference": "губернатордың кеңсесі жарақат алғандардың он тоғызы полиция қызметкері болғанын айтты",
+      "baseline_hypothesis": "гернаожарақат алғандардыңполицияқмтро",
+      "baseline_scores": {
+        "reference_words": 10,
+        "word_errors": 10,
+        "substitutions": 2,
+        "deletions": 8,
+        "insertions": 0,
+        "reference_chars": 85,
+        "char_errors": 48
+      },
+      "duration_s": 9.36
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0613",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0613.wav",
+      "audio_sha256": "1064568fa7d69919058f63c3a5bd3e7b361f72f57d25a7ff2e33f22fec7ca17b",
+      "reference": "губернатордың кеңсесі жарақат алғандардың он тоғызы полиция қызметкері болғанын айтты",
+      "baseline_hypothesis": "гернатокңсжарақат алғандардыңполицияқызметкрі блға",
+      "baseline_scores": {
+        "reference_words": 10,
+        "word_errors": 10,
+        "substitutions": 3,
+        "deletions": 7,
+        "insertions": 0,
+        "reference_chars": 85,
+        "char_errors": 35
+      },
+      "duration_s": 9.36
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0659",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0659.wav",
+      "audio_sha256": "9f6733dbdc5e299daa59b54df20e26b53d94560a24779753d58fba5277a248de",
+      "reference": "әрі-беріден соң мұнда көптеген кішкентай мысықтар соның ішінде жоғалған үй мысықтары бар. олар құрт-құмырсқа кеміргіштер кесіртке сияқты көптеген шағын жыртқыш аңдарды және құстарды жейді",
+      "baseline_hypothesis": "әрі беріден соң мұнда көптеген кішкентай мысықтар соның ішінде жоғалған үй мысықтары бар олар құрт құмырсқа кеміргіштер кесіртке сияқты көптеген шағын жыртқыш аңдарды және құстарды жейді",
+      "baseline_scores": {
+        "reference_words": 24,
+        "word_errors": 4,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 2,
+        "reference_chars": 184,
+        "char_errors": 2
+      },
+      "duration_s": 16.8
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0659",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0659.wav",
+      "audio_sha256": "b9dd6c68ae17df81b6eb626436cf436bf548a2c42227033d7e4e8d37a6decd3c",
+      "reference": "әрі-беріден соң мұнда көптеген кішкентай мысықтар соның ішінде жоғалған үй мысықтары бар. олар құрт-құмырсқа кеміргіштер кесіртке сияқты көптеген шағын жыртқыш аңдарды және құстарды жейді",
+      "baseline_hypothesis": "әріберіден омұоң шіндғғнүймыықтарықұрұмырқіргітіржртқаңдыжқтрдыжд",
+      "baseline_scores": {
+        "reference_words": 24,
+        "word_errors": 23,
+        "substitutions": 2,
+        "deletions": 21,
+        "insertions": 0,
+        "reference_chars": 184,
+        "char_errors": 119
+      },
+      "duration_s": 16.8
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0659",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0659.wav",
+      "audio_sha256": "4dfab656c5aa33882cf5c2ba1595c61710f0b1e7160188a8de32ab519d4b32c1",
+      "reference": "әрі-беріден соң мұнда көптеген кішкентай мысықтар соның ішінде жоғалған үй мысықтары бар. олар құрт-құмырсқа кеміргіштер кесіртке сияқты көптеген шағын жыртқыш аңдарды және құстарды жейді",
+      "baseline_hypothesis": "әрі беріден соң мұнда көптеген кішкентай мысықтар соның ішінде жоғалған үй мысықтары бар олар құрт құмырсқа кеміргіштер кесіртке сияқты көптеген шағын жыртқыш аңдарды және құстарды жейді",
+      "baseline_scores": {
+        "reference_words": 24,
+        "word_errors": 4,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 2,
+        "reference_chars": 184,
+        "char_errors": 2
+      },
+      "duration_s": 16.8
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0666",
+      "selection": "failure",
+      "trigger_conditions": [
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0666.wav",
+      "audio_sha256": "73e198e53843fa829a1aeb3f33e2593b9e37906eba37cedb6f965922823423de",
+      "reference": "көпір астындағы тік аралық 15 метрді құрайды құрылыс 2011 жылдың тамыз айында аяқталды ол 2017 жылдың наурыз айына дейін жол қозғалысына ашылмады",
+      "baseline_hypothesis": "көпір астындағы тік аралық он бес метрді құрайды құрылыс екі мың он бірінші жылдың тамыз айында аяқталды ол екі мың он жетінші жылдың наурыз айына дейін жол қозғалысына ашылмады",
+      "baseline_scores": {
+        "reference_words": 22,
+        "word_errors": 10,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 7,
+        "reference_chars": 145,
+        "char_errors": 42
+      },
+      "duration_s": 13.5
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0666",
+      "selection": "failure",
+      "trigger_conditions": [
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0666.wav",
+      "audio_sha256": "c540db93aed0fdaf66faf0c6dd94f1f32e41b8e1628da02bae780cc5b7d093df",
+      "reference": "көпір астындағы тік аралық 15 метрді құрайды құрылыс 2011 жылдың тамыз айында аяқталды ол 2017 жылдың наурыз айына дейін жол қозғалысына ашылмады",
+      "baseline_hypothesis": "көпір астындағы тік аралық он бес мерді құрайды құрлыс екн бііншіжың ыында яқталдыы ауыайын дейн жол қозғалысына ашылмады",
+      "baseline_scores": {
+        "reference_words": 22,
+        "word_errors": 15,
+        "substitutions": 9,
+        "deletions": 5,
+        "insertions": 1,
+        "reference_chars": 145,
+        "char_errors": 46
+      },
+      "duration_s": 13.5
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0666",
+      "selection": "failure",
+      "trigger_conditions": [
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0666.wav",
+      "audio_sha256": "ae8b4b31fb9f3cbd96e97a53a7a160e25b77e0c26c02a61603e22eaafd32c49d",
+      "reference": "көпір астындағы тік аралық 15 метрді құрайды құрылыс 2011 жылдың тамыз айында аяқталды ол 2017 жылдың наурыз айына дейін жол қозғалысына ашылмады",
+      "baseline_hypothesis": "көір астындағікрақд құрайдыққғаыашлады",
+      "baseline_scores": {
+        "reference_words": 22,
+        "word_errors": 22,
+        "substitutions": 3,
+        "deletions": 19,
+        "insertions": 0,
+        "reference_chars": 145,
+        "char_errors": 107
+      },
+      "duration_s": 13.5
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0694",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0694.wav",
+      "audio_sha256": "abd939bbe101cce4cbab9fe9e8621b6dfb78f52dffb37bfff9be3f4a8523e566",
+      "reference": "1537 жылы асунсьон қаласының негізі салынғаннан бастап парагвай өзінің көптеген түпкілікті сипаты мен өзіндік ерекшелігін сақтай білді",
+      "baseline_hypothesis": "мың бес жүз жетпіс үшінші жылы асуаньсон қаласының негізгі салынған бастап парагвай өзінің көптеген түпкілікті сипатты мен өзіндік ерекшелігін сақтай білді",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 9,
+        "substitutions": 5,
+        "deletions": 0,
+        "insertions": 4,
+        "reference_chars": 134,
+        "char_errors": 33
+      },
+      "duration_s": 14.52
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0694",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0694.wav",
+      "audio_sha256": "de5204b6bec16ab275cf1b3a876bc7a6f2ce58f5133341c94cac723d02116c07",
+      "reference": "1537 жылы асунсьон қаласының негізі салынғаннан бастап парагвай өзінің көптеген түпкілікті сипаты мен өзіндік ерекшелігін сақтай білді",
+      "baseline_hypothesis": "қаласныңнегізісалынғіндікшлгіна білді",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 16,
+        "substitutions": 1,
+        "deletions": 15,
+        "insertions": 0,
+        "reference_chars": 134,
+        "char_errors": 97
+      },
+      "duration_s": 14.52
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0694",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0694.wav",
+      "audio_sha256": "92aedc2126d210f14444dc9175579a54e129f5b186105b8a40d20bfff204143f",
+      "reference": "1537 жылы асунсьон қаласының негізі салынғаннан бастап парагвай өзінің көптеген түпкілікті сипаты мен өзіндік ерекшелігін сақтай білді",
+      "baseline_hypothesis": "мың бес жүз жетпіс үшінші жылы асуаньсон қаласының негізгі салынған бастап парагвай өзінің көптеген түпкілікті сипатты мен өзіндік ерекшелігін сақтай білді",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 9,
+        "substitutions": 5,
+        "deletions": 0,
+        "insertions": 4,
+        "reference_chars": 134,
+        "char_errors": 33
+      },
+      "duration_s": 14.52
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0763",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0763.wav",
+      "audio_sha256": "85167da56d66a7fa978328d76a280519e545d7389e5d2ba8b78dcca4988d546b",
+      "reference": "жиырмасыншы ғасырдағы зерттеу генетикалық вариацияның екі пулы бар екенін көрсетті жасырын және көрінетін",
+      "baseline_hypothesis": "жиырмасыншы ғасырдағы зерттеу генетикалық вариацияның екі пулы бар екенін көрсетті жасырын және көрінетін",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 105,
+        "char_errors": 0
+      },
+      "duration_s": 10.86
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0763",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0763.wav",
+      "audio_sha256": "a9a84694bae9b2496803ab420d34dd9f5966de3af4e73d2309942bf3fb0c1d3e",
+      "reference": "жиырмасыншы ғасырдағы зерттеу генетикалық вариацияның екі пулы бар екенін көрсетті жасырын және көрінетін",
+      "baseline_hypothesis": "ғик",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 13,
+        "substitutions": 1,
+        "deletions": 12,
+        "insertions": 0,
+        "reference_chars": 105,
+        "char_errors": 102
+      },
+      "duration_s": 10.86
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0763",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0763.wav",
+      "audio_sha256": "ab2aa4433e6b3ce93bdc29f86536004235271995e411130ab069552126b29541",
+      "reference": "жиырмасыншы ғасырдағы зерттеу генетикалық вариацияның екі пулы бар екенін көрсетті жасырын және көрінетін",
+      "baseline_hypothesis": "ғырдызертеугеетикарин",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 13,
+        "substitutions": 1,
+        "deletions": 12,
+        "insertions": 0,
+        "reference_chars": 105,
+        "char_errors": 84
+      },
+      "duration_s": 10.86
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0773",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0773.wav",
+      "audio_sha256": "f778e78eb9a18feb55f2ae2404344d612cca1e2378f36ffa4673b1047b427945",
+      "reference": "ақш гимнастикасы және ақш олимпиада комитеті бір мақсатты көздейді гимнастика және басқа да спорт түрлерін барынша қауіпсіз етіп спортшылардың өз армандарын орындауды қауіпсіз позитивті және мүмкіндіктерге толы ортада жүзеге асыруын қамтамасыз ету",
+      "baseline_hypothesis": "ақш гимнастикасы және ақш олимпиада комитеті бір мақсатты көздейді гимнастика және басқа да спорт түрлерін барынша қауіпсіз етіп спортшылардың өз армандарын орындауды қауіпсіз позитивті және мүмкіндіктерге толы ортада жүзеге асыруын қамтамасыз ету",
+      "baseline_scores": {
+        "reference_words": 32,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 247,
+        "char_errors": 0
+      },
+      "duration_s": 20.4
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0773",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0773.wav",
+      "audio_sha256": "cb2e90aebe78470b91f1d7ba6f0b61a3c87ec175b7c547364f0540db80e27106",
+      "reference": "ақш гимнастикасы және ақш олимпиада комитеті бір мақсатты көздейді гимнастика және басқа да спорт түрлерін барынша қауіпсіз етіп спортшылардың өз армандарын орындауды қауіпсіз позитивті және мүмкіндіктерге толы ортада жүзеге асыруын қамтамасыз ету",
+      "baseline_hypothesis": "коиекдіаыынораүыз",
+      "baseline_scores": {
+        "reference_words": 32,
+        "word_errors": 32,
+        "substitutions": 1,
+        "deletions": 31,
+        "insertions": 0,
+        "reference_chars": 247,
+        "char_errors": 230
+      },
+      "duration_s": 20.4
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0773",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0773.wav",
+      "audio_sha256": "d2d9c2accaa4545c2a6b8fe380c8aa85df10725b4d9645a232cb1c2397d02e76",
+      "reference": "ақш гимнастикасы және ақш олимпиада комитеті бір мақсатты көздейді гимнастика және басқа да спорт түрлерін барынша қауіпсіз етіп спортшылардың өз армандарын орындауды қауіпсіз позитивті және мүмкіндіктерге толы ортада жүзеге асыруын қамтамасыз ету",
+      "baseline_hypothesis": "ақгимнасти және қолимпида комитеті бір мақаты көздейдігасүліршқауіпсіз еісршылардың армандарын оындауды қауіпсізоив мүіндіктерге толы ортада жүзеге асыуын қамтамасыз ету",
+      "baseline_scores": {
+        "reference_words": 32,
+        "word_errors": 23,
+        "substitutions": 9,
+        "deletions": 14,
+        "insertions": 0,
+        "reference_chars": 247,
+        "char_errors": 78
+      },
+      "duration_s": 20.4
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0803",
+      "selection": "failure",
+      "trigger_conditions": [
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0803.wav",
+      "audio_sha256": "b6120905bca73d09e60c4de353af6484728ee208e906d2f5ee400590ed4f0f8b",
+      "reference": "«бұл қоштасу болайын деп тұрған жоқ. бұл — бір тараудың жабылуы және жаңасының ашылуы»",
+      "baseline_hypothesis": "бұл қоштасу болайын деп тұрған жоқ бұл бір тараудың жабылуы және жаңасының ашылуы",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 81,
+        "char_errors": 0
+      },
+      "duration_s": 7.5
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0803",
+      "selection": "failure",
+      "trigger_conditions": [
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0803.wav",
+      "audio_sha256": "cff72206f4727c16588dd466fba7ee493e11bd2912077895a6bf40e944ff8973",
+      "reference": "«бұл қоштасу болайын деп тұрған жоқ. бұл — бір тараудың жабылуы және жаңасының ашылуы»",
+      "baseline_hypothesis": "бұлқоштау болаын дептұрғанжоқ бұл бір тараудың жабылу және жаңасының ашылуы",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 7,
+        "substitutions": 4,
+        "deletions": 3,
+        "insertions": 0,
+        "reference_chars": 81,
+        "char_errors": 6
+      },
+      "duration_s": 7.5
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0803",
+      "selection": "failure",
+      "trigger_conditions": [
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0803.wav",
+      "audio_sha256": "1ecebc2cbd2bdcdd60ce0016dddbb9fb6bba88a11a30181fe0bc28e75097e673",
+      "reference": "«бұл қоштасу болайын деп тұрған жоқ. бұл — бір тараудың жабылуы және жаңасының ашылуы»",
+      "baseline_hypothesis": "л",
+      "baseline_scores": {
+        "reference_words": 13,
+        "word_errors": 13,
+        "substitutions": 1,
+        "deletions": 12,
+        "insertions": 0,
+        "reference_chars": 81,
+        "char_errors": 80
+      },
+      "duration_s": 7.5
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0833",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0833.wav",
+      "audio_sha256": "29372d3c4fa3037fef3b8d284fa660c3af9068e166dddf2227bf6869487259f5",
+      "reference": "блогтарды тиісті түрде қолдану студенттердің аналитикалық және критикалық ойлауын әлдеқайда күшейтуі мүмкін. интернет материалдарына белсенді түрде жауап беру арқылы олар басқа адамдардың жазбаларына қатысты өздерінің позициясын айқындай алады сондай-ақ нақты бір мәселелер бойынша өздерінің көзқарастарын білдіре алады oravec 2002",
+      "baseline_hypothesis": "блогтарды тиісті түрде қолдану студенттердің аналитикалық және критикалық ойлауын әлдеқайда күшейтуі мүмкін интернет материалдарына белсенді түрде жауап беру арқылы олар басқа адамдардың жазбаларына қатысты өздерінің позициясын айқындай алады сондай ақ нақты бір мәселелер бойынша өздерінің көзқарастарын білдіре алады оравек екі мың екі",
+      "baseline_scores": {
+        "reference_words": 39,
+        "word_errors": 6,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 3,
+        "reference_chars": 329,
+        "char_errors": 18
+      },
+      "duration_s": 25.02
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0833",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0833.wav",
+      "audio_sha256": "9c9f47bb99f6ed9fdcefbe39b53f633b2450f5f33a1c51a13e0873a5d0fa3cfc",
+      "reference": "блогтарды тиісті түрде қолдану студенттердің аналитикалық және критикалық ойлауын әлдеқайда күшейтуі мүмкін. интернет материалдарына белсенді түрде жауап беру арқылы олар басқа адамдардың жазбаларына қатысты өздерінің позициясын айқындай алады сондай-ақ нақты бір мәселелер бойынша өздерінің көзқарастарын білдіре алады oravec 2002",
+      "baseline_hypothesis": "ун",
+      "baseline_scores": {
+        "reference_words": 39,
+        "word_errors": 39,
+        "substitutions": 1,
+        "deletions": 38,
+        "insertions": 0,
+        "reference_chars": 329,
+        "char_errors": 327
+      },
+      "duration_s": 25.02
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0833",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0833.wav",
+      "audio_sha256": "d04b6d4ad0e5071e989b1e24c63d815c71eecbbd7de9b3ba0fbd4efc3ae3b997",
+      "reference": "блогтарды тиісті түрде қолдану студенттердің аналитикалық және критикалық ойлауын әлдеқайда күшейтуі мүмкін. интернет материалдарына белсенді түрде жауап беру арқылы олар басқа адамдардың жазбаларына қатысты өздерінің позициясын айқындай алады сондай-ақ нақты бір мәселелер бойынша өздерінің көзқарастарын білдіре алады oravec 2002",
+      "baseline_hypothesis": "богтардыт қлдану студентердіңижойлын",
+      "baseline_scores": {
+        "reference_words": 39,
+        "word_errors": 39,
+        "substitutions": 3,
+        "deletions": 36,
+        "insertions": 0,
+        "reference_chars": 329,
+        "char_errors": 293
+      },
+      "duration_s": 25.02
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_validation_0053",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_validation_0053.wav",
+      "audio_sha256": "7dbf9a53f98ddc61461861db5a9363e64680eda435265d5fbd85b1464a29b0be",
+      "reference": "кейбір ресми хабарларда өлімдер саны сегіз деп көрсетілген және ресми хабарлар 30-ға дейін адам жарақаттанғанын растайды бірақ түпкілікті сандар әлі белгісіз",
+      "baseline_hypothesis": "кейбір ресми хабарларда өлімдер саны сегіз деп көрсетілген және ресми хабарлар отызға дейін адам жарақаттанғанын растайды бірақ түпкілікті сандар әлі белгісіз",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 156,
+        "char_errors": 4
+      },
+      "duration_s": 14.7
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_validation_0053",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_validation_0053.wav",
+      "audio_sha256": "914799ef45a8365dc7def802525e5e2f4f689c6d0bc9af1f283aef23d01a8f03",
+      "reference": "кейбір ресми хабарларда өлімдер саны сегіз деп көрсетілген және ресми хабарлар 30-ға дейін адам жарақаттанғанын растайды бірақ түпкілікті сандар әлі белгісіз",
+      "baseline_hypothesis": "өлімдера",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 21,
+        "substitutions": 1,
+        "deletions": 20,
+        "insertions": 0,
+        "reference_chars": 156,
+        "char_errors": 148
+      },
+      "duration_s": 14.7
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_validation_0053",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_validation_0053.wav",
+      "audio_sha256": "1edc6e1b039f0e13c3ee6d595f5dea9334cfbbbfa11b7ca80c19f8e3d0412d5d",
+      "reference": "кейбір ресми хабарларда өлімдер саны сегіз деп көрсетілген және ресми хабарлар 30-ға дейін адам жарақаттанғанын растайды бірақ түпкілікті сандар әлі белгісіз",
+      "baseline_hypothesis": "кдөлімдерсанағ",
+      "baseline_scores": {
+        "reference_words": 21,
+        "word_errors": 21,
+        "substitutions": 1,
+        "deletions": 20,
+        "insertions": 0,
+        "reference_chars": 156,
+        "char_errors": 142
+      },
+      "duration_s": 14.7
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_validation_0253",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_validation_0253.wav",
+      "audio_sha256": "9e31182049e5fbb9aa7c5a2f0def0f262b5534fbf84afd2d24c45ee72b4442ec",
+      "reference": "негізгі жергілікті сыра – «number one». бұл күрделі сыра емес бірақ жағымды және сергітеід. тағы бір жергілікті сыра «manta» деп аталады",
+      "baseline_hypothesis": "негізгі жергілікті сыра намбер уан бұл күрделі сыра емес бірақ жағымды және сергітеді тағы бір жергілікті сыра манта деп аталады",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 4,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 128,
+        "char_errors": 16
+      },
+      "duration_s": 12.78
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_validation_0253",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_validation_0253.wav",
+      "audio_sha256": "79d175de05cc8e9fac2565c37479c7bfd64b7235c6a307bd91526db0eaa9b5fa",
+      "reference": "негізгі жергілікті сыра – «number one». бұл күрделі сыра емес бірақ жағымды және сергітеід. тағы бір жергілікті сыра «manta» деп аталады",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 20,
+        "substitutions": 0,
+        "deletions": 20,
+        "insertions": 0,
+        "reference_chars": 128,
+        "char_errors": 128
+      },
+      "duration_s": 12.78
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_validation_0253",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_validation_0253.wav",
+      "audio_sha256": "0820cccf3a5a21c9d24b6650896a0ce40630fd581dbe4ef6e1a17bc36cb4c2a0",
+      "reference": "негізгі жергілікті сыра – «number one». бұл күрделі сыра емес бірақ жағымды және сергітеід. тағы бір жергілікті сыра «manta» деп аталады",
+      "baseline_hypothesis": "негізгіжергіліктісыран бұл күрделі сыра ес ірақымджнеері",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 17,
+        "substitutions": 3,
+        "deletions": 14,
+        "insertions": 0,
+        "reference_chars": 128,
+        "char_errors": 73
+      },
+      "duration_s": 12.78
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0001.wav",
+      "audio_sha256": "cdd6026f47961257d1c475aef91a0bd742a84a4c5af1848e714617d51f6825f5",
+      "reference": "оны «вичи» француздар билеген. бұл 1940 жылы немістермен бейбіт келісім жасасқан және  соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды",
+      "baseline_hypothesis": "оны вичи француздар билеген бұл бір мың тоғыз жүз қырықыншы жылы немістермен бейбіт келісім жасасқан және соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 5,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 4,
+        "reference_chars": 151,
+        "char_errors": 27
+      },
+      "duration_s": 24.36
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0001.wav",
+      "audio_sha256": "7cb029e24b630e17af9f566bab1fccc2974979f43a967db604f490d25993effc",
+      "reference": "оны «вичи» француздар билеген. бұл 1940 жылы немістермен бейбіт келісім жасасқан және  соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды",
+      "baseline_hypothesis": "оны вичи француздар билеген бұл бір мың тоғыз жүз қырықыншы жылы немістермен бейбіт келісім жасасқан және соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 5,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 4,
+        "reference_chars": 151,
+        "char_errors": 27
+      },
+      "duration_s": 24.36
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0001.wav",
+      "audio_sha256": "1dfc0c9c26cb2e0237c4bc439966d919f1ea3a5f1e51b0f3c93c3dc04c90b725",
+      "reference": "оны «вичи» француздар билеген. бұл 1940 жылы немістермен бейбіт келісім жасасқан және  соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды",
+      "baseline_hypothesis": "оны вичи француздар билеген бұл бір мың тоғыз жүз қырықыншы жылы немістермен бейбіт келісім жасасқан және соғысудың орнына жаулаушылармен бірге жұмыс істеген француздар болды",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 5,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 4,
+        "reference_chars": 151,
+        "char_errors": 27
+      },
+      "duration_s": 24.36
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0002.wav",
+      "audio_sha256": "e8f13c4491e0ea8ed53ffdd60e9463251de3c82e0a039a54bfde1c8ae23e5da2",
+      "reference": "ешкілер алғаш рет қол үйретілген уақыт иранның загрос тауларында шамамен 10 000 жыл бұрын деп саналады",
+      "baseline_hypothesis": "ешкілер алғаш рет қол үйретілген уақыт иранның загроз тауларында шамамен он мың жыл бұрын деп саналады",
+      "baseline_scores": {
+        "reference_words": 16,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 102,
+        "char_errors": 6
+      },
+      "duration_s": 16.44
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0002.wav",
+      "audio_sha256": "95a4d0835c803d9be778df0b04c886cbbf0b2e6f45a2046ad86271d42f9747c8",
+      "reference": "ешкілер алғаш рет қол үйретілген уақыт иранның загрос тауларында шамамен 10 000 жыл бұрын деп саналады",
+      "baseline_hypothesis": "ешкілер алғаш рет қол үйретілген уақыт иранның загроз тауларында шамамен он мың жыл бұрын деп саналады",
+      "baseline_scores": {
+        "reference_words": 16,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 102,
+        "char_errors": 6
+      },
+      "duration_s": 16.44
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0002.wav",
+      "audio_sha256": "900419fa51554d8747fd882f94e5780dd80fc11993ba1ca5760903a581b6940c",
+      "reference": "ешкілер алғаш рет қол үйретілген уақыт иранның загрос тауларында шамамен 10 000 жыл бұрын деп саналады",
+      "baseline_hypothesis": "ешкілер алғаш рет қол үйретілген уақыт иранның загроз тауларында шамамен он мың жыл бұрын деп саналады",
+      "baseline_scores": {
+        "reference_words": 16,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 102,
+        "char_errors": 6
+      },
+      "duration_s": 16.44
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0003",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/kk/fleurs_kk_kz_test_0003.wav",
+      "audio_sha256": "13433ff7ae3df78c5bf662c86ce0f238062c16cd42850aabbb662faa3f7a1318",
+      "reference": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіге бөлу 3:2 деп айтылады",
+      "baseline_hypothesis": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіге бөлу үште екі деп аталады",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 3,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 109,
+        "char_errors": 10
+      },
+      "duration_s": 11.82
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0003",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/alaw/fleurs_kk_kz_test_0003.wav",
+      "audio_sha256": "61c64e57060462d6b22517ad0628b1cb13e57a4bbdb0837c585731f76c89877f",
+      "reference": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіге бөлу 3:2 деп айтылады",
+      "baseline_hypothesis": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіеге бөлу үште екі деп аталады",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 4,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 109,
+        "char_errors": 11
+      },
+      "duration_s": 11.82
+    },
+    {
+      "language": "kk",
+      "id": "fleurs_kk_kz_test_0003",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/kk/mulaw/fleurs_kk_kz_test_0003.wav",
+      "audio_sha256": "5d754bdb9aea73d2c129ac89cd7545c06461bd45752d871441e871d3ccd31c7c",
+      "reference": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіге бөлу 3:2 деп айтылады",
+      "baseline_hypothesis": "сондықтан бұл пішімнің арақатынасы ең қарапайым бүтін санның қатынасын алу үшін он екіге бөлу үшті екі деп аталады",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 3,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 109,
+        "char_errors": 10
+      },
+      "duration_s": 11.82
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0578",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/ky/fleurs_ky_kg_test_0578.wav",
+      "audio_sha256": "c7dfb8d475e97d4ca3937780d725d039b584f6edf0fe6f665dbbf69bb0a38cbb",
+      "reference": "изилдөө үчүн колдонулган заманбап телескоптордун көпчүлүгү атмосфералык шарттары жакшы болгон өзүнчө аймактарда жайгашкан ири курулмалар болуп эсептелет",
+      "baseline_hypothesis": "изилдөө үчүн колдонулган заманбап телескоптордун көпчүлүгү атмосфералык шарттары жакшы болгон өзүнчө аймактарда жайгашкан ири курулмалар болуп эсептелет изилдөө үчүн колдонулган заманбап телескоптун көпчүлүгү атмосфералык шарттарды жакшы болгон өзүнчө аймактарда жайгашкан ири курулмалар болуп эсептелет",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 17,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 17,
+        "reference_chars": 152,
+        "char_errors": 151
+      },
+      "duration_s": 23.58
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0578",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/alaw/fleurs_ky_kg_test_0578.wav",
+      "audio_sha256": "12d7b07efa372e12f5749bceed0bf83ea53444e5263fc9c797f242ad0bfece92",
+      "reference": "изилдөө үчүн колдонулган заманбап телескоптордун көпчүлүгү атмосфералык шарттары жакшы болгон өзүнчө аймактарда жайгашкан ири курулмалар болуп эсептелет",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 17,
+        "substitutions": 0,
+        "deletions": 17,
+        "insertions": 0,
+        "reference_chars": 152,
+        "char_errors": 152
+      },
+      "duration_s": 23.58
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0578",
+      "selection": "failure",
+      "trigger_conditions": [
+        "alaw",
+        "mulaw"
+      ],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/mulaw/fleurs_ky_kg_test_0578.wav",
+      "audio_sha256": "2cc5db825480f7f1b67807748ae1f33388563174696533aa95c48cf33b57ef7d",
+      "reference": "изилдөө үчүн колдонулган заманбап телескоптордун көпчүлүгү атмосфералык шарттары жакшы болгон өзүнчө аймактарда жайгашкан ири курулмалар болуп эсептелет",
+      "baseline_hypothesis": "",
+      "baseline_scores": {
+        "reference_words": 17,
+        "word_errors": 17,
+        "substitutions": 0,
+        "deletions": 17,
+        "insertions": 0,
+        "reference_chars": 152,
+        "char_errors": 152
+      },
+      "duration_s": 23.58
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/ky/fleurs_ky_kg_test_0000.wav",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "reference": "спектрдин башка жагынан караганда адам жамаат жасап жаткан нерселердин баарын өзгөртүп аны өзүнө ылайыкташыруусу керек деп сезген таанылгыс инсанга айланат",
+      "baseline_hypothesis": "спектрдин башка жагынан караганда адам жамаат жасап жаткан нерселердин баарын өзгөртүп аны өзүнө ылайыкташтыруусу керек деп сезген таанылгыс инсанга айланат",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 155,
+        "char_errors": 1
+      },
+      "duration_s": 12.36
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/alaw/fleurs_ky_kg_test_0000.wav",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "reference": "спектрдин башка жагынан караганда адам жамаат жасап жаткан нерселердин баарын өзгөртүп аны өзүнө ылайыкташыруусу керек деп сезген таанылгыс инсанга айланат",
+      "baseline_hypothesis": "нспектрдин башка жагынан караганда адам жамаат жасап жаткан нерселердин баарын өзгөртүп аны өзүнө ылайыкташтыруусу керек деп сезген таанылгыс инсанга айланат",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 2,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 155,
+        "char_errors": 2
+      },
+      "duration_s": 12.36
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/mulaw/fleurs_ky_kg_test_0000.wav",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "reference": "спектрдин башка жагынан караганда адам жамаат жасап жаткан нерселердин баарын өзгөртүп аны өзүнө ылайыкташыруусу керек деп сезген таанылгыс инсанга айланат",
+      "baseline_hypothesis": "спектрдин башка жагынан караганда адам жамаат жасап жаткан нерселердин баарын өзгөртүп аны өзүнө ылайыкташтыруусу керек деп сезген таанылгыс инсанга айланат",
+      "baseline_scores": {
+        "reference_words": 20,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 155,
+        "char_errors": 1
+      },
+      "duration_s": 12.36
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/ky/fleurs_ky_kg_test_0001.wav",
+      "audio_sha256": "ff2a6d058aaa2ed3efe514a554b81841dc227b44444df7a9cf7e8500bd7f8304",
+      "reference": "колуңуздун нымы сырткы катмарлар менен реакцияга киргенде күлкүлүү болот жана кабык сымал нерсе пайда болот",
+      "baseline_hypothesis": "колуңуздун нымы сырткы катмарлар менен реакцияга киргенде күлкүлүү болот жана кабык сымал нерсе пайда болот",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 107,
+        "char_errors": 0
+      },
+      "duration_s": 7.8
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/alaw/fleurs_ky_kg_test_0001.wav",
+      "audio_sha256": "d63f6b58f4681f1ec3deb5233e4215e1d77e1cb75d7a26c24815b6ae62b38fda",
+      "reference": "колуңуздун нымы сырткы катмарлар менен реакцияга киргенде күлкүлүү болот жана кабык сымал нерсе пайда болот",
+      "baseline_hypothesis": "колуңуздун нымы сырткы катмарлар менен реакцияга киргенде күлкүлүү болот жана кабык сымал нерсе пайда болот",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 107,
+        "char_errors": 0
+      },
+      "duration_s": 7.8
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/mulaw/fleurs_ky_kg_test_0001.wav",
+      "audio_sha256": "1bf0379c797e3fc9ac8b1897151c6d23bd0656f18ceca9d931a0262bda3cead5",
+      "reference": "колуңуздун нымы сырткы катмарлар менен реакцияга киргенде күлкүлүү болот жана кабык сымал нерсе пайда болот",
+      "baseline_hypothesis": "колуңуздун нымы сырткы катмарлар менен реакцияга киргенде күлкүлүү болот жана кабык сымал нерсе пайда болот",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 107,
+        "char_errors": 0
+      },
+      "duration_s": 7.8
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/ky/fleurs_ky_kg_test_0002.wav",
+      "audio_sha256": "a2eb48632fe02f9a6aba3d47a9eb22a70faf428fb1da3d207136eeb34f930504",
+      "reference": "европа тарыхындагы ушул кезде кудуретке да байлыкка да ээ болгон католикалык чиркөө катуу көзөмөлдөнө баштаган",
+      "baseline_hypothesis": "европа тарыхындагы ушул кезде кудуретке да байлыкка да ээ болгон католикалык чиркөө катуу көзөмөлдөнө баштаган",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 110,
+        "char_errors": 0
+      },
+      "duration_s": 8.64
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/alaw/fleurs_ky_kg_test_0002.wav",
+      "audio_sha256": "f810f266ebc495cdfc08826d6546468e85fac9f51b2f1d1551d0ca8d5991d47f",
+      "reference": "европа тарыхындагы ушул кезде кудуретке да байлыкка да ээ болгон католикалык чиркөө катуу көзөмөлдөнө баштаган",
+      "baseline_hypothesis": "европа тарыхындагы ушул кезде кудуретке да байлыкка да ээ болгон католикалык чиркөө катуу көзөмөлдөнө баштаган",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 110,
+        "char_errors": 0
+      },
+      "duration_s": 8.64
+    },
+    {
+      "language": "ky",
+      "id": "fleurs_ky_kg_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/ky/mulaw/fleurs_ky_kg_test_0002.wav",
+      "audio_sha256": "7823d5d29903e31e548ab1fd0d3a310b830847ba3626515e82989566655526d1",
+      "reference": "европа тарыхындагы ушул кезде кудуретке да байлыкка да ээ болгон католикалык чиркөө катуу көзөмөлдөнө баштаган",
+      "baseline_hypothesis": "европа тарыхындагы ушул кезде кудуретке да байлыкка да ээ болгон католикалык чиркөө катуу көзөмөлдөнө баштаган",
+      "baseline_scores": {
+        "reference_words": 15,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 110,
+        "char_errors": 0
+      },
+      "duration_s": 8.64
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/uz/fleurs_uz_uz_test_0000.wav",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "reference": "siz shuningdek oʻzingiznikidan boshqa hukumatlar maslahatini olishni xohlashingiz mumkin biroq ularning maslahati oʻzlarining fuqarolari uchun moʻljallangan",
+      "baseline_hypothesis": "siz shuningdek o'zingiznikidan boshqa hukumatlar maslahatini olishni xohlashingiz mumkin biroq ularning maslahati o'zlarining fuqarolari uchun mo'ljallangan",
+      "baseline_scores": {
+        "reference_words": 16,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 153,
+        "char_errors": 0
+      },
+      "duration_s": 13.68
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/uz/alaw/fleurs_uz_uz_test_0000.wav",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "reference": "siz shuningdek oʻzingiznikidan boshqa hukumatlar maslahatini olishni xohlashingiz mumkin biroq ularning maslahati oʻzlarining fuqarolari uchun moʻljallangan",
+      "baseline_hypothesis": "siz shuningdek o'zingiznikidan boshqa hukumatlar maslahatini olishni xohlashingiz mumkin biroq ularning maslahati o'zlarining fuqarolari uchun mo'ljallangan",
+      "baseline_scores": {
+        "reference_words": 16,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 153,
+        "char_errors": 0
+      },
+      "duration_s": 13.68
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0000",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/uz/mulaw/fleurs_uz_uz_test_0000.wav",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "reference": "siz shuningdek oʻzingiznikidan boshqa hukumatlar maslahatini olishni xohlashingiz mumkin biroq ularning maslahati oʻzlarining fuqarolari uchun moʻljallangan",
+      "baseline_hypothesis": "siz shuningdek o'zingiznikidan boshqa hukumatlar maslahatini olishni xohlashingiz mumkin biroq ularning maslahati o'zlarining fuqarolari uchun mo'ljallangan",
+      "baseline_scores": {
+        "reference_words": 16,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 153,
+        "char_errors": 0
+      },
+      "duration_s": 13.68
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/uz/fleurs_uz_uz_test_0001.wav",
+      "audio_sha256": "58c7c10b111f26ead0151433d4547de4e508195b1c63d0d44c810cf92ef5d6b1",
+      "reference": "internet oʻzida ommaviy hamda shaxslararo aloqa elementlarini mujassamlashtiradi",
+      "baseline_hypothesis": "internet o'zida ommaviy hamda shaxslararo aloqa elementlarini mujassamlashtiradi",
+      "baseline_scores": {
+        "reference_words": 8,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 79,
+        "char_errors": 0
+      },
+      "duration_s": 6.6
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/uz/alaw/fleurs_uz_uz_test_0001.wav",
+      "audio_sha256": "09fc92fc8b3a18520ae16432842be1579bc730a1e188e20a1e40ed1966d1da2d",
+      "reference": "internet oʻzida ommaviy hamda shaxslararo aloqa elementlarini mujassamlashtiradi",
+      "baseline_hypothesis": "internet o'zida ommaviy hamda shaxslararo aloqa elementlarini mujassamlashtiradi",
+      "baseline_scores": {
+        "reference_words": 8,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 79,
+        "char_errors": 0
+      },
+      "duration_s": 6.6
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0001",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/uz/mulaw/fleurs_uz_uz_test_0001.wav",
+      "audio_sha256": "957e4abc9fdd4c2b2b4d323ea7ff83b4e8ae432f7b4deb562b5916c38fa4dedf",
+      "reference": "internet oʻzida ommaviy hamda shaxslararo aloqa elementlarini mujassamlashtiradi",
+      "baseline_hypothesis": "internet o'zida ommaviy hamda shaxslararo aloqa elementlarini mujassamlashtiradi",
+      "baseline_scores": {
+        "reference_words": 8,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 79,
+        "char_errors": 0
+      },
+      "duration_s": 6.6
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "original",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/audio/uz/fleurs_uz_uz_test_0002.wav",
+      "audio_sha256": "52eb190cc681fa92a110e567f3b0d3a7c2e5ab50f2c403dabfa1157740d1e2d0",
+      "reference": "olimlar sayyoralar qanday qilib shakllanishini ayniqsa yer qanday shakllanganini tushunishga umid qiladilar chunki kometalar ancha avval yer bilan toʻqnashgan",
+      "baseline_hypothesis": "olimlar sayyoralar qanday qilib shakllanishini ayniqsa yer qanday shakllanganini tushunishga umid qiladilar chunki kometalar ancha avval yer bilan to'qnashgan",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 157,
+        "char_errors": 0
+      },
+      "duration_s": 15.12
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "alaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/uz/alaw/fleurs_uz_uz_test_0002.wav",
+      "audio_sha256": "d67f7ed33f19bd60e51c43c311225772f17ef7ee9700bb6842381f0ee962b957",
+      "reference": "olimlar sayyoralar qanday qilib shakllanishini ayniqsa yer qanday shakllanganini tushunishga umid qiladilar chunki kometalar ancha avval yer bilan toʻqnashgan",
+      "baseline_hypothesis": "olimlar sayyoralar qanday qilib shakllanishini ayniqsa yer qanday shakllanganini tushunishga umid qiladilar chunki kometalar ancha avval yer bilan to'qnashgan",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 157,
+        "char_errors": 0
+      },
+      "duration_s": 15.12
+    },
+    {
+      "language": "uz",
+      "id": "fleurs_uz_uz_test_0002",
+      "selection": "control",
+      "trigger_conditions": [],
+      "condition": "mulaw",
+      "path": "/home/ekhodzitsky/.cache/gigastt-multilingual-telephony/uz/mulaw/fleurs_uz_uz_test_0002.wav",
+      "audio_sha256": "f00a1f12f02cb93a7d66ff4501db121437290dafab011d51af181d1e3d28cac6",
+      "reference": "olimlar sayyoralar qanday qilib shakllanishini ayniqsa yer qanday shakllanganini tushunishga umid qiladilar chunki kometalar ancha avval yer bilan toʻqnashgan",
+      "baseline_hypothesis": "olimlar sayyoralar qanday qilib shakllanishini ayniqsa yer qanday shakllanganini tushunishga umid qiladilar chunki kometalar ancha avval yer bilan to'qnashgan",
+      "baseline_scores": {
+        "reference_words": 19,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 157,
+        "char_errors": 0
+      },
+      "duration_s": 15.12
+    }
+  ]
+}

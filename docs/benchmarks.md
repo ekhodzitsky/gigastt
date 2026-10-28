@@ -6,6 +6,18 @@
 > not current-model memory budgets. The current encoder is 305 MiB; its M1
 > footprint and latency have not been remeasured.
 
+## Which evidence applies
+
+- [Current main RNN-T bundle](rnnt-quantization.md): pinned October weights,
+  measured Linux quality/speed/resource trade-offs and upgrade instructions.
+- [Multilingual evaluation](languages.md): matched reading and conversational
+  cohorts with retained per-recording results; its own source/model snapshot.
+- [Six-head research comparison](https://github.com/ekhodzitsky/gigastt/pull/453):
+  current RNN-T weights and additional unmerged CTC/punctuation adapters. Quote
+  its recorded configuration, not the capabilities of a released binary.
+- The M1 comparison below is historical. It does not establish current RAM,
+  speed or accuracy, and the original primary RNN-T scores remain unverified.
+
 Historical comparisons of gigastt against Russian-ASR engines. The primary
 comparison used Apple M1 CPU, 1,000-sample manifests per domain (992 nonempty
 clean-read references), failures included in scoring, and bootstrap intervals.
@@ -38,12 +50,10 @@ The public benchmark-results branch contains a different 15-fixture smoke run.
 A new fully documented run may replace the missing evidence; older `e2e_rnnt`,
 multilingual, held-out and streaming measurements must remain separately labelled.
 
-> **Contamination caveat.** GigaAM v3 (gigastt) is a SberDevices model whose training is
-> dominated by Golos, and OpenSTT-style corpora are common in Russian ASR training mixes.
-> The Golos / OpenSTT slices here **very likely overlap GigaAM v3's training
-> distribution** — treat gigastt's in-domain numbers as a best-case upper bound, not WER
-> on unseen data. (Golos ships an official train/test split, so this is distribution
-> overlap, not row-level leakage.)
+> **Training overlap is not established.** These public corpora may share
+> domains or recordings with model training data. An official corpus test split
+> does not prove a pretrained model never saw that material. Interpret results
+> within their collection domain; do not label them a guaranteed unseen test.
 
 ## Accuracy by domain — WER % (95% CI)
 
@@ -52,7 +62,6 @@ Domains: **Clean read** `golos_crowd_1k` · **Far-field** `golos_farfield` ·
 
 | Engine | Clean read | Far-field | Phone calls | YouTube |
 |---|---|---|---|---|
-| **gigastt** (GigaAM v3 `rnnt`, INT8) | pending evidence | pending evidence | pending evidence | pending evidence |
 | gigastt (GigaAM Multilingual `ml_ctc_large`, 600M, INT8) | 4.44 (3.7–5.2) | 5.70 (4.9–6.6) | — ² | — ² |
 | gigastt (GigaAM Multilingual `ml_ctc`, 220M, INT8) | 6.15 (5.4–7.0) | 8.28 (7.3–9.4) | — ² | — ² |
 | Vosk 0.54 (Zipformer2) | **2.97 (2.4–3.6)** | 6.29 (5.4–7.3) | 22.74 (21.3–24.2) | 17.24 (16.0–18.4) |
@@ -98,8 +107,8 @@ RTF (M1 CPU): gigastt ~0.04–0.09 · Vosk ~0.04–0.05 · faster-whisper ~0.7�
   **loses on SOVA device/command** (10.30 vs 6.28) — Zipformer/command domain.
 - **vs faster-whisper Large-v3:** gigastt ahead on **CV** (2.63 vs 5.22), **RuLS**
   (4.21 vs 9.65), and **SOVA** (10.30 vs 14.79); **FLEURS** and **ToneWebinars**
-  Whisper leads (3.84 vs 5.26; 8.33 vs 13.02); **Podlodka** is a statistical tie
-  (7.33 vs 7.27, wide CI). Domain-dependent — Whisper stronger on long lecture speech.
+  Whisper leads (3.84 vs 5.26; 8.33 vs 13.02); **Podlodka** has similar point estimates
+  (7.33 vs 7.27, wide CI); this does not prove equivalence. Domain-dependent — Whisper stronger on long lecture speech.
 - Podlodka n=67 is thin (HF only ~87 utts total); CI is wide.
 - ToneWebinars: validation slice of first 2500 RU rows, seed=42 → n=1000; ~7.1 h audio;
   mostly Russian webinar segments (Cyrillic majority filter).
@@ -230,7 +239,7 @@ English, Kazakh, Kyrgyz and Uzbek. See [Languages](languages.md) for the later
 
 > Same caveat as the Russian table: GigaAM Multilingual is pre-trained on 2M hours across
 > 70+ languages and LibriSpeech is a common English ASR corpus, so read this as a best-case
-> in-distribution upper bound, not WER on unseen English.
+> public-corpus measurement with unknown training overlap, not proven WER on unseen English.
 
 ## Kazakh / Kyrgyz / Uzbek — WER % (FLEURS)
 
@@ -262,6 +271,8 @@ The latter is a separate Linux CPU experiment, not the historical M1 speed table
 
 ## Speed — RTF (processing ÷ audio; lower = faster; M1 CPU)
 
+Historical model/software configuration; not remeasured on the current RNN-T bundle.
+
 | Engine | Clean | Far-field | Phone | YouTube |
 |---|---|---|---|---|
 | Vosk 0.42 / 0.54 | ~0.03 | ~0.03 | ~0.03 | ~0.04 |
@@ -278,7 +289,11 @@ the 1025-token BPE one.)
 
 ## Footprint
 
-| Engine | Deployable model on disk | Peak RAM | Cold-start |
+Historical and heterogeneous measurements: the gigastt row combines a reported
+steady-state footprint with an older cold-start measurement. It is not a uniform
+peak-memory comparison or a sizing guide for current weights.
+
+| Engine | Historical model on disk | Reported memory (different methods) | Cold-start |
 |---|---|---|---|
 | **gigastt** | **~225 MB** (INT8) | **~510 MB RSS / ~66 MB resident** ¹ | **0.94 s** |
 | T-one (greedy) | 138 MB | 672 MB | 1.87 s |
@@ -293,29 +308,24 @@ the 1025-token BPE one.)
 `--punctuation off --itn off`, steady state after 5 warm decodes. Two metrics,
 because they now diverge: **resident footprint** (dirty + compressed pages,
 `/usr/bin/footprint`) is ~46 MB at `--pool-size 1` and ~66 MB at the default
-`--pool-size 2` (~35 / ~57 MB at `/ready`) — the honest "RAM you actually
-need" figure, since the 215 MB model is memory-mapped and file-backed and the
-OS reclaims those clean pages under pressure. **`ps` RSS** — what
+`--pool-size 2` (~35 / ~57 MB at `/ready`) — a macOS-specific dirty/compressed measure. The old encoder is memory-mapped
+and its clean pages may be reclaimed, but memory pressure can cause refaults;
+this figure alone is not an operational RAM budget. **`ps` RSS** — what
 `top`/Activity Monitor shows — reads ~277 MB (pool 1) / ~510 MB (pool 2)
 because it counts the shared model mapping per mapping. The server's own
 `memory_after_load rss_mb=` startup log samples before the mapping is touched
 and reads only ~55 / ~83 MB — a known under-read, not a number to quote. The
-committed `benchmark/results_footprint_gigastt.json` predates the memory-mapped
-encoder: its cold-start (0.94 s) still matches the table, but its ~1501 MB peak
-RSS is the pre-mmap figure and contradicts the rows above — do not quote it. The
+original report references `benchmark/results_footprint_gigastt.json`, which
+is absent from this checkout. It described a pre-mmap run with 0.94 s cold-start
+and roughly 1501 MB peak RSS. Neither that report nor the later steady-state
+figures supplies a reproducible current peak-memory baseline. The
 pre-v2.3 default was `--pool-size 4`; v2.3 lowered it to 2 plus a RAM-aware
 auto-cap.
 
-gigastt wins **on-disk size** (4–13× smaller than the Whisper/Vosk engines) and
-**cold-start** (0.94 s; Vosk 0.42 is a dreadful ~30 s). It is honestly **not** the
-absolute smallest — T-one greedy is 138 MB — but T-one's *production* config adds a
-5.5 GB KenLM, so gigastt is the smallest model **with no language-model trade-off**.
-gigastt now also wins **peak RAM**: ~46 MB resident / ~277 MB `ps` RSS at
-`--pool-size 1` makes it the lightest engine in this table, and even the
-default `--pool-size 2` (~66 MB resident / ~510 MB RSS, ~20 MB marginal per
-extra slot) sits below Vosk 0.54 (560 MB) and T-one greedy (672 MB). The
-resident figure is what to budget: RSS counts the shared memory-mapped model,
-whose pages the OS reclaims under pressure.
+Do not rank these entries by comparing one engine's dirty/compressed footprint
+with another engine's RSS or peak allocation. Measure the exact deployed model,
+pool size, warmup, request concurrency and peak memory on the target host.
+Current deployment guidance is in [the runbook](runbook.md#out-of-memory-oom).
 
 ## Streaming measurement protocol
 
@@ -484,7 +494,7 @@ operators run it on-device with
 [`benchmark/bench_edge.py`](../benchmark/bench_edge.py) (cold-start, RSS@ready,
 warm RTF, RSS after decode, WebSocket time-to-first-partial).
 
-| Platform | Head | RTF | Peak RSS | Cold-start | TTFP |
+| Platform | Head | RTF | Memory after warm decode | Cold-start | TTFP |
 |---|---|---|---|---|---|
 | Raspberry Pi 4 (microSD) | `rnnt` INT8 | — | — | — | — |
 | Raspberry Pi 4 (microSD) | `ml_ctc` INT8 | — | — | — | — |
@@ -496,13 +506,13 @@ protocol above.
 
 **Apple M1 reference (same protocol, `--pool-size 1`).** For orientation while
 Pi hardware is pending: the same harness on the M1 development machine, per
-head. RTF and TTFP are from the committed `benchmark/results_edge_m1.json`
-(gigastt 2.16.0); RAM and cold-start come from a 2026-08-04 re-measurement
-after the memory-mapped ORT-cache change and are **not** in that artifact —
-it is pre-mmap (it reads ~1.0 s cold start, ~747 MB RSS@ready). **Not** a Pi
-prediction.
+head. The original report cites `benchmark/results_edge_m1.json`
+(gigastt 2.16.0), but that artifact is absent from this checkout. RAM and
+cold-start were reported separately on 2026-08-04 after the memory-mapped
+ORT-cache change. The table is retained as a historical report, not a
+reproducible current baseline or a Pi prediction.
 
-| Head | RTF | Peak RSS | Cold-start | TTFP |
+| Head | RTF | Memory after warm decode | Cold-start | TTFP |
 |---|---|---|---|---|
 | `rnnt` INT8 | 0.043 (0.041–0.045) | ~277 MiB RSS / ~46 MB resident | ~0.4 s warm boot | 766 ms |
 | `ml_ctc` INT8 | 0.032 (0.030–0.036) | ~261 MiB RSS / ~28 MB resident | ~0.3 s warm boot | 749 ms |
@@ -514,8 +524,7 @@ for both heads. RAM and cold-start re-measured 2026-08-04 on M1 Pro after the
 memory-mapped ORT-cache change (`--pool-size 1`): RSS is process `ps`
 RSS after warm decodes, resident is the macOS `footprint` dirty+compressed
 figure; the warm boot reads the cached `.ort` file, and the first boot after a
-model update pays a one-time ~2.7 s `.onnx`→`.ort` conversion. `ml_ctc` is the
-lighter head — a single encoder-only session, no decoder/joiner pair.
+model update pays a one-time ~2.7 s `.onnx`→`.ort` conversion. `ml_ctc` is encoder-only; its memory use must still be measured for the chosen bundle.
 
 > **RAM note.** The encoder weights now load from a memory-mapped ORT-format
 > cache (`.ort`) with zero-copy initializers and ORT prepacking disabled: the
@@ -524,7 +533,7 @@ lighter head — a single encoder-only session, no decoder/joiner pair.
 > **resident footprint** (dirty + compressed pages) — ~46 MB pool-1 / ~66 MB
 > pool-2 after warm decodes (~35 / ~57 MB at `/ready`), ~20 MB marginal per
 > extra slot — and **`ps` RSS**, which counts the shared mapping per mapping
-> (~277 / ~510 MB). Budget the resident figure. The server's own
+> (~277 / ~510 MB). These historical values are not a current memory budget. The server's own
 > `memory_after_load rss_mb=` startup log samples before the mapping is
 > touched and reads only ~55 / ~83 MB — a known under-read, not a number to
 > quote.
@@ -537,66 +546,40 @@ lighter head — a single encoder-only session, no decoder/joiner pair.
   is never one row.
 - **Default `rnnt` output is bare lowercase.** Readable text needs
   `--punctuation` / `--itn` (an extra model plus extra CPU — relevant on
-  constrained devices) or the `e2e_rnnt` head, which trades WER for baked-in
-  punctuation.
+  constrained devices) or the `e2e_rnnt` head with built-in punctuation. Compare recognition
+  quality on the target domain using a consistent normalization policy.
 - **Diarization model is skippable.** Speaker diarization is opt-in at request
   time; `download --skip-diarization` skips downloading the speaker model on
   constrained devices.
 
 ## Pull-request model smoke gate
 
-`Model smoke` runs on every pull request (including forks) and main push,
-with read-only repository permissions and no secrets. It caches only the four
-pinned `rnnt` recognition files; cache misses download them, and engine loading
-verifies the checksums from `model/variant.rs` on every run. The workflow checks
-file presence before invoking the ignored oracle so a missing model cannot
-silently skip the gate. Exact test names are also checked against the test list
-to reject a zero-test run after renaming. It does not cache optimized graphs or
-optional sidecars.
+`Model smoke` is part of manually dispatched `ci.yml`, including its default
+branch-check mode. Pushes and PR events do not start it. It downloads/caches
+pinned RNN-T recognition files, verifies prerequisites and invokes explicit
+serial tests; missing model assets or a renamed zero-test target cannot silently
+satisfy the gate. Optimized graphs and optional sidecars are not its cache inputs.
 
-The serial tests compare the encoder to the author activation fixture and the
-exact expected transcript (see the oracle tolerance JSON), then exercise real
-speech through WebSocket partials, window slides and finalization under all
-commit policies. The WebSocket test checks text consistency between policies,
-not equality with batch recognition or corpus WER. These are correctness gates;
-no shared-runner latency threshold is enforced. The entire job has a 25-minute
-limit. The full custom WER harness is never invoked by these explicit targets.
-
-Repository administrators must require the `Model smoke` check for `main`
-after this workflow is available. Full E2E and quality suites remain main-push
-checks; the Criterion regression job remains advisory because runner timing is
-noisy. Forks use the ordinary `pull_request` event, not a privileged target event;
-GitHub may require a maintainer to approve a first-time contributor's run.
+The tests compare encoder activations and expected transcript fixtures, then
+exercise real speech through WebSocket partials, sliding windows and finalization.
+These are correctness checks, not corpus WER or shared-runner latency guarantees.
+Full E2E/model-quality checks require `full=true`. Required status reporting and
+release prerequisites are described in [manual CI operation](performance-regressions.md#manual-ci-operation).
 
 ## Headline single-engine metrics
 
-The primary four-domain `rnnt` WER claims are withheld pending the evidence
-specified above. Resource measurements below have their own measurement context;
-they do not validate the missing accuracy run.
-
-| Metric | Value |
-|---|---|
-| WER — primary four-domain comparison | Pending complete raw results and provenance |
-| RTF (`rnnt` INT8, M1 CPU) | ~0.10 |
-| RAM (default `--pool-size 2`) | ~66 MB resident / ~510 MB `ps` RSS (single session ~46 MB / ~277 MB — RSS counts the shared memory-mapped model; resident is the honest figure) |
-| INT8 encoder (only runtime path) | ~215 MB on disk |
+Use only results with the required provenance above. The current main RNN-T
+encoder is about 305 MiB (about 310 MiB with decoder/joiner/vocabulary).
+Historical M1 RTF and steady-state memory have not been remeasured for it.
+Model size is not a memory budget, and the withheld four-domain RNN-T scores
+cannot be recovered by copying a different Linux or multilingual experiment.
 
 ## Held-out queue
 
-Full 3-engine table (gigastt · Vosk 0.54 · faster-whisper L3) is above. Status:
-
-| # | Status | Dataset | Domain |
-|---|--------|---------|--------|
-| 1 | **done** (+ FW) | Mozilla Common Voice RU | clean / crowd read |
-| 2 | **done** (+ FW) | FLEURS `ru_ru` (WER) | clean read |
-| 3 | **done** (+ FW) | Russian LibriSpeech (RuLS) | audiobook |
-| 4 | **done** (+ FW) | SOVA RuDevices | device / command |
-| 5 | **partial** (n=67 only, + FW) | Podlodka Speech | conversational |
-| 6 | **done** (+ FW) | ToneWebinars | webinar / lecture |
-| 7 | optional | Phone-sim on a held-out set | telephony proxy |
-
-Full queue, prep scripts, protocol, and definition of done:
-[`docs/held-out-datasets-roadmap.md`](held-out-datasets-roadmap.md).
+Dataset coverage, preparation and publication requirements are maintained in the
+[public dataset protocol](held-out-datasets-roadmap.md). Historical comparison
+scores and their provenance remain above; a completed run is not proof of
+training-data independence.
 
 ## Reproduce
 

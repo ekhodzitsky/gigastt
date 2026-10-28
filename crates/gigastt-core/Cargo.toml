@@ -92,7 +92,7 @@ rubato = "5.0"
 symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
 # AAC-LC, HE-AAC, and AAC-LD from ADTS, M4A, LATM/LOAS, and bounded fMP4.
 # Zero runtime dependencies. rust-version 1.89, below the workspace MSRV.
-syom = { version = "0.7.1", optional = true }
+syom = { version = "0.8.1", optional = true }
 # WAVE family ingest (PCM/IEEE, G.711, G.722, GSM 06.10, MS/IMA ADPCM,
 # RF64/RIFX/Wave64). Zero default-feature deps; default features are
 # `adpcm` + `simd`.

@@ -1,144 +1,140 @@
 # gigastt
 
-Russian speech to text, locally.
+Local speech recognition for files, live audio and embedded applications.
 
 [![crates.io](https://img.shields.io/crates/v/gigastt.svg)](https://crates.io/crates/gigastt)
 [![docs.rs](https://docs.rs/gigastt-core/badge.svg)](https://docs.rs/gigastt-core)
-[![CI](https://github.com/ekhodzitsky/gigastt/actions/workflows/ci.yml/badge.svg)](https://github.com/ekhodzitsky/gigastt/actions/workflows/ci.yml)
-[![coverage](https://codecov.io/gh/ekhodzitsky/gigastt/branch/main/graph/badge.svg)](https://codecov.io/gh/ekhodzitsky/gigastt)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A speech recognizer in Rust, powered by [GigaAM v3](https://github.com/salute-developers/GigaAM)
-and ONNX Runtime. Transcribe files, serve HTTP and WebSocket clients, or embed
-the engine. CPU by default. The default INT8 model is about 310 MiB; inference
-runs on the device after the initial downloads. No cloud API or API key.
+gigastt is a Rust CLI and HTTP/WebSocket server powered by
+[GigaAM](https://github.com/salute-developers/GigaAM) and ONNX Runtime.
+Russian recognition is the default; multilingual models also support English,
+Kazakh, Kyrgyz and Uzbek. Inference runs on your machine, with no cloud API,
+account or API key. Models are downloaded once and can be provisioned offline.
 
-## Examples
+This documentation follows **main**. For an installed release, use the
+[documentation at its tag](https://github.com/ekhodzitsky/gigastt/tags).
+Model bundles and language-binding releases have their own versions.
 
-Transcribe a recording or write subtitles:
+## Install
+
+Choose one installation method:
+
+- **Prebuilt binary:** download the archive for your platform from
+  [Releases](https://github.com/ekhodzitsky/gigastt/releases), unpack it and put
+  `gigastt` (`gigastt.exe` on Windows) on `PATH`. Builds cover macOS Apple Silicon,
+  Linux x86_64/aarch64 and Windows x86_64. See [release verification](docs/verifying-releases.md).
+- **Homebrew:**
+  ```sh
+  brew tap ekhodzitsky/gigastt https://github.com/ekhodzitsky/gigastt
+  brew install gigastt
+  ```
+- **Build the published crate:**
+  ```sh
+  cargo install gigastt --locked
+  ```
+  Requires Rust 1.94+, a native toolchain and `protoc`; Linux also needs OpenSSL
+  development files. [Build prerequisites](.github/CONTRIBUTING.md#development).
+
+Docker and offline/systemd packages: [deployment](docs/deployment.md).
+
+## Transcribe a file
 
 ```sh
 gigastt transcribe recording.wav
 gigastt transcribe recording.wav --format srt --output recording.srt
 ```
 
-Process a folder, or watch for new recordings:
+The first run downloads missing models. `gigastt download` preloads the ASR
+bundle and, in default builds, the speaker model; punctuation is fetched when
+enabled by `serve` or `transcribe`. See [model setup and sizes](docs/models.md).
+
+Batch processing and directory watching:
 
 ```sh
 gigastt transcribe-batch recordings/ transcripts/
 gigastt watch inbox/ transcripts/
 ```
 
-Start the server:
+Files include WAV, AAC/M4A, MP3, FLAC, OGG/Vorbis, OGG/Opus and WebM/Opus.
+WAV telephony codecs and raw G.711/G.722 are supported; see the
+[format and codec reference](docs/api.md#audio-formats-and-telephony-codecs).
+
+## Run the server
 
 ```sh
 gigastt serve
 ```
 
-From another terminal, upload a file:
+From another terminal, check readiness and upload a file:
 
 ```sh
-curl http://127.0.0.1:9876/v1/transcribe \
+curl --fail http://127.0.0.1:9876/ready
+curl --fail http://127.0.0.1:9876/v1/transcribe \
   -H 'Content-Type: application/octet-stream' \
   --data-binary @recording.wav
 ```
 
-The server binds to loopback by default. [Deployment](docs/deployment.md)
-covers Docker, remote clients and reverse proxies.
+Wait for `/ready` to return HTTP 200 before sending audio. `/health` also
+answers during model loading. The default bind is loopback; remote access needs
+explicit configuration and a proxy for TLS/authentication. See [deployment](docs/deployment.md).
 
-## Interfaces
-
-| Interface | Use |
+| Interface | Purpose |
 |---|---|
-| CLI | Files, batch folders, watched folders; TXT, JSON, SRT, VTT, Markdown |
-| `/v1/transcribe` | File upload; word timings, segments and optional speaker labels |
-| `/v1/transcribe/stream` | File upload with SSE results |
-| `/v1/ws` | Live PCM16 audio with partial and final transcripts |
-| `/v1/audio/transcriptions` | OpenAI-compatible multipart upload; JSON, text, subtitles, verbose JSON |
-| `/v1/jobs` | Opt-in queue for file transcription; progress, polling and cancellation |
-| In process | Rust, C ABI, Node and Python; Swift/Kotlin packaging guides |
+| CLI | Files, batch and watch; text, JSON, SRT, VTT and Markdown exports |
+| `POST /v1/transcribe` | File upload with word timings and optional speaker labels |
+| `POST /v1/transcribe/stream` | File upload with SSE results |
+| `GET /v1/ws` | Live mono PCM16 at 8, 16, 24, 44.1 or 48 kHz; partial/final transcripts |
+| `POST /v1/audio/transcriptions` | OpenAI-compatible multipart upload and output formats |
+| `/v1/jobs` | Optional in-memory job queue, progress and cancellation (`--enable-jobs`) |
 
-[API reference](docs/api.md) · [Go client](sdks/go) ·
-[TypeScript client](sdks/js) · [Embedding quickstarts](docs/quickstarts.md)
+[API reference](docs/api.md) · [CLI reference](docs/cli.md) ·
+[Go client](sdks/go/README.md) · [TypeScript client](sdks/js/README.md)
 
-## Audio and models
+## Choose a model
 
-Files: WAV (PCM, IEEE float, G.711, G.722, GSM, ADPCM, RF64), AAC/M4A, MP3,
-FLAC, OGG/Vorbis, OGG/Opus and WebM/Opus. Raw telephony input is available
-through the CLI and native REST API. WebSocket takes PCM16 at
-8, 16, 24, 44.1 or 48 kHz.
+| Model | Languages | Text output |
+|---|---|---|
+| `rnnt` (default) | Russian | Bare recognition; CLI/server can add punctuation and number normalization |
+| `e2e_rnnt` | Russian | Built-in punctuation, casing and text normalization |
+| `ml_ctc`, `ml_ctc_large` | Russian, English, Kazakh, Kyrgyz, Uzbek | Bare multilingual text |
 
-The default `rnnt` head recognizes Russian. `e2e_rnnt` includes punctuation
-and casing; `ml_ctc` / `ml_ctc_large` support Russian, English, Kazakh,
-Kyrgyz and Uzbek. Optional punctuation, Russian text normalization,
-hotwords and speaker diarization are described in the [API](docs/api.md).
-
-For measured Kazakh, Kyrgyz and Uzbek accuracy, model selection and limits on
-conversation quality, see [Languages](docs/languages.md). The latest matched
-evaluation recommends `ml_ctc_large`; reading and conversation are reported separately.
-
-CPU works out of the box. CUDA, CoreML and NNAPI builds, plus experimental
-ANE and Candle backends: [architecture](docs/architecture.md).
+Select with `--model-variant`. [Models](docs/models.md) explains downloads,
+formatting policy and upgrades; [Languages](docs/languages.md) reports measured
+multilingual quality. Choose using recognition quality, speed and memory on your
+workload, as well as punctuation.
 
 ## Performance
 
-Reported file-transcription WER (%), lower is better. Apple M1 CPU,
-Golos/OpenSTT slices, 1,000 samples per domain (992 clean references).
+The current main-branch RNN-T ASR bundle is about **310 MiB on disk**. It uses
+INT8 matrix weights with floating-point convolutions; side models and optimized
+caches add space. Disk size is not a RAM requirement. The older v2.22.0 release
+pins a different bundle; see [the model transition](docs/rnnt-quantization.md).
 
-| Engine | Clean read | Far-field | Phone | YouTube |
-|---|---:|---:|---:|---:|
-| gigastt (`rnnt`, INT8) | pending evidence | pending evidence | pending evidence | pending evidence |
-| Vosk 0.54 | 2.97 | 6.29 | 22.74 | 17.24 |
-| faster-whisper (Large v3) | 15.53 | 17.34 | 24.93 | 15.45 |
+[Benchmarks](docs/benchmarks.md) records corpus, model and hardware provenance.
+Historical M1 figures do not describe the new bundle. Live WebSocket recognition
+uses an offline model with buffered incremental decoding, so file WER and speed
+must not be presented as live-stream measurements.
 
-The previously reported primary `rnnt` scores are withheld until their raw
-results and complete run provenance are available. Competitor rows remain
-historical measurements. These datasets are close to GigaAM's training
-distribution; results on held-out sets differ. Full
-comparisons, confidence intervals and artifact provenance:
-[benchmarks](docs/benchmarks.md).
+## Embed the engine
 
-The 2026-10-09 RNN-T bundle keeps convolutions in FP32 and quantizes MatMul
-weights to INT8. On the measured Linux CPU, warm long-form processing takes
-about 55–56% of the old bundle's time, with about 22–23% higher peak RSS.
-Model size is about 310 MiB per head. The historical M1 latency and memory
-figures have not been remeasured for this bundle. See the
-[quality trade-offs and upgrade instructions](docs/rnnt-quantization.md).
+Use `gigastt-core = "2.22"` in Rust, `npm install gigastt` for the Node native
+binding, or `pip install gigastt` for Python. These packages load side-provisioned
+models. Swift, Kotlin and C ABI options are covered in
+[in-process quickstarts](docs/quickstarts.md) and [packaging](docs/embedding-packaging.md).
+Package availability and versions differ across ecosystems.
 
-Live WebSocket recognition uses a buffered offline model with incremental
-partials. Its accuracy and latency differ from file transcription;
-see the [streaming measurements](docs/benchmarks.md#streaming-measurement-protocol).
+CPU is the default backend. CUDA, CoreML, NNAPI and experimental ANE/Candle
+builds are described in [architecture](docs/architecture.md).
 
-## Install
+## Documentation and development
 
-Homebrew:
+[Documentation index](docs/README.md) · [Troubleshooting](docs/troubleshooting.md) ·
+[Contributing](.github/CONTRIBUTING.md) · [Changelog](CHANGELOG.md) ·
+[Privacy](docs/privacy.md) · [Security](.github/SECURITY.md)
 
-```sh
-brew tap ekhodzitsky/gigastt https://github.com/ekhodzitsky/gigastt
-brew install gigastt
-```
+GitHub workflows run only on manual dispatch. Local validation and the manual
+review/release process are documented in [Contributing](.github/CONTRIBUTING.md).
 
-Or build from crates.io:
-
-```sh
-cargo install gigastt
-```
-
-Building requires Rust 1.94+ and `protoc`; ONNX Runtime is downloaded at
-build time by default. Linux source builds also need OpenSSL development files;
-see [native build prerequisites](.github/CONTRIBUTING.md#development).
-[Prebuilt releases](https://github.com/ekhodzitsky/gigastt/releases)
-cover macOS Apple Silicon, Linux x86_64/aarch64 and Windows x86_64.
-[Docker instructions](docs/deployment.md#docker) use the published GHCR images.
-
-For Rust embedding: `gigastt-core = "2.22"`. Node: `npm install gigastt`.
-Python: `pip install gigastt`. Model setup and platform packaging:
-[quickstarts](docs/quickstarts.md).
-
-[Who uses gigastt](docs/who-uses.md) · [Documentation](docs/README.md) ·
-[CLI](docs/cli.md) · [API](docs/api.md) · [Benchmarks](docs/benchmarks.md) ·
-[Changelog](CHANGELOG.md)
-
-MIT. Default ASR weights are MIT; the optional WeSpeaker model is
-CC BY 4.0. Benchmark datasets retain their own licenses. See
-[LICENSE](LICENSE), [NOTICE](NOTICE) and [data licenses](benchmark/DATA_LICENSE).
+MIT. ASR weights are MIT; the optional WeSpeaker model is CC BY 4.0.
+See [LICENSE](LICENSE), [NOTICE](NOTICE) and [benchmark data licenses](benchmark/DATA_LICENSE).

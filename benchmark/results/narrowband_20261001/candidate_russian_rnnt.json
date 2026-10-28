@@ -1,0 +1,1134 @@
+{
+  "health": {
+    "status": "ok",
+    "model": "gigaam-v3-rnnt",
+    "variant": "rnnt",
+    "version": "2.21.0",
+    "punctuation": false,
+    "itn": false
+  },
+  "manifest": {
+    "samples": [
+      {
+        "id": "golos_00",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+        "reference": "шестьдесят тысяч тенге сколько будет стоить",
+        "dataset": "russian_golos_fixture",
+        "sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0"
+      },
+      {
+        "id": "golos_01",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+        "reference": "покажи мне на смотрешке телеканал синергия тв",
+        "dataset": "russian_golos_fixture",
+        "sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c"
+      },
+      {
+        "id": "golos_02",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+        "reference": "заказать яблоки зеленые",
+        "dataset": "russian_golos_fixture",
+        "sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f"
+      },
+      {
+        "id": "golos_03",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+        "reference": "алиса закажи килограммовый торт графские развалины",
+        "dataset": "russian_golos_fixture",
+        "sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240"
+      },
+      {
+        "id": "golos_04",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+        "reference": "ищи телеканал про бизнес на тиви",
+        "dataset": "russian_golos_fixture",
+        "sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758"
+      },
+      {
+        "id": "golos_05",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+        "reference": "михаила мурадяна",
+        "dataset": "russian_golos_fixture",
+        "sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04"
+      },
+      {
+        "id": "golos_06",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+        "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+        "dataset": "russian_golos_fixture",
+        "sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8"
+      },
+      {
+        "id": "golos_07",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+        "reference": "найди боевики",
+        "dataset": "russian_golos_fixture",
+        "sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867"
+      },
+      {
+        "id": "golos_08",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+        "reference": "гетто сезон три",
+        "dataset": "russian_golos_fixture",
+        "sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7"
+      },
+      {
+        "id": "golos_09",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+        "reference": "хочу посмотреть ростов папа на телевизоре",
+        "dataset": "russian_golos_fixture",
+        "sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68"
+      },
+      {
+        "id": "golos_10",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+        "reference": "сбер какое твое самое ненавистное занятие",
+        "dataset": "russian_golos_fixture",
+        "sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81"
+      },
+      {
+        "id": "golos_11",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+        "reference": "афина чем платят у китайцев",
+        "dataset": "russian_golos_fixture",
+        "sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72"
+      },
+      {
+        "id": "golos_12",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+        "reference": "джой как работает досрочное погашение кредита",
+        "dataset": "russian_golos_fixture",
+        "sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b"
+      },
+      {
+        "id": "golos_13",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+        "reference": "у тебя найдется люк кейдж",
+        "dataset": "russian_golos_fixture",
+        "sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0"
+      },
+      {
+        "id": "golos_14",
+        "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+        "reference": "у тебя будет лучшая часть пинк",
+        "dataset": "russian_golos_fixture",
+        "sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8"
+      }
+    ]
+  },
+  "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.43",
+  "python": "3.12.14 (main, Sep  1 2026, 14:16:52) [Clang 22.1.3 ]",
+  "scoring": "scripts/wer_unicode.py normalize; jiwer; micro WER/CER including spaces; no ITN",
+  "details": [
+    {
+      "id": "golos_00",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+      "reference": "шестьдесят тысяч тенге сколько будет стоить",
+      "dataset": "russian_golos_fixture",
+      "sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "condition": "original",
+      "input_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "hypothesis": "шестьдесят тысяч тенге сколько будет стоить",
+      "elapsed_s": 0.16219077701680362,
+      "duration_s": 4.0,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 43,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 43,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_00",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+      "reference": "шестьдесят тысяч тенге сколько будет стоить",
+      "dataset": "russian_golos_fixture",
+      "sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "condition": "simulated_telephone",
+      "input_sha256": "11cf19b3af3447866a4456782c33c3951f44bf7d64cf956ac1315f41dd1382e7",
+      "hypothesis": "шестьдесят тысяч тенге сколько будет стоить",
+      "elapsed_s": 0.24539009807631373,
+      "duration_s": 3.99975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 43,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 43,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_01",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+      "reference": "покажи мне на смотрешке телеканал синергия тв",
+      "dataset": "russian_golos_fixture",
+      "sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "condition": "original",
+      "input_sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "hypothesis": "покажи мне на смотрешке телеканал синергия тв",
+      "elapsed_s": 0.15334335388615727,
+      "duration_s": 3.43,
+      "scores": {
+        "verbatim": {
+          "reference_words": 7,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 7,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_01",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+      "reference": "покажи мне на смотрешке телеканал синергия тв",
+      "dataset": "russian_golos_fixture",
+      "sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "condition": "simulated_telephone",
+      "input_sha256": "27d16e55fb64789ad1f538f754614fe40960e96deaa040e6381cc5bc67fdedce",
+      "hypothesis": "покажи мне на смотрешке телеканал синергия тв",
+      "elapsed_s": 0.13810113491490483,
+      "duration_s": 3.42975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 7,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 7,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_02",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+      "reference": "заказать яблоки зеленые",
+      "dataset": "russian_golos_fixture",
+      "sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "condition": "original",
+      "input_sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "hypothesis": "заказать яблоки зеленые",
+      "elapsed_s": 0.10921909101307392,
+      "duration_s": 3.06,
+      "scores": {
+        "verbatim": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 23,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 23,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_02",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+      "reference": "заказать яблоки зеленые",
+      "dataset": "russian_golos_fixture",
+      "sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "condition": "simulated_telephone",
+      "input_sha256": "f1dc226a4c56f5072436113f8fb559e5c95928c3e90ed35e8b1db672eefd079a",
+      "hypothesis": "заказать яблоки зеленые",
+      "elapsed_s": 0.11493988404981792,
+      "duration_s": 3.05975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 23,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 23,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_03",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+      "reference": "алиса закажи килограммовый торт графские развалины",
+      "dataset": "russian_golos_fixture",
+      "sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "condition": "original",
+      "input_sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "hypothesis": "алиса закажи килограммовый торт графские развалины",
+      "elapsed_s": 0.18185511487536132,
+      "duration_s": 5.44,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 50,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 50,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_03",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+      "reference": "алиса закажи килограммовый торт графские развалины",
+      "dataset": "russian_golos_fixture",
+      "sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "condition": "simulated_telephone",
+      "input_sha256": "fa48c1e6cfd8fb0b29ceb5b03b0223cba86b4aa9bebce49426d65193fb7e5cc7",
+      "hypothesis": "алиса закажи килограммовый торт графские развалины",
+      "elapsed_s": 0.1856574108824134,
+      "duration_s": 5.43975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 50,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 50,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_04",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+      "reference": "ищи телеканал про бизнес на тиви",
+      "dataset": "russian_golos_fixture",
+      "sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "condition": "original",
+      "input_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "hypothesis": "ищи телеканал про бизнес на тиви",
+      "elapsed_s": 0.1733852990437299,
+      "duration_s": 5.22,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 32,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 32,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_04",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+      "reference": "ищи телеканал про бизнес на тиви",
+      "dataset": "russian_golos_fixture",
+      "sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "condition": "simulated_telephone",
+      "input_sha256": "12a7c4659dc2d62efa55345ba24e1367c219956c08898d7792474280faa54948",
+      "hypothesis": "ищи телеканал про бизнес на тв",
+      "elapsed_s": 0.17585392598994076,
+      "duration_s": 5.21975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 1,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 32,
+          "char_errors": 2
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 1,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 32,
+          "char_errors": 2
+        }
+      }
+    },
+    {
+      "id": "golos_05",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+      "reference": "михаила мурадяна",
+      "dataset": "russian_golos_fixture",
+      "sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "condition": "original",
+      "input_sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "hypothesis": "михаила мурадяна",
+      "elapsed_s": 0.11832690215669572,
+      "duration_s": 3.2039375,
+      "scores": {
+        "verbatim": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 16,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 16,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_05",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+      "reference": "михаила мурадяна",
+      "dataset": "russian_golos_fixture",
+      "sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "condition": "simulated_telephone",
+      "input_sha256": "2518b9961f1f13b5b70f6daa590040ad560c3ebc1864202b7e3cdcae9d53e759",
+      "hypothesis": "михаила мурадяна",
+      "elapsed_s": 0.12386199599131942,
+      "duration_s": 3.20375,
+      "scores": {
+        "verbatim": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 16,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 16,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_06",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+      "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "dataset": "russian_golos_fixture",
+      "sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "condition": "original",
+      "input_sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "hypothesis": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "elapsed_s": 0.18504327000118792,
+      "duration_s": 5.0,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 49,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 49,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_06",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+      "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "dataset": "russian_golos_fixture",
+      "sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "condition": "simulated_telephone",
+      "input_sha256": "142d0bf7b6337ddb50045893d2eaa3919a88f284bdd3dd61ba093e1db946af6e",
+      "hypothesis": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "elapsed_s": 0.17932456103153527,
+      "duration_s": 4.99975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 49,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 49,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_07",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+      "reference": "найди боевики",
+      "dataset": "russian_golos_fixture",
+      "sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "condition": "original",
+      "input_sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "hypothesis": "найди боевики",
+      "elapsed_s": 0.08003752492368221,
+      "duration_s": 2.04,
+      "scores": {
+        "verbatim": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 13,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 13,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_07",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+      "reference": "найди боевики",
+      "dataset": "russian_golos_fixture",
+      "sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "condition": "simulated_telephone",
+      "input_sha256": "29fbe530bee25d53c62e7ad076b6aaf9f514c5619405927107ec3fc34b4ebe83",
+      "hypothesis": "найди боевики",
+      "elapsed_s": 0.08660185895860195,
+      "duration_s": 2.03975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 13,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 2,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 13,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_08",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+      "reference": "гетто сезон три",
+      "dataset": "russian_golos_fixture",
+      "sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "condition": "original",
+      "input_sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "hypothesis": "гетто сезон три",
+      "elapsed_s": 0.16089557902887464,
+      "duration_s": 4.928,
+      "scores": {
+        "verbatim": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 15,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 15,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_08",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+      "reference": "гетто сезон три",
+      "dataset": "russian_golos_fixture",
+      "sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "condition": "simulated_telephone",
+      "input_sha256": "3b90abfe5aefe022200e97c0ebe8808fabe7a287f2422e314e74bd8d2d37a042",
+      "hypothesis": "гетто сезон три",
+      "elapsed_s": 0.1714899770449847,
+      "duration_s": 4.92775,
+      "scores": {
+        "verbatim": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 15,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 3,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 15,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_09",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+      "reference": "хочу посмотреть ростов папа на телевизоре",
+      "dataset": "russian_golos_fixture",
+      "sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "condition": "original",
+      "input_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "hypothesis": "хочу посмотреть ростов папа на телевизоре",
+      "elapsed_s": 0.12439818191342056,
+      "duration_s": 3.34325,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_09",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+      "reference": "хочу посмотреть ростов папа на телевизоре",
+      "dataset": "russian_golos_fixture",
+      "sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "condition": "simulated_telephone",
+      "input_sha256": "de6dbb7ccdfb66bd608ad86f6b662c3a7a1234b1f9398cafe8f6b922c82066d6",
+      "hypothesis": "хочу посмотреть ростов папа на телевизоре",
+      "elapsed_s": 0.12978158215992153,
+      "duration_s": 3.343,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_10",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+      "reference": "сбер какое твое самое ненавистное занятие",
+      "dataset": "russian_golos_fixture",
+      "sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "condition": "original",
+      "input_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "hypothesis": "сбер какое твое самое ненавистное занятие",
+      "elapsed_s": 0.13666520407423377,
+      "duration_s": 3.9061875,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_10",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+      "reference": "сбер какое твое самое ненавистное занятие",
+      "dataset": "russian_golos_fixture",
+      "sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "condition": "simulated_telephone",
+      "input_sha256": "799defcb047a563c3ecbba8c052cae082a9cf92a13b6ff848f8002b727e6134c",
+      "hypothesis": "сбер какое твое самое ненавистное занятие",
+      "elapsed_s": 0.14006879297085106,
+      "duration_s": 3.906,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 41,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_11",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+      "reference": "афина чем платят у китайцев",
+      "dataset": "russian_golos_fixture",
+      "sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "condition": "original",
+      "input_sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "hypothesis": "афина чем платят у китайцев",
+      "elapsed_s": 0.18205702281557024,
+      "duration_s": 5.64,
+      "scores": {
+        "verbatim": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 27,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 27,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_11",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+      "reference": "афина чем платят у китайцев",
+      "dataset": "russian_golos_fixture",
+      "sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "condition": "simulated_telephone",
+      "input_sha256": "9f0a69daee792d2857865f4913f370ce9e63b63b563c5f54acf52942dab177dc",
+      "hypothesis": "афина чем платят у китайцев",
+      "elapsed_s": 0.19424499617889524,
+      "duration_s": 5.63975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 27,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 27,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_12",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+      "reference": "джой как работает досрочное погашение кредита",
+      "dataset": "russian_golos_fixture",
+      "sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "condition": "original",
+      "input_sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "hypothesis": "джой как работает досрочное погашение кредита",
+      "elapsed_s": 0.2109447179827839,
+      "duration_s": 5.9439375,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_12",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+      "reference": "джой как работает досрочное погашение кредита",
+      "dataset": "russian_golos_fixture",
+      "sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "condition": "simulated_telephone",
+      "input_sha256": "1e57d16738dc191ee28b35e9da2a19699a7f4e6f9a080dfb8e82d2874c5b02dc",
+      "hypothesis": "джой как работает досрочное погашение кредита",
+      "elapsed_s": 0.19860546896234155,
+      "duration_s": 5.94375,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 45,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_13",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+      "reference": "у тебя найдется люк кейдж",
+      "dataset": "russian_golos_fixture",
+      "sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "condition": "original",
+      "input_sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "hypothesis": "у тебя найдется люк кейдж",
+      "elapsed_s": 0.11745404591783881,
+      "duration_s": 3.2,
+      "scores": {
+        "verbatim": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 25,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 25,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_13",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+      "reference": "у тебя найдется люк кейдж",
+      "dataset": "russian_golos_fixture",
+      "sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "condition": "simulated_telephone",
+      "input_sha256": "66a8a2d0e4c32aec19a8dbc13492d8215494284fb86a1d33be0d4066e1f51901",
+      "hypothesis": "у тебя найдется люк кейдж",
+      "elapsed_s": 0.11926986020989716,
+      "duration_s": 3.19975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 25,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 5,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 25,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_14",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+      "reference": "у тебя будет лучшая часть пинк",
+      "dataset": "russian_golos_fixture",
+      "sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "condition": "original",
+      "input_sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "hypothesis": "у тебя будет лучшая часть пинк",
+      "elapsed_s": 0.12296601687557995,
+      "duration_s": 3.41,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 30,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 30,
+          "char_errors": 0
+        }
+      }
+    },
+    {
+      "id": "golos_14",
+      "path": "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+      "reference": "у тебя будет лучшая часть пинк",
+      "dataset": "russian_golos_fixture",
+      "sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "condition": "simulated_telephone",
+      "input_sha256": "75773d502c0cacdc8192dee7a18d2497b7e6c2d413dfd30e408caf5ed6e8cf83",
+      "hypothesis": "у тебя будет лучшая часть пинк",
+      "elapsed_s": 0.1235419069416821,
+      "duration_s": 3.40975,
+      "scores": {
+        "verbatim": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 30,
+          "char_errors": 0
+        },
+        "normalized": {
+          "reference_words": 6,
+          "word_errors": 0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0,
+          "reference_chars": 30,
+          "char_errors": 0
+        }
+      }
+    }
+  ],
+  "summary": [
+    {
+      "dataset": "russian_golos_fixture",
+      "condition": "original",
+      "reference_layer": "verbatim",
+      "n": 15,
+      "audio_s": 61.7653125,
+      "elapsed_s": 2.2187821015249938,
+      "rtf": 0.03592278597351861,
+      "wer_pct": 0.0,
+      "cer_pct": 0.0,
+      "empty_hypotheses": 0
+    },
+    {
+      "dataset": "russian_golos_fixture",
+      "condition": "original",
+      "reference_layer": "normalized",
+      "n": 15,
+      "audio_s": 61.7653125,
+      "elapsed_s": 2.2187821015249938,
+      "rtf": 0.03592278597351861,
+      "wer_pct": 0.0,
+      "cer_pct": 0.0,
+      "empty_hypotheses": 0
+    },
+    {
+      "dataset": "russian_golos_fixture",
+      "condition": "simulated_telephone",
+      "reference_layer": "verbatim",
+      "n": 15,
+      "audio_s": 61.76175,
+      "elapsed_s": 2.3267334543634206,
+      "rtf": 0.03767272550346162,
+      "wer_pct": 1.3333333333333333,
+      "cer_pct": 0.40404040404040403,
+      "empty_hypotheses": 0
+    },
+    {
+      "dataset": "russian_golos_fixture",
+      "condition": "simulated_telephone",
+      "reference_layer": "normalized",
+      "n": 15,
+      "audio_s": 61.76175,
+      "elapsed_s": 2.3267334543634206,
+      "rtf": 0.03767272550346162,
+      "wer_pct": 1.3333333333333333,
+      "cer_pct": 0.40404040404040403,
+      "empty_hypotheses": 0
+    }
+  ]
+}

@@ -285,7 +285,7 @@ gigastt transcribe [OPTIONS] <FILE>
                               --sample-rate. Env: GIGASTT_CODEC.
   --sample-rate <HZ>          Sample rate of a raw --codec stream (8000 or 16000
                               for g722). Env: GIGASTT_SAMPLE_RATE.
-  Supports: WAV (incl. G.711 A-law/μ-law and G.722 payloads, GSM 06.10 / wav49, MS/IMA ADPCM, RF64), M4A, MP3,
+  Supports: WAV (incl. G.711 A-law/μ-law, G.722 payloads, G.726, GSM 06.10 / wav49, MS/IMA ADPCM, RF64), M4A, MP3,
             OGG/Vorbis, OGG/Opus (.opus), WebM/Opus, FLAC (mono or
             auto-mixed); raw .ulaw/.alaw/.g722 via --codec
 

@@ -2,7 +2,9 @@
 
 Core inference engine for [gigastt](https://github.com/ekhodzitsky/gigastt) — Russian (and optional multilingual) speech recognition powered by GigaAM v3 via ONNX Runtime. No server dependencies; no tokio runtime required for inference itself — embed it in any Rust application.
 
-Runtime is **INT8 only**. Default `rnnt` / `e2e_rnnt` files come from GitHub Releases; `ml_ctc` / `ml_ctc_large` come from HuggingFace, as do the optional speaker-embedding and punctuation sidecars — the Silero VAD sidecar comes from GitHub (`snakers4/silero-vad`).
+The standard ONNX runtime uses **prequantized INT8 bundles** (with floating-point
+operators where required). Experimental ANE/Candle backends use converted assets;
+see the [model guide](../../docs/models.md). Default `rnnt` / `e2e_rnnt` files come from GitHub Releases; `ml_ctc` / `ml_ctc_large` come from HuggingFace, as do the optional speaker-embedding and punctuation sidecars — the Silero VAD sidecar comes from GitHub (`snakers4/silero-vad`).
 
 ## Usage
 
@@ -15,7 +17,7 @@ gigastt-core = "2.22"
 use gigastt_core::inference::Engine;
 use gigastt_core::model;
 
-// Download the lean INT8 bundle on first run (~310 MiB, GitHub Releases)
+// Download the version-pinned INT8 bundle on first run (GitHub Releases)
 let model_dir = model::default_model_dir();
 model::ensure_model(&model_dir).await?;
 
@@ -47,10 +49,13 @@ for seg in &segments {
     println!("[{}] {}", if seg.is_final { "final" } else { "partial" }, seg.text);
 }
 
-if let Some(tail) = engine.flush_state(&mut state) {
+if let Some(tail) = engine.try_finish_stream(&mut state, &mut guard)? {
     println!("[final] {}", tail.text);
 }
 ```
+
+`try_finish_stream` decodes the pending sub-stride tail and reports failures.
+`flush_state` alone only flushes already recognized state and is not an EOF decode.
 
 Live WebSocket WER is **not** batch-equal — buffered offline RNN-T, not a
 native streaming AM. Numbers and protocol:

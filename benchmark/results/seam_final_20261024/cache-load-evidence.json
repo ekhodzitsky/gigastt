@@ -1,0 +1,14 @@
+{
+  "rnnt-candidate.log": [
+    "\u001b[2m2026-10-24T11:31:53.581446Z\u001b[0m \u001b[32m INFO\u001b[0m \u001b[2mgigastt_core::runtime::ort::session\u001b[0m\u001b[2m:\u001b[0m encoder: loaded fresh optimized graph cache, skipped source model \u001b[3mpath\u001b[0m\u001b[2m=\u001b[0m/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models/optimized_cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort"
+  ],
+  "e2e_rnnt-baseline.log": [
+    "\u001b[2m2026-10-24T11:41:57.700573Z\u001b[0m \u001b[32m INFO\u001b[0m \u001b[2mgigastt_core::runtime::ort::session\u001b[0m\u001b[2m:\u001b[0m encoder: loaded fresh optimized graph cache, skipped source model \u001b[3mpath\u001b[0m\u001b[2m=\u001b[0m/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models/optimized_cache/16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort"
+  ],
+  "rnnt-baseline.log": [
+    "\u001b[2m2026-10-24T11:31:53.236151Z\u001b[0m \u001b[32m INFO\u001b[0m \u001b[2mgigastt_core::runtime::ort::session\u001b[0m\u001b[2m:\u001b[0m encoder: loaded fresh optimized graph cache, skipped source model \u001b[3mpath\u001b[0m\u001b[2m=\u001b[0m/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models/optimized_cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort"
+  ],
+  "e2e_rnnt-candidate.log": [
+    "\u001b[2m2026-10-24T11:41:58.062423Z\u001b[0m \u001b[32m INFO\u001b[0m \u001b[2mgigastt_core::runtime::ort::session\u001b[0m\u001b[2m:\u001b[0m encoder: loaded fresh optimized graph cache, skipped source model \u001b[3mpath\u001b[0m\u001b[2m=\u001b[0m/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models/optimized_cache/16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort"
+  ]
+}

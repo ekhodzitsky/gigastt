@@ -1,0 +1,15 @@
+{
+  "source_weights_sha256": {
+    "base/model.safetensors": "95235871856d690c02c663d83d7099e89650877fcf57b48e0d1e5e4a278fecdf",
+    "adapter/adapter_model.safetensors": "f49c02568e5d37300f736ef2a325f9f6b356936d4378e2a8d842a09c8194dc23"
+  },
+  "ctranslate2": "4.8.2",
+  "conversion": "Merge FP32 base and LoRA with peft, export FP32; no quantization at export",
+  "files_sha256": {
+    "tokenizer.json": "5c1bf30c9e716e1477bedef846b01be0013daecb89e9e3ef7ab89b23c178df1b",
+    "config.json": "b0253ea6c0d3bea6b1e19e91a02acfd3b53f4467362efcb5a3e6b16c9b3a9b7e",
+    "vocabulary.json": "c69260f2ab26d659b7c398f9a2b2b48ed0df16c3b47d7326782fd9cba71690c1",
+    "preprocessor_config.json": "654cf18d3e163b948ceaf9766da56ce0b52de265d58673cf61c9376f126bd499",
+    "model.bin": "0a39dc53fac35312b722dcdaec0b5905ddff0d86165039feeea30cc330f13058"
+  }
+}

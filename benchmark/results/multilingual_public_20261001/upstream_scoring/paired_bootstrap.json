@@ -1,0 +1,13 @@
+{
+  "metric": "paired clip-bootstrap difference in macro WER_best, percentage points; negative favors gigastt",
+  "comparison": "ml_ctc_original minus archived Kazakh Whisper fine-tune",
+  "n": 31,
+  "seed": 42,
+  "resamples": 10000,
+  "mean_difference_pp": -5.251935483870968,
+  "percentile_95_ci_pp": [
+    -9.161612903225807,
+    -1.2722580645161294
+  ],
+  "caveat": "Clip-level resampling ignores correlation between clips from the same sources and speakers; not a population-level guarantee."
+}

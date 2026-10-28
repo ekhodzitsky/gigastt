@@ -1,0 +1,12 @@
+[
+  {
+    "package": "candle-core-0.11.0",
+    "registry_archive_sha256": "5ecb245093b0f791b89d3420c3df9c6d49c60ab63ba54db896bf8a3baf486706",
+    "patch": "candle-core-0.11.0.patch"
+  },
+  {
+    "package": "askama_derive-0.16.0",
+    "registry_archive_sha256": "e1c7065972a130eafa84215f21352ae15b4a7393da48c1f5e103904490736738",
+    "patch": "askama_derive-0.16.0.patch"
+  }
+]

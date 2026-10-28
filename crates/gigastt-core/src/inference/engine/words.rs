@@ -127,7 +127,7 @@ fn stitch_report(
         let retained = merged.len();
         (merged, retained)
     } else {
-        stitch_chunk_words_retained(merged, words, seam_seconds(prev_end, start_sample))
+        stitch_chunk_words_retained(merged, words, overlap_seconds(prev_end, start_sample))
     };
     if !ctl.aborted() {
         ctl.report((start_sample + n_samples) as u64);

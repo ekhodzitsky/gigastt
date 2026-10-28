@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "source": "The same two public LDC recordings as fixed segmentation control; full channels, no VAD or oracle boundaries",
+    "resampler": "rubato5 sinc32 cutoff0.97 oversampling256 linear BlackmanHarris2; whole-file 8->16k float then PCM16 nearest ties-away-from-zero clipping",
+    "helper_sha256": "3aa9cdf27d80919b5d1d7499443ca5fbc88b5e639f604986ca490eba0d8f238a",
+    "helper_source_sha256": "6b454e7b9c4703c58baf605e95ca6666fc76ac4eccc876bbc486c0f1044235dc",
+    "runtime_changed": false,
+    "model_variant": "ml_ctc_large",
+    "model_sha256": "b2ad9c38fc04197ba758105d33f7404fd13d977958722e0f49e3f3e22521f1c6",
+    "candidate_binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "server_configuration": "CPU, pool size 1, 3 encoder intra threads, VAD off, punctuation off, ITN off",
+    "health": {
+      "status": "ok",
+      "model": "gigaam-multilingual-large-ctc",
+      "variant": "ml_ctc_large",
+      "version": "2.21.0",
+      "punctuation": false,
+      "itn": false
+    },
+    "scoring": "scripts/wer_unicode.py normalize; jiwer; micro WER/CER including spaces; no ITN",
+    "condition": "Full channel, short32/.97 resampling to16kPCM16; native server file windows; no automatic 10/20-second slicing",
+    "independence": "Already inspected development diagnostics; selected filter from simulated31clipresult, not independent test"
+  },
+  "completed": true,
+  "details": [
+    {
+      "id": "ldc_kazakh_sample",
+      "recording_id": "ldc_kazakh_sample",
+      "input_sha256": "c1f7d4bb9d19553ffff92c1e57fb59149462f801a7f49ad1a30c55728802f320",
+      "original_source_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "duration_seconds": 110.03975,
+      "word_errors": 77,
+      "reference_words": 77,
+      "wer_percent": 100.0
+    },
+    {
+      "id": "material_kk_inLine",
+      "recording_id": "ldc2025s03_public_sample",
+      "input_sha256": "ae977c4b2aca5c499a7363465d9e03ee3872bd51cb28db6bdc596e5298caad5c",
+      "original_source_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "duration_seconds": 56.13975,
+      "word_errors": 44,
+      "reference_words": 44,
+      "wer_percent": 100.0
+    },
+    {
+      "id": "material_kk_outLine",
+      "recording_id": "ldc2025s03_public_sample",
+      "input_sha256": "84efd1b3fb527b67e773b12dd72ce991af0ecc459ecfd62c127964d23c4915ac",
+      "original_source_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "duration_seconds": 56.13975,
+      "word_errors": 47,
+      "reference_words": 49,
+      "wer_percent": 95.91836734693878
+    }
+  ],
+  "recordings": [
+    {
+      "recording_id": "ldc_kazakh_sample",
+      "channels": 1,
+      "word_errors": 77,
+      "reference_words": 77,
+      "wer_percent": 100.0
+    },
+    {
+      "recording_id": "ldc2025s03_public_sample",
+      "channels": 2,
+      "word_errors": 91,
+      "reference_words": 93,
+      "wer_percent": 97.84946236559139
+    }
+  ]
+}

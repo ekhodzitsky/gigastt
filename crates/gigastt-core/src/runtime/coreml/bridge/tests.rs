@@ -7,6 +7,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+mod objc_lifetime;
+
 fn package_path() -> PathBuf {
     let home = std::env::var("HOME").expect("HOME set");
     PathBuf::from(home).join(".gigastt/models/ane/gigaam_v3_encoder_768.mlpackage")

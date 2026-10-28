@@ -1,0 +1,10 @@
+{
+  "unchanged_cache_skips_encoder": true,
+  "corrupt_embedding_recomputed": true,
+  "source_checksum_mismatch_rejected": true,
+  "initial_baseline_matches_precision_audit": true,
+  "initial_epoch_zero_preserves_all_test_scores": true,
+  "python_compile_passed": true,
+  "script_ast_parse_passed": true,
+  "public_json_no_reference_or_hypothesis_fields": true
+}

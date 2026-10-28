@@ -56,6 +56,7 @@ RUN git clone --depth 1 --branch v1.7.5 https://github.com/ggml-org/whisper.cpp.
 FROM base AS gigastt-builder
 
 COPY Cargo.toml Cargo.lock /workspace/
+COPY vendor/ /workspace/vendor/
 COPY crates/ /workspace/crates/
 RUN cargo build --release -p gigastt --locked
 

@@ -22,6 +22,15 @@ Requires Go 1.23+.
 
 ## Quickstart
 
+Prepare raw little-endian mono PCM16 before streaming:
+
+```sh
+ffmpeg -i recording.wav -f s16le -acodec pcm_s16le -ac 1 -ar 16000 recording.pcm
+```
+
+WAV headers have variable length; do not strip a fixed 44-byte prefix.
+The example prints every final segment and waits for session closure.
+
 ```go
 package main
 
@@ -36,14 +45,18 @@ import (
 )
 
 func main() {
-	finals := make(chan gigastt.Transcript, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	closed := make(chan error, 1)
 
-	client, err := gigastt.Dial(context.Background(), gigastt.DefaultURL,
+	client, err := gigastt.Dial(ctx, gigastt.DefaultURL,
 		gigastt.WithSampleRate(16000), // must be one of the server's supported_rates
-		gigastt.WithReconnect(250*time.Millisecond, 5*time.Second, 10),
 		gigastt.WithHandlers(gigastt.Handlers{
 			OnPartial: func(t gigastt.Transcript) { fmt.Printf("\r  ... %s", t.Text) },
-			OnFinal:   func(t gigastt.Transcript) { finals <- t },
+			OnFinal: func(t gigastt.Transcript) {
+				fmt.Printf("\n>>> %s (%.0f%% avg confidence)\n", t.Text, avgConfidence(t)*100)
+			},
+			OnClose: func(err error) { closed <- err },
 			OnError:   func(e *gigastt.ServerError) { log.Printf("server error: %v", e) },
 		}),
 	)
@@ -52,10 +65,13 @@ func main() {
 	}
 	defer client.Close()
 
-	wav, _ := os.ReadFile("recording.wav") // 16 kHz mono PCM16 WAV
-	for offset := 44; offset < len(wav); offset += 32768 {
-		end := min(offset+32768, len(wav))
-		if err := client.SendPCM(wav[offset:end]); err != nil {
+	pcm, err := os.ReadFile("recording.pcm")
+	if err != nil {
+		log.Fatal(err)
+	}
+	for offset := 0; offset < len(pcm); offset += 32768 {
+		end := min(offset+32768, len(pcm))
+		if err := client.SendPCM(pcm[offset:end]); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -63,8 +79,14 @@ func main() {
 	if err := client.Stop(); err != nil { // ask the server to finalize
 		log.Fatal(err)
 	}
-	t := <-finals
-	fmt.Printf("\n>>> %s (%.0f%% avg confidence)\n", t.Text, avgConfidence(t)*100)
+	select {
+	case err := <-closed:
+		if err != nil {
+			log.Fatal(err)
+		}
+	case <-ctx.Done():
+		log.Fatal(ctx.Err())
+	}
 }
 
 func avgConfidence(t gigastt.Transcript) float64 {
@@ -117,10 +139,10 @@ go test ./...
 
 ### Integration test against a live server
 
-Requires a running server with the model (~225 MB INT8):
+Requires a running server with the model (~310 MiB for the current main ASR bundle):
 
 ```sh
-# once: download the model (~225 MB INT8), then start the server from the repository root
+# once: download the model (~310 MiB for the current main ASR bundle), then start the server from the repository root
 cargo run -- download
 cargo run --release -- serve
 
