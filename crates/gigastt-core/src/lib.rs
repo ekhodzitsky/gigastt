@@ -88,7 +88,7 @@ pub mod runtime_api {
     pub use crate::runtime::candle_factory;
     pub use crate::runtime::{
         Runtime, RuntimeError, RuntimeFactory, RuntimeSession, Shape, Tensor, TensorData,
-        TensorDataView, cpu_factory, production_factory,
+        TensorDataView, cpu_factory, production_factory, set_ort_environment,
     };
 }
 

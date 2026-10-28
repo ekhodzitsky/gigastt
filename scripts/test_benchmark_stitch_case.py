@@ -52,6 +52,17 @@ delta(base, candidate)
             changes = json.loads((output / 'warmup-rnnt-sample-changes.json').read_text())
             self.assertEqual(changes[0]['candidate'], 'да')
 
+    def test_cache_priming_covers_both_runtime_versions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args = SimpleNamespace(output=Path(directory), baseline=Path('/old'),
+                                   candidate=Path('/new'))
+            with patch.object(benchmark, 'start_server') as start:
+                start.return_value = (MagicMock(), [], 0)
+                benchmark.prime_caches('rnnt', args)
+                self.assertEqual([call.args[0] for call in start.call_args_list],
+                                 [args.baseline, args.candidate])
+                self.assertEqual(start.return_value[0].wait.call_count, 2)
+
     def test_startup_waits_for_model_readiness(self):
         ready = MagicMock()
         ready.__enter__.return_value.status = 200
