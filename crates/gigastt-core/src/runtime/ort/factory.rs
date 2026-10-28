@@ -163,20 +163,38 @@ impl OrtFactory {
     }
 }
 
-static ORT_INIT: OnceLock<bool> = OnceLock::new();
+// Keep the existing process-wide lifetime: ort rc.15 permits only one build
+// per process, even after the last handle is dropped. Concurrent engine loads
+// must share this owner rather than race to create independent environments.
+static ORT_ENVIRONMENT: OnceLock<Result<ort::environment::Environment, String>> = OnceLock::new();
 
-fn ensure_ort_initialized() {
-    let initialized_by_us = ORT_INIT.get_or_init(|| ort::init().with_name("gigastt").commit());
-    if !initialized_by_us {
-        tracing::warn!(
-            "ort environment was already configured before gigastt initialization; execution provider settings may not apply"
-        );
-    }
+/// Share a host application's ONNX Runtime environment with gigastt.
+///
+/// Call this before creating any gigastt engine or runtime session when the
+/// host initializes `ort` itself. `ort` rc.15 permits only one environment per
+/// process, so gigastt cannot create another or discover the host's handle.
+/// The environment is retained for the process lifetime. Returns `false` if
+/// gigastt has already initialized (or attempted to initialize) its environment;
+/// the existing configuration is never replaced. Use the same pinned `ort`
+/// crate version as gigastt when passing the handle.
+pub fn set_ort_environment(environment: ort::environment::Environment) -> bool {
+    ORT_ENVIRONMENT.set(Ok(environment)).is_ok()
+}
+
+pub(crate) fn ort_environment() -> Result<&'static ort::environment::Environment, &'static str> {
+    ORT_ENVIRONMENT
+        .get_or_init(|| {
+            ort::init()
+                .with_name("gigastt")
+                .build()
+                .map_err(|e| e.to_string())
+        })
+        .as_ref()
+        .map_err(String::as_str)
 }
 
 impl RuntimeFactory for OrtFactory {
     fn create(&self, intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError> {
-        ensure_ort_initialized();
         Ok(Box::new(OrtRuntime::new(
             intra_threads,
             self.provider,
@@ -248,7 +266,6 @@ pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
 /// with another slot or the recognition encoder between embedding calls.
 #[cfg(feature = "diarization")]
 pub(crate) fn speaker_runtime(intra_threads: usize) -> Box<dyn Runtime> {
-    ensure_ort_initialized();
     Box::new(
         OrtRuntime::new(intra_threads, OrtExecutionProvider::Cpu, true, None, None)
             .without_spinning(),

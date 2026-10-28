@@ -1,5 +1,5 @@
 # Weekly Dependabot scan. We pin Rust deps in `Cargo.lock` and
-# several direct deps (`ort = "=2.0.0-rc.13"`, `prost`, …) that
+# several direct deps (`ort = "=2.0.0-rc.15"`, `prost`, …) that
 # would otherwise drift silently — Dependabot keeps the supply chain
 # honest by surfacing new RUSTSEC advisories and minor-version bumps as
 # PRs the maintainer can triage on a predictable cadence.

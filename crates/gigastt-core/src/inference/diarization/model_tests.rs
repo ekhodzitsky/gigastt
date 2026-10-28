@@ -11,7 +11,7 @@ struct CpuOracle(Mutex<Session>);
 impl CpuOracle {
     fn new(model: &Path, intra_threads: usize) -> Self {
         Self(Mutex::new(
-            Session::builder()
+            Session::builder(crate::runtime::ort::factory::ort_environment().unwrap())
                 .unwrap()
                 .with_execution_providers([ort::ep::CPU::default().build()])
                 .unwrap()

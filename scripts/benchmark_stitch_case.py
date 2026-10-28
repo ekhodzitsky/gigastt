@@ -95,6 +95,20 @@ def require(condition, message):
         raise ValueError(message)
 
 
+def prime_caches(head, args):
+    # Runtime versions have different cache keys. Prime each binary independently
+    # so fresh optimization/prepacking is excluded from both measured arms.
+    for arm in ('baseline', 'candidate'):
+        with (args.output / f'{head}-{arm}-cache-prime.log').open('w') as log:
+            prime, _, _ = start_server(getattr(args, arm), 19878, head, args, log)
+            prime.send_signal(signal.SIGTERM)
+            try:
+                prime.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                prime.kill()
+                prime.wait()
+
+
 def warmup_pair(ports, audio, output, head, sample):
     expected = {}
     for arm, port in ports.items():
@@ -208,17 +222,7 @@ def main():
     for head in ENCODERS:
         processes, ports, logs = {}, {'baseline': 19876, 'candidate': 19877}, []
         try:
-            # A freshly optimized source session and an ORT-cache session can
-            # differ in kernel prepacking. Warm requests do not remove that
-            # difference: prime the disk cache, then restart before comparison.
-            with (args.output / f'{head}-cache-prime.log').open('w') as log:
-                prime, _, _ = start_server(args.baseline, 19878, head, args, log)
-                prime.send_signal(signal.SIGTERM)
-                try:
-                    prime.wait(timeout=15)
-                except subprocess.TimeoutExpired:
-                    prime.kill()
-                    prime.wait()
+            prime_caches(head, args)
             for arm, port in ports.items():
                 log = (args.output / f'{head}-{arm}.log').open('w')
                 logs.append(log)

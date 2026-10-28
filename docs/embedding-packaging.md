@@ -54,6 +54,41 @@ cargo build -p gigastt-core --no-default-features --features "file-decode,ort-lo
 ORT_DYLIB_PATH=/opt/onnxruntime/lib/libonnxruntime.so ./your-app
 ```
 
+## Static CoreML builds on macOS
+
+ONNX Runtime 1.31's static CoreML objects require Clang's availability-check
+builtin ([LLVM implementation](https://github.com/llvm/llvm-project/blob/main/compiler-rt/lib/builtins/os_version_check.c)).
+The core build script locates `libclang_rt.osx.a` through the selected
+Apple toolchain (`xcrun --sdk macosx clang --print-resource-dir`) and links that
+archive. Xcode or Command Line Tools must therefore be installed and selected;
+`DEVELOPER_DIR` and `TOOLCHAINS` are honored. CPU-only and dynamic-ORT builds do
+not need this additional link step. No OS-version checks are stubbed out.
+
+## Rust hosts that initialize `ort` themselves
+
+The pinned `ort` 2.0.0-rc.15 uses explicit environment handles and permits only
+one environment per process. If the host creates that environment, share it
+with gigastt **before the first engine or runtime session**:
+
+```rust,ignore
+let environment = ort::init().with_name("my-app").build()?;
+if !gigastt_core::runtime_api::set_ort_environment(environment.clone()) {
+    return Err("gigastt environment was already initialized".into());
+}
+// The host may also pass &environment to its own ort::session::Session::builder.
+```
+
+Use the same exact `ort` crate version as gigastt. The sharing function retains
+the handle for the process lifetime; `false` means initialization was already
+attempted and the existing configuration was preserved. This replaces the old
+implicit adoption of a host's global environment. Hosts using `init_from`
+should likewise call `.build()?` and pass the resulting handle. Standalone
+servers and bindings need no additional initialization.
+
+Dynamic native libraries must provide API 31 (ONNX Runtime 1.31 or newer).
+Android packages pin the tested native runtime in
+[`onnxruntime.json`](../packaging/android/onnxruntime.json).
+
 ## Which to choose
 
 | | Default (`download-binaries`, static) | `ort-load-dynamic` |

@@ -206,7 +206,9 @@ impl OrtRuntime {
         model_path: &Path,
         is_encoder: bool,
     ) -> Result<ort::session::builder::SessionBuilder, RuntimeError> {
-        let mut builder = Session::builder()
+        let environment =
+            super::factory::ort_environment().map_err(|e| load_failed(model_path, e))?;
+        let mut builder = Session::builder(environment)
             .map_err(|e| load_failed(model_path, e))?
             .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
             .map_err(|e| load_failed(model_path, e))?;
@@ -587,6 +589,50 @@ mod tests {
             None,
             Some(cache_dir.to_path_buf()),
         )
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "spawns an isolated process and calls onnxruntime FFI")]
+    fn test_host_environment_can_be_shared_before_loading_sessions() {
+        const CHILD: &str = "GIGASTT_TEST_HOST_ORT_ENVIRONMENT";
+        if std::env::var_os(CHILD).is_none() {
+            let status = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", "runtime::ort::session::tests::test_host_environment_can_be_shared_before_loading_sessions", "--nocapture"])
+                .env(CHILD, "1")
+                .status()
+                .unwrap();
+            assert!(status.success());
+            return;
+        }
+        let host = ort::init().with_name("embedding-host").build().unwrap();
+        assert!(crate::runtime_api::set_ort_environment(host.clone()));
+        assert!(!crate::runtime_api::set_ort_environment(host.clone()));
+        drop(host);
+        test_session_retains_environment_after_runtime_is_dropped();
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore = "calls into onnxruntime FFI")]
+    fn test_session_retains_environment_after_runtime_is_dropped() {
+        let dir = tempfile::tempdir().unwrap();
+        let model = dir.path().join("identity.onnx");
+        write_identity_model(&model);
+        let runtime = cached_runtime(dir.path());
+        let session = runtime.load_session(&model, false).unwrap();
+        drop(runtime);
+        let replacement = cached_runtime(dir.path());
+        let replacement_session = replacement.load_session(&model, false).unwrap();
+        drop(replacement);
+        let inputs = [Tensor::new(
+            crate::runtime::tensor::Shape::new(vec![1]),
+            crate::runtime::tensor::TensorData::F32(vec![3.0]),
+        )
+        .unwrap()];
+        for session in [session, replacement_session] {
+            let mut output = Vec::new();
+            session.run_f32_into(&inputs, &mut [&mut output]).unwrap();
+            assert_eq!(output, [3.0]);
+        }
     }
 
     #[test]

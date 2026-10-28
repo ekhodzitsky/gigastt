@@ -1,0 +1,41 @@
+name: CoreML diagnostics
+
+# Narrow, explicit diagnostic run; never publishes protected PR statuses.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  coreml:
+    runs-on: macos-14
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - run: brew install protobuf
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: coreml-diagnostics
+          # Branch-scoped manual diagnostics retain compilation across attempts.
+          save-if: true
+          cache-on-failure: true
+      - run: cargo build --release --locked -p gigastt --features coreml
+      - uses: actions/cache@v6
+        id: models
+        with:
+          path: ~/.gigastt/models
+          key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/**') }}
+      - if: steps.models.outputs.cache-hit != 'true'
+        run: ./target/release/gigastt download
+      - name: CoreML inference
+        run: bash scripts/coreml-smoke.sh
+      - if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coreml-diagnostics
+          path: |
+            transcript.txt
+            stderr.log
+          if-no-files-found: ignore

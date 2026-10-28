@@ -433,17 +433,6 @@ fn link_model_files(dst: &std::path::Path, names: &[&str]) -> bool {
     true
 }
 
-/// Kill the child on drop so a panicking assertion can never leak a running
-/// subprocess (nor let a TempDir be deleted out from under it mid-quantize).
-struct KillOnDrop(std::process::Child);
-
-impl Drop for KillOnDrop {
-    fn drop(&mut self) {
-        let _ = self.0.kill();
-        let _ = self.0.wait();
-    }
-}
-
 /// Happy path with everything already present: stdout must be pure NDJSON —
 /// every line parses as a JSON object with a `phase` tag and the final line is
 /// `{"phase":"done",…}`. Human `\r`-progress and tracing logs must not leak
@@ -503,88 +492,43 @@ fn cli_download_json_happy_path_stdout_is_pure_ndjson() {
     );
 }
 
-/// The ~2-minute INT8 quantization pass must announce itself as its own
-/// `quantize` phase as soon as it starts (a sidecar reading the stream would
-/// otherwise mistake it for a hang). FP32 weights are linked in without the
-/// INT8 encoder to force the pass; the subprocess is killed right after the
-/// event arrives — the test asserts the emission, not the quantization.
-#[cfg(unix)]
-#[ignore = "requires the GigaAM model (~225 MB INT8)"]
+/// FP32 source files are not a runtime install. Offline download must reject
+/// them without starting quantization or treating them as a ready INT8 bundle.
 #[test]
-fn cli_download_json_emits_quantize_phase() {
-    use std::io::BufRead;
-
+fn cli_download_offline_rejects_fp32_only_install() {
     let tmp = tempfile::tempdir().expect("tempdir");
-    if !link_model_files(
-        tmp.path(),
-        &[
-            "v3_rnnt_encoder.onnx",
-            "v3_rnnt_decoder.onnx",
-            "v3_rnnt_joint.onnx",
-            "v3_vocab.txt",
-        ],
-    ) {
-        return;
+    for name in [
+        "v3_rnnt_encoder.onnx",
+        "v3_rnnt_decoder.onnx",
+        "v3_rnnt_joint.onnx",
+        "v3_vocab.txt",
+    ] {
+        std::fs::write(tmp.path().join(name), b"not a runtime model").expect("fixture");
     }
-
-    let mut child = KillOnDrop(
-        Command::new(bin())
-            .args([
-                "download",
-                "--model-dir",
-                tmp.path().to_str().unwrap(),
-                "--model-variant",
-                "rnnt",
-                "--progress=json",
-                "--skip-diarization",
-            ])
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()
-            .expect("spawn"),
-    );
-
-    let stdout = child.0.stdout.take().expect("piped stdout");
-    let (tx, rx) = std::sync::mpsc::channel();
-    std::thread::spawn(move || {
-        for line in std::io::BufReader::new(stdout).lines() {
-            let Ok(line) = line else { break };
-            if tx.send(line).is_err() {
-                break;
-            }
-        }
-    });
-
-    let deadline = Instant::now() + Duration::from_secs(120);
-    let mut saw_quantize = false;
-    while Instant::now() < deadline {
-        match rx.recv_timeout(Duration::from_millis(500)) {
-            Ok(line) if line.is_empty() => continue,
-            Ok(line) => {
-                let v: serde_json::Value = serde_json::from_str(&line)
-                    .unwrap_or_else(|e| panic!("non-JSON stdout line {line:?}: {e}"));
-                if v["phase"] == "quantize" {
-                    assert_eq!(
-                        v["file"], "v3_rnnt_encoder.onnx",
-                        "quantize event names the encoder being quantized: {v}"
-                    );
-                    saw_quantize = true;
-                    break;
-                }
-            }
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                if let Some(status) = child.0.try_wait().expect("try_wait") {
-                    panic!("download exited ({status}) before emitting a quantize event");
-                }
-            }
-            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
-        }
-    }
-    drop(child);
-    assert!(
-        saw_quantize,
-        "quantize phase event must be emitted when the INT8 encoder is missing"
-    );
+    let out = Command::new(bin())
+        .args([
+            "--offline",
+            "download",
+            "--model-dir",
+            tmp.path().to_str().unwrap(),
+            "--model-variant",
+            "rnnt",
+            "--progress=json",
+            "--skip-diarization",
+        ])
+        .output()
+        .expect("run");
+    assert!(!out.status.success(), "FP32-only install must not be ready");
+    let stdout = String::from_utf8(out.stdout).expect("UTF-8 progress");
+    let events: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|line| !line.is_empty())
+        .map(|line| serde_json::from_str(line).expect("JSON progress"))
+        .collect();
+    assert!(events.iter().any(|event| event["phase"] == "error"));
+    assert!(!events.iter().any(|event| event["phase"] == "quantize"));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("offline mode"));
+    assert!(!tmp.path().join("v3_rnnt_encoder_int8.onnx").exists());
 }
 
 /// The json error contract end-to-end without a model or network: an

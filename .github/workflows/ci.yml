@@ -12,6 +12,11 @@ on:
         required: false
         default: false
         type: boolean
+      coreml_smoke:
+        description: 'Include CoreML runtime smoke without repeating all full-run jobs'
+        required: false
+        default: false
+        type: boolean
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -79,6 +84,7 @@ jobs:
       - run: python3 scripts/test-release-assets.py
       - run: python3 scripts/test_homebrew_release_metadata.py
       - run: python3 scripts/test_android_runtime.py
+      - run: python3 scripts/test_coreml_smoke.py
 
   runtime-isolation:
     runs-on: ubuntu-latest
@@ -281,6 +287,8 @@ jobs:
         with:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Test Apple compiler runtime link setup
+        run: python3 scripts/test_apple_runtime_link.py
       - run: cargo test --workspace --lib --bins
       - name: Model-free CLI integration tests
         run: cargo test -p gigastt --test e2e_cli
@@ -342,13 +350,13 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - run: cargo build --release -p gigastt --features coreml
 
-      # Runtime smoke (full manual run only — the model is ~850 MB). Issue #42:
+      # Runtime smoke (full run or explicitly requested — the model is ~850 MB). Issue #42:
       # CoreML sessions can load fine and still fail at prediction time, so
       # a plain `cargo build` check is not enough. The smoke also fails when
       # the engine silently falls back to the CPU EP, because that would
       # mean the CoreML path regressed even though transcription still works.
       - name: Cache model
-        if: inputs.full
+        if: inputs.full || inputs.coreml_smoke
         id: cache-model
         uses: actions/cache@v6
         with:
@@ -356,31 +364,22 @@ jobs:
           key: gigastt-model-v3-onnx-${{ hashFiles('crates/gigastt-core/src/model/**') }}
 
       - name: Download model
-        if: inputs.full && steps.cache-model.outputs.cache-hit != 'true'
+        if: (inputs.full || inputs.coreml_smoke) && steps.cache-model.outputs.cache-hit != 'true'
         run: ./target/release/gigastt download
 
       - name: CoreML runtime smoke
-        if: inputs.full
+        if: inputs.full || inputs.coreml_smoke
         timeout-minutes: 20
-        run: |
-          set -uo pipefail
-          RUST_LOG=warn ./target/release/gigastt transcribe \
-            crates/gigastt/tests/fixtures/golos_00.wav >transcript.txt 2>stderr.log
-          status=$?
-          echo "--- stderr ---"; cat stderr.log
-          echo "--- transcript ---"; cat transcript.txt
-          if [ "$status" -ne 0 ]; then
-            echo "::error::CoreML inference failed (exit $status)"
-            exit 1
-          fi
-          if grep -q "falling back to CPU execution provider" stderr.log; then
-            echo "::error::CoreML EP fell back to CPU at runtime — CoreML path regressed"
-            exit 1
-          fi
-          if ! grep -q "тенге" transcript.txt; then
-            echo "::error::Transcript does not contain the expected reference text"
-            exit 1
-          fi
+        run: bash scripts/coreml-smoke.sh
+      - name: Retain CoreML diagnostics
+        if: always() && (inputs.full || inputs.coreml_smoke)
+        uses: actions/upload-artifact@v6
+        with:
+          name: coreml-smoke
+          path: |
+            transcript.txt
+            stderr.log
+          if-no-files-found: ignore
 
   build-cuda:
     runs-on: ubuntu-latest
@@ -437,7 +436,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
@@ -728,6 +727,10 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: obi1kenobi/cargo-semver-checks-action@v2
+        env:
+          # Rustdoc compares APIs without linking or running native inference.
+          # Do not download both ORT archives just to generate the API schemas.
+          ORT_SKIP_DOWNLOAD: "1"
         with:
           # coreml+cuda are mutually exclusive; --all-features is impossible.
           feature-group: default-features

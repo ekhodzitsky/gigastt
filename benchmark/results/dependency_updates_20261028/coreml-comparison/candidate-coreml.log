@@ -1,0 +1,5 @@
+Error: inference failed
+
+Caused by:
+    0: Encoder inference failed
+    1: inference failed: Non-zero status code returned while running 4690602444414826299_CoreML_4690602444414826299_4 node. Name:'CoreMLExecutionProvider_4690602444414826299_CoreML_4690602444414826299_4_4' Status Message: Error executing model: Unable to compute the prediction using a neural network model. It can be an invalid input data or broken/unsupported model (error code: -1).

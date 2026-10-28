@@ -29,8 +29,8 @@ The native libs + Kotlin are generated before assembling (not committed):
 
 ```sh
 # Per-ABI native libs. A single `cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64`
-# call does NOT work: ort's pyke prebuilts cover only aarch64-linux-android, so
-# the other two ABIs have no prebuilt. Instead (mirrors android-aar.yml):
+# call does NOT work: ort's pyke prebuilts do not cover armeabi-v7a.
+# Instead (mirrors android-aar.yml):
 # 1. Fetch the official Microsoft onnxruntime-android AAR and unpack one
 #    libonnxruntime.so per ABI:
 ORT_VER=$(python3 -c 'import json; print(json.load(open("packaging/android/onnxruntime.json"))["version"])')
@@ -94,9 +94,9 @@ MIT.
 
 ## Native runtime compatibility
 
-The official Microsoft AAR is pinned to **1.27.0** with its SHA-256 in
-[`onnxruntime.json`](onnxruntime.json). Its C header provides API 27, matching
-`ort` 2.0.0-rc.13 default features. The previous 1.24.2 library could not satisfy
+The official Microsoft AAR is pinned to **1.31.0** with its SHA-256 in
+[`onnxruntime.json`](onnxruntime.json). Its C header provides API 31, matching
+`ort` 2.0.0-rc.15 default features. Older native runtimes cannot satisfy
 that API request. The archive contains ELF libraries for all three packaged ABIs:
 `arm64-v8a`, `armeabi-v7a`, and `x86_64`.
 
