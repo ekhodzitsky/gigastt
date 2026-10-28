@@ -1,0 +1,433 @@
+{
+  "protocol": "Same engine, pool=1, CPU, ITN disabled, default punctuation/VAD absent; 16 kHz float PCM source; lowercase, yo->ye, word tokens; Levenshtein errors/reference words. Small regression slice, not a corpus WER claim.",
+  "models": {
+    "v3_rnnt_encoder_int8.onnx": "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f",
+    "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+    "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+    "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+  },
+  "totals": {
+    "base": {
+      "errors": 1,
+      "words": 75,
+      "wer": 0.013333333333333334
+    },
+    "original": {
+      "errors": 0,
+      "words": 75,
+      "wer": 0.0
+    },
+    "candidate": {
+      "errors": 0,
+      "words": 75,
+      "wer": 0.0
+    }
+  },
+  "rows": [
+    {
+      "decoder": "base",
+      "file": "speech0.m4a.0.f32",
+      "reference": "шестьдесят тысяч тенге сколько будет стоить",
+      "text": "шестьдесят тысяч тенге сколько будет стоить",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "28ef3774e6faaa841af85de8ed3362513222751d294a06a7f793246dd4b313cc"
+    },
+    {
+      "decoder": "base",
+      "file": "speech1.m4a.0.f32",
+      "reference": "покажи мне на смотрешке телеканал синергия тв",
+      "text": "покажи мне на смотрешке телеканал синергия тв",
+      "errors": 0,
+      "words": 7,
+      "pcm_sha256": "87b910cf2a73b2edb7b3d65847b9f26451fb6a146467a06408d86c42cc6b02c5"
+    },
+    {
+      "decoder": "base",
+      "file": "speech2.m4a.0.f32",
+      "reference": "заказать яблоки зеленые",
+      "text": "заказать яблоки зеленые",
+      "errors": 0,
+      "words": 3,
+      "pcm_sha256": "0a7902db09f67ef97119f57ab9699ff4681ba1ec939ad49d402214816c558087"
+    },
+    {
+      "decoder": "base",
+      "file": "speech3.m4a.0.f32",
+      "reference": "алиса закажи килограммовый торт графские развалины",
+      "text": "алиса закажи килограммовый торт графские развалины",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "732561af4188b4c5a493d723cfaa27830c6c98febe769b00dbb4b3ad16d6216b"
+    },
+    {
+      "decoder": "base",
+      "file": "speech4.m4a.0.f32",
+      "reference": "ищи телеканал про бизнес на тиви",
+      "text": "ищи телеканал про бизнес на тв",
+      "errors": 1,
+      "words": 6,
+      "pcm_sha256": "d0f71e4a7bdd3b157940dbc007037a1f15700a0bdaaf25cb39716d9f9316f192"
+    },
+    {
+      "decoder": "base",
+      "file": "speech5.m4a.0.f32",
+      "reference": "михаила мурадяна",
+      "text": "михаила мурадяна",
+      "errors": 0,
+      "words": 2,
+      "pcm_sha256": "07bd41ce768fd9d388e52c97fb208c30526a6bfdeea089e4214bca72304de127"
+    },
+    {
+      "decoder": "base",
+      "file": "speech6.m4a.0.f32",
+      "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "text": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "7516b34161fc26845bf6771a133e24467aaa4342a081a19aca487708e6b291fa"
+    },
+    {
+      "decoder": "base",
+      "file": "speech7.m4a.0.f32",
+      "reference": "найди боевики",
+      "text": "найди боевики",
+      "errors": 0,
+      "words": 2,
+      "pcm_sha256": "49838715345b3efce108867bf39116d64e303ef45ec27575186db24cacbc1b19"
+    },
+    {
+      "decoder": "base",
+      "file": "speech8.m4a.0.f32",
+      "reference": "гетто сезон три",
+      "text": "гетто сезон три",
+      "errors": 0,
+      "words": 3,
+      "pcm_sha256": "b901c81a747cfcee12283f44f48f69c9bc801e1bc8daeb6d2b4ca15f565c6d31"
+    },
+    {
+      "decoder": "base",
+      "file": "speech9.m4a.0.f32",
+      "reference": "хочу посмотреть ростов папа на телевизоре",
+      "text": "хочу посмотреть ростов папа на телевизоре",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "69493fb6bc67e41d2949fba06f70cce8a3afe10fe0c93bf931d87acba03d3513"
+    },
+    {
+      "decoder": "base",
+      "file": "speech10.m4a.0.f32",
+      "reference": "сбер какое твое самое ненавистное занятие",
+      "text": "сбер какое твое самое ненавистное занятие",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "7dc50d36469526fb5aad276200b0a93c7184f66bcbd10f4442009515f9be0368"
+    },
+    {
+      "decoder": "base",
+      "file": "speech11.m4a.0.f32",
+      "reference": "афина чем платят у китайцев",
+      "text": "афина чем платят у китайцев",
+      "errors": 0,
+      "words": 5,
+      "pcm_sha256": "750e34c2db15343eb73a9e6e7ac52b31037734e97219ac88279ccea281fe949a"
+    },
+    {
+      "decoder": "base",
+      "file": "speech12.m4a.0.f32",
+      "reference": "джой как работает досрочное погашение кредита",
+      "text": "джой как работает досрочное погашение кредита",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "f9af5bda664f9cd90e2cc7c3302ba678f7c88e68352605f4bbeecb993091ad97"
+    },
+    {
+      "decoder": "base",
+      "file": "speech13.m4a.0.f32",
+      "reference": "у тебя найдется люк кейдж",
+      "text": "у тебя найдется люк кейдж",
+      "errors": 0,
+      "words": 5,
+      "pcm_sha256": "19a24363183c142a729ea2061f9d41f21018250254ac22971180f19bdbaf3d9e"
+    },
+    {
+      "decoder": "base",
+      "file": "speech14.m4a.0.f32",
+      "reference": "у тебя будет лучшая часть пинк",
+      "text": "у тебя будет лучшая часть пинк",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "d17aecc9bbd50527689952f7800953821121a97cc2ae967ff301dcd85a4e8115"
+    },
+    {
+      "decoder": "original",
+      "file": "speech0.m4a.0.f32",
+      "reference": "шестьдесят тысяч тенге сколько будет стоить",
+      "text": "шестьдесят тысяч тенге сколько будет стоить",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "197e46ba871090cf04ec366bc956165206ed80045b56410e6ac42e6a3c815f7f"
+    },
+    {
+      "decoder": "original",
+      "file": "speech1.m4a.0.f32",
+      "reference": "покажи мне на смотрешке телеканал синергия тв",
+      "text": "покажи мне на смотрешке телеканал синергия тв",
+      "errors": 0,
+      "words": 7,
+      "pcm_sha256": "2c6a46b1f8812b0d2bc5d03aabd64a0196ef770950c304328a6e7dfd3f562a4e"
+    },
+    {
+      "decoder": "original",
+      "file": "speech2.m4a.0.f32",
+      "reference": "заказать яблоки зеленые",
+      "text": "заказать яблоки зеленые",
+      "errors": 0,
+      "words": 3,
+      "pcm_sha256": "2625f32978f1e8e28a17225d02fbe278e06524c0b1cfed8d0f366b2c89e46d5b"
+    },
+    {
+      "decoder": "original",
+      "file": "speech3.m4a.0.f32",
+      "reference": "алиса закажи килограммовый торт графские развалины",
+      "text": "алиса закажи килограммовый торт графские развалины",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "7347902557f8e896cc296cbc6663c5d1dc22d6316b3a6ef8ad4b95e14021453d"
+    },
+    {
+      "decoder": "original",
+      "file": "speech4.m4a.0.f32",
+      "reference": "ищи телеканал про бизнес на тиви",
+      "text": "ищи телеканал про бизнес на тиви",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "7af9f6a29d0ddd76584c16f17cf12f44fa1b5636a669501903c16cb5bd3d0c45"
+    },
+    {
+      "decoder": "original",
+      "file": "speech5.m4a.0.f32",
+      "reference": "михаила мурадяна",
+      "text": "михаила мурадяна",
+      "errors": 0,
+      "words": 2,
+      "pcm_sha256": "f55ec07a3bdd2a53d0c2a377b5e1786d09eacaf2483aa29586216f849df62fab"
+    },
+    {
+      "decoder": "original",
+      "file": "speech6.m4a.0.f32",
+      "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "text": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "fb93cb9b6cea0cb72018c78fb21bbfbab25fc3e2d2d78f4dcdbc9ab25c23f007"
+    },
+    {
+      "decoder": "original",
+      "file": "speech7.m4a.0.f32",
+      "reference": "найди боевики",
+      "text": "найди боевики",
+      "errors": 0,
+      "words": 2,
+      "pcm_sha256": "4d8e7a71e6e0e13cf354d3a37b4af246219847cea4384bb540ecc2d3ac7a35dc"
+    },
+    {
+      "decoder": "original",
+      "file": "speech8.m4a.0.f32",
+      "reference": "гетто сезон три",
+      "text": "гетто сезон три",
+      "errors": 0,
+      "words": 3,
+      "pcm_sha256": "39231d296dd64d50b2667f37d4e41093610394acd89855dc0758136bb9958504"
+    },
+    {
+      "decoder": "original",
+      "file": "speech9.m4a.0.f32",
+      "reference": "хочу посмотреть ростов папа на телевизоре",
+      "text": "хочу посмотреть ростов папа на телевизоре",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "35d38d9ee21083e654ae15e538aeb99a8029eae5abecc134f0ec6ecaed11c407"
+    },
+    {
+      "decoder": "original",
+      "file": "speech10.m4a.0.f32",
+      "reference": "сбер какое твое самое ненавистное занятие",
+      "text": "сбер какое твое самое ненавистное занятие",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "d16f00d0586ba0f86c709acb3ce3da3107cdfa7be4f97335d0558651773c1910"
+    },
+    {
+      "decoder": "original",
+      "file": "speech11.m4a.0.f32",
+      "reference": "афина чем платят у китайцев",
+      "text": "афина чем платят у китайцев",
+      "errors": 0,
+      "words": 5,
+      "pcm_sha256": "7a727ebb57cf99bee5fef7b6173d9c1486aaa864c74a699593815b63b794cf6b"
+    },
+    {
+      "decoder": "original",
+      "file": "speech12.m4a.0.f32",
+      "reference": "джой как работает досрочное погашение кредита",
+      "text": "джой как работает досрочное погашение кредита",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "b80c01efe2312cd84f839797aa506acb2baabd962a806c61cc516c174db009e7"
+    },
+    {
+      "decoder": "original",
+      "file": "speech13.m4a.0.f32",
+      "reference": "у тебя найдется люк кейдж",
+      "text": "у тебя найдется люк кейдж",
+      "errors": 0,
+      "words": 5,
+      "pcm_sha256": "90875c14e3687b46358274649cb95d54db8b0624b19fa06d678d53ce213a2cb6"
+    },
+    {
+      "decoder": "original",
+      "file": "speech14.m4a.0.f32",
+      "reference": "у тебя будет лучшая часть пинк",
+      "text": "у тебя будет лучшая часть пинк",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "d1c4113748087deed0d5c430e8c9a12c641325d0eca1fb45a7f1611155e88ea9"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech0.m4a.0.f32",
+      "reference": "шестьдесят тысяч тенге сколько будет стоить",
+      "text": "шестьдесят тысяч тенге сколько будет стоить",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "197e46ba871090cf04ec366bc956165206ed80045b56410e6ac42e6a3c815f7f"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech1.m4a.0.f32",
+      "reference": "покажи мне на смотрешке телеканал синергия тв",
+      "text": "покажи мне на смотрешке телеканал синергия тв",
+      "errors": 0,
+      "words": 7,
+      "pcm_sha256": "2c6a46b1f8812b0d2bc5d03aabd64a0196ef770950c304328a6e7dfd3f562a4e"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech2.m4a.0.f32",
+      "reference": "заказать яблоки зеленые",
+      "text": "заказать яблоки зеленые",
+      "errors": 0,
+      "words": 3,
+      "pcm_sha256": "2625f32978f1e8e28a17225d02fbe278e06524c0b1cfed8d0f366b2c89e46d5b"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech3.m4a.0.f32",
+      "reference": "алиса закажи килограммовый торт графские развалины",
+      "text": "алиса закажи килограммовый торт графские развалины",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "7347902557f8e896cc296cbc6663c5d1dc22d6316b3a6ef8ad4b95e14021453d"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech4.m4a.0.f32",
+      "reference": "ищи телеканал про бизнес на тиви",
+      "text": "ищи телеканал про бизнес на тиви",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "7af9f6a29d0ddd76584c16f17cf12f44fa1b5636a669501903c16cb5bd3d0c45"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech5.m4a.0.f32",
+      "reference": "михаила мурадяна",
+      "text": "михаила мурадяна",
+      "errors": 0,
+      "words": 2,
+      "pcm_sha256": "f55ec07a3bdd2a53d0c2a377b5e1786d09eacaf2483aa29586216f849df62fab"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech6.m4a.0.f32",
+      "reference": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "text": "любовницы две тысячи тринадцать пятнадцатый сезон",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "fb93cb9b6cea0cb72018c78fb21bbfbab25fc3e2d2d78f4dcdbc9ab25c23f007"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech7.m4a.0.f32",
+      "reference": "найди боевики",
+      "text": "найди боевики",
+      "errors": 0,
+      "words": 2,
+      "pcm_sha256": "4d8e7a71e6e0e13cf354d3a37b4af246219847cea4384bb540ecc2d3ac7a35dc"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech8.m4a.0.f32",
+      "reference": "гетто сезон три",
+      "text": "гетто сезон три",
+      "errors": 0,
+      "words": 3,
+      "pcm_sha256": "39231d296dd64d50b2667f37d4e41093610394acd89855dc0758136bb9958504"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech9.m4a.0.f32",
+      "reference": "хочу посмотреть ростов папа на телевизоре",
+      "text": "хочу посмотреть ростов папа на телевизоре",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "35d38d9ee21083e654ae15e538aeb99a8029eae5abecc134f0ec6ecaed11c407"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech10.m4a.0.f32",
+      "reference": "сбер какое твое самое ненавистное занятие",
+      "text": "сбер какое твое самое ненавистное занятие",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "d16f00d0586ba0f86c709acb3ce3da3107cdfa7be4f97335d0558651773c1910"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech11.m4a.0.f32",
+      "reference": "афина чем платят у китайцев",
+      "text": "афина чем платят у китайцев",
+      "errors": 0,
+      "words": 5,
+      "pcm_sha256": "7a727ebb57cf99bee5fef7b6173d9c1486aaa864c74a699593815b63b794cf6b"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech12.m4a.0.f32",
+      "reference": "джой как работает досрочное погашение кредита",
+      "text": "джой как работает досрочное погашение кредита",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "b80c01efe2312cd84f839797aa506acb2baabd962a806c61cc516c174db009e7"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech13.m4a.0.f32",
+      "reference": "у тебя найдется люк кейдж",
+      "text": "у тебя найдется люк кейдж",
+      "errors": 0,
+      "words": 5,
+      "pcm_sha256": "90875c14e3687b46358274649cb95d54db8b0624b19fa06d678d53ce213a2cb6"
+    },
+    {
+      "decoder": "candidate",
+      "file": "speech14.m4a.0.f32",
+      "reference": "у тебя будет лучшая часть пинк",
+      "text": "у тебя будет лучшая часть пинк",
+      "errors": 0,
+      "words": 6,
+      "pcm_sha256": "d1c4113748087deed0d5c430e8c9a12c641325d0eca1fb45a7f1611155e88ea9"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "created_utc": "2026-10-28T21:38:05.000190+00:00",
+  "original_affinity": [
+    2,
+    3
+  ],
+  "controlled_affinity": [
+    0,
+    2
+  ],
+  "observed_post_failure_process_sample": {
+    "pid": 3101559,
+    "psr": 15,
+    "pcpu": 99.7,
+    "command": "qemu-aarch64"
+  },
+  "qemu_exited_before_automated_followup_sampling": true,
+  "cpu_siblings": {
+    "0": "0,12",
+    "2": "2,14",
+    "3": "3,15"
+  },
+  "diagnosis": "Possible SMT/scheduling interference, not proven causation. The short bytes case had paired ratios 0.843 through 1.417. Retain original failing data; two complete same-binary/same-fixture control campaigns on cores 0/2 must independently pass all six 5% gates.",
+  "loadavg": "8.04 13.26 11.47 8/5468 3122713"
+}

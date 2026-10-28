@@ -225,3 +225,14 @@ blocks merge. CI remains manually dispatched.
 The pinned Core ML bridge comparison model uses the CoreML8 opset and requires
 macOS 15 or newer. The manual ANE job uses macOS 15; the comparison rejects an
 older host before downloading assets or building either revision.
+
+## AAC decoder changes
+
+Keep `extended-aac` opt-in until the same production-path comparison passes
+for both short and long inputs. The [AAC audit](aac-audit.md) records the
+initial regression, fixes, quality evidence and reproduction commands.
+`scripts/compare-aac-decoders.py` rejects missing/error measurements and a
+median paired latency increase above 5%; its threshold also applies to the
+optional decoder. Enabling a feature does not waive acceptance for standard
+builds. Manual CI exercises optional AAC correctness tests; it does not run
+this local paired codec comparison automatically.

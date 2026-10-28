@@ -1,0 +1,26 @@
+{
+  "valid": {
+    "expected": true,
+    "observed": true
+  },
+  "wrong-code": {
+    "expected": false,
+    "observed": false
+  },
+  "missing-header": {
+    "expected": false,
+    "observed": false
+  },
+  "mismatched-delay": {
+    "expected": false,
+    "observed": false
+  },
+  "zero-delay": {
+    "expected": false,
+    "observed": false
+  },
+  "boolean-delay": {
+    "expected": false,
+    "observed": false
+  }
+}

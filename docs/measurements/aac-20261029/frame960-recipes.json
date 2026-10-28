@@ -1,0 +1,20 @@
+[
+  {
+    "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc960-m48-long.loas",
+    "source": "/home/ekhodzitsky/Projects/syom/lab/frame960/vectors/lc960-m48.loas",
+    "repeat": 16,
+    "source_sha256": "a473c32923370ab0bf45d34fb1fa807363329fe2ee4e9936578e1a441888826c",
+    "sha256": "d2dbd55a7179e0f44ad30dfdf4a1e5ecbe194bacbface78dd7f2005edb7658b3",
+    "access_units": 128,
+    "duration_seconds": 2.56
+  },
+  {
+    "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc960-s48-long.loas",
+    "source": "/home/ekhodzitsky/Projects/syom/lab/frame960/vectors/lc960-s48.loas",
+    "repeat": 16,
+    "source_sha256": "782016da655f04fb1b50f6a297ff392c8fb3a37118428d48f2a8ecfe0539e368",
+    "sha256": "f5d4790fea5b3a9be302a3fb23427f78cf68fae22d9707382fa4b8102d17158d",
+    "access_units": 128,
+    "duration_seconds": 2.56
+  }
+]

@@ -834,7 +834,8 @@ This applies to every file-transcription endpoint (`/v1/transcribe`,
 | WAV with G.722 ADPCM (tags `0x0064`, `0x0065`, `0x028F`) | ryf |
 | WAV with G.726 ADPCM (tag `0x0045`, mono 8 kHz, 16/24/32/40 kbit/s) | ryf |
 | WAV with GSM 06.10 (wav49 / tag `0x0031`) | ryf |
-| MP3, M4A/AAC, OGG/Vorbis, FLAC | symphonia |
+| MP3, M4A/AAC-LC, OGG/Vorbis, FLAC | symphonia |
+| ADTS, LATM/LOAS, M4A, bounded fragmented MP4 (AAC-LC, HE-AAC, AAC-LD) | syom, only with `--features extended-aac`; [measured limitations](aac-audit.md) |
 | OGG/Opus, `.opus` (Telegram voice) | built-in fallback (`opus-rs`, pure Rust) |
 | WebM/Opus, Matroska (browser `MediaRecorder`) | symphonia demux + the same Opus fallback |
 | Raw headerless `.ulaw` / `.alaw` / `.g722` | ryf — requires `?codec=` |
