@@ -79,6 +79,7 @@ jobs:
       - run: python3 scripts/test-release-assets.py
       - run: python3 scripts/test_homebrew_release_metadata.py
       - run: python3 scripts/test_android_runtime.py
+      - run: python3 scripts/test_phrase_loss_diagnostic.py
 
   runtime-isolation:
     runs-on: ubuntu-latest

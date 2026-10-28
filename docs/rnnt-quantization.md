@@ -72,6 +72,9 @@ alignment metric differs from the reporter's timestamp-only lost-run metric;
 neither should be described as the other. Public data cannot prove correctness
 on the private meeting or on every language/domain.
 
+The [local phrase-loss diagnostic](phrase-loss-diagnostics.md) provides a bounded
+CPU full-file/window comparison while keeping private audio and transcripts local.
+
 ## Model release checks
 
 `benchmark/model-release.json` pins the FP32 source files, the immutable old

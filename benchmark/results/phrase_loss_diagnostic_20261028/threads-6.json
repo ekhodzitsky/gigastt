@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "machine": "x86_64",
+  "encoder_threads_requested": 6,
+  "binary_version": "gigastt 2.22.0",
+  "binary_sha256": "d24e6c2cf0c8b1a60266c661eebcc31d72208347e5b9def6927b6a41958d2216",
+  "model_sha256": {
+    "v3_e2e_rnnt_encoder_int8.onnx": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091",
+    "v3_e2e_rnnt_decoder.onnx": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+    "v3_e2e_rnnt_joint.onnx": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c",
+    "v3_e2e_rnnt_vocab.txt": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7"
+  },
+  "variant": "e2e_rnnt",
+  "complete": true,
+  "ground_truth_available": false,
+  "cold_warm_response_equal": true,
+  "full_word_counts": {
+    "full-cold": 677,
+    "full-warm": 677
+  },
+  "windows": [
+    {
+      "start": 22,
+      "comparisons": {
+        "full-cold": {
+          "text_equal": true,
+          "local_token_count": 50,
+          "full_token_count": 50,
+          "timestamp_uncovered_count": 0
+        },
+        "full-warm": {
+          "text_equal": true,
+          "local_token_count": 50,
+          "full_token_count": 50,
+          "timestamp_uncovered_count": 0
+        }
+      }
+    },
+    {
+      "start": 44,
+      "comparisons": {
+        "full-cold": {
+          "text_equal": true,
+          "local_token_count": 61,
+          "full_token_count": 61,
+          "timestamp_uncovered_count": 0
+        },
+        "full-warm": {
+          "text_equal": true,
+          "local_token_count": 61,
+          "full_token_count": 61,
+          "timestamp_uncovered_count": 0
+        }
+      }
+    },
+    {
+      "start": 66,
+      "comparisons": {
+        "full-cold": {
+          "text_equal": true,
+          "local_token_count": 59,
+          "full_token_count": 59,
+          "timestamp_uncovered_count": 0
+        },
+        "full-warm": {
+          "text_equal": true,
+          "local_token_count": 59,
+          "full_token_count": 59,
+          "timestamp_uncovered_count": 0
+        }
+      }
+    }
+  ]
+}
