@@ -332,3 +332,24 @@ fn test_feature_extractor_compute_mel_reuses_buffers() {
         "output buffer holds frames * N_MELS values"
     );
 }
+
+#[test]
+fn test_endpoint_silence_validation_and_frame_rounding() {
+    use super::EndpointSilence;
+    for invalid in [0, 39, 2001, u32::MAX] {
+        assert!(EndpointSilence::new(invalid).is_err());
+    }
+    for (ms, frames) in [
+        (40, 1),
+        (600, 15),
+        (601, 16),
+        (1000, 25),
+        (1500, 38),
+        (2000, 50),
+    ] {
+        let value = EndpointSilence::new(ms).unwrap();
+        assert_eq!(value.milliseconds(), ms);
+        assert_eq!(value.frames(), frames);
+    }
+    assert_eq!(EndpointSilence::default().frames(), 15);
+}

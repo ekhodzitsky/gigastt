@@ -2,7 +2,7 @@ asyncapi: 3.0.0
 
 info:
   title: gigastt WebSocket API
-  version: "1.2"
+  version: "1.3"
   description: |
     Live-partials WebSocket API powered by GigaAM v3 (rnnt head by default).
     On-device Russian speech recognition via ONNX Runtime. Buffered/chunked
@@ -41,6 +41,7 @@ info:
 
     ## Text Commitment
 
+    Protocol 1.3 adds optional endpoint_silence_ms; clients using 1.2 remain accepted.
     Protocol 1.2 adds `committed` and `tentative`; clients using 1.0 and 1.1 remain accepted.
     `text` is exactly `committed + tentative`, including whitespace. The tentative suffix
     includes any separating space. Commitment is scoped to one utterance and resets after Final.
@@ -267,7 +268,7 @@ components:
           description: Expected audio sample rate in Hz (client should send at this rate)
         version:
           type: string
-          example: "1.2"
+          example: "1.3"
           description: WebSocket protocol version (semver-lite major.minor)
         supported_rates:
           type: array
@@ -427,6 +428,7 @@ components:
             - invalid_commit_policy
             - invalid_sample_rate
             - invalid_endpoint_mode
+            - invalid_endpoint_silence_ms
             - timeout
             - pool_closed
             - max_session_duration_exceeded
@@ -494,6 +496,16 @@ components:
             Text commitment per utterance. Omitted = keep the current policy (initially auto).
             Values are case-insensitive. Unknown values yield invalid_commit_policy without
             changing the configuration. See Text Commitment for final post-processing behavior.
+        endpoint_silence_ms:
+          type: integer
+          minimum: 40
+          maximum: 2000
+          example: 1200
+          description: >-
+            Decoder blank-run duration in milliseconds, not acoustic silence.
+            Auto mode without VAD only; rounded up to 40 ms frames. Initially the
+            server default (600 ms), omitted preserves the session value. Invalid
+            range rejects this configure message with invalid_endpoint_silence_ms.
         min_silence_ms:
           type: integer
           example: 1200

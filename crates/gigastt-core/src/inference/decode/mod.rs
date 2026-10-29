@@ -26,6 +26,7 @@ const ENC_DIM: usize = 768;
 /// Number of consecutive blank frames to trigger endpointing (~600ms at 40ms/frame).
 /// This is the streaming endpoint signal only when no VAD is attached; with a
 /// VAD, `process_chunk` ignores it and the VAD's `min_silence_ms` owns endpointing.
+#[cfg(test)]
 pub(crate) const ENDPOINT_BLANK_THRESHOLD: usize = 15;
 
 /// Token emitted by the decoder with metadata.
@@ -495,7 +496,8 @@ fn greedy_decode_impl_with_abort<B: DecodeBackend>(
                 // True blank: decoder state was NOT updated. Safe to cache.
                 in_blank_run = true;
                 state.consecutive_blanks += 1;
-                if state.consecutive_blanks >= ENDPOINT_BLANK_THRESHOLD && !tokens.is_empty() {
+                if state.consecutive_blanks >= state.endpoint_blank_threshold && !tokens.is_empty()
+                {
                     endpoint_detected = true;
                 }
                 break;
@@ -509,9 +511,12 @@ fn greedy_decode_impl_with_abort<B: DecodeBackend>(
                 in_blank_run = false;
                 cache_valid = false;
                 state.consecutive_blanks = 0;
+                endpoint_detected = false;
                 break;
             }
 
+            // Only a trailing blank run can finish the current window.
+            endpoint_detected = false;
             // === NON-BLANK TOKEN: commit state, emit token ===
             in_blank_run = false;
             commit_non_blank(state, &decoder_out, token, biaser, bias_state.as_mut())?;

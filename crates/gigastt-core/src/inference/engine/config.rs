@@ -223,6 +223,13 @@ impl Engine {
         self
     }
 
+    /// Set the default decoder blank-run duration for new streaming sessions.
+    /// Does not change file transcription, VAD or manual endpointing.
+    pub fn with_endpoint_silence(mut self, duration: crate::inference::EndpointSilence) -> Self {
+        self.endpoint_silence = duration;
+        self
+    }
+
     /// Set the max retained streaming encoder window in seconds (default 2.5).
     /// The value is clamped to the supported range (2.4–30 s; see
     /// [`Engine::stream_max_window_samples`]). Longer windows

@@ -1,0 +1,936 @@
+{
+  "schema": 1,
+  "baseline_commit": "143b9f2920a65fe4b466c012cfaaa8e0fb302bda",
+  "candidate_sources": {
+    "crates/gigastt-core/src/inference/decode/mod.rs": "71395ac25a7163eff99c68b06adda2ba0c1b631c60c93b19870483ac5a33c661",
+    "crates/gigastt-core/src/inference/engine/stream.rs": "814b5fc92e52a0b8696a87ce93b88b12f5272d0f9c9c5fb63dd68864e06fb60e",
+    "crates/gigastt-core/src/inference/state.rs": "2972ca3a9e0ac43522daf129fe4739d9184ff6ae756c30e53197600da68d35a8",
+    "crates/gigastt-core/src/inference/engine/live_probe/experiment.rs": "fb21ed6bb6e41aff2c386279d6a6fdf3189c5336534ac0e3da1a7ab3946c33b1",
+    "benchmark/common.py": "125fc985ac19a329aebcde5f10d2270b9b4d1db6f12b449cf3e25785a9d858f9"
+  },
+  "baseline_probe_sha256": "d5986ec872f89969b9272699f8b4d8ca0dddbe974fd0a062829e7013590ebbc4",
+  "models": {
+    "v3_e2e_rnnt_vocab.txt": "39abae20e692998290c574e606f11a9edef2902a1995463fcff63d1490cf22b7",
+    "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+    "v3_e2e_rnnt_decoder.onnx": "7b0a16d67fd2cb37061decc93c69e364a9ab27afee3c57495d55b1c974cf7231",
+    "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07",
+    "v3_rnnt_encoder_int8.onnx": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+    "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+    "v3_e2e_rnnt_encoder_int8.onnx": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091",
+    "v3_e2e_rnnt_joint.onnx": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c"
+  },
+  "fixture_hashes": {
+    "golos_02.wav": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+    "golos_00.wav": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+    "golos_01.wav": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c"
+  },
+  "raw_sha256": {
+    "baseline-rnnt.json": "0a41cbc58deb24a58e3dbc580a857ba2976670b0fdc4d9b3cf53b95457c4f94c",
+    "baseline-e2e.json": "c9a6442240d6af657489aa0f2c6d631ce753b251319dfd50c2f98dbaf05c8e32",
+    "final-rnnt.json": "f3a4bdac711b7e72edfdc69a78a03a20b4ec576b79531afbc97ccb1cd8d81343",
+    "final-e2e.json": "514a49de2c83c4b4d824dcea8cc0ef5415ddf083e526fd27d4dd9c03ddf5eba7"
+  },
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "build_profile": "debug test",
+  "cpu": "AMD Ryzen AI 9 HX 370",
+  "encoder_threads": 4,
+  "pool": 1,
+  "chunk_ms": 100,
+  "decode_stride_ms": 800,
+  "window_seconds": 2.5,
+  "tail_silence_ms": 3000,
+  "clock": "input_audio_ms_not_network_or_wall_latency",
+  "totals": [
+    {
+      "arm": "baseline",
+      "head": "rnnt",
+      "threshold_ms": 600,
+      "natural_errors": 1,
+      "stress_errors": 0,
+      "blank_finals": 7
+    },
+    {
+      "arm": "baseline",
+      "head": "e2e",
+      "threshold_ms": 600,
+      "natural_errors": 3,
+      "stress_errors": 4,
+      "blank_finals": 16
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "threshold_ms": 600,
+      "natural_errors": 1,
+      "stress_errors": 0,
+      "blank_finals": 7
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "threshold_ms": 1000,
+      "natural_errors": 1,
+      "stress_errors": 0,
+      "blank_finals": 6
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "threshold_ms": 1500,
+      "natural_errors": 1,
+      "stress_errors": 0,
+      "blank_finals": 5
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "threshold_ms": 600,
+      "natural_errors": 0,
+      "stress_errors": 1,
+      "blank_finals": 6
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "threshold_ms": 1000,
+      "natural_errors": 0,
+      "stress_errors": 1,
+      "blank_finals": 5
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "threshold_ms": 1500,
+      "natural_errors": 0,
+      "stress_errors": 1,
+      "blank_finals": 5
+    }
+  ],
+  "rows": [
+    {
+      "arm": "baseline",
+      "head": "rnnt",
+      "file": "golos_00.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "baseline",
+      "head": "rnnt",
+      "file": "golos_01.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 1,
+      "wer_percent": 14.285714285714285,
+      "finals": [
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 6430,
+          "reason": "stop",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "7b6f13e4a7c8811c61b50c491541302a9f4accb3a8d470503e917812480e3f15"
+    },
+    {
+      "arm": "baseline",
+      "head": "rnnt",
+      "file": "golos_02.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f"
+    },
+    {
+      "arm": "baseline",
+      "head": "rnnt",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 600,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 3200,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "baseline",
+      "head": "rnnt",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 600,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 8000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "baseline",
+      "head": "e2e",
+      "file": "golos_00.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "f4694007871842231f4388f510138fac1d5409c3e06276253b0ad62412e88e2a"
+    },
+    {
+      "arm": "baseline",
+      "head": "e2e",
+      "file": "golos_01.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 2,
+      "wer_percent": 28.57142857142857,
+      "finals": [
+        {
+          "input_ms": 1600,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 2400,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "187fd275a42ec58ecd6219ebf7d89506bdb4438d8a0a007300a38027e757fb28"
+    },
+    {
+      "arm": "baseline",
+      "head": "e2e",
+      "file": "golos_02.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 1,
+      "wer_percent": 33.33333333333333,
+      "finals": [
+        {
+          "input_ms": 3200,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "c61887b3090fb0e6a823859623b1e8432be4629706c71e243ae637083ea2757b"
+    },
+    {
+      "arm": "baseline",
+      "head": "e2e",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 600,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 1,
+      "wer_percent": 20.0,
+      "finals": [
+        {
+          "input_ms": 3200,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "cbed0534c9d3786eed05c5ddd1622a2d8528fcde53ba69e8a28008516715d15c"
+    },
+    {
+      "arm": "baseline",
+      "head": "e2e",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 600,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 3,
+      "wer_percent": 60.0,
+      "finals": [
+        {
+          "input_ms": 2400,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 6400,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 7200,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 8000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "d66b01837a7c844f7f9111d1be4a5a0fa9c59261ab24c5108daa284c5292d2f0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_00.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_01.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 1,
+      "wer_percent": 14.285714285714285,
+      "finals": [
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 6430,
+          "reason": "stop",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "7b6f13e4a7c8811c61b50c491541302a9f4accb3a8d470503e917812480e3f15"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_02.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 600,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 3200,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 600,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 8000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_00.wav",
+      "threshold_ms": 1000,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_01.wav",
+      "threshold_ms": 1000,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 1,
+      "wer_percent": 14.285714285714285,
+      "finals": [
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 6430,
+          "reason": "stop",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "7b6f13e4a7c8811c61b50c491541302a9f4accb3a8d470503e917812480e3f15"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_02.wav",
+      "threshold_ms": 1000,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 1000,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 3200,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 1000,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 8000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_00.wav",
+      "threshold_ms": 1500,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_01.wav",
+      "threshold_ms": 1500,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 1,
+      "wer_percent": 14.285714285714285,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 6430,
+          "reason": "stop",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "7b6f13e4a7c8811c61b50c491541302a9f4accb3a8d470503e917812480e3f15"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "golos_02.wav",
+      "threshold_ms": 1500,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "379f562938e4b188ac4ed05d315ca01059729d8851323b8d7308f4cb2bde053f"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 1500,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 6400,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "rnnt",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 1500,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 8800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "1283cef6cb1fbf089b2f87990ad74ebbdda5de8fe8c5501ccee6c684219891d0"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_00.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "f4694007871842231f4388f510138fac1d5409c3e06276253b0ad62412e88e2a"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_01.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "6efa7e792d2e90a0228fba4962cbfc8af849728f9459842a82adb0cefd6be81a"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_02.wav",
+      "threshold_ms": 600,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "380e1595279f1f9a74e1231f86481c1023fb835ae331d06d81a7e193698446bb"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 600,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "7178dcb298244f68dbadab5805003015df63f7696836c0a506c86fb56996a43f"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 600,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 1,
+      "wer_percent": 20.0,
+      "finals": [
+        {
+          "input_ms": 2400,
+          "reason": "blank",
+          "nonempty": true
+        },
+        {
+          "input_ms": 8000,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "b8f2948c7b141889f1148e161a87cfbe516ebe05702ac599dd02cca4a2e7c7e7"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_00.wav",
+      "threshold_ms": 1000,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "f4694007871842231f4388f510138fac1d5409c3e06276253b0ad62412e88e2a"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_01.wav",
+      "threshold_ms": 1000,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 4800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "6efa7e792d2e90a0228fba4962cbfc8af849728f9459842a82adb0cefd6be81a"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_02.wav",
+      "threshold_ms": 1000,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "380e1595279f1f9a74e1231f86481c1023fb835ae331d06d81a7e193698446bb"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 1000,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 6400,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "7178dcb298244f68dbadab5805003015df63f7696836c0a506c86fb56996a43f"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 1000,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 1,
+      "wer_percent": 20.0,
+      "finals": [
+        {
+          "input_ms": 8800,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "baadeb3747b8f1f294b61ba6fa3b6d0b39f708f5d88f0e64579bd7ab442bd723"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_00.wav",
+      "threshold_ms": 1500,
+      "source_audio_ms": 4000.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "f4694007871842231f4388f510138fac1d5409c3e06276253b0ad62412e88e2a"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_01.wav",
+      "threshold_ms": 1500,
+      "source_audio_ms": 3430.0,
+      "reference_words": 7,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 6400,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "6efa7e792d2e90a0228fba4962cbfc8af849728f9459842a82adb0cefd6be81a"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "golos_02.wav",
+      "threshold_ms": 1500,
+      "source_audio_ms": 3060.0,
+      "reference_words": 3,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 5600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "380e1595279f1f9a74e1231f86481c1023fb835ae331d06d81a7e193698446bb"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "synthetic_midpoint_pause_800ms",
+      "threshold_ms": 1500,
+      "source_audio_ms": 4800.0,
+      "reference_words": 5,
+      "word_errors": 0,
+      "wer_percent": 0.0,
+      "finals": [
+        {
+          "input_ms": 7200,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "7178dcb298244f68dbadab5805003015df63f7696836c0a506c86fb56996a43f"
+    },
+    {
+      "arm": "final",
+      "head": "e2e",
+      "file": "synthetic_half_speed",
+      "threshold_ms": 1500,
+      "source_audio_ms": 8000.0,
+      "reference_words": 5,
+      "word_errors": 1,
+      "wer_percent": 20.0,
+      "finals": [
+        {
+          "input_ms": 9600,
+          "reason": "blank",
+          "nonempty": true
+        }
+      ],
+      "text_sha256": "baadeb3747b8f1f294b61ba6fa3b6d0b39f708f5d88f0e64579bd7ab442bd723"
+    }
+  ]
+}
