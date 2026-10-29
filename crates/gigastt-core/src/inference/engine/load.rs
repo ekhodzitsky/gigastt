@@ -233,6 +233,7 @@ impl Engine {
             vad: None,
             vad_config: crate::vad::VadConfig::default(),
             endpoint_mode: EndpointMode::Auto,
+            endpoint_silence: crate::inference::EndpointSilence::default(),
             stream_max_window_samples: STREAM_MAX_WINDOW_SAMPLES,
             // Default on: stable-prefix commits cut long-phrase streaming WER
             // loss at slide boundaries (10.6% → 2.1% corpus WER on 10 labelled

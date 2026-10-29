@@ -145,7 +145,7 @@ async fn test_ws_connect_receives_ready() {
     let (_sink, _stream, ready) = common::ws_connect(port).await;
 
     assert_eq!(ready["type"], "ready");
-    assert_eq!(ready["version"], "1.2");
+    assert_eq!(ready["version"], "1.3");
     assert_eq!(ready["min_protocol_version"], "1.0");
     assert_eq!(ready["sample_rate"], 48000);
     assert!(
@@ -1683,5 +1683,92 @@ async fn test_ws_final_carries_segment_confidence() {
     assert!(
         (0.0..=1.0).contains(&confidence),
         "segment confidence must lie in [0, 1], got {confidence}"
+    );
+}
+
+#[ignore = "requires model"]
+#[tokio::test]
+async fn test_ws_endpoint_override_survives_reconfigure_and_file_output_unchanged() {
+    use gigastt::inference::{EndpointSilence, Engine};
+    let model_dir = common::model_dir();
+    let engine = Engine::load_with_pool_size(&model_dir, 1)
+        .unwrap()
+        .with_itn(false);
+    let (port, shutdown) = common::start_server_with_engine(engine).await;
+    let clip = gigastt::inference::audio::decode_audio_file(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/golos_00.wav"
+    ))
+    .unwrap();
+    let mut samples = clip.clone();
+    samples.extend(std::iter::repeat_n(0.0, 48000));
+    let wav = gigastt::inference::audio::encode_wav_pcm16(&samples, 16000);
+    let mut baseline = None;
+    for recreate in [false, true] {
+        let (mut sink, mut stream, _) = common::ws_connect(port).await;
+        sink.send(Message::Text(serde_json::json!({"type":"configure","sample_rate":16000,"endpoint_silence_ms":1500,"punctuation":false,"itn":false}).to_string().into())).await.unwrap();
+        if recreate {
+            sink.send(Message::Text(
+                serde_json::json!({"type":"configure","diarization":false})
+                    .to_string()
+                    .into(),
+            ))
+            .await
+            .unwrap();
+        }
+        for chunk in wav[44..].chunks(3200) {
+            sink.send(Message::Binary(chunk.to_vec().into()))
+                .await
+                .unwrap();
+        }
+        sink.send(Message::Text(
+            serde_json::json!({"type":"stop"}).to_string().into(),
+        ))
+        .await
+        .unwrap();
+        let finals = tokio::time::timeout(Duration::from_secs(60), async {
+            let mut finals = Vec::new();
+            while let Some(msg) = stream.next().await {
+                let Message::Text(text) = msg.unwrap() else {
+                    continue;
+                };
+                let v: serde_json::Value = serde_json::from_str(&text).unwrap();
+                assert_ne!(v["type"], "error", "{v}");
+                if v["type"] == "final" {
+                    finals.push((v["text"].clone(), v["endpoint_reason"].clone()));
+                    if v["endpoint_reason"] == "stop" {
+                        break;
+                    }
+                }
+            }
+            finals
+        })
+        .await
+        .unwrap();
+        assert!(!finals.is_empty());
+        if let Some(expected) = &baseline {
+            assert_eq!(&finals, expected);
+        } else {
+            baseline = Some(finals);
+        }
+    }
+    let _ = shutdown.send(());
+    // File inference does not consult streaming endpoint duration.
+    let engine = Engine::load_with_pool_size(&model_dir, 1)
+        .unwrap()
+        .with_itn(false);
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/golos_00.wav");
+    let before = {
+        let mut guard = engine.pool.checkout_blocking().unwrap();
+        engine.transcribe_file(path, &mut guard).unwrap()
+    };
+    let engine = engine.with_endpoint_silence(EndpointSilence::new(1500).unwrap());
+    let after = {
+        let mut guard = engine.pool.checkout_blocking().unwrap();
+        engine.transcribe_file(path, &mut guard).unwrap()
+    };
+    assert_eq!(
+        serde_json::to_value(before).unwrap(),
+        serde_json::to_value(after).unwrap()
     );
 }

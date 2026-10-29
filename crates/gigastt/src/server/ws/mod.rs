@@ -451,6 +451,7 @@ async fn handle_ws_inner(
                             punctuation,
                             itn,
                             endpoint_mode,
+                            endpoint_silence_ms,
                             min_silence_ms,
                             commit_policy,
                             ..
@@ -467,6 +468,7 @@ async fn handle_ws_inner(
                                 punctuation,
                                 itn,
                                 endpoint_mode,
+                            endpoint_silence_ms,
                                 min_silence_ms,
                                 commit_policy,
                                 peer,

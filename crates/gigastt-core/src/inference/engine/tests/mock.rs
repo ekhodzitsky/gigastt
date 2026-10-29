@@ -806,6 +806,7 @@ fn bare_state(
         punctuation: None,
         itn: None,
         endpoint_mode: EndpointMode::Auto,
+        endpoint_silence: crate::inference::EndpointSilence::default(),
         agreed_prefix: 0,
         cap_streak: 0,
         #[cfg(feature = "diarization")]
@@ -1126,4 +1127,68 @@ fn test_retention_silence_slides_to_left_context() {
         assert!(state.audio_buffer.len() < STREAM_MAX_WINDOW_SAMPLES);
     }
     assert!(state.window_start_samples > STREAM_MAX_WINDOW_SAMPLES);
+}
+
+#[test]
+fn test_stream_endpoint_duration_boot_default_and_session_isolation() {
+    use crate::inference::EndpointSilence;
+    let (engine, _tmp) = blank_run_engine();
+    let engine = engine.with_endpoint_silence(EndpointSilence::new(1000).unwrap());
+    let mut short = engine.create_state(false);
+    let mut long = engine.create_state(false);
+    assert_eq!(long.endpoint_silence.milliseconds(), 1000);
+    short.endpoint_silence = EndpointSilence::new(600).unwrap();
+    let chunk = vec![0.0f32; 12800];
+    let mut guard = engine.pool.checkout_blocking().unwrap();
+    let segs = engine.process_chunk(&chunk, &mut long, &mut guard).unwrap();
+    assert!(!segs[0].is_final);
+    assert_eq!(short.endpoint_silence.milliseconds(), 600);
+    assert_eq!(
+        engine.create_state(false).endpoint_silence.milliseconds(),
+        1000
+    );
+    assert!(!Engine::speech_endpoint(
+        EndpointMode::Auto,
+        true,
+        false,
+        true
+    ));
+    assert!(!Engine::speech_endpoint(
+        EndpointMode::Manual,
+        true,
+        true,
+        false
+    ));
+    assert!(!Engine::speech_endpoint(
+        EndpointMode::Assistant,
+        true,
+        false,
+        false
+    ));
+    assert!(Engine::speech_endpoint(
+        EndpointMode::Auto,
+        false,
+        true,
+        true
+    ));
+}
+
+#[test]
+fn test_blank_only_window_finishes_previously_committed_utterance() {
+    let (engine, _tmp) = tiny_mock_engine();
+    let mut guard = engine.pool.checkout_blocking().unwrap();
+    let mut state = engine.create_state(false);
+    state.endpoint_silence = crate::inference::EndpointSilence::new(40).unwrap();
+    state.assembler.append(vec![w("earlier", 0.0, 0.1)]);
+    state.assembler.commit_live();
+    // This mock emits one blank encoder frame and no tokens. The utterance
+    // still exists even though its speech has left the retained decode window.
+    state.pending_samples = 12800;
+    let segments = engine
+        .process_chunk(&vec![0.0; 320], &mut state, &mut guard)
+        .unwrap();
+    assert_eq!(segments.len(), 1);
+    assert!(segments[0].is_final);
+    assert_eq!(segments[0].text, "earlier");
+    assert_eq!(segments[0].endpoint_reason, Some(EndpointReason::Blank));
 }

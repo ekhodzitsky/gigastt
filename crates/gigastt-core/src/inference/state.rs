@@ -9,6 +9,43 @@ use super::diarization::StreamingDiarizationState;
 use super::features::MelSpectrogram;
 use super::now_timestamp;
 
+/// Validated decoder blank-run duration for streaming auto mode without VAD.
+/// This measures absence of decoded tokens, not acoustic silence. Values are
+/// rounded up to encoder frames. The upper bound stays below the minimum
+/// streaming window cap; use VAD or manual endpointing for longer pauses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EndpointSilence(u32);
+
+impl EndpointSilence {
+    pub const DEFAULT_MS: u32 = 600;
+    pub const MIN_MS: u32 = 40;
+    pub const MAX_MS: u32 = 2000;
+
+    pub fn new(milliseconds: u32) -> Result<Self, crate::error::GigasttError> {
+        if !(Self::MIN_MS..=Self::MAX_MS).contains(&milliseconds) {
+            return Err(crate::error::GigasttError::InvalidInput {
+                message: "endpoint_silence_ms must be between 40 and 2000".into(),
+            });
+        }
+        Ok(Self(milliseconds))
+    }
+
+    pub fn milliseconds(self) -> u32 {
+        self.0
+    }
+
+    pub(crate) fn frames(self) -> usize {
+        let frame_ms = (super::HOP_LENGTH * super::ENCODER_SUBSAMPLING / 16) as u32;
+        self.0.div_ceil(frame_ms) as usize
+    }
+}
+
+impl Default for EndpointSilence {
+    fn default() -> Self {
+        Self(Self::DEFAULT_MS)
+    }
+}
+
 #[non_exhaustive]
 pub struct DecoderState {
     /// LSTM hidden state vector (length [`PRED_HIDDEN`]).
@@ -19,6 +56,7 @@ pub struct DecoderState {
     pub prev_token: i64,
     /// Count of consecutive blank frames (used for endpointing).
     pub consecutive_blanks: usize,
+    pub(crate) endpoint_blank_threshold: usize,
 }
 
 impl DecoderState {
@@ -29,6 +67,7 @@ impl DecoderState {
             c: vec![0.0; PRED_HIDDEN],
             prev_token: blank_id as i64,
             consecutive_blanks: 0,
+            endpoint_blank_threshold: EndpointSilence::default().frames(),
         }
     }
 }
@@ -156,6 +195,8 @@ pub struct StreamingState {
     pub itn: Option<bool>,
     /// Per-session utterance-end policy (from engine boot or WS `configure`).
     pub endpoint_mode: EndpointMode,
+    /// Decoder blank-run threshold; only used by auto mode without VAD.
+    pub endpoint_silence: EndpointSilence,
     /// Length of the longest text-equal prefix shared by the previous live tail
     /// and the latest window hypothesis — how much of the tail is stable enough
     /// to commit at the window cap. Updated by `decode_window` on every pass.

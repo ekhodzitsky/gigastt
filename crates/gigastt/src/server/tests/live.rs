@@ -106,7 +106,7 @@ async fn test_live_ws_ready_audio_stop_final() {
 
     let ready = next_json(&mut stream).await;
     assert_eq!(ready["type"], "ready");
-    assert_eq!(ready["version"], "1.2");
+    assert_eq!(ready["version"], "1.3");
     assert_eq!(ready["min_protocol_version"], "1.0");
 
     sink.send(Message::Text(
@@ -278,4 +278,31 @@ async fn test_live_ws_tail_error_preserves_partial_without_final() {
             }
         }
     }
+}
+
+#[tokio::test]
+async fn test_live_ws_endpoint_duration_validation_and_legacy_versions() {
+    let (port, shutdown, _tmp) = spawn_mock_server().await;
+    for version in ["1.0", "1.1", "1.2", "1.3"] {
+        let (ws, _) = tokio_tungstenite::connect_async(format!("ws://127.0.0.1:{port}/v1/ws"))
+            .await
+            .unwrap();
+        let (mut sink, mut stream) = ws.split();
+        assert_eq!(next_json(&mut stream).await["type"], "ready");
+        for ms in [0, 39, 2001, u32::MAX] {
+            sink.send(Message::Text(serde_json::json!({"type":"configure","protocol_version":version,"endpoint_silence_ms":ms}).to_string().into())).await.unwrap();
+            assert_eq!(
+                next_json(&mut stream).await["code"],
+                "invalid_endpoint_silence_ms"
+            );
+        }
+        sink.send(Message::Text(serde_json::json!({"type":"configure","protocol_version":version,"endpoint_silence_ms":1500}).to_string().into())).await.unwrap();
+        sink.send(Message::Text(
+            serde_json::json!({"type":"stop"}).to_string().into(),
+        ))
+        .await
+        .unwrap();
+        assert_eq!(next_json(&mut stream).await["type"], "final");
+    }
+    let _ = shutdown.send(());
 }

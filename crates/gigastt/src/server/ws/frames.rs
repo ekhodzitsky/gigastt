@@ -350,6 +350,7 @@ pub(super) async fn handle_configure_message(
     punctuation: Option<bool>,
     itn: Option<bool>,
     endpoint_mode: Option<String>,
+    endpoint_silence_ms: Option<u32>,
     min_silence_ms: Option<u32>,
     commit_policy: Option<String>,
     peer: SocketAddr,
@@ -371,6 +372,7 @@ pub(super) async fn handle_configure_message(
         && ![
             gigastt_core::protocol::MIN_PROTOCOL_VERSION,
             "1.1",
+            "1.2",
             gigastt_core::protocol::PROTOCOL_VERSION,
         ]
         .contains(&ver.as_str())
@@ -390,6 +392,25 @@ pub(super) async fn handle_configure_message(
         .await?;
         return Ok(FrameOutcome::Break);
     }
+    // Validate before changing any session fields or recreating its state.
+    let endpoint_silence = match endpoint_silence_ms
+        .map(gigastt_core::inference::EndpointSilence::new)
+        .transpose()
+    {
+        Ok(duration) => duration,
+        Err(error) => {
+            send_server_message(
+                sink,
+                &ServerMessage::Error {
+                    message: error.to_string(),
+                    code: "invalid_endpoint_silence_ms".into(),
+                    retry_after_ms: None,
+                },
+            )
+            .await?;
+            return Ok(FrameOutcome::Continue);
+        }
+    };
     let commit_policy = if let Some(token) = commit_policy {
         let Some(policy) = gigastt_core::inference::CommitPolicy::parse_token(&token) else {
             send_server_message(
@@ -445,6 +466,7 @@ pub(super) async fn handle_configure_message(
             new_state.punctuation = old.punctuation;
             new_state.itn = old.itn;
             new_state.endpoint_mode = old.endpoint_mode;
+            new_state.endpoint_silence = old.endpoint_silence;
             new_state.abort = old.abort.clone();
             new_state.partial = old.partial.clone();
             new_state.commit_policy = old.commit_policy;
@@ -459,6 +481,9 @@ pub(super) async fn handle_configure_message(
     // absent field leaves the previous value, so repeated Configures compose
     // the same way `sample_rate` does.
     if let Some(state) = state_opt.as_mut() {
+        if let Some(duration) = endpoint_silence {
+            state.endpoint_silence = duration;
+        }
         if let Some(policy) = commit_policy {
             state.commit_policy = policy;
         }
