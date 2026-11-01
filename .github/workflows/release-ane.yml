@@ -40,7 +40,7 @@ permissions:
 
 jobs:
   publish-ane:
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       # GitHub Actions forbids referencing `secrets.*` directly in `if:`, so
       # hoist the presence check into an env var (mirrors release-model.yml).
