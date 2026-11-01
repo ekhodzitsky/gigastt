@@ -1154,6 +1154,11 @@ jobs:
         run: |
           # Optimized timing/RSS probes run in the mandatory Speaker performance
           # job. Instrumented debug coverage cannot provide valid measurements.
+          # The endpoint replay requires an explicit model and a fresh report
+          # path. Coverage output is diagnostic, not a latency measurement.
+          endpoint_probe_dir="$(mktemp -d "$RUNNER_TEMP/endpoint-coverage.XXXXXX")"
+          GIGASTT_TEST_MODEL_DIR="$HOME/.gigastt/models" \
+          GIGASTT_ENDPOINT_PROBE="$endpoint_probe_dir/report.json" \
           cargo llvm-cov --no-report --workspace --lib --bins -- --ignored --test-threads=1 \
             --skip inference::diarization::model_tests::test_speaker_quality_and_latency_against_cpu_oracle \
             --skip inference::diarization::model_tests::test_speaker_resource_probe
