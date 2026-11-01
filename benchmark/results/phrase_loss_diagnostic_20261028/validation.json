@@ -1,0 +1,84 @@
+{
+  "binary_source": "af1a0a9629093ed8c6f752b242dc8f1300909229; merged tree identical at 143b9f2920a65fe4b466c012cfaaa8e0fb302bda",
+  "fixture": "podlodka-306 from benchmark/manifests/longform_stitch.json",
+  "fixture_preparation": "ffmpeg -nostdin -v error -i podlodka-306.wav -ac 1 -ar 16000 -c:a pcm_s16le public-pcm16.wav",
+  "original_audio_sha256": "46cb7a0868bf7ab39c248af8206836a4ab34ed852b34fc72acf1ea8574088767",
+  "prepared_audio_sha256": "26195a06863839d1a631c28ac11f577e37bd13e22b0585bb41c9b4931ae76e3e",
+  "positions": [
+    30,
+    52,
+    75
+  ],
+  "windows": [
+    {
+      "file": "window-22-46.wav",
+      "start": 22,
+      "end": 46,
+      "pcm_sha256": "bf1c7ebdb57742b8d11098a29a33b715f1548392e80b0638fabd8ec8a021c913"
+    },
+    {
+      "file": "window-44-68.wav",
+      "start": 44,
+      "end": 68,
+      "pcm_sha256": "dab74ebb52f8f0b1aeaf1996f89dd5381ba31d255fd0c6f98798185e5d46450d"
+    },
+    {
+      "file": "window-66-90.wav",
+      "start": 66,
+      "end": 90,
+      "pcm_sha256": "e7f7e2bfbb166a62279d8e14aa41fabb910e76013ce1f1082f16f0b613a36bd3"
+    }
+  ],
+  "response_hashes": [
+    {
+      "threads": 1,
+      "responses": [
+        {
+          "file": "full-cold.json",
+          "sha256": "d23e0c3ea9ee7142bba756fc715c5e0eeb3383ee8bc401ce3055b4cc2a35f4a8"
+        },
+        {
+          "file": "full-warm.json",
+          "sha256": "d23e0c3ea9ee7142bba756fc715c5e0eeb3383ee8bc401ce3055b4cc2a35f4a8"
+        },
+        {
+          "file": "window-22-46.json",
+          "sha256": "630ff03112470c6b0d28a8ae4f2ffece6cfb8d5c91c7a6f27d5cc71ddadd047a"
+        },
+        {
+          "file": "window-44-68.json",
+          "sha256": "95b1784a32502c771f0b9300003fab636ea3ecee54b8fce6cf587515543c664e"
+        },
+        {
+          "file": "window-66-90.json",
+          "sha256": "81990c00686b98d6aa709fea5f4b2351e1fc43fbeec5557bf1379263501b2c64"
+        }
+      ]
+    },
+    {
+      "threads": 6,
+      "responses": [
+        {
+          "file": "full-cold.json",
+          "sha256": "d23e0c3ea9ee7142bba756fc715c5e0eeb3383ee8bc401ce3055b4cc2a35f4a8"
+        },
+        {
+          "file": "full-warm.json",
+          "sha256": "d23e0c3ea9ee7142bba756fc715c5e0eeb3383ee8bc401ce3055b4cc2a35f4a8"
+        },
+        {
+          "file": "window-22-46.json",
+          "sha256": "630ff03112470c6b0d28a8ae4f2ffece6cfb8d5c91c7a6f27d5cc71ddadd047a"
+        },
+        {
+          "file": "window-44-68.json",
+          "sha256": "95b1784a32502c771f0b9300003fab636ea3ecee54b8fce6cf587515543c664e"
+        },
+        {
+          "file": "window-66-90.json",
+          "sha256": "81990c00686b98d6aa709fea5f4b2351e1fc43fbeec5557bf1379263501b2c64"
+        }
+      ]
+    }
+  ]
+}
