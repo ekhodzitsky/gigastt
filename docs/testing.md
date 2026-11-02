@@ -113,3 +113,17 @@ comparing results; a canonical filename can refer to older locally cached weight
 Manual branch/full-main CI, protected statuses and publication checks follow
 [manual CI operation](performance-regressions.md#manual-ci-operation).
 Pushing a commit or tag does not start a workflow.
+
+## Generated files and cleanup
+
+Keep local Cargo output in `target/` (or set `CARGO_TARGET_DIR` outside the
+checkout). Python bytecode, test caches, coverage output and virtual environments
+are disposable local files; do not commit them. Stop builds before running
+`cargo clean` to reclaim the current target directory.
+
+Published files under `benchmark/results*/` are measurement evidence, not build
+artifacts. Preserve them when cleaning a checkout. Docker excludes these results
+and local caches from its build context; benchmark containers use mounted datasets
+and write fresh results at runtime. Source fixtures and benchmark manifests remain
+in the context. Avoid `git clean -fdx`: it can delete unpublished research, local
+configuration and downloaded inputs along with generated files.
