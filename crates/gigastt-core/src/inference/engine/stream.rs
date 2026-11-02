@@ -65,6 +65,7 @@ impl Engine {
             punctuation: None,
             itn: None,
             endpoint_mode: self.endpoint_mode,
+            endpoint_silence: self.endpoint_silence,
             agreed_prefix: 0,
             cap_streak: 0,
             #[cfg(feature = "diarization")]
@@ -401,6 +402,7 @@ impl Engine {
         // The window overlaps the previous one, so persisting the LSTM state
         // would double-condition the prediction network — decode fresh.
         let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+        decoder_state.endpoint_blank_threshold = state.endpoint_silence.frames();
         // Streaming always uses the engine boot biaser (per-request hotwords
         // apply to file-transcription paths that carry TranscribeOverrides).
         let abort = || {
@@ -495,7 +497,14 @@ impl Engine {
         if !state.abort_requested() || tail.len() > state.assembler.live_word_count() {
             state.assembler.set_words(tail);
         }
-        Ok(endpoint)
+        // A window can contain only blanks after the utterance's words have
+        // been committed and slid out. The decoder's local token guard must
+        // not leave that existing utterance waiting indefinitely for stop.
+        // Empty streams still never endpoint; CTC leaves this counter at zero.
+        let trailing_blank_endpoint = !state.abort_requested()
+            && !state.assembler.is_empty()
+            && decoder_state.consecutive_blanks >= state.endpoint_silence.frames();
+        Ok(endpoint || trailing_blank_endpoint)
     }
 
     fn publish_stream_partial(&self, state: &StreamingState) {

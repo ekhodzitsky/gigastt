@@ -631,3 +631,51 @@ fn test_capped_tied_tokens_normalize_only_emissions() {
         MAX_TOKENS_PER_STEP
     );
 }
+
+#[test]
+fn test_endpoint_clears_when_speech_resumes_in_window() {
+    let mut script = vec![0];
+    script.extend(std::iter::repeat_n(4, ENDPOINT_BLANK_THRESHOLD));
+    script.extend([1, 4]);
+    let frames = ENDPOINT_BLANK_THRESHOLD + 1;
+    let mut backend = FakeBackend::new(script, 5, 4);
+    let mut state = DecoderState::new(4);
+    let enc = fake_enc_tensor(frames);
+    let result =
+        greedy_decode_impl(&mut backend, &enc.view(), frames, 4, &mut state, None).unwrap();
+    assert_eq!(result.tokens.len(), 2);
+    assert!(
+        !result.endpoint_detected,
+        "an internal pause must not finalize resumed speech"
+    );
+}
+
+#[test]
+fn test_endpoint_configured_threshold_does_not_change_tokens() {
+    let mut outputs = Vec::new();
+    for (threshold, expected) in [
+        (14, true),
+        (15, true),
+        (16, false),
+        (25, false),
+        (38, false),
+    ] {
+        let mut script = vec![0];
+        script.extend(std::iter::repeat_n(4, 15));
+        let mut backend = FakeBackend::new(script, 5, 4);
+        let mut state = DecoderState::new(4);
+        state.endpoint_blank_threshold = threshold;
+        let enc = fake_enc_tensor(15);
+        let result =
+            greedy_decode_impl(&mut backend, &enc.view(), 15, 4, &mut state, None).unwrap();
+        assert_eq!(result.endpoint_detected, expected);
+        outputs.push(
+            result
+                .tokens
+                .iter()
+                .map(|t| (t.token_id, t.frame_index))
+                .collect::<Vec<_>>(),
+        );
+    }
+    assert!(outputs.windows(2).all(|w| w[0] == w[1]));
+}
