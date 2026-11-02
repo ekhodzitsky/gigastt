@@ -164,3 +164,9 @@ modules convention). Publishing is part of the human release process and is
 ## License
 
 MIT — see [LICENSE](../../LICENSE).
+
+The optional `WithEndpointSilenceMS(1000)` setting requires server protocol 1.3. It controls
+decoder blank-run endpoint duration (40–2000 ms, default 600), only in auto mode
+without VAD. It is not acoustic silence detection. When set, the SDK requests
+protocol 1.3 so older servers reject the handshake instead of ignoring the
+setting. When omitted, the SDK retains its protocol 1.0 compatibility.

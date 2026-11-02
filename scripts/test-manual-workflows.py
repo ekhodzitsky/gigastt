@@ -26,6 +26,11 @@ class WorkflowPolicyTests(unittest.TestCase):
                 events = re.findall(r'^  ([a-z_]+):', block[1], re.M)
                 self.assertEqual(events, ['workflow_dispatch'])
 
+    def test_workflows_do_not_schedule_retired_macos_runners(self):
+        for path in (ROOT / '.github/workflows').glob('*.yml'):
+            with self.subTest(workflow=path.name):
+                self.assertNotRegex(path.read_text(), r'(?m)^\s*(?:-\s*)?(?:runs-on|host|os):\s*[\"\']?macos-(?:13|14)(?:[\s\"\']|$|-)')
+
     def test_manual_ci_does_not_depend_on_automatic_event_payloads(self):
         workflow = (ROOT / '.github/workflows/ci.yml').read_text()
         self.assertNotIn('github.event.before', workflow)

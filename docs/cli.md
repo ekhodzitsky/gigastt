@@ -89,6 +89,9 @@ gigastt serve [OPTIONS]
                             Env: GIGASTT_VAD_MIN_SILENCE_MS.
   --vad-model-dir <DIR>     Silero VAD model directory [default: ~/.gigastt/models/vad].
                             Env: GIGASTT_VAD_MODEL_DIR.
+  --endpoint-silence-ms <MS> Decoder blank-run duration, 40–2000 [default: 600].
+                            Env: GIGASTT_ENDPOINT_SILENCE_MS. Auto without VAD only;
+                            rounds up to 40 ms frames, not acoustic silence.
   --endpoint-mode <MODE>    WS utterance end: auto|assistant|manual [default: auto].
                             Env: GIGASTT_ENDPOINT_MODE. Window cap never emits final.
   --stream-max-window-secs <N>  Max retained streaming encoder window (seconds)

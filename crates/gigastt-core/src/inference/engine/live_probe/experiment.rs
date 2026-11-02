@@ -233,3 +233,99 @@ fn benchmark_live_window_workload() {
     let artifact = json!({"schema":1,"config":{"concurrent":concurrent,"stride_ms":stride_ms,"window_secs":window_secs,"vad":vad,"punctuation":true,"itn":true,"encoder_threads_per_slot":4,"chunk_ms":100},"process_cpu_ticks":proc_cpu_ticks()-cpu_start,"elapsed_ms":start.elapsed().as_millis(),"rows":rows});
     std::fs::write(output, serde_json::to_vec_pretty(&artifact).unwrap()).unwrap();
 }
+
+/// Fast local replay: input-audio time, not wall-clock/network final latency.
+#[test]
+#[ignore = "requires models and GIGASTT_ENDPOINT_PROBE output path"]
+fn benchmark_endpoint_duration() {
+    let output = std::env::var("GIGASTT_ENDPOINT_PROBE").expect("output path required");
+    assert!(
+        !Path::new(&output).exists(),
+        "preserve previous measurements"
+    );
+    let model_dir = std::env::var("GIGASTT_TEST_MODEL_DIR").expect("explicit model directory");
+    let variant = match std::env::var("GIGASTT_ENDPOINT_VARIANT").as_deref() {
+        Ok("e2e_rnnt") => crate::model::ModelVariant::E2eRnnt,
+        _ => crate::model::ModelVariant::Rnnt,
+    };
+    let engine = Engine::load_with_factory(
+        Path::new(&model_dir),
+        Some(variant),
+        1,
+        1,
+        0,
+        crate::runtime::cpu_factory(),
+        4,
+        true,
+        "cpu",
+    )
+    .unwrap()
+    .with_itn(false);
+    engine.warmup().unwrap();
+    let fixtures = Path::new(env!("CARGO_MANIFEST_DIR")).join("../gigastt/tests/fixtures");
+    let manifest: Vec<Value> =
+        serde_json::from_slice(&std::fs::read(fixtures.join("manifest.json")).unwrap()).unwrap();
+    let mut clips: Vec<_> = manifest
+        .iter()
+        .take(3)
+        .map(|row| Clip {
+            name: row["filename"].as_str().unwrap().into(),
+            reference: row["reference"].as_str().unwrap().into(),
+            samples: decode_audio_file(
+                fixtures
+                    .join(row["filename"].as_str().unwrap())
+                    .to_str()
+                    .unwrap(),
+            )
+            .unwrap(),
+        })
+        .collect();
+    let mut paused = clips[0].samples.clone();
+    let midpoint = paused.len() / 2;
+    paused.splice(midpoint..midpoint, std::iter::repeat_n(0.0, 12800));
+    clips.push(Clip {
+        name: "synthetic_midpoint_pause_800ms".into(),
+        reference: clips[0].reference.clone(),
+        samples: paused,
+    });
+    // Pitch-changing slowdown is a stress probe, not natural slow speech.
+    let slowed = clips[0].samples.iter().flat_map(|&s| [s, s]).collect();
+    clips.push(Clip {
+        name: "synthetic_half_speed".into(),
+        reference: clips[0].reference.clone(),
+        samples: slowed,
+    });
+    let mut rows = Vec::new();
+    for ms in [600, 1000, 1500] {
+        for clip in &clips {
+            let mut state = engine.create_state(false);
+            state.endpoint_silence = crate::inference::EndpointSilence::new(ms).unwrap();
+            let mut guard = engine.pool.checkout_blocking().unwrap();
+            let mut samples = clip.samples.clone();
+            samples.extend(std::iter::repeat_n(0.0, 48000));
+            let mut events = Vec::new();
+            let mut finals = Vec::new();
+            let started = Instant::now();
+            for (index, chunk) in samples.chunks(1600).enumerate() {
+                for segment in engine.process_chunk(chunk, &mut state, &mut guard).unwrap() {
+                    receive(
+                        segment,
+                        ((index + 1) * 100) as u128,
+                        &mut events,
+                        &mut finals,
+                    );
+                }
+            }
+            if let Some(segment) = engine.finish_stream(&mut state, &mut guard) {
+                receive(
+                    segment,
+                    (samples.len() / 16) as u128,
+                    &mut events,
+                    &mut finals,
+                );
+            }
+            rows.push(json!({"file":clip.name,"reference":clip.reference,"text":finals.join(" "),"endpoint_silence_ms":ms,"audio_samples":clip.samples.len(),"events":events,"work_ms":started.elapsed().as_secs_f64()*1000.0}));
+        }
+    }
+    std::fs::write(output, serde_json::to_vec_pretty(&json!({"schema":1,"variant":format!("{variant:?}"),"clock":"input_audio_ms_not_wall_time","chunk_ms":100,"tail_silence_ms":3000,"rows":rows})).unwrap()).unwrap();
+}
