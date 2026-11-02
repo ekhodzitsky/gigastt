@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn test_protocol_version_constant() {
-    assert_eq!(PROTOCOL_VERSION, "1.2");
+    assert_eq!(PROTOCOL_VERSION, "1.3");
     assert_eq!(MIN_PROTOCOL_VERSION, "1.0");
 }
 
@@ -21,7 +21,7 @@ fn test_ready_serialization_includes_version() {
     let json = serde_json::to_string(&msg).unwrap();
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
     assert_eq!(v["type"], "ready");
-    assert_eq!(v["version"], "1.2");
+    assert_eq!(v["version"], "1.3");
     assert_eq!(v["model"], "test-model");
     assert_eq!(v["sample_rate"], 48000);
     assert_eq!(v["min_protocol_version"], "1.0");
@@ -341,4 +341,25 @@ fn test_ready_diarization_false_omitted() {
     let json = serde_json::to_string(&msg).unwrap();
     let v: serde_json::Value = serde_json::from_str(&json).unwrap();
     assert!(v.get("diarization").is_none());
+}
+
+#[test]
+fn test_configure_endpoint_silence_is_additive() {
+    for (json, expected) in [
+        (r#"{"type":"configure"}"#, None),
+        (
+            r#"{"type":"configure","endpoint_silence_ms":1500}"#,
+            Some(1500),
+        ),
+    ] {
+        let message: ClientMessage = serde_json::from_str(json).unwrap();
+        let ClientMessage::Configure {
+            endpoint_silence_ms,
+            ..
+        } = message
+        else {
+            panic!("configure")
+        };
+        assert_eq!(endpoint_silence_ms, expected);
+    }
 }

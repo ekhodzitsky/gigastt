@@ -1,4 +1,5 @@
 /target
+**/target/
 .omc/
 
 # Override global gitignore — CLAUDE.md is part of the project
@@ -71,3 +72,9 @@ benchmark/results_dual_constraint/*.wav
 
 # Per-clip oracle transcripts. The summary JSON next to this directory is kept.
 benchmark/oracle/fleurs_ru_int8/
+
+# Disposable analysis/test outputs
+.coverage
+.coverage.*
+htmlcov/
+*.profdata

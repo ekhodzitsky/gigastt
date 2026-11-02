@@ -115,6 +115,8 @@ pub struct EngineRecipe {
     /// Optional endpoint-mode token (`auto` / `assistant` / …). `None` leaves
     /// the engine default (offline paths). Serve always sets this.
     pub endpoint_mode: Option<String>,
+    /// Optional decoder blank-run duration for streaming (milliseconds).
+    pub endpoint_silence_ms: Option<u32>,
     /// Optional streaming window cap in seconds. `None` leaves the engine
     /// default (2.5 s); serve always sets this. Offline paths ignore it (they
     /// use file transcription, not the streaming window).
@@ -174,6 +176,7 @@ impl EngineRecipe {
             quantize: false,
             skip_quantize: true,
             endpoint_mode: None,
+            endpoint_silence_ms: None,
             stream_max_window_secs: None,
             stream_stable_prefix: false,
             file_window_concurrency: 1,
@@ -267,6 +270,9 @@ impl EngineRecipe {
             let mode = inference::EndpointMode::parse_token(token)
                 .unwrap_or(inference::EndpointMode::Auto);
             engine = engine.with_endpoint_mode(mode);
+        }
+        if let Some(ms) = self.endpoint_silence_ms {
+            engine = engine.with_endpoint_silence(inference::EndpointSilence::new(ms)?);
         }
         if let Some(secs) = self.stream_max_window_secs {
             engine = engine.with_stream_max_window_secs(secs);

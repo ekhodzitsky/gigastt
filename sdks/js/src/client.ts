@@ -65,6 +65,8 @@ export interface ClientOptions {
   sampleRate?: number;
   /** Enable speaker diarization for the session (if the server supports it). */
   diarization?: boolean;
+  /** Decoder blank-run duration (40–2000 ms); requires server protocol 1.3. */
+  endpointSilenceMs?: number;
   /**
    * AbortSignal governing the whole client lifetime: aborting rejects a
    * pending `connect`, interrupts reconnect backoff, and closes the socket.
@@ -330,9 +332,12 @@ export class GigasttClient {
         ws.send(
           JSON.stringify({
             type: "configure",
-            protocol_version: PROTOCOL_VERSION,
+            protocol_version: this.opts.endpointSilenceMs !== undefined ? "1.3" : PROTOCOL_VERSION,
             ...(this.opts.sampleRate !== undefined
               ? { sample_rate: this.opts.sampleRate }
+              : {}),
+            ...(this.opts.endpointSilenceMs !== undefined
+              ? { endpoint_silence_ms: this.opts.endpointSilenceMs }
               : {}),
             ...(this.opts.diarization !== undefined
               ? { diarization: this.opts.diarization }
