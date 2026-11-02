@@ -15,6 +15,8 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- Load an engine with an application-supplied runtime factory through
+  `Engine::load_with_factory`, retaining model checks, pool loading and warmup.
 - Configure non-VAD streaming blank-run endpoint duration with
   `serve --endpoint-silence-ms` / `GIGASTT_ENDPOINT_SILENCE_MS` or WebSocket
   `configure.endpoint_silence_ms` (protocol 1.3; clients 1.0–1.2 remain accepted).

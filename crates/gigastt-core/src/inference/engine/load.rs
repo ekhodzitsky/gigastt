@@ -249,10 +249,20 @@ impl Engine {
         }
     }
 
-    /// Package-private factory-based loader. Used by production code paths and
-    /// by tests that inject a [`crate::runtime::factory::RuntimeFactory`].
+    /// Load with an application-supplied runtime from [`crate::runtime_api`].
+    ///
+    /// The factory must implement the selected head's encoder/decoder/joiner
+    /// tensor contracts and honor the model's precision. Normal model resolution,
+    /// checksum verification, pool loading and warmup still apply. The default
+    /// [`RuntimeFactory::verify_on_disk_checksums`](crate::runtime_api::RuntimeFactory::verify_on_disk_checksums)
+    /// remains enabled; disabling it is intended for controlled test fixtures.
+    ///
+    /// Set `allow_cpu_fallback` to `false` when execution must stay within the
+    /// supplied backend. `execution_provider` is its diagnostic label; this
+    /// entry point does not select an execution provider or add a backend
+    /// dependency to gigastt-core.
     #[allow(clippy::too_many_arguments)]
-    pub(crate) fn load_with_factory(
+    pub fn load_with_factory(
         model_dir: &Path,
         variant_override: Option<ModelVariant>,
         pool_size: usize,
