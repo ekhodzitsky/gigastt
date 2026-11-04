@@ -914,3 +914,84 @@ async fn test_ensure_prequantized_present_no_download() {
         "no download when the prequantized set is present"
     );
 }
+
+/// A custom pack is authoritative even when standard model files also exist.
+#[tokio::test]
+#[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
+async fn test_ensure_model_variant_custom_manifest_controls_bootstrap() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    for file in ModelVariant::Rnnt.prequantized_files() {
+        std::fs::write(dir.join(file), b"standard").unwrap();
+    }
+    std::fs::write(
+        dir.join("manifest.toml"),
+        "architecture = \"ml_ctc\"\n[files]\nencoder = \"custom.int8.onnx\"\nencoder_int8 = \"custom.int8.onnx\"\nvocab = \"custom_vocab.txt\"\n",
+    ).unwrap();
+    std::fs::write(dir.join("custom.int8.onnx"), b"custom").unwrap();
+    std::fs::write(dir.join("custom_vocab.txt"), b"vocab").unwrap();
+    assert_eq!(
+        ensure_model_variant(None, dir.to_str().unwrap())
+            .await
+            .unwrap(),
+        ModelVariant::MlCtc
+    );
+    // Incomplete custom packs must not silently select or download another model.
+    std::fs::remove_file(dir.join("custom_vocab.txt")).unwrap();
+    assert!(
+        ensure_model_variant(None, dir.to_str().unwrap())
+            .await
+            .is_err()
+    );
+}
+
+#[tokio::test]
+#[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
+async fn test_ensure_model_variant_standalone_pack_validation() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    let manifest = "architecture = \"ml_ctc\"\n[files]\nencoder = \"custom.int8.onnx\"\nencoder_int8 = \"custom.int8.onnx\"\nvocab = \"custom_vocab.txt\"\n";
+    std::fs::write(dir.join("manifest.toml"), manifest).unwrap();
+    std::fs::write(dir.join("custom.int8.onnx"), b"custom").unwrap();
+    std::fs::write(dir.join("custom_vocab.txt"), b"vocab").unwrap();
+    assert_eq!(
+        ensure_model_variant(Some(ModelVariant::MlCtc), dir.to_str().unwrap())
+            .await
+            .unwrap(),
+        ModelVariant::MlCtc
+    );
+    assert!(
+        ensure_model_variant(Some(ModelVariant::Rnnt), dir.to_str().unwrap())
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("conflicts")
+    );
+    std::fs::remove_file(dir.join("custom.int8.onnx")).unwrap();
+    assert!(
+        ensure_model_variant(None, dir.to_str().unwrap())
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("encoder_int8")
+    );
+    std::fs::create_dir(dir.join("custom.int8.onnx")).unwrap();
+    assert!(
+        ensure_model_variant(None, dir.to_str().unwrap())
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("file missing")
+    );
+    std::fs::write(dir.join("manifest.toml"), "invalid manifest").unwrap();
+    assert!(
+        ensure_model_variant(None, dir.to_str().unwrap())
+            .await
+            .is_err()
+    );
+    assert_eq!(
+        std::fs::read_dir(dir).unwrap().count(),
+        3,
+        "validation must not create download files"
+    );
+}
