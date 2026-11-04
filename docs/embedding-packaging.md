@@ -8,18 +8,21 @@ packaging decision when shipping gigastt inside another app.
 ## Default: static linking (recommended)
 
 The default build (`ort`'s `download-binaries` feature) **statically links**
-onnxruntime into the output. Every gigastt artifact is therefore
-**self-contained** — the onnxruntime code is baked in, with no separate
+onnxruntime into supported desktop CPU outputs. These artifacts need no separate
 `libonnxruntime.{so,dylib,dll}` to ship or locate at runtime:
 
 - the `gigastt` server/CLI binary,
 - the `gigastt-ffi` `cdylib` (`.so`/`.dylib`/`.dll`) and `staticlib` (`.a`),
 - the `gigastt-node` Node addon (`.node`),
-- the `gigastt-uniffi` Python wheel and the iOS static library.
+- the `gigastt-uniffi` desktop Python wheel and supported ARM64 Apple slices.
+
+This is not a universal platform guarantee: the Android AAR packages native
+ONNX Runtime libraries separately, and the Swift x86_64 simulator slice defers
+linking to the consumer. Follow the [Android](../packaging/android/README.md)
+and [Swift](../packaging/swift/README.md) packaging instructions.
 
 This is verified in CI and locally: the binaries carry no dynamic onnxruntime
-dependency. For the CPU execution provider this is the right default for every
-binding — there is no `LD_LIBRARY_PATH` / `DYLD_LIBRARY_PATH` to set, no RPATH to
+dependency. For supported desktop CPU targets this is the default — there is no `LD_LIBRARY_PATH` / `DYLD_LIBRARY_PATH` to set, no RPATH to
 manage, and no dylib to bundle alongside the addon.
 
 The trade-off is build-time: `download-binaries` fetches a prebuilt onnxruntime
@@ -57,9 +60,11 @@ ORT_DYLIB_PATH=/opt/onnxruntime/lib/libonnxruntime.so ./your-app
 |---|---|---|
 | Artifact | Self-contained — no companion lib | Needs `libonnxruntime` at runtime |
 | Runtime setup | None | `ORT_DYLIB_PATH` / `init_from` |
-| Build-time network | Fetches onnxruntime (checksummed) | None (vendor it yourself) |
-| Best for | All bindings, CPU EP, simplest distribution | Air-gapped builds, size control, dynamic EP variants |
+| Native runtime build-time fetch | Fetches ONNX Runtime (checksummed) | None; provision it yourself |
+| Best for | Supported desktop CPU bindings, simplest distribution | Air-gapped builds, size control, dynamic EP variants |
 
-For the prebuilt bindings (npm, PyPI wheel, xcframework) gigastt ships, the
-static default is used — each package is self-contained. `load-dynamic` is the
-escape hatch for the cases above, not the default integration path.
+The native runtime is only one build input: a fully offline build must also
+provide Cargo dependencies, toolchains and generators locally. GPU libraries
+and platform system libraries can still be required even with statically linked
+ONNX Runtime. Inspect the exact packaged target rather than assuming all slices
+have identical linking behavior.

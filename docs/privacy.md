@@ -1,79 +1,68 @@
-# Privacy
+# Privacy and data flow
 
-gigastt is designed to keep all speech recognition entirely on the device that
-runs it. This document describes precisely what data moves where and what is
-retained.
+gigastt performs recognition on the host running the engine. It does not send
+audio or transcripts to a third-party recognition service and has no telemetry
+or analytics uploader. The deployment still determines where data travels:
+when a remote client calls your server, audio crosses that connection and the
+transcript is returned to that client.
 
-## Audio and transcript data
+## Processing and storage
 
-- All audio processing runs locally via ONNX Runtime. Audio frames never leave
-  the machine.
-- Transcripts are returned to the caller of the local API. The inference
-  server does **not** persist them unless you enable `/v1/jobs` (in-memory,
-  TTL `--jobs-ttl-secs`) or use CLI `transcribe-batch` / `watch` (you chose
-  the output path). Logs never include transcript text.
-- Tracing logs (controlled by `RUST_LOG`) record request metadata such as
-  duration and word count. They do not contain transcript text. PII sanitization
-  of log output shipped in v0.9.6.
+- CLI and in-process bindings read the audio you supply and return recognized
+  text to the caller. CLI `--output`, batch and watch commands can write results
+  to the selected destination.
+- HTTP/WebSocket uploads and active recognition buffers are held in memory.
+  Optional `/v1/jobs` keeps job data/results in memory under configured limits
+  and TTL; it is not a durable disk queue. See [long recordings](long-recordings.md).
+- Application tracing omits recognized transcript text. Logs can include paths,
+  peer addresses, errors, timings and request metadata. A caller, reverse proxy,
+  shell redirection or application wrapper can separately record requests or
+  transcripts; those components are outside gigastt's logging policy.
+- Model weights and optimized graph caches are stored on disk. Removing a job
+  or completing transcription does not remove those reusable model assets.
 
-## Telemetry and analytics
+## Network activity
 
-- gigastt contains no telemetry, analytics, or "phone-home" code.
-- No usage data, error reports, or performance metrics are transmitted to any
-  external service.
+The built-in downloader fetches missing models from the sources in the
+[model catalog](models.md): GitHub Releases for RNN-T and Silero VAD, and
+Hugging Face for multilingual ASR, punctuation and WeSpeaker. Downloads verify
+pinned SHA-256 hashes and use atomic replacement. Provisioning these assets
+requires network access and exposes the usual connection metadata to their hosts;
+it does not upload recognition input.
 
-## Network traffic
+After provisioning the required assets, use `--offline` or `GIGASTT_OFFLINE=1`
+to prohibit model downloads. Missing required ASR files cause an error;
+optional punctuation/VAD setup can warn and continue without that processor.
+Bindings load side-provisioned files rather than downloading them implicitly.
 
-### Runtime
+Building from source is a separate network boundary. Cargo resolves/downloads
+dependencies and the default ORT build fetches a checksummed native library.
+An offline build must provision both Rust dependencies and native inputs; see
+[embedding and linking](embedding-packaging.md).
 
-The only outbound network call a running gigastt process makes is the one-time
-model download (ASR heads, and optionally punctuation / VAD / speaker models):
+## Server access
 
-- Default `rnnt` / `e2e_rnnt` INT8 files come from **GitHub Releases**.
-  `ml_ctc` / `ml_ctc_large` INT8 encoders come from HuggingFace
-  (`istupakov/gigaam-multilingual-ctc-onnx` and
-  `istupakov/gigaam-multilingual-large-ctc-onnx`). Optional punctuation,
-  Silero VAD, and WeSpeaker diarization weights are also fetched when those
-  features are first enabled.
-- Each file is SHA-256 verified before use and written atomically to disk.
-- After the initial download, gigastt operates fully offline.
-- Audited: the HTTP client (`reqwest`) is referenced from exactly one runtime
-  module — the model downloader (`gigastt-core/src/model/`) — and every fetch
-  in that module funnels through a single download function. (The server
-  crate's e2e tests also use `reqwest`, but as a dev-dependency that is never
-  compiled into the shipped binary.) No other runtime
-  code path opens outbound connections. `GIGASTT_OFFLINE=1` (or `--offline`)
-  turns even that path into a fast, instructive error for air-gapped hosts.
+The default listener is `127.0.0.1:9876`. Non-loopback binding requires
+`--bind-all` or `GIGASTT_ALLOW_BIND_ANY=1`. The server has no built-in TLS or
+application authentication; use the [deployment guide](deployment.md) when
+exposing it to other machines.
 
-### Build time (not runtime)
+The Origin allowlist checks browser-origin requests. Loopback origins are
+allowed; additional origins require explicit configuration. Origin checking
+is not authentication for arbitrary clients.
 
-Building with the default `ort` features also downloads a prebuilt onnxruntime
-native library at **compile** time (verified by an embedded checksum, outside
-`Cargo.lock`). That is a developer/CI concern, not a runtime phone-home. Air-gapped
-builds use `ort` with `default-features = false` + `load-dynamic` (or a vendored
-onnxruntime); see [architecture.md](architecture.md).
+Optional Prometheus metrics are served on a separate listener, defaulting to
+`127.0.0.1:9090`. They expose operational counters/gauges/histograms, without
+audio or transcript content. A configured scraper can transmit those metrics
+to its own storage.
 
-## Server binding
+| Data | Built-in destination | Persistence |
+|---|---|---|
+| Audio | Engine on the processing host | Active buffers/jobs in memory; source file remains wherever the caller stored it |
+| Transcript | CLI/binding caller or API client | Explicit output files; optional in-memory jobs |
+| Logs | Configured process log output | Depends on terminal redirection, service journal or collector |
+| Metrics | Configured metrics listener | Depends on the scraper |
+| Models/caches | Local model and cache directories | Reused across runs |
 
-- By default the server listens on `127.0.0.1` (loopback only). Traffic is
-  therefore not reachable from other hosts on the network.
-- Binding to a non-loopback address requires an explicit opt-in:
-  `--bind-all` flag or `GIGASTT_ALLOW_BIND_ANY=1` environment variable.
-- Cross-origin requests are denied by default; the origin allowlist is empty
-  unless `--allow-origin` or `--cors-allow-any` is passed. Loopback origins
-  (`localhost`, `127.0.0.1`, `::1`) are always allowed regardless.
-
-## Prometheus metrics
-
-When `--metrics` is enabled, the `/metrics` endpoint exposes request counts and
-latency histograms. These metrics contain no audio content, transcript text, or
-user-identifying information — only aggregate HTTP counters and durations.
-
-## Summary
-
-| Data type | Leaves the device? | Stored on disk? | Logged? |
-|-----------|-------------------|-----------------|---------|
-| Audio frames | No | No | No |
-| Transcript text | No | CLI batch/watch write the files you asked for; `/v1/jobs` keeps results in memory for `--jobs-ttl-secs` | No |
-| Request metadata (duration, word count) | No | Only if you redirect logs | Yes (word count only) |
-| Model weights | No (downloaded once, then local) | Yes (`~/.gigastt/models/`) | No |
+See [sharing logs safely](troubleshooting.md#sharing-logs-safely) before
+publishing diagnostics.

@@ -1,0 +1,254 @@
+[
+  {
+    "id": "rnnt-long_example-0",
+    "baseline": "f65e429dff7ec2b0b9538ae94d09f0a09fca197dd23a9c765c7c653d876e75af",
+    "candidate": "f65e429dff7ec2b0b9538ae94d09f0a09fca197dd23a9c765c7c653d876e75af",
+    "identical": true
+  },
+  {
+    "id": "rnnt-long_example-3",
+    "baseline": "0c334ea29485b771599decf330918572611c6956cfaa44b20fa0994c098d4a54",
+    "candidate": "0c334ea29485b771599decf330918572611c6956cfaa44b20fa0994c098d4a54",
+    "identical": true
+  },
+  {
+    "id": "rnnt-long_example-22",
+    "baseline": "d587a7a91518349d25b8d9d1c90791ec4ea82eeb4aa0f8014b3c082ad8ec554d",
+    "candidate": "d587a7a91518349d25b8d9d1c90791ec4ea82eeb4aa0f8014b3c082ad8ec554d",
+    "identical": true
+  },
+  {
+    "id": "rnnt-ruls-0000-0010-0",
+    "baseline": "c0b52036b22f35600ccc463d46b73d9192a7c603564b2ff8ac8a87e402c70aef",
+    "candidate": "c0b52036b22f35600ccc463d46b73d9192a7c603564b2ff8ac8a87e402c70aef",
+    "identical": true
+  },
+  {
+    "id": "rnnt-ruls-0000-0010-3",
+    "baseline": "1d47e09de045503f1e6615910249e4765643370c2318c806ed8be7f9f81e887a",
+    "candidate": "1d47e09de045503f1e6615910249e4765643370c2318c806ed8be7f9f81e887a",
+    "identical": true
+  },
+  {
+    "id": "rnnt-ruls-0000-0010-22",
+    "baseline": "22a2e8c1eb0742d1e7967d0b3487af7746777f0aefabc1c5a5eeca6820e5cbe8",
+    "candidate": "22a2e8c1eb0742d1e7967d0b3487af7746777f0aefabc1c5a5eeca6820e5cbe8",
+    "identical": true
+  },
+  {
+    "id": "rnnt-ruls-0013-0024-0",
+    "baseline": "e98d6efd3ebea8b4b2cbb8965ea1dab0bd6a88f081bdd8b7c7d229116c6dff46",
+    "candidate": "e98d6efd3ebea8b4b2cbb8965ea1dab0bd6a88f081bdd8b7c7d229116c6dff46",
+    "identical": true
+  },
+  {
+    "id": "rnnt-ruls-0013-0024-3",
+    "baseline": "c9d0db4c899d65d097d8312a042d02cd35f0a0772044986bf61c6d5dfcaa5fc7",
+    "candidate": "c9d0db4c899d65d097d8312a042d02cd35f0a0772044986bf61c6d5dfcaa5fc7",
+    "identical": true
+  },
+  {
+    "id": "rnnt-ruls-0013-0024-22",
+    "baseline": "562696631f1dd222b7138bbaf0ab3693d0979f06d41e2bcbce3a0961c01f38d4",
+    "candidate": "562696631f1dd222b7138bbaf0ab3693d0979f06d41e2bcbce3a0961c01f38d4",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-306-0",
+    "baseline": "5b28a67a4507813723acdaea02e8bf7ac3cb799a01e0ad27e183bf2fb15d74a8",
+    "candidate": "5b28a67a4507813723acdaea02e8bf7ac3cb799a01e0ad27e183bf2fb15d74a8",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-306-3",
+    "baseline": "a14ecab33769605078306e5e4170c5f0cd49ad328fd79e4ec4583773959d0e0d",
+    "candidate": "a14ecab33769605078306e5e4170c5f0cd49ad328fd79e4ec4583773959d0e0d",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-306-22",
+    "baseline": "d2e77862eadb17d1ca547d289db5324d277c74f51457492afbee0abff1e816cb",
+    "candidate": "d2e77862eadb17d1ca547d289db5324d277c74f51457492afbee0abff1e816cb",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-132-0",
+    "baseline": "83b459747f55dfcb6b84b863ee03e13a1e1db2b02546c3679faac2efabc1dc68",
+    "candidate": "83b459747f55dfcb6b84b863ee03e13a1e1db2b02546c3679faac2efabc1dc68",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-132-3",
+    "baseline": "d3317a0227feb77cc82333e1e41a9470875b91464e8399b4e8465e0a2950d27f",
+    "candidate": "d3317a0227feb77cc82333e1e41a9470875b91464e8399b4e8465e0a2950d27f",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-132-22",
+    "baseline": "584c0251956efe0b235c9818020ab7044a8603b602f7025cd6fcdfb1b0fae62b",
+    "candidate": "584c0251956efe0b235c9818020ab7044a8603b602f7025cd6fcdfb1b0fae62b",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-200-0",
+    "baseline": "6d6fff0b06aeec2f84f3cceebeae9cc8d5aa69fb6f4d411f47547583788996cc",
+    "candidate": "6d6fff0b06aeec2f84f3cceebeae9cc8d5aa69fb6f4d411f47547583788996cc",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-200-3",
+    "baseline": "2715072481ecce3f125c0f0dfaa44bcb35d062dd55df984d74009caeab641377",
+    "candidate": "2715072481ecce3f125c0f0dfaa44bcb35d062dd55df984d74009caeab641377",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-200-22",
+    "baseline": "aedf1c240dd26c79fff04eb5bddb038a5f82a8b19fd32b17f516221bee55a352",
+    "candidate": "aedf1c240dd26c79fff04eb5bddb038a5f82a8b19fd32b17f516221bee55a352",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-275-0",
+    "baseline": "07672d677b9f13fa5b81b1db57232c7bc36e418e3d012c025e052b401361c698",
+    "candidate": "07672d677b9f13fa5b81b1db57232c7bc36e418e3d012c025e052b401361c698",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-275-3",
+    "baseline": "b5171f9b90ab544f676bcc98169839d6d335aa9bb43b9cebda3fcd8dcf728f3a",
+    "candidate": "b5171f9b90ab544f676bcc98169839d6d335aa9bb43b9cebda3fcd8dcf728f3a",
+    "identical": true
+  },
+  {
+    "id": "rnnt-podlodka-275-22",
+    "baseline": "0500841210dbb767536b1a7fcc2d6c2f800dcf85e5e8f9d7f00e8c03dfb3946e",
+    "candidate": "0500841210dbb767536b1a7fcc2d6c2f800dcf85e5e8f9d7f00e8c03dfb3946e",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-long_example-0",
+    "baseline": "10bcc91be730b8e290a852eee25f33cb60abedc60c7477f3892a6c38dcae2c80",
+    "candidate": "10bcc91be730b8e290a852eee25f33cb60abedc60c7477f3892a6c38dcae2c80",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-long_example-3",
+    "baseline": "43b681e48b8256802e4c59b1a8c713302de02ec2aa88ecc94e03e98285afd62c",
+    "candidate": "43b681e48b8256802e4c59b1a8c713302de02ec2aa88ecc94e03e98285afd62c",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-long_example-22",
+    "baseline": "5be07258b46e72e8f8abe954fd896d8c13fa092847893121c8f68b92c81f5301",
+    "candidate": "5be07258b46e72e8f8abe954fd896d8c13fa092847893121c8f68b92c81f5301",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-ruls-0000-0010-0",
+    "baseline": "2fdb7b84a689b9ccb2c37e0db7b52f3432eb4fcc24e2830bf5a82f8e48be41e9",
+    "candidate": "2fdb7b84a689b9ccb2c37e0db7b52f3432eb4fcc24e2830bf5a82f8e48be41e9",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-ruls-0000-0010-3",
+    "baseline": "d3a84250f7d535fbd72c0f193af471363fd9823a8ebad87f5db3c3a00c87c7b6",
+    "candidate": "d3a84250f7d535fbd72c0f193af471363fd9823a8ebad87f5db3c3a00c87c7b6",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-ruls-0000-0010-22",
+    "baseline": "5eb3ce85f2551074feadea518c61171604ed8bd362a375ba41c1cd468531a136",
+    "candidate": "5eb3ce85f2551074feadea518c61171604ed8bd362a375ba41c1cd468531a136",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-ruls-0013-0024-0",
+    "baseline": "84c2a2e1942d9816798f381532c00d360db8d6b68b948aef1a3f98ed54cacfd6",
+    "candidate": "84c2a2e1942d9816798f381532c00d360db8d6b68b948aef1a3f98ed54cacfd6",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-ruls-0013-0024-3",
+    "baseline": "9795ab8b5038d86faef3cf227aa82b858a4f21254022483db75b7ce352360f83",
+    "candidate": "9795ab8b5038d86faef3cf227aa82b858a4f21254022483db75b7ce352360f83",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-ruls-0013-0024-22",
+    "baseline": "8f73a6a8811d544664fcaedd3f4b9576db172f5e21feae7f18e9a1aba0190238",
+    "candidate": "8f73a6a8811d544664fcaedd3f4b9576db172f5e21feae7f18e9a1aba0190238",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-306-0",
+    "baseline": "a9f7bffc25a5e27169c4dba4a120f5b7e27c0ac8917be4257280073661c2cc32",
+    "candidate": "a9f7bffc25a5e27169c4dba4a120f5b7e27c0ac8917be4257280073661c2cc32",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-306-3",
+    "baseline": "88bcaaf03cf73d743d57a76e96edde44f3058adc14298f19cb574c8641ec6acd",
+    "candidate": "88bcaaf03cf73d743d57a76e96edde44f3058adc14298f19cb574c8641ec6acd",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-306-22",
+    "baseline": "e565eec1416f36f424547bdee1cfcf5bb40e772fd8ce027c54ea0a4ef43eefb2",
+    "candidate": "e565eec1416f36f424547bdee1cfcf5bb40e772fd8ce027c54ea0a4ef43eefb2",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-132-0",
+    "baseline": "f3c17489ef943500cdba0ef1ac5b84abd62880a97ff7396a353f5ac62730c75e",
+    "candidate": "f3c17489ef943500cdba0ef1ac5b84abd62880a97ff7396a353f5ac62730c75e",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-132-3",
+    "baseline": "32068a7405468996f7b41105748e6c71387854ec87f72b2637bae27934c81a06",
+    "candidate": "32068a7405468996f7b41105748e6c71387854ec87f72b2637bae27934c81a06",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-132-22",
+    "baseline": "07f3848fd741a3b05e4deab4e9462ba90245ca7488c6c8f26d0f5fcacd840f7a",
+    "candidate": "07f3848fd741a3b05e4deab4e9462ba90245ca7488c6c8f26d0f5fcacd840f7a",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-200-0",
+    "baseline": "d0e27974ca6b8724a170555c49ffcdc9057d50565dee954d7980c5d33f89b9a4",
+    "candidate": "d0e27974ca6b8724a170555c49ffcdc9057d50565dee954d7980c5d33f89b9a4",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-200-3",
+    "baseline": "fd01ccc7b1fe6854b1c99a2aab17dc29460fda49c82cc41ff96a1efc21e5a024",
+    "candidate": "fd01ccc7b1fe6854b1c99a2aab17dc29460fda49c82cc41ff96a1efc21e5a024",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-200-22",
+    "baseline": "4ca3845357475fe95613856d2c2bdc92f521cdcd96f55889b3ea82bbe6d0682e",
+    "candidate": "4ca3845357475fe95613856d2c2bdc92f521cdcd96f55889b3ea82bbe6d0682e",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-275-0",
+    "baseline": "68aea39bd49eeeb4e43750b4c6abba0cec58c48104358e775709b8a095c374bb",
+    "candidate": "68aea39bd49eeeb4e43750b4c6abba0cec58c48104358e775709b8a095c374bb",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-275-3",
+    "baseline": "757c6e7c1d4ad78293675645a17db658c804a042f58a6ba7df234f85f4ee60de",
+    "candidate": "757c6e7c1d4ad78293675645a17db658c804a042f58a6ba7df234f85f4ee60de",
+    "identical": true
+  },
+  {
+    "id": "e2e_rnnt-podlodka-275-22",
+    "baseline": "ab8cc60f28ee18ff10147cc987a8915f425de49a57854e3ce527be4b90b2c8c2",
+    "candidate": "ab8cc60f28ee18ff10147cc987a8915f425de49a57854e3ce527be4b90b2c8c2",
+    "identical": true
+  }
+]

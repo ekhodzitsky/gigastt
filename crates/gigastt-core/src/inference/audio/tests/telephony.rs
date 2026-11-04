@@ -1,6 +1,69 @@
 use super::*;
 
 #[test]
+fn test_g726_wave_matches_independent_reference_and_streaming() {
+    use super::super::stream::FileWindows;
+    use bytes::Bytes;
+
+    let fixtures: [(&[u8], &[u8]); 4] = [
+        (
+            include_bytes!("../../../../tests/fixtures/telephony/g726_16k.wav"),
+            include_bytes!("../../../../tests/fixtures/telephony/g726_16k_reference.wav"),
+        ),
+        (
+            include_bytes!("../../../../tests/fixtures/telephony/g726_24k.wav"),
+            include_bytes!("../../../../tests/fixtures/telephony/g726_24k_reference.wav"),
+        ),
+        (
+            include_bytes!("../../../../tests/fixtures/telephony/g726_32k.wav"),
+            include_bytes!("../../../../tests/fixtures/telephony/g726_32k_reference.wav"),
+        ),
+        (
+            include_bytes!("../../../../tests/fixtures/telephony/g726_40k.wav"),
+            include_bytes!("../../../../tests/fixtures/telephony/g726_40k_reference.wav"),
+        ),
+    ];
+    for (encoded, reference) in fixtures {
+        // Both signals use the same production resampler; the reference PCM
+        // was decoded independently by FFmpeg, never by the updated library.
+        let expected = decode_audio_bytes(reference).unwrap();
+        // Even the 2-bit fixture must cross the decoder's 4096-byte input
+        // block; the 3- and 5-bit rates also exercise carried partial bytes.
+        assert!(expected.len() > 32_768, "fixture must cross decode blocks");
+        let actual = decode_audio_bytes(encoded).unwrap();
+        assert!(!actual.is_empty());
+        assert_eq!(actual, expected);
+        assert_eq!(
+            FileWindows::decode_bytes(Bytes::copy_from_slice(encoded), None).unwrap(),
+            expected
+        );
+        let error =
+            FileWindows::decode_bytes(Bytes::copy_from_slice(encoded), Some(0.05)).unwrap_err();
+        assert!(matches!(
+            error.downcast_ref::<crate::error::GigasttError>(),
+            Some(crate::error::GigasttError::AudioTooLong { .. })
+        ));
+    }
+}
+
+#[test]
+fn test_wave_ambiguous_0064_is_rejected_in_both_decode_paths() {
+    use super::super::stream::FileWindows;
+    use bytes::Bytes;
+
+    // A 32 kbit/s header could mean G.726; interpreting it as G.722 would
+    // silently return the wrong signal. Valid 64 kbit/s aliases are covered
+    // by test_decode_audio_bytes_g722_wav_fallback.
+    let wav = make_compressed_wav(0x0064, 8000, 4000, &[0x55; 80]);
+    for result in [
+        decode_audio_bytes(&wav),
+        FileWindows::decode_bytes(Bytes::from(wav), None),
+    ] {
+        assert!(result.is_err(), "ambiguous codec must not be guessed");
+    }
+}
+
+#[test]
 fn test_telephony_codec_from_name() {
     assert_eq!(
         TelephonyCodec::from_name("pcmu"),
@@ -432,4 +495,35 @@ fn test_raw_decode_cancels_before_codec_and_between_resampling_stages() {
         error.downcast_ref::<crate::error::GigasttError>(),
         Some(crate::error::GigasttError::Cancelled)
     ));
+}
+
+#[test]
+fn test_fixture_mulaw_encoder_preserves_independent_codepoints() {
+    // FFmpeg decoded every mu-law byte (0..=255) into this independent PCM
+    // reference. Both zero codes decode to zero, whose canonical encoding is FF.
+    let reference =
+        include_bytes!("../../../../tests/fixtures/telephony/pcmu_codepoints_ffmpeg.pcm");
+    assert_eq!(reference.len(), 256 * 2);
+    let pcm: Vec<i16> = reference
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|&pair| i16::from_le_bytes(pair))
+        .collect();
+    let canonical: Vec<u8> = (0..=u8::MAX)
+        .map(|code| if code == 0x7f { 0xff } else { code })
+        .collect();
+    let encoded = encode_telephony(&mut audio_codec::pcmu::PcmuEncoder::new(), &pcm);
+    assert_eq!(
+        encoded, canonical,
+        "fixture encoder changed canonical levels"
+    );
+
+    let codes: Vec<u8> = (0..=u8::MAX).collect();
+    let samples: Vec<f32> = pcm.iter().map(|&x| f32::from(x) / 32768.0).collect();
+    let expected = resample(&samples, SampleRate(8000), SampleRate(16000)).unwrap();
+    assert_eq!(
+        decode_telephony_raw(&codes, TelephonyCodec::Pcmu, 8000).unwrap(),
+        expected
+    );
 }

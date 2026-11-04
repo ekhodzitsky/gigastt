@@ -1,0 +1,271 @@
+{
+  "binary_sha256": {
+    "base": "73060aa367aaa3aad7cba336e449056cd4d05d30ab5ba0a7d92d953b7f4f2bd0",
+    "candidate": "d24e6c2cf0c8b1a60266c661eebcc31d72208347e5b9def6927b6a41958d2216"
+  },
+  "cases": [
+    {
+      "variant": "rnnt",
+      "fixture": "golos_00",
+      "fixture_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_01",
+      "fixture_sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_02",
+      "fixture_sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_03",
+      "fixture_sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_04",
+      "fixture_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_05",
+      "fixture_sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_06",
+      "fixture_sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_07",
+      "fixture_sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_08",
+      "fixture_sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_09",
+      "fixture_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_10",
+      "fixture_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_11",
+      "fixture_sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_12",
+      "fixture_sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_13",
+      "fixture_sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "golos_14",
+      "fixture_sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "speech-celt",
+      "fixture_sha256": "481c3251f3a8289a6af01aca87b19e2f0a0408e4aa26b969bb06d0e0a5894770",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "speech-hybrid",
+      "fixture_sha256": "33db05c37c27e63251a199ba63eb543fa9ed515a1edd0fcd413974fecb677102",
+      "text_equal": true,
+      "differing_fields": [
+        "words"
+      ]
+    },
+    {
+      "variant": "rnnt",
+      "fixture": "speech-silk",
+      "fixture_sha256": "0ccfcd033ea712be2a1cbade0987a3a8189b48314c5c8dad8defdcc79eebf427",
+      "text_equal": true,
+      "differing_fields": [
+        "words"
+      ]
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_00",
+      "fixture_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_01",
+      "fixture_sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_02",
+      "fixture_sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_03",
+      "fixture_sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_04",
+      "fixture_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_05",
+      "fixture_sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_06",
+      "fixture_sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_07",
+      "fixture_sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_08",
+      "fixture_sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_09",
+      "fixture_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_10",
+      "fixture_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_11",
+      "fixture_sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_12",
+      "fixture_sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_13",
+      "fixture_sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "golos_14",
+      "fixture_sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "speech-celt",
+      "fixture_sha256": "481c3251f3a8289a6af01aca87b19e2f0a0408e4aa26b969bb06d0e0a5894770",
+      "text_equal": true,
+      "differing_fields": []
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "speech-hybrid",
+      "fixture_sha256": "33db05c37c27e63251a199ba63eb543fa9ed515a1edd0fcd413974fecb677102",
+      "text_equal": true,
+      "differing_fields": [
+        "words"
+      ]
+    },
+    {
+      "variant": "e2e_rnnt",
+      "fixture": "speech-silk",
+      "fixture_sha256": "0ccfcd033ea712be2a1cbade0987a3a8189b48314c5c8dad8defdcc79eebf427",
+      "text_equal": true,
+      "differing_fields": [
+        "words"
+      ]
+    }
+  ],
+  "base_revision": "29c42e71606e25c539b5303c3aa9da00528b70d1",
+  "cargo_lock_sha256": "9b31719d84dfae4931ac07b725d9ca390ef80469a87fb1d7bd3c2544aaa5ed18",
+  "fixture_duration_seconds": 61.7653125
+}

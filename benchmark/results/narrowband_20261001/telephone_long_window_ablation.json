@@ -1,0 +1,82 @@
+[
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": null,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 1,
+    "high_band_mean": -20.694244384765625
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": null,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 1,
+    "high_band_mean": -17.623355865478516
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 16,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 1,
+    "high_band_mean": -18.278350830078125
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 16,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 1,
+    "high_band_mean": -16.472640991210938
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 15,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 1,
+    "high_band_mean": -17.481279373168945
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 15,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 1,
+    "high_band_mean": -16.07828140258789
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 14,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 1,
+    "high_band_mean": -16.592716217041016
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 14,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 5,
+    "high_band_mean": -15.5551118850708
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 12,
+    "window": "symmetric_f32",
+    "floor": 1e-09,
+    "words": 8,
+    "high_band_mean": -14.050698280334473
+  },
+  {
+    "frontend": "NumPy, author bf16 mel filters",
+    "bits": 12,
+    "window": "author_periodic_bf16",
+    "floor": 1e-09,
+    "words": 9,
+    "high_band_mean": -13.63033390045166
+  }
+]

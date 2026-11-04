@@ -93,7 +93,12 @@ The Rust CI harness in `crates/gigastt/tests/benchmark.rs` uses a simpler digit-
 
 ### Dataset contamination
 
-GigaAM v3 is a SberDevices model whose fine-tuning is dominated by Golos, and Common Voice / OpenSTT-style corpora are commonly part of Russian ASR training mixes. The Golos / OpenSTT / Common Voice slices used here therefore very likely overlap GigaAM v3's training distribution, so the in-domain WER should be read as a **best-case upper bound**, not a WER on unseen data. Golos ships an official train/test split (distribution overlap, not row-level leakage); the renormalized matrix below — measured with the `e2e_rnnt` head against **Vosk 0.42** — still shows Vosk ahead on clean read speech. The primary `rnnt` comparison with Vosk 0.54 is withheld pending complete raw results and provenance; overlapping confidence intervals alone would not establish equivalence.
+Training overlap is unknown for these public corpora. An official corpus test
+split does not establish exclusion from a pretrained model’s training data.
+Report the dataset and sample manifest without claiming uncontaminated held-out
+accuracy. The historical matrix below compares `e2e_rnnt` with Vosk 0.42; the
+primary `rnnt`/Vosk 0.54 comparison is withheld pending complete raw evidence.
+Overlapping confidence intervals alone do not establish equivalence.
 
 ## Quick Start
 
@@ -192,15 +197,15 @@ select one (default: `golos_crowd`). Committed manifests live under
 
 ### Headline matrix (Golos + OpenSTT)
 
-These are the four domains in the main README / [`docs/benchmarks.md`](../docs/benchmarks.md)
-accuracy table. Treat them as **in-distribution upper bounds** for GigaAM (contamination
-caveat in that doc).
+These are the four domains in the historical
+[benchmark matrix](../docs/benchmarks.md). Training overlap is unknown; see
+the provenance caveats in that report.
 
 ### Held-out / additional public sets
 
 Second column outside Golos/OpenSTT. Full numbers, CIs, and takeaways:
 [`docs/benchmarks.md` § Held-out](../docs/benchmarks.md#held-out--additional-public-sets--wer--95-ci).
-Protocol and queue: [`docs/held-out-datasets-roadmap.md`](../docs/held-out-datasets-roadmap.md).
+Evaluation protocol: [`docs/held-out-datasets-roadmap.md`](../docs/held-out-datasets-roadmap.md).
 Licenses: [`DATA_LICENSE`](DATA_LICENSE).
 
 | Manifest | Domain | n | Prep script | Engines published (2026-07) |
@@ -561,11 +566,17 @@ audio_duration:
 
 ## CI / Automation
 
-A GitHub Action runs the benchmark weekly (Sunday at 04:00 UTC) on `ubuntu-latest` and commits `results.json` to the `benchmark-results-local` branch. See `.github/workflows/benchmark.yml`.
+The manually dispatched [benchmark workflow](../.github/workflows/benchmark.yml)
+runs on `ubuntu-latest` and commits `results.json` to `benchmark-results-local`.
+There is no weekly schedule or push trigger. Its selected runner/corpus/sample
+limit belongs with every published number; a small workflow smoke run is not
+the full historical comparison.
 
 ### Badges
 
-Add to your README:
+Optional badges below read the most recent manual workflow result, which may
+be a small smoke cohort. They do not identify model revision or dataset and
+should not replace a contextualized benchmark table:
 
 ```markdown
 ![WER](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fekhodzitsky%2Fgigastt%2Fbenchmark-results-local%2Fresults.json&query=%24.runners%5B0%5D.wer&suffix=%25&label=WER&color=blue)

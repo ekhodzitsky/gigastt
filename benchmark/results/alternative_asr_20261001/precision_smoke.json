@@ -1,0 +1,263 @@
+{
+  "caveat": "One clip only, cold inference, concurrent host load. This is neither accuracy equivalence evidence nor a performance comparison.",
+  "runs": [
+    {
+      "dtype": "float32",
+      "base_revision": "92847d02bbdb4311e4c85d9d3b4c7f82e31e59bf",
+      "adapter_revision": "904d5d22339952909001d1abcbc1ecf29d26d706",
+      "num_beams": 5,
+      "load_seconds": 8.428848847048357,
+      "max_rss_kib": 4036004,
+      "detail": {
+        "id": "kzaudio_1",
+        "dataset": "kazakh_russian_natural",
+        "path": "/tmp/gigastt-multilingual-audit/kaz-codeswitch/audio/kzaudio_1.wav",
+        "sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+        "reference": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и вообщем влажениены канешно менен бастадық брэкет салдым",
+        "reference_normalized": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениены конечно менен бастадық брекет салдым",
+        "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+        "flags": {
+          "has_contraction": "0",
+          "has_dialect_slang": "0",
+          "has_barbarisms": "1",
+          "has_propers": "0"
+        },
+        "condition": "original",
+        "input_sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+        "duration_s": 7.3086875,
+        "elapsed_s": 87.40397045109421,
+        "hypothesis": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениені конечно менен бастадық брекет салдым",
+        "chunks": [
+          {
+            "start_s": 0.0,
+            "text": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениені конечно менен бастадық брекет салдым",
+            "tokens": 60,
+            "prefix_tokens": [
+              "Ð±",
+              "ÑĸÐ·",
+              "Ġ",
+              "Ó"
+            ]
+          }
+        ],
+        "token_limit_chunks": 0,
+        "scores": {
+          "verbatim": {
+            "reference_words": 16,
+            "word_errors": 6,
+            "substitutions": 5,
+            "deletions": 0,
+            "insertions": 1,
+            "reference_chars": 117,
+            "char_errors": 7
+          },
+          "normalized": {
+            "reference_words": 17,
+            "word_errors": 1,
+            "substitutions": 1,
+            "deletions": 0,
+            "insertions": 0,
+            "reference_chars": 117,
+            "char_errors": 1
+          }
+        }
+      },
+      "summary": [
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "verbatim",
+          "n": 1,
+          "audio_s": 7.3086875,
+          "elapsed_s": 87.40397045109421,
+          "rtf": 11.958914709528107,
+          "wer_pct": 37.5,
+          "cer_pct": 5.982905982905983,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "normalized",
+          "n": 1,
+          "audio_s": 7.3086875,
+          "elapsed_s": 87.40397045109421,
+          "rtf": 11.958914709528107,
+          "wer_pct": 5.882352941176471,
+          "cer_pct": 0.8547008547008547,
+          "empty_hypotheses": 0
+        }
+      ]
+    },
+    {
+      "dtype": "bfloat16",
+      "base_revision": "92847d02bbdb4311e4c85d9d3b4c7f82e31e59bf",
+      "adapter_revision": "904d5d22339952909001d1abcbc1ecf29d26d706",
+      "num_beams": 5,
+      "load_seconds": 11.16468556295149,
+      "max_rss_kib": 5102068,
+      "detail": {
+        "id": "kzaudio_1",
+        "dataset": "kazakh_russian_natural",
+        "path": "/tmp/gigastt-multilingual-audit/kaz-codeswitch/audio/kzaudio_1.wav",
+        "sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+        "reference": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и вообщем влажениены канешно менен бастадық брэкет салдым",
+        "reference_normalized": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениены конечно менен бастадық брекет салдым",
+        "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+        "flags": {
+          "has_contraction": "0",
+          "has_dialect_slang": "0",
+          "has_barbarisms": "1",
+          "has_propers": "0"
+        },
+        "condition": "original",
+        "input_sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+        "duration_s": 7.3086875,
+        "elapsed_s": 37.28879071911797,
+        "hypothesis": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениені конечно менен бастадық брекет салдым",
+        "chunks": [
+          {
+            "start_s": 0.0,
+            "text": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениені конечно менен бастадық брекет салдым",
+            "tokens": 60,
+            "prefix_tokens": [
+              "Ð±",
+              "ÑĸÐ·",
+              "Ġ",
+              "Ó"
+            ]
+          }
+        ],
+        "token_limit_chunks": 0,
+        "scores": {
+          "verbatim": {
+            "reference_words": 16,
+            "word_errors": 6,
+            "substitutions": 5,
+            "deletions": 0,
+            "insertions": 1,
+            "reference_chars": 117,
+            "char_errors": 7
+          },
+          "normalized": {
+            "reference_words": 17,
+            "word_errors": 1,
+            "substitutions": 1,
+            "deletions": 0,
+            "insertions": 0,
+            "reference_chars": 117,
+            "char_errors": 1
+          }
+        }
+      },
+      "summary": [
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "verbatim",
+          "n": 1,
+          "audio_s": 7.3086875,
+          "elapsed_s": 37.28879071911797,
+          "rtf": 5.101981815355763,
+          "wer_pct": 37.5,
+          "cer_pct": 5.982905982905983,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "normalized",
+          "n": 1,
+          "audio_s": 7.3086875,
+          "elapsed_s": 37.28879071911797,
+          "rtf": 5.101981815355763,
+          "wer_pct": 5.882352941176471,
+          "cer_pct": 0.8547008547008547,
+          "empty_hypotheses": 0
+        }
+      ]
+    },
+    {
+      "dtype": "int8_dynamic",
+      "base_revision": "92847d02bbdb4311e4c85d9d3b4c7f82e31e59bf",
+      "adapter_revision": "904d5d22339952909001d1abcbc1ecf29d26d706",
+      "num_beams": 5,
+      "load_seconds": 22.227676179958507,
+      "max_rss_kib": 7788620,
+      "detail": {
+        "id": "kzaudio_1",
+        "dataset": "kazakh_russian_natural",
+        "path": "/tmp/gigastt-multilingual-audit/kaz-codeswitch/audio/kzaudio_1.wav",
+        "sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+        "reference": "біз өзімізге влажение жасаймыз өзімізбен жұмыс жасаймыз деп и вообщем влажениены канешно менен бастадық брэкет салдым",
+        "reference_normalized": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениены конечно менен бастадық брекет салдым",
+        "source": "https://www.youtube.com/watch?v=d0R8AHlugCE. ЖАНСАЯ, ДАНИЯР, ЕРІК | Qazaq StandUp | Қазақша стендап. Channel: \nQazaq Stand Up | INTELLIGENTNO QU",
+        "flags": {
+          "has_contraction": "0",
+          "has_dialect_slang": "0",
+          "has_barbarisms": "1",
+          "has_propers": "0"
+        },
+        "condition": "original",
+        "input_sha256": "9ff060bdf55bb920f91151cf45eb80cbd4bee2d167e4108a5f871f816ead2f23",
+        "duration_s": 7.3086875,
+        "elapsed_s": 35.596545605920255,
+        "hypothesis": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениені конечно менен бастадық брекет салды",
+        "chunks": [
+          {
+            "start_s": 0.0,
+            "text": "біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп и в общем вложениені конечно менен бастадық брекет салды",
+            "tokens": 59
+          }
+        ],
+        "token_limit_chunks": 0,
+        "scores": {
+          "verbatim": {
+            "reference_words": 16,
+            "word_errors": 7,
+            "substitutions": 6,
+            "deletions": 0,
+            "insertions": 1,
+            "reference_chars": 117,
+            "char_errors": 8
+          },
+          "normalized": {
+            "reference_words": 17,
+            "word_errors": 2,
+            "substitutions": 2,
+            "deletions": 0,
+            "insertions": 0,
+            "reference_chars": 117,
+            "char_errors": 2
+          }
+        }
+      },
+      "summary": [
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "verbatim",
+          "n": 1,
+          "audio_s": 7.3086875,
+          "elapsed_s": 35.596545605920255,
+          "rtf": 4.870442963380259,
+          "wer_pct": 43.75,
+          "cer_pct": 6.837606837606837,
+          "empty_hypotheses": 0
+        },
+        {
+          "dataset": "kazakh_russian_natural",
+          "condition": "original",
+          "reference_layer": "normalized",
+          "n": 1,
+          "audio_s": 7.3086875,
+          "elapsed_s": 35.596545605920255,
+          "rtf": 4.870442963380259,
+          "wer_pct": 11.764705882352942,
+          "cer_pct": 1.7094017094017093,
+          "empty_hypotheses": 0
+        }
+      ]
+    }
+  ]
+}

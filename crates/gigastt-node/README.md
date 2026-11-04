@@ -2,7 +2,9 @@
 
 Node.js binding for [gigastt](https://github.com/ekhodzitsky/gigastt) — on-device Russian speech-to-text (**GigaAM v3**) — built with [napi-rs](https://napi.rs).
 
-Wraps the synchronous `gigastt-core` engine: models are **side-loaded** (no HTTP download) and inference runs on a libuv worker thread via napi's `AsyncTask`, so calls return **Promises** and never block the event loop. Errors are thrown JS `Error`s and objects are garbage-collected (no manual free). onnxruntime is statically linked, so the `.node` addon is self-contained. `package.json` `engines.node` is `>=18` (napi); the separate `@gigastt/client` WS SDK requires **Node ≥ 20**.
+Wraps the synchronous `gigastt-core` engine: models are **side-loaded** (no HTTP download) and inference runs on a libuv worker thread via napi's `AsyncTask`, so transcription and stream operations return **Promises**. The `Engine` constructor
+loads models synchronously and can block the calling thread; initialize it before
+interactive work or inside an application worker. Errors are thrown JS `Error`s and objects are garbage-collected (no manual free). onnxruntime is statically linked, so the `.node` addon is self-contained. `package.json` `engines.node` is `>=18` (napi); the separate `@gigastt/client` WS SDK requires **Node ≥ 20**.
 
 ## In-process (this package) vs sidecar server
 
@@ -15,7 +17,7 @@ talking to it over WebSocket/REST. Pick consciously:
 | Deployment | Single `npm install` — one prebuilt binary fetched by postinstall | Binary discovery on the user's machine, spawn, supervision, port selection |
 | Interface | Plain JS calls; errors are thrown `Error`s | Wire protocol over a loopback port (`/v1/ws`, REST, SSE) |
 | Versioning | App and engine are one artifact, shipped together | App must gate on the discovered server's version |
-| Memory | Model + pool live in your app's process (~46 MB resident at pool 1 / ~66 MB at pool 2; `ps` RSS ~277 / ~510 MB counts the mapped encoder) | Model lives in the separate server process |
+| Memory | Model + pool live in your app's process; measure RSS/peak memory with your exact model and pool | Model lives in the separate server process |
 | Concurrency | One engine/pool instance per app process | One server shared by several apps/clients |
 | Failure isolation | An engine crash takes the app down (and vice versa) | Server crashes are isolated; the app survives and can restart it |
 | Upgrades | Redeploy the app | Upgrade the server independently of any client |
@@ -64,6 +66,21 @@ npm run build               # napi build --platform --release -> index.js + inde
 GIGASTT_MODEL_DIR=~/.gigastt/models npm run smoke   # transcribes the golos_00.wav fixture
 ```
 
+The smoke test also checks concurrent calls, typed failures, event-loop progress,
+and native engine lifetime after JavaScript releases its reference and runs GC.
+`npm run benchmark --silent` runs the same checks with 21 warmed serial and
+concurrent rounds and emits JSON with latency, RSS, output and binary/fixture
+hashes. It uses two pool slots. `loadMs` is a single descriptive startup sample,
+not a statistically qualified cold-load comparison.
+
+For a dependency update, build both revisions with the same compiler and release
+settings, then set `GIGASTT_TEST_ADDON` to each absolute `.node` path to exercise
+both with this same harness. Keep the same model files and hardware, alternate
+fresh-process base/candidate runs, and retain all measurements and model hashes.
+Compare complete transcripts, word timings and streamed segments as well as
+latency and memory; see [dependency acceptance](../../docs/performance-regressions.md).
+These model-backed commands remain manual and do not enable automatic CI.
+
 `npm run build` produces the native `gigastt.<platform>.node` addon (git-ignored); `loader.js`, `install.js`, and `gigastt.d.ts` are the committed, published package files.
 
 ## Performance note
@@ -72,11 +89,11 @@ Inference runs on libuv's worker threadpool (default 4 threads, shared with Node
 
 ## Packaging
 
-**Single npm package.** `gigastt` is one JS-only package (`loader.js` + `install.js` + `gigastt.d.ts`) — no per-platform sub-packages. On `npm install gigastt`, the postinstall (`install.js`) downloads exactly **one** native binary — the `gigastt.<platform>.node` matching the install platform — from the `node-v<version>` GitHub release, so only ~47 MB is fetched (not all platforms). `loader.js` then loads it. onnxruntime is statically linked into each `.node`, so there is no native dylib to locate (no `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH`).
+**Single npm package.** `gigastt` is one JS-only package (`loader.js` + `install.js` + `gigastt.d.ts`) — no per-platform sub-packages. On `npm install gigastt`, the postinstall (`install.js`) downloads exactly **one** native binary — the `gigastt.<platform>.node` matching the install platform — from the `node-v<version>` GitHub release, so only the matching platform artifact is fetched (size varies by release). `loader.js` then loads it. onnxruntime is statically linked into each `.node`, so there is no native dylib to locate (no `LD_LIBRARY_PATH`/`DYLD_LIBRARY_PATH`).
 
 Supported prebuilt platforms: `darwin-arm64`, `linux-x64-gnu`, `linux-arm64-gnu`, `win32-x64-msvc` (Intel macOS omitted — ort ships no onnxruntime for it). The binaries are built per native runner and attached to the `node-v<version>` release by the **Node Prebuilds** workflow (`.github/workflows/node-prebuilds.yml`, `workflow_dispatch`); the single `gigastt` package is then published.
 
-Caveat: `npm install --ignore-scripts` skips the postinstall, so the binary is not fetched — `require('gigastt')` then errors with instructions to run `node install.js`. The ~305 MiB INT8 model is **not** bundled either; side-load it at runtime (e.g. `gigastt download`).
+Caveat: `npm install --ignore-scripts` skips the postinstall, so the binary is not fetched — `require('gigastt')` then errors with instructions to run `node install.js`. The current main ASR bundle (~310 MiB) is **not** bundled either; side-load it at runtime (e.g. `gigastt download`).
 
 ## License
 

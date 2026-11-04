@@ -13,7 +13,7 @@ Operator-facing guidance for gigastt in production: graceful shutdown, session c
 | `Close(1001 Going Away)` seen by clients | Expected on SIGTERM — not a bug | None — clients should reconnect |
 | WARN `optimized graph cache directory cannot be created / is not writable` | Cache dir missing or unwritable (e.g. read-only model dir) | Service still works — see [ORT cache warnings](#ort-optimized-graph-cache-warnings) |
 | REST `503` `timeout` / WS error `timeout` (`retry_after_ms`) | Pool saturated — every triplet busy | Raise `--pool-size`; isolate batch with `--batch-pool-size`; see [Pool exhaustion](#pool-exhaustion--backpressure) |
-| `inference_timeout` (REST `504` / WS close) | A run made no progress for `--inference-timeout-secs` (default 600 s) | Not a length limit — the deadline resets on every decode window, so long files never trip it. Investigate a wedged ONNX run |
+| `inference_timeout` (REST `504` / WS close) | A run made no progress for `--inference-timeout-secs` (default 600 s) | Progress watchdog, not a total duration cap. Long files can still time out if a stage stops reporting progress; inspect the stalled stage |
 | Server won't start, model errors | Missing / corrupt model files | See [Model download failures](#model-download-failures) |
 | OOM / pod killed | Pool RSS exceeds the box | Lower `--pool-size`, use the INT8 encoder, `--pool-min-size` to boot degraded — see [Out-of-memory](#out-of-memory-oom) |
 | Long file must be sent again after a cancel or restart | Jobs are not stored on disk, and one upload is capped at `--body-limit-bytes` (default 50 MiB) | Chunk under the cap, or raise it with `--jobs-max-bytes`. See [Long recordings](long-recordings.md) |
@@ -419,17 +419,16 @@ pause-rich long-form quality + peak RAM, and rely on automatic chunking when
 VAD is off. Per-request `?vad=false` forces whole-buffer / chunked decode on a
 VAD-enabled server.
 
-### Head SKU: ml_ctc is speed, not lean-RAM
+### Selecting a model for resources
 
-`--model-variant ml_ctc` is a **throughput / RTF** choice (~**1.5×** faster RTF
-than default `rnnt` in lab — e.g. RTF **~0.023** vs **~0.034**), **not** a
-low-memory SKU. Ready RSS for `ml_ctc` is **about the same class as `rnnt`**
-in older measurements made before the RNN-T encoder grew to 305 MiB.
-The former speed and ready-memory comparison is not established for the new
-RNN-T bundle. For less RAM use
-**`--pool-size 1`**, not a head switch. Use `ml_ctc` / `ml_ctc_large` when you
-need **ru/en/kk/ky/uz** or higher encode speed; `rnnt` remains the Russian-only
-default. Its primary accuracy comparison awaits complete benchmark evidence.
+Select multilingual CTC when the language requirements call for it; see
+[Models](models.md) and [Languages](languages.md). Older claims that `ml_ctc`
+was faster than RNN-T used the previous convolution-quantized RNN-T bundle.
+They do not establish a speed or RAM advantage over the current October bundle.
+
+Measure ready and peak memory, latency and recognition quality with the exact
+model/pool settings you plan to deploy. `--pool-size 1` reduces concurrent
+session allocation; choosing a smaller file alone does not predict peak RAM.
 
 ### Optional model ready tax
 

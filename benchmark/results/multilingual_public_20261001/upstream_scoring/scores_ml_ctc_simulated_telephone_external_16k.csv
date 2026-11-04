@@ -1,0 +1,32 @@
+audio_id,service,raw_output,excluded,wer_vs_verbatim,wer_vs_normalized,wer_best,cer_vs_verbatim,cer_vs_normalized,cer_best,best_layer
+kzaudio_1,ml_ctc_simulated_telephone_external_16k,біз өзімізге вложение жасаймыз өзімізбен жұмыс жасаймыз деп венен конечно меен бастады брекит салдым,False,0.5,0.4118,0.4118,0.188,0.1538,0.1538,normalized
+kzaudio_2,ml_ctc_simulated_telephone_external_16k,алдында короче мен осы брекитті тағып шықтым да и менің өзімң бір жақын танысымды кезіктіріп қалдым и андай шыға салып бір тупой сұрақтар қойды да брекетма қарап,False,0.2593,0.1852,0.1852,0.0741,0.0491,0.0491,normalized
+kzaudio_3,ml_ctc_simulated_telephone_external_16k,құмаш өйтіп баспайтын шығар енді ол специально солай шығарылған ғой енді ауызның бәрі,False,0.4667,0.2857,0.2857,0.1978,0.1099,0.1099,normalized
+kzaudio_4,ml_ctc_simulated_telephone_external_16k,білмеймін пиқылдай ма әл аэропортқа барып үлгерген жоқпын мен қайдан білемін енді спеиално пилдатын оып шыарған шыға,False,0.4118,0.3529,0.3529,0.1048,0.1016,0.1016,normalized
+kzaudio_5,ml_ctc_simulated_telephone_external_16k,щн кргендамға ледғайые бі менбк қаратысызда,False,1.0,1.0,1.0,0.6555,0.6532,0.6532,tie
+kzaudio_6,ml_ctc_simulated_telephone_external_16k,сәл жоғары көзімізбен қарай сөйлесейік иә ыыы в общем құттықтап қойсаңыздар болады жақында званиям өсті қайын әпке деген звание алдым,False,0.4,0.2,0.2,0.1095,0.0597,0.0597,normalized
+kzaudio_7,ml_ctc_simulated_telephone_external_16k,біз алып жатқан келіннің яғни қыздың бір тәтесі тілек айтып жатыр екен айналайын айнұржан барған жеріңе бақытты болам деп емес бақытты қылам деп бар алтыным,False,0.0,0.08,0.0,0.0,0.025,0.0,verbatim
+kzaudio_8,ml_ctc_simulated_telephone_external_16k,ойланып қарасам менің ұзату тойымда да маған да сондай тілек айтқан екен да,False,0.0,0.0,0.0,0.0,0.0,0.0,tie
+kzaudio_9,ml_ctc_simulated_telephone_external_16k,бі келін болп түсмісөйіп келін бо түе үйді дастаран басында таңет тұрып ақа,False,0.7333,0.7333,0.7333,0.2421,0.2424,0.2421,tie
+kzaudio_10,ml_ctc_simulated_telephone_external_16k,бәрін бердік сондағысы сен қонақ болдың дейді так стоп мен қонақ болған жоқпын,False,0.1538,0.0,0.0,0.0263,0.0,0.0,normalized
+kzaudio_11,ml_ctc_simulated_telephone_external_16k,қызыңболасын қимайсың өсіріп баптап өсірген гүлімдеп,False,0.5,0.5,0.5,0.0556,0.0556,0.0556,tie
+kzaudio_12,ml_ctc_simulated_telephone_external_16k,тойдағы тілектер өзі андай бірнен кейін бірі кете береді де самый потолок тілек біздің үйлену тойымызда дидардың сестасы болды,False,0.2778,0.1579,0.1579,0.056,0.0234,0.0234,normalized
+kzaudio_13,ml_ctc_simulated_telephone_external_16k,тілектің бәрі дұрыс емес сен бақытты қыл қызым саған аманат,False,0.0,0.0,0.0,0.0,0.0,0.0,tie
+kzaudio_14,ml_ctc_simulated_telephone_external_16k,ияр,False,1.0,1.0,1.0,0.9762,0.9764,0.9762,tie
+kzaudio_15,ml_ctc_simulated_telephone_external_16k,еркен еентаймен раиның арқасында көтерілгенсің дейді көбісі айтады барлықтарына бірден жауап берейін,False,0.5714,0.3571,0.3571,0.0962,0.0654,0.0654,normalized
+kzaudio_16,ml_ctc_simulated_telephone_external_16k,былай бастайды ғой сен негізі жақсы жігітсің просто мен саған недостойнымын,False,0.1818,0.0909,0.0909,0.027,0.0133,0.0133,normalized
+kzaudio_17,ml_ctc_simulated_telephone_external_16k,мен осы елмнің азаматымын енді қазақта сөз бар шақырған жерден қалма дейді мен барған шара бұл жарым жартылай мемлекеттік деп те айтуға болады жарым жартылай жеке шара бұлсонау тарихына үңілсек,False,0.1875,0.125,0.125,0.0406,0.0302,0.0302,normalized
+kzaudio_18,ml_ctc_simulated_telephone_external_16k,лара ттры л ар,False,1.0,1.0,1.0,0.8947,0.8947,0.8947,tie
+kzaudio_19,ml_ctc_simulated_telephone_external_16k,е те анашара мебұл шарамен қоаорлемніоскарын алды,False,0.9286,0.9286,0.9286,0.3636,0.3636,0.3636,tie
+kzaudio_20,ml_ctc_simulated_telephone_external_16k,бүгінгі дейін сіз тиктокқа шығасыз инстаграмға шығасыз иә тікелей эфирге ыы сол жұмысыңызды тастамайсыз,False,0.1429,0.0769,0.0769,0.0673,0.03,0.03,normalized
+kzaudio_21,ml_ctc_simulated_telephone_external_16k,әрбір азамат ұлтына қызмет ету керек деп есептеймін ол м жай адам бола ма ой шаруа адам болад ма әркім өз деңгейінде қызмет жасаса біздің еліміз алға басады,False,0.2069,0.1071,0.1071,0.0696,0.025,0.025,normalized
+kzaudio_22,ml_ctc_simulated_telephone_external_16k,ыамасолардың ортасын біріктірларыапсихологияқаналтіиолігізгі психологиям олдбола,False,0.9286,0.9286,0.9286,0.6117,0.6154,0.6117,tie
+kzaudio_23,ml_ctc_simulated_telephone_external_16k,,False,1.0,1.0,1.0,1.0,1.0,1.0,tie
+kzaudio_24,ml_ctc_simulated_telephone_external_16k,бұрынғ дпоммеен бүгінгі замаауі жеенд бар дүнеміз жирмажылға бұрынғы жағдаға келі де мүмін,False,0.7647,0.75,0.75,0.2992,0.2823,0.2823,normalized
+kzaudio_25,ml_ctc_simulated_telephone_external_16k,адам үйленсе де тұрмыс құрса да интерес бар ғой бір өмірде бір сондықтан әлбетте спонсор болғандар рас ол жасырын емес,False,0.2273,0.0952,0.0952,0.082,0.0333,0.0333,normalized
+kzaudio_26,ml_ctc_simulated_telephone_external_16k,аан оалаалаааода аан аыойға матыр,False,1.0,1.0,1.0,0.6765,0.6887,0.6765,tie
+kzaudio_27,ml_ctc_simulated_telephone_external_16k,бірақ құстың жаңағы сүін м ә еме,False,0.7273,0.7273,0.7273,0.5676,0.5676,0.5676,tie
+kzaudio_28,ml_ctc_simulated_telephone_external_16k,бералңыз біра кейде бай байқарап тр пакетке ты жереіндер бар,False,0.75,0.75,0.75,0.2436,0.2405,0.2405,tie
+kzaudio_29,ml_ctc_simulated_telephone_external_16k,алға жүрмеген артқа кетді бәрібір прогресбол кедда біқам оылкеяа л,False,0.7895,0.7895,0.7895,0.453,0.4407,0.4407,tie
+kzaudio_30,ml_ctc_simulated_telephone_external_16k,бес алты жеті рет барды ол дұрыс па,False,0.0,0.0,0.0,0.0,0.0,0.0,tie
+kzaudio_31,ml_ctc_simulated_telephone_external_16k,оаадасоайнамаз да соай адам өзгер ал келе она қуан керек,False,0.8462,0.8462,0.8462,0.2222,0.2222,0.2222,tie

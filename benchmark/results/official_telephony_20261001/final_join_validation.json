@@ -1,0 +1,11 @@
+{
+  "matched_comparisons": 30,
+  "missing_groups": 0,
+  "helper_server_checks": 15,
+  "exact_hypothesis_matches_except_outer_whitespace": 10,
+  "word_error_count_matches": 14,
+  "public_json_without_reference_or_hypothesis_fields": true,
+  "public_artifacts_without_hf_token_patterns": true,
+  "private_ldc_full_references_and_hypotheses_not_found": true,
+  "matched_comparison_sha256": "ea48956c297add4b0f0893b68fd27fad49b640bcbab946fe5df6d24e54b8fe66"
+}

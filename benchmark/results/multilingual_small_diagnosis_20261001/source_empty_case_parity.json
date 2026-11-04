@@ -1,0 +1,193 @@
+{
+  "metadata": {
+    "selection": "All five unique utterances with empty original telephone output, fixed before these diagnostics, times all three conditions",
+    "checkpoint_sha256": "24aa92be5994fa8b9f1ce40fe59fc9693de0ce6af415011b7c0b4480c7fcf733",
+    "prepared_sha256": "db4d8957c91f342e1f685e956b33ee04cbf0c034b6d941bf10429af0fa910061",
+    "script_sha256": "1034895eca299026a14cb7b81cc57eac3ad938b9d3709ba0fadce045fb8301cb",
+    "torch": "2.9.1+cpu",
+    "threads": 3,
+    "pipeline": "Original source encoder/head on exact saved product features; not an audio-loader or long-form test"
+  },
+  "rows": [
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "original",
+      "feature_sha256": "e14e1bd61b8572df3ba34d6df0402791ca4c670112f508284685d07d644aeb62",
+      "feature_frames": 1523,
+      "output_frames": 381,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.00016832351684570312,
+      "logits_mean_absolute_difference": 4.986189196642954e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "alaw",
+      "feature_sha256": "598750424b854f94b5628a60f731e891df3a836004f68d7b32a3eb942801fefd",
+      "feature_frames": 1522,
+      "output_frames": 381,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 8.392333984375e-05,
+      "logits_mean_absolute_difference": 3.7767229059681995e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "mulaw",
+      "feature_sha256": "32d584333b341111e1039599c9ca0d1c3b571c90a0bdb626e0ec4214671727b1",
+      "feature_frames": 1522,
+      "output_frames": 381,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 7.05718994140625e-05,
+      "logits_mean_absolute_difference": 4.602998615155229e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "original",
+      "feature_sha256": "258ef066454a7191463155dde6c79ada41ce45c75c840f677d00516e0576a225",
+      "feature_frames": 1571,
+      "output_frames": 393,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.0003540515899658203,
+      "logits_mean_absolute_difference": 4.9862105697684456e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "alaw",
+      "feature_sha256": "cba118629059baeb735f780effb9c634e7e06ff32235c7310ebed32e89cbd5bd",
+      "feature_frames": 1570,
+      "output_frames": 393,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.0005970001220703125,
+      "logits_mean_absolute_difference": 9.829039299802389e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "mulaw",
+      "feature_sha256": "b2727197c8c5fa712b9c3d660cb5ab2c3291da73acba9a006b74dbe6f8589655",
+      "feature_frames": 1570,
+      "output_frames": 393,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.00012540817260742188,
+      "logits_mean_absolute_difference": 4.337553036748432e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "original",
+      "feature_sha256": "ccfddd558a7f540aad9e8e10974845f68155d2146ccac1fedde5d9b9253f9cb1",
+      "feature_frames": 1469,
+      "output_frames": 368,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.00010180473327636719,
+      "logits_mean_absolute_difference": 3.9357400964945555e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "alaw",
+      "feature_sha256": "4e2de5bf450196d06068c040833e0b89ce483159741433aeccef255626c05c7b",
+      "feature_frames": 1468,
+      "output_frames": 367,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.0007605552673339844,
+      "logits_mean_absolute_difference": 9.320547178504057e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "mulaw",
+      "feature_sha256": "6012735826be6e519cfd462215f735316477f90e95c5c5ef7abac1b19d6416c4",
+      "feature_frames": 1468,
+      "output_frames": 367,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.0002522468566894531,
+      "logits_mean_absolute_difference": 4.585897386277793e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "original",
+      "feature_sha256": "c58b4b8a0e0552b6ab647de0ead15c8692c472c8cac7dd085824cb310869e8ed",
+      "feature_frames": 1277,
+      "output_frames": 320,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.00012230873107910156,
+      "logits_mean_absolute_difference": 4.098109911865322e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "alaw",
+      "feature_sha256": "664fc992d66fc7af16818292ac3b9f5a4fd9419bcfb07553f8f02f5563a4487c",
+      "feature_frames": 1276,
+      "output_frames": 319,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.00022125244140625,
+      "logits_mean_absolute_difference": 4.668812835006975e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "mulaw",
+      "feature_sha256": "52f862d1c54d3728d70c7254db5c49f34443982b3282a6a4b469fea349a8ee72",
+      "feature_frames": 1276,
+      "output_frames": 319,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 6.866455078125e-05,
+      "logits_mean_absolute_difference": 5.337262791726971e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "original",
+      "feature_sha256": "34df89ba5bc6187281f920ab6652f870c1ff4eff7aeef18acac9423cf096d0c4",
+      "feature_frames": 2357,
+      "output_frames": 590,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 0.0001437664031982422,
+      "logits_mean_absolute_difference": 4.421923222253099e-06,
+      "source_all_blank": false
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "alaw",
+      "feature_sha256": "a474114da77a5d4f4be2db24ff724916e307fd43dea866f602454b0fbefcfeda",
+      "feature_frames": 2356,
+      "output_frames": 589,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 8.20159912109375e-05,
+      "logits_mean_absolute_difference": 3.573269850676297e-06,
+      "source_all_blank": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "mulaw",
+      "feature_sha256": "1bb05df0d1163bcd294326e737dac52253d12001a7af46f4a87e66c83f11e681",
+      "feature_frames": 2356,
+      "output_frames": 589,
+      "frame_argmax_identical": true,
+      "frame_argmax_agreement": 1.0,
+      "logits_max_absolute_difference": 5.91278076171875e-05,
+      "logits_mean_absolute_difference": 3.7243246424623067e-06,
+      "source_all_blank": true
+    }
+  ]
+}

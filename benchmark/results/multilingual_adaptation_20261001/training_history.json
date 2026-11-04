@@ -1,0 +1,2152 @@
+[
+  {
+    "epoch": 0,
+    "validation": {
+      "wer_percent": 10.17897091722595,
+      "groups": {
+        "fleurs_kk_adaptation/original": {
+          "n": 32,
+          "errors": 43,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 9.619686800894854
+        },
+        "fleurs_kk_adaptation/simulated_telephone": {
+          "n": 32,
+          "errors": 48,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 10.738255033557047
+        }
+      },
+      "details": [
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "4811e86c1b595fae7ad26bda667a07d54cbc7650029fe13898fc22db71a06c57"
+        },
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "73b8cf97cfbbd491f60266e6d4360617293de072af2858e2ab6e20d68080e208"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "3ad6c28d5ea565d837efc5631e17337319490a9e104fd15daa9bea51d72d67bf"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "fa70fecb3a31d1c599b3723ca4e16a2adbba045ab59cd3f54733928917aa5afc"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "5f86759e102c1674bb6cc1e3ed61d26f96b6f2a6ea3e846f4dffbd9f110571d9"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "ff58adef1205ef54cca385b3146c8b92def3a7bd409df8b73dab92fe78c1caea"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "8f6ae147aee224f39a01705fb52d152216cfad3a2546e2e7e88fe2f2fbb1e557"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 12,
+          "audio_sha256": "d5b8b9f1104db4024616d0a1402cb35bbdb451f10ed02e08e6d5be0d1e998a5d"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "c2945b98a8499b79c1cb15b5a9ddd6b3ad972d388ba2a160c1d4f9702788f022"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "0d8c22e7301119ea96b27545a518561d9ca8ecce5d5a74b19033f1797f9e6e6f"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "a16921f241d7c6eef9620e453a0f36c690fa6233447128a07df2a4be75bc2b5a"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "82e86a6dd1c6db602602b5470c98f9d97e8a19fc12914512d7f061887a508981"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "8037698569932dffe2ddd7f50f558dfb056dc44af33d99988461f65372b65cab"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "d833ea51cc725c8a5c528ed1a8882ab5b5b9a5d7121b2e5b7d7e9339bc3a0e14"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "1c24360a2347ecc8d23ce7087ac9ee2c9cbd45b89d806363abd6dca3820f024b"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "96ed60564382a4ca3016843555301143270640e7a6b1d9c2a15f3ed95480af24"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "b3f97b8b3b4c8d7a5d5abc6091100874e159a2089375a3c17f3e895980058512"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "d54dd209b138d1ae45f274f6f32338dff9c6c83b81f2cd886ead055552148b55"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "6515e826f7c3627a4da5e2d9ba671c09e6f4ace1c41a2f73aeed381285a3edc0"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 11,
+          "audio_sha256": "0c071e0e13f81b72c490b8eb552078be78da001abd158fe59e1c2201b4bd96b2"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "08c5725d21b0b4d98e6e4bb4fe0ffe2148e22a21559de35cb1bc161ff3152a62"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "9ddb678c4fb988e67e6b44772da95ca28b48059c148055be9480a295a53fab78"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "f82f2f107bd4c9836755671627ac08367a257a68c84797ea99786e9009af6572"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "28eeaedbea4a804d3c910e0127786a018dc2d154ba19373e1f5e2fae873d7591"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 14,
+          "audio_sha256": "aecfea33d2033409ac4a0d65d26fda3bedbbd5b2babf067e703a3d54b3d0ee3c"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 14,
+          "audio_sha256": "732a15d66b8dd9c021af64654088c66f2f3c8572ca50e7d13ff4f5a4553744a7"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "b68a2a70bf9a8646b66247f6dfa284c2fee7fd8ed7040512eb4e1a95089bccdb"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "94a8a0c9d33b685e62b1b9f59e2d9e0045e3b72519bc548425b078924fe3afa2"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "3c6dd5700ed2a7642eb98174e9b1ed71b28227b1426a1a26dd1d09e979fe84ca"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "03fe7b6658c24ac79cb8ba28669485b3e6a4b01a24c096d445887a88e6847266"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "17952a8158aeca06636b3d0c20fa6cb0276389e4a81ef80291c954f745502452"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "aee12b5426063ee58205b1ebf382aa1136fbefec31d8e2e931220b878d562902"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "4ad76375ddf008d0b2e270aa92179b412dc2a7bf16e37283c398d45353c56f41"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "720e3f312765cd0221ce5e30dc7beef2213f8f83c617510b0246c0aaa93dbe3d"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "5fe652c924ac8e57d9970716aef3de0d4e36ddb9cf0b65baf53624de11bd321c"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 20,
+          "audio_sha256": "d81b572908ef7b2642e690d371f1d0b6571b06a7d447aafee1564e6f06b1cef6"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 8,
+          "ref_words": 14,
+          "audio_sha256": "76ad2d69303860adec509d05d884df095dc0ddff7a9d5dd9939d2a8a3ffecd73"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 7,
+          "ref_words": 14,
+          "audio_sha256": "ea294f05d36c19c86fb8104319730cff42f4df88c3d1e4b060406feec4bc66a1"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "6a051e24189e4759b2e334aecff21490b2cfb828a97a935160d3477a7165f4f8"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "d86aa98d003988cf8bc821dec1c06def18a0e544a4a979d41d23b1f6b5fa7886"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "79c4e04b2d6f3a722965dcb9eded6dd752f552de559c25db1fdb75e5c02381a4"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "075f2c27dccfa2beb573bc93e8580a21a235fdfd4a9c756721f62a407afe305d"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "f95f4ddb2256701074bc5d7f53c2a2668642b97c7a1a99619ecb8dd70d787941"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "cf08bf05a755078f9d22a5d93e6a5be818c7f2dfab4bd53d7d3b77d1cfe30e2f"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "29ab7906948b99e48b497bde777d9218d7105ba295d6808a8b933531ef715b9c"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "d863074e6f4f33e67ed6921b3c808b233e384962ee40d1d6ab9aee85c8df416d"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "fc9b449f724e05c0027a0c70dbf080c26e6e56deef079735c247ee0deac40b24"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "002a0a053d999555ab97349ef59cdccf8bae2fd2a8e355d569152e24fe253c2c"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 13,
+          "audio_sha256": "a752b91ad6824df54d391cd7444923c8d1b80a72801b95fc37b38b2eb239cec2"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "481aec64d109556b8f85ac8af9a0ac834acd6e0d78f4ce859963037e31848049"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "872552011ef3feffa5fdb442fd1c53d92fa5af9e2a23aa2b7e1851593a4588e0"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "ad4fb0ea06704a1fe60dacad14f47d4da8b121fd0d1160c8a56aada721456c15"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "0c791429bc5b1994f5943073c3a2f4a21457c67656288a4c030b2a29de1944cb"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "b06414512ed844cca9986620788dd7bcd12ca007f0de1a812e12c02eabec1734"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "b2f885b463b72bb6e6de9df0275b55ea8e8313ff900fcb9099c15880464cc16b"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "ea27ec3a3546b860f88597473b488506ddc14965b1d137fb761ce0b5b68f739e"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 15,
+          "audio_sha256": "65700d7e668e338c33287748bb641b1b8f66b7cb7655bc5e4b73c05417f89238"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 15,
+          "audio_sha256": "fdc5ebf4213b4fd54087094e4df992926eab3ea4118a65092f5a89f20e7ca6e3"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "88bb5da3224e64501af26b941724e67e708671cb45f90b8b1e0e4fc26a1205d5"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "79ecce9c1cb2f93f6d4bc48229c8a166ff692bee5d05efa184da4013b170284e"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "dd263069e1812198ef8115f973d06477f5efac50ca075576a10ceaed5b55e910"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "18ab8e1a2675fb6da23f2f58dd7293550603e7f83fab5c61a84c3dcf183ebf6c"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 14,
+          "audio_sha256": "77b9a27a1ec0822915fc29d4eb0f4247a7a63fa89f5a21f7b0e2c4c629a7de72"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "127acc7b34c829f011d14696e7b866ae7c998e20672414a7c06b4c9af1be9e9a"
+        }
+      ]
+    }
+  },
+  {
+    "epoch": 1,
+    "mean_batch_ctc_loss": 0.11850534360855818,
+    "elapsed_seconds": 1.2942610268946737,
+    "validation": {
+      "wer_percent": 10.17897091722595,
+      "groups": {
+        "fleurs_kk_adaptation/original": {
+          "n": 32,
+          "errors": 43,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 9.619686800894854
+        },
+        "fleurs_kk_adaptation/simulated_telephone": {
+          "n": 32,
+          "errors": 48,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 10.738255033557047
+        }
+      },
+      "details": [
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "4811e86c1b595fae7ad26bda667a07d54cbc7650029fe13898fc22db71a06c57"
+        },
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "73b8cf97cfbbd491f60266e6d4360617293de072af2858e2ab6e20d68080e208"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "3ad6c28d5ea565d837efc5631e17337319490a9e104fd15daa9bea51d72d67bf"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "fa70fecb3a31d1c599b3723ca4e16a2adbba045ab59cd3f54733928917aa5afc"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "5f86759e102c1674bb6cc1e3ed61d26f96b6f2a6ea3e846f4dffbd9f110571d9"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "ff58adef1205ef54cca385b3146c8b92def3a7bd409df8b73dab92fe78c1caea"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "8f6ae147aee224f39a01705fb52d152216cfad3a2546e2e7e88fe2f2fbb1e557"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 12,
+          "audio_sha256": "d5b8b9f1104db4024616d0a1402cb35bbdb451f10ed02e08e6d5be0d1e998a5d"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "c2945b98a8499b79c1cb15b5a9ddd6b3ad972d388ba2a160c1d4f9702788f022"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "0d8c22e7301119ea96b27545a518561d9ca8ecce5d5a74b19033f1797f9e6e6f"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "a16921f241d7c6eef9620e453a0f36c690fa6233447128a07df2a4be75bc2b5a"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "82e86a6dd1c6db602602b5470c98f9d97e8a19fc12914512d7f061887a508981"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "8037698569932dffe2ddd7f50f558dfb056dc44af33d99988461f65372b65cab"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "d833ea51cc725c8a5c528ed1a8882ab5b5b9a5d7121b2e5b7d7e9339bc3a0e14"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "1c24360a2347ecc8d23ce7087ac9ee2c9cbd45b89d806363abd6dca3820f024b"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "96ed60564382a4ca3016843555301143270640e7a6b1d9c2a15f3ed95480af24"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "b3f97b8b3b4c8d7a5d5abc6091100874e159a2089375a3c17f3e895980058512"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "d54dd209b138d1ae45f274f6f32338dff9c6c83b81f2cd886ead055552148b55"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "6515e826f7c3627a4da5e2d9ba671c09e6f4ace1c41a2f73aeed381285a3edc0"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 11,
+          "audio_sha256": "0c071e0e13f81b72c490b8eb552078be78da001abd158fe59e1c2201b4bd96b2"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "08c5725d21b0b4d98e6e4bb4fe0ffe2148e22a21559de35cb1bc161ff3152a62"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "9ddb678c4fb988e67e6b44772da95ca28b48059c148055be9480a295a53fab78"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "f82f2f107bd4c9836755671627ac08367a257a68c84797ea99786e9009af6572"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "28eeaedbea4a804d3c910e0127786a018dc2d154ba19373e1f5e2fae873d7591"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 14,
+          "audio_sha256": "aecfea33d2033409ac4a0d65d26fda3bedbbd5b2babf067e703a3d54b3d0ee3c"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 14,
+          "audio_sha256": "732a15d66b8dd9c021af64654088c66f2f3c8572ca50e7d13ff4f5a4553744a7"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "b68a2a70bf9a8646b66247f6dfa284c2fee7fd8ed7040512eb4e1a95089bccdb"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "94a8a0c9d33b685e62b1b9f59e2d9e0045e3b72519bc548425b078924fe3afa2"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "3c6dd5700ed2a7642eb98174e9b1ed71b28227b1426a1a26dd1d09e979fe84ca"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "03fe7b6658c24ac79cb8ba28669485b3e6a4b01a24c096d445887a88e6847266"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "17952a8158aeca06636b3d0c20fa6cb0276389e4a81ef80291c954f745502452"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "aee12b5426063ee58205b1ebf382aa1136fbefec31d8e2e931220b878d562902"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "4ad76375ddf008d0b2e270aa92179b412dc2a7bf16e37283c398d45353c56f41"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "720e3f312765cd0221ce5e30dc7beef2213f8f83c617510b0246c0aaa93dbe3d"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "5fe652c924ac8e57d9970716aef3de0d4e36ddb9cf0b65baf53624de11bd321c"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 20,
+          "audio_sha256": "d81b572908ef7b2642e690d371f1d0b6571b06a7d447aafee1564e6f06b1cef6"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 8,
+          "ref_words": 14,
+          "audio_sha256": "76ad2d69303860adec509d05d884df095dc0ddff7a9d5dd9939d2a8a3ffecd73"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 7,
+          "ref_words": 14,
+          "audio_sha256": "ea294f05d36c19c86fb8104319730cff42f4df88c3d1e4b060406feec4bc66a1"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "6a051e24189e4759b2e334aecff21490b2cfb828a97a935160d3477a7165f4f8"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "d86aa98d003988cf8bc821dec1c06def18a0e544a4a979d41d23b1f6b5fa7886"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "79c4e04b2d6f3a722965dcb9eded6dd752f552de559c25db1fdb75e5c02381a4"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "075f2c27dccfa2beb573bc93e8580a21a235fdfd4a9c756721f62a407afe305d"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "f95f4ddb2256701074bc5d7f53c2a2668642b97c7a1a99619ecb8dd70d787941"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "cf08bf05a755078f9d22a5d93e6a5be818c7f2dfab4bd53d7d3b77d1cfe30e2f"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "29ab7906948b99e48b497bde777d9218d7105ba295d6808a8b933531ef715b9c"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "d863074e6f4f33e67ed6921b3c808b233e384962ee40d1d6ab9aee85c8df416d"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "fc9b449f724e05c0027a0c70dbf080c26e6e56deef079735c247ee0deac40b24"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "002a0a053d999555ab97349ef59cdccf8bae2fd2a8e355d569152e24fe253c2c"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 13,
+          "audio_sha256": "a752b91ad6824df54d391cd7444923c8d1b80a72801b95fc37b38b2eb239cec2"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "481aec64d109556b8f85ac8af9a0ac834acd6e0d78f4ce859963037e31848049"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "872552011ef3feffa5fdb442fd1c53d92fa5af9e2a23aa2b7e1851593a4588e0"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "ad4fb0ea06704a1fe60dacad14f47d4da8b121fd0d1160c8a56aada721456c15"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "0c791429bc5b1994f5943073c3a2f4a21457c67656288a4c030b2a29de1944cb"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "b06414512ed844cca9986620788dd7bcd12ca007f0de1a812e12c02eabec1734"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "b2f885b463b72bb6e6de9df0275b55ea8e8313ff900fcb9099c15880464cc16b"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "ea27ec3a3546b860f88597473b488506ddc14965b1d137fb761ce0b5b68f739e"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 15,
+          "audio_sha256": "65700d7e668e338c33287748bb641b1b8f66b7cb7655bc5e4b73c05417f89238"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 15,
+          "audio_sha256": "fdc5ebf4213b4fd54087094e4df992926eab3ea4118a65092f5a89f20e7ca6e3"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "88bb5da3224e64501af26b941724e67e708671cb45f90b8b1e0e4fc26a1205d5"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "79ecce9c1cb2f93f6d4bc48229c8a166ff692bee5d05efa184da4013b170284e"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "dd263069e1812198ef8115f973d06477f5efac50ca075576a10ceaed5b55e910"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "18ab8e1a2675fb6da23f2f58dd7293550603e7f83fab5c61a84c3dcf183ebf6c"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 14,
+          "audio_sha256": "77b9a27a1ec0822915fc29d4eb0f4247a7a63fa89f5a21f7b0e2c4c629a7de72"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "127acc7b34c829f011d14696e7b866ae7c998e20672414a7c06b4c9af1be9e9a"
+        }
+      ]
+    }
+  },
+  {
+    "epoch": 2,
+    "mean_batch_ctc_loss": 0.11547707028687,
+    "elapsed_seconds": 1.3054015999659896,
+    "validation": {
+      "wer_percent": 10.17897091722595,
+      "groups": {
+        "fleurs_kk_adaptation/original": {
+          "n": 32,
+          "errors": 43,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 9.619686800894854
+        },
+        "fleurs_kk_adaptation/simulated_telephone": {
+          "n": 32,
+          "errors": 48,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 10.738255033557047
+        }
+      },
+      "details": [
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "4811e86c1b595fae7ad26bda667a07d54cbc7650029fe13898fc22db71a06c57"
+        },
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "73b8cf97cfbbd491f60266e6d4360617293de072af2858e2ab6e20d68080e208"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "3ad6c28d5ea565d837efc5631e17337319490a9e104fd15daa9bea51d72d67bf"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "fa70fecb3a31d1c599b3723ca4e16a2adbba045ab59cd3f54733928917aa5afc"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "5f86759e102c1674bb6cc1e3ed61d26f96b6f2a6ea3e846f4dffbd9f110571d9"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "ff58adef1205ef54cca385b3146c8b92def3a7bd409df8b73dab92fe78c1caea"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "8f6ae147aee224f39a01705fb52d152216cfad3a2546e2e7e88fe2f2fbb1e557"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 12,
+          "audio_sha256": "d5b8b9f1104db4024616d0a1402cb35bbdb451f10ed02e08e6d5be0d1e998a5d"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "c2945b98a8499b79c1cb15b5a9ddd6b3ad972d388ba2a160c1d4f9702788f022"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "0d8c22e7301119ea96b27545a518561d9ca8ecce5d5a74b19033f1797f9e6e6f"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "a16921f241d7c6eef9620e453a0f36c690fa6233447128a07df2a4be75bc2b5a"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "82e86a6dd1c6db602602b5470c98f9d97e8a19fc12914512d7f061887a508981"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "8037698569932dffe2ddd7f50f558dfb056dc44af33d99988461f65372b65cab"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "d833ea51cc725c8a5c528ed1a8882ab5b5b9a5d7121b2e5b7d7e9339bc3a0e14"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "1c24360a2347ecc8d23ce7087ac9ee2c9cbd45b89d806363abd6dca3820f024b"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "96ed60564382a4ca3016843555301143270640e7a6b1d9c2a15f3ed95480af24"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "b3f97b8b3b4c8d7a5d5abc6091100874e159a2089375a3c17f3e895980058512"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "d54dd209b138d1ae45f274f6f32338dff9c6c83b81f2cd886ead055552148b55"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "6515e826f7c3627a4da5e2d9ba671c09e6f4ace1c41a2f73aeed381285a3edc0"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 11,
+          "audio_sha256": "0c071e0e13f81b72c490b8eb552078be78da001abd158fe59e1c2201b4bd96b2"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "08c5725d21b0b4d98e6e4bb4fe0ffe2148e22a21559de35cb1bc161ff3152a62"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "9ddb678c4fb988e67e6b44772da95ca28b48059c148055be9480a295a53fab78"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "f82f2f107bd4c9836755671627ac08367a257a68c84797ea99786e9009af6572"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "28eeaedbea4a804d3c910e0127786a018dc2d154ba19373e1f5e2fae873d7591"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 14,
+          "audio_sha256": "aecfea33d2033409ac4a0d65d26fda3bedbbd5b2babf067e703a3d54b3d0ee3c"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 14,
+          "audio_sha256": "732a15d66b8dd9c021af64654088c66f2f3c8572ca50e7d13ff4f5a4553744a7"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "b68a2a70bf9a8646b66247f6dfa284c2fee7fd8ed7040512eb4e1a95089bccdb"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "94a8a0c9d33b685e62b1b9f59e2d9e0045e3b72519bc548425b078924fe3afa2"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "3c6dd5700ed2a7642eb98174e9b1ed71b28227b1426a1a26dd1d09e979fe84ca"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "03fe7b6658c24ac79cb8ba28669485b3e6a4b01a24c096d445887a88e6847266"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "17952a8158aeca06636b3d0c20fa6cb0276389e4a81ef80291c954f745502452"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "aee12b5426063ee58205b1ebf382aa1136fbefec31d8e2e931220b878d562902"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "4ad76375ddf008d0b2e270aa92179b412dc2a7bf16e37283c398d45353c56f41"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "720e3f312765cd0221ce5e30dc7beef2213f8f83c617510b0246c0aaa93dbe3d"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "5fe652c924ac8e57d9970716aef3de0d4e36ddb9cf0b65baf53624de11bd321c"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 20,
+          "audio_sha256": "d81b572908ef7b2642e690d371f1d0b6571b06a7d447aafee1564e6f06b1cef6"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 8,
+          "ref_words": 14,
+          "audio_sha256": "76ad2d69303860adec509d05d884df095dc0ddff7a9d5dd9939d2a8a3ffecd73"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 7,
+          "ref_words": 14,
+          "audio_sha256": "ea294f05d36c19c86fb8104319730cff42f4df88c3d1e4b060406feec4bc66a1"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "6a051e24189e4759b2e334aecff21490b2cfb828a97a935160d3477a7165f4f8"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "d86aa98d003988cf8bc821dec1c06def18a0e544a4a979d41d23b1f6b5fa7886"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "79c4e04b2d6f3a722965dcb9eded6dd752f552de559c25db1fdb75e5c02381a4"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "075f2c27dccfa2beb573bc93e8580a21a235fdfd4a9c756721f62a407afe305d"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "f95f4ddb2256701074bc5d7f53c2a2668642b97c7a1a99619ecb8dd70d787941"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "cf08bf05a755078f9d22a5d93e6a5be818c7f2dfab4bd53d7d3b77d1cfe30e2f"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "29ab7906948b99e48b497bde777d9218d7105ba295d6808a8b933531ef715b9c"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "d863074e6f4f33e67ed6921b3c808b233e384962ee40d1d6ab9aee85c8df416d"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "fc9b449f724e05c0027a0c70dbf080c26e6e56deef079735c247ee0deac40b24"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "002a0a053d999555ab97349ef59cdccf8bae2fd2a8e355d569152e24fe253c2c"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 13,
+          "audio_sha256": "a752b91ad6824df54d391cd7444923c8d1b80a72801b95fc37b38b2eb239cec2"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "481aec64d109556b8f85ac8af9a0ac834acd6e0d78f4ce859963037e31848049"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "872552011ef3feffa5fdb442fd1c53d92fa5af9e2a23aa2b7e1851593a4588e0"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "ad4fb0ea06704a1fe60dacad14f47d4da8b121fd0d1160c8a56aada721456c15"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "0c791429bc5b1994f5943073c3a2f4a21457c67656288a4c030b2a29de1944cb"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "b06414512ed844cca9986620788dd7bcd12ca007f0de1a812e12c02eabec1734"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "b2f885b463b72bb6e6de9df0275b55ea8e8313ff900fcb9099c15880464cc16b"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "ea27ec3a3546b860f88597473b488506ddc14965b1d137fb761ce0b5b68f739e"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 15,
+          "audio_sha256": "65700d7e668e338c33287748bb641b1b8f66b7cb7655bc5e4b73c05417f89238"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 15,
+          "audio_sha256": "fdc5ebf4213b4fd54087094e4df992926eab3ea4118a65092f5a89f20e7ca6e3"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "88bb5da3224e64501af26b941724e67e708671cb45f90b8b1e0e4fc26a1205d5"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "79ecce9c1cb2f93f6d4bc48229c8a166ff692bee5d05efa184da4013b170284e"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "dd263069e1812198ef8115f973d06477f5efac50ca075576a10ceaed5b55e910"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "18ab8e1a2675fb6da23f2f58dd7293550603e7f83fab5c61a84c3dcf183ebf6c"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 14,
+          "audio_sha256": "77b9a27a1ec0822915fc29d4eb0f4247a7a63fa89f5a21f7b0e2c4c629a7de72"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "127acc7b34c829f011d14696e7b866ae7c998e20672414a7c06b4c9af1be9e9a"
+        }
+      ]
+    }
+  },
+  {
+    "epoch": 3,
+    "mean_batch_ctc_loss": 0.12646866358816625,
+    "elapsed_seconds": 1.3587794920895249,
+    "validation": {
+      "wer_percent": 10.17897091722595,
+      "groups": {
+        "fleurs_kk_adaptation/original": {
+          "n": 32,
+          "errors": 43,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 9.619686800894854
+        },
+        "fleurs_kk_adaptation/simulated_telephone": {
+          "n": 32,
+          "errors": 48,
+          "ref_words": 447,
+          "empty": 0,
+          "wer_percent": 10.738255033557047
+        }
+      },
+      "details": [
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "4811e86c1b595fae7ad26bda667a07d54cbc7650029fe13898fc22db71a06c57"
+        },
+        {
+          "id": "fleurs_kk_1601_0",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "73b8cf97cfbbd491f60266e6d4360617293de072af2858e2ab6e20d68080e208"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "3ad6c28d5ea565d837efc5631e17337319490a9e104fd15daa9bea51d72d67bf"
+        },
+        {
+          "id": "fleurs_kk_1564_1",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 17,
+          "audio_sha256": "fa70fecb3a31d1c599b3723ca4e16a2adbba045ab59cd3f54733928917aa5afc"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "5f86759e102c1674bb6cc1e3ed61d26f96b6f2a6ea3e846f4dffbd9f110571d9"
+        },
+        {
+          "id": "fleurs_kk_1557_2",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "ff58adef1205ef54cca385b3146c8b92def3a7bd409df8b73dab92fe78c1caea"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "8f6ae147aee224f39a01705fb52d152216cfad3a2546e2e7e88fe2f2fbb1e557"
+        },
+        {
+          "id": "fleurs_kk_1627_3",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 12,
+          "audio_sha256": "d5b8b9f1104db4024616d0a1402cb35bbdb451f10ed02e08e6d5be0d1e998a5d"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "c2945b98a8499b79c1cb15b5a9ddd6b3ad972d388ba2a160c1d4f9702788f022"
+        },
+        {
+          "id": "fleurs_kk_1526_4",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "0d8c22e7301119ea96b27545a518561d9ca8ecce5d5a74b19033f1797f9e6e6f"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "a16921f241d7c6eef9620e453a0f36c690fa6233447128a07df2a4be75bc2b5a"
+        },
+        {
+          "id": "fleurs_kk_1598_5",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "82e86a6dd1c6db602602b5470c98f9d97e8a19fc12914512d7f061887a508981"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "8037698569932dffe2ddd7f50f558dfb056dc44af33d99988461f65372b65cab"
+        },
+        {
+          "id": "fleurs_kk_1529_6",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 3,
+          "ref_words": 17,
+          "audio_sha256": "d833ea51cc725c8a5c528ed1a8882ab5b5b9a5d7121b2e5b7d7e9339bc3a0e14"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "1c24360a2347ecc8d23ce7087ac9ee2c9cbd45b89d806363abd6dca3820f024b"
+        },
+        {
+          "id": "fleurs_kk_1530_7",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 11,
+          "audio_sha256": "96ed60564382a4ca3016843555301143270640e7a6b1d9c2a15f3ed95480af24"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "b3f97b8b3b4c8d7a5d5abc6091100874e159a2089375a3c17f3e895980058512"
+        },
+        {
+          "id": "fleurs_kk_1556_8",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 5,
+          "ref_words": 23,
+          "audio_sha256": "d54dd209b138d1ae45f274f6f32338dff9c6c83b81f2cd886ead055552148b55"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 11,
+          "audio_sha256": "6515e826f7c3627a4da5e2d9ba671c09e6f4ace1c41a2f73aeed381285a3edc0"
+        },
+        {
+          "id": "fleurs_kk_1548_9",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 11,
+          "audio_sha256": "0c071e0e13f81b72c490b8eb552078be78da001abd158fe59e1c2201b4bd96b2"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "08c5725d21b0b4d98e6e4bb4fe0ffe2148e22a21559de35cb1bc161ff3152a62"
+        },
+        {
+          "id": "fleurs_kk_1553_10",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "9ddb678c4fb988e67e6b44772da95ca28b48059c148055be9480a295a53fab78"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "f82f2f107bd4c9836755671627ac08367a257a68c84797ea99786e9009af6572"
+        },
+        {
+          "id": "fleurs_kk_1651_11",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 14,
+          "audio_sha256": "28eeaedbea4a804d3c910e0127786a018dc2d154ba19373e1f5e2fae873d7591"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 3,
+          "ref_words": 14,
+          "audio_sha256": "aecfea33d2033409ac4a0d65d26fda3bedbbd5b2babf067e703a3d54b3d0ee3c"
+        },
+        {
+          "id": "fleurs_kk_1571_12",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 14,
+          "audio_sha256": "732a15d66b8dd9c021af64654088c66f2f3c8572ca50e7d13ff4f5a4553744a7"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "b68a2a70bf9a8646b66247f6dfa284c2fee7fd8ed7040512eb4e1a95089bccdb"
+        },
+        {
+          "id": "fleurs_kk_1549_13",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "94a8a0c9d33b685e62b1b9f59e2d9e0045e3b72519bc548425b078924fe3afa2"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "3c6dd5700ed2a7642eb98174e9b1ed71b28227b1426a1a26dd1d09e979fe84ca"
+        },
+        {
+          "id": "fleurs_kk_1566_14",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "03fe7b6658c24ac79cb8ba28669485b3e6a4b01a24c096d445887a88e6847266"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "17952a8158aeca06636b3d0c20fa6cb0276389e4a81ef80291c954f745502452"
+        },
+        {
+          "id": "fleurs_kk_1585_15",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 17,
+          "audio_sha256": "aee12b5426063ee58205b1ebf382aa1136fbefec31d8e2e931220b878d562902"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "4ad76375ddf008d0b2e270aa92179b412dc2a7bf16e37283c398d45353c56f41"
+        },
+        {
+          "id": "fleurs_kk_1515_16",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 9,
+          "audio_sha256": "720e3f312765cd0221ce5e30dc7beef2213f8f83c617510b0246c0aaa93dbe3d"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "5fe652c924ac8e57d9970716aef3de0d4e36ddb9cf0b65baf53624de11bd321c"
+        },
+        {
+          "id": "fleurs_kk_1591_18",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 20,
+          "audio_sha256": "d81b572908ef7b2642e690d371f1d0b6571b06a7d447aafee1564e6f06b1cef6"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 8,
+          "ref_words": 14,
+          "audio_sha256": "76ad2d69303860adec509d05d884df095dc0ddff7a9d5dd9939d2a8a3ffecd73"
+        },
+        {
+          "id": "fleurs_kk_1655_19",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 7,
+          "ref_words": 14,
+          "audio_sha256": "ea294f05d36c19c86fb8104319730cff42f4df88c3d1e4b060406feec4bc66a1"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "6a051e24189e4759b2e334aecff21490b2cfb828a97a935160d3477a7165f4f8"
+        },
+        {
+          "id": "fleurs_kk_1519_20",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 16,
+          "audio_sha256": "d86aa98d003988cf8bc821dec1c06def18a0e544a4a979d41d23b1f6b5fa7886"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "79c4e04b2d6f3a722965dcb9eded6dd752f552de559c25db1fdb75e5c02381a4"
+        },
+        {
+          "id": "fleurs_kk_1550_21",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 21,
+          "audio_sha256": "075f2c27dccfa2beb573bc93e8580a21a235fdfd4a9c756721f62a407afe305d"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "f95f4ddb2256701074bc5d7f53c2a2668642b97c7a1a99619ecb8dd70d787941"
+        },
+        {
+          "id": "fleurs_kk_1558_22",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 20,
+          "audio_sha256": "cf08bf05a755078f9d22a5d93e6a5be818c7f2dfab4bd53d7d3b77d1cfe30e2f"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "29ab7906948b99e48b497bde777d9218d7105ba295d6808a8b933531ef715b9c"
+        },
+        {
+          "id": "fleurs_kk_1569_23",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 13,
+          "audio_sha256": "d863074e6f4f33e67ed6921b3c808b233e384962ee40d1d6ab9aee85c8df416d"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "fc9b449f724e05c0027a0c70dbf080c26e6e56deef079735c247ee0deac40b24"
+        },
+        {
+          "id": "fleurs_kk_1612_26",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 10,
+          "audio_sha256": "002a0a053d999555ab97349ef59cdccf8bae2fd2a8e355d569152e24fe253c2c"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 13,
+          "audio_sha256": "a752b91ad6824df54d391cd7444923c8d1b80a72801b95fc37b38b2eb239cec2"
+        },
+        {
+          "id": "fleurs_kk_1559_27",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 13,
+          "audio_sha256": "481aec64d109556b8f85ac8af9a0ac834acd6e0d78f4ce859963037e31848049"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "872552011ef3feffa5fdb442fd1c53d92fa5af9e2a23aa2b7e1851593a4588e0"
+        },
+        {
+          "id": "fleurs_kk_1636_29",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 7,
+          "audio_sha256": "ad4fb0ea06704a1fe60dacad14f47d4da8b121fd0d1160c8a56aada721456c15"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "0c791429bc5b1994f5943073c3a2f4a21457c67656288a4c030b2a29de1944cb"
+        },
+        {
+          "id": "fleurs_kk_1652_30",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 4,
+          "audio_sha256": "b06414512ed844cca9986620788dd7bcd12ca007f0de1a812e12c02eabec1734"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "b2f885b463b72bb6e6de9df0275b55ea8e8313ff900fcb9099c15880464cc16b"
+        },
+        {
+          "id": "fleurs_kk_1631_31",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 4,
+          "ref_words": 15,
+          "audio_sha256": "ea27ec3a3546b860f88597473b488506ddc14965b1d137fb761ce0b5b68f739e"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 15,
+          "audio_sha256": "65700d7e668e338c33287748bb641b1b8f66b7cb7655bc5e4b73c05417f89238"
+        },
+        {
+          "id": "fleurs_kk_1631_32",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 1,
+          "ref_words": 15,
+          "audio_sha256": "fdc5ebf4213b4fd54087094e4df992926eab3ea4118a65092f5a89f20e7ca6e3"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "88bb5da3224e64501af26b941724e67e708671cb45f90b8b1e0e4fc26a1205d5"
+        },
+        {
+          "id": "fleurs_kk_1518_33",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 12,
+          "audio_sha256": "79ecce9c1cb2f93f6d4bc48229c8a166ff692bee5d05efa184da4013b170284e"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "dd263069e1812198ef8115f973d06477f5efac50ca075576a10ceaed5b55e910"
+        },
+        {
+          "id": "fleurs_kk_1659_34",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 0,
+          "ref_words": 9,
+          "audio_sha256": "18ab8e1a2675fb6da23f2f58dd7293550603e7f83fab5c61a84c3dcf183ebf6c"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "original",
+          "group": "fleurs_kk_adaptation/original",
+          "errors": 1,
+          "ref_words": 14,
+          "audio_sha256": "77b9a27a1ec0822915fc29d4eb0f4247a7a63fa89f5a21f7b0e2c4c629a7de72"
+        },
+        {
+          "id": "fleurs_kk_1526_35",
+          "condition": "simulated_telephone",
+          "group": "fleurs_kk_adaptation/simulated_telephone",
+          "errors": 2,
+          "ref_words": 14,
+          "audio_sha256": "127acc7b34c829f011d14696e7b866ae7c998e20672414a7c06b4c9af1be9e9a"
+        }
+      ]
+    }
+  }
+]

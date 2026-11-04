@@ -1,0 +1,1149 @@
+{
+  "metadata": {
+    "model": "original_small",
+    "model_identity": {
+      "variant": "ml_ctc",
+      "model_dir": "/home/ekhodzitsky/.gigastt/models",
+      "encoder_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+      "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    },
+    "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "protocol_sha256": "19fc9567ad02b7684354c8dff5714e0b7547107ea8ceba6eb6ea1d29e0f43b90",
+    "script_sha256": "f6dce1e4a6ffb05e99b6ee0a44e2a4f795e4af5cfdaf5c573d0cb0063f965330",
+    "server": {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+        "--offline",
+        "serve",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "19941",
+        "--model-dir",
+        "/home/ekhodzitsky/.gigastt/models",
+        "--model-variant",
+        "ml_ctc",
+        "--execution-provider",
+        "cpu",
+        "--pool-size",
+        "2",
+        "--encoder-intra-threads",
+        "3",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "health": {
+        "status": "ok",
+        "model": "gigaam-multilingual-ctc",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "punctuation": false,
+        "itn": false
+      },
+      "model_info": {
+        "id": "gigaam-multilingual-ctc",
+        "name": "GigaAM Multilingual CTC",
+        "variant": "ml_ctc",
+        "version": "2.21.0",
+        "encoder": "int8",
+        "vocab_size": 71,
+        "sample_rate": 16000,
+        "pool_size": 2,
+        "pool_available": 2,
+        "supported_formats": [
+          "wav",
+          "mp3",
+          "m4a",
+          "ogg",
+          "flac"
+        ],
+        "supported_rates": [
+          8000,
+          16000,
+          24000,
+          44100,
+          48000
+        ],
+        "punctuation": false,
+        "itn": false,
+        "execution_provider": "cpu",
+        "diarization": true
+      }
+    },
+    "warmup_excluded": true,
+    "timing_caveat": "Concurrent host workload; not a resource benchmark"
+  },
+  "complete": true,
+  "n": 51,
+  "groups": [
+    {
+      "group": "full_channel",
+      "recording": "babel",
+      "reference_words": 77,
+      "word_errors": 74,
+      "substitutions": 5,
+      "deletions": 69,
+      "insertions": 0,
+      "reference_chars": 488,
+      "char_errors": 440,
+      "n": 1,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 96.1038961038961,
+      "cer_pct": 90.1639344262295
+    },
+    {
+      "group": "full_channel",
+      "recording": "material",
+      "reference_words": 93,
+      "word_errors": 93,
+      "substitutions": 7,
+      "deletions": 86,
+      "insertions": 0,
+      "reference_chars": 574,
+      "char_errors": 521,
+      "n": 2,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 100.0,
+      "cer_pct": 90.76655052264809
+    },
+    {
+      "group": "full_channel",
+      "recording": "all",
+      "reference_words": 170,
+      "word_errors": 167,
+      "substitutions": 12,
+      "deletions": 155,
+      "insertions": 0,
+      "reference_chars": 1062,
+      "char_errors": 961,
+      "n": 3,
+      "empty_hypotheses": 0,
+      "failed_requests": 0,
+      "wer_pct": 98.23529411764706,
+      "cer_pct": 90.48964218455744
+    },
+    {
+      "group": "oracle_segments",
+      "recording": "babel",
+      "reference_words": 77,
+      "word_errors": 61,
+      "substitutions": 41,
+      "deletions": 15,
+      "insertions": 5,
+      "reference_chars": 465,
+      "char_errors": 169,
+      "n": 24,
+      "empty_hypotheses": 1,
+      "failed_requests": 0,
+      "wer_pct": 79.22077922077922,
+      "cer_pct": 36.344086021505376
+    },
+    {
+      "group": "oracle_segments",
+      "recording": "material",
+      "reference_words": 93,
+      "word_errors": 48,
+      "substitutions": 27,
+      "deletions": 20,
+      "insertions": 1,
+      "reference_chars": 552,
+      "char_errors": 161,
+      "n": 24,
+      "empty_hypotheses": 2,
+      "failed_requests": 0,
+      "wer_pct": 51.61290322580645,
+      "cer_pct": 29.166666666666668
+    },
+    {
+      "group": "oracle_segments",
+      "recording": "all",
+      "reference_words": 170,
+      "word_errors": 109,
+      "substitutions": 68,
+      "deletions": 35,
+      "insertions": 6,
+      "reference_chars": 1017,
+      "char_errors": 330,
+      "n": 48,
+      "empty_hypotheses": 3,
+      "failed_requests": 0,
+      "wer_pct": 64.11764705882354,
+      "cer_pct": 32.448377581120944
+    }
+  ],
+  "rows": [
+    {
+      "id": "babel_full_channel_ldc_kazakh_sample",
+      "recording": "babel",
+      "group": "full_channel",
+      "audio_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "reference_sha256": "a2ee17f6d0d4115784bddbfd2285248bff064b7d28e7b5b4f749e10d45c9abe9",
+      "duration_s": 110.04,
+      "scores": {
+        "reference_words": 77,
+        "word_errors": 74,
+        "substitutions": 5,
+        "deletions": 69,
+        "insertions": 0,
+        "reference_chars": 488,
+        "char_errors": 440
+      },
+      "elapsed_s": 6.887883413000964,
+      "status": "ok"
+    },
+    {
+      "id": "material_full_channel_material_kk_inLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "reference_sha256": "84a337fc25b4bafa7f926d6c3c928a519380877b99149777b4d6a1c3695e30d6",
+      "duration_s": 56.14,
+      "scores": {
+        "reference_words": 44,
+        "word_errors": 44,
+        "substitutions": 5,
+        "deletions": 39,
+        "insertions": 0,
+        "reference_chars": 268,
+        "char_errors": 228
+      },
+      "elapsed_s": 4.8720556019979995,
+      "status": "ok"
+    },
+    {
+      "id": "material_full_channel_material_kk_outLine",
+      "recording": "material",
+      "group": "full_channel",
+      "audio_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "reference_sha256": "583824f66a9c5595430874805be4bfd50bd7225ed73ef01c9c1e5b62d1ceb942",
+      "duration_s": 56.14,
+      "scores": {
+        "reference_words": 49,
+        "word_errors": 49,
+        "substitutions": 2,
+        "deletions": 47,
+        "insertions": 0,
+        "reference_chars": 306,
+        "char_errors": 293
+      },
+      "elapsed_s": 3.5519064890031586,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_00",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "2e8afd7f806efc9367e115b4e289fec6e9d576288018e8de2c6d89579f869ce5",
+      "reference_sha256": "fe784b03bc6fa98d47c98370ec14ca2a53199b779b864e42a6652c9e40d423a0",
+      "duration_s": 1.03,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 12,
+        "char_errors": 3
+      },
+      "elapsed_s": 0.07860942900151713,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_01",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "f71c8d9c78889aca4b8c352c682a1a097412e1a57a1c96f482a708c2d2f8436e",
+      "reference_sha256": "b2728aaaa0c72d5a5a6652eab8004df01868ce2c05d0faba6ad629522dfb623a",
+      "duration_s": 0.85,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 7,
+        "char_errors": 1
+      },
+      "elapsed_s": 0.07608581900058198,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_02",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "79abecba0295b73eca00f07c8eca14fbe5573139cbf0ac967b66897d7d10c5f3",
+      "reference_sha256": "c263a9a74d833c64dbbc110ab4daf3be199d6af813edd468671cc3848838c54f",
+      "duration_s": 0.91,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 4,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.07656990599934943,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_03",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "0051f30a9428c9223f24f04fc8b7bdcf4b498390d90cedb37aa227084d9760ca",
+      "reference_sha256": "9bd6331972b77e0b3200a5444707fc90cb1bd021467688ad8068c81aa0e60040",
+      "duration_s": 1.01,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 14,
+        "char_errors": 6
+      },
+      "elapsed_s": 0.07256938700083992,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_04",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "4df49044d5b8ccc360deb45d1ce250d86d53101516b57f05f22ef7ff7ad99511",
+      "reference_sha256": "b2728aaaa0c72d5a5a6652eab8004df01868ce2c05d0faba6ad629522dfb623a",
+      "duration_s": 1.0,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 7,
+        "char_errors": 1
+      },
+      "elapsed_s": 0.06535634499959997,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_05",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "1573e7c7add8149c52d9dd428f58e4683f602ef83287468c2706284f30e41a98",
+      "reference_sha256": "c146b21259e82b69cafea64799587bb8493df9bb9b841a95c15cba51461f333f",
+      "duration_s": 5.93,
+      "scores": {
+        "reference_words": 15,
+        "word_errors": 9,
+        "substitutions": 7,
+        "deletions": 1,
+        "insertions": 1,
+        "reference_chars": 98,
+        "char_errors": 23
+      },
+      "elapsed_s": 0.2536950989997422,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_06",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "c21dc1bd728923dc42e1bbae5524eb1adeb6958959d8b854b5f78321857eb15b",
+      "reference_sha256": "80f4611a0bd7d18f0f95e9e07901b239c64ae5fd8436a285f7dfa9a5d1049112",
+      "duration_s": 2.14,
+      "scores": {
+        "reference_words": 6,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 38,
+        "char_errors": 1
+      },
+      "elapsed_s": 0.10432487499929266,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_07",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "26baa6fb7c94778649b08d92f54899ae7130801cb93838fa9e0c63e8b5b55993",
+      "reference_sha256": "e747950c834e25f25ae21b565365893853d7d9b959107a3f04eb70a766a252d7",
+      "duration_s": 0.73,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 7,
+        "char_errors": 4
+      },
+      "elapsed_s": 0.05557711299843504,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_08",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "aa672bf8ffe3e8f02a0dc8991d48cb12cb10ec5d2eb621eabdd92a02449a461b",
+      "reference_sha256": "fe784b03bc6fa98d47c98370ec14ca2a53199b779b864e42a6652c9e40d423a0",
+      "duration_s": 5.34,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 0,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 12,
+        "char_errors": 12
+      },
+      "elapsed_s": 0.23229700800220598,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_09",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "6a255d212029d08c90ecd4019bd56930ae2ccde83e334da0d1179a7f2b34d202",
+      "reference_sha256": "b2728aaaa0c72d5a5a6652eab8004df01868ce2c05d0faba6ad629522dfb623a",
+      "duration_s": 0.97,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 7,
+        "char_errors": 6
+      },
+      "elapsed_s": 0.06017176599925733,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_10",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "0c4c49d6b4618165718d4481e304a43c19e18351291b68497ab47d0009008daf",
+      "reference_sha256": "9bd6331972b77e0b3200a5444707fc90cb1bd021467688ad8068c81aa0e60040",
+      "duration_s": 1.54,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 14,
+        "char_errors": 7
+      },
+      "elapsed_s": 0.08656482199876336,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_11",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "f2c06fc352bab915606582259425f2fa98ec03c725ddfd6a21b7dea58ad92ad1",
+      "reference_sha256": "b2728aaaa0c72d5a5a6652eab8004df01868ce2c05d0faba6ad629522dfb623a",
+      "duration_s": 0.97,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 7,
+        "char_errors": 6
+      },
+      "elapsed_s": 0.07123365200095577,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_12",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "b2eb08fd79b8a4549fc2fd081dc7d77f70ca893f87b18da0a9a2b9b81b82cfec",
+      "reference_sha256": "86588e0a958415686d2a9c6d61b19be4e0654261f32913156ac499278a02f208",
+      "duration_s": 5.19,
+      "scores": {
+        "reference_words": 13,
+        "word_errors": 12,
+        "substitutions": 6,
+        "deletions": 6,
+        "insertions": 0,
+        "reference_chars": 77,
+        "char_errors": 35
+      },
+      "elapsed_s": 0.24170218799918075,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_13",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "635d216a1adf6e8a33f371fd789bf157f7887b3a4f448b3bce18e897bb591f79",
+      "reference_sha256": "c263a9a74d833c64dbbc110ab4daf3be199d6af813edd468671cc3848838c54f",
+      "duration_s": 0.69,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 4,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.05546505399979651,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_14",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "58f26c44d60f486c831bbd5fdeaaaa29c943c69872be8a0dba21ace002f8f9bd",
+      "reference_sha256": "83385db4bb91d0116c3c2510c5f8d2760374c303703fcc3bb316b4d5824c5ee0",
+      "duration_s": 2.87,
+      "scores": {
+        "reference_words": 5,
+        "word_errors": 6,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 2,
+        "reference_chars": 42,
+        "char_errors": 14
+      },
+      "elapsed_s": 0.15211363799971878,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_15",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "058e6db41f10e243ac4f14ba62513b5b635a38eb6e90ed234a6379b4a0e89442",
+      "reference_sha256": "c263a9a74d833c64dbbc110ab4daf3be199d6af813edd468671cc3848838c54f",
+      "duration_s": 0.74,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 4,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.05391067899836344,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_16",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "66c16751da0dd9210b3e7e5ba43819111f3c305595eba3b741ee882c8dd4b715",
+      "reference_sha256": "aa007c451eb8d5be24227f5b30dec9501743335db36f013f72c8a7967a08ca9a",
+      "duration_s": 3.47,
+      "scores": {
+        "reference_words": 7,
+        "word_errors": 7,
+        "substitutions": 5,
+        "deletions": 0,
+        "insertions": 2,
+        "reference_chars": 45,
+        "char_errors": 13
+      },
+      "elapsed_s": 0.1686006739982986,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_17",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "8df56bbb0311fcfc4ce023512157f10f15229785d4602d4ab87141b4f2399431",
+      "reference_sha256": "9501a93a06ff95ffd80f6caabddfb9a4cfda1ba2e0a06e845546551339593ae1",
+      "duration_s": 0.7,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 1,
+        "substitutions": 0,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 5,
+        "char_errors": 3
+      },
+      "elapsed_s": 0.0536755080029252,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_18",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "df54fc4f6f96e4f4ecd939979ef46ff361d3342995199b74610738ffa44c7fa7",
+      "reference_sha256": "b2728aaaa0c72d5a5a6652eab8004df01868ce2c05d0faba6ad629522dfb623a",
+      "duration_s": 0.84,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 7,
+        "char_errors": 2
+      },
+      "elapsed_s": 0.059444602997245966,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_19",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "7e3b23f6e9ee163ed003ff1aa9ead4a16d87911a84fa3db5ce7687ebeb7fb1bc",
+      "reference_sha256": "b2728aaaa0c72d5a5a6652eab8004df01868ce2c05d0faba6ad629522dfb623a",
+      "duration_s": 0.6,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 7,
+        "char_errors": 7
+      },
+      "elapsed_s": 0.04849982599989744,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_20",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "7f9335fc29167cf2c2a83cdd07058d05f25fa05928cd4e9e643e2c9a2e95693e",
+      "reference_sha256": "c31a5a4508458f111b75d2f633cda3a528c2eaac65d46e8d520c9cdec2540f3b",
+      "duration_s": 1.41,
+      "scores": {
+        "reference_words": 3,
+        "word_errors": 3,
+        "substitutions": 2,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 13,
+        "char_errors": 8
+      },
+      "elapsed_s": 0.08008956399862655,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_21",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "5be9e57806b5e786fc658721f5a98699625223f31d04c9a84df4f30ed5bcaf85",
+      "reference_sha256": "b9288a1073157aabf78dd36f743f50acee6e75d87fdb2ac190c9704192f3ece9",
+      "duration_s": 3.13,
+      "scores": {
+        "reference_words": 5,
+        "word_errors": 5,
+        "substitutions": 4,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 27,
+        "char_errors": 14
+      },
+      "elapsed_s": 0.1454206010021153,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_22",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "4a919d5886026547363935e2069ffd28befe414c5b62056c9a39f4fe3b0dd879",
+      "reference_sha256": "caef2d89a605054ba6932cbd648459215d7d8b20a65729619988b315cb73f5f8",
+      "duration_s": 0.89,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 3,
+        "char_errors": 3
+      },
+      "elapsed_s": 0.0644856830003846,
+      "status": "ok"
+    },
+    {
+      "id": "babel_oracle_segments_23",
+      "recording": "babel",
+      "group": "oracle_segments",
+      "audio_sha256": "9420298db29e54c5f8deb222902ffe38da3a2faaa038281790c56a7997f4e492",
+      "reference_sha256": "c263a9a74d833c64dbbc110ab4daf3be199d6af813edd468671cc3848838c54f",
+      "duration_s": 0.46,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 4,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.04031719799968414,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_01",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "f4215fae4b426bae3f6fa6f7be74228318947bdcef14be855fb52faa67737544",
+      "reference_sha256": "140d4eb541d782149f778108ef9bd5e4dcc0415a7a58c1d003726aadbd7c2953",
+      "duration_s": 1.193,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 16,
+        "char_errors": 5
+      },
+      "elapsed_s": 0.07372281899733935,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_02",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "50a5ebe917e16d17d95950df32ccdfaac05078e64328d460b747b4a5f428118b",
+      "reference_sha256": "f5fe9f50d6477916a41bcdfb86ad5d3a3de3ce23477c1d99c881fbddbb9ebd4b",
+      "duration_s": 0.85,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 11,
+        "char_errors": 1
+      },
+      "elapsed_s": 0.058474654997553444,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_03",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "4e294bc0bcc4d98d699b963859fc0ad62c8696576c701452bcba23678d5d08c6",
+      "reference_sha256": "c2ab9bc5b0c9b2a5fe3d5b748ded3e713bd8c9b7bd9b61ffd113a965d7c5cbcf",
+      "duration_s": 1.147,
+      "scores": {
+        "reference_words": 3,
+        "word_errors": 3,
+        "substitutions": 1,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 13,
+        "char_errors": 8
+      },
+      "elapsed_s": 0.07148719800170511,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_05",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "c47e58a91bbda7e21aed875c65cf5d3b931e9eed45d2075669c86e6bc67e49e0",
+      "reference_sha256": "f61406a6cb1e3620d76a57fa70c4f05aab291708702287be2449696944d52361",
+      "duration_s": 2.14,
+      "scores": {
+        "reference_words": 5,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 35,
+        "char_errors": 1
+      },
+      "elapsed_s": 0.11245870199854835,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_07",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "bda3762bdf9d723a7f35c3ba33f8d7061d6a5dc7120fd52b83416b7b2c4888f7",
+      "reference_sha256": "6b67eba45883535c7f58d761ad1fb02cb925beba79bc677cbbfc28fbc13f0bee",
+      "duration_s": 2.01,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 13,
+        "char_errors": 13
+      },
+      "elapsed_s": 0.11302442200030782,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_09",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "772f5f31ba5500f3edcb2bf4295f94ae2115cc0bb800ab4420980bdbc3e9afb7",
+      "reference_sha256": "29759ad72a1b46d6cc7765ca5c93093d3a8c943b0e26dc141205714b7865097b",
+      "duration_s": 2.17,
+      "scores": {
+        "reference_words": 5,
+        "word_errors": 5,
+        "substitutions": 1,
+        "deletions": 4,
+        "insertions": 0,
+        "reference_chars": 26,
+        "char_errors": 23
+      },
+      "elapsed_s": 0.11396896299993386,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_11",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "a5054f467e36b677fbcb07db3abf6780270065fba9bba6c6f8c218fd9f736586",
+      "reference_sha256": "4a7629805f2457c67bd408780dbc6cfc13593d3134925a9048c11035bbd0528c",
+      "duration_s": 1.003,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 0,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 3,
+        "char_errors": 3
+      },
+      "elapsed_s": 0.06024270999841974,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_14",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "29353f1673e07a0f143195ed62bc0016340d1dff76357ca5f5a90aee3e40650d",
+      "reference_sha256": "dedc2853f208c772c4c2d9f88452e9fef99d662cee9bb0d5a64db805466247b8",
+      "duration_s": 1.549,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 13,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.0872115140009555,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_15",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "30d8074eb3ab518749059ae9c7031eb4743b53c8c2ea82a6da2d2b9596441454",
+      "reference_sha256": "e50081f119f6b74db271d2f3ddab2819d8bddd596dbaa7516cd9823af0f105a7",
+      "duration_s": 1.501,
+      "scores": {
+        "reference_words": 4,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 23,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.0906681739979831,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_19",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "958779ffd3a43695a3a4eba99edaf7008b231fc87f93950bfb16c9ff1273f2ee",
+      "reference_sha256": "c7b47161b35a7120099eabb7687091ab93735698f892d7c89a36baa596970d89",
+      "duration_s": 1.569,
+      "scores": {
+        "reference_words": 4,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 25,
+        "char_errors": 5
+      },
+      "elapsed_s": 0.08649057299771812,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_20",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "38047e5169802fc3454369faf0bc35876af004601f9d2e3353dd39fb0266ef0a",
+      "reference_sha256": "c324fa25e9969c1be0af484278f6b220d1eaccde76c4d58e25839ff825e40eff",
+      "duration_s": 0.981,
+      "scores": {
+        "reference_words": 3,
+        "word_errors": 3,
+        "substitutions": 1,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 16,
+        "char_errors": 11
+      },
+      "elapsed_s": 0.07138229100019089,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_22",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "f0e7473291b330719c6c095f384f133c364662d3e31bb4020cf26cebd9059888",
+      "reference_sha256": "8b5964c25c33df90faa486fc6388aceba4b9accdf2a7ee8fd4c61f492d380c0a",
+      "duration_s": 0.94,
+      "scores": {
+        "reference_words": 3,
+        "word_errors": 3,
+        "substitutions": 2,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 12,
+        "char_errors": 4
+      },
+      "elapsed_s": 0.05831572700117249,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_24",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "d2c9a2c6d0a68902a77e9291f077b5cd4e69a1536cedbf0d3a6a574906574017",
+      "reference_sha256": "6b67eba45883535c7f58d761ad1fb02cb925beba79bc677cbbfc28fbc13f0bee",
+      "duration_s": 1.516,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 0,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 13,
+        "char_errors": 13
+      },
+      "elapsed_s": 0.08471860099962214,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_inLine_25",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "3a4edad066323e2a25911b9c38d0f0ea575c068f255be6e040f8718831f0e871",
+      "reference_sha256": "0d199b6b1d4a46b64f685c6a174be913e3c626290a1939d827d9e18b3e1ec23e",
+      "duration_s": 2.334,
+      "scores": {
+        "reference_words": 6,
+        "word_errors": 4,
+        "substitutions": 2,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 36,
+        "char_errors": 14
+      },
+      "elapsed_s": 0.11814372899971204,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_00",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "b5385fcc7e441d0ae5be6750ce47c1dea3a87d6a10c49671c45309d49b777d6f",
+      "reference_sha256": "e39a2181858bab2503c28a2e52d1f6dbed9febd52323ac6f73a529038517cb62",
+      "duration_s": 1.02,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 6,
+        "char_errors": 5
+      },
+      "elapsed_s": 0.0760996739991242,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_02",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "51edbc0a49465b4f8fbd38766d036562b18d5cba77a5f1825a3cead551e92ca7",
+      "reference_sha256": "468b4df07d5977ecad56fa0f59e8a72d3a2ad79bbf346f94662f364c13c90472",
+      "duration_s": 7.99,
+      "scores": {
+        "reference_words": 13,
+        "word_errors": 3,
+        "substitutions": 2,
+        "deletions": 0,
+        "insertions": 1,
+        "reference_chars": 86,
+        "char_errors": 2
+      },
+      "elapsed_s": 0.38479885199922137,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_04",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "8e423d11915f3013ef35a4767d36605edc8445568278e5957d138607b2433d86",
+      "reference_sha256": "cf6746ea1808f123032227825544fe47845b2f39e5305c797a21ea9e13ceeb97",
+      "duration_s": 2.18,
+      "scores": {
+        "reference_words": 4,
+        "word_errors": 4,
+        "substitutions": 2,
+        "deletions": 2,
+        "insertions": 0,
+        "reference_chars": 31,
+        "char_errors": 19
+      },
+      "elapsed_s": 0.12316056300187483,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_08",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "ee73f825eb8f47f4bd4ec6af383a09332a1e11799eab3f9a071923fdcae62087",
+      "reference_sha256": "916ef4584bd7b3ad1f7165fa778435c0be3b22ec020e7637bb45c50b4dc9151a",
+      "duration_s": 5.03,
+      "scores": {
+        "reference_words": 9,
+        "word_errors": 4,
+        "substitutions": 4,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 51,
+        "char_errors": 9
+      },
+      "elapsed_s": 0.2341239220004354,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_10",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "d2afdf6776125ff34e5c1f1efad31b8216ad27f65d69aed0d9293bd533257611",
+      "reference_sha256": "a64f30c7ea6e3d364125f22e0da2f60aca7e3d8ff3e40c625d0269da97dea4ae",
+      "duration_s": 0.94,
+      "scores": {
+        "reference_words": 2,
+        "word_errors": 2,
+        "substitutions": 1,
+        "deletions": 1,
+        "insertions": 0,
+        "reference_chars": 13,
+        "char_errors": 13
+      },
+      "elapsed_s": 0.06473179400200024,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_12",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "fb38ae78fab0659ab953b7d8e7e3474cedae7b96b5e394426ec3ae782cc5d444",
+      "reference_sha256": "af0711557d3fe309d2b1c5e91f801ed897967b1c0b0acc0da7f4e243d09a9288",
+      "duration_s": 1.31,
+      "scores": {
+        "reference_words": 3,
+        "word_errors": 3,
+        "substitutions": 3,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 13,
+        "char_errors": 10
+      },
+      "elapsed_s": 0.07794205800018972,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_14",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "09e72181c92fee9a811801e16042ebe180bbdddf9c4dc5d2036603f4bd8b1336",
+      "reference_sha256": "95020f4f18c743972a2bd30a4d841ed1214af6f28da0c205e23b561a3481a59d",
+      "duration_s": 2.391,
+      "scores": {
+        "reference_words": 5,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 40,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.1244807379989652,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_15",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "5976da8f970ef4e343032670e472973068532b4a09cde9acf877a80414cace06",
+      "reference_sha256": "696fcff9e9e9bf3a69889a1d659265258dc80d810d73078abb76cf644c71dda1",
+      "duration_s": 2.869,
+      "scores": {
+        "reference_words": 6,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 37,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.15897806599969044,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_17",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "66d66c601fa259cdafa019c588ddffb730931269535c3e51fac7b47be51f6d5d",
+      "reference_sha256": "dfeab73f8646826d0572643648b4ee542e282cc33f6ce04c08393be2d9a65a53",
+      "duration_s": 1.29,
+      "scores": {
+        "reference_words": 1,
+        "word_errors": 1,
+        "substitutions": 1,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 2,
+        "char_errors": 2
+      },
+      "elapsed_s": 0.11622008300037123,
+      "status": "ok"
+    },
+    {
+      "id": "material_oracle_segments_material_kk_outLine_19",
+      "recording": "material",
+      "group": "oracle_segments",
+      "audio_sha256": "701535f3fa5b04250abe8ee9d73cd895ddc1362351ba316dbf50f22839b93838",
+      "reference_sha256": "9779c6b4f8b6ed87e40411aa358e587c22ef44d72fc2f6337af92785d0d0d305",
+      "duration_s": 1.48,
+      "scores": {
+        "reference_words": 4,
+        "word_errors": 0,
+        "substitutions": 0,
+        "deletions": 0,
+        "insertions": 0,
+        "reference_chars": 18,
+        "char_errors": 0
+      },
+      "elapsed_s": 0.10301212400008808,
+      "status": "ok"
+    }
+  ]
+}

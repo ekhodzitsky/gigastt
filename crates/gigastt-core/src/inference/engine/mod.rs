@@ -24,7 +24,7 @@ use super::state::{
     CommitPolicy, DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
     TranscriptAssembler, TranscriptSegment, WordInfo, aggregate_confidence,
 };
-use super::token_format::{TokenFormatter, seam_seconds, stitch_chunk_words_retained};
+use super::token_format::{TokenFormatter, overlap_seconds, stitch_chunk_words_retained};
 use super::tokenizer::Tokenizer;
 use super::types::{
     DEFAULT_HOTWORDS_BOOST, DiarizationOutcome, HotwordError, HotwordOverride,
@@ -173,6 +173,7 @@ pub struct Engine {
     /// Default streaming utterance-end policy for new sessions. Overridable
     /// per session via WS `configure.endpoint_mode`.
     endpoint_mode: EndpointMode,
+    endpoint_silence: super::EndpointSilence,
     /// Max retained streaming encoder window (samples @16kHz) before the window
     /// commits a stable prefix and slides. Defaults to
     /// [`STREAM_MAX_WINDOW_SAMPLES`] (2.5 s); overridden at serve time via

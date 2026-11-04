@@ -40,9 +40,10 @@ type Handlers struct {
 }
 
 type config struct {
-	sampleRate  uint32
-	diarization *bool
-	dialTimeout time.Duration
+	sampleRate        uint32
+	diarization       *bool
+	endpointSilenceMS *uint32
+	dialTimeout       time.Duration
 
 	reconnect   bool
 	minBackoff  time.Duration
@@ -66,6 +67,12 @@ type Option func(*config)
 // (48000) applies.
 func WithSampleRate(hz uint32) Option {
 	return func(c *config) { c.sampleRate = hz }
+}
+
+// WithEndpointSilenceMS sets the decoder blank-run duration (40–2000 ms).
+// Requires server protocol 1.3; the server validates the range.
+func WithEndpointSilenceMS(ms uint32) Option {
+	return func(c *config) { c.endpointSilenceMS = &ms }
 }
 
 // WithDiarization enables speaker diarization for the session (if the server
@@ -358,6 +365,10 @@ func (c *Client) configureMessage() []byte {
 	}
 	if c.cfg.sampleRate != 0 {
 		msg["sample_rate"] = c.cfg.sampleRate
+	}
+	if c.cfg.endpointSilenceMS != nil {
+		msg["protocol_version"] = "1.3"
+		msg["endpoint_silence_ms"] = *c.cfg.endpointSilenceMS
 	}
 	if c.cfg.diarization != nil {
 		msg["diarization"] = *c.cfg.diarization

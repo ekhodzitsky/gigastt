@@ -86,14 +86,14 @@ no manual edits are ever needed.
 ## Shipping the model
 
 The xcframework contains only the inference code. The GigaAM v3 model
-(~225 MB lean INT8) is not embedded — download it once on a
+(~310 MiB for the current main ONNX bundle) is not embedded — download it once on a
 developer machine and bundle the directory with your app (or fetch it on
 first launch and cache it).
 
 Download the prequantized model with the gigastt CLI:
 
 ```sh
-gigastt download
+gigastt download --skip-diarization
 ```
 
 This writes the model directory to `~/.gigastt/models/`. Copy that directory

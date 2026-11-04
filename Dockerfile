@@ -25,6 +25,7 @@ WORKDIR /build
 # crate. Subsequent edits to src/ only invalidate the final compilation
 # layer, cutting incremental rebuild time from minutes to seconds.
 COPY Cargo.toml Cargo.lock ./
+COPY vendor/ vendor/
 COPY crates/gigastt-core/Cargo.toml crates/gigastt-core/
 COPY crates/gigastt-quantize/Cargo.toml crates/gigastt-quantize/
 COPY crates/gigastt-quantize/build.rs crates/gigastt-quantize/

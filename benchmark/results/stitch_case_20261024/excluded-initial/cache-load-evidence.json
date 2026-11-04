@@ -1,0 +1,8 @@
+{
+  "baseline": [
+    "2026-10-24T09:41:07.931504Z  INFO gigastt_core::runtime::ort::session: encoder: loading source model and refreshing optimized graph cache path=/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models/optimized_cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort.partial.74349.1"
+  ],
+  "candidate": [
+    "2026-10-24T09:41:09.630871Z  INFO gigastt_core::runtime::ort::session: encoder: loaded fresh optimized graph cache, skipped source model path=/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models/optimized_cache/1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f-e2bcfcb14b810979b3268015737d2f6505b177b413841f65075c426a920b1ce4_optimized.ort"
+  ]
+}

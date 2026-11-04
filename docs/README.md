@@ -1,60 +1,67 @@
-# gigastt documentation
+# Documentation
 
-Start with the [README](../README.md) for installation and examples.
-Use the references below for a specific API, command or deployment question.
+Start with the [root README](../README.md) to install gigastt and transcribe a
+file. These guides describe the checked-out source. Released binaries, model
+bundles and language bindings can have different versions; use the matching
+release tag when integrating a packaged version.
 
-## Start here
+## Use and integrate
 
-| Guide | Audience | Contents |
-|---|---|---|
-| **[API](api.md)** | Integrators | WebSocket protocol, REST + SSE, jobs, admin reload, error codes, client examples |
-| **[CLI](cli.md)** | Operators | Every subcommand and flag (drift-checked against `main.rs`) |
-| **[Quickstarts](quickstarts.md)** | Embedders | In-process Python / Node / Swift / Kotlin |
-| **[Who uses gigastt](who-uses.md)** | Integrators | Public applications, optional adapters and user reports, with source links |
-
-## Reference
-
-| Guide | Contents |
+| Guide | What it answers |
 |---|---|
-| **[Architecture](architecture.md)** | Pipeline, crates, surfaces, model heads, hardware EPs, INT8, air-gapped builds |
-| **[OpenAPI](openapi.yaml)** | Machine-readable REST schema (`/health`, `/ready`, transcribe, jobs, admin) |
-| **[AsyncAPI](asyncapi.yaml)** | Machine-readable WebSocket schema (`/v1/ws`) |
-| **[Benchmarks](benchmarks.md)** | WER / RTF / footprint methodology and tables |
-| **[Held-out datasets roadmap](held-out-datasets-roadmap.md)** | Public RU sets beyond Golos/OpenSTT (CV, FLEURS, RuLS, SOVA, Podlodka, ToneWebinars) |
-| **[Edge / Raspberry Pi roadmap](edge-raspberry-pi-roadmap.md)** | Hardware measurement protocol and deployment scenarios |
-| **[Embedding & packaging](embedding-packaging.md)** | Static vs `ort-load-dynamic`, wheel/AAR notes |
-| **[Android / C ABI](android.md)** | Native library build, model bundling and Kotlin/JNI integration |
+| [Models](models.md) | Supported heads, files, downloads, formatting and offline setup |
+| [Languages](languages.md) | Measured multilingual reading/conversation quality and limitations |
+| [CLI](cli.md) | Commands, flags, environment variables and defaults |
+| [API](api.md) | HTTP, WebSocket, SSE, jobs, errors and output contracts |
+| [OpenAPI](openapi.yaml) / [AsyncAPI](asyncapi.yaml) | Machine-readable HTTP / WebSocket contracts |
+| [In-process quickstarts](quickstarts.md) | Rust/Python/Node/Swift/Kotlin integration paths |
+| [Embedding and linking](embedding-packaging.md) | Native ONNX Runtime packaging and dynamic linking |
+| [Android C ABI](android.md) | Native library, JNI and model provisioning |
+| [Go client](../sdks/go/README.md) / [TypeScript client](../sdks/js/README.md) | Clients for a running server |
+| [Swift package](../packaging/swift/README.md) / [Android AAR](../packaging/android/README.md) | Platform packaging, availability and limits |
+| [Managed server lifecycle](managed-lifecycle.md) | Running gigastt as an application-owned child process |
+| [OpenClaw recipe](integrations/openclaw.md) | A version-specific external integration |
+| [Public integrations](who-uses.md) | Dated source-backed usage examples |
 
-## Operations
+## Operate
 
-| Guide | Contents |
+| Guide | What it answers |
 |---|---|
-| **[Deployment](deployment.md)** | Reverse proxy (Caddy/nginx), TLS, Docker |
-| **[Runbook](runbook.md)** | Drain, pool saturation, timeouts, OOM, model download failures |
-| **[Long recordings](long-recordings.md)** | Upload cap, in-memory jobs, cancel and restart |
-| **[Speaker attribution](speaker-attribution.md)** | Short public meetings versus the current diarizer |
-| **[Troubleshooting](troubleshooting.md)** | Symptom → cause → fix table |
-| **[Observability](observability/)** | Prometheus alerts + dashboard |
-| **[Privacy](privacy.md)** | What leaves the device (runtime vs build) |
-| **[Verifying releases](verifying-releases.md)** | SHA256 / minisign / SLSA |
-| **[Self-hosted runner](self-hosted-runner.md)** | Optional CI hardware |
+| [Deployment](deployment.md) | Docker, TLS/authentication proxies, offline bundles and systemd |
+| [Runbook](runbook.md) | Readiness, drain, backpressure, cancellation, memory and caches |
+| [Troubleshooting](troubleshooting.md) | Diagnose installation, capture and recognition failures |
+| [Long recordings](long-recordings.md) | Upload limits, in-memory jobs, progress and interruption |
+| [Speaker attribution](speaker-attribution.md) | Measured diarization behavior on public meetings |
+| [Privacy](privacy.md) | Processing host, network traffic, storage and logs |
+| [Observability assets](observability/) | Prometheus alerts and dashboard |
+| [Release verification](verifying-releases.md) | Checksums, optional signatures and build provenance |
+| [Edge / Raspberry Pi](edge-raspberry-pi-roadmap.md) | Target-hardware measurement requirements; Pi remains unmeasured |
 
-## Backends (opt-in features)
+## Develop and release
 
-| Guide | Feature |
+- [Contributing](../.github/CONTRIBUTING.md): prerequisites, review and manual release procedure.
+- [Testing](testing.md): explicit unit, integration, load/soak and benchmark commands.
+- [Architecture](architecture.md): components, data flow and backend choices.
+- [Performance acceptance](performance-regressions.md): dependency/model regressions and manual CI.
+- [Homebrew releases](homebrew-release.md): manually propose and review Formula updates.
+- [Self-hosted benchmarks](self-hosted-runner.md): dedicated hardware and workflow adaptation.
+- [ANE backend](ane-backend.md) / [Candle backend](candle-backend.md): experimental assets and hardware limits.
+- [Security policy](../.github/SECURITY.md), [Changelog](../CHANGELOG.md), [third-party notices](../NOTICE).
+
+## Measurements and implementation evidence
+
+These reports retain the model, code, hardware and corpus context of their
+experiments. A historical result is not a current release guarantee. Available raw
+benchmark results and fixtures are preserved; the benchmark report identifies
+historical claims whose referenced artifacts are missing.
+
+| Area | Reports |
 |---|---|
-| **[ANE backend](ane-backend.md)** | `--features ane` (macOS ARM64 Neural Engine) |
-| **[Candle backend](candle-backend.md)** | `--features candle` (experimental parity path) |
+| Recognition and models | [Benchmarks](benchmarks.md), [RNN-T quantization](rnnt-quantization.md), [public dataset protocol](held-out-datasets-roadmap.md), [benchmark harness](../benchmark/README.md) |
+| File transcription | [Long-form stitching](longform-stitching.md), [audio source contract](audio-source-contract.md), [transcription contract matrix](transcription-contracts.md), [window scheduling](file-window-scheduling.md), [raw telephony PCM](raw-telephony-pcm.md) |
+| Live decoding | [Window computation](live-window-compute.md), [retained audio](stream-retention.md), [transcript snapshots](transcript-snapshot-memory.md), [historical latency](archive/streaming-latency-2026-06-13.md) |
+| Resource use | [Short recordings](short-recording-latency.md), [sidecar contention](sidecar-contention.md), [model hashing](model-hashing.md), [runtime output buffers](runtime-output-workspace.md), [CTC beam profile](ctc-beam-profile.md) |
 
-## Project history and policies
-
-- [`CHANGELOG.md`](../CHANGELOG.md) — release notes
-- [Contributing](../.github/CONTRIBUTING.md) — development, pull requests and releases
-- [Security policy](../.github/SECURITY.md) — vulnerability reporting + supported versions
-- [`NOTICE`](../NOTICE) — third-party notices (opus, WeSpeaker, benchmark data)
-
-Archive / design notes under `docs/archive/` and `docs/superpowers/` are historical
-and may lag the current release. Dated `project-audit-*` snapshots (local,
-not shipped) are **not** current product truth — do not quote them.
-
-Experimental UniFFI AAR: [`packaging/android/README.md`](../packaging/android/README.md).
+For unmerged model/punctuation experiments, see the clearly labelled
+[research links](models.md#quality-evidence-and-research). They do not extend the
+released CLI catalog.

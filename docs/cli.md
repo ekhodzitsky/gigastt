@@ -89,6 +89,9 @@ gigastt serve [OPTIONS]
                             Env: GIGASTT_VAD_MIN_SILENCE_MS.
   --vad-model-dir <DIR>     Silero VAD model directory [default: ~/.gigastt/models/vad].
                             Env: GIGASTT_VAD_MODEL_DIR.
+  --endpoint-silence-ms <MS> Decoder blank-run duration, 40–2000 [default: 600].
+                            Env: GIGASTT_ENDPOINT_SILENCE_MS. Auto without VAD only;
+                            rounds up to 40 ms frames, not acoustic silence.
   --endpoint-mode <MODE>    WS utterance end: auto|assistant|manual [default: auto].
                             Env: GIGASTT_ENDPOINT_MODE. Window cap never emits final.
   --stream-max-window-secs <N>  Max retained streaming encoder window (seconds)
@@ -285,7 +288,7 @@ gigastt transcribe [OPTIONS] <FILE>
                               --sample-rate. Env: GIGASTT_CODEC.
   --sample-rate <HZ>          Sample rate of a raw --codec stream (8000 or 16000
                               for g722). Env: GIGASTT_SAMPLE_RATE.
-  Supports: WAV (incl. G.711 A-law/μ-law and G.722 payloads, GSM 06.10 / wav49, MS/IMA ADPCM, RF64), M4A, MP3,
+  Supports: WAV (incl. G.711 A-law/μ-law, G.722 payloads, G.726, GSM 06.10 / wav49, MS/IMA ADPCM, RF64), M4A, MP3,
             OGG/Vorbis, OGG/Opus (.opus), WebM/Opus, FLAC (mono or
             auto-mixed); raw .ulaw/.alaw/.g722 via --codec
 

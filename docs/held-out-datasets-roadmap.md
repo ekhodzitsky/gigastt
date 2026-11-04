@@ -1,104 +1,74 @@
-# Held-out / public datasets roadmap
+# Public dataset evaluation protocol
 
-**Goal.** Publish WER (and RTF where cheap) on public Russian speech sets
-**outside** the current Golos + OpenSTT matrix, so the contamination caveat in
-[`docs/benchmarks.md`](../docs/benchmarks.md) is paired with a second column of
-evidence. Measure **one dataset at a time**; ship results before starting the next.
+Evaluate recognition across different recording domains. The filename is retained
+for existing links; completed dataset work and scores are recorded in the
+[benchmark report](benchmarks.md), rather than duplicated as a task queue here.
 
-**Not a guarantee of zero train overlap.** GigaAM / competitors may still have
-seen similar corpora. The point is: *not the same Golos/OpenSTT val slices we
-already publish*, different collection pipelines where possible, fixed protocol.
+Public availability does not establish that a dataset was excluded from model
+training. Unless training provenance proves otherwise, describe it as an
+additional public evaluation set, not a guaranteed uncontaminated holdout.
 
-## Protocol (every item)
+## Available datasets
 
-1. Prepare a **deterministic** slice (prefer `seed=42`, ~1000 utt when the set is large enough; smaller OK with wider CI).
-2. Manifest in `benchmark/manifests/<name>.json` (same schema as existing).
-3. Run the cross-engine Python harness:
-   ```sh
-   cd benchmark
-   # Vosk 0.54 runner CLI id: vosk-0.54 (normalized vosk_0_54)
-   python benchmark.py --dataset <name> --max-samples 0 \
-     --runners gigastt --output results_full/<name>_gigastt.json
-   python benchmark.py --dataset <name> --max-samples 0 \
-     --runners vosk-0.54 --output results_full/<name>_vosk054.json
-   python benchmark.py --dataset <name> --max-samples 0 \
-     --runners faster_whisper --output results_full/<name>_faster_whisper.json
-   ```
-4. Attach or keep local `results_full/<name>*.json` artifacts (`results_full/` is
-   gitignored; published numbers go into docs).
-5. Update [`docs/benchmarks.md`](../docs/benchmarks.md) with a **Held-out / additional public sets** table row + provenance + license note in [`benchmark/DATA_LICENSE`](../benchmark/DATA_LICENSE) / `NOTICE` if new upstream license appears.
-6. Update [`benchmark/README.md`](../benchmark/README.md) dataset section.
-7. Mark the row below **done** with date and short note.
+The [benchmark guide](../benchmark/README.md) documents preparation and runners;
+[manifests](../benchmark/manifests) fix the selected samples. Existing additional
+Russian evaluations cover:
 
-Default engines: **gigastt (`rnnt` INT8)**, **Vosk 0.54**, **faster-whisper large-v3**.
-Same hardware note as the main table (Apple M1 CPU unless stated otherwise).
+| Dataset | Domain | Preparation |
+|---|---|---|
+| Common Voice RU | Crowd read speech | `prepare_common_voice_ru.py` |
+| FLEURS `ru_ru` | Read speech | `prepare_fleurs.py --config ru_ru` |
+| RuLS | Audiobooks | `prepare_rulslib.py` |
+| SOVA RuDevices | Device commands | Committed manifest |
+| Podlodka Speech | Podcasts | `prepare_podlodka.py` |
+| ToneWebinars | Webinars and lectures | `prepare_tone_webinars.py` |
 
-## Queue
+Preparation scripts live in `scripts/`. The historical Podlodka evaluation
+contains only 67 samples; report that limitation with its scores. Golos and
+OpenSTT provide other recording domains, while separate multilingual and
+punctuation sets answer different questions. See [languages](languages.md).
 
-| # | Status | Dataset | Domain | License (check card) | Source | Prep | Headline (gigastt / Vosk / FW) |
-|---|--------|---------|--------|----------------------|--------|------|--------------------------------|
-| 1 | **done (2026-07-25)** · FW same day | Common Voice RU | crowd read | CC0-1.0 | mirror `artyomboyko/common_voice_21_0_ru` | `prepare_common_voice_ru.py` | **2.63** / 6.10 / 5.22 (n=1000) |
-| 2 | **done (2026-07-25)** · FW 2026-07-26 | FLEURS `ru_ru` | clean read | CC BY 4.0 | [google/fleurs](https://huggingface.co/datasets/google/fleurs) | `prepare_fleurs.py --config ru_ru` | 5.26 / 6.14 / **3.84** (n=775) |
-| 3 | **done (2026-07-25)** · FW 2026-07-26 | RuLS | audiobook | PD USA / LibriVox | [openslr.org/96](https://www.openslr.org/96/) | `prepare_rulslib.py` | **4.21** / 9.18 / 9.65 (n=1000) |
-| 4 | **done (2026-07-25)** · FW 2026-07-26 | SOVA RuDevices | device / command | see HF | `bond005/sova_rudevices` | committed manifest | 10.30 / **6.28** / 14.79 (n=1000) |
-| 5 | **partial (n=67)** · FW 2026-07-26 | Podlodka Speech | podcast | see HF | [podlodka_speech](https://huggingface.co/datasets/bond005/podlodka_speech) | `prepare_podlodka.py` | 7.33 / 9.96 / 7.27 (thin CI) |
-| 6 | **done (2026-07-26)** · 3-engine | ToneWebinars | webinar / lecture | Apache-2.0 | [ToneWebinars](https://huggingface.co/datasets/Vikhrmodels/ToneWebinars) | `prepare_tone_webinars.py` | 13.02 / 14.87 / **8.33** (n=1000) |
-| 7 | optional | Phone-sim on held-out set | telephony proxy | inherits source | reuse CV or FLEURS | *need* codec recipe | 8 kHz + μ-law/A-law proxy only |
+## Protocol
 
-### Explicitly out of this queue
+1. Pin the upstream dataset revision, split, selection rule and seed. Commit a
+   manifest or reproducible preparation script plus sample list. Record source
+   licensing in [DATA_LICENSE](../benchmark/DATA_LICENSE) and [NOTICE](../NOTICE).
+2. Choose currently relevant model versions and pin the binary/source revision,
+   weights and tokenizer hashes. Use identical audio samples for each candidate.
+3. Fix normalization before comparing: casing, punctuation, numbers, fillers and
+   `ё` handling can change WER without changing acoustic recognition. Report raw
+   and normalized scores where these policies materially affect the result.
+4. Measure recognition WER/CER and deletion rates, empty outputs and failures.
+   Measure punctuation/casing separately. Include short commands, natural speech
+   and long recordings appropriate to the intended deployment.
+5. Measure speed and memory on the same host with explicit provider, threads,
+   pool size, warm-up, cache state and optional processing. Separate load time
+   from warm inference and ASR time from the full user-visible pipeline.
+6. Publish per-sample hypotheses and timings, aggregate scores, sample count,
+   audio duration and uncertainty. Use paired comparisons on identical samples;
+   overlapping confidence intervals alone do not establish equivalence.
 
-| Dataset | Why |
-|---------|-----|
-| Golos crowd / farfield | Already published; GigaAM train-family |
-| OpenSTT calls / YouTube | Already published; common mix |
-| Random YouTube without refs | No ground truth |
-| Paid/NDA call corpora | Commercial proof track — separate from public roadmap |
-| ToneBooks | Deferred; webinars preferred for in-the-wild acoustics |
+For an existing manifest, a gigastt run uses the cross-engine harness:
 
-## Already published (baseline matrix)
+```sh
+cd benchmark
+python benchmark.py --dataset fleurs_ru --max-samples 0 \
+  --runners gigastt --output results_full/fleurs_ru_gigastt.json
+```
 
-Tracked for orientation only — not part of the new queue.
+Check the benchmark guide for environment setup and runner configuration before
+running. A runner name alone does not identify the selected model or processing
+settings. Use the same explicit protocol for every compared runner.
 
-| Dataset | Role | Docs |
-|---------|------|------|
-| `golos_crowd_1k` | clean read (in-domain upper bound) | `docs/benchmarks.md` |
-| `golos_farfield` | far-field | same |
-| `openstt_calls` | phone | same |
-| `openstt_youtube` | YouTube / noisy | same |
-| `fleurs_ru_punct` | punctuation F1 only | same |
-| `librispeech_test_clean` | English (ml_ctc heads) | same |
-| FLEURS kk/ky/uz | multilingual heads | same |
+## Publication requirements
 
-## Definition of done (per dataset)
+`results_full/` is ignored by default. Before publishing a new headline, make its
+raw evidence retrievable in a reviewed repository artifact or linked immutable
+release artifact, and record its checksum. A local-only file is insufficient for
+an independently verifiable claim. Preserve older dated results as historical
+measurements; do not silently relabel them as results of a newer binary or model.
 
-For items **1–4 and 6** the checklist is satisfied (manifest + 3 engines + CI +
-docs row + license note + this roadmap). Item **5** is partial (n=67 only).
-
-- [x] Manifest committed (or reproducible prep script + committed sample list).
-- [x] Full run: gigastt + Vosk 0.54 + faster-whisper L3 (items 1–6).
-- [x] Bootstrap 95% CI reported.
-- [x] Row in `docs/benchmarks.md` under **Held-out / additional public sets**.
-- [x] License note in `benchmark/DATA_LICENSE` + root `NOTICE`.
-- [x] This roadmap: status dated.
-- [ ] Item 5: larger Podlodka split if upstream grows.
-- [ ] Item 7: phone-sim recipe (optional).
-
-## Progress log
-
-| Date | Dataset | Action |
-|------|---------|--------|
-| 2026-07-25 | — | Roadmap created; queue ordered; start with Common Voice RU. |
-| 2026-07-25 | Common Voice RU | n=1000 seed=42 (CV 21.0 mirror); gigastt 2.63 · Vosk 6.10 · FW 5.22. |
-| 2026-07-25 | FLEURS `ru_ru` | Full test n=775; gigastt 5.26 · Vosk 6.14. |
-| 2026-07-25 | tooling | `vosk_054` runner: MP3 + IEEE-float WAV via soundfile/av. |
-| 2026-07-25 | RuLS / SOVA / Podlodka | gigastt vs Vosk: RuLS 4.21/9.18 · SOVA 10.30/6.28 · Podlodka 7.33/9.96 (n=67). |
-| 2026-07-26 | FLEURS faster-whisper | FW 3.84 (3.4–4.3) n=775 RTF 0.73 — leads FLEURS. |
-| 2026-07-26 | RuLS / SOVA / Podlodka FW | FW: RuLS 9.65 · SOVA 14.79 · Podlodka 7.27. |
-| 2026-07-26 | ToneWebinars | val RU n=1000 (~7.1 h); FW **8.33** · gigastt 13.02 · Vosk 14.87. Docs + NOTICE locked. |
-
-## Links
-
-- Methodology: [`benchmark/README.md`](../benchmark/README.md)
-- Published tables: [`docs/benchmarks.md`](../docs/benchmarks.md)
-- Data licenses: [`benchmark/DATA_LICENSE`](../benchmark/DATA_LICENSE)
-- Contamination caveat: `docs/benchmarks.md` § Dataset contamination / README caveats
+Update the [benchmark report](benchmarks.md) with provenance, limitations and a
+link to raw evidence. Do not promote a model on punctuation alone or a speed
+improvement without checking recognition quality. File recognition and live
+WebSocket behavior require separate measurements.

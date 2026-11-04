@@ -1,0 +1,24 @@
+{
+  "recognition_requests_verified": 990,
+  "unique_audio_samples": 232,
+  "artifact_checks": "Complete per-model/per-condition coverage; unique sample-condition pairs; stored WER edit counts and aggregate summaries recomputed successfully",
+  "scoring_checks": [
+    "Kazakh special letters preserved",
+    "Uzbek apostrophes folded",
+    "Empty hypotheses counted as deletions",
+    "Extra words counted as insertions",
+    "Micro aggregation weighted by reference length"
+  ],
+  "cargo_test": {
+    "command": "cargo test --workspace --lib --bins",
+    "passed": 1115,
+    "failed": 0,
+    "ignored": 39
+  },
+  "cargo_clippy": "passed",
+  "cargo_fmt_check": "passed",
+  "python_py_compile": "passed",
+  "git_diff_check": "passed",
+  "environment_workaround": "libssl-dev downloaded and extracted under /tmp; OPENSSL_INCLUDE_DIR and OPENSSL_LIB_DIR point to that extraction, OPENSSL_STATIC=0; no system package installation",
+  "limits": "Model-dependent ignored integration tests were not run by the unit suite; public-audio measurements used the pre-existing release binary identified by SHA-256."
+}

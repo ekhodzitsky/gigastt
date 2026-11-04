@@ -1,0 +1,77 @@
+{
+  "completed": true,
+  "measured_requests": 162,
+  "unique_real_recordings": 2,
+  "primary_channel_requests": 9,
+  "oracle_excerpt_requests": 144,
+  "vad_channel_requests": 9,
+  "checks": [
+    {
+      "model": "original_small",
+      "vad": false,
+      "n": 51,
+      "failed_requests": 0,
+      "result_sha256": "70ca31081e8743f1fdf0e585e363668db3debacdb415f73fe9b1cbece8b33645",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "reference_and_input_identity_verified": true,
+      "public_restricted_text_removed": true
+    },
+    {
+      "model": "candidate_small",
+      "vad": false,
+      "n": 51,
+      "failed_requests": 0,
+      "result_sha256": "4b35a610e677ba5c91ea2e805204fbedd573546d916879c97e574f2bf42ef6f6",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "reference_and_input_identity_verified": true,
+      "public_restricted_text_removed": true
+    },
+    {
+      "model": "large",
+      "vad": false,
+      "n": 51,
+      "failed_requests": 0,
+      "result_sha256": "1a5d56c825ac26e0e8ebfef6906a02685ea446b2907c0f4153216ea93423002d",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "reference_and_input_identity_verified": true,
+      "public_restricted_text_removed": true
+    },
+    {
+      "model": "original_small",
+      "vad": true,
+      "n": 3,
+      "failed_requests": 0,
+      "result_sha256": "3d57c1e24cf73f09a2e1454c25f5d89b881cf988794a57e911a060c0c1b51103",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "reference_and_input_identity_verified": true,
+      "public_restricted_text_removed": true
+    },
+    {
+      "model": "candidate_small",
+      "vad": true,
+      "n": 3,
+      "failed_requests": 0,
+      "result_sha256": "cd02026725f9ca4ce293e0673efb122c58286acbc59a7eb61ecc2b90d7a092ab",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "reference_and_input_identity_verified": true,
+      "public_restricted_text_removed": true
+    },
+    {
+      "model": "large",
+      "vad": true,
+      "n": 3,
+      "failed_requests": 0,
+      "result_sha256": "d5d367c42224e46de556193b4b67b38cd6b52e602749d93ebad375dc60b3c662",
+      "all_word_distances_independently_verified": true,
+      "all_character_scores_recomputed": true,
+      "reference_and_input_identity_verified": true,
+      "public_restricted_text_removed": true
+    }
+  ],
+  "limitations": "Saved hypotheses independently rescored with word DP; inference not rerun. Two repeatedly inspected recordings; no representative-call claim. VAD startup synthetic-silence fallback warnings excluded; actualrequests verified through VAD completion logs."
+}

@@ -46,3 +46,38 @@ CHANGELOG.md
 README.md
 CLAUDE.md
 AGENTS.md
+
+# Local caches and generated files can exist below COPYed source directories.
+**/target/
+**/node_modules/
+**/__pycache__/
+**/*.py[cod]
+**/.venv/
+**/venv/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.cache/
+**/*.profraw
+**/*.profdata
+**/cobertura*.xml
+**/htmlcov/
+**/.env
+**/.env.*
+**/.codex/
+**/.cursor/
+**/.serena/
+**/.aider*
+**/.claude-memory-compiler/
+**/.codebase-memory*/
+**/.backlog/
+**/backlog/
+**/backlog.config.yml
+
+# Published measurements remain in Git; benchmark images take their inputs
+# from mounted datasets and write new results at runtime.
+benchmark/results/
+benchmark/results_*/
+benchmark/results.json
+benchmark/results_*.json
+benchmark/logs/

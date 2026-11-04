@@ -1,7 +1,7 @@
 {
   "name": "gigastt",
   "version": "2.22.0",
-  "description": "On-device Russian speech-to-text (GigaAM v3) — Node.js binding",
+  "description": "On-device Russian speech-to-text (GigaAM v3) \u2014 Node.js binding",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -44,6 +44,7 @@
     "postinstall": "node install.js",
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
-    "smoke": "node __test__/smoke.cjs"
+    "smoke": "node --expose-gc __test__/smoke.cjs",
+    "benchmark": "node --expose-gc __test__/smoke.cjs --benchmark"
   }
 }

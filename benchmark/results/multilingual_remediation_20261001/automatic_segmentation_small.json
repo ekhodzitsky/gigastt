@@ -1,0 +1,198 @@
+{
+  "metadata": {
+    "model_variant": "ml_ctc",
+    "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "model_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+    "health": {
+      "status": "ok",
+      "model": "gigaam-multilingual-ctc",
+      "variant": "ml_ctc",
+      "version": "2.21.0",
+      "punctuation": false,
+      "itn": false
+    },
+    "windows_seconds": [
+      10,
+      20
+    ],
+    "boundary_policy": "Nonoverlapping fixed-duration chunks from sample zero; final chunk may be shorter. No VAD, reference timestamps, overlap or hypothesis stitching.",
+    "scoring": "Concatenate all chunk hypotheses in chronological order, then score against the complete channel reference with shared Unicode normalization and jiwer.",
+    "limitations": "Two public recordings, three channels total; fixed boundaries can split words. Already inspected development diagnostics, not independent final holdout. No speed comparison because other jobs run concurrently.",
+    "manifest_sha256": [
+      "79d8277cfab6894da46d7d06ccd95dc81e15b2d5f3bd3380ae7fc2046057795e",
+      "e0d71936cc5d9a4a79c7ace3f33b91d5aca7f74c8202483e045806ea046fe9c7"
+    ],
+    "server_configuration": {
+      "execution_provider": "cpu",
+      "pool_size": 1,
+      "encoder_intra_threads": 3,
+      "vad": false,
+      "punctuation": false,
+      "itn": false,
+      "port": 19880
+    }
+  },
+  "completed": true,
+  "details": [
+    {
+      "id": "ldc_kazakh_sample",
+      "dataset": "kazakh_real_telephone_single_sample",
+      "source_audio_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "window_seconds": 10,
+      "duration_seconds": 110.04,
+      "chunks": 12,
+      "empty_chunks": 1,
+      "elapsed_seconds": 11.669768628897145,
+      "wer_percent": 77.92207792207792,
+      "scores": {
+        "reference_words": 77,
+        "word_errors": 60,
+        "substitutions": 26,
+        "deletions": 34,
+        "insertions": 0,
+        "reference_chars": 488,
+        "char_errors": 245
+      },
+      "recording_id": "ldc_kazakh_sample"
+    },
+    {
+      "id": "ldc_kazakh_sample",
+      "dataset": "kazakh_real_telephone_single_sample",
+      "source_audio_sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "window_seconds": 20,
+      "duration_seconds": 110.04,
+      "chunks": 6,
+      "empty_chunks": 1,
+      "elapsed_seconds": 13.289326489903033,
+      "wer_percent": 94.8051948051948,
+      "scores": {
+        "reference_words": 77,
+        "word_errors": 73,
+        "substitutions": 8,
+        "deletions": 65,
+        "insertions": 0,
+        "reference_chars": 488,
+        "char_errors": 405
+      },
+      "recording_id": "ldc_kazakh_sample"
+    },
+    {
+      "id": "material_kk_inLine",
+      "dataset": "kazakh_material_real_telephone",
+      "source_audio_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "window_seconds": 10,
+      "duration_seconds": 56.14,
+      "chunks": 6,
+      "empty_chunks": 1,
+      "elapsed_seconds": 4.871520661981776,
+      "wer_percent": 84.0909090909091,
+      "scores": {
+        "reference_words": 44,
+        "word_errors": 37,
+        "substitutions": 9,
+        "deletions": 28,
+        "insertions": 0,
+        "reference_chars": 268,
+        "char_errors": 166
+      },
+      "recording_id": "ldc2025s03_public_sample"
+    },
+    {
+      "id": "material_kk_inLine",
+      "dataset": "kazakh_material_real_telephone",
+      "source_audio_sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "window_seconds": 20,
+      "duration_seconds": 56.14,
+      "chunks": 3,
+      "empty_chunks": 0,
+      "elapsed_seconds": 8.238618954084814,
+      "wer_percent": 97.72727272727273,
+      "scores": {
+        "reference_words": 44,
+        "word_errors": 43,
+        "substitutions": 4,
+        "deletions": 39,
+        "insertions": 0,
+        "reference_chars": 268,
+        "char_errors": 222
+      },
+      "recording_id": "ldc2025s03_public_sample"
+    },
+    {
+      "id": "material_kk_outLine",
+      "dataset": "kazakh_material_real_telephone",
+      "source_audio_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "window_seconds": 10,
+      "duration_seconds": 56.14,
+      "chunks": 6,
+      "empty_chunks": 0,
+      "elapsed_seconds": 7.906552525004372,
+      "wer_percent": 73.46938775510205,
+      "scores": {
+        "reference_words": 49,
+        "word_errors": 36,
+        "substitutions": 11,
+        "deletions": 25,
+        "insertions": 0,
+        "reference_chars": 306,
+        "char_errors": 167
+      },
+      "recording_id": "ldc2025s03_public_sample"
+    },
+    {
+      "id": "material_kk_outLine",
+      "dataset": "kazakh_material_real_telephone",
+      "source_audio_sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "window_seconds": 20,
+      "duration_seconds": 56.14,
+      "chunks": 3,
+      "empty_chunks": 1,
+      "elapsed_seconds": 5.346401354065165,
+      "wer_percent": 100.0,
+      "scores": {
+        "reference_words": 49,
+        "word_errors": 49,
+        "substitutions": 3,
+        "deletions": 46,
+        "insertions": 0,
+        "reference_chars": 306,
+        "char_errors": 280
+      },
+      "recording_id": "ldc2025s03_public_sample"
+    }
+  ],
+  "recordings": [
+    {
+      "recording_id": "ldc_kazakh_sample",
+      "window_seconds": 10,
+      "channels": 1,
+      "word_errors": 60,
+      "reference_words": 77,
+      "wer_percent": 77.92207792207792
+    },
+    {
+      "recording_id": "ldc_kazakh_sample",
+      "window_seconds": 20,
+      "channels": 1,
+      "word_errors": 73,
+      "reference_words": 77,
+      "wer_percent": 94.8051948051948
+    },
+    {
+      "recording_id": "ldc2025s03_public_sample",
+      "window_seconds": 10,
+      "channels": 2,
+      "word_errors": 73,
+      "reference_words": 93,
+      "wer_percent": 78.49462365591398
+    },
+    {
+      "recording_id": "ldc2025s03_public_sample",
+      "window_seconds": 20,
+      "channels": 2,
+      "word_errors": 92,
+      "reference_words": 93,
+      "wer_percent": 98.9247311827957
+    }
+  ]
+}

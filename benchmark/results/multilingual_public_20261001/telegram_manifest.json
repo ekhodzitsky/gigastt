@@ -1,0 +1,1013 @@
+{
+  "source": "https://huggingface.co/datasets/BoburAmirov/asr_evaluate_set",
+  "revision": "c6e1b4f66d45e9d7644003d1564837786295850a",
+  "license": "Apache-2.0 per publisher",
+  "selection": "random.Random(42).sample(range(745), 100), in source order",
+  "notes": "Public Telegram voice messages, manual references per publisher; train is the sole published split; not telephone calls",
+  "arrow_sha256": [
+    "c83379b77b1ba1cfe58458e7305a11628a831fc8d95d357293f6e16839ecba83",
+    "986885f18da1f39d93a2b6fc965a2c55714c7b2d21f13d25311490325943afdc"
+  ],
+  "samples": [
+    {
+      "id": "telegram_6",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1159994_chunk005.wav",
+      "sha256": "9ca1c07ddbff9a54e094aa90375188714f4143a9964ebf71d6394150564d7f54",
+      "reference": "keyin exness akkaunt oching exness akkauntdan",
+      "row_index": 6,
+      "source_name": "1159994_chunk005.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_25",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1160792_chunk000.wav",
+      "sha256": "2744b54e04ac757be7c285fa845e38164e1f3b9eed64ca1e2817a17768efbcc4",
+      "reference": "men ovozli xabar yozganimdan keyin yozdingizda bu adashib ketdim deb shuning uchun undan oldin boshqa narsa aytayotuvdizda to'g'rimi aka yo noto'g'ri gapirayotgan bo'lsam ayting aka",
+      "row_index": 25,
+      "source_name": "1160792_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_27",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1160799_chunk000.wav",
+      "sha256": "39127bcaf84a0fc9098865542289c4ca98ae22360a25084e2d14ac8bc1a90f0b",
+      "reference": "bo'ldi aka siz haqsiz siz bilan tortishib o'tirmayman",
+      "row_index": 27,
+      "source_name": "1160799_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_30",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1161987_chunk000.wav",
+      "sha256": "200e6732a74228bad79f3f7a1ba2323b5fc9cfa2d248075c2c6bb23ce02ac21b",
+      "reference": "assalomu alaykum gruppadagilar yaxshimisizlar",
+      "row_index": 30,
+      "source_name": "1161987_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_32",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1161987_chunk002.wav",
+      "sha256": "a5cc397fb5882ec956d64229d4a5d39b8a4ba3223389e2128222e6918ec626c4",
+      "reference": "nima qilsak bo'ladi yordam berib yuboringlar iltimos",
+      "row_index": 32,
+      "source_name": "1161987_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_44",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1721220_chunk001.wav",
+      "sha256": "eab54cf355a7db3c3f56a9137cfac634754ebe625ea56f2ad4cb3d56eb088251",
+      "reference": "prokuraturaga yozma tartibda ariza qilasiz",
+      "row_index": 44,
+      "source_name": "1721220_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_46",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1721220_chunk003.wav",
+      "sha256": "8ba996cd442c830b7a45ebc01b97d6da98a26c30e8961249f9b8a20d99641ad7",
+      "reference": "lekin davlat tashkiloti ko'rayotgan nima ana uni ijroga o'tkazib yubor deydi shu bilan o'tib ketaveradi undan ko'ra o'sha o'zi tasdiqlab bersa ijro monitoringi desangiz shuncha oyda masalan sudga buyruq chiqqan paytdan boshlab shundoq ko'tarib beradi",
+      "row_index": 46,
+      "source_name": "1721220_chunk003.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_57",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722036_chunk005.wav",
+      "sha256": "2312d83fcbb2653c2489a7d6f4659314d62bf29e72838374807f313bd0145d4b",
+      "reference": "endi biz qanday bilamiz u jarayonni firibgarlik masalasi boʻyicha koʻriladigan ish",
+      "row_index": 57,
+      "source_name": "1722036_chunk005.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_67",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk001.wav",
+      "sha256": "5257e412061e49cb7c25cb890a5fb68f64972283f04543ec4fc3f36a08f8c703",
+      "reference": "bundoq qaranglarda sizlardan iltimos bu narsa",
+      "row_index": 67,
+      "source_name": "1722038_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_71",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk005.wav",
+      "sha256": "8cc834053d949c43a3d37dc9eecb45c9ea0da1590636226064aea01d37d8b2f0",
+      "reference": "tushundinglarmi",
+      "row_index": 71,
+      "source_name": "1722038_chunk005.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_73",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk007.wav",
+      "sha256": "04b12887092487ebfc8b7ef1f5b91dabfad8399a9b56298588acf2c5c8458e81",
+      "reference": "mahallasining gruppasi yoki kanali tumanni kanali yoki boshqa davlat tashkilotiniki bo'lsa rasmiy kanal bo'ladi",
+      "row_index": 73,
+      "source_name": "1722038_chunk007.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_80",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk014.wav",
+      "sha256": "5a21fd3b66c3aa9013104e9603a5a0bf79f510322da0d6d0d8bb481ccf17fb42",
+      "reference": "u aytayotgani ertaga sizga nimadir zarar yetadigan bo'lsa sizning yoningizda turib bermaydiku hayotda",
+      "row_index": 80,
+      "source_name": "1722038_chunk014.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_81",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk015.wav",
+      "sha256": "64235186edde0061d6583c1b4fe58640d4ed08233b8f2b8f29082c7f728ffc51",
+      "reference": "tekshiring oldin",
+      "row_index": 81,
+      "source_name": "1722038_chunk015.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_89",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk023.wav",
+      "sha256": "b5d7f393ef48c492efe743cd7947139e0ceda1d5c5e8a78706ad5c457b2239e3",
+      "reference": "shuning uchun shu narsani tekshirib iltimos sizlardan",
+      "row_index": 89,
+      "source_name": "1722038_chunk023.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_94",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk030.wav",
+      "sha256": "e912e536cdf74be13aa79b2fec9c3077b56aced45d1a4992b261d26b6fe41957",
+      "reference": "majburiyat yuklatilgan guruhga yozing guruhda men imkoniyatim bo'lmasa meni hamkasblarimiz bor javob berib qo'yadi",
+      "row_index": 94,
+      "source_name": "1722038_chunk030.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_95",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk031.wav",
+      "sha256": "56113203ce601eb32c1b42d498aaa1b9f835d024bb8e3c5b05da3399cc709f27",
+      "reference": "endi har xil holat bo'ladida odamda kimdir eshitiladigan vaqt bo'ladi bu masalani shunchaki berib ketiladigan narsa emas bu",
+      "row_index": 95,
+      "source_name": "1722038_chunk031.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_99",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722038_chunk035.wav",
+      "sha256": "f0ba5767901d3d532de687d1c04aec85f1e67bf3f756f3ac9b77e1fcaa1d1bad",
+      "reference": "xolisona mana hamma ko'rib turadi berilayotgan javobni agar men noto'g'ri javob bersam qaysidir hamkasbim men bilmagan narsamni to'g'irlab ketadi",
+      "row_index": 99,
+      "source_name": "1722038_chunk035.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_103",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722202_chunk001.wav",
+      "sha256": "bda25ce8759d64aa5efd364c8ae60226f1bf48990f021d8677fbbf4751a902e9",
+      "reference": "boshqa bir shaxsni nima deydi o'zbekiston respublikasida uchta hokimiyat bor qonun chiqaruvchi ijro etuvchi sud bular uchalasi bir biridan mustaqil unaqa bir birining ishiga aralashmaydi",
+      "row_index": 103,
+      "source_name": "1722202_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_104",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722202_chunk002.wav",
+      "sha256": "5b8b8138e699a564ac30022b8b5b3a874f259207eecb192691a730006dce32da",
+      "reference": "siz aytayotgan narsa yo'q ochig'ini gapirish kerak xo'p ariza topshirish masalasi haligi xohlasangiz bu narsani qiling agar xohlamasangiz shart emas qonuniy talab shundaki ovora bo'lib o'tirmang demoqchiman xo'p",
+      "row_index": 104,
+      "source_name": "1722202_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_114",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722704_chunk001.wav",
+      "sha256": "437b29ae161a89785748bd3de99abcdb099009d8a0f4ab15239187982d00be42",
+      "reference": "2024-yil vaqt doirasida o'zingiz keltirib olasiz",
+      "row_index": 114,
+      "source_name": "1722704_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_127",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722704_chunk014.wav",
+      "sha256": "6d475b86a95cf456154c23aba9f73580cecd040cac149aea879b1b79ce6aa9de",
+      "reference": "endi buni nazorat qilish davlatning ixtiyorida davlat nazorat qilib bo'lib bo'lib beryapti ha shuni aaa 5 6 million qarzdorlik bo'lardida",
+      "row_index": 127,
+      "source_name": "1722704_chunk014.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_142",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1722796_chunk000.wav",
+      "sha256": "51bf6097a3925753966b2e29c2d4469a06a5e2c5b56a938e7388f1188a6d1454",
+      "reference": "vaalaykum assalom assalomu alaykum qarzdorlik deganda kelajakda vaqtda keladigan qarzdorlikmi yoki oldingi qarzdorlikmi shuni ham tushunib olingda yo'q desam",
+      "row_index": 142,
+      "source_name": "1722796_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_159",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1723998_chunk007.wav",
+      "sha256": "cda8bd56f47e9807085a13d93d090263290615486150daa4181870a60325005e",
+      "reference": "tushundingizmi chunki notarial o'zingiz tasdiqlayapsiz",
+      "row_index": 159,
+      "source_name": "1723998_chunk007.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_163",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1724001_chunk002.wav",
+      "sha256": "578377b88a3e9f01fca6d7deef641e3768aa2e87e54b4b0c3ee68435961599fc",
+      "reference": "o'shani olingda",
+      "row_index": 163,
+      "source_name": "1724001_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_166",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1724001_chunk005.wav",
+      "sha256": "c6445fbb1f3317eec488377ab2a87d0bf3386ef8648e3c486c8305fae00c0a94",
+      "reference": "nima deydi mumkin masku bitta nigohi qayd etiladi u haqiqiy bo'ladi u tushundingizmi",
+      "row_index": 166,
+      "source_name": "1724001_chunk005.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_167",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1724001_chunk006.wav",
+      "sha256": "e7e655e738a5cbd1ca7cc15279ae1bcb07b13b711d16ae2009222994d8eb9789",
+      "reference": "u anovi olib kelib o'qitib oldim deyapti o'zi uni kim tasdiqlaydi uni",
+      "row_index": 167,
+      "source_name": "1724001_chunk006.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_175",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1724001_chunk014.wav",
+      "sha256": "1785fcf85d6910f67a6e2f89a277aa841df853459425eb526f4871c3f7412378",
+      "reference": "o'shanda sal sizlarga plus bo'ladi",
+      "row_index": 175,
+      "source_name": "1724001_chunk014.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_196",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1726155_chunk003.wav",
+      "sha256": "da6314406db4240aa334fcc5724678067b433f5b080a4ee74c0848008f16f19f",
+      "reference": "ha nima insonni ism familiyasini o'zgartirish qiyin deb o'ylaysizlarmi haoson bu narsa qiyin narsa emas borib u shaxs o'zini xohishi bilan o'zgartirib kelib boshqa odam bo'lib qolib bir pastda nima qilsa bo'laveradi bazada turadi ismi o'zgartirilgan degan nimani yozib asli eskisini yangisini yozib qo'yadi",
+      "row_index": 196,
+      "source_name": "1726155_chunk003.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_203",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1726578_chunk001.wav",
+      "sha256": "b81047f037083e55ed94e91013d4f20cb96a1b45da059b312ae1c9435a59cd92",
+      "reference": "bu haligi ortiqcha muammo bo'ladi o'zingizga",
+      "row_index": 203,
+      "source_name": "1726578_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_214",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1726586_chunk006.wav",
+      "sha256": "7b69c8a3b9750a6530283782bb2ca59f1391be214801eb7120423257e28b387c",
+      "reference": "agar mana shuncha muddat yashamay qo'ygan bo'lsa ajratib yuboradi",
+      "row_index": 214,
+      "source_name": "1726586_chunk006.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_220",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1726586_chunk012.wav",
+      "sha256": "9100ff65034b2a2b839370d628dd2434cbdc92e7b13a1cfae3d29ba4ac1a61fb",
+      "reference": "sudning qarorini avvaldan muhokama qilib bo'lmaydi uchta mustaqil hokimiyat bor qonun chiqaruvchiijro etuvchi sud",
+      "row_index": 220,
+      "source_name": "1726586_chunk012.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_223",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1726586_chunk015.wav",
+      "sha256": "bf3bf5b979229a83a2ca746ad78b39ab36bcae03f98dd206194384e04989a821",
+      "reference": "hmm",
+      "row_index": 223,
+      "source_name": "1726586_chunk015.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_224",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1726586_chunk016.wav",
+      "sha256": "860b864fd3ed625df8a9e495b5f2764bdcc67437a3b8af3762da07a6940b8332",
+      "reference": "ikkala taraf ishtirok etadi agar taraf ishtirok etmaydigan bo'lsa da'vo arizasi birinchi marta ko'rilishda rad qilish ham mumkin tushundingizmi",
+      "row_index": 224,
+      "source_name": "1726586_chunk016.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_225",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1726586_chunk017.wav",
+      "sha256": "5e67b6cac7af8c1a5fc39fdab1e9f01cda71f94f26a996a93e66a16a5f630547",
+      "reference": "muxlat olib olinsa nisbatan yaxshiroq sizlarga keyingi jarayonlarda sizlarni plusinglarga o'tishi mumkin nimaga desangiz mana shuncha muxlat berildi mahalla tomonidan bir necha marotaba aa mana olti oy davomida ikki marta yarashuv komissiyasi o'tkazildi deylik yoki uch marta o'sha necha marta yarashtirish bo'lgan bo'lsa mahallada o'shalarida har bittasida muhokama qilinadi lekin ajratish imkoni bo'lmadi deb turb xulosasini olib kelib qo'shilsa u bo'lishi mumkin",
+      "row_index": 225,
+      "source_name": "1726586_chunk017.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_228",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1727677_chunk001.wav",
+      "sha256": "575927676430b6ef892c59ca088800aa867fad59b9ac62c247f9597f1fb37dd6",
+      "reference": "o'zining oldidan o'tib qo'ying menda shunaqa holat bo'lyapti sen qilganmisan kim qilgan bu joyda",
+      "row_index": 228,
+      "source_name": "1727677_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_233",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1727677_chunk006.wav",
+      "sha256": "d41a6ac53a346773542f75f8d6e4e04f2c225ed96cdfbf7388de179a5f1bcdfb",
+      "reference": "ketishni xohlamayman deb oldidan o'tib qo'ying",
+      "row_index": 233,
+      "source_name": "1727677_chunk006.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_234",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1727677_chunk007.wav",
+      "sha256": "dd91169e514226f62ce42e41f77d88dabc38d364da20995b4356541043dc4328",
+      "reference": "agar bo'lmaydigan bo'lsa oxiri iloji shu shikoyat qilinadi nima deysiz endi xohlasangiz shu shikoyat qilish kerak faqat",
+      "row_index": 234,
+      "source_name": "1727677_chunk007.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_238",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1727677_chunk011.wav",
+      "sha256": "a6850fbded31d9d7b3867627c6381b6a68d872494a82496ff384a36b97339735",
+      "reference": "agar mana bu narsa qilib bersang qilib berding bo'lmasa men kim qilgan bo'lsa ham javob beradi men shikoyat qilyapman deb oldindan o'tib qo'yasiz",
+      "row_index": 238,
+      "source_name": "1727677_chunk011.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_250",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1728625_chunk002.wav",
+      "sha256": "a4db7e069b3c061c4c72ba375cc8a0ecd4ab0a293e9ac9c6e47b233eb4d24547",
+      "reference": "asosida",
+      "row_index": 250,
+      "source_name": "1728625_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_270",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1734322_chunk000.wav",
+      "sha256": "5ebd8bbabe2f8b3a3e9a2fa2fa3f2ceeaa9db195c4f164e1146f12f082e8067c",
+      "reference": "assalomu alaykum ishsizlik hisobida to'lanadi nimaga desangiz o'zini o'zi band qilgan shaxs davlat daromadiga soliq to'laydimi",
+      "row_index": 270,
+      "source_name": "1734322_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_273",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1734322_chunk003.wav",
+      "sha256": "7461c699fc988fc1e4af373402b89b289815b70bf638fce2d8e8d3d6e556dfd2",
+      "reference": "korxona boʻladigan boʻlsa fermer xoʻjaligiboʻladigan boʻlsa u rahbar sifatida ishlaydi toʻgʻrimi",
+      "row_index": 273,
+      "source_name": "1734322_chunk003.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_274",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1734322_chunk004.wav",
+      "sha256": "9952741c12ca3a3ea2d2db889075e53ca63f3b1e5c53df2d1f00172df064041e",
+      "reference": "yat deb turib alohida bitta tashkilot bo'lmaydiku to'g'rimi",
+      "row_index": 274,
+      "source_name": "1734322_chunk004.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_276",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1734322_chunk006.wav",
+      "sha256": "3b88b7422ae7dcf69c21e360a2d3bb50c91251f7649eac5be0289225dd9ecacc",
+      "reference": "rahbarga nachisleniya bo'ladi oylik hisobda har oyda o'sha oyligidan to'laydi tushundingizmi",
+      "row_index": 276,
+      "source_name": "1734322_chunk006.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_281",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1737029_chunk004.wav",
+      "sha256": "8ad13e9edfcbfbf4e226d91cbf58b8136e2c77f565ffc6f9d33e06f1dc8ecd22",
+      "reference": "o'sha o'sha qanchaga kelishgan bo'lsangiz shuni tushirib beradishu",
+      "row_index": 281,
+      "source_name": "1737029_chunk004.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_284",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/1742774_chunk002.wav",
+      "sha256": "d121ecae29ea7c726104d7d36fc0e9a8f0fecf55df1e27176918ac997bf6da5f",
+      "reference": "oldindan muhokama ham qilib bo'lmaydi mana shunday bo'ladi deb sud o'zi yakunda o'zi hukm o'qiydi tushundingizmi ehtimollik jihatdan tahmin qilish mumkin mana shu atrofda bo'lishi mumkin deb turib lekin aniq mana shunday bo'ladi deb bo'lmaydi 57 ni qo'llasa yengillik bo'ladi yaxshiroq tushundingizmi",
+      "row_index": 284,
+      "source_name": "1742774_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_296",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/18533350_chunk001.wav",
+      "sha256": "e9628a445a6cf7824d6199a60a1d6de4cbffbcba6f8731ef66297c471a87f88b",
+      "reference": "shu dunyoda yashashga o'zingni ko'ndirissiq sovuqqa chidashga o'rgan bu dunyoda doim vafodor do'st topilavermaydi doim ko'ngliga yoqadigan ish topilavermaydi chunki bekamu ko'st mukammal bo'lish bu dunyoning sifati emas birodarlar bir kam dunyo u mukammallik naryoqda bo'ladi ideallik naryoqda bo'ladi jannatda bo'ladi shuning uchun dunyoni boricha qabul qil",
+      "row_index": 296,
+      "source_name": "18533350_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_300",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115847_chunk002.wav",
+      "sha256": "8a29e150222a713ee394c2266d4f7f1a9bcfe299ee29391f8739f343893c7f04",
+      "reference": "shunday ayollar eshitib qo'ysin aytyaptiki qaysi birxotin bu dunyoda eriga ozor bersa albatta u erini jannatda xurayndan bo'lgan xotinlari bor shular kutyapti bu ayolga tushib qolgani yo'q hali uni shunday xurlar kutyapti jannatda deyapti ana o'sha jannatdagi pokiza xurayndan bo'lgan xotinlari ayatar ekanki hoy ayol xudo seni halok qilsin",
+      "row_index": 300,
+      "source_name": "2115847_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_323",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk019.wav",
+      "sha256": "58812e186adaa369813f0c6ea1b44571974917b77ad04b03091a331ed08dc084",
+      "reference": "50 ga60 ga ehtimol 70 ga kirganda inson bunday orqasiga qararkan hayotiga",
+      "row_index": 323,
+      "source_name": "2115848_chunk019.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_332",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk028.wav",
+      "sha256": "007a86fc5713fdd20e40a5ee58c1282846073d9d0c692b3b470056476c6922d3",
+      "reference": "shunday orqanglarga bunday qaraganda uyalib qolmaylik birodarlar",
+      "row_index": 332,
+      "source_name": "2115848_chunk028.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_344",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk040.wav",
+      "sha256": "9cd5e9b55bd9abc9e1196c8e443b30d19f46881175f9a78b1d7b87bbffa19c46",
+      "reference": "uyalishi kerakmi",
+      "row_index": 344,
+      "source_name": "2115848_chunk040.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_348",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk044.wav",
+      "sha256": "8dd215a0bc369b0ea2700a893f3b9df755444ac3ce7fab0a4df16f6401fd11ba",
+      "reference": "uyalayotgan bo'lsa",
+      "row_index": 348,
+      "source_name": "2115848_chunk044.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_352",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk048.wav",
+      "sha256": "905f6890e9b62ca54bb17d182fbae400952a245ab146f00c3fe1ae64ea93d1a7",
+      "reference": "yeganimiz oldida yemaganimiz ketdida",
+      "row_index": 352,
+      "source_name": "2115848_chunk048.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_363",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk059.wav",
+      "sha256": "32fa5ea2476b8ec00086342e3377726a32ac4678638bebbe53167b69cb8f3ceb",
+      "reference": "tabib holigini ko'rib turib allohdan qo'rqadigan tabib edi aytdi birodar kasalingiz unaqa bir xatarlimas",
+      "row_index": 363,
+      "source_name": "2115848_chunk059.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_367",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk063.wav",
+      "sha256": "b74f99461fd5adb1e92bd05059abc3b890514cdc916a70626ae8d8fab4adcc01",
+      "reference": "u tabib nima deydi e o'tkazib yuboribsiz kasalni",
+      "row_index": 367,
+      "source_name": "2115848_chunk063.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_370",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk066.wav",
+      "sha256": "651a8ad8b0cb57ab01a9eca4f4d8a49a67697374f8a1f070fb45609c470fbb9f",
+      "reference": "yoʻli qolmabdi deydi",
+      "row_index": 370,
+      "source_name": "2115848_chunk066.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_373",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk069.wav",
+      "sha256": "2100c2d80ccd14b25d9147b125e002b237c6a9e83cd879e3bab4280ec9c7414b",
+      "reference": "o'shani oldiga bordingizmi odam qurib ketgandek deydi yana nima deydi",
+      "row_index": 373,
+      "source_name": "2115848_chunk069.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_379",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk075.wav",
+      "sha256": "0e84f4b86e020751c42b24830c8ec5f728d4674cf29cc285961e230e34c8649d",
+      "reference": "birinchi tabib haqiqiy mo'minning ishini qildi allohdan qo'rqdi omonatga xiyonat qilmadi bu bu tabib uchun albatta sharafli bo'lgan narsa",
+      "row_index": 379,
+      "source_name": "2115848_chunk075.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_387",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk083.wav",
+      "sha256": "68976210a391f59cc1e7bda7ba8850f329be6563cf8a88f613789db4ce3206f7",
+      "reference": "endi bu",
+      "row_index": 387,
+      "source_name": "2115848_chunk083.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_388",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk084.wav",
+      "sha256": "63af252d576ddd3f28e2bc39bab3bda8cd6fe7815d9e87ce974b40d5071dae6c",
+      "reference": "andozani har qanday hunar egasiga solishimiz mumkin",
+      "row_index": 388,
+      "source_name": "2115848_chunk084.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_389",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115848_chunk085.wav",
+      "sha256": "5d3b2c3737f9cd271ef7d15b8a08ca22814c10b7601e47801e9d35501845e1c1",
+      "reference": "ustalar o'zining eskisini eplab qo'ysa ham bo'ladigan holatda",
+      "row_index": 389,
+      "source_name": "2115848_chunk085.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_410",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk016.wav",
+      "sha256": "f3f9d53a55130aceb08ab4ea9eb5ceea5edcfe5184376263148ec6e07de809c6",
+      "reference": "opaukani opasingilni jamlab turgan otaona",
+      "row_index": 410,
+      "source_name": "2115849_chunk016.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_429",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk035.wav",
+      "sha256": "603ad8972641781669b0ed25f335fccba09ff8b9b20becf0329c46cac70bcdf2",
+      "reference": "akamning uyiga borsam akamning bolasi mening bolamga qattiq tegib qo'ydi",
+      "row_index": 429,
+      "source_name": "2115849_chunk035.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_432",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk038.wav",
+      "sha256": "c4544b705c7f0424a31fc7550c6091098d33b136ae742f23997103e1ea3f4b80",
+      "reference": "pochcham menga e'tibor bermay qo'ydi",
+      "row_index": 432,
+      "source_name": "2115849_chunk038.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_459",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk065.wav",
+      "sha256": "c8df264831d4da3487ab981827230e791c4b857c05d3a9c699a2a922d90d72cf",
+      "reference": "yaxshi ko'rardingku",
+      "row_index": 459,
+      "source_name": "2115849_chunk065.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_464",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk070.wav",
+      "sha256": "36b35099799290014f5a3177969af22ce310916f18e3171a09fdaa289310ef7d",
+      "reference": "lug'atlarimizdan onamiz tarjima qilib bermaydimi",
+      "row_index": 464,
+      "source_name": "2115849_chunk070.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_470",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk076.wav",
+      "sha256": "1cee0af481080e58a24dc9087599d8c018817f01ed93ff71082c72c66cbe733f",
+      "reference": "bu erini qoʻlidagi ayol",
+      "row_index": 470,
+      "source_name": "2115849_chunk076.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_473",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk079.wav",
+      "sha256": "116d63dc491bbe4a1fc60107f18410feb68959cf31e3b0079d0d1f4c0267073a",
+      "reference": "eri xohlasa biror narsani beradi senga",
+      "row_index": 473,
+      "source_name": "2115849_chunk079.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_517",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2115849_chunk124.wav",
+      "sha256": "30a26b47ea07cd7f2f9c7957fe6073889860eb515dd90b0220c547eefda2e053",
+      "reference": "tarjimonlarimizni ollohim umrini barakotli qilsin omin",
+      "row_index": 517,
+      "source_name": "2115849_chunk124.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_546",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2117341_chunk006.wav",
+      "sha256": "13efd87ab51d1c0bbe4acf0809853d310e26a4910e39c54590dd60cd14e15345",
+      "reference": "hammasini o'rgatmagan dunyo oxirat yaxshiligini hammasini o'rgatgan kishi payg'ambar sollallohu alayhi vasallam dunyodan o'tdi bilol ibn robah madinada aylanib yurardi aytildiki ey bilol rasululloh vafot toptilar deydi bilol shu voqeani ko'tara olmadi",
+      "row_index": 546,
+      "source_name": "2117341_chunk006.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_549",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2117341_chunk009.wav",
+      "sha256": "d401e9cfda4f2f003a000e2641754fd8c32ae802e16efaf727e96bb6577a1c4d",
+      "reference": "men madinayi munavvaradan uzoqlarga ketaman qanday qilib azon aytaman payg'ambarimiz yo'qku bu yerda anas ibn molik roziyallohu anhu hadisida va lammata rasululloh rasululloh rasululloh madinayi munavvaraga kirganlarida anora minnahal kullashay madinayi munavvarani hamma taraflari nurlik bo'lib ketdi dedi",
+      "row_index": 549,
+      "source_name": "2117341_chunk009.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_558",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2117341_chunk018.wav",
+      "sha256": "6cefaacacd1d299eac9c7f41a9233c98b440e735fca17f746de4483bf466cc17",
+      "reference": "ibrohim farzandini qabriga qo'yayotganda yig'ladi maryayi qiddiyadan ko'rgan farzandi ibrohim ikki yoshga kirmasdan dunyodan o'tgan sahobalar abdurahmon ibn avf so'radi yo rasululloh ey alloh taoloning elchisi nima sababdan yig'layapsiz dedi nima bo'ldiki siz yig'layapsiz o'zingiz bizni yig'lashdan qaytargansiz nima sababdan yig'layapsiz",
+      "row_index": 558,
+      "source_name": "2117341_chunk018.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_565",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2117343_chunk002.wav",
+      "sha256": "fedef76066d5178189a6d1a37d9ca492306da7b5751330ce29867c6c32b896a7",
+      "reference": "bilasizmi birodarlar bu qalb ishi bu unga banda o'zi bir yo'lga sola olmaydi qaranglar deyapti qo'linglarda nima bor allohning dargohiga olib boradigan",
+      "row_index": 565,
+      "source_name": "2117343_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_570",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2117425_chunk004.wav",
+      "sha256": "1de5e9e9ececc9b03e57bbff949ffbcdf0d87d5ef847931a59210f72a9b74a17",
+      "reference": "o'zi sal menda yo'qroq deb turib sepimizga sandig'imizga tashlaylik deyotgan ayol bo'ladigan bo'lsa bu ayolni xayri yo'q birodarlar kimki akasi bilan ya'ni kuyovning akasi bilan aka sizga ko'p zulm qiladi ishlatadi ishlatadi lekin o'zi katta pulni olib ketadi sizga hech narsa bermaydi bu adolatsizlik bu boshqa ishingizni ajrating o'zingiz",
+      "row_index": 570,
+      "source_name": "2117425_chunk004.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_574",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2117425_chunk008.wav",
+      "sha256": "fe77a60f17678f57d863e4db13146007414f01778cf1b0229c27584ea6be6cc5",
+      "reference": "bizning rizqimizni farzandimizni hali yosh rizqini robbil olamin beradi siz imomga yaxshilik qiling deb yaxshilikka muruvat qilgan ayol mana bu ayol soliha ayol bo'ladi",
+      "row_index": 574,
+      "source_name": "2117425_chunk008.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_591",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2118178_chunk003.wav",
+      "sha256": "373f129037f5d336253d6033c0ad037fc903be36f9bbe0166c28cc1728cafd12",
+      "reference": "sizni faqat sizni doʻst ekanligingizni bilishim uchun shuncha xiyonat koʻrishim aldanishim shart edimi beminnat mehringizni qadriga yetishim uchun minnatli mehribonlardan pand yeyishim shart edimi",
+      "row_index": 591,
+      "source_name": "2118178_chunk003.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_603",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835034_chunk003.wav",
+      "sha256": "ffdbcef7f2828e9c668f29e15e298a50f31aa5f0899d34c276efe6d478fc177f",
+      "reference": "2005-yil",
+      "row_index": 603,
+      "source_name": "2835034_chunk003.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_604",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835034_chunk004.wav",
+      "sha256": "125bc8f9fab05a13f0d13034a68a299ecd1d4861620375a9a2bcd7c2ebea0af9",
+      "reference": "qizni fikrini",
+      "row_index": 604,
+      "source_name": "2835034_chunk004.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_616",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835127_chunk004.wav",
+      "sha256": "8c8a7790b814756ecaa43a5771bdb1909603facb680959a8adb92ed074e94767",
+      "reference": "10 ming beraman",
+      "row_index": 616,
+      "source_name": "2835127_chunk004.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_618",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835149_chunk001.wav",
+      "sha256": "aed17d9d1310012c9109c1fe1bb70629daac3fdad218e686ee1e57ddab842b23",
+      "reference": "u payt sen ham tug'ilmagan bo'lsang kerak",
+      "row_index": 618,
+      "source_name": "2835149_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_623",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835213_chunk002.wav",
+      "sha256": "eaf50a7d19d41b51ef6be2f0e06d583d352fafd7fec51ca87ab8b470ef1b4481",
+      "reference": "yaxshi necha yillik tanishing bo'lsa",
+      "row_index": 623,
+      "source_name": "2835213_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_633",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835262_chunk007.wav",
+      "sha256": "c84e3114a3fe0f76464b2be31e837a9bd6999686ae040e505248415597576dbb",
+      "reference": "sekin itoat qilish",
+      "row_index": 633,
+      "source_name": "2835262_chunk007.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_643",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835296_chunk000.wav",
+      "sha256": "2d13c4c40b3ed915bacd931793dca6c4ead4286b2da8a8f7c988d8ff66bedc91",
+      "reference": "nimaga",
+      "row_index": 643,
+      "source_name": "2835296_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_650",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835299_chunk001.wav",
+      "sha256": "50308edbc787646f77d39419c793e90195a32e99a701c1ed46e16c4784c4dc21",
+      "reference": "shuncha gaplarni gapirib tashladi ro'zayi ramazonda mayli xudoni o'zi kechirsin hammani",
+      "row_index": 650,
+      "source_name": "2835299_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_654",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835312_chunk000.wav",
+      "sha256": "05e7af8a0a9eea480bc861dc75453ca26dd74eafdc5d74884fe32959370c8054",
+      "reference": "lekin menda bunaqa odat yo'q quruq tuxmat",
+      "row_index": 654,
+      "source_name": "2835312_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_655",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/2835312_chunk001.wav",
+      "sha256": "56644ac2182151639084ade3a2d1b6a7437d5bf0e9aefe0dd1495b5fe726e05b",
+      "reference": "chorni qilsang misol uchun lichkada gaplashsang chorniy qilsang uchirib yuborsang mana bu yerda",
+      "row_index": 655,
+      "source_name": "2835312_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_663",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/89692_chunk001.wav",
+      "sha256": "1ddacdb22bfb4f69402b00761380fd72319fa3485674798d634a32d90eb74a01",
+      "reference": "it bilimdon tanlovidagi g'olib yoshlarga",
+      "row_index": 663,
+      "source_name": "89692_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_665",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/89692_chunk003.wav",
+      "sha256": "9bdb3db43967772b954a6c559d148f23c8ed5445b4f44753dd9a4b298bfd6ccc",
+      "reference": "lekin xulosa qilmasligimni so'rayman haqiqatdan ham bu yuqori saviyada tayyorgarlik ko'rib o'tkazilmagan tanlov bo'lgan",
+      "row_index": 665,
+      "source_name": "89692_chunk003.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_673",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/89692_chunk011.wav",
+      "sha256": "2a5af7fcf91650d77c5decf71424b10221ece50d5738a558297fdba23c4bfe0e",
+      "reference": "davlatimiz qonlab yig'adigan obro'sini mana shunaqa mayda kichik xatolar bilan yo'q qilish kerak emas sababi bu juda ham muhim",
+      "row_index": 673,
+      "source_name": "89692_chunk011.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_677",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/89692_chunk015.wav",
+      "sha256": "9dba0c408d457091a4fb1f3619624130ace8259530e5d62cd497eaf3006ac240",
+      "reference": "vaziyatni joyiga tushurib g'oliblarimizga noutbuk yetib borishini hali isboti bilan yana bir marta ko'rsatamiz",
+      "row_index": 677,
+      "source_name": "89692_chunk015.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_692",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/89709_chunk013.wav",
+      "sha256": "de8fbda6fd01685bb11269001356185105f04b68e35e338c31faf2d0a4d1b087",
+      "reference": "u kichkinami kattami baribir yoshlarning ko'nglidan o'tadi",
+      "row_index": 692,
+      "source_name": "89709_chunk013.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_703",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/9601_chunk007.wav",
+      "sha256": "b9255491ffd72963ce1d08c836e8cf9df8cc05aefc22ce8d1e3b65241cb3b58e",
+      "reference": "hammaga bu oshkoq qilinyapti vazirlik tarqamagan tarqamagan ikkita uchta yo'q aslida 17 ta 18 ta bo'lib ketadi yana to'qqizta minusda turganlarimiz bor shifoxonada yotibdi aniqlanmagan ertaga aniqlansa uni ham oshkor qilmaydi",
+      "row_index": 703,
+      "source_name": "9601_chunk007.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_709",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/9602_chunk005.wav",
+      "sha256": "9b2fb6a07c7ac7615920438595122024b98e3bbe37d27f62175b8bd6f1e02669",
+      "reference": "assalomu alaykum gruppadagilar oxirgi yangiliklarni aytaman sizlarga tak mana bolalarimiz kanikulga chiqishadiyu 20dan xudo xohlasa shu bilan sentyabrgacha karantin ekan maktab bog'chalar yopilarmish hamma",
+      "row_index": 709,
+      "source_name": "9602_chunk005.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_714",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/976_chunk000.wav",
+      "sha256": "721cfd1e9f472caad8aa81b3e1f078ec5155be035e6461f4bcbabf0563674a3e",
+      "reference": "eng muhimi shuda aktyorlik aktyor bo'lish kerak xullas greencardda yutgan odamni ham topsangiz endi 100 ming dollar aytgan odamga 100 ming dollar berangiz ham ko'ndirasiz prosta aktyor bo'lasiz yordam bering iltimos",
+      "row_index": 714,
+      "source_name": "976_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_718",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/97826_chunk001.wav",
+      "sha256": "1e27075ce6140c493c50d47b826f35672f651e068d9ada3fe85bb0bab25bb1d1",
+      "reference": "sayt orqali",
+      "row_index": 718,
+      "source_name": "97826_chunk001.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_727",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/97826_chunk010.wav",
+      "sha256": "ff42ffca5fc7e59e21e19adf898a67faafc9440be8ea4fa4b68714a2dcaa2585",
+      "reference": "keyin o'zingiz bilan bog'lanadigan",
+      "row_index": 727,
+      "source_name": "97826_chunk010.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_731",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/97826_chunk014.wav",
+      "sha256": "d4699a8ee926559c6cfbcc8f929a647cbd842831440cb7f3df0b5fd280d10edb",
+      "reference": "uzog'i bilan' 15 20 minut shekilli",
+      "row_index": 731,
+      "source_name": "97826_chunk014.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_732",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/979_chunk000.wav",
+      "sha256": "ced39cf07eca12bc01b4b20e928eeadf903e54deea8a6c0a579d404ce35bbd75",
+      "reference": "birodar uchta to'rtta davlat deyapsizku qanday davlat bo'lishi farqi yo'qmiboshqacha",
+      "row_index": 732,
+      "source_name": "979_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_735",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/981_chunk000.wav",
+      "sha256": "612a3597a995a040ef9b2693b9949ef6a337604a0687af95b7e06d3581d8c719",
+      "reference": "aka savol javobga qaramaydi shunday basharangizga qarab yoqasizmi yoqmasizmi o'shanga qarab beradi savoljavobdan lyuboy odam o'taveradi aka bir kunga vizaning soni chegaralangan bo'ladi har kuniga",
+      "row_index": 735,
+      "source_name": "981_chunk000.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_737",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/981_chunk002.wav",
+      "sha256": "f4be3b1b8f36b6a969d7ce975fdc8965f76d03ec06764010b071caa8c08bee53",
+      "reference": "stavkasi anavisi bor ularning ham unga bor",
+      "row_index": 737,
+      "source_name": "981_chunk002.wav",
+      "source_sample_rate": 16000
+    },
+    {
+      "id": "telegram_740",
+      "dataset": "uzbek_telegram_natural",
+      "path": "/tmp/gigastt-multilingual-audit/uz_telegram/983_chunk000.wav",
+      "sha256": "d8640a96e9eba046d80ed30decd083ce8a79b9076d9374b7a558aa4a374af6b5",
+      "reference": "bu uchta to'rtta davlat deyapmanku bu vizasi bor masalan yaponiya bo'lishi mumkin yevropa shengen vizasi bo'lishi kerak yo bo'lmasa angliyaniki yo kanadaniki yo bo'lmasam avstraliyaning vizasi bo'lsa amerika elchixonasi o'ylanmasdan viza beradi shunday qiling javob",
+      "row_index": 740,
+      "source_name": "983_chunk000.wav",
+      "source_sample_rate": 16000
+    }
+  ]
+}

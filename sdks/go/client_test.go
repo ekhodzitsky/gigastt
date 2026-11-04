@@ -123,17 +123,21 @@ func TestDialSendsConfigureAndReceivesReady(t *testing.T) {
 	c, err := Dial(context.Background(), m.url,
 		WithSampleRate(16000),
 		WithDiarization(true),
+		WithEndpointSilenceMS(1500),
 	)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
 
 	cfg := waitFor(t, configureCh, "configure")
-	if cfg["protocol_version"] != ProtocolVersion {
-		t.Errorf("protocol_version = %v, want %q", cfg["protocol_version"], ProtocolVersion)
+	if cfg["protocol_version"] != "1.3" {
+		t.Errorf("protocol_version = %v, want 1.3", cfg["protocol_version"])
 	}
 	if cfg["sample_rate"] != float64(16000) {
 		t.Errorf("sample_rate = %v, want 16000", cfg["sample_rate"])
+	}
+	if cfg["endpoint_silence_ms"] != float64(1500) {
+		t.Errorf("endpoint_silence_ms = %v, want 1500", cfg["endpoint_silence_ms"])
 	}
 	if cfg["diarization"] != true {
 		t.Errorf("diarization = %v, want true", cfg["diarization"])

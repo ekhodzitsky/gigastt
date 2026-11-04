@@ -1,0 +1,26 @@
+{
+  "status": "frozen_before_candidate_inference",
+  "training": false,
+  "candidates": ["original_u8_conv_fp32", "s8_channel_full_conv_fp32", "s8_channel_reduced_conv_fp32"],
+  "inputs": "111 decoded_float rows from frozen diagnosis: 22 failure + 15 control recordings, original/A-law/mu-law each",
+  "cases_sha256": "083ad0560561861f47c3460de9872b55f07f4da63283eaeebf93accf87e1fce7",
+  "runtime": "frozen native production RuntimeFactory, 3 intra threads, 1 inter thread, unchanged features and Unicode scorer",
+  "gates": {
+    "all_inputs_complete_finite": true,
+    "new_empty_id_condition_pairs": 0,
+    "new_catastrophic_id_condition_pairs": 0,
+    "catastrophic_definition": "5 * deletions >= 4 * reference_words",
+    "failure_phone_errors": "strict reduction in both codecs",
+    "failure_phone_deletions": "strict reduction in both codecs; combined <= 562 (baseline 750)",
+    "all_phone_errors_and_deletions": "strict reduction in both codecs",
+    "control_word_errors_max_original_alaw_mulaw": [22, 29, 26],
+    "failure_original_word_errors_max": 80,
+    "model_bytes_max_ratio": 1.5,
+    "quantized_weight_original_element_fraction_min_exclusive": 0.5,
+    "quantized_stored_weight_byte_fraction_min_exclusive": 0.5
+  },
+  "selection": "among passing candidates: lowest failure telephone word errors, then control telephone word errors, then model bytes, then name",
+  "next_stage": "Selected candidate: 1000 recordings per each of ru/en/kk/ky/uz, original + A-law + mu-law, 15000 native product requests, paired quality and resource comparison",
+  "exposure": "37 screened unique recordings and 4963 outside screening reported separately; baseline of all 5000 already inspected, not a blind holdout",
+  "production": "Existing installation and baseline artifacts unchanged"
+}

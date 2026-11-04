@@ -1,0 +1,34 @@
+{
+  "archive": "/home/ekhodzitsky/.cache/gigastt-small-package/gigastt-small-multilingual-selective.tar.gz",
+  "archive_sha256": "2de9e00e954b2bd4a0135f3a1036a44c224c42ca974136af358335459fd38bad",
+  "archive_bytes": 265630933,
+  "checksum_sidecar": "/home/ekhodzitsky/.cache/gigastt-small-package/gigastt-small-multilingual-selective.tar.gz.sha256",
+  "independent_rebuild_sha256": "2de9e00e954b2bd4a0135f3a1036a44c224c42ca974136af358335459fd38bad",
+  "rebuild_byte_identical": true,
+  "installed_directory": "/home/ekhodzitsky/.cache/gigastt-small-package/installed-small",
+  "installed_files": {
+    "manifest.toml": {
+      "bytes": 172,
+      "sha256": "3adda86bf5a5d7114233e07f466860945d99ee9b36bf4333d3ec6e2fb4ca0412"
+    },
+    "multilingual_small_selective.int8.onnx": {
+      "bytes": 320394571,
+      "sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0"
+    },
+    "multilingual_vocab.txt": {
+      "bytes": 393,
+      "sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4"
+    }
+  },
+  "builder_sha256": "c7d18e53749f3021000fadf75744aa6ca124f76073e15cb5d7de4e2eddd188bb",
+  "tests_sha256": "ab990e8005266891a6a521543f7cf72ac83e74624ef042ec34daf9de683d848f",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "zlib_build_version": "1.3.1",
+  "zlib_runtime_version": "1.3.1",
+  "python_tests_passed": 16,
+  "no_original_companion": true,
+  "no_production_installation_replaced": true,
+  "no_external_upload": true,
+  "source_encoder_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+  "additional_python_3_12_tests_passed": 16
+}

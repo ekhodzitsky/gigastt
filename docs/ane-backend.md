@@ -2,8 +2,8 @@
 
 > Optional `--features ane`: run the GigaAM v3 **encoder** on the Apple **Neural
 > Engine** via native Core ML `.mlpackage`s. Additive and opt-in; the default `ort`
-> path is unchanged. The original pre-implementation plan is archived in
-> [`docs/archive/ane-backend-plan.md`](archive/ane-backend-plan.md).
+> path uses ONNX Runtime. This guide describes the implemented backend;
+> conversion scripts and parity tests are the reproducible references.
 
 gigastt's default inference backend is ONNX Runtime (`ort`). An **optional**
 native Apple **Neural Engine** backend is available behind the `ane` Cargo

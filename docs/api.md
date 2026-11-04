@@ -35,8 +35,8 @@ Client                            Server
 ```
 
 **Versioning.** Protocol messages are discriminated by the `type` field; the
-current version is `1.2`, reported in `ready.version`; `ready.min_protocol_version`
-is `1.0`, and clients configuring `1.0` or `1.1` remain supported. Version 1.2 adds
+current version is `1.3`, reported in `ready.version`; `ready.min_protocol_version`
+is `1.0`, and clients configuring `1.0`, `1.1` or `1.2` remain supported. Version 1.3 adds optional `endpoint_silence_ms`. Version 1.2 adds
 committed/tentative text and a per-utterance commitment policy. New fields are additive
 only — never removed or renamed — so clients must ignore fields they do not
 know. A client may announce its version via `configure.protocol_version`; an
@@ -53,7 +53,7 @@ Sent immediately after the WebSocket handshake, before any audio is accepted.
   "type": "ready",
   "model": "gigaam-v3-rnnt",
   "sample_rate": 48000,
-  "version": "1.2",
+  "version": "1.3",
   "min_protocol_version": "1.0",
   "supported_rates": [8000, 16000, 24000, 44100, 48000],
   "diarization": false,
@@ -191,6 +191,7 @@ replies with `configure_too_late` and keeps the previous settings).
 | `punctuation` | boolean | Per-session punctuation/casing override for `final` segments only. `true` on a server without a punctuation model is a graceful no-op — finals stay raw, no error |
 | `itn` | boolean | Per-session inverse text normalization override (`final` segments only) |
 | `endpoint_mode` | string | `auto` \| `assistant` \| `manual` — overrides server `--endpoint-mode` for this session |
+| `endpoint_silence_ms` | integer | Decoder blank-run duration, 40–2000 ms (default 600); rounded up to 40 ms frames. Auto mode without VAD only. Omitted keeps the current session value. Invalid range returns `invalid_endpoint_silence_ms` without applying that configure message. |
 | `min_silence_ms` | integer | Per-session VAD trailing silence (ms); ignored if server has no VAD |
 | `commit_policy` | string | `auto` \| `on_finalize` \| `stable_prefix`; omitted = keep the current policy (initially `auto`). Invalid values yield `invalid_commit_policy` without changing the configuration |
 
@@ -247,6 +248,7 @@ frame). The same enum is declared in [`docs/asyncapi.yaml`](asyncapi.yaml).
 | `configure_too_late` | continues | `configure` arrived after the first audio frame; previous settings kept |
 | `invalid_commit_policy` | continues | Unknown text commitment policy; previous settings kept. Native SSE returns HTTP 400 before decoding |
 | `invalid_sample_rate` | continues | Rate not in `supported_rates`; previous rate kept |
+| `invalid_endpoint_silence_ms` | continues | `endpoint_silence_ms` outside 40–2000; configure message not applied |
 | `invalid_endpoint_mode` | continues | `endpoint_mode` not one of `auto` / `assistant` / `manual`; previous mode kept |
 | `unsupported_protocol_version` | ends | Client requested a protocol version the server does not speak |
 | `payload_too_large` | — | REST/SSE surface (body over `--body-limit-bytes`). On WS, an oversized frame is rejected by the transport with close code 1009 instead |
@@ -703,7 +705,8 @@ them in.
   diarization. The mutual-exclusion check with `channels=split` treats `diarization=true`
   as an explicit request; returns `400` with code `conflicting_modes` if both are set.
   Actual diarization output requires the speaker-encoder model to be loaded on the
-  server (downloaded automatically when the `diarization` feature is enabled).
+  server (provisioned by `gigastt download` unless `--skip-diarization` is set;
+  loading for recognition is lazy).
 
 Per-request overrides of the boot defaults (all optional; absent means "use the
 server default", so a request that sets none is byte-identical to before these
@@ -831,6 +834,7 @@ This applies to every file-transcription endpoint (`/v1/transcribe`,
 | WAV (PCM 8–32 bit, IEEE float, RF64/BW64/RIFX/Wave64, MS/IMA ADPCM) | ryf |
 | WAV with G.711 A-law / μ-law (8 kHz typical) | ryf |
 | WAV with G.722 ADPCM (tags `0x0064`, `0x0065`, `0x028F`) | ryf |
+| WAV with G.726 ADPCM (tag `0x0045`, mono 8 kHz, 16/24/32/40 kbit/s) | ryf |
 | WAV with GSM 06.10 (wav49 / tag `0x0031`) | ryf |
 | MP3, M4A/AAC, OGG/Vorbis, FLAC | symphonia |
 | OGG/Opus, `.opus` (Telegram voice) | built-in fallback (`opus-rs`, pure Rust) |
@@ -854,7 +858,12 @@ This applies to every file-transcription endpoint (`/v1/transcribe`,
   the model's 16 kHz.
 - **G.722 in WAV** (what Asterisk, Cisco, and Teams-player exports write —
   format tag `0x0064`, mmreg `0x0065`, ffmpeg writes `0x028F`) decodes to its
-  native 16 kHz.
+  native 16 kHz. The shared tag `0x0064` is accepted as G.722 only when
+  the header declares 8000 bytes/second per channel; other byte rates are
+  ambiguous with G.726 and are rejected instead of guessing the codec.
+- **G.726 in WAV** uses tag `0x0045` with AAL2 packing, mono 8 kHz and
+  16/24/32/40 kbit/s. Audio is resampled to 16 kHz. Headerless G.726 and
+  explicit codec overrides for ambiguous tag `0x0064` are not exposed.
 - **GSM 06.10 in WAV** (Asterisk wav49, tag `0x0031`) decodes natively; 8 kHz
   is resampled to 16 kHz. Headerless GSM is not a `?codec=` option.
 - **Headerless streams** (RTP dumps, Asterisk Monitor raw) carry no container
@@ -1001,3 +1010,31 @@ bun examples/bun_client.ts recording.wav                                    # Bu
 go run examples/go_client.go recording.wav                                  # Go (gorilla/websocket)
 kotlinc examples/KotlinClient.kt -include-runtime -d client.jar && java -jar client.jar recording.wav  # Kotlin
 ```
+
+
+### Decoder blank-run endpoint duration
+
+Without VAD, auto mode uses `serve --endpoint-silence-ms 1000` (environment:
+`GIGASTT_ENDPOINT_SILENCE_MS`) or a per-session configure before any audio:
+
+```json
+{"type":"configure","sample_rate":16000,"endpoint_silence_ms":1000}
+```
+
+The default remains 600 ms. This counts consecutive decoder blank frames, not
+measured acoustic silence. Values 40–2000 ms are supported and rounded upward
+to 40 ms encoder frames (1500 means 1520 ms). The server checks the result at
+its decode stride, so this is not an exact wall-clock response deadline.
+A new token after an internal pause clears the endpoint signal for that window.
+Repeated configure messages preserve the setting when omitted, including when
+diarization configuration recreates the stream state. Out-of-range values reject
+that configure message before applying any of its fields.
+
+Increasing the threshold tolerates longer pauses at the cost of later finals;
+it does not guarantee that blank runs coincide with silence or fix recognition
+errors. The bound stays below the minimum streaming window cap. For longer
+pauses use VAD with `min_silence_ms`, or manual endpointing and explicit `stop`.
+The new field has no effect with VAD, assistant/manual mode, CTC heads (which do
+not use the RNN-T blank-run endpoint), or file transcription. `stop` still flushes
+immediately. An automatic final ends an utterance without closing the WebSocket; explicit
+`stop` finishes the session.

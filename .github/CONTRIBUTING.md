@@ -44,7 +44,7 @@ helper script or dependency-feature change is required.
 cargo build                            # CPU debug build
 cargo build --features coreml          # macOS ARM64 with CoreML
 cargo build --features cuda            # Linux x86_64 with CUDA 12+
-cargo build --features ane             # macOS ARM64 native ANE (file mode)
+cargo build --features ane             # macOS ARM64 native ANE (file and live)
 cargo build --features candle          # experimental Candle/Metal
 cargo build -p gigastt-ffi             # C-ABI FFI layer (Android / mobile)
 
@@ -70,12 +70,17 @@ identifiers or private planning files in commits, branches, tags or PR text.
 Run `python3 scripts/check-publication.py` to check the staged tree and branch;
 CI also checks commit history introduced by the PR and its title/description.
 
-For E2E / load / soak tests see [`CLAUDE.md`](../CLAUDE.md).
+For E2E, load/soak, model-backed and feature checks see [Testing](../docs/testing.md).
+Run `python3 scripts/check-docs-drift.py` and `python3 scripts/test_docs_drift.py`
+when editing documentation. The drift gate includes crate/SDK/benchmark READMEs.
 
 ## Pull requests
 
 - One logical change per PR; rebase on `main` before opening.
-- CI (`ci.yml`) must be green: clippy, unit tests, feature compile checks, audit.
+- CI and Publication hygiene must be dispatched manually on the exact PR head
+  when validation is requested. Pushes do not start checks. Follow
+  [manual CI operation](../docs/performance-regressions.md#manual-ci-operation);
+  required statuses still need to pass before merge.
 - `cargo deny check` passes (license + advisory + sources).
 - For user-visible changes: add a bullet under the `## [Unreleased]` section of `CHANGELOG.md`.
 - Keep commit messages short and present-tense (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).
@@ -91,19 +96,24 @@ as well as hand-written changes.
 ## Release checklist
 
 Release artifacts are produced by [`release.yml`](workflows/release.yml)
-on `v*` tag push. Never upload tarballs manually — the workflow is the single
+by manual dispatch with an existing release tag. Pushing the tag does not start
+the workflow. Never upload tarballs manually — the workflow is the single
 source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
 
 1. **Bump version** in `Cargo.toml` (`version = "x.y.z"`). Run `cargo check` so `Cargo.lock` updates.
 2. **Update `CHANGELOG.md`**: move the `## [Unreleased]` bullets into a new `## [x.y.z] - YYYY-MM-DD` section; leave an empty `## [Unreleased]` for the next cycle.
 3. **Verify locally**: `cargo test --workspace --lib --bins && cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --all -- --check && python3 scripts/check-docs-drift.py`.
-4. **Merge through a PR**: commit the release preparation, merge after required checks pass, and wait for the exact resulting main commit to pass the full CI, including performance and quality gates.
+4. **Merge through a PR**: commit the release preparation, merge after required checks pass, and explicitly dispatch full CI on the exact resulting main commit (`full=true`),
+   with an accepted ancestor SHA. Wait for performance and quality gates to pass.
 5. **Tag & push** (signed):
    ```sh
    git tag -s vx.y.z -m "gigastt vx.y.z"
    git push origin vx.y.z
    ```
-6. **Wait for the release workflow** to finish on GitHub Actions.
+6. **Dispatch Release** from the reviewed workflow revision, then wait for it:
+   ```sh
+   gh workflow run release.yml --ref main -f tag=vx.y.z
+   ```
    It must produce:
    - `gigastt-x.y.z-aarch64-apple-darwin.tar.gz`
    - `gigastt-x.y.z-x86_64-unknown-linux-gnu.tar.gz`
@@ -118,8 +128,9 @@ source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
 
    The same workflow also publishes multi-arch GHCR images (`:x.y.z` / `:latest`, plus
    `:x.y.z-cuda` / `:cuda`), offline bundles and `.deb` packages, an SBOM, SLSA provenance
-   and minisign signatures. Homebrew's Formula update is proposed by `homebrew.yml` as a PR. Approve its
-   workflows when prompted, wait for green checks and merge it; see
+   and optional minisign signatures when the signing secret is configured.
+   Dispatch `homebrew.yml` separately to propose a Formula update PR, then
+   manually run its checks and review it; see
    [Homebrew release updates](../docs/homebrew-release.md).
 7. **Verify the release page** on GitHub — all assets attached, release notes generated.
 8. **Publish to crates.io** (only after step 7, from the validated release commit).
@@ -127,12 +138,16 @@ source of truth, and out-of-band uploads break SHA-pinned clients (e.g. Murmur).
    with authenticated `gh` before publishing:
 
    ```sh
+   cargo publish -p gigastt-quantize --dry-run
+   cargo publish -p gigastt-quantize
    cargo publish -p gigastt-core --dry-run
    cargo publish -p gigastt-core
    cargo publish -p gigastt --dry-run
    cargo publish -p gigastt
    ```
-   Publish `gigastt-core` first (it is a dependency of `gigastt`). `gigastt-ffi` is a cdylib and not published to crates.io.
+   Publish unpublished workspace dependencies in order: `gigastt-quantize`,
+   `gigastt-core`, then `gigastt`. Skip versions already published; verify their
+   identity instead of attempting to overwrite them. `gigastt-ffi` is a cdylib and not published to crates.io.
    The dry-run must succeed before the real publish. A failed `cargo publish` after the tag is pushed means the tag and crate diverge — fix forward with `vx.y.z+1`; do NOT re-tag.
 9. **Language bindings ship separately**, each via `workflow_dispatch`: `node-prebuilds.yml`
    (npm), `python-wheels.yml` (PyPI), `ios-xcframework.yml`, `android-aar.yml`. They are not

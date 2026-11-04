@@ -1,0 +1,39 @@
+{
+  "input_id": "fleurs_en_us_test_0000",
+  "condition": "original",
+  "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+  "native_cli_matches_frozen_server": true,
+  "native_runtime_version": "1.28.0",
+  "native_binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+  "rows": [
+    {
+      "onnxruntime": "1.30.0",
+      "feature_sha256": "7cfdd5c6f184712c6224bb6630d055425e217d208e43bb6bcbdd534db90d2471",
+      "hypothesis_sha256": "600a824093b2a821f71b0a7b67bda1db93a7c56a4216578bb27a96f24cf3ccd8",
+      "matches_native_except_outer_whitespace": false
+    },
+    {
+      "onnxruntime": "1.28.0",
+      "feature_sha256": "7cfdd5c6f184712c6224bb6630d055425e217d208e43bb6bcbdd534db90d2471",
+      "hypothesis_sha256": "bfb0c68bfd2019363a44815e7f42060daa52e3b6bea9cbc82d216d3e20bbb5b7",
+      "matches_native_except_outer_whitespace": false
+    }
+  ],
+  "python_runtime_hypotheses_match_each_other": false,
+  "interpretation": "Different Python runtime versions produce different hypotheses on the identical feature array; neither currently matches frozen native product. This follow-up is outside the135factorial executions.",
+  "release_helper_sha256": "eb04adbf755794aee22f6cb11ab27fd4d69ec4d98c5bb4d621ca298d71a3bc4d",
+  "debug_vs_release_dump": {
+    "pcm": {
+      "same_shape": true,
+      "exact_equal": true,
+      "max_difference": 0.0,
+      "mean_difference": 0.0
+    },
+    "mel": {
+      "same_shape": true,
+      "exact_equal": true,
+      "max_difference": 0.0,
+      "mean_difference": 0.0
+    }
+  }
+}

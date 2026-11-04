@@ -1,0 +1,118 @@
+{
+  "quality": {
+    "rnnt": {
+      "cases": 21,
+      "audio_seconds": 3637.0987423469387,
+      "reference_words": 8142,
+      "changed_words": 0,
+      "baseline": {
+        "normalized_sdi": [
+          436,
+          106,
+          49
+        ],
+        "case_errors_on_aligned_podcast_words": 567
+      },
+      "candidate": {
+        "normalized_sdi": [
+          436,
+          106,
+          49
+        ],
+        "case_errors_on_aligned_podcast_words": 567
+      }
+    },
+    "e2e_rnnt": {
+      "cases": 21,
+      "audio_seconds": 3637.0987423469387,
+      "reference_words": 8142,
+      "changed_words": 0,
+      "baseline": {
+        "normalized_sdi": [
+          312,
+          87,
+          68
+        ],
+        "case_errors_on_aligned_podcast_words": 234
+      },
+      "candidate": {
+        "normalized_sdi": [
+          312,
+          87,
+          68
+        ],
+        "case_errors_on_aligned_podcast_words": 234
+      }
+    }
+  },
+  "timing": {
+    "rnnt/long_example": {
+      "median_paired_ratio": 0.9988935427706453,
+      "baseline": {
+        "seconds": 2.148491968000144,
+        "rtf": 0.03015427323508974,
+        "cpu_seconds": 4.0800000000000125,
+        "VmRSS": 539300,
+        "VmHWM": 671792
+      },
+      "candidate": {
+        "seconds": 2.126924720000261,
+        "rtf": 0.029851575017547524,
+        "cpu_seconds": 4.049999999999983,
+        "VmRSS": 566980,
+        "VmHWM": 662856
+      }
+    },
+    "rnnt/podlodka-306": {
+      "median_paired_ratio": 0.9228095885839614,
+      "baseline": {
+        "seconds": 7.885705542999858,
+        "rtf": 0.03236394120939859,
+        "cpu_seconds": 14.970000000000027,
+        "VmRSS": 541420,
+        "VmHWM": 671792
+      },
+      "candidate": {
+        "seconds": 6.963865524000084,
+        "rtf": 0.02858059220952837,
+        "cpu_seconds": 13.579999999999984,
+        "VmRSS": 582812,
+        "VmHWM": 682380
+      }
+    },
+    "e2e_rnnt/long_example": {
+      "median_paired_ratio": 1.0049976752128724,
+      "baseline": {
+        "seconds": 2.404522029999953,
+        "rtf": 0.033747677614034424,
+        "cpu_seconds": 4.740000000000009,
+        "VmRSS": 573952,
+        "VmHWM": 678728
+      },
+      "candidate": {
+        "seconds": 2.506906357999924,
+        "rtf": 0.035184650638595424,
+        "cpu_seconds": 4.839999999999975,
+        "VmRSS": 575596,
+        "VmHWM": 681148
+      }
+    },
+    "e2e_rnnt/podlodka-306": {
+      "median_paired_ratio": 0.9948428365970944,
+      "baseline": {
+        "seconds": 8.156894153999929,
+        "rtf": 0.033476933853519804,
+        "cpu_seconds": 15.75,
+        "VmRSS": 573952,
+        "VmHWM": 678728
+      },
+      "candidate": {
+        "seconds": 8.053632689999631,
+        "rtf": 0.033053135636368684,
+        "cpu_seconds": 15.660000000000025,
+        "VmRSS": 578028,
+        "VmHWM": 681148
+      }
+    }
+  }
+}

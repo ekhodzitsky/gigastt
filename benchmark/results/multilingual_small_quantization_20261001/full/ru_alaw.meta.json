@@ -1,0 +1,95 @@
+{
+  "identity": {
+    "schema": 1,
+    "manifest_sha256": "7c178b6f337554f4cb3c97de389d17fe95413df3d1e95c6d2e9b6634eb7b9e61",
+    "variant": "ml_ctc",
+    "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "model_sha256": {
+      "/home/ekhodzitsky/.cache/gigastt-small-quantization/s8_channel_reduced_conv_fp32/multilingual_ctc.int8.onnx": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+      "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack/multilingual_vocab.txt": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+      "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack/manifest.toml": "6d6c127188579f49da03b04ca81c72e54cab6ebfca170bc111ada528a8ac2ae9"
+    },
+    "scorer_sha256": {
+      "benchmark_multilingual_1000.py": "66324d0bd241085fa6b13bbdecec2780ca8654bc80efe96f448ce292d83f2880",
+      "benchmark_multilingual_public.py": "9d1558e90ab6d451fa37997faab20f45a1444963491fbdd321c860286b7966fb",
+      "wer_unicode.py": "71e0703f3b78182b63e9629c2b9963c5f08938e2d010d660eb1cb8cf16370be2"
+    },
+    "jiwer": "4.0.0",
+    "workers": 2,
+    "timeout_s": 300.0,
+    "url": "http://127.0.0.1:19922",
+    "health_configuration": {
+      "variant": "ml_ctc",
+      "punctuation": false,
+      "itn": false,
+      "execution_provider": null,
+      "backend": null,
+      "vad": null
+    },
+    "model_configuration": {
+      "variant": "ml_ctc",
+      "version": "2.21.0",
+      "execution_provider": "cpu",
+      "encoder": "int8",
+      "pool_size": 2,
+      "sample_rate": 16000,
+      "vocab_size": 71
+    },
+    "expected_samples_per_language": 1000
+  },
+  "health": {
+    "status": "ok",
+    "model": "gigaam-multilingual-ctc",
+    "variant": "ml_ctc",
+    "version": "2.21.0",
+    "punctuation": false,
+    "itn": false
+  },
+  "model_info": {
+    "id": "gigaam-multilingual-ctc",
+    "name": "GigaAM Multilingual CTC",
+    "variant": "ml_ctc",
+    "version": "2.21.0",
+    "encoder": "int8",
+    "vocab_size": 71,
+    "sample_rate": 16000,
+    "pool_size": 2,
+    "pool_available": 2,
+    "supported_formats": [
+      "wav",
+      "mp3",
+      "m4a",
+      "ogg",
+      "flac"
+    ],
+    "supported_rates": [
+      8000,
+      16000,
+      24000,
+      44100,
+      48000
+    ],
+    "punctuation": false,
+    "itn": false,
+    "execution_provider": "cpu",
+    "diarization": false
+  },
+  "scoring": "wer_unicode.normalize + jiwer; lowercase; apostrophe variants deleted; punctuation deleted (hyphens join words); no NFC, ITN or yo-folding; CER includes spaces between normalized tokens. Primary uses reference as supplied. Digit-free excludes any str.isdigit character in original reference; eligible_official_style additionally requires audio <=30s. This is not a model-card replication.",
+  "python": "3.12.14 (main, Sep  1 2026, 14:16:52) [Clang 22.1.3 ]",
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.43",
+  "timing_caveat": "Contended CPU timing; summed request times are not throughput or headline performance",
+  "runs": [
+    {
+      "started_utc": "2026-10-01T19:08:31Z",
+      "resumed_results": 0,
+      "warmup": {
+        "status": "ok",
+        "elapsed_s": 0.7491207589991973,
+        "error": null
+      },
+      "completed": true,
+      "measured_wall_s": 380.7166306910003,
+      "finished_utc": "2026-10-01T19:14:52Z"
+    }
+  ]
+}

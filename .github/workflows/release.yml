@@ -61,7 +61,7 @@ jobs:
       matrix:
         include:
           - name: macos-arm64
-            os: macos-14
+            os: macos-15
             target: aarch64-apple-darwin
             features: coreml
             asset_suffix: aarch64-apple-darwin

@@ -73,12 +73,14 @@ jobs:
       - run: python3 scripts/test-manual-workflows.py
       - run: python3 scripts/test_manual_statuses.py
       - run: python3 scripts/test-performance-gates.py
+      - run: python3 scripts/test-asr-performance.py
       - run: python3 scripts/test-ci-prerequisites.py
       - run: python3 scripts/test-resolve-release.py
       - run: python3 scripts/test-resolve-android.py
       - run: python3 scripts/test-release-assets.py
       - run: python3 scripts/test_homebrew_release_metadata.py
       - run: python3 scripts/test_android_runtime.py
+      - run: python3 scripts/test_phrase_loss_diagnostic.py
 
   runtime-isolation:
     runs-on: ubuntu-latest
@@ -329,7 +331,7 @@ jobs:
       - run: cargo test --workspace --lib --bins
 
   build-coreml:
-    runs-on: macos-14
+    runs-on: macos-15
     name: Build (CoreML)
     steps:
       - uses: actions/checkout@v7
@@ -413,7 +415,7 @@ jobs:
       - run: cargo build --release -p gigastt --features diarization
 
   build-candle:
-    runs-on: macos-14
+    runs-on: macos-15
     name: Build (Candle/Metal)
     steps:
       - uses: actions/checkout@v7
@@ -429,10 +431,17 @@ jobs:
       - run: cargo test -p gigastt-core --features candle --lib
 
   build-ane:
-    runs-on: macos-14
+    needs: comparison-base
+    runs-on: macos-15
     name: Build (ANE)
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
       - uses: dtolnay/rust-toolchain@stable
       - name: Install protoc
         run: brew install protobuf
@@ -443,6 +452,28 @@ jobs:
       - run: cargo build -p gigastt --features ane
       - run: cargo clippy -p gigastt --features ane --all-targets -- -D warnings
       - run: cargo test -p gigastt-core --lib --features ane
+      - name: Detect Objective-C runtime changes
+        id: objc-delta
+        env:
+          BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
+        run: python3 scripts/compare-objc-revisions.py --base "$BASE_SHA" --affected-only >> "$GITHUB_OUTPUT"
+      - name: Check optimized Objective-C ownership
+        if: steps.objc-delta.outputs.changed == 'true'
+        run: cargo test --release --locked -p gigastt-core --lib --features ane test_objc_autorelease -- --test-threads=1
+      - name: Test Objective-C comparison harness
+        run: python3 -O scripts/test_compare_objc_revisions.py
+      - name: Compare affected Core ML bridge revisions
+        if: steps.objc-delta.outputs.changed == 'true'
+        env:
+          BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
+        run: python3 scripts/compare-objc-revisions.py --base "$BASE_SHA"
+      - name: Retain Core ML measurements
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: objc-revisions
+          path: target/objc-revisions
+          if-no-files-found: ignore
       # Warning-free with the lean core (no default features) + ane only.
       - run: cargo check -p gigastt-core --no-default-features --features ane
 
@@ -507,21 +538,63 @@ jobs:
             target/speaker-revisions/
           if-no-files-found: error
 
+  asr-performance:
+    name: ASR performance
+    needs: comparison-base
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install native build prerequisites
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: asr-performance
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.gigastt/asr-performance-models
+          key: asr-performance-${{ hashFiles('scripts/asr-performance-assets.json') }}
+      - name: Provision both pinned ASR heads
+        run: |
+          for head in rnnt e2e_rnnt; do
+            cargo run --locked -p gigastt -- download --model-variant "$head" --model-dir "$HOME/.gigastt/asr-performance-models/$head" --skip-diarization
+          done
+      - name: Compare full ASR revisions
+        env:
+          BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
+        run: GIGASTT_ASR_MODELS="$HOME/.gigastt/asr-performance-models" python3 scripts/asr-performance.py --base "$BASE_SHA"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: asr-performance
+          path: target/asr-revisions/
+          if-no-files-found: error
+
   model-smoke:
     # All PRs, including forks: indirect inference dependencies cannot skip this gate.
     runs-on: ubuntu-latest
     name: Model smoke
-    needs: [bench, speaker-performance]
+    needs: [bench, speaker-performance, asr-performance, build-ane]
     if: always()
     timeout-minutes: 25
     permissions:
       contents: read
     steps:
-      - name: Require performance gates
+      - name: Require performance and bridge checks
         env:
           BENCH_RESULT: ${{ needs.bench.result }}
           SPEAKER_RESULT: ${{ needs.speaker-performance.result }}
-        run: test "$BENCH_RESULT" = success && test "$SPEAKER_RESULT" = success
+          ASR_RESULT: ${{ needs.asr-performance.result }}
+          OBJC_RESULT: ${{ needs.build-ane.result }}
+        run: test "$BENCH_RESULT" = success && test "$SPEAKER_RESULT" = success && test "$ASR_RESULT" = success && test "$OBJC_RESULT" = success
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -698,6 +771,9 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - uses: obi1kenobi/cargo-semver-checks-action@v2
+        env:
+          # rustdoc-only API comparison does not execute native inference.
+          ORT_SKIP_DOWNLOAD: "1"
         with:
           # coreml+cuda are mutually exclusive; --all-features is impossible.
           feature-group: default-features
@@ -797,14 +873,11 @@ jobs:
       - uses: crate-ci/typos@v1
 
   docs-drift:
-    # Advisory gate against documentation drift (scripts/check-docs-drift.py):
+    # Gate against documentation drift (scripts/check-docs-drift.py):
     # CLI flags vs cli.md, WS error codes vs asyncapi.yaml/api.md, audio
     # formats, OpenAPI routes, relative links and version pins.
-    # continue-on-error keeps it non-blocking while it stabilizes — revisit
-    # promoting it to a required check after 2026-09-15.
-    continue-on-error: true
     runs-on: ubuntu-latest
-    name: Docs Drift (advisory)
+    name: Docs Drift
     permissions:
       contents: read
       pull-requests: read
@@ -820,7 +893,7 @@ jobs:
           filters: |
             docs:
               - 'docs/**'
-              - '.github/*.md'
+              - '**/*.md'
               - 'crates/gigastt/src/main.rs'
               - 'crates/gigastt/src/serve.rs'
               - 'crates/gigastt/src/serve/bind.rs'
@@ -832,13 +905,16 @@ jobs:
               - 'crates/gigastt/src/server/listen.rs'
               - 'crates/gigastt-core/src/inference/audio/**'
               - 'scripts/check-docs-drift.py'
+              - 'scripts/test_docs_drift.py'
               - 'scripts/check-docs-drift.allowlist'
               - 'README*.md'
               - 'Cargo.toml'
               - 'packaging/**/README*'
       - if: github.ref == 'refs/heads/main' || steps.filter.outputs.docs == 'true'
         name: Check docs drift
-        run: python3 scripts/check-docs-drift.py
+        run: |
+          python3 scripts/test_docs_drift.py
+          python3 scripts/check-docs-drift.py
 
   dependency-review:
     needs: comparison-base
@@ -1120,6 +1196,11 @@ jobs:
         run: |
           # Optimized timing/RSS probes run in the mandatory Speaker performance
           # job. Instrumented debug coverage cannot provide valid measurements.
+          # The endpoint replay requires an explicit model and a fresh report
+          # path. Coverage output is diagnostic, not a latency measurement.
+          endpoint_probe_dir="$(mktemp -d "$RUNNER_TEMP/endpoint-coverage.XXXXXX")"
+          GIGASTT_TEST_MODEL_DIR="$HOME/.gigastt/models" \
+          GIGASTT_ENDPOINT_PROBE="$endpoint_probe_dir/report.json" \
           cargo llvm-cov --no-report --workspace --lib --bins -- --ignored --test-threads=1 \
             --skip inference::diarization::model_tests::test_speaker_quality_and_latency_against_cpu_oracle \
             --skip inference::diarization::model_tests::test_speaker_resource_probe
@@ -1179,6 +1260,7 @@ jobs:
               - 'Cargo.lock'
               - 'crates/**/Cargo.toml'
               - 'crates/**/build.rs'
+              - 'vendor/**'
               - 'crates/gigastt-quantize/proto/**'
               - 'rust-toolchain.toml'
 

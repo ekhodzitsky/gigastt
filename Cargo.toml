@@ -2,6 +2,7 @@
 members = ["crates/gigastt-core", "crates/gigastt-ffi", "crates/gigastt-uniffi", "crates/gigastt-node", "crates/gigastt", "crates/gigastt-quantize"]
 default-members = ["crates/gigastt"]
 resolver = "3"
+exclude = ["vendor/candle-core-0.11.0", "vendor/askama_derive-0.16.0"]
 
 [workspace.package]
 version = "2.22.0"
@@ -33,3 +34,7 @@ opt-level = 3
 
 [profile.dev.package.memchr]
 opt-level = 3
+
+[patch.crates-io]
+candle-core = { path = "vendor/candle-core-0.11.0" }
+askama_derive = { path = "vendor/askama_derive-0.16.0" }

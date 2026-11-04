@@ -1,0 +1,914 @@
+{
+  "metadata": {
+    "candidate": "s8_channel_reduced_conv_fp32",
+    "model_dir": "/home/ekhodzitsky/.cache/gigastt-small-quantization/selected_product_pack",
+    "binary": "/home/ekhodzitsky/.cache/gigastt-multilingual-1000/gigastt-candidate",
+    "binary_sha256": "bb30ca980374af9eb6e9fae9d239c3ce34a85e69e202bc8f8bac6c1e7ae36566",
+    "encoder_sha256": "18fa5fab6ece0123d7813f7abc8da129530f6d1a7da17c85c4b3948f27b8e3e0",
+    "vocab_sha256": "4d130287892e1099fedfb3f93c4b4cf8a263151158801680b28977d1be4133f4",
+    "manifest_sha256": "6d6c127188579f49da03b04ca81c72e54cab6ebfca170bc111ada528a8ac2ae9",
+    "bootstrap_presence_companion_sha256": "e08e27ae5669b39f0c378fae101bbbb9a80505f74f9b66719c309bf5b894a480",
+    "bootstrap_presence_companion_loaded": false,
+    "custom_manifest_policy": "Supported custom basename; explicit external SHA verification; no production checksum code changed.",
+    "pool_size": 2,
+    "encoder_intra_threads": 3,
+    "http_workers_per_server": 2,
+    "script_sha256": "1fda2bfd8334a090bfd551cfa11480586dda32da27e00fbcbe3b66e8d107207d"
+  },
+  "prepared_sha256": "db4d8957c91f342e1f685e956b33ee04cbf0c034b6d941bf10429af0fa910061",
+  "native_private_sha256": "a8aee7c1b37ad15984346e7f2a3dee095a0544c8aa085d1b7ea59a94ed9643a2",
+  "n": 111,
+  "exact_matches": 111,
+  "score_matches": 111,
+  "rows": [
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "condition": "original",
+      "audio_sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "feature_sha256": "c2e4a510d7d3f40b650c108e46227ef54fa1c466fd089b0285e86c6e84fa270a",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "feature_sha256": "a0307158ee8e1e81ed2413ad56653665c7e0870cb3e03734588458c1ac73f5c0",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "feature_sha256": "336758cb917e6f10e5dc9da44cf68aa85a9aa5838a0159dc295cfbf485f633ba",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "condition": "original",
+      "audio_sha256": "81673ad2f0eb6a463e13fd9d5a442d1469e745f9a67565a3b9d20fbff395599a",
+      "feature_sha256": "018c3c81e630f957bb66b503cb382a8d30342c38a978a3cfbbd78282b6749092",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "aa1855165eacf5490fc30c44da36f1f21897348c51906eda2f5fa949b4205a28",
+      "feature_sha256": "d2b1912caf8dbb8014bed2a47609ec2206aac58ff1ad8a69a1ff50f7c527f04d",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "6710c6470ce7757c91f41e9f63e088a218f1b09bbf7a0a502247b25d5bd3a26a",
+      "feature_sha256": "24180fa1419f00f1487bb014c10b11a4d3721e12d7be57853b702171816c0bb3",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "condition": "original",
+      "audio_sha256": "78e9c886fbfc247dc7743f9dc7473006b7a50b9401f1db9af16926cf9dae0d04",
+      "feature_sha256": "c1223efffd4e09b1baa64fc5286dd9750ac7e8b69f8f85e3a7db64b9941c2aa2",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "e7deccb7c578ed70c3ed80918c837a42885c54a087e8ce68144e3d1a88b93de7",
+      "feature_sha256": "ff6e9edd692d6e20cd4183907254bd4933d57cf8b4bb2ec634182e70a72e5ab0",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "08b0001dcba76c2b807e701f5a9ac124b04ea979cd0cc4a59cef873d605b2b80",
+      "feature_sha256": "cbb10665b0760fcb0700f686d6b5796963ca8a559192904d1ab8a318b74a9da2",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "condition": "original",
+      "audio_sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "feature_sha256": "991e35c13eeaf52f5873696e1e3586d831802cf161fc563f3bef7569658cb523",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "feature_sha256": "f974ed3ed354f299168b6366303d649c775a1825f1558100d1fb8e6964d2c294",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "feature_sha256": "50b0b284a0868d745e2e3cb6d15c148593e7897f01f00d81853b48d474efa835",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "condition": "original",
+      "audio_sha256": "7603cae3294309ef70d234180cefccc3b13865ee525262228a636069b9b62841",
+      "feature_sha256": "608985344c81b7d7ba12d73bd9a8df3eb7f8a7eb820c7a7e076c566099ca17a2",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "aebd7dcdb506a692c0d287a4b4c5f6e125664fa5aa623ccb8589fc5df25b4b43",
+      "feature_sha256": "0b22954b22da548873b87b215464c79c9512a9d202615d09658777cf80355e6a",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "ba09794690a21ee6531351f0f6b50396f1b17ef6ac2bdb573e412aff3c302b54",
+      "feature_sha256": "cf15f3a01b8d7b4ecf5722a0d2c5900de82ad6168f91a71d6f294dd5ef738141",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "condition": "original",
+      "audio_sha256": "260bdd1a15e1d35bcc5d91667516ca3bc659285e10f94872182715bcd7880398",
+      "feature_sha256": "f3f4cb06e492018994b8d4b310b68bc4b544b465e295c384cdbcc60b10165ae3",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "eac72ce14c4d98ad104a6bb93b3dfe74eb8343c043f14a65dce9e9f2b92c0fcf",
+      "feature_sha256": "aae220d7902eba487210196a6583ae75754acfd714fe42b1ec3a284207b4bb16",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "3f5ed538f903eb7b3926dd500335ff392a73cb21f97bdb610a2a06680a3f684e",
+      "feature_sha256": "e1b9bad5e5ce47dba919309de87a632f9eb826d91a8ac637d5a5050fba336f9f",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "condition": "original",
+      "audio_sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "feature_sha256": "5c40ef20c25b14bcfc90238a343ffda8fed3efd63cce138de6a8ec05958649b1",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "feature_sha256": "30da8f831df7e5e195d44424c37a8ef26fe44cb8efcc84be74e8a38412fcdde4",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "feature_sha256": "ed1e1269a9cf44da2f8315134ba0a5347d9377853ee6104dfc19211de6151e96",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0094",
+      "condition": "original",
+      "audio_sha256": "cfcc02bb4c5bf5d6bc1fb0483fa61bd605e7fd8b3237133a286d48d714e6f0f7",
+      "feature_sha256": "0b4b52bd636a460bba11528c96d3b08917667f1c4494958dfff362a06a9cc76e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0094",
+      "condition": "alaw",
+      "audio_sha256": "c5b15fa9fa4ff58bff7f5389225070a46e71df9cb258c42619cdac045bc5f72a",
+      "feature_sha256": "726f85c8a804f3035d7f8a3497564d2e26da9c4d9bf027718a19a923656bf213",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0094",
+      "condition": "mulaw",
+      "audio_sha256": "d70ffe0482b3f41a374169b5e2c5a854112ed27d8c324d1f9afa7df397624cfd",
+      "feature_sha256": "044d2092d445227f2f90f619e6fdc8ee917501b9f21038357664298d3135112e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0111",
+      "condition": "original",
+      "audio_sha256": "44e53f51be9b04f6d5c0eaba111b40c0ae83083ac0ace0da97c20162248c42d0",
+      "feature_sha256": "60b649a7117020403ae502dc632377513dc0bfe554e3ac450334278247ff5ef4",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0111",
+      "condition": "alaw",
+      "audio_sha256": "5613b7d97916799a2a62d2ae1f08bf9a45b3eb8c5e8a670b9923e561a5dfe7a5",
+      "feature_sha256": "1aec4130d7987212a55464acc917d74dcc58afb51dd57482bc2dea366e7e8b14",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0111",
+      "condition": "mulaw",
+      "audio_sha256": "fc323dda9b7b9fa8bc1049226344c046274c2e569b1eece168011feba8f6478b",
+      "feature_sha256": "e761d2e6a7fb675d3a18b699e7cfaa790cafeaa3df4456e74c276445edee9e1e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0113",
+      "condition": "original",
+      "audio_sha256": "d346b78cb21212e4b46a9be2c62133a80dca119c081dc7582eee22c48471195d",
+      "feature_sha256": "2b52aa7d148f6725d1833aac37ca5b0139ac9b5a08fc7e2e10039295838833d0",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0113",
+      "condition": "alaw",
+      "audio_sha256": "38ef2713b96543bdebbd8a551c20aa2f8eede6ad2f57c4737f0a1df719bb7799",
+      "feature_sha256": "14dd0b37ee085b57b4e5242b31be3a762bd61ab06398bab8581ce27007d93603",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0113",
+      "condition": "mulaw",
+      "audio_sha256": "6f272309b4e14b2dea5ea0201c48f223f0b54b95163f1bbfd0cd745247e3b76e",
+      "feature_sha256": "0b4527106eb95649e8d2414c28e80be470397040e3be65e8eb488b4617de0dec",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "original",
+      "audio_sha256": "6751a78f4c4afb62430604e63aedbb5b0fc04d87ec0c6af24c7aefac13ab2eef",
+      "feature_sha256": "e14e1bd61b8572df3ba34d6df0402791ca4c670112f508284685d07d644aeb62",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "alaw",
+      "audio_sha256": "6ea643d9a80eed14e59302ce59c2f47dbd33d540d906fe8f6b65cd824876fe98",
+      "feature_sha256": "598750424b854f94b5628a60f731e891df3a836004f68d7b32a3eb942801fefd",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0121",
+      "condition": "mulaw",
+      "audio_sha256": "51875e796b933981bd72243215ccaadb67c1d918ff2dff137800fdb0b9860f76",
+      "feature_sha256": "32d584333b341111e1039599c9ca0d1c3b571c90a0bdb626e0ec4214671727b1",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0141",
+      "condition": "original",
+      "audio_sha256": "692dcd900cacfaf5e2385a3f287ce3fa11ae7971d141e70c19fa40231e3432f1",
+      "feature_sha256": "b67c24ac3bee33f6e6cf093a8aed737180084985b7aca429d2a77e53d9d09205",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0141",
+      "condition": "alaw",
+      "audio_sha256": "d43cffa650557d7ec6b3e6f6bae8b812f27dec9c340b8175ff69cf64949fea82",
+      "feature_sha256": "f36e1cf7490675e5d7f1001899e292c0815fefcb1a65788ebe753ceb98bc73cc",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0141",
+      "condition": "mulaw",
+      "audio_sha256": "4a2c4592b99254f79cff151e5118d17d73ff3f662b94238f0a1b813cabb58f27",
+      "feature_sha256": "e65da77dd6a1fb39fecff4b3b1d77b98d58cac3c66ef53f0ffa1659c4e3f0c39",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "original",
+      "audio_sha256": "a2fb33466f1e035d0299ebf68820a46b6e9a0caaf6760031379ad5b9d0218809",
+      "feature_sha256": "258ef066454a7191463155dde6c79ada41ce45c75c840f677d00516e0576a225",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "alaw",
+      "audio_sha256": "f17f0df69cdb4a6a532c568ce477a6837f5bc00291dbe0bb5a540f268a694b5a",
+      "feature_sha256": "cba118629059baeb735f780effb9c634e7e06ff32235c7310ebed32e89cbd5bd",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0162",
+      "condition": "mulaw",
+      "audio_sha256": "0a917720721114a5ab746502db21abc8d8d810f76b7cab633ff02f52b87af132",
+      "feature_sha256": "b2727197c8c5fa712b9c3d660cb5ab2c3291da73acba9a006b74dbe6f8589655",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "original",
+      "audio_sha256": "0cbaa8f36f6c60782e7c28d18ad3ea9ceaace283bb713ae8b3c0647aca39e1d1",
+      "feature_sha256": "ccfddd558a7f540aad9e8e10974845f68155d2146ccac1fedde5d9b9253f9cb1",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "alaw",
+      "audio_sha256": "d2efce3bbcf1da7c395538683d8f70b2104f01ea1ddef50cf138975c8ad93f60",
+      "feature_sha256": "4e2de5bf450196d06068c040833e0b89ce483159741433aeccef255626c05c7b",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0295",
+      "condition": "mulaw",
+      "audio_sha256": "1eb8c3058bc6a539d6b6c960f541434803feafa390dc4ec628790827d2c601c4",
+      "feature_sha256": "6012735826be6e519cfd462215f735316477f90e95c5c5ef7abac1b19d6416c4",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0345",
+      "condition": "original",
+      "audio_sha256": "4062175f8254d19141100f15bbd6ea5a85e57a997255ccfe0bf37ff2bd536bb5",
+      "feature_sha256": "f7503cde4981848ac746a0f37c7d19f003777a541e0408720d5bcf187724ff99",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0345",
+      "condition": "alaw",
+      "audio_sha256": "c9cb67af9d387f74fe737167ddcb8d4565a36479bb39f879c065f94c45fb4569",
+      "feature_sha256": "c1196a85e3fda64ee9250623f5824a40836b5caa7a30af9247656a62deeb8ac1",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0345",
+      "condition": "mulaw",
+      "audio_sha256": "f9f25022fb8161fecf8d643b503fc30448026a7ff43f54ab0d30c7cafdafd8a6",
+      "feature_sha256": "a5bb029a6d709d363606717baade9803cf39cbe0ad5df65e6f8fa4eb3bfcdfad",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0380",
+      "condition": "original",
+      "audio_sha256": "15e9be0f3a4b79dc6f1afba65948dccefee4042db3d7cbb772abe5c50df7a3bd",
+      "feature_sha256": "502b005922457cb0bc9fa7d8704205b5822e80c6f782a73f968233a3f81da8eb",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0380",
+      "condition": "alaw",
+      "audio_sha256": "c03045d4d7d10d9147ebef03f8eedd191ceceec999bca7d55fcf779960cf2b73",
+      "feature_sha256": "cecae21d374fcf911aeb0d205c8fbba049d86d93c515225cba3f10ae6e430af2",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0380",
+      "condition": "mulaw",
+      "audio_sha256": "4bc6f618f6b2866b2b79d520cfa508b6d14b0e4ed072c9eec38b529bd7965f85",
+      "feature_sha256": "28fcb0ee0d3cadb43cc7edbebf03b4f70e66cf518cf8efb802ad32af4dd05657",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0484",
+      "condition": "original",
+      "audio_sha256": "ea5cc00b0acc7adbc427b24b3bd1c88ebb322eacf3b43f6e8b24b707fd7db7c6",
+      "feature_sha256": "d7602024b717ff2e98bd0aff464a2b29dabd1ec6b21e6652279f4a9f4449bba7",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0484",
+      "condition": "alaw",
+      "audio_sha256": "f0a36a6b262937b83a6bc3480c7f8c98418816625aed5bfac104c00d5faf7271",
+      "feature_sha256": "e19623651ad04dcd3edaaa36f3ed9905678d25da0153ad9aa09a5fb5799ad50e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0484",
+      "condition": "mulaw",
+      "audio_sha256": "3a4c6b2a655b773160504960e8aa198c998557d00ae32c223ce2d93d75b4fbcd",
+      "feature_sha256": "13541338e4d8bc32d80ba2a66a9f7ed7b956d3156365dcbf169d5c41d7284a0e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0613",
+      "condition": "original",
+      "audio_sha256": "bb62729f7adc3a0a9a1d9f947e4fa3c8f8b751b4acda8e242786fe1184736f8f",
+      "feature_sha256": "e37f3f5d91871185383b3867fda7c29c31386e670de13bc5c5dfc0245c9a38d6",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0613",
+      "condition": "alaw",
+      "audio_sha256": "dcac4411ead1b3cf52a63ce40d3b83721c2768be0f21ce553651bae098f285ff",
+      "feature_sha256": "5147c42e4c8baa39e5093e0d2d2f0c7e3216b51c7c6181817ffc5aec5de5c830",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0613",
+      "condition": "mulaw",
+      "audio_sha256": "1064568fa7d69919058f63c3a5bd3e7b361f72f57d25a7ff2e33f22fec7ca17b",
+      "feature_sha256": "a9c780a7c4c52a8fe3be2b8e6b5ad074676849bdc98cc78a2174c58be84c6a6e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0659",
+      "condition": "original",
+      "audio_sha256": "9f6733dbdc5e299daa59b54df20e26b53d94560a24779753d58fba5277a248de",
+      "feature_sha256": "5b4786d6d012ffcb5186b7faeae8c83809c6fe24103d6a3f85fd50fc269ae6da",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0659",
+      "condition": "alaw",
+      "audio_sha256": "b9dd6c68ae17df81b6eb626436cf436bf548a2c42227033d7e4e8d37a6decd3c",
+      "feature_sha256": "9c35af445f83c6ba869c797d8e0efd56d7dd2d6de9b68235b213ed357c42f60b",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0659",
+      "condition": "mulaw",
+      "audio_sha256": "4dfab656c5aa33882cf5c2ba1595c61710f0b1e7160188a8de32ab519d4b32c1",
+      "feature_sha256": "0b54acfcc90da98059b6920192c9eba121662e73c70f7d5452b82a8695bb2fb2",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0666",
+      "condition": "original",
+      "audio_sha256": "73e198e53843fa829a1aeb3f33e2593b9e37906eba37cedb6f965922823423de",
+      "feature_sha256": "60b310c191a1ac4345b3e06c0029900b1678448c140cdbbe99ba017b79847f82",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0666",
+      "condition": "alaw",
+      "audio_sha256": "c540db93aed0fdaf66faf0c6dd94f1f32e41b8e1628da02bae780cc5b7d093df",
+      "feature_sha256": "da58e4392be3ebff8052a761cd766941790900ad280f9c30b7ef063b850b6870",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0666",
+      "condition": "mulaw",
+      "audio_sha256": "ae8b4b31fb9f3cbd96e97a53a7a160e25b77e0c26c02a61603e22eaafd32c49d",
+      "feature_sha256": "a4bc585ccbdddc6f2aff4a113f8e4304eb6bf4a6761b9fe7a91d379fea4213bc",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0694",
+      "condition": "original",
+      "audio_sha256": "abd939bbe101cce4cbab9fe9e8621b6dfb78f52dffb37bfff9be3f4a8523e566",
+      "feature_sha256": "4ced622be241e8cc1fceecec795fb2a8efee0db9f89dd58a9706c3e27fa94053",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0694",
+      "condition": "alaw",
+      "audio_sha256": "de5204b6bec16ab275cf1b3a876bc7a6f2ce58f5133341c94cac723d02116c07",
+      "feature_sha256": "21bbb10285171b617715b613342b5574acef18f9cbfeb6a9715e8a88b408b81e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0694",
+      "condition": "mulaw",
+      "audio_sha256": "92aedc2126d210f14444dc9175579a54e129f5b186105b8a40d20bfff204143f",
+      "feature_sha256": "d19caccbb08e173ba401c910e7b1a1876594183d5f78139655e349d6ca4d18a7",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0763",
+      "condition": "original",
+      "audio_sha256": "85167da56d66a7fa978328d76a280519e545d7389e5d2ba8b78dcca4988d546b",
+      "feature_sha256": "1825c2f59f81da1cac46a12534a6c9984be5a886ae2775e8d96d4c0f58ff3aa3",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0763",
+      "condition": "alaw",
+      "audio_sha256": "a9a84694bae9b2496803ab420d34dd9f5966de3af4e73d2309942bf3fb0c1d3e",
+      "feature_sha256": "956f72e6fda583ed99043cae7cf59a8e48d5284f783555837db4c299352f8103",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0763",
+      "condition": "mulaw",
+      "audio_sha256": "ab2aa4433e6b3ce93bdc29f86536004235271995e411130ab069552126b29541",
+      "feature_sha256": "fb3d862ca09212e998ea0c0b06ffbc9b840d728ce5a977cd71af33f3344814d1",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0773",
+      "condition": "original",
+      "audio_sha256": "f778e78eb9a18feb55f2ae2404344d612cca1e2378f36ffa4673b1047b427945",
+      "feature_sha256": "e459f4b09332ed91de878a6b8f7f4579a3ce024de1c9d1e8232f0a350ab71552",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0773",
+      "condition": "alaw",
+      "audio_sha256": "cb2e90aebe78470b91f1d7ba6f0b61a3c87ec175b7c547364f0540db80e27106",
+      "feature_sha256": "8e75eb76a914c21ca1d1699153041b46cf3a058b9391a0d1f625628f963c373c",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0773",
+      "condition": "mulaw",
+      "audio_sha256": "d2d9c2accaa4545c2a6b8fe380c8aa85df10725b4d9645a232cb1c2397d02e76",
+      "feature_sha256": "c3277fefa46c26d671a6e14da4bd6421ec8b4faa986810df03225545fc4c92c3",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0803",
+      "condition": "original",
+      "audio_sha256": "b6120905bca73d09e60c4de353af6484728ee208e906d2f5ee400590ed4f0f8b",
+      "feature_sha256": "586ce77a66daad27dd27837c7ca438ebd705b75c7df8a145abf77cbea0fb67a2",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0803",
+      "condition": "alaw",
+      "audio_sha256": "cff72206f4727c16588dd466fba7ee493e11bd2912077895a6bf40e944ff8973",
+      "feature_sha256": "05432fd4e0095bd27c55752ea2e83f1f8bd51d44054ce05efbbb2e270537a7c6",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0803",
+      "condition": "mulaw",
+      "audio_sha256": "1ecebc2cbd2bdcdd60ce0016dddbb9fb6bba88a11a30181fe0bc28e75097e673",
+      "feature_sha256": "47f4c8a8d94057cb9b8774a79a7df69e7a1e1e30c131b63a45cf0c3da43ccd01",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0833",
+      "condition": "original",
+      "audio_sha256": "29372d3c4fa3037fef3b8d284fa660c3af9068e166dddf2227bf6869487259f5",
+      "feature_sha256": "8d47b24356177a80737862e1cda5920cb23a0e0a61b5cd6c6debb6917c25e2b6",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0833",
+      "condition": "alaw",
+      "audio_sha256": "9c9f47bb99f6ed9fdcefbe39b53f633b2450f5f33a1c51a13e0873a5d0fa3cfc",
+      "feature_sha256": "dde34e48ac2b5af8c0e1c13f7b3516b1479da171304a81de085af4edb7027bed",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0833",
+      "condition": "mulaw",
+      "audio_sha256": "d04b6d4ad0e5071e989b1e24c63d815c71eecbbd7de9b3ba0fbd4efc3ae3b997",
+      "feature_sha256": "df47f4b6700f1c1d9fa7cc98826e54ad08b27fd1c6722021b199d24850748c2b",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0053",
+      "condition": "original",
+      "audio_sha256": "7dbf9a53f98ddc61461861db5a9363e64680eda435265d5fbd85b1464a29b0be",
+      "feature_sha256": "b1453386234e118ca4e2fcc83fd5ae45ccbc5a1d27930c2122b70e16e4b189de",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0053",
+      "condition": "alaw",
+      "audio_sha256": "914799ef45a8365dc7def802525e5e2f4f689c6d0bc9af1f283aef23d01a8f03",
+      "feature_sha256": "7f91a57020b453e34f5755573ac190dec44907f6c6dac23669a4961bcbaa58c4",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0053",
+      "condition": "mulaw",
+      "audio_sha256": "1edc6e1b039f0e13c3ee6d595f5dea9334cfbbbfa11b7ca80c19f8e3d0412d5d",
+      "feature_sha256": "a793bdfa7b997e095728e2604ce3e82dc99cf3a791532079f1dbd675548c1434",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "original",
+      "audio_sha256": "9e31182049e5fbb9aa7c5a2f0def0f262b5534fbf84afd2d24c45ee72b4442ec",
+      "feature_sha256": "c58b4b8a0e0552b6ab647de0ead15c8692c472c8cac7dd085824cb310869e8ed",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "alaw",
+      "audio_sha256": "79d175de05cc8e9fac2565c37479c7bfd64b7235c6a307bd91526db0eaa9b5fa",
+      "feature_sha256": "664fc992d66fc7af16818292ac3b9f5a4fd9419bcfb07553f8f02f5563a4487c",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_validation_0253",
+      "condition": "mulaw",
+      "audio_sha256": "0820cccf3a5a21c9d24b6650896a0ce40630fd581dbe4ef6e1a17bc36cb4c2a0",
+      "feature_sha256": "52f862d1c54d3728d70c7254db5c49f34443982b3282a6a4b469fea349a8ee72",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "condition": "original",
+      "audio_sha256": "cdd6026f47961257d1c475aef91a0bd742a84a4c5af1848e714617d51f6825f5",
+      "feature_sha256": "e34a48abdf8de5d43082ae6848af795230c0d4b915c9f30ae8d3433df07355fe",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "7cb029e24b630e17af9f566bab1fccc2974979f43a967db604f490d25993effc",
+      "feature_sha256": "f6402759785fbee111db3ee4b7360acf98965ef92e891d154459645a43a11c40",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "1dfc0c9c26cb2e0237c4bc439966d919f1ea3a5f1e51b0f3c93c3dc04c90b725",
+      "feature_sha256": "115c3d32b205af3a624f7575efc0ae0cd4057a9c7929dfe6a7eaae6f85fdf38e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "condition": "original",
+      "audio_sha256": "e8f13c4491e0ea8ed53ffdd60e9463251de3c82e0a039a54bfde1c8ae23e5da2",
+      "feature_sha256": "a7b4f05bcbdcb742dd834fe65ed70b6212cda7e4f4dcb2188a1d75635c13fee6",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "95a4d0835c803d9be778df0b04c886cbbf0b2e6f45a2046ad86271d42f9747c8",
+      "feature_sha256": "66011458b686a76977754256a0b74bd819dd1b1a56142059d2e4982354a4505d",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "900419fa51554d8747fd882f94e5780dd80fc11993ba1ca5760903a581b6940c",
+      "feature_sha256": "74b8319d42a55f78d66e6785c5b88fd2be0017e35b194fbd887ff8508a53cfb3",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "condition": "original",
+      "audio_sha256": "13433ff7ae3df78c5bf662c86ce0f238062c16cd42850aabbb662faa3f7a1318",
+      "feature_sha256": "fa11dfc7fff3cb6bfcc8b8028e3e6871614b0fba53a4151ba58ca70feda99db4",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "condition": "alaw",
+      "audio_sha256": "61c64e57060462d6b22517ad0628b1cb13e57a4bbdb0837c585731f76c89877f",
+      "feature_sha256": "600251db13a4c0bfdb5ae8c2cbb3425bab7838b9923b7fd8ea814efddb2af99f",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "condition": "mulaw",
+      "audio_sha256": "5d754bdb9aea73d2c129ac89cd7545c06461bd45752d871441e871d3ccd31c7c",
+      "feature_sha256": "2eb25b2cf3ceee0009fc5eb4d7782e5fb9aff13873abd760fc7ad3bccff5e007",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "original",
+      "audio_sha256": "c7dfb8d475e97d4ca3937780d725d039b584f6edf0fe6f665dbbf69bb0a38cbb",
+      "feature_sha256": "34df89ba5bc6187281f920ab6652f870c1ff4eff7aeef18acac9423cf096d0c4",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "alaw",
+      "audio_sha256": "12d7b07efa372e12f5749bceed0bf83ea53444e5263fc9c797f242ad0bfece92",
+      "feature_sha256": "a474114da77a5d4f4be2db24ff724916e307fd43dea866f602454b0fbefcfeda",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0578",
+      "condition": "mulaw",
+      "audio_sha256": "2cc5db825480f7f1b67807748ae1f33388563174696533aa95c48cf33b57ef7d",
+      "feature_sha256": "1bb05df0d1163bcd294326e737dac52253d12001a7af46f4a87e66c83f11e681",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "condition": "original",
+      "audio_sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "feature_sha256": "c88866febcde1dc6cfa5cba102bcd97919c43b1c5bb83fbb9be7f13f945f3f1d",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "feature_sha256": "abe3fc17d7470df19fe2f1e98c17d8d1a0bbf7678e5ce903f403fedb5a6d1662",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "feature_sha256": "4184cfd10e60d732bc05407dbb65d85807e36487c8125943df1492c45dd24c61",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "condition": "original",
+      "audio_sha256": "ff2a6d058aaa2ed3efe514a554b81841dc227b44444df7a9cf7e8500bd7f8304",
+      "feature_sha256": "295b64e5d42e840f5eac803d915238e2efc53236bba922e12be4ddbb42030522",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "d63f6b58f4681f1ec3deb5233e4215e1d77e1cb75d7a26c24815b6ae62b38fda",
+      "feature_sha256": "da182389adbb7d27b88bd74ce0b70aff8728436c08f27b1a1dab20451c1de27d",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "1bf0379c797e3fc9ac8b1897151c6d23bd0656f18ceca9d931a0262bda3cead5",
+      "feature_sha256": "2d1b80e0f6714aed850436548b251c444ed219c048a41f992e6da7cd8542b6c5",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "condition": "original",
+      "audio_sha256": "a2eb48632fe02f9a6aba3d47a9eb22a70faf428fb1da3d207136eeb34f930504",
+      "feature_sha256": "580cac1bce9dc4a28166ea61867257189c67d75757ec185ab1dcf5ef81242999",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "f810f266ebc495cdfc08826d6546468e85fac9f51b2f1d1551d0ca8d5991d47f",
+      "feature_sha256": "1b3cd1188d35667618936661e0bcf913b084b54bfbd3a30fb7dff896783cc999",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "7823d5d29903e31e548ab1fd0d3a310b830847ba3626515e82989566655526d1",
+      "feature_sha256": "bbce4654b4ea4684832a554951dae2b4524193066b2377e96ddfaa5b50d2a510",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "condition": "original",
+      "audio_sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "feature_sha256": "965c3747904f3157f76eea22661d6ffdcf3d2fbd385b2ff539d82824cb79d20f",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "condition": "alaw",
+      "audio_sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "feature_sha256": "c0ca5827e867af5181589729ee2515af9f1effe2a06a85f43c4273b183a4baa8",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "condition": "mulaw",
+      "audio_sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "feature_sha256": "b274b10a1000efd67c725105febd46f29d6eaa9d45197261255f37432a8ef646",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "condition": "original",
+      "audio_sha256": "58c7c10b111f26ead0151433d4547de4e508195b1c63d0d44c810cf92ef5d6b1",
+      "feature_sha256": "c0a30e562cd0511088fb9828db58389bf6d24efe06233242cabf1d6122b28ff1",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "condition": "alaw",
+      "audio_sha256": "09fc92fc8b3a18520ae16432842be1579bc730a1e188e20a1e40ed1966d1da2d",
+      "feature_sha256": "f0d4c7a1575bc0d5bd5b79e871fbdb11ef7301f1420acf0af575eb2f945b07f2",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "condition": "mulaw",
+      "audio_sha256": "957e4abc9fdd4c2b2b4d323ea7ff83b4e8ae432f7b4deb562b5916c38fa4dedf",
+      "feature_sha256": "ade3fa2d3c834ba32b8168545f9899130169f2c88c23a132c7fba32d976590a3",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "condition": "original",
+      "audio_sha256": "52eb190cc681fa92a110e567f3b0d3a7c2e5ab50f2c403dabfa1157740d1e2d0",
+      "feature_sha256": "3c23d79e9778a5f19d3a5c6702c0efd376d99d996884239894fc1a30629f0350",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "condition": "alaw",
+      "audio_sha256": "d67f7ed33f19bd60e51c43c311225772f17ef7ee9700bb6842381f0ee962b957",
+      "feature_sha256": "e390dc86aee53aa4a1fbf8f2d6df712423f716ac51ddaa25dada56bc19925720",
+      "exact_text_match": true,
+      "word_scores_match": true
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "condition": "mulaw",
+      "audio_sha256": "f00a1f12f02cb93a7d66ff4501db121437290dafab011d51af181d1e3d28cac6",
+      "feature_sha256": "e057d00876e85297119e95f83975525ac6d78eefece3b5ae56f333e44a19319e",
+      "exact_text_match": true,
+      "word_scores_match": true
+    }
+  ],
+  "passed": true
+}

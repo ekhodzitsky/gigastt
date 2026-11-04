@@ -13,11 +13,16 @@ overlap. The encoder and RNN-T predictor start afresh for each window. This
 bounds inference memory; it also changes acoustic context compared with a
 single pass.
 
-The stitch aligns words within the overlap by normalized text, sequence order
-and start time. It maximizes matching words, then minimizes timestamp drift
+The stitch aligns words within the actual overlap by normalized text, sequence
+order and start time. Both alignment and case-evidence checks use the new
+window start and previous window end; an end-anchored tail is not restricted
+to the nominal two-second band. It maximizes matching words, then minimizes timestamp drift
 (at most 400 ms per pair). Matching ignores case, punctuation and `ё`/`е`, but
-the selected word retains its original text, timing and confidence. A matching
-word near the overlap midpoint supplies a shared cut: both copies belong to
+the selected word retains its original timing and confidence. A Cyrillic
+window-start capital can take the older copy's lowercase spelling only when
+the correspondence is unique and the preceding word does not end a sentence.
+Without that evidence its spelling is preserved. A matching word near the
+overlap midpoint supplies a shared cut: both copies belong to
 the same side, so timestamp jitter cannot independently retain or discard both.
 Sequence alignment preserves repeated words such as “да да”.
 
@@ -328,3 +333,23 @@ correction. The words that still change with a shift on the official example
 full-context decode as well; they need a language-model prior or a different
 acoustic model, not a different window grid. Offline decoding is not
 shift-invariant, and no window geometry tried here makes it so.
+
+## Actual-overlap alignment follow-up (2026-10-25)
+
+The alignment and case-evidence searches now use the actual window overlap,
+including an end-anchored tail wider than two seconds. A model-free regression
+reproduces the reported `Может, оставить Один файл` case: the aligned lowercase
+copy at 17 s lies outside the old midpoint band for the reported 7.08–24 s
+overlap. Tests preserve names, reject ambiguous repetitions and reject evidence
+beyond the previous window end. The author's audio URL returned HTTP 404; this
+is not an independent reproduction on that recording.
+
+The [local report](../benchmark/results/trailing_overlap_20261025/report.json)
+compares both RNN-T heads on seven public recordings at three offsets: all 42
+complete responses are identical. Median paired latency changes range from
+−1.32% to +1.45% across two durations and both heads (seven alternating pairs
+per group); median RSS decreases, while the largest median HWM increase is
+1.25%. These are bounded local observations, not a speedup claim. The report
+records exact source and binary identities, accepted dependency differences,
+model hashes, commands and raw timings. The paired responses are preserved in
+[the compressed JSON archive](../benchmark/results/trailing_overlap_20261025/responses.json.gz).

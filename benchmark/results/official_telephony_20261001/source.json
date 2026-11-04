@@ -1,0 +1,1681 @@
+{
+  "metadata": {
+    "source_revision": "7447938d791c4f3e643386ee22c33777004293a5",
+    "checkpoint_sha256": "24aa92be5994fa8b9f1ce40fe59fc9693de0ce6af415011b7c0b4480c7fcf733",
+    "model": "multilingual_ctc",
+    "precision": "original checkpoint FP32 CPU",
+    "threads": 2,
+    "packages": {
+      "torch": "2.9.1+cpu",
+      "torchaudio": "2.9.1+cpu",
+      "gigaam": "0.2.0",
+      "numpy": "2.5.3",
+      "soundfile": "0.14.0"
+    },
+    "selection": "First ten manifest entries per language, unchanged across original/A-law/mu-law; no replacement or training",
+    "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers",
+    "script_sha256": "ac9a453ebf734b358831cbba154db13e7cbb8235b0b63ea12313d8d43eb5e0f1"
+  },
+  "groups": {
+    "ru/original": {
+      "n": 9,
+      "errors": 16,
+      "ref_words": 154,
+      "empty": 0,
+      "wer_percent": 10.38961038961039
+    },
+    "ru/alaw": {
+      "n": 9,
+      "errors": 16,
+      "ref_words": 154,
+      "empty": 0,
+      "wer_percent": 10.38961038961039
+    },
+    "ru/mulaw": {
+      "n": 9,
+      "errors": 17,
+      "ref_words": 154,
+      "empty": 0,
+      "wer_percent": 11.03896103896104
+    },
+    "en/original": {
+      "n": 10,
+      "errors": 27,
+      "ref_words": 209,
+      "empty": 0,
+      "wer_percent": 12.91866028708134
+    },
+    "en/alaw": {
+      "n": 10,
+      "errors": 35,
+      "ref_words": 209,
+      "empty": 0,
+      "wer_percent": 16.74641148325359
+    },
+    "en/mulaw": {
+      "n": 10,
+      "errors": 34,
+      "ref_words": 209,
+      "empty": 0,
+      "wer_percent": 16.267942583732058
+    },
+    "kk/original": {
+      "n": 10,
+      "errors": 24,
+      "ref_words": 178,
+      "empty": 0,
+      "wer_percent": 13.48314606741573
+    },
+    "kk/alaw": {
+      "n": 10,
+      "errors": 44,
+      "ref_words": 178,
+      "empty": 0,
+      "wer_percent": 24.719101123595507
+    },
+    "kk/mulaw": {
+      "n": 10,
+      "errors": 43,
+      "ref_words": 178,
+      "empty": 0,
+      "wer_percent": 24.15730337078652
+    },
+    "ky/original": {
+      "n": 10,
+      "errors": 18,
+      "ref_words": 173,
+      "empty": 0,
+      "wer_percent": 10.404624277456648
+    },
+    "ky/alaw": {
+      "n": 10,
+      "errors": 19,
+      "ref_words": 173,
+      "empty": 0,
+      "wer_percent": 10.982658959537572
+    },
+    "ky/mulaw": {
+      "n": 10,
+      "errors": 19,
+      "ref_words": 173,
+      "empty": 0,
+      "wer_percent": 10.982658959537572
+    },
+    "uz/original": {
+      "n": 10,
+      "errors": 36,
+      "ref_words": 189,
+      "empty": 0,
+      "wer_percent": 19.047619047619047
+    },
+    "uz/alaw": {
+      "n": 10,
+      "errors": 42,
+      "ref_words": 189,
+      "empty": 0,
+      "wer_percent": 22.22222222222222
+    },
+    "uz/mulaw": {
+      "n": 10,
+      "errors": 42,
+      "ref_words": 189,
+      "empty": 0,
+      "wer_percent": 22.22222222222222
+    },
+    "kk_real_call/automatic_nonoverlapping20s_short_api_control": {
+      "n": 3,
+      "errors": 163,
+      "ref_words": 170,
+      "empty": 0,
+      "wer_percent": 95.88235294117646
+    }
+  },
+  "official_longform_attempts": [
+    {
+      "id": "ldc_kazakh_sample",
+      "status": "blocked",
+      "error_type": "ModuleNotFoundError",
+      "error": "No module named 'pyannote'"
+    },
+    {
+      "id": "material_kk_inLine",
+      "status": "blocked",
+      "error_type": "ModuleNotFoundError",
+      "error": "No module named 'pyannote'"
+    },
+    {
+      "id": "material_kk_outLine",
+      "status": "blocked",
+      "error_type": "ModuleNotFoundError",
+      "error": "No module named 'pyannote'"
+    }
+  ],
+  "excluded_short_inputs": [
+    {
+      "id": "fleurs_ru_ru_test_0007",
+      "language": "ru",
+      "condition": "original",
+      "duration_s": 27.0,
+      "sha256": "1847ca4fd0b5c017d174a43b3fe7c97d8f90f841690b44225a2cb556f50a05ce",
+      "reason": "Too long wav file, use 'transcribe_longform' method."
+    },
+    {
+      "id": "fleurs_ru_ru_test_0007",
+      "language": "ru",
+      "condition": "alaw",
+      "duration_s": 27.0,
+      "sha256": "b44ea2a650a1d3e23a9a67021c66b27d752d0efc6cd37423dada81021576861e",
+      "reason": "Too long wav file, use 'transcribe_longform' method."
+    },
+    {
+      "id": "fleurs_ru_ru_test_0007",
+      "language": "ru",
+      "condition": "mulaw",
+      "duration_s": 27.0,
+      "sha256": "3470ff9880279745e0ca7b4a4bdfe2f243c90d4cb946b27a58b2dbf7f07327b4",
+      "reason": "Too long wav file, use 'transcribe_longform' method."
+    }
+  ],
+  "rows": [
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "08d7f2cd51bb0de6d00655368d9926888930a8a2482ee48153c1b099dcc2a7e4",
+      "ref_words": 21,
+      "errors": 0,
+      "duration_s": 16.92,
+      "elapsed_s": 2.44658045999995
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "81673ad2f0eb6a463e13fd9d5a442d1469e745f9a67565a3b9d20fbff395599a",
+      "ref_words": 14,
+      "errors": 0,
+      "duration_s": 11.52,
+      "elapsed_s": 1.5489732020000702
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "78e9c886fbfc247dc7743f9dc7473006b7a50b9401f1db9af16926cf9dae0d04",
+      "ref_words": 10,
+      "errors": 0,
+      "duration_s": 8.64,
+      "elapsed_s": 1.4237649840001723
+    },
+    {
+      "id": "fleurs_ru_ru_test_0003",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "d327393251ecdea82bf7b09be85715b068b4ab1fabd2709be698ede923646a72",
+      "ref_words": 17,
+      "errors": 0,
+      "duration_s": 7.92,
+      "elapsed_s": 1.2429767690000517
+    },
+    {
+      "id": "fleurs_ru_ru_test_0004",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "5c7a6328c4afe385fc75dd0023ae094c6548d56eadebf71817a9d5482adb1176",
+      "ref_words": 26,
+      "errors": 2,
+      "duration_s": 19.44,
+      "elapsed_s": 1.8695973499998217
+    },
+    {
+      "id": "fleurs_ru_ru_test_0005",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "0917a419b13b5feb194181cd1cf2dc486cca80710a49a7147c12e3b1147bf36c",
+      "ref_words": 19,
+      "errors": 8,
+      "duration_s": 10.44,
+      "elapsed_s": 1.6888096659999974
+    },
+    {
+      "id": "fleurs_ru_ru_test_0006",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "2866329aac3f03a28dde4826d910a06c191df3c7921155b3431ec5b3d0b77e8a",
+      "ref_words": 12,
+      "errors": 2,
+      "duration_s": 7.2,
+      "elapsed_s": 0.8849151569997957
+    },
+    {
+      "id": "fleurs_ru_ru_test_0008",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "959af13a44f1124126a333f2b0f95787da606e8830db5176af9db341c46b2a9a",
+      "ref_words": 24,
+      "errors": 4,
+      "duration_s": 11.52,
+      "elapsed_s": 1.744991896999636
+    },
+    {
+      "id": "fleurs_ru_ru_test_0009",
+      "language": "ru",
+      "condition": "original",
+      "sha256": "f23f60c73dccb0cb779cec7145cda9d3f38498b207e88dff654d5b2f0f973735",
+      "ref_words": 11,
+      "errors": 0,
+      "duration_s": 5.94,
+      "elapsed_s": 1.0395370349997393
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "d268109a934095d02e9005bccbe91e3af7d8d2f5f6ee8e0d41e6dfba8cf349a1",
+      "ref_words": 21,
+      "errors": 0,
+      "duration_s": 16.92,
+      "elapsed_s": 1.9297384520000378
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "aa1855165eacf5490fc30c44da36f1f21897348c51906eda2f5fa949b4205a28",
+      "ref_words": 14,
+      "errors": 0,
+      "duration_s": 11.52,
+      "elapsed_s": 1.7318898940002327
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "e7deccb7c578ed70c3ed80918c837a42885c54a087e8ce68144e3d1a88b93de7",
+      "ref_words": 10,
+      "errors": 0,
+      "duration_s": 8.64,
+      "elapsed_s": 1.2262927430001582
+    },
+    {
+      "id": "fleurs_ru_ru_test_0003",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "88093f9c3bcd7e5fad377e5dd165fd5712a853c5ff61788b53a6fb6f1203b08f",
+      "ref_words": 17,
+      "errors": 0,
+      "duration_s": 7.92,
+      "elapsed_s": 1.3887320659996476
+    },
+    {
+      "id": "fleurs_ru_ru_test_0004",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "c963f961af6d6f9bef27a345009a2da44888f6747a8ce8b575bfe35395cf71e4",
+      "ref_words": 26,
+      "errors": 2,
+      "duration_s": 19.44,
+      "elapsed_s": 4.037606063000112
+    },
+    {
+      "id": "fleurs_ru_ru_test_0005",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "7f6b4840cfc33c680e76e489eac88d4417be5990aad2900ee36c56af1ae7251e",
+      "ref_words": 19,
+      "errors": 7,
+      "duration_s": 10.44,
+      "elapsed_s": 1.3370200409999597
+    },
+    {
+      "id": "fleurs_ru_ru_test_0006",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "4a76082d54aeb479cc484e423dbba4f9f374c0e06755a33d813d624c66c8f022",
+      "ref_words": 12,
+      "errors": 2,
+      "duration_s": 7.2,
+      "elapsed_s": 1.3774540959998376
+    },
+    {
+      "id": "fleurs_ru_ru_test_0008",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "1d4582541cb64e01d37c53d1b60037de323a712d415c98f0c62637767b324621",
+      "ref_words": 24,
+      "errors": 4,
+      "duration_s": 11.52,
+      "elapsed_s": 5.837655183000152
+    },
+    {
+      "id": "fleurs_ru_ru_test_0009",
+      "language": "ru",
+      "condition": "alaw",
+      "sha256": "0533b7e99311130c3ec32a99d023a4382e8f40bcfdb571644c40ab465e669937",
+      "ref_words": 11,
+      "errors": 1,
+      "duration_s": 5.94,
+      "elapsed_s": 1.0706708520001484
+    },
+    {
+      "id": "fleurs_ru_ru_test_0000",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "bbd1e8e183d447ade6736903f716ba7921f6afa9d5845cbcbac60085e1392ab8",
+      "ref_words": 21,
+      "errors": 0,
+      "duration_s": 16.92,
+      "elapsed_s": 2.5963122929997553
+    },
+    {
+      "id": "fleurs_ru_ru_test_0001",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "6710c6470ce7757c91f41e9f63e088a218f1b09bbf7a0a502247b25d5bd3a26a",
+      "ref_words": 14,
+      "errors": 0,
+      "duration_s": 11.52,
+      "elapsed_s": 1.66153474299972
+    },
+    {
+      "id": "fleurs_ru_ru_test_0002",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "08b0001dcba76c2b807e701f5a9ac124b04ea979cd0cc4a59cef873d605b2b80",
+      "ref_words": 10,
+      "errors": 0,
+      "duration_s": 8.64,
+      "elapsed_s": 1.3204904049998731
+    },
+    {
+      "id": "fleurs_ru_ru_test_0003",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "c49c4992b80acd3aa237929275c6f8b793caa608677e13718f8d0dc93d4c90f2",
+      "ref_words": 17,
+      "errors": 0,
+      "duration_s": 7.92,
+      "elapsed_s": 1.7330421010001373
+    },
+    {
+      "id": "fleurs_ru_ru_test_0004",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "72a869614b60bc8b98b4e6c0f734e1e6a52b5f1b1b9fe96ab8b58fd0a15983ce",
+      "ref_words": 26,
+      "errors": 2,
+      "duration_s": 19.44,
+      "elapsed_s": 2.884041659000104
+    },
+    {
+      "id": "fleurs_ru_ru_test_0005",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "01546fb032a163ab43b7ebb57dffcb6de7485b51e8dedf75e253b68826cb7b07",
+      "ref_words": 19,
+      "errors": 7,
+      "duration_s": 10.44,
+      "elapsed_s": 1.470893810999769
+    },
+    {
+      "id": "fleurs_ru_ru_test_0006",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "7a8060b96124e2524c03fb7b81f5c8ff6a5200041446aac8cd03f8457c4e771f",
+      "ref_words": 12,
+      "errors": 3,
+      "duration_s": 7.2,
+      "elapsed_s": 1.195443239999804
+    },
+    {
+      "id": "fleurs_ru_ru_test_0008",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "e6d7f679b55f40377f09410ee5a24878921b984f837f9b78fd69ba169819652e",
+      "ref_words": 24,
+      "errors": 4,
+      "duration_s": 11.52,
+      "elapsed_s": 1.6251084420000552
+    },
+    {
+      "id": "fleurs_ru_ru_test_0009",
+      "language": "ru",
+      "condition": "mulaw",
+      "sha256": "40ca5688faa8b84cdaff2236b76289fcf7e07c9af1f0a6ddc0067dbaca8364af",
+      "ref_words": 11,
+      "errors": 1,
+      "duration_s": 5.94,
+      "elapsed_s": 1.0012870310001745
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "original",
+      "sha256": "33aca50159ec2e3cbcc894eb26faa916d6badb1b49fb75994973561540a7f012",
+      "ref_words": 19,
+      "errors": 4,
+      "duration_s": 10.56,
+      "elapsed_s": 1.5950449790002494
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "language": "en",
+      "condition": "original",
+      "sha256": "7603cae3294309ef70d234180cefccc3b13865ee525262228a636069b9b62841",
+      "ref_words": 21,
+      "errors": 3,
+      "duration_s": 8.76,
+      "elapsed_s": 1.4361113049999403
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "language": "en",
+      "condition": "original",
+      "sha256": "260bdd1a15e1d35bcc5d91667516ca3bc659285e10f94872182715bcd7880398",
+      "ref_words": 33,
+      "errors": 3,
+      "duration_s": 11.46,
+      "elapsed_s": 1.8006044240000847
+    },
+    {
+      "id": "fleurs_en_us_test_0003",
+      "language": "en",
+      "condition": "original",
+      "sha256": "b174be7730f0aab6a26762130b66f2125392b50550645727bd057d8479fb6219",
+      "ref_words": 15,
+      "errors": 5,
+      "duration_s": 5.76,
+      "elapsed_s": 1.3536793910002416
+    },
+    {
+      "id": "fleurs_en_us_test_0004",
+      "language": "en",
+      "condition": "original",
+      "sha256": "bfa2f3fb72a05cbcb7c0000a460435f2d0eedca7c5cc90f01aacc89127df7f63",
+      "ref_words": 15,
+      "errors": 4,
+      "duration_s": 4.32,
+      "elapsed_s": 0.8164852100003372
+    },
+    {
+      "id": "fleurs_en_us_test_0005",
+      "language": "en",
+      "condition": "original",
+      "sha256": "3802ffc3e69c66e0d2e66652015bff0c6b1b8498bfb8670623eb4e34bc9e008d",
+      "ref_words": 20,
+      "errors": 0,
+      "duration_s": 11.42,
+      "elapsed_s": 1.748513143999844
+    },
+    {
+      "id": "fleurs_en_us_test_0006",
+      "language": "en",
+      "condition": "original",
+      "sha256": "6b3081a29a5bb6fc6434e8525690edc26b23844841e119c916183f4ba1863372",
+      "ref_words": 16,
+      "errors": 2,
+      "duration_s": 10.8,
+      "elapsed_s": 1.7071904370000084
+    },
+    {
+      "id": "fleurs_en_us_test_0007",
+      "language": "en",
+      "condition": "original",
+      "sha256": "14c9f40d7087ed487823917a9bc1838a037d78d315a694f7ace632651c612a61",
+      "ref_words": 16,
+      "errors": 0,
+      "duration_s": 6.96,
+      "elapsed_s": 1.1111488700003065
+    },
+    {
+      "id": "fleurs_en_us_test_0008",
+      "language": "en",
+      "condition": "original",
+      "sha256": "8152d901627ad1bb88fee68b1f3adb706e33d2292bca02ef4d92465e2db4c84f",
+      "ref_words": 21,
+      "errors": 5,
+      "duration_s": 11.04,
+      "elapsed_s": 1.6311153490000834
+    },
+    {
+      "id": "fleurs_en_us_test_0009",
+      "language": "en",
+      "condition": "original",
+      "sha256": "9514bffb9e0bd3397f2cf90041eff51b87e68293335f7ff904515a19f8d416e3",
+      "ref_words": 33,
+      "errors": 1,
+      "duration_s": 9.9,
+      "elapsed_s": 2.669314315000065
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "b1be1ae50870c2d1b3b86826fef286cb39e5f8bdfb1bf71c8f62c72ddd96b628",
+      "ref_words": 19,
+      "errors": 4,
+      "duration_s": 10.56,
+      "elapsed_s": 2.496111940999981
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "aebd7dcdb506a692c0d287a4b4c5f6e125664fa5aa623ccb8589fc5df25b4b43",
+      "ref_words": 21,
+      "errors": 2,
+      "duration_s": 8.76,
+      "elapsed_s": 1.3861086679999062
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "eac72ce14c4d98ad104a6bb93b3dfe74eb8343c043f14a65dce9e9f2b92c0fcf",
+      "ref_words": 33,
+      "errors": 9,
+      "duration_s": 11.46,
+      "elapsed_s": 1.5903414350000276
+    },
+    {
+      "id": "fleurs_en_us_test_0003",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "8aeaba0eb96c7af0f79d8dcac801fe86986fda76dc30f19bd85d567ad8e212d9",
+      "ref_words": 15,
+      "errors": 5,
+      "duration_s": 5.76,
+      "elapsed_s": 0.9045604779998939
+    },
+    {
+      "id": "fleurs_en_us_test_0004",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "f5078cbd68459f97dcc6de6ddd973c6d87f239b74c22639bdcdb8945571ac331",
+      "ref_words": 15,
+      "errors": 5,
+      "duration_s": 4.32,
+      "elapsed_s": 0.7923581529998955
+    },
+    {
+      "id": "fleurs_en_us_test_0005",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "de2b6126f2cca7f72f7d6dc7584265af37f93f184676d6866e2c4fe487d351f9",
+      "ref_words": 20,
+      "errors": 0,
+      "duration_s": 11.42,
+      "elapsed_s": 1.3836408319998554
+    },
+    {
+      "id": "fleurs_en_us_test_0006",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "aca9be1c350cd9724d36c652331676933fdd280c3e23e4c3c98d7b5ae6d28685",
+      "ref_words": 16,
+      "errors": 1,
+      "duration_s": 10.8,
+      "elapsed_s": 1.5134084329997677
+    },
+    {
+      "id": "fleurs_en_us_test_0007",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "98093fcaf2289299b4ac9f963825691905d8798c706eb468e6d55683e1934dda",
+      "ref_words": 16,
+      "errors": 0,
+      "duration_s": 6.96,
+      "elapsed_s": 1.088806131000183
+    },
+    {
+      "id": "fleurs_en_us_test_0008",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "5da438be2c966bd1a1628e3734b43c2845e4cc484124ee308a5cc34837d0aaad",
+      "ref_words": 21,
+      "errors": 6,
+      "duration_s": 11.04,
+      "elapsed_s": 1.6531389980000313
+    },
+    {
+      "id": "fleurs_en_us_test_0009",
+      "language": "en",
+      "condition": "alaw",
+      "sha256": "4e42457b27f5c6c2a450de6af07493d6948ef7bba9c1290925e872d79bcf6347",
+      "ref_words": 33,
+      "errors": 3,
+      "duration_s": 9.9,
+      "elapsed_s": 1.5293133330001183
+    },
+    {
+      "id": "fleurs_en_us_test_0000",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "4cff3fa3597c7b187f06d308afa287f6b3c769309abb57af2dca1815c4de3fb5",
+      "ref_words": 19,
+      "errors": 4,
+      "duration_s": 10.56,
+      "elapsed_s": 1.5895591729999978
+    },
+    {
+      "id": "fleurs_en_us_test_0001",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "ba09794690a21ee6531351f0f6b50396f1b17ef6ac2bdb573e412aff3c302b54",
+      "ref_words": 21,
+      "errors": 3,
+      "duration_s": 8.76,
+      "elapsed_s": 1.7658006569999998
+    },
+    {
+      "id": "fleurs_en_us_test_0002",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "3f5ed538f903eb7b3926dd500335ff392a73cb21f97bdb610a2a06680a3f684e",
+      "ref_words": 33,
+      "errors": 7,
+      "duration_s": 11.46,
+      "elapsed_s": 1.7838956209998287
+    },
+    {
+      "id": "fleurs_en_us_test_0003",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "06544bc2ec70dc1630408b021390ae6b5f27e8600d7086fb3aae56d80ed60fff",
+      "ref_words": 15,
+      "errors": 6,
+      "duration_s": 5.76,
+      "elapsed_s": 0.9533296730000984
+    },
+    {
+      "id": "fleurs_en_us_test_0004",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "e11d0cad56f1b47160c42906153de3c16c89566e1f43394026b23627f33f876b",
+      "ref_words": 15,
+      "errors": 4,
+      "duration_s": 4.32,
+      "elapsed_s": 1.0186027770000692
+    },
+    {
+      "id": "fleurs_en_us_test_0005",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "0d61706799677ef0f2633fcbb65ba2dc73cd7284b4a98991ab4acb105106f0c7",
+      "ref_words": 20,
+      "errors": 1,
+      "duration_s": 11.42,
+      "elapsed_s": 1.991115871999682
+    },
+    {
+      "id": "fleurs_en_us_test_0006",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "ae249c6a0ae9ace93f5d79cf95d8ab7a4c30bd3f6d140b91cf34e87ba8924021",
+      "ref_words": 16,
+      "errors": 0,
+      "duration_s": 10.8,
+      "elapsed_s": 1.4957012900003974
+    },
+    {
+      "id": "fleurs_en_us_test_0007",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "597c827ccaaebd34c06119e569ff892e1f8bcf9a4a353ace4de4f3eed2493461",
+      "ref_words": 16,
+      "errors": 0,
+      "duration_s": 6.96,
+      "elapsed_s": 1.0415052489997834
+    },
+    {
+      "id": "fleurs_en_us_test_0008",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "90a4be976df5bc2889b6461f9453e9c71b9fe09e60f30c119cc011f442541df9",
+      "ref_words": 21,
+      "errors": 7,
+      "duration_s": 11.04,
+      "elapsed_s": 1.4563767639997423
+    },
+    {
+      "id": "fleurs_en_us_test_0009",
+      "language": "en",
+      "condition": "mulaw",
+      "sha256": "0aad5d912eb55f0a56da0d2e0b60537cffd36470b0c363f3874a638875d9910c",
+      "ref_words": 33,
+      "errors": 2,
+      "duration_s": 9.9,
+      "elapsed_s": 1.4206687549999515
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "dd15ff8d2a19ecf7bc4a64afc849e02af801a630b92186c23ba07a67beb93301",
+      "ref_words": 20,
+      "errors": 2,
+      "duration_s": 14.88,
+      "elapsed_s": 1.7283669510002255
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "cdd6026f47961257d1c475aef91a0bd742a84a4c5af1848e714617d51f6825f5",
+      "ref_words": 20,
+      "errors": 5,
+      "duration_s": 24.36,
+      "elapsed_s": 3.3425384350002787
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "e8f13c4491e0ea8ed53ffdd60e9463251de3c82e0a039a54bfde1c8ae23e5da2",
+      "ref_words": 16,
+      "errors": 3,
+      "duration_s": 16.44,
+      "elapsed_s": 2.228147431999787
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "13433ff7ae3df78c5bf662c86ce0f238062c16cd42850aabbb662faa3f7a1318",
+      "ref_words": 17,
+      "errors": 3,
+      "duration_s": 11.82,
+      "elapsed_s": 1.734431807999954
+    },
+    {
+      "id": "fleurs_kk_kz_test_0004",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "e541850596ca7efc3d3ea735dbf842d836be44c9ce38ae5b07f36369fef6ea80",
+      "ref_words": 19,
+      "errors": 2,
+      "duration_s": 17.34,
+      "elapsed_s": 2.349476737000259
+    },
+    {
+      "id": "fleurs_kk_kz_test_0005",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "5bd2559e2ec31abd756821e6dd407e71c6395e80b8ce8e6734bd4cf2f381da27",
+      "ref_words": 23,
+      "errors": 5,
+      "duration_s": 17.58,
+      "elapsed_s": 2.4663005920001524
+    },
+    {
+      "id": "fleurs_kk_kz_test_0006",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "2a3a2fda8ba6fd88c0c757a261204d2fed56cdb630451e41b24c94275d593b52",
+      "ref_words": 15,
+      "errors": 2,
+      "duration_s": 16.08,
+      "elapsed_s": 2.6292966539999725
+    },
+    {
+      "id": "fleurs_kk_kz_test_0007",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "b5903cce23dd40a6a16ccc81ee6e276418dac0ed750330e97dc2f64229fab70f",
+      "ref_words": 18,
+      "errors": 0,
+      "duration_s": 13.56,
+      "elapsed_s": 1.8999974359999214
+    },
+    {
+      "id": "fleurs_kk_kz_test_0008",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "3caa9d3787cbadb1d84ae139dd2bcf45974d7b612afa0450c0bb7e235a5a1a72",
+      "ref_words": 15,
+      "errors": 2,
+      "duration_s": 18.12,
+      "elapsed_s": 2.6248865020002086
+    },
+    {
+      "id": "fleurs_kk_kz_test_0009",
+      "language": "kk",
+      "condition": "original",
+      "sha256": "8b7f69cfa64262399a65988bc51efa3618420574c51df97b17af8d2857b4c4b3",
+      "ref_words": 15,
+      "errors": 0,
+      "duration_s": 19.44,
+      "elapsed_s": 2.6867756460001146
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "05d022c8877e8fc3435eb7de25b29ad4bfb456e118dc57f21757fccfc3fe92f4",
+      "ref_words": 20,
+      "errors": 20,
+      "duration_s": 14.88,
+      "elapsed_s": 2.153715225999804
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "7cb029e24b630e17af9f566bab1fccc2974979f43a967db604f490d25993effc",
+      "ref_words": 20,
+      "errors": 5,
+      "duration_s": 24.36,
+      "elapsed_s": 2.793849607000084
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "95a4d0835c803d9be778df0b04c886cbbf0b2e6f45a2046ad86271d42f9747c8",
+      "ref_words": 16,
+      "errors": 3,
+      "duration_s": 16.44,
+      "elapsed_s": 0.9493910389996927
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "61c64e57060462d6b22517ad0628b1cb13e57a4bbdb0837c585731f76c89877f",
+      "ref_words": 17,
+      "errors": 4,
+      "duration_s": 11.82,
+      "elapsed_s": 0.7947801320001417
+    },
+    {
+      "id": "fleurs_kk_kz_test_0004",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "7ec7118a6e7486dee5e298d89ad3cd561113c8a77a2e2d76eccc7650715b2ad9",
+      "ref_words": 19,
+      "errors": 2,
+      "duration_s": 17.34,
+      "elapsed_s": 2.6666628840002886
+    },
+    {
+      "id": "fleurs_kk_kz_test_0005",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "68115d8a20d3e51b82275bd63097c974c9d19321f74d60bde96304df6600eeba",
+      "ref_words": 23,
+      "errors": 5,
+      "duration_s": 17.58,
+      "elapsed_s": 2.4845987379999315
+    },
+    {
+      "id": "fleurs_kk_kz_test_0006",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "25e713bb00c209bc2d9e1f7fa07400317aa3331d3c5a768785c8e81df9a83155",
+      "ref_words": 15,
+      "errors": 2,
+      "duration_s": 16.08,
+      "elapsed_s": 2.3912479300001905
+    },
+    {
+      "id": "fleurs_kk_kz_test_0007",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "fd66b24650c0894f3c0bcf4e5149e0090687964a1daf821225d30030535455c1",
+      "ref_words": 18,
+      "errors": 0,
+      "duration_s": 13.56,
+      "elapsed_s": 1.9124750450000647
+    },
+    {
+      "id": "fleurs_kk_kz_test_0008",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "66ec75f61ba087d402037f28f226ccf661e88cd33375e8692dddefbaac77eba2",
+      "ref_words": 15,
+      "errors": 2,
+      "duration_s": 18.12,
+      "elapsed_s": 3.279292757999883
+    },
+    {
+      "id": "fleurs_kk_kz_test_0009",
+      "language": "kk",
+      "condition": "alaw",
+      "sha256": "65450b6a6482e897f1b786c2ec51c1e86cb52a2c3483154865016b8522d0baa7",
+      "ref_words": 15,
+      "errors": 1,
+      "duration_s": 19.44,
+      "elapsed_s": 3.699213878000137
+    },
+    {
+      "id": "fleurs_kk_kz_test_0000",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "763b05deea468b16d596dab0a7b0d3399b6f67525a43abe710edf1c4bee876ed",
+      "ref_words": 20,
+      "errors": 20,
+      "duration_s": 14.88,
+      "elapsed_s": 2.3882926469996164
+    },
+    {
+      "id": "fleurs_kk_kz_test_0001",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "1dfc0c9c26cb2e0237c4bc439966d919f1ea3a5f1e51b0f3c93c3dc04c90b725",
+      "ref_words": 20,
+      "errors": 5,
+      "duration_s": 24.36,
+      "elapsed_s": 3.486006175000057
+    },
+    {
+      "id": "fleurs_kk_kz_test_0002",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "900419fa51554d8747fd882f94e5780dd80fc11993ba1ca5760903a581b6940c",
+      "ref_words": 16,
+      "errors": 3,
+      "duration_s": 16.44,
+      "elapsed_s": 2.34342708999975
+    },
+    {
+      "id": "fleurs_kk_kz_test_0003",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "5d754bdb9aea73d2c129ac89cd7545c06461bd45752d871441e871d3ccd31c7c",
+      "ref_words": 17,
+      "errors": 3,
+      "duration_s": 11.82,
+      "elapsed_s": 1.7635451420001118
+    },
+    {
+      "id": "fleurs_kk_kz_test_0004",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "3cc2551d2794ed65aa1b0ae25c2c70070dd69b900a54252cab783701165d1342",
+      "ref_words": 19,
+      "errors": 2,
+      "duration_s": 17.34,
+      "elapsed_s": 2.4561811039998247
+    },
+    {
+      "id": "fleurs_kk_kz_test_0005",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "711086b719ae1b89d7248fedccccc6c42d737e581f941a25a650eff6ba7a65aa",
+      "ref_words": 23,
+      "errors": 5,
+      "duration_s": 17.58,
+      "elapsed_s": 2.9798592800002552
+    },
+    {
+      "id": "fleurs_kk_kz_test_0006",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "2cc85f81b048980bfd9c9f21201430c3d5c3ea5928733cd523bcca16755a4c43",
+      "ref_words": 15,
+      "errors": 2,
+      "duration_s": 16.08,
+      "elapsed_s": 2.4202179039998555
+    },
+    {
+      "id": "fleurs_kk_kz_test_0007",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "735ab874bbf40ff06d5362de5dc5867ae444f1a8da92e6876be42e18f63d91e1",
+      "ref_words": 18,
+      "errors": 0,
+      "duration_s": 13.56,
+      "elapsed_s": 2.0874230150002404
+    },
+    {
+      "id": "fleurs_kk_kz_test_0008",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "f13615f77ee28bf42512ccd101117c7a58bdc1f80172ae99bf58d416999ac898",
+      "ref_words": 15,
+      "errors": 2,
+      "duration_s": 18.12,
+      "elapsed_s": 2.556593955000153
+    },
+    {
+      "id": "fleurs_kk_kz_test_0009",
+      "language": "kk",
+      "condition": "mulaw",
+      "sha256": "e70e24a9a2f27ce6d3e5491c8144be8175d0490fec15767910f1af88939fc7b6",
+      "ref_words": 15,
+      "errors": 1,
+      "duration_s": 19.44,
+      "elapsed_s": 2.6300009400001727
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "66738d623b802a4171232f329464f1884c5b4555bd4180f4358e8fd954745e34",
+      "ref_words": 20,
+      "errors": 1,
+      "duration_s": 12.36,
+      "elapsed_s": 1.8356874669998433
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "ff2a6d058aaa2ed3efe514a554b81841dc227b44444df7a9cf7e8500bd7f8304",
+      "ref_words": 15,
+      "errors": 0,
+      "duration_s": 7.8,
+      "elapsed_s": 1.35053202600011
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "a2eb48632fe02f9a6aba3d47a9eb22a70faf428fb1da3d207136eeb34f930504",
+      "ref_words": 15,
+      "errors": 0,
+      "duration_s": 8.64,
+      "elapsed_s": 1.302087131999997
+    },
+    {
+      "id": "fleurs_ky_kg_test_0003",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "a4cd06cafe46e804be794afdb85991992d21378c9ac7bb62ca68d982f6aecc6d",
+      "ref_words": 25,
+      "errors": 8,
+      "duration_s": 18.78,
+      "elapsed_s": 2.7977929100002257
+    },
+    {
+      "id": "fleurs_ky_kg_test_0004",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "b9a93eb74a0593d237a5a1cd572eff14a597c0268b7bb97a3e1ab8c420f3c14a",
+      "ref_words": 13,
+      "errors": 2,
+      "duration_s": 9.48,
+      "elapsed_s": 1.4777783810000074
+    },
+    {
+      "id": "fleurs_ky_kg_test_0005",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "302a01255db6574d19d8dca9a2d0527f4e76374143669c810f883b4682d45361",
+      "ref_words": 16,
+      "errors": 1,
+      "duration_s": 11.88,
+      "elapsed_s": 1.7589747480001279
+    },
+    {
+      "id": "fleurs_ky_kg_test_0006",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "d6a2a661c3d8dfa30a4df690459f4ee9ca2786ac6ab84f37469cf7ac62959267",
+      "ref_words": 16,
+      "errors": 1,
+      "duration_s": 10.32,
+      "elapsed_s": 1.5059047069998996
+    },
+    {
+      "id": "fleurs_ky_kg_test_0007",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "96eccdf1823a27603ea79ab8f130fbce7bff7299928c4db13211b30f4cad4871",
+      "ref_words": 21,
+      "errors": 5,
+      "duration_s": 12.12,
+      "elapsed_s": 1.6701991429999907
+    },
+    {
+      "id": "fleurs_ky_kg_test_0008",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "1795a9d4bc42cf27fdbc2ff771c046360b127a076cc6a522f99ac8563f741248",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 13.56,
+      "elapsed_s": 1.6644911479997972
+    },
+    {
+      "id": "fleurs_ky_kg_test_0009",
+      "language": "ky",
+      "condition": "original",
+      "sha256": "e11bfef893cbe08d3909692034ab0e75168fd2d5cf6a4c54f1f7ffdf85e782ad",
+      "ref_words": 13,
+      "errors": 0,
+      "duration_s": 9.24,
+      "elapsed_s": 1.7801162860000659
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "72c36640c134dcca093acd9830390be6fd42f84a52100c754f2196759cfb5d1f",
+      "ref_words": 20,
+      "errors": 1,
+      "duration_s": 12.36,
+      "elapsed_s": 1.9724804409997887
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "d63f6b58f4681f1ec3deb5233e4215e1d77e1cb75d7a26c24815b6ae62b38fda",
+      "ref_words": 15,
+      "errors": 0,
+      "duration_s": 7.8,
+      "elapsed_s": 1.42690656700006
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "f810f266ebc495cdfc08826d6546468e85fac9f51b2f1d1551d0ca8d5991d47f",
+      "ref_words": 15,
+      "errors": 0,
+      "duration_s": 8.64,
+      "elapsed_s": 1.3420756370001072
+    },
+    {
+      "id": "fleurs_ky_kg_test_0003",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "841cd037d30c46090874ea0ee41a3f7f14ff1be15ab99e9ff7d83f956dc62bd0",
+      "ref_words": 25,
+      "errors": 9,
+      "duration_s": 18.78,
+      "elapsed_s": 2.673801372000071
+    },
+    {
+      "id": "fleurs_ky_kg_test_0004",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "296a66a73c38779acf06a03d57ee32dcaf8346e552ccfe30f2cb92a7e8e97481",
+      "ref_words": 13,
+      "errors": 2,
+      "duration_s": 9.48,
+      "elapsed_s": 1.4382467149998774
+    },
+    {
+      "id": "fleurs_ky_kg_test_0005",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "8665ea37b2f94bc05bb92fc5417512d519d85766431db02f164503c68d2af619",
+      "ref_words": 16,
+      "errors": 1,
+      "duration_s": 11.88,
+      "elapsed_s": 1.726678813000035
+    },
+    {
+      "id": "fleurs_ky_kg_test_0006",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "3f683921b5d0619e21d465c87ab36ccd1ed73ccfdfc06f88a9f7a14b71aa79c6",
+      "ref_words": 16,
+      "errors": 1,
+      "duration_s": 10.32,
+      "elapsed_s": 1.5530284049996226
+    },
+    {
+      "id": "fleurs_ky_kg_test_0007",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "7fc70a0e4c8d6e7aad9a6cd4739950b87701b204b9bbeb647b7abf42e46a90da",
+      "ref_words": 21,
+      "errors": 5,
+      "duration_s": 12.12,
+      "elapsed_s": 1.955698952000148
+    },
+    {
+      "id": "fleurs_ky_kg_test_0008",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "6a5ec6fc0ac5385aba3d31b128b92f444b0380ba6851a6c28fdc2a9957a9171f",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 13.56,
+      "elapsed_s": 2.0307277599999907
+    },
+    {
+      "id": "fleurs_ky_kg_test_0009",
+      "language": "ky",
+      "condition": "alaw",
+      "sha256": "f0b897148248b2c44067fbc72f19db36cb25a0fd99c40d47190b6ca0bb5dbcfe",
+      "ref_words": 13,
+      "errors": 0,
+      "duration_s": 9.24,
+      "elapsed_s": 1.5005267729998195
+    },
+    {
+      "id": "fleurs_ky_kg_test_0000",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "2290ed366e659746661056fdaf58c47548cb65a3024241aebb36e342ab1cb389",
+      "ref_words": 20,
+      "errors": 1,
+      "duration_s": 12.36,
+      "elapsed_s": 1.9250003430001925
+    },
+    {
+      "id": "fleurs_ky_kg_test_0001",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "1bf0379c797e3fc9ac8b1897151c6d23bd0656f18ceca9d931a0262bda3cead5",
+      "ref_words": 15,
+      "errors": 0,
+      "duration_s": 7.8,
+      "elapsed_s": 1.164396656000008
+    },
+    {
+      "id": "fleurs_ky_kg_test_0002",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "7823d5d29903e31e548ab1fd0d3a310b830847ba3626515e82989566655526d1",
+      "ref_words": 15,
+      "errors": 0,
+      "duration_s": 8.64,
+      "elapsed_s": 1.387492161999944
+    },
+    {
+      "id": "fleurs_ky_kg_test_0003",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "17d33beb0d5fb704e725ddce157cc5ffc2fd1dede297345ab9ceaa49c2cd53de",
+      "ref_words": 25,
+      "errors": 9,
+      "duration_s": 18.78,
+      "elapsed_s": 2.7253512520001095
+    },
+    {
+      "id": "fleurs_ky_kg_test_0004",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "a73352a624ac4553e0d0179a43c477dda12bd2320a7be5a6c041cc851ff49a01",
+      "ref_words": 13,
+      "errors": 2,
+      "duration_s": 9.48,
+      "elapsed_s": 1.7096675799998593
+    },
+    {
+      "id": "fleurs_ky_kg_test_0005",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "c11b3e2a13643f5d5f8b347374b6cda9e367b98a2bbd995fa0f917c4778f396b",
+      "ref_words": 16,
+      "errors": 1,
+      "duration_s": 11.88,
+      "elapsed_s": 2.283709624000039
+    },
+    {
+      "id": "fleurs_ky_kg_test_0006",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "13ce9d0b9040004908e47c939459f5da28144c6613967cbd5215632da5328afe",
+      "ref_words": 16,
+      "errors": 1,
+      "duration_s": 10.32,
+      "elapsed_s": 1.545589089999794
+    },
+    {
+      "id": "fleurs_ky_kg_test_0007",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "be9165f9cc2d83aaa5845a81e1a5f9eb997cc3259e8943bf54f0e9332672e67b",
+      "ref_words": 21,
+      "errors": 5,
+      "duration_s": 12.12,
+      "elapsed_s": 1.9176507180000044
+    },
+    {
+      "id": "fleurs_ky_kg_test_0008",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "d577e61e6398c3d2d02170aea41e31ab1e98e00e8db98fbcba363e08563c9f74",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 13.56,
+      "elapsed_s": 3.3491003169997384
+    },
+    {
+      "id": "fleurs_ky_kg_test_0009",
+      "language": "ky",
+      "condition": "mulaw",
+      "sha256": "b8ade80d9ac8645451c0de8fe8e8ef20b068133aba4c6d6d0851307b498c185d",
+      "ref_words": 13,
+      "errors": 0,
+      "duration_s": 9.24,
+      "elapsed_s": 1.5146137219999218
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "c74043032d3c621f2d787a3ae67cf76ee4dbeb303b571a2f0a35f84642893e96",
+      "ref_words": 16,
+      "errors": 0,
+      "duration_s": 13.68,
+      "elapsed_s": 1.8832882920000884
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "58c7c10b111f26ead0151433d4547de4e508195b1c63d0d44c810cf92ef5d6b1",
+      "ref_words": 8,
+      "errors": 0,
+      "duration_s": 6.6,
+      "elapsed_s": 1.1650150909999866
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "52eb190cc681fa92a110e567f3b0d3a7c2e5ab50f2c403dabfa1157740d1e2d0",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 15.12,
+      "elapsed_s": 2.0157492739999725
+    },
+    {
+      "id": "fleurs_uz_uz_test_0003",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "9e07e9c288bd30e0ec396c272e95d89400081a4a19ca6a2441a27da583177f63",
+      "ref_words": 20,
+      "errors": 8,
+      "duration_s": 8.64,
+      "elapsed_s": 1.4156361210002615
+    },
+    {
+      "id": "fleurs_uz_uz_test_0004",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "827d11d57fb7f267370cc485848c09f4ab110e945f1622567701f0583c356f8f",
+      "ref_words": 26,
+      "errors": 7,
+      "duration_s": 21.48,
+      "elapsed_s": 3.670556843000213
+    },
+    {
+      "id": "fleurs_uz_uz_test_0005",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "3e27d2fcdbc895d9cced198f9885b70012ddb7c8c86fbc9cd790def897a075b4",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 15.0,
+      "elapsed_s": 2.204338452999764
+    },
+    {
+      "id": "fleurs_uz_uz_test_0006",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "d8f3e0efb3c4b19bf7293c06efb61811c347109c0798f645de759199d038c951",
+      "ref_words": 18,
+      "errors": 2,
+      "duration_s": 11.4,
+      "elapsed_s": 1.7413512230000379
+    },
+    {
+      "id": "fleurs_uz_uz_test_0007",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "924731ea15d3bbe8f0843dd6d1da2613cf233cf362c0618c8e78c372da0fd3ed",
+      "ref_words": 13,
+      "errors": 9,
+      "duration_s": 14.16,
+      "elapsed_s": 2.2284127709999666
+    },
+    {
+      "id": "fleurs_uz_uz_test_0008",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "bea7a3248c28054d65e78997aaac530eee588d60a39f0190559c09825715ad6d",
+      "ref_words": 27,
+      "errors": 4,
+      "duration_s": 11.04,
+      "elapsed_s": 1.900039134999588
+    },
+    {
+      "id": "fleurs_uz_uz_test_0009",
+      "language": "uz",
+      "condition": "original",
+      "sha256": "cce158c3373ffede4b02b088f3e77918aac65bce8d52c14a7ff2221fbdd25d88",
+      "ref_words": 23,
+      "errors": 6,
+      "duration_s": 22.32,
+      "elapsed_s": 3.3467375690001973
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "b5fa9af3a6a4a43e36d8f7a7f5eb5b84624a53edbca168fe529760b975f7c0a0",
+      "ref_words": 16,
+      "errors": 0,
+      "duration_s": 13.68,
+      "elapsed_s": 2.2333100900000318
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "09fc92fc8b3a18520ae16432842be1579bc730a1e188e20a1e40ed1966d1da2d",
+      "ref_words": 8,
+      "errors": 0,
+      "duration_s": 6.6,
+      "elapsed_s": 0.879593327999828
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "d67f7ed33f19bd60e51c43c311225772f17ef7ee9700bb6842381f0ee962b957",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 15.12,
+      "elapsed_s": 3.117458163000265
+    },
+    {
+      "id": "fleurs_uz_uz_test_0003",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "1c26d12ed628a07a74d67e4b44f91d371b50015e1c2cd07671c9d8b9538c45bd",
+      "ref_words": 20,
+      "errors": 11,
+      "duration_s": 8.64,
+      "elapsed_s": 1.4003405979997297
+    },
+    {
+      "id": "fleurs_uz_uz_test_0004",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "7e209902bbe5dfd432653ace5ab3cf34cf885ab68e28c39cbb351077bb870b3e",
+      "ref_words": 26,
+      "errors": 7,
+      "duration_s": 21.48,
+      "elapsed_s": 3.28734468499988
+    },
+    {
+      "id": "fleurs_uz_uz_test_0005",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "3e6cea2af05ed9d7bd1411a4f06973279824c1fefb342d1bb201c7ebf9c4e75b",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 15.0,
+      "elapsed_s": 1.9444640430001527
+    },
+    {
+      "id": "fleurs_uz_uz_test_0006",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "b46c3bdecc53dd47814fe4bc3337739ec878a6d5132143a3d34f49cab2cfe326",
+      "ref_words": 18,
+      "errors": 2,
+      "duration_s": 11.4,
+      "elapsed_s": 1.8245926399999917
+    },
+    {
+      "id": "fleurs_uz_uz_test_0007",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "778ec90623f98e93ce99b13d0c2ed0c8727295ddd2ea57da2847c0504575cc2e",
+      "ref_words": 13,
+      "errors": 9,
+      "duration_s": 14.16,
+      "elapsed_s": 2.347878449000291
+    },
+    {
+      "id": "fleurs_uz_uz_test_0008",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "aa5a020d80cc90b1ced041efdabc6d72671a840d6562d922b8bf9ef6de3dd858",
+      "ref_words": 27,
+      "errors": 7,
+      "duration_s": 11.04,
+      "elapsed_s": 1.8136177110000062
+    },
+    {
+      "id": "fleurs_uz_uz_test_0009",
+      "language": "uz",
+      "condition": "alaw",
+      "sha256": "b61d6304b46fffbf52a5fe4ea2657cff142666eb3d79c0f862a0cc1b3d5090e8",
+      "ref_words": 23,
+      "errors": 6,
+      "duration_s": 22.32,
+      "elapsed_s": 3.9546356050000213
+    },
+    {
+      "id": "fleurs_uz_uz_test_0000",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "dd63618fec716628b779e501929a2cebe356c1e9e77481e9eeca2b409680a9d4",
+      "ref_words": 16,
+      "errors": 0,
+      "duration_s": 13.68,
+      "elapsed_s": 2.166904455000349
+    },
+    {
+      "id": "fleurs_uz_uz_test_0001",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "957e4abc9fdd4c2b2b4d323ea7ff83b4e8ae432f7b4deb562b5916c38fa4dedf",
+      "ref_words": 8,
+      "errors": 0,
+      "duration_s": 6.6,
+      "elapsed_s": 1.3710473250002906
+    },
+    {
+      "id": "fleurs_uz_uz_test_0002",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "f00a1f12f02cb93a7d66ff4501db121437290dafab011d51af181d1e3d28cac6",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 15.12,
+      "elapsed_s": 1.7045549059998848
+    },
+    {
+      "id": "fleurs_uz_uz_test_0003",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "899f31d7dcd64d020f489ed95ad9097c0555648b36fa2544a1467ecb8abbbda7",
+      "ref_words": 20,
+      "errors": 11,
+      "duration_s": 8.64,
+      "elapsed_s": 1.185538544999872
+    },
+    {
+      "id": "fleurs_uz_uz_test_0004",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "8f620ea30d89e6ab8e3c8d8ca0b1dedbe29bc1e2499610355fcf16cdf5d85122",
+      "ref_words": 26,
+      "errors": 7,
+      "duration_s": 21.48,
+      "elapsed_s": 3.163458276000256
+    },
+    {
+      "id": "fleurs_uz_uz_test_0005",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "bab3288621e4b117312f34e9ee26f6fcb92b7220e3b9dfd2240b5c92ba2dbc5a",
+      "ref_words": 19,
+      "errors": 0,
+      "duration_s": 15.0,
+      "elapsed_s": 2.4775949229997423
+    },
+    {
+      "id": "fleurs_uz_uz_test_0006",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "838d29c39e642bd6c121650d11daf39d046a7d2cdbaedc6a9aee77391be46497",
+      "ref_words": 18,
+      "errors": 2,
+      "duration_s": 11.4,
+      "elapsed_s": 2.037356338000336
+    },
+    {
+      "id": "fleurs_uz_uz_test_0007",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "51c68f07ec2c03e47dfcbeb97ea13615bea834ba344bf5a501191377e19555c5",
+      "ref_words": 13,
+      "errors": 9,
+      "duration_s": 14.16,
+      "elapsed_s": 2.2184127860000444
+    },
+    {
+      "id": "fleurs_uz_uz_test_0008",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "d110ab162c5ca3fdc386eb47f367df71064061a055af940fac739180f1307c15",
+      "ref_words": 27,
+      "errors": 7,
+      "duration_s": 11.04,
+      "elapsed_s": 2.291294933000245
+    },
+    {
+      "id": "fleurs_uz_uz_test_0009",
+      "language": "uz",
+      "condition": "mulaw",
+      "sha256": "42dd6afc6d0de274507a01f7cba2649903ca10836cef8a2c14f2d5ed0b5d69d1",
+      "ref_words": 23,
+      "errors": 6,
+      "duration_s": 22.32,
+      "elapsed_s": 3.3436712070001704
+    },
+    {
+      "id": "ldc_kazakh_sample",
+      "language": "kk_real_call",
+      "condition": "automatic_nonoverlapping20s_short_api_control",
+      "sha256": "222cd50297e278d2abd920b76612b17157d75a9c7a1daf9d657042856405e477",
+      "ref_words": 77,
+      "errors": 72,
+      "duration_s": 110.04,
+      "elapsed_s": 18.674676055999953
+    },
+    {
+      "id": "material_kk_inLine",
+      "language": "kk_real_call",
+      "condition": "automatic_nonoverlapping20s_short_api_control",
+      "sha256": "3c39e697515f2e75510553b1c975eeb3344e3e1928da69ed824975a333696956",
+      "ref_words": 44,
+      "errors": 43,
+      "duration_s": 56.14,
+      "elapsed_s": 8.457514340000216
+    },
+    {
+      "id": "material_kk_outLine",
+      "language": "kk_real_call",
+      "condition": "automatic_nonoverlapping20s_short_api_control",
+      "sha256": "6ad28a36ea3c315844d84bf1acb764330cb3aae8f7345a863ebd8bf9fa0a395c",
+      "ref_words": 49,
+      "errors": 48,
+      "duration_s": 56.14,
+      "elapsed_s": 7.816004472000259
+    }
+  ]
+}

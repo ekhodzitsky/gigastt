@@ -1,13 +1,12 @@
 //! Criterion micro-benchmark for WAVE / telephony decode (`ryf` path).
 //!
 //! Uses in-tree fixtures under `tests/fixtures/telephony/` (3 s @ 16 kHz)
-//! plus G.711 WAVs built from the PCM fixture. No model required.
+//! plus frozen G.711 payloads wrapped as WAVs. No model required.
 //!
 //! ```sh
 //! cargo bench -p gigastt-core --bench decode
 //! ```
 
-use audio_codec::Encoder;
 use bytes::Bytes;
 use criterion::{Criterion, criterion_group, criterion_main};
 use gigastt_core::inference::audio::{
@@ -17,6 +16,11 @@ use std::hint::black_box;
 
 const TONE_SRC: &[u8] = include_bytes!("../tests/fixtures/telephony/tone_src.wav");
 const G722_WAV: &[u8] = include_bytes!("../tests/fixtures/telephony/g722_tone.wav");
+// Frozen from the original benchmark workload. Fixture encoder updates must
+// not silently change the bytes measured on the base and candidate revisions.
+const ALAW_PAYLOAD: &[u8] = include_bytes!("../tests/fixtures/telephony/g711_alaw_benchmark.alaw");
+const MULAW_PAYLOAD: &[u8] =
+    include_bytes!("../tests/fixtures/telephony/g711_mulaw_benchmark.ulaw");
 
 fn find_riff_chunk<'a>(data: &'a [u8], want: &[u8; 4]) -> &'a [u8] {
     let mut pos = 12usize;
@@ -38,24 +42,6 @@ fn find_riff_chunk<'a>(data: &'a [u8], want: &[u8; 4]) -> &'a [u8] {
         "missing {} chunk",
         std::str::from_utf8(want).unwrap_or("????")
     );
-}
-
-fn pcm16_from_wav(wav: &[u8]) -> Vec<i16> {
-    find_riff_chunk(wav, b"data")
-        .as_chunks::<2>()
-        .0
-        .iter()
-        .map(|c| i16::from_le_bytes(*c))
-        .collect()
-}
-
-fn encode_into<E: Encoder>(encoder: &mut E, samples: &[i16]) -> Vec<u8> {
-    let mut out = vec![0u8; encoder.max_encode_bytes(samples.len())];
-    let n = encoder
-        .encode_into(samples, &mut out)
-        .unwrap_or_else(|e| panic!("encode: {e}"));
-    out.truncate(n);
-    out
 }
 
 fn compressed_wav(tag: u16, sample_rate: u32, byte_rate: u32, payload: &[u8]) -> Vec<u8> {
@@ -80,13 +66,10 @@ fn compressed_wav(tag: u16, sample_rate: u32, byte_rate: u32, payload: &[u8]) ->
 }
 
 fn bench_decode(c: &mut Criterion) {
-    let pcm16 = pcm16_from_wav(TONE_SRC);
-    // Naive 16 kHz → 8 kHz for a realistic G.711 upsample path (8 k → 16 k).
-    let pcm8k: Vec<i16> = pcm16.iter().copied().step_by(2).collect();
-    let alaw = encode_into(&mut audio_codec::pcma::PcmaEncoder::new(), &pcm8k);
-    let ulaw = encode_into(&mut audio_codec::pcmu::PcmuEncoder::new(), &pcm8k);
-    let alaw_wav = compressed_wav(0x0006, 8_000, 8_000, &alaw);
-    let ulaw_wav = compressed_wav(0x0007, 8_000, 8_000, &ulaw);
+    let alaw = ALAW_PAYLOAD;
+    let ulaw = MULAW_PAYLOAD;
+    let alaw_wav = compressed_wav(0x0006, 8_000, 8_000, alaw);
+    let ulaw_wav = compressed_wav(0x0007, 8_000, 8_000, ulaw);
     let g722_payload = find_riff_chunk(G722_WAV, b"data").to_vec();
 
     let pcm_bytes = Bytes::from_static(TONE_SRC);
@@ -139,7 +122,7 @@ fn bench_decode(c: &mut Criterion) {
     });
     group.bench_function("raw_pcmu_8k", |b| {
         b.iter(|| {
-            black_box(decode_telephony_raw(black_box(&ulaw), TelephonyCodec::Pcmu, 8_000).unwrap());
+            black_box(decode_telephony_raw(black_box(ulaw), TelephonyCodec::Pcmu, 8_000).unwrap());
         });
     });
     group.finish();

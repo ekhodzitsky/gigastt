@@ -1,0 +1,36 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -39,7 +39,7 @@
+ code-in-doc = ["dep:pulldown-cmark"]
+ config = [
+     "external-sources",
+-    "dep:basic-toml",
++    "dep:toml",
+     "dep:glob",
+     "dep:serde",
+     "dep:serde_derive",
+@@ -76,9 +76,11 @@
+ path = "benches/derive-template.rs"
+ harness = false
+ 
+-[dependencies.basic-toml]
+-version = "0.1.1"
++[dependencies.toml]
++version = "1.0"
+ optional = true
++default-features = false
++features = ["parse", "serde"]
+ 
+ [dependencies.glob]
+ version = "0.3.3"
+--- a/src/config.rs
++++ b/src/config.rs
+@@ -354,7 +354,7 @@
+ impl RawConfig<'_> {
+     #[cfg(feature = "config")]
+     fn from_toml_str(s: &str) -> Result<RawConfig<'_>, CompileError> {
+-        basic_toml::from_str(s).map_err(|e| {
++        toml::from_str(s).map_err(|e| {
+             CompileError::no_file_info(format!("invalid TOML in {CONFIG_FILE_NAME}: {e}"), None)
+         })
+     }

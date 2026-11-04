@@ -14,9 +14,10 @@ It is **additive and opt-in** — the default build is unchanged and still uses 
   INT8 ONNX files sit on disk — the Candle loader uses safetensors.
   With a non-rnnt head (`e2e_rnnt`, `ml_ctc`/`ml_ctc_large`) the build transparently
   falls back to the `ort` backend, even when compiled with `--features candle`.
-- **Byte-for-byte parity with the ort backend** is verified at every stage on the Golos
-  fixtures: encoder `max_abs_diff ≈ 4e-6`, decoder (LSTM) `≈ 1e-6`, joiner `≈ 3e-6`, and
-  whole-file + streaming transcripts are **identical** to ort.
+- Historical FP32 parity checks on Golos fixtures reported encoder
+  `max_abs_diff ≈ 4e-6`, decoder `≈ 1e-6`, joiner `≈ 3e-6`, and identical
+  transcripts. Tensor values are numerically close, not byte-identical. This
+  does not establish parity with the current quantized ONNX bundle.
 - Experimental: only validated on Apple Silicon with short clips so far. Metal stability on
   very long audio / specific GPUs is not yet characterized.
 - `candle` is mutually exclusive with `coreml`/`cuda`/`nnapi` (compile-time error if combined).
@@ -24,9 +25,12 @@ It is **additive and opt-in** — the default build is unchanged and still uses 
 
 ## 1. Convert the model weights
 
-The Candle backend loads weights from `safetensors` files derived from the ONNX models you
-already have (`gigastt download` populates `~/.gigastt/models/`). No PyTorch or extra
-download is required — the converter reads the local `v3_rnnt_*.onnx` files.
+The converter requires a separately provisioned **FP32**
+`v3_rnnt_encoder.onnx`, plus `v3_rnnt_decoder.onnx` and `v3_rnnt_joint.onnx`.
+A normal `gigastt download` fetches an INT8 encoder and does not supply that
+FP32 source. Do not rename INT8 weights to the FP32 basename. Provision and
+verify the source files before invoking the converter; it needs no PyTorch
+once those files are present.
 
 ```sh
 uv run --python 3.13 --with onnx --with numpy --with safetensors \
@@ -52,7 +56,7 @@ cargo build --release --features candle
 cargo build -p gigastt-core --release --features candle
 ```
 
-Do **not** combine with `--features coreml` or `--features cuda` (mutually exclusive).
+Do not combine with `coreml`, `cuda`, `nnapi`, or `ane` (mutually exclusive).
 The default `ort` build remains `cargo build --release` (unchanged).
 
 ## 3. Run

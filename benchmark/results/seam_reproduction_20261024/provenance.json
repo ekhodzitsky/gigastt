@@ -1,0 +1,59 @@
+{
+  "script_sha256": "9119ad3d12ec61c29fe9721cf89f3ad1a0a1eeb063908def9e819f1538f96af6",
+  "manifest_sha256": "e8a5c4fb9646d4a2c7cb274b4c53fb56244130f183b922ad7b9d3d81d78224d9",
+  "encoder_sha256": "16805903b102d8b27bb0253de044f25e33a8a5bf07fce0c4da4ac1a5a7544091",
+  "servers": {
+    "baseline": {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/stitch-case-20261024/gigastt-baseline",
+        "serve",
+        "--offline",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models",
+        "--model-variant",
+        "e2e_rnnt",
+        "--execution-provider",
+        "cpu",
+        "--port",
+        "19886",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--file-window-concurrency",
+        "1",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "binary_sha256": "2946a92d0e2cc9492285d79fd6c15988479603b61c59c7e574ddd5e8461b67d8"
+    },
+    "candidate": {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/seam-reproduction-20261024/gigastt-candidate",
+        "serve",
+        "--offline",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/current-asr-heads/active-models",
+        "--model-variant",
+        "e2e_rnnt",
+        "--execution-provider",
+        "cpu",
+        "--port",
+        "19886",
+        "--pool-size",
+        "1",
+        "--encoder-intra-threads",
+        "2",
+        "--file-window-concurrency",
+        "1",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off"
+      ],
+      "binary_sha256": "f15c72f44076e3c55a2a4a29371ff93528b8e3f318a15b71eed29aa40b48400c"
+    }
+  }
+}

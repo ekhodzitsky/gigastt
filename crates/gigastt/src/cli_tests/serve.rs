@@ -703,3 +703,17 @@ fn test_cli_serve_rejects_bad_itn_value() {
     let res = Cli::try_parse_from(["gigastt", "serve", "--itn", "sometimes"]);
     assert!(res.is_err(), "invalid itn mode must be rejected");
 }
+
+#[test]
+fn test_cli_endpoint_silence_range() {
+    for ms in ["0", "39", "2001", "-1", "600.5"] {
+        assert!(Cli::try_parse_from(["gigastt", "serve", "--endpoint-silence-ms", ms]).is_err());
+    }
+    for ms in ["40", "600", "1000", "1500", "2000"] {
+        let cli = Cli::try_parse_from(["gigastt", "serve", "--endpoint-silence-ms", ms]).unwrap();
+        let Commands::Serve(args) = cli.command else {
+            panic!("serve")
+        };
+        assert_eq!(args.endpoint_silence_ms, ms.parse::<u32>().unwrap());
+    }
+}

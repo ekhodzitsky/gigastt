@@ -1,0 +1,32 @@
+audio_id,service,raw_output,excluded,wer_vs_verbatim,wer_vs_normalized,wer_best,cer_vs_verbatim,cer_vs_normalized,cer_best,best_layer
+kzaudio_1,ml_ctc_simulated_telephone,,False,1.0,1.0,1.0,1.0,1.0,1.0,tie
+kzaudio_2,ml_ctc_simulated_telephone,,False,1.0,1.0,1.0,1.0,1.0,1.0,tie
+kzaudio_3,ml_ctc_simulated_telephone,а,False,1.0,1.0,1.0,0.989,0.989,0.989,tie
+kzaudio_4,ml_ctc_simulated_telephone,б аопортқа бар лгерген жоқынм қадан білем,False,1.0,1.0,1.0,0.6694,0.6797,0.6694,tie
+kzaudio_5,ml_ctc_simulated_telephone,гр,False,1.0,1.0,1.0,0.9832,0.9839,0.9832,tie
+kzaudio_6,ml_ctc_simulated_telephone,б сөйлееік құттықтап қойсаңызда болад жаынданайд,False,0.9,0.95,0.9,0.6569,0.6493,0.6493,verbatim
+kzaudio_7,ml_ctc_simulated_telephone,,False,1.0,1.0,1.0,1.0,1.0,1.0,tie
+kzaudio_8,ml_ctc_simulated_telephone,ойланып қарсам менің ұзат тойымда да мағанда сондай тілек айқан екен да,False,0.3846,0.3846,0.3846,0.0533,0.0533,0.0533,tie
+kzaudio_9,ml_ctc_simulated_telephone,стран т,False,1.0,1.0,1.0,0.9263,0.9293,0.9263,tie
+kzaudio_10,ml_ctc_simulated_telephone,қонақ болдыңт қонақо,False,0.9231,0.9231,0.9231,0.7368,0.7436,0.7368,tie
+kzaudio_11,ml_ctc_simulated_telephone,багнгүлі,False,1.0,1.0,1.0,0.8519,0.8519,0.8519,tie
+kzaudio_12,ml_ctc_simulated_telephone,поолтл біің үйлен томдидар а,False,1.0,1.0,1.0,0.776,0.7812,0.776,tie
+kzaudio_13,ml_ctc_simulated_telephone,л р дрыс емес сен бақытты қыл қызым сағанаманат,False,0.5,0.5,0.5,0.2034,0.2034,0.2034,tie
+kzaudio_14,ml_ctc_simulated_telephone,ар,False,1.0,1.0,1.0,0.9841,0.9843,0.9841,tie
+kzaudio_15,ml_ctc_simulated_telephone,,False,1.0,1.0,1.0,1.0,1.0,1.0,tie
+kzaudio_16,ml_ctc_simulated_telephone,дотоы,False,1.0,1.0,1.0,0.9324,0.9333,0.9324,tie
+kzaudio_17,ml_ctc_simulated_telephone,аамаылаймлкелаалайаих,False,1.0,1.0,1.0,0.8934,0.8945,0.8934,tie
+kzaudio_18,ml_ctc_simulated_telephone,дональд трат,False,0.9474,0.9474,0.9474,0.9098,0.9098,0.9098,tie
+kzaudio_19,ml_ctc_simulated_telephone,лшапорт лемні оскарын алдым,False,0.8571,0.8571,0.8571,0.6494,0.6494,0.6494,tie
+kzaudio_20,ml_ctc_simulated_telephone,гтикоинтаатэфирголысыды татамайы,False,1.0,1.0,1.0,0.6923,0.68,0.68,tie
+kzaudio_21,ml_ctc_simulated_telephone,азаматқ,False,1.0,1.0,1.0,0.9557,0.9563,0.9557,tie
+kzaudio_22,ml_ctc_simulated_telephone,рзаматта солардың ортасын біріктіруолардыарпсихолгиянықанал енің негізгі психологиям олола,False,0.8571,0.8571,0.8571,0.5631,0.5673,0.5631,tie
+kzaudio_23,ml_ctc_simulated_telephone,оал,False,1.0,1.0,1.0,0.9681,0.9681,0.9681,tie
+kzaudio_24,ml_ctc_simulated_telephone,длзаманаиа дүниеыл брын келмі,False,1.0,1.0,1.0,0.7717,0.7661,0.7661,tie
+kzaudio_25,ml_ctc_simulated_telephone,тұрмыс құртоаоноро,False,0.9545,0.9524,0.9524,0.8525,0.85,0.85,normalized
+kzaudio_26,ml_ctc_simulated_telephone,аааалмасты,False,1.0,1.0,1.0,0.902,0.9057,0.902,tie
+kzaudio_27,ml_ctc_simulated_telephone,,False,1.0,1.0,1.0,1.0,1.0,1.0,tie
+kzaudio_28,ml_ctc_simulated_telephone,д ай бай ар еретіндер бар,False,0.9167,0.9167,0.9167,0.6923,0.6835,0.6835,tie
+kzaudio_29,ml_ctc_simulated_telephone,,False,1.0,1.0,1.0,1.0,1.0,1.0,tie
+kzaudio_30,ml_ctc_simulated_telephone,бес алты жеті рет барды ол дұрыс па,False,0.0,0.0,0.0,0.0,0.0,0.0,tie
+kzaudio_31,ml_ctc_simulated_telephone,оаолаа,False,1.0,1.0,1.0,0.9167,0.9167,0.9167,tie

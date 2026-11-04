@@ -1,0 +1,285 @@
+{
+  "completed": true,
+  "protocol_sha256": "1d371f5771fe47add075df14c5b551067f0b34b6fe8a4edcd0adf0e36d5648c9",
+  "candidate_count": 3,
+  "executions": 333,
+  "baseline": {
+    "control/original": {
+      "n": 15,
+      "reference_words": 264,
+      "word_errors": 22,
+      "deletions": 0,
+      "empty": 0
+    },
+    "control/alaw": {
+      "n": 15,
+      "reference_words": 264,
+      "word_errors": 29,
+      "deletions": 0,
+      "empty": 0
+    },
+    "control/mulaw": {
+      "n": 15,
+      "reference_words": 264,
+      "word_errors": 26,
+      "deletions": 0,
+      "empty": 0
+    },
+    "failure/original": {
+      "n": 22,
+      "reference_words": 453,
+      "word_errors": 80,
+      "deletions": 0,
+      "empty": 0
+    },
+    "failure/alaw": {
+      "n": 22,
+      "reference_words": 453,
+      "word_errors": 437,
+      "deletions": 401,
+      "empty": 4
+    },
+    "failure/mulaw": {
+      "n": 22,
+      "reference_words": 453,
+      "word_errors": 399,
+      "deletions": 349,
+      "empty": 4
+    }
+  },
+  "candidates": [
+    {
+      "candidate": "original_u8_conv_fp32",
+      "passed": true,
+      "gates": {
+        "complete_finite": true,
+        "no_new_empty": true,
+        "no_new_catastrophic": true,
+        "model_size": true,
+        "quantized_elements": true,
+        "quantized_stored_bytes": true,
+        "failure_original": true,
+        "controls": true,
+        "failure_phone_errors": true,
+        "failure_phone_deletions": true,
+        "failure_phone_deletions_25pct": true,
+        "all_phone_errors_and_deletions": true
+      },
+      "resource": {
+        "quantized_matrix_count": 128,
+        "quantized_original_elements": 188743680,
+        "original_initializer_elements": 220736327,
+        "quantized_original_element_fraction": 0.8550639696020673,
+        "quantized_stored_weight_bytes": 188743680,
+        "total_initializer_and_constant_tensor_bytes": 318641860,
+        "quantized_stored_weight_byte_fraction": 0.592337993507821,
+        "source_named_tensors_unchanged": true,
+        "denominator": "All source initializer elements; all candidate initializer and Constant tensor bytes, including biases, scales, zero points and bookkeeping tensors (conservative)."
+      },
+      "groups": {
+        "control/original": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 22,
+          "deletions": 0,
+          "empty": 0
+        },
+        "control/alaw": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 28,
+          "deletions": 0,
+          "empty": 0
+        },
+        "control/mulaw": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 25,
+          "deletions": 0,
+          "empty": 0
+        },
+        "failure/original": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 80,
+          "deletions": 1,
+          "empty": 0
+        },
+        "failure/alaw": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 168,
+          "deletions": 96,
+          "empty": 1
+        },
+        "failure/mulaw": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 169,
+          "deletions": 109,
+          "empty": 1
+        }
+      },
+      "new_empty": [],
+      "new_catastrophic": [],
+      "result_sha256": "089b50db46264b0d37b3a78ff958b7fb9ef8a8e295b03928f6bad74ea5ee1a65",
+      "model_bytes": 319325013
+    },
+    {
+      "candidate": "s8_channel_full_conv_fp32",
+      "passed": true,
+      "gates": {
+        "complete_finite": true,
+        "no_new_empty": true,
+        "no_new_catastrophic": true,
+        "model_size": true,
+        "quantized_elements": true,
+        "quantized_stored_bytes": true,
+        "failure_original": true,
+        "controls": true,
+        "failure_phone_errors": true,
+        "failure_phone_deletions": true,
+        "failure_phone_deletions_25pct": true,
+        "all_phone_errors_and_deletions": true
+      },
+      "resource": {
+        "quantized_matrix_count": 128,
+        "quantized_original_elements": 188743680,
+        "original_initializer_elements": 220736327,
+        "quantized_original_element_fraction": 0.8550639696020673,
+        "quantized_stored_weight_bytes": 188743680,
+        "total_initializer_and_constant_tensor_bytes": 319501380,
+        "quantized_stored_weight_byte_fraction": 0.5907444906810732,
+        "source_named_tensors_unchanged": true,
+        "denominator": "All source initializer elements; all candidate initializer and Constant tensor bytes, including biases, scales, zero points and bookkeeping tensors (conservative)."
+      },
+      "groups": {
+        "control/original": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 22,
+          "deletions": 0,
+          "empty": 0
+        },
+        "control/alaw": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 29,
+          "deletions": 0,
+          "empty": 0
+        },
+        "control/mulaw": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 26,
+          "deletions": 0,
+          "empty": 0
+        },
+        "failure/original": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 80,
+          "deletions": 1,
+          "empty": 0
+        },
+        "failure/alaw": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 189,
+          "deletions": 113,
+          "empty": 1
+        },
+        "failure/mulaw": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 187,
+          "deletions": 122,
+          "empty": 1
+        }
+      },
+      "new_empty": [],
+      "new_catastrophic": [],
+      "result_sha256": "43e876e732182995fd8d927f582da85eb9edceb58429149ef448710217dbf792",
+      "model_bytes": 320394571
+    },
+    {
+      "candidate": "s8_channel_reduced_conv_fp32",
+      "passed": true,
+      "gates": {
+        "complete_finite": true,
+        "no_new_empty": true,
+        "no_new_catastrophic": true,
+        "model_size": true,
+        "quantized_elements": true,
+        "quantized_stored_bytes": true,
+        "failure_original": true,
+        "controls": true,
+        "failure_phone_errors": true,
+        "failure_phone_deletions": true,
+        "failure_phone_deletions_25pct": true,
+        "all_phone_errors_and_deletions": true
+      },
+      "resource": {
+        "quantized_matrix_count": 128,
+        "quantized_original_elements": 188743680,
+        "original_initializer_elements": 220736327,
+        "quantized_original_element_fraction": 0.8550639696020673,
+        "quantized_stored_weight_bytes": 188743680,
+        "total_initializer_and_constant_tensor_bytes": 319501380,
+        "quantized_stored_weight_byte_fraction": 0.5907444906810732,
+        "source_named_tensors_unchanged": true,
+        "denominator": "All source initializer elements; all candidate initializer and Constant tensor bytes, including biases, scales, zero points and bookkeeping tensors (conservative)."
+      },
+      "groups": {
+        "control/original": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 22,
+          "deletions": 0,
+          "empty": 0
+        },
+        "control/alaw": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 29,
+          "deletions": 0,
+          "empty": 0
+        },
+        "control/mulaw": {
+          "n": 15,
+          "reference_words": 264,
+          "word_errors": 25,
+          "deletions": 0,
+          "empty": 0
+        },
+        "failure/original": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 80,
+          "deletions": 1,
+          "empty": 0
+        },
+        "failure/alaw": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 159,
+          "deletions": 93,
+          "empty": 1
+        },
+        "failure/mulaw": {
+          "n": 22,
+          "reference_words": 453,
+          "word_errors": 166,
+          "deletions": 107,
+          "empty": 1
+        }
+      },
+      "new_empty": [],
+      "new_catastrophic": [],
+      "result_sha256": "699c1bb84d7868c4670032297a92c02ef1f97f0fe3da21d2c29246fb5a5054b1",
+      "model_bytes": 320394571
+    }
+  ],
+  "selected_candidate": "s8_channel_reduced_conv_fp32",
+  "limitations": "111 previously seen failure-enriched inputs; acceptance authorizes full benchmark only, not production replacement."
+}

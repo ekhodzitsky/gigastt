@@ -185,6 +185,13 @@ pub(crate) struct ServeArgs {
         )]
     pub(crate) endpoint_mode: String,
 
+    /// Decoder blank-run duration in ms for auto mode without VAD, not acoustic
+    /// silence. Rounded up to 40 ms frames; actual finalization follows decode
+    /// strides. Use VAD/manual for longer pauses. Env: GIGASTT_ENDPOINT_SILENCE_MS.
+    #[arg(long, env = "GIGASTT_ENDPOINT_SILENCE_MS", default_value_t = 600,
+        value_parser = clap::value_parser!(u32).range(40..=2000))]
+    pub(crate) endpoint_silence_ms: u32,
+
     /// Max retained streaming encoder window in seconds (WebSocket / SSE).
     /// Re-decoding the whole window every 0.8 s stride bounds WER on phrases
     /// longer than the window: raising this (e.g. 7.5) improves long-phrase
@@ -463,6 +470,7 @@ pub(crate) async fn run_serve(
         quantize: false,
         skip_quantize: true,
         endpoint_mode: Some(args.endpoint_mode),
+        endpoint_silence_ms: Some(args.endpoint_silence_ms),
         stream_max_window_secs: Some(args.stream_max_window_secs),
         stream_stable_prefix: args.stream_stable_prefix,
         file_window_concurrency: args.file_window_concurrency.max(1),

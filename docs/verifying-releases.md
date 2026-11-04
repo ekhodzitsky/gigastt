@@ -1,8 +1,8 @@
 # Verifying gigastt releases
 
-Every tagged release on GitHub ships three kinds of attestation alongside
-the binary tarballs. You don't need all three — pick the one that matches
-your threat model.
+Published releases provide checksums and build provenance. Detached minisign
+signatures are also provided when signing is configured. Verify the assets
+actually attached to the chosen release; a Git tag alone does not publish them.
 
 ## 1. SHA-256 checksums (every release)
 
@@ -12,7 +12,7 @@ compromised GitHub release (an attacker with release access could publish
 matching checksums alongside tampered binaries).
 
 ```sh
-gh release download v2.18.0 -R ekhodzitsky/gigastt \
+gh release download v2.22.0 -R ekhodzitsky/gigastt \
     -p 'gigastt-*.tar.gz' -p 'SHA256SUMS.txt'
 # SHA256SUMS.txt also lists the .deb packages — filter to what you downloaded
 # (on GNU coreutils, `sha256sum -c --ignore-missing SHA256SUMS.txt` works too)
@@ -43,9 +43,9 @@ Verify with [minisign](https://jedisct1.github.io/minisign/) or
 [rsign2](https://github.com/jedisct1/rsign2):
 
 ```sh
-gh release download v2.18.0 -R ekhodzitsky/gigastt \
+gh release download v2.22.0 -R ekhodzitsky/gigastt \
     -p '*.tar.gz' -p '*.tar.gz.minisig'
-minisign -Vm gigastt-2.18.0-aarch64-apple-darwin.tar.gz -p gigastt.pub
+minisign -Vm gigastt-2.22.0-aarch64-apple-darwin.tar.gz -p gigastt.pub
 ```
 
 ## 3. SLSA build provenance
@@ -56,7 +56,7 @@ built by the `release.yml` workflow on a specific commit in
 `ekhodzitsky/gigastt` — no special public key required.
 
 ```sh
-gh attestation verify gigastt-2.18.0-aarch64-apple-darwin.tar.gz \
+gh attestation verify gigastt-2.22.0-aarch64-apple-darwin.tar.gz \
     --repo ekhodzitsky/gigastt
 ```
 
@@ -66,15 +66,18 @@ gh attestation verify gigastt-2.18.0-aarch64-apple-darwin.tar.gz \
 |---|---|---|---|
 | Mirror / in-flight tampering | ✅ | ✅ | ✅ |
 | Compromised GitHub release | ❌ | ✅ | ⚠ only if attacker doesn't also control CI |
-| Compromised maintainer CI token | ❌ | ✅ | ❌ |
-| Rebuild reproducibility proof | ❌ | ❌ | ✅ (workflow SHA recorded) |
+| Compromised maintainer CI token | ❌ | Depends on signing-key access | ❌ |
+| Bit-for-bit reproducible rebuild proof | ❌ | ❌ | ❌ |
 
-For privacy-conscious deployments, verify **both** minisign and SLSA —
-they fail independently, so it takes two compromises to forge.
+An attestation establishes recorded build provenance, not a bit-for-bit
+reproducible build or a code audit; see [GitHub's attestation documentation](https://docs.github.com/en/actions/concepts/security/artifact-attestations).
+Signature and provenance checks have different trust assumptions. If both signing
+credentials and the build workflow are accessible from one compromised CI
+environment, they are not independent protections.
 
 ## Release source selection
 
-Both a `v*` tag push and a manual Release dispatch first resolve an existing
+A manual Release dispatch first resolves an existing
 `vMAJOR.MINOR.PATCH` tag, optionally with a SemVer prerelease suffix such as
 `-rc.1`. Build metadata (`+suffix`) is rejected because it cannot be used in a
 Docker tag. The tag version must match the workspace and every workspace
@@ -88,9 +91,10 @@ workflow's ref/commit and the resolved release tag/commit, so the workflow
 revision is not mistaken for the artifact source. The existing attestation
 [action supports custom predicates](https://github.com/actions/attest-build-provenance/blob/v4/action.yml).
 
-Maintainers must select a reviewed revision with green main CI before tagging
-or dispatching. Source validation does not enforce that CI prerequisite and is
-not a dry run: successful Release jobs publish GitHub assets and GHCR images.
+Maintainers must select a reviewed revision with successful full main CI before
+dispatching. The workflow validates the tag/source version and separately enforces
+the exact-source performance/quality prerequisite. It is not a dry run: successful
+Release jobs publish GitHub assets and GHCR images. A tag push does not launch it.
 Local resolver regressions use temporary Git repositories and never publish.
 Do not dispatch historical tags as part of history maintenance or replace
 previously signed release assets.

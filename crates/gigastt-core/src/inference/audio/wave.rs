@@ -1,6 +1,6 @@
 //! WAVE family ingest via [`ryf`].
 //!
-//! PCM / IEEE, G.711, G.722, GSM 06.10, MS/IMA ADPCM, and the RF64 / RIFX /
+//! PCM / IEEE, G.711, G.722, G.726, GSM 06.10, MS/IMA ADPCM, and the RF64 / RIFX /
 //! BW64 / Wave64 containers go through ryf. Other containers stay on the
 //! symphonia path. `decode_streaming` is push-based, so the windowed decoder
 //! drives it from a dedicated thread with a bounded channel — peak audio

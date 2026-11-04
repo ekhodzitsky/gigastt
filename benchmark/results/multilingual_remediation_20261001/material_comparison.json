@@ -1,0 +1,178 @@
+[
+  {
+    "file": "material_baseline_ml_ctc_large_vad0_summary.json",
+    "label": "baseline",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 100.0,
+    "cer": 91.46341463414635,
+    "n_channels": 2
+  },
+  {
+    "file": "material_baseline_ml_ctc_large_vad0_summary.json",
+    "label": "baseline",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 97.84946236559139,
+    "cer": 87.63066202090593,
+    "n_channels": 2
+  },
+  {
+    "file": "material_baseline_ml_ctc_large_vad1_summary.json",
+    "label": "baseline",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 97.84946236559139,
+    "cer": 89.89547038327527,
+    "n_channels": 2
+  },
+  {
+    "file": "material_baseline_ml_ctc_large_vad1_summary.json",
+    "label": "baseline",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 86.02150537634408,
+    "cer": 66.89895470383276,
+    "n_channels": 2
+  },
+  {
+    "file": "material_baseline_ml_ctc_vad0_summary.json",
+    "label": "baseline",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 100.0,
+    "cer": 98.60627177700349,
+    "n_channels": 2
+  },
+  {
+    "file": "material_baseline_ml_ctc_vad0_summary.json",
+    "label": "baseline",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 98.9247311827957,
+    "cer": 90.06968641114983,
+    "n_channels": 2
+  },
+  {
+    "file": "material_baseline_ml_ctc_vad1_summary.json",
+    "label": "baseline",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 100.0,
+    "cer": 100.0,
+    "n_channels": 2
+  },
+  {
+    "file": "material_baseline_ml_ctc_vad1_summary.json",
+    "label": "baseline",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 90.3225806451613,
+    "cer": 85.36585365853658,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_large_vad0_summary.json",
+    "label": "candidate",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 98.9247311827957,
+    "cer": 89.54703832752614,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_large_vad0_summary.json",
+    "label": "candidate",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 97.84946236559139,
+    "cer": 87.63066202090593,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_large_vad1_summary.json",
+    "label": "candidate",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 95.6989247311828,
+    "cer": 82.57839721254355,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_large_vad1_summary.json",
+    "label": "candidate",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 86.02150537634408,
+    "cer": 66.89895470383276,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_vad0_summary.json",
+    "label": "candidate",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 100.0,
+    "cer": 90.76655052264809,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_vad0_summary.json",
+    "label": "candidate",
+    "vad": false,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 98.9247311827957,
+    "cer": 90.06968641114983,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_vad1_summary.json",
+    "label": "candidate",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original",
+    "wer": 94.6236559139785,
+    "cer": 90.41811846689896,
+    "n_channels": 2
+  },
+  {
+    "file": "material_candidate_ml_ctc_vad1_summary.json",
+    "label": "candidate",
+    "vad": true,
+    "threads": 3,
+    "timing": "Concurrent CPU research; not comparable speed benchmark",
+    "condition": "original_external_16k",
+    "wer": 90.3225806451613,
+    "cer": 85.36585365853658,
+    "n_channels": 2
+  }
+]
