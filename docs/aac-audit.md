@@ -228,3 +228,7 @@ also runs the optional AAC integration tests. Workflows remain
 Merge recommendation: review as an optional capability extension with the
 compatibility fixes and evidence above. Do not market it as a universally
 faster decoder or enable it in default releases based on this one-host audit.
+
+The [syom 0.10.0 current-main follow-up](measurements/aac-20261104/README.md)
+records failing decoder and HTTP parity gates; this optional integration is not
+yet accepted for merge on current main.

@@ -33,7 +33,7 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Changed
 
-- Add opt-in `extended-aac` decoding through syom 0.8.1 for ADTS, LATM/LOAS,
+- Add opt-in `extended-aac` decoding through syom 0.10.0 for ADTS, LATM/LOAS,
   HE-AAC, AAC-LD and bounded fragmented MP4. Preserve the default Symphonia
   path while broader workload/platform qualification remains open. Bound AAC
   scan memory, batch decoder handoffs, and preserve cancellation and existing

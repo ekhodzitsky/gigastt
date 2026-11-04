@@ -4344,9 +4344,9 @@ dependencies = [
 
 [[package]]
 name = "syom"
-version = "0.8.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9720ac01d202d983ee3b83bce3c72c4d0822a5e5533feadd03946e897b7a20d7"
+checksum = "864eacba963d7f6db2815289d4a8572f62a8784ee61f71a013bf9a9b935491ce"
 
 [[package]]
 name = "sysctl"
