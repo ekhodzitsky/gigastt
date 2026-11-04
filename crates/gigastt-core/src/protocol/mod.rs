@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Current WebSocket protocol version (semver-lite: major.minor).
-pub const PROTOCOL_VERSION: &str = "1.2";
+pub const PROTOCOL_VERSION: &str = "1.3";
 /// Oldest accepted client version; newer versions add optional fields.
 pub const MIN_PROTOCOL_VERSION: &str = "1.0";
 
@@ -111,6 +111,10 @@ pub enum ClientMessage {
         /// values are rejected with `invalid_endpoint_mode`. Optional.
         #[serde(default)]
         endpoint_mode: Option<String>,
+        /// Decoder blank-run duration, 40..=2000 ms, rounded up to 40 ms.
+        /// Auto mode without VAD only; omitted retains the session setting.
+        #[serde(default)]
+        endpoint_silence_ms: Option<u32>,
         /// Per-session minimum trailing silence (ms) for VAD endpointing.
         /// Overrides server `--vad-min-silence-ms` for this connection only.
         /// No effect when the server has no VAD loaded. Optional.

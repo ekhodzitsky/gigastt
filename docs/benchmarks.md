@@ -563,6 +563,9 @@ satisfy the gate. Optimized graphs and optional sidecars are not its cache input
 The tests compare encoder activations and expected transcript fixtures, then
 exercise real speech through WebSocket partials, sliding windows and finalization.
 These are correctness checks, not corpus WER or shared-runner latency guarantees.
+Model smoke also requires the paired [whole-ASR performance
+comparison](performance-regressions.md#running-the-asr-check-locally) to pass;
+it compares both recognition heads against the accepted binary revision.
 Full E2E/model-quality checks require `full=true`. Required status reporting and
 release prerequisites are described in [manual CI operation](performance-regressions.md#manual-ci-operation).
 

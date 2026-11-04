@@ -30,7 +30,7 @@ permissions:
 jobs:
   build-xcframework:
     name: Build GigasttFFI.xcframework
-    runs-on: macos-14
+    runs-on: macos-15
     outputs:
       # "true" when the package was mirrored to ekhodzitsky/gigastt-swift in
       # this run (consumed by the verify-spm job).
@@ -384,7 +384,7 @@ jobs:
   verify-spm:
     name: Verify SPM package resolves
     needs: build-xcframework
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
         with:

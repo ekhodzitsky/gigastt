@@ -73,12 +73,14 @@ jobs:
       - run: python3 scripts/test-manual-workflows.py
       - run: python3 scripts/test_manual_statuses.py
       - run: python3 scripts/test-performance-gates.py
+      - run: python3 scripts/test-asr-performance.py
       - run: python3 scripts/test-ci-prerequisites.py
       - run: python3 scripts/test-resolve-release.py
       - run: python3 scripts/test-resolve-android.py
       - run: python3 scripts/test-release-assets.py
       - run: python3 scripts/test_homebrew_release_metadata.py
       - run: python3 scripts/test_android_runtime.py
+      - run: python3 scripts/test_phrase_loss_diagnostic.py
 
   runtime-isolation:
     runs-on: ubuntu-latest
@@ -335,7 +337,7 @@ jobs:
       - run: cargo test --workspace --lib --bins
 
   build-coreml:
-    runs-on: macos-14
+    runs-on: macos-15
     name: Build (CoreML)
     steps:
       - uses: actions/checkout@v7
@@ -419,7 +421,7 @@ jobs:
       - run: cargo build --release -p gigastt --features diarization
 
   build-candle:
-    runs-on: macos-14
+    runs-on: macos-15
     name: Build (Candle/Metal)
     steps:
       - uses: actions/checkout@v7
@@ -542,11 +544,51 @@ jobs:
             target/speaker-revisions/
           if-no-files-found: error
 
+  asr-performance:
+    name: ASR performance
+    needs: comparison-base
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install native build prerequisites
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: asr-performance
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: actions/cache@v6
+        with:
+          path: ~/.gigastt/asr-performance-models
+          key: asr-performance-${{ hashFiles('scripts/asr-performance-assets.json') }}
+      - name: Provision both pinned ASR heads
+        run: |
+          for head in rnnt e2e_rnnt; do
+            cargo run --locked -p gigastt -- download --model-variant "$head" --model-dir "$HOME/.gigastt/asr-performance-models/$head" --skip-diarization
+          done
+      - name: Compare full ASR revisions
+        env:
+          BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
+        run: GIGASTT_ASR_MODELS="$HOME/.gigastt/asr-performance-models" python3 scripts/asr-performance.py --base "$BASE_SHA"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: asr-performance
+          path: target/asr-revisions/
+          if-no-files-found: error
+
   model-smoke:
     # All PRs, including forks: indirect inference dependencies cannot skip this gate.
     runs-on: ubuntu-latest
     name: Model smoke
-    needs: [bench, speaker-performance, build-ane]
+    needs: [bench, speaker-performance, asr-performance, build-ane]
     if: always()
     timeout-minutes: 25
     permissions:
@@ -556,8 +598,9 @@ jobs:
         env:
           BENCH_RESULT: ${{ needs.bench.result }}
           SPEAKER_RESULT: ${{ needs.speaker-performance.result }}
+          ASR_RESULT: ${{ needs.asr-performance.result }}
           OBJC_RESULT: ${{ needs.build-ane.result }}
-        run: test "$BENCH_RESULT" = success && test "$SPEAKER_RESULT" = success && test "$OBJC_RESULT" = success
+        run: test "$BENCH_RESULT" = success && test "$SPEAKER_RESULT" = success && test "$ASR_RESULT" = success && test "$OBJC_RESULT" = success
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -1159,6 +1202,11 @@ jobs:
         run: |
           # Optimized timing/RSS probes run in the mandatory Speaker performance
           # job. Instrumented debug coverage cannot provide valid measurements.
+          # The endpoint replay requires an explicit model and a fresh report
+          # path. Coverage output is diagnostic, not a latency measurement.
+          endpoint_probe_dir="$(mktemp -d "$RUNNER_TEMP/endpoint-coverage.XXXXXX")"
+          GIGASTT_TEST_MODEL_DIR="$HOME/.gigastt/models" \
+          GIGASTT_ENDPOINT_PROBE="$endpoint_probe_dir/report.json" \
           cargo llvm-cov --no-report --workspace --lib --bins -- --ignored --test-threads=1 \
             --skip inference::diarization::model_tests::test_speaker_quality_and_latency_against_cpu_oracle \
             --skip inference::diarization::model_tests::test_speaker_resource_probe

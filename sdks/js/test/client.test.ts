@@ -140,12 +140,14 @@ describe("GigasttClient", () => {
       const client = await GigasttClient.connect(server.url, {
         sampleRate: 16000,
         diarization: true,
+        endpointSilenceMs: 1500,
       });
 
       const configure = await withTimeout(configureSeen.promise);
-      expect(configure.protocol_version).toBe(PROTOCOL_VERSION);
+      expect(configure.protocol_version).toBe("1.3");
       expect(configure.sample_rate).toBe(16000);
       expect(configure.diarization).toBe(true);
+      expect(configure.endpoint_silence_ms).toBe(1500);
 
       expect(client.ready.model).toBe("gigaam-v3-e2e-rnnt");
       expect(client.ready.sample_rate).toBe(48000);

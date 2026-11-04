@@ -47,7 +47,11 @@ missing, renamed and removed benchmark results require investigation.
   turns. Median paired increases above 20% for load, embedding, offline or streaming
   time, or above 10% for RSS/peak RSS, fail the check. This catches changes shared
   by the live oracle and candidate, including an ONNX Runtime upgrade.
-- **Model smoke** explicitly requires both Linux performance jobs and the macOS
+- **ASR performance** compares complete file recognition in the accepted and candidate
+  binaries on both `rnnt` and `e2e_rnnt`, using pinned INT8 models and speech
+  fixtures. It rejects missing evidence, changed transcripts and resource or
+  latency regressions. The local protocol and limits are described below.
+- **Model smoke** explicitly requires all three Linux performance jobs and the macOS
   bridge job to succeed. It
   runs even if a dependency fails, and fails itself in that case. This is
   necessary because a skipped required GitHub job can otherwise permit merge.
@@ -77,7 +81,7 @@ In **Actions → CI → Run workflow**, select the PR branch and enter the full
 moving refs, missing commits, unrelated history and comparison against the
 candidate itself. Use the last accepted revision covering the entire change;
 do not replace a failing baseline with the candidate to hide a regression.
-The default `full=false` runs the branch checks, including both performance gates
+The default `full=false` runs the branch checks, including all three Linux performance gates
 and Model smoke. It does not run full E2E, E2E coverage, the ORT CoreML execution-provider
 smoke or all Docker builds. These expensive checks are opt-in with `full=true`.
 The ANE bridge comparison below runs in ordinary manual CI when its code or
@@ -119,6 +123,69 @@ remain valid evidence, but a newer failed manual run prevents reusing them.
 Release, model publication, Homebrew, platform builds, soak, Miri, dependency
 resolution and standalone benchmarks each require their own manual dispatch.
 A successful Release does not automatically start Homebrew.
+
+## Running the ASR check locally
+
+The Linux CPU comparison requires Python 3.11+ and builds two immutable revisions
+in release mode, each
+with its own `Cargo.lock`. It injects the same test-only probe into both engine
+test modules. Production inference code is not replaced. Provision both pinned
+model bundles, then compare against the accepted ancestor:
+
+```sh
+for head in rnnt e2e_rnnt; do
+  cargo run --locked -p gigastt -- download --model-variant "$head" \
+    --model-dir "$HOME/.gigastt/asr-performance-models/$head" --skip-diarization
+done
+GIGASTT_ASR_MODELS="$HOME/.gigastt/asr-performance-models" \
+  python3 scripts/asr-performance.py --base FULL_ANCESTOR_SHA
+python3 scripts/test-asr-performance.py
+```
+
+The candidate defaults to `HEAD`; uncommitted production changes are not measured.
+Use `--candidate SHA` to select another commit. A same-commit comparison is
+permitted locally as a noise control; CI's baseline resolver rejects it.
+`scripts/asr-performance-assets.json` pins every model and audio file by SHA-256.
+Each head processes three bundled Golos clips and a deterministic 35.97-second
+concatenation with silence gaps, exercising file windowing. No new corpus is
+downloaded. Both binaries finish building before measurements start.
+
+Seven alternating pairs of fresh processes use the CPU provider, one pool slot
+and at most two encoder threads. Both binaries are pinned to the same first
+one or two allowed logical CPUs; the probe verifies the actual affinity. This
+prevents migration between fast and efficiency cores on hybrid hosts. It does
+not reserve those CPUs against other applications. Each process measures model loading, its first
+transcription, then warmed transcription of each file. Each file has an untimed
+warmup; short clips then run ten times and report mean time per transcription
+to reduce scheduling jitter on sub-100ms calls. The long file runs once after
+its warmup. Every repetition must preserve its transcript and duration.
+Median **paired** ratios
+must be at most 1.20 for load and first transcription, and 1.10 for each warmed
+file, RSS and peak RSS. No aggregate average may hide a slow individual case.
+All texts must be nonempty and identical between repetitions and revisions;
+durations and configuration must match the pinned workload. Missing rounds,
+failed subprocesses, malformed numbers or changed inputs fail the gate.
+The tolerances account for measurement variability, not permission to ship a
+known slowdown. A legitimate recognition change requires a reviewed quality
+comparison, not silently disabling the text check.
+
+Raw build/process logs, immutable commit and executable hashes, probe hash,
+asset hashes and measurements are retained under `target/asr-revisions/` and in
+the manual CI artifact. Revalidate a report with
+`python3 scripts/asr-performance.py --check target/asr-revisions/report.json`.
+Run without other CPU-intensive tasks. A failed rerun overwrites the old report
+with incomplete evidence instead of leaving stale passing measurements.
+
+This measures the file ASR engine, including decoding, features, encoder,
+recognition decoder and window stitching. It excludes punctuation restoration,
+ITN, diarization, HTTP overhead, WebSocket streaming, concurrent requests and
+non-CPU providers. The long case repeats short speech; it does not establish
+long-form recognition quality. Transcript equality on these fixtures is a
+regression guard, not a replacement for corpus WER. The separate full quality
+and speaker gates remain required. Linux RSS includes mapped model pages and
+native libraries; it is not a portable physical-memory footprint. Load timings
+use fresh graph caches but warm filesystem pages, not cold disk startup.
+Changes affecting excluded workloads require additional representative evidence.
 
 ## Running the speaker check locally
 

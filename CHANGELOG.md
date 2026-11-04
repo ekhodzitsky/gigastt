@@ -13,6 +13,20 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ## [Unreleased]
 
+### Added
+
+- Configure non-VAD streaming blank-run endpoint duration with
+  `serve --endpoint-silence-ms` / `GIGASTT_ENDPOINT_SILENCE_MS` or WebSocket
+  `configure.endpoint_silence_ms` (protocol 1.3; clients 1.0–1.2 remain accepted).
+  Default 600 ms, supported 40–2000 ms; VAD/manual and file paths are unchanged.
+
+### Fixed
+
+- Clear a decoder endpoint signal when speech resumes later in the same window,
+  preventing an internal pause from finalizing an utterance that is still spoken.
+- Finalize an already committed utterance after a trailing blank-only window,
+  even when its speech has slid out of the retained encoder context.
+
 ### Security
 
 - Update TLS verification and root certificates in workspace/fuzz lockfiles; patch Candle ZIP handling and Askama TOML parsing to remove vulnerable or unmaintained dependencies from repository builds. See [dependency patch scope](vendor/README.md), including the limitation for downstream crates.io consumers.
