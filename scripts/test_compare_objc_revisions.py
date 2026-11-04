@@ -95,17 +95,23 @@ class HostTests(unittest.TestCase):
 
 
 class ProtectedGateTests(unittest.TestCase):
-    def test_coreml_failure_blocks_required_model_smoke(self):
+    def test_each_required_failure_blocks_model_smoke(self):
         workflow = (module.ROOT / '.github/workflows/ci.yml').read_text()
         job = workflow.split('  model-smoke:\n', 1)[1]
         job = re.split(r'\n  [a-zA-Z0-9_-]+:\n', job, maxsplit=1)[0]
         command = re.search(r'^        run: (.+)$', job, re.MULTILINE).group(1)
-        for result in ('failure', 'cancelled', 'skipped', '', 'success'):
-            with self.subTest(result=result):
-                run = subprocess.run(['bash', '-c', command], check=False,
-                                     env=dict(os.environ, BENCH_RESULT='success',
-                                              SPEAKER_RESULT='success', OBJC_RESULT=result))
-                self.assertEqual(run.returncode == 0, result == 'success')
+        successful = dict(BENCH_RESULT='success', SPEAKER_RESULT='success',
+                          ASR_RESULT='success', OBJC_RESULT='success')
+        for dependency in successful:
+            for result in ('failure', 'cancelled', 'skipped', '', 'success', None):
+                with self.subTest(dependency=dependency, result=result):
+                    env = {**os.environ, **successful}
+                    if result is None:
+                        env.pop(dependency)
+                    else:
+                        env[dependency] = result
+                    run = subprocess.run(['bash', '-c', command], check=False, env=env)
+                    self.assertEqual(run.returncode == 0, result == 'success')
         self.assertRegex(job, r'needs: \[[^\]]*build-ane[^\]]*\]')
         self.assertIn('    if: always()', job)
         self.assertIn('OBJC_RESULT: ${{ needs.build-ane.result }}', job)
