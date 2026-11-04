@@ -45,6 +45,10 @@ cancellation and output behavior to targeted regression tests.
 Model smoke and quality gates are separate from a full WER experiment. See
 [benchmark gates](benchmarks.md#pull-request-model-smoke-gate) and the
 [performance acceptance policy](performance-regressions.md) for exact protocols.
+The [whole-ASR comparison](performance-regressions.md#running-the-asr-check-locally)
+measures both RNN-T heads against the accepted revision on the same host.
+Its model-free failure-contract tests run with
+`python3 scripts/test-asr-performance.py`.
 A test that skips for missing assets is not evidence of model correctness.
 
 ## Load, soak and long-form quality

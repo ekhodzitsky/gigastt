@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 REQUIRED_JOBS = {'Format', 'Clippy', 'Unit Tests', 'Model smoke',
-                 'Speaker performance', 'Benchmarks (regression gate)',
+                 'Speaker performance', 'ASR performance', 'Benchmarks (regression gate)',
                  'Quality Gate (WER/RTF/RSS)'}
 
 
