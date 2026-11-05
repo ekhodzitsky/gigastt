@@ -39,3 +39,23 @@ remove the unused dynamic-library override and label the actual static ORT
 archive fingerprint correctly; acceptance assertions remain unchanged.
 The HTTP corpus contains WAV controls, AAC-LC speech and HE controls. It is
 not a representative population WER measurement or cross-platform acceptance.
+
+## Follow-up: the changed transcript is correct
+
+A [targeted independent check](golos04-presentation.json) resolves the changed
+`golos_04-aac` output. The human reference, original WAV, FFmpeg-decoded M4A
+bounded to its 5.220-second presentation, and syom all produce
+`ищи телеканал про бизнес на тиви`. The standard main AAC path instead produces
+`ищи телеканал про бизнес на тв`.
+
+The standard path returns 84,992 samples, syom 83,520 (16 kHz). Aligning the
+standard PCM by 1,024 samples reduces RMS difference from 0.0943 to 5.52e-8;
+the remaining excess tail is 448 samples. This is evidence of unremoved
+priming/padding in the standard path for this recording. It explains the
+5.312-versus-5.220-second duration difference; the latter matches the container
+presentation duration. It does not establish the cause for every other file.
+
+Therefore the old transcript/duration equality assertion fails on a demonstrable
+correction in this example. It must not be interpreted as an ASR quality
+regression. Corpus-level reference scoring and the still-failing decoder speed
+gate remain necessary. The recorded failed canary is retained unchanged.
