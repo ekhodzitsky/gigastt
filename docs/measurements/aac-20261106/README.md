@@ -44,3 +44,36 @@ archive. [Metadata](validation.json) pins registry, handoff and validation scope
 reference files describe this run and require rebinding when replayed elsewhere.
 No audio, PCM or model weights are published. This is Linux x86_64 evidence only.
 No hosted CI, release publication or deployment was performed for this refresh.
+
+## Load-latency localization
+
+The original two slow final responses spend 457/495 ms inside logged encoder
+inference. AAC setup begins about 1–2 ms before inference starts. Thus the
+observed half-second delay is in ASR inference, rather than AAC input/handoff
+or the upload-admission retry interval.
+
+A fixed diagnostic (four rounds, four server conditions, 8 clients, the same
+32 mixed WAV/AAC cases) adds per-thread CPU observations. It does not replace
+acceptance. [Summary](latency-localization.json) retains every round. Main's
+unpinned p95 ranges 155–747 ms; candidate 204–702 ms. Slow WAV controls occur
+in both binaries: maximum logged WAV encoder time is 716/639 ms. Both binaries
+were also tested with requested affinity on the same four fast physical cores
+0–3; sampled CPU IDs confirm this placement. Main p95 ranges 174–236 ms, while
+candidate ranges 173–561 ms. Affinity reduces typical variability but neither
+reserves cores nor eliminates the candidate outlier. No stable candidate-only
+cause has been established.
+
+The host also carries indexing/rendering/compilation work. A separate
+[post-experiment ten-second observation](process-load-snapshot.json) measures
+actual CPU deltas; it is not telemetry from the original spike. The diagnostic
+observer itself adds overhead (recorded in the summary) and is pinned to CPU8.
+Kernel sched_schedstats was disabled: sampled wait counters are not a reliable
+live starvation measure. No other user's processes were stopped or modified.
+
+Conclusion: the slow stage is localized to encoder inference and the phenotype
+also occurs without syom, on main and WAV. Shared-host CPU contention/placement
+is a supported explanation to investigate, not a proven historical root cause.
+The original load failure remains valid and unresolved. Next qualification must
+use a quiet or isolated runner, keep identical placement/configuration for both
+binaries, and retain CPU/pressure context around requests. No production thread
+limits or acceptance thresholds were changed to make this result pass.

@@ -1,0 +1,8 @@
+{
+  "duration_seconds": 10.006997504000083,
+  "cpu_percent_one_core": {
+    "codebase-memory": 2.8979721428338396,
+    "blender": 0.8993706650173983
+  },
+  "scope": "Post-experiment ten-second observation, not historical spike attribution."
+}
