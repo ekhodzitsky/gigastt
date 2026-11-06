@@ -1,0 +1,4 @@
+2026-10-28T22:06:10.337773Z  INFO gigastt::server::listen: gigastt server listening on http://127.0.0.1:58727
+2026-10-28T22:06:11.608345Z ERROR request{request_id=01a1848c-9ead-7017-ac62-e4be1103529d method=POST path=/v1/transcribe}: gigastt::server::http::transcribe: REST inference made no progress for 1s — aborting
+2026-10-28T22:06:15.125393Z  INFO gigastt::server::listen: Shutting down server
+2026-10-28T22:06:15.163561Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

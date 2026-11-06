@@ -1,0 +1,39 @@
+{
+  "syom": "0.10.1",
+  "registry_checksum": "4dcc9f2b9f8213961f9804076cdbaaf8ed0cea4e7c3a9cd92a9326d23eb97df3",
+  "base": "adf4db0d7b06a150534734b69b925e3136f0a631",
+  "adapter_base": "49faef1375dd4bef7f0d4ac9602b4dd68bc51dbf",
+  "handoff_patch_sha256": "82467a7a14cd41cd8b416e53e94fc49b133b94f09a4f266d49650e3daee24968",
+  "runtime_handoff_files_verified": 7,
+  "default_tests": 1269,
+  "extended_tests": 1305,
+  "ignored": 49,
+  "both_clippy_pass": true,
+  "decoder_campaigns_pass": [
+    true,
+    true
+  ],
+  "pcm_cases_identical": 29,
+  "independent_http_qualified": true,
+  "load_gates": {
+    "baseline_responses": true,
+    "baseline_steady_memory": true,
+    "candidate_responses": true,
+    "candidate_steady_memory": true,
+    "latency": false,
+    "client_latency_with_retries": true,
+    "upload_admission_exercised": true,
+    "peak_rss": true,
+    "queue-cancel-baseline": true,
+    "queue-cancel-candidate": true,
+    "watchdog-baseline": true,
+    "watchdog-candidate": true
+  },
+  "last_burst": {
+    "clients": 8,
+    "baseline_p95_ms": 201.83613100016373,
+    "candidate_p95_ms": 495.2331240001513,
+    "ratio": 2.4536396013246486
+  },
+  "complete_acceptance": false
+}

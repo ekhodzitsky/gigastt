@@ -1,0 +1,1202 @@
+{
+  "base": {
+    "fmp4_he2.mp4": {
+      "file": {
+        "error": "Unsupported audio codec: unsupported feature: aac: aac too complex",
+        "mode": "file"
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 462.1128743022813,
+            "finite": true,
+            "samples": 6142
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 0.384,
+          "file": 0.384
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.latm": {
+      "file": {
+        "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+        "mode": "file"
+      },
+      "probe": {
+        "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+        "mode": "probe"
+      }
+    },
+    "he48.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 231.04336164275182,
+            "finite": true,
+            "samples": 3071
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 0.384,
+          "file": 0.384
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc-fast.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.779002437568565,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.021333333333334,
+          "file": 4.021333333333334
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc-fragmented.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.779002437568565,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.779002437568565,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.074666666666666,
+          "file": 4.074666666666666
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.latm": {
+      "file": {
+        "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+        "mode": "file"
+      },
+      "probe": {
+        "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+        "mode": "probe"
+      }
+    },
+    "lc.mka": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.779002437568565,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ld48.loas": {
+      "file": {
+        "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+        "mode": "file"
+      },
+      "probe": {
+        "error": "Unsupported audio format: unsupported feature: core (probe): no suitable format reader found",
+        "mode": "probe"
+      }
+    },
+    "long-stereo.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 199.2550006794906,
+            "finite": true,
+            "samples": 1280340
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 80.02133333333333,
+          "file": 80.02133333333333
+        },
+        "mode": "probe",
+        "planes": []
+      },
+      "split": {
+        "detail": null,
+        "mode": "split",
+        "planes": [
+          {
+            "energy": 199.25500067247486,
+            "finite": true,
+            "samples": 1280340
+          },
+          {
+            "energy": 199.25500068531534,
+            "finite": true,
+            "samples": 1280340
+          }
+        ]
+      },
+      "scan": {
+        "detail": {
+          "channels": 2,
+          "dual_mono": true
+        },
+        "mode": "scan",
+        "planes": []
+      }
+    },
+    "mp3.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 17.548173196138492,
+            "finite": true,
+            "samples": 65664
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.0690625,
+          "file": 4.0690625
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ps48.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 123.5007834805842,
+            "finite": true,
+            "samples": 17748
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 1.1093333333333333,
+          "file": 1.1093333333333333
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ps48.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 61.747143630877304,
+            "finite": true,
+            "samples": 8874
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 1.1093333333333333,
+          "file": 1.1093333333333333
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech0.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.779002437568565,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.021333333333334,
+          "file": 4.021333333333334
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech1.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 1888.1204813239133,
+            "finite": true,
+            "samples": 55295
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 3.4513333333333334,
+          "file": 3.4513333333333334
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech2.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 59.05235840366592,
+            "finite": true,
+            "samples": 49492
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 3.0813333333333333,
+          "file": 3.0813333333333333
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech3.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 4.3837535111415855,
+            "finite": true,
+            "samples": 87380
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 5.461333333333333,
+          "file": 5.461333333333333
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech4.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 375.61094315257793,
+            "finite": true,
+            "samples": 83967
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 5.241333333333333,
+          "file": 5.241333333333333
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    }
+  },
+  "original": {
+    "fmp4_he2.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 108.40735627498167,
+            "finite": true,
+            "samples": 21844
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": 1.3653333333333333
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 463.6047214821665,
+            "finite": true,
+            "samples": 6143
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.latm": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 463.6047214821665,
+            "finite": true,
+            "samples": 6143
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 463.60472148216655,
+            "finite": true,
+            "samples": 5439
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 0.34,
+          "file": 0.34
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc-fast.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77882783328283,
+            "finite": true,
+            "samples": 63999
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.0,
+          "file": 4.0
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc-fragmented.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77899683759549,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": 4.032
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77899683759549,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.latm": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77899683759549,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.mka": {
+      "file": {
+        "error": "Unsupported audio codec: unsupported feature: core (codec): unsupported audio codec",
+        "mode": "file"
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ld48.loas": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 946.589181603873,
+            "finite": true,
+            "samples": 32255
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "long-stereo.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 199.25433504789186,
+            "finite": true,
+            "samples": 1279999
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 80.0,
+          "file": 80.0
+        },
+        "mode": "probe",
+        "planes": []
+      },
+      "split": {
+        "detail": null,
+        "mode": "split",
+        "planes": [
+          {
+            "energy": 199.2543350445054,
+            "finite": true,
+            "samples": 1279999
+          },
+          {
+            "energy": 199.25433506920876,
+            "finite": true,
+            "samples": 1279999
+          }
+        ]
+      },
+      "scan": {
+        "detail": {
+          "channels": 2,
+          "dual_mono": true
+        },
+        "mode": "scan",
+        "planes": []
+      }
+    },
+    "mp3.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 17.548173196138492,
+            "finite": true,
+            "samples": 65664
+          }
+        ]
+      },
+      "probe": {
+        "error": "Unsupported audio format: isomp4: no AAC audio track found",
+        "mode": "probe"
+      }
+    },
+    "ps48.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 62.4304019009401,
+            "finite": true,
+            "samples": 17748
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ps48.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 62.430401900916834,
+            "finite": true,
+            "samples": 17044
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 1.066,
+          "file": 1.066
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech0.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77882783328283,
+            "finite": true,
+            "samples": 63999
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.0,
+          "file": 4.0
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech1.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 1888.1200464186952,
+            "finite": true,
+            "samples": 54879
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 3.43,
+          "file": 3.43
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech2.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 59.052152607622965,
+            "finite": true,
+            "samples": 48959
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 3.06,
+          "file": 3.06
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech3.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 4.383752074242342,
+            "finite": true,
+            "samples": 87039
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 5.44,
+          "file": 5.44
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech4.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 375.5569881524992,
+            "finite": true,
+            "samples": 83519
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 5.22,
+          "file": 5.22
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    }
+  },
+  "candidate": {
+    "fmp4_he2.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 108.40735627498167,
+            "finite": true,
+            "samples": 21844
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": 1.3653333333333333
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 463.6047214821665,
+            "finite": true,
+            "samples": 6143
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.latm": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 463.6047214821665,
+            "finite": true,
+            "samples": 6143
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "he48.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 463.60472148216655,
+            "finite": true,
+            "samples": 5439
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 0.34,
+          "file": 0.34
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc-fast.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77882783328283,
+            "finite": true,
+            "samples": 63999
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.0,
+          "file": 4.0
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc-fragmented.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77899683759549,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": 4.032
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77899683759549,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.latm": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77899683759549,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "lc.mka": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.779002437568565,
+            "finite": true,
+            "samples": 64511
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ld48.loas": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 946.589181603873,
+            "finite": true,
+            "samples": 32255
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "long-stereo.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 199.25433504789186,
+            "finite": true,
+            "samples": 1279999
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 80.0,
+          "file": 80.0
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "mp3.mp4": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 17.548173196138492,
+            "finite": true,
+            "samples": 65664
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.0690625,
+          "file": 4.0690625
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ps48.adts": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 62.4304019009401,
+            "finite": true,
+            "samples": 17748
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": null,
+          "file": null
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "ps48.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 62.430401900916834,
+            "finite": true,
+            "samples": 17044
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 1.066,
+          "file": 1.066
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech0.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 19.77882783328283,
+            "finite": true,
+            "samples": 63999
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 4.0,
+          "file": 4.0
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech1.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 1888.1200464186952,
+            "finite": true,
+            "samples": 54879
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 3.43,
+          "file": 3.43
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech2.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 59.052152607622965,
+            "finite": true,
+            "samples": 48959
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 3.06,
+          "file": 3.06
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech3.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 4.383752074242342,
+            "finite": true,
+            "samples": 87039
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 5.44,
+          "file": 5.44
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    },
+    "speech4.m4a": {
+      "file": {
+        "detail": null,
+        "mode": "file",
+        "planes": [
+          {
+            "energy": 375.5569881524992,
+            "finite": true,
+            "samples": 83519
+          }
+        ]
+      },
+      "probe": {
+        "detail": {
+          "bytes": 5.22,
+          "file": 5.22
+        },
+        "mode": "probe",
+        "planes": []
+      }
+    }
+  }
+}

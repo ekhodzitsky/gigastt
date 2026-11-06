@@ -1,0 +1,22 @@
+{
+  "main": "adf4db0d7b06a150534734b69b925e3136f0a631",
+  "syom": "0.10.0",
+  "syom_registry_checksum": "864eacba963d7f6db2815289d4a8572f62a8784ee61f71a013bf9a9b935491ce",
+  "tests": {
+    "tests": {
+      "passed": 1278,
+      "ignored": 49
+    },
+    "default-tests": {
+      "passed": 1269,
+      "ignored": 49
+    }
+  },
+  "decoder_limit": 1.05,
+  "default_acceptance": false,
+  "version_only_acceptance": true,
+  "http_acceptance": false,
+  "model_encoder_sha256": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+  "http_runner_adjustment": "Local copies omit ORT_DYLIB_PATH and fingerprint the statically linked ORT archive instead. Thresholds and assertions unchanged.",
+  "load_test": "Not run: basic decoder and HTTP canary acceptance failed first."
+}

@@ -1,0 +1,81 @@
+# HELP gigastt_http_requests_total Total HTTP requests processed
+# TYPE gigastt_http_requests_total counter
+gigastt_http_requests_total{method="POST",path="/v1/transcribe",status="200"} 33
+gigastt_http_requests_total{method="POST",path="/v1/transcribe",status="422"} 2
+
+# HELP gigastt_inference_timeouts_total Total inference runs aborted by the per-request inference timeout
+# TYPE gigastt_inference_timeouts_total counter
+
+# HELP gigastt_pool_timeouts_total Total pool checkout timeouts
+# TYPE gigastt_pool_timeouts_total counter
+
+# HELP gigastt_rate_limit_rejections_total Total requests rejected by rate limiter
+# TYPE gigastt_rate_limit_rejections_total counter
+
+# HELP gigastt_batch_pool_available Number of session triplets currently available in the batch pool (only populated when --batch-pool-size > 0)
+# TYPE gigastt_batch_pool_available gauge
+
+# HELP gigastt_batch_pool_waiters Number of tasks currently waiting for a batch-pool checkout
+# TYPE gigastt_batch_pool_waiters gauge
+
+# HELP gigastt_pool_available Number of session triplets currently available in the pool
+# TYPE gigastt_pool_available gauge
+gigastt_pool_available 1
+
+# HELP gigastt_pool_waiters Number of tasks currently waiting for a pool checkout
+# TYPE gigastt_pool_waiters gauge
+
+# HELP gigastt_ws_active_connections Number of active WebSocket connections
+# TYPE gigastt_ws_active_connections gauge
+
+# HELP gigastt_http_request_duration_seconds HTTP request duration in seconds
+# TYPE gigastt_http_request_duration_seconds histogram
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="0.005"} 2
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="0.01"} 2
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="0.025"} 2
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="0.05"} 2
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="0.1"} 4
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="0.25"} 35
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="0.5"} 35
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="1"} 35
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="2.5"} 35
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="5"} 35
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="10"} 35
+gigastt_http_request_duration_seconds_bucket{method="POST",path="/v1/transcribe",le="+Inf"} 35
+gigastt_http_request_duration_seconds_sum{method="POST",path="/v1/transcribe"} 5.464512870999999
+gigastt_http_request_duration_seconds_count{method="POST",path="/v1/transcribe"} 35
+
+# HELP gigastt_inference_duration_seconds Inference duration in seconds
+# TYPE gigastt_inference_duration_seconds histogram
+gigastt_inference_duration_seconds_bucket{le="0.005"} 2
+gigastt_inference_duration_seconds_bucket{le="0.01"} 2
+gigastt_inference_duration_seconds_bucket{le="0.025"} 2
+gigastt_inference_duration_seconds_bucket{le="0.05"} 2
+gigastt_inference_duration_seconds_bucket{le="0.1"} 4
+gigastt_inference_duration_seconds_bucket{le="0.25"} 35
+gigastt_inference_duration_seconds_bucket{le="0.5"} 35
+gigastt_inference_duration_seconds_bucket{le="1"} 35
+gigastt_inference_duration_seconds_bucket{le="2.5"} 35
+gigastt_inference_duration_seconds_bucket{le="5"} 35
+gigastt_inference_duration_seconds_bucket{le="10"} 35
+gigastt_inference_duration_seconds_bucket{le="+Inf"} 35
+gigastt_inference_duration_seconds_sum 5.461792190000002
+gigastt_inference_duration_seconds_count 35
+
+# HELP gigastt_pool_checkout_duration_seconds Time spent waiting for a pool checkout
+# TYPE gigastt_pool_checkout_duration_seconds histogram
+gigastt_pool_checkout_duration_seconds_bucket{le="0.005"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="0.01"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="0.025"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="0.05"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="0.1"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="0.25"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="0.5"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="1"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="2.5"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="5"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="10"} 35
+gigastt_pool_checkout_duration_seconds_bucket{le="+Inf"} 35
+gigastt_pool_checkout_duration_seconds_sum 0.000055962000000000004
+gigastt_pool_checkout_duration_seconds_count 35
+

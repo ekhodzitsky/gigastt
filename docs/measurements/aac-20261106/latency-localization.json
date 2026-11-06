@@ -1,0 +1,440 @@
+{
+  "diagnostic_only": true,
+  "original_acceptance_unchanged": true,
+  "rounds": [
+    {
+      "round": 0,
+      "condition": "baseline-unpinned",
+      "p95_ms": 704.0639409997311,
+      "p99_ms": 747.0876349998434,
+      "slowest": [
+        {
+          "id": "golos_00-he2",
+          "ms": 747.0876349998434,
+          "attempts": 1
+        },
+        {
+          "id": "golos_01-aac",
+          "ms": 704.0639409997311,
+          "attempts": 8
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "condition": "candidate-unpinned",
+      "p95_ms": 522.6544060001288,
+      "p99_ms": 603.0880459998116,
+      "slowest": [
+        {
+          "id": "golos_04-wav",
+          "ms": 603.0880459998116,
+          "attempts": 1
+        },
+        {
+          "id": "golos_06-aac",
+          "ms": 522.6544060001288,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "condition": "candidate-fast",
+      "p95_ms": 257.9977410000538,
+      "p99_ms": 281.68188199970245,
+      "slowest": [
+        {
+          "id": "golos_12-aac",
+          "ms": 281.68188199970245,
+          "attempts": 1
+        },
+        {
+          "id": "golos_03-aac",
+          "ms": 257.9977410000538,
+          "attempts": 5
+        }
+      ]
+    },
+    {
+      "round": 0,
+      "condition": "baseline-fast",
+      "p95_ms": 235.81250699999146,
+      "p99_ms": 240.63607399966713,
+      "slowest": [
+        {
+          "id": "golos_04-wav",
+          "ms": 240.63607399966713,
+          "attempts": 1
+        },
+        {
+          "id": "golos_04-aac",
+          "ms": 235.81250699999146,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "condition": "baseline-fast",
+      "p95_ms": 173.82823200023267,
+      "p99_ms": 180.25605399998312,
+      "slowest": [
+        {
+          "id": "golos_12-aac",
+          "ms": 180.25605399998312,
+          "attempts": 1
+        },
+        {
+          "id": "golos_12-wav",
+          "ms": 173.82823200023267,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "condition": "candidate-fast",
+      "p95_ms": 172.91293700009192,
+      "p99_ms": 184.42855100011002,
+      "slowest": [
+        {
+          "id": "golos_12-aac",
+          "ms": 184.42855100011002,
+          "attempts": 1
+        },
+        {
+          "id": "golos_12-wav",
+          "ms": 172.91293700009192,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "condition": "candidate-unpinned",
+      "p95_ms": 614.4881040004293,
+      "p99_ms": 811.8816439996408,
+      "slowest": [
+        {
+          "id": "golos_03-aac",
+          "ms": 811.8816439996408,
+          "attempts": 5
+        },
+        {
+          "id": "golos_03-wav",
+          "ms": 614.4881040004293,
+          "attempts": 5
+        }
+      ]
+    },
+    {
+      "round": 1,
+      "condition": "baseline-unpinned",
+      "p95_ms": 747.2497680000743,
+      "p99_ms": 777.4745329998041,
+      "slowest": [
+        {
+          "id": "golos_03-aac",
+          "ms": 777.4745329998041,
+          "attempts": 8
+        },
+        {
+          "id": "golos_03-wav",
+          "ms": 747.2497680000743,
+          "attempts": 7
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "condition": "baseline-unpinned",
+      "p95_ms": 615.2989030001663,
+      "p99_ms": 622.3756509998566,
+      "slowest": [
+        {
+          "id": "golos_03-aac",
+          "ms": 622.3756509998566,
+          "attempts": 7
+        },
+        {
+          "id": "golos_11-aac",
+          "ms": 615.2989030001663,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "condition": "candidate-unpinned",
+      "p95_ms": 701.822342000014,
+      "p99_ms": 811.2927410002158,
+      "slowest": [
+        {
+          "id": "golos_03-aac",
+          "ms": 811.2927410002158,
+          "attempts": 9
+        },
+        {
+          "id": "golos_00-he2",
+          "ms": 701.822342000014,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "condition": "candidate-fast",
+      "p95_ms": 560.6019400001969,
+      "p99_ms": 671.6818740001145,
+      "slowest": [
+        {
+          "id": "golos_04-aac",
+          "ms": 671.6818740001145,
+          "attempts": 1
+        },
+        {
+          "id": "golos_06-wav",
+          "ms": 560.6019400001969,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "condition": "baseline-fast",
+      "p95_ms": 191.41667199983203,
+      "p99_ms": 200.2356550001423,
+      "slowest": [
+        {
+          "id": "golos_03-aac",
+          "ms": 200.2356550001423,
+          "attempts": 4
+        },
+        {
+          "id": "golos_12-aac",
+          "ms": 191.41667199983203,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "condition": "baseline-fast",
+      "p95_ms": 225.06416099986382,
+      "p99_ms": 230.6942780001009,
+      "slowest": [
+        {
+          "id": "golos_12-aac",
+          "ms": 230.6942780001009,
+          "attempts": 1
+        },
+        {
+          "id": "golos_12-wav",
+          "ms": 225.06416099986382,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "condition": "candidate-fast",
+      "p95_ms": 249.76686999980302,
+      "p99_ms": 267.0364740001787,
+      "slowest": [
+        {
+          "id": "golos_03-wav",
+          "ms": 267.0364740001787,
+          "attempts": 5
+        },
+        {
+          "id": "golos_03-aac",
+          "ms": 249.76686999980302,
+          "attempts": 4
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "condition": "candidate-unpinned",
+      "p95_ms": 204.22009999992952,
+      "p99_ms": 209.15411299984044,
+      "slowest": [
+        {
+          "id": "golos_04-aac",
+          "ms": 209.15411299984044,
+          "attempts": 1
+        },
+        {
+          "id": "golos_06-aac",
+          "ms": 204.22009999992952,
+          "attempts": 1
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "condition": "baseline-unpinned",
+      "p95_ms": 155.22743400015315,
+      "p99_ms": 171.46413099999336,
+      "slowest": [
+        {
+          "id": "golos_06-wav",
+          "ms": 171.46413099999336,
+          "attempts": 1
+        },
+        {
+          "id": "golos_12-aac",
+          "ms": 155.22743400015315,
+          "attempts": 1
+        }
+      ]
+    }
+  ],
+  "conditions": {
+    "baseline-unpinned": {
+      "p95_ms_by_round": [
+        704.0639409997311,
+        747.2497680000743,
+        615.2989030001663,
+        155.22743400015315
+      ],
+      "median_p95_ms": 659.6814219999487,
+      "max_encoder_ms_by_codec": {
+        "wave": 716,
+        "aac": null
+      },
+      "observer_cpu_seconds": 4.107386644,
+      "clean_exit": true,
+      "observed_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ]
+    },
+    "candidate-unpinned": {
+      "p95_ms_by_round": [
+        522.6544060001288,
+        614.4881040004293,
+        701.822342000014,
+        204.22009999992952
+      ],
+      "median_p95_ms": 568.571255000279,
+      "max_encoder_ms_by_codec": {
+        "wave": 639,
+        "aac": 786
+      },
+      "observer_cpu_seconds": 3.980864507,
+      "clean_exit": true,
+      "observed_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ]
+    },
+    "candidate-fast": {
+      "p95_ms_by_round": [
+        257.9977410000538,
+        172.91293700009192,
+        560.6019400001969,
+        249.76686999980302
+      ],
+      "median_p95_ms": 253.8823054999284,
+      "max_encoder_ms_by_codec": {
+        "wave": 548,
+        "aac": 647
+      },
+      "observer_cpu_seconds": 1.6683728359999999,
+      "clean_exit": true,
+      "observed_cpus": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "baseline-fast": {
+      "p95_ms_by_round": [
+        235.81250699999146,
+        173.82823200023267,
+        191.41667199983203,
+        225.06416099986382
+      ],
+      "median_p95_ms": 208.24041649984792,
+      "max_encoder_ms_by_codec": {
+        "wave": 555,
+        "aac": null
+      },
+      "observer_cpu_seconds": 1.586472465,
+      "clean_exit": true,
+      "observed_cpus": [
+        0,
+        1,
+        2,
+        3
+      ]
+    }
+  },
+  "historical_outliers": {
+    "encoder_ms": [
+      457,
+      495
+    ],
+    "aac_setup_ms_approx": [
+      1,
+      2
+    ],
+    "limits": "No historical per-thread CPU telemetry; exact original cause not proven."
+  },
+  "concurrent_process_snapshot": [
+    "codebase-memory indexing",
+    "Blender",
+    "Rust compilation"
+  ],
+  "observer_limit": "Sampling ran on CPU8 and adds overhead. Affinity restricts placement but does not reserve CPUs. This is localization, not a passing acceptance rerun.",
+  "raw_trace_sha256": "5e89a3cfaf3a8ae6c7264a00ff2d21460b16c1033c37ce5c86a3cc168caa73c4",
+  "raw_trace_location": "Local aac-0101/latency-diagnostic/result.json; per-thread trace retained outside Git.",
+  "scheduler_wait_caveat": "sched_schedstats was 0; do not treat sampled wait counters as a reliable live starvation measurement."
+}

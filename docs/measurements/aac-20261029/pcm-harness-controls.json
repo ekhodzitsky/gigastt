@@ -1,0 +1,14 @@
+{
+  "same": {
+    "expected_exit": 0,
+    "observed_exit": 0
+  },
+  "different": {
+    "expected_exit": 1,
+    "observed_exit": 1
+  },
+  "bad-length": {
+    "expected_exit": 1,
+    "observed_exit": 1
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "created_utc": "2026-10-28T21:24:25.459643+00:00",
+  "upstream_main": "143b9f2920a65fe4b466c012cfaaa8e0fb302bda",
+  "integration_commit": "d577b9ee3ca5a15f2eb848db899db1d1e598d22b",
+  "source_tree": "fcf2c4af53e9ebb10e61e248e61e42986415bda5",
+  "baseline_snapshot_tree": "fcf2c4af53e9ebb10e61e248e61e42986415bda5",
+  "baseline_and_candidate_consumer_rust_identical": true,
+  "consumer_rust_files_compared": 292,
+  "audio_source_sha256": {
+    "crates/gigastt-core/src/inference/audio/aac.rs": "8bff096160fb137eccc33eb529af822aa48f85e9173b9ba2f16e77c10cd508d0",
+    "crates/gigastt-core/src/inference/audio/aac/channels.rs": "332f07e6fccbb3726c2dbeae97bdb88b6965a5b13b3b7706502353b0671761ce",
+    "crates/gigastt-core/src/inference/audio/aac/input.rs": "106c4aad5a946f61860c876a1e4c74ed5bd4f712ff22f7c5850d048331dcec1f",
+    "crates/gigastt-core/src/inference/audio/aac/probe.rs": "5a5dd75fbb8a905ec6d09caa234f73ce9c76093eeee7df256ac845e80ae18d23",
+    "crates/gigastt-core/src/inference/audio/chunks.rs": "a8c9c026f1864135eab84337324d579008d26fd05a297f17f10318459bb98abe",
+    "crates/gigastt-core/src/inference/audio/decode.rs": "cc61498a9066fde02189a2a07bfcca95081520e509a9f7b2e7e72b2bbb5bbb1f",
+    "crates/gigastt-core/src/inference/audio/decode/bytes_source.rs": "da06b87736ed3fe301d86557c0cbfa51f1d7eb0d393637640e5184a89334778a",
+    "crates/gigastt-core/src/inference/audio/decode/channels.rs": "ac8ba880d63dbd585fe546de13499afdb8d345f3c27326fe4fe7589fb70048af",
+    "crates/gigastt-core/src/inference/audio/decode/dual_mono.rs": "e364891f29e4f04777d0241129fd3e4ba12c5645b4b8d7a73d11eccac964232b",
+    "crates/gigastt-core/src/inference/audio/decode/probe.rs": "98eb6f475e5fa2c2fdcbecc69ffd5812bfc1b691d34f4ea34183ea7f35dfec9f",
+    "crates/gigastt-core/src/inference/audio/decode/scan.rs": "831019b0fa2e7e73e6431dd20cd46c190f1bd4ad2f0155bf34cb762b79e57a7d",
+    "crates/gigastt-core/src/inference/audio/mod.rs": "56341fb3c98d79b187214edeb81067c8978dd89980291e1c58e0a8918db48757",
+    "crates/gigastt-core/src/inference/audio/opus.rs": "678d7a586fd143d3e8f1830bb6ced07b88c39f21750bd17dcace4a9cf894cf57",
+    "crates/gigastt-core/src/inference/audio/opus/framing.rs": "b3883c8dd91b05d20817946e43865881bbe6f26f80aa2ddcc443dcd39708c076",
+    "crates/gigastt-core/src/inference/audio/pcm.rs": "f6300638a831bd54ae9098a78f8c269e8de03c783a9742744c0ca552ee921a85",
+    "crates/gigastt-core/src/inference/audio/proptests.rs": "fb4c626a451a35b1ad086cd2f5869a19297cd73380e19d8cfab551397e6aef3b",
+    "crates/gigastt-core/src/inference/audio/resample.rs": "aed9dce69efc65ee4fae0c8644e38aedff031f68f788fb5c9a5cc3573359e1c3",
+    "crates/gigastt-core/src/inference/audio/stream.rs": "a3712440065b8500ce76053a3dc21660194d8a005ed6890dbf8e690201f49c0b",
+    "crates/gigastt-core/src/inference/audio/stream/file.rs": "b7cdbd9f051ec6e6a72d28fc8df6afd842638d6ea8d5b9b443b59b91132a5ae6",
+    "crates/gigastt-core/src/inference/audio/stream/file_windows_tests.rs": "021371469859f344e51543f66eaf98c3ec5c4078a7468e6d7a52200778bb2b46",
+    "crates/gigastt-core/src/inference/audio/stream/tests.rs": "45f449721d3183ba2d9517e792c08094f5f51e0e8713b66a94a42eea4201b32b",
+    "crates/gigastt-core/src/inference/audio/telephony.rs": "1d3bab379de5566cf474d0ec40030fe6fb7ecb7acc32cf75630f6f6ca82d524b",
+    "crates/gigastt-core/src/inference/audio/tests/aac.rs": "08de8fb96332df8d461ac9bf07163381b1bff42afdcd6e50f04295b70aa498ab",
+    "crates/gigastt-core/src/inference/audio/tests/aac_compat.rs": "51f1c066f0ee78aaacd397243040577ee48d7c62fdd7857816b38f25092127aa",
+    "crates/gigastt-core/src/inference/audio/tests/cancellation.rs": "56e1fe269f375b860b25c50bdad1b750a31faf1803ffd7170cd1b172b0a62004",
+    "crates/gigastt-core/src/inference/audio/tests/decode.rs": "f2cd6c81fee336d9c0492f2d182b15eea967d6403519d9f07407631201d5ef70",
+    "crates/gigastt-core/src/inference/audio/tests/mod.rs": "b607ce32edea93d4e3ffc1fbae442dd3117dc4d8cd8e15e9b7960906925cd7fc",
+    "crates/gigastt-core/src/inference/audio/tests/opus.rs": "75bbdbad05c6e524838116b744d55f7a70eaf52f81274dda5cf329c762a7f071",
+    "crates/gigastt-core/src/inference/audio/tests/pcm.rs": "9db83bda67e44a73894c103d7e8f835cf2f6746b9d0032f6044c7dcf30eb1464",
+    "crates/gigastt-core/src/inference/audio/tests/resample.rs": "202eba8768416b8ea0b8f7c082fe3270d9e315978da4145b190185458bd9db10",
+    "crates/gigastt-core/src/inference/audio/tests/stream.rs": "2c3dac0edda55b7567425ec9315e5367dda39f23d6281bca65f4458a485e66a5",
+    "crates/gigastt-core/src/inference/audio/tests/telephony.rs": "ca2631b80469ecf1f17c23dcda9bc7b24eae53d1c7f8937fca659f75577ff73c",
+    "crates/gigastt-core/src/inference/audio/vad_windows.rs": "986bd5a93af071e47983af931cf0a634883d456808b9fd9a41342d14ec3a4ab8",
+    "crates/gigastt-core/src/inference/audio/vad_windows/tests.rs": "72e3acdcf16aab04cb23ee72a21bd8c184f006db4795664745a6ce7ce6cf6493",
+    "crates/gigastt-core/src/inference/audio/wave.rs": "002dd3e5d90f12a2998d41b943ff6fb255c51ed00d44de81135dde6f8dd129a3"
+  },
+  "syom_lock_entries": {
+    "baseline": {
+      "name": "syom",
+      "version": "0.7.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "599d0459aea231fbafc3f1dd51743508d3414613a3aa067772a8c97eb327df7b"
+    },
+    "candidate": {
+      "name": "syom",
+      "version": "0.8.1",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "checksum": "9720ac01d202d983ee3b83bce3c72c4d0822a5e5533feadd03946e897b7a20d7"
+    }
+  },
+  "other_locked_package_entries_identical": true,
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+  "release_profile": {
+    "lto": true,
+    "codegen-units": 1,
+    "strip": true
+  },
+  "checks": {
+    "default": {
+      "passed": 1259,
+      "ignored": 48,
+      "clippy_warnings_denied": true
+    },
+    "extended": {
+      "passed": 1268,
+      "ignored": 48,
+      "clippy_warnings_denied": true
+    },
+    "final_extended": {
+      "passed": 1268,
+      "ignored": 48,
+      "clippy_warnings_denied": true
+    }
+  },
+  "production_source_change": "Merge current main and update syom 0.7.1 to published 0.8.1; keep extended-aac non-default.",
+  "cold_build_startup_scope": "Build times include warmed caches and previous artifacts; not controlled cold-build measurements.",
+  "native_environment": "Existing unpacked OpenSSL development prefix as documented in CONTRIBUTING; unchanged manifests. ORT load-dynamic flag for local release probes/servers, no dependency default-feature edits.",
+  "probe_and_server_build_args": [
+    "build",
+    "--release",
+    "--locked",
+    "-p",
+    "gigastt-core",
+    "--example",
+    "aac_probe",
+    "-p",
+    "gigastt",
+    "--bin",
+    "gigastt",
+    "--no-default-features",
+    "--features",
+    "gigastt/extended-aac,gigastt-core/ort-load-dynamic"
+  ],
+  "probe_core_features": [
+    "__internals",
+    "async-pool",
+    "diarization",
+    "extended-aac",
+    "file-decode",
+    "net",
+    "ort-load-dynamic",
+    "quantize"
+  ],
+  "default_probe_core_features": [
+    "__internals",
+    "async-pool",
+    "diarization",
+    "file-decode",
+    "net",
+    "ort-load-dynamic",
+    "quantize"
+  ],
+  "feature_note": "Building the core example with the server unifies server development features. Fingerprints confirm these core features; the matched default probe explicitly uses the same list without extended-aac. Diarization inference is not requested.",
+  "deployment_scope": "Maintainer explicitly requests no deployment; local checks and existing PR update only.",
+  "cpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "48 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "24"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-23"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "AuthenticAMD"
+      },
+      {
+        "field": "Model name:",
+        "data": "AMD Ryzen AI 9 HX 370 w/ Radeon 890M"
+      },
+      {
+        "field": "CPU family:",
+        "data": "26"
+      },
+      {
+        "field": "Model:",
+        "data": "36"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "2"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "12"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "0"
+      },
+      {
+        "field": "Frequency boost:",
+        "data": "enabled"
+      },
+      {
+        "field": "CPU(s) scaling MHz:",
+        "data": "89%"
+      },
+      {
+        "field": "CPU max MHz:",
+        "data": "5157.8950"
+      },
+      {
+        "field": "CPU min MHz:",
+        "data": "605.2640"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "3992.56"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "AMD-V"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "576 KiB (12 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "384 KiB (12 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "12 MiB (12 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "24 MiB (2 instances)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-23"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Mitigation; IBPB on VMEXIT only"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; STIBP always-on; PBRSB-eIBRS Not affected; BHI Not affected"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Mitigation; IBPB on VMEXIT"
+      }
+    ]
+  },
+  "timing_cpu_topology": {
+    "2": {
+      "core_id": "2",
+      "max_frequency_khz": "5157895"
+    },
+    "3": {
+      "core_id": "3",
+      "max_frequency_khz": "5157895"
+    }
+  },
+  "pcm_comparison_runner": "scripts/compare-aac-pcm.py",
+  "timing_affinity_initial": [
+    2,
+    3
+  ],
+  "timing_affinity_controls": [
+    0,
+    2
+  ],
+  "latency_limit_ratio": 1.05,
+  "required_controlled_upgrade_campaigns": 2,
+  "controlled_upgrade_campaigns_both_pass": true,
+  "original_failed_upgrade_campaign_retained": "upgrade-paired.json",
+  "timing_runner_sha256": "effe2ab6eae604ee36dc2b9da083feea86dece0ec03a15b5ed9d00cd9a72a0cb",
+  "final_adapter_change": {
+    "file": "crates/gigastt-core/src/inference/audio/aac.rs",
+    "old_batch_frames": 8192,
+    "final_batch_frames": 24576,
+    "rationale": "Measured handoff overhead and failed standard-decoder gates at 8 Ki frames; use bounded 24 Ki batches and verify exact PCM, cancellation and repeated paired performance.",
+    "source_sha256": "051fe1ffd5b99907ce0b3fb5ee75155e67d941b663068de04b687cf71f16ef6f",
+    "other_291_consumer_rust_files_unchanged": true,
+    "pcm_parity_cases_after_batch_change": 31
+  },
+  "http_load_runner_sha256": "e5c4643344151c498f8fd8d7502df3c2ee56087788b137ab0f24798acff88d2e",
+  "http_canary_runner_sha256": "5faaa2b8a9e18ba4bc78191951d1963363fea30be79c20f027ba8e4b1408abd1",
+  "http_runner_repository": "https://github.com/ekhodzitsky/syom",
+  "http_runner_commit": "a91ef933895a859a240e34674309bf4fa08e8e4b",
+  "http_model_files_sha256": {
+    "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+    "v3_rnnt_encoder_int8.onnx": "c52665e9d96c4ca3a153c063d2ee9af6c567fe2975ca50fd038b75bbf2f60e7f",
+    "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+    "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+  },
+  "http_models_unchanged_after_runs": true,
+  "http_model_scope": "Existing legacy 215 MiB RNN-T INT8 encoder, not current main 305 MiB release bundle. CPU ORT 1.28.0; punctuation and ITN off; diarization not requested.",
+  "http_runtime_sha256": "aa4079d18f4ea7a5f3a94d80cd4bbe0f2740436626622d64d793803a20381083",
+  "http_affinity": {
+    "serial_and_legacy_diagnostic": [
+      0,
+      2
+    ],
+    "final_admission_load": "unrestricted host affinity; two encoder threads per slot remain uncapped"
+  },
+  "final_validation": {
+    "pcm_cases": 31,
+    "default_comparison_passes": 2,
+    "old_adapter_comparison_pass": true,
+    "http_cases": 32,
+    "successful_load_cases_per_binary": 224,
+    "deployment": "none, explicitly requested by maintainer",
+    "github_ci_dispatched": false
+  }
+}

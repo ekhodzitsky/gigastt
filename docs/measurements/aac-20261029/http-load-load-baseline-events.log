@@ -1,0 +1,4 @@
+2026-10-28T21:56:05.920151Z  WARN gigastt_core::inference::sizing: Capping encoder intra-op threads 2 -> 1: 2 pooled encoder(s) x 2 threads would exceed the 2 logical CPU(s) available. Lower --pool-size or --encoder-intra-threads to silence this.
+2026-10-28T21:56:07.438230Z  INFO gigastt::server::listen: gigastt server listening on http://127.0.0.1:40673
+2026-10-28T21:56:41.587996Z  INFO gigastt::server::listen: Shutting down server
+2026-10-28T21:56:41.588053Z  INFO gigastt::server::listen: Drain complete: all tracked WS/SSE/job tasks finished

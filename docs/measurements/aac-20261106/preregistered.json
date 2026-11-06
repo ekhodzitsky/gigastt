@@ -1,0 +1,10 @@
+{
+  "cpu": [
+    1
+  ],
+  "campaigns": 2,
+  "latency_limit": 1.05,
+  "baseline": "current main standard decoder adf4db0",
+  "candidate": "published syom0.10.1 plus hash-verified nine-file handoff with registry dependency",
+  "reason_for_cpu": "Reproduce upstream preregistered CPU1 qualification; chosen before new measurements. Retain all outcomes."
+}

@@ -1,2 +1,4 @@
 # Preserve the archived upstream CSV bytes, including their CRLF endings.
 benchmark/results/multilingual_public_20261001/upstream_scoring/*.csv -text whitespace=cr-at-eol
+# Captured Prometheus snapshots retain their original separators and bytes.
+docs/measurements/aac-20261029/*.prom -text -whitespace

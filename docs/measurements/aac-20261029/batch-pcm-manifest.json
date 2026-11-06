@@ -1,0 +1,129 @@
+[
+  {
+    "id": "speech0-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech0.m4a"
+  },
+  {
+    "id": "speech1-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech1.m4a"
+  },
+  {
+    "id": "speech2-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech2.m4a"
+  },
+  {
+    "id": "speech3-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech3.m4a"
+  },
+  {
+    "id": "speech4-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech4.m4a"
+  },
+  {
+    "id": "speech5-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech5.m4a"
+  },
+  {
+    "id": "speech6-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech6.m4a"
+  },
+  {
+    "id": "speech7-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech7.m4a"
+  },
+  {
+    "id": "speech8-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech8.m4a"
+  },
+  {
+    "id": "speech9-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech9.m4a"
+  },
+  {
+    "id": "speech10-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech10.m4a"
+  },
+  {
+    "id": "speech11-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech11.m4a"
+  },
+  {
+    "id": "speech12-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech12.m4a"
+  },
+  {
+    "id": "speech13-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech13.m4a"
+  },
+  {
+    "id": "speech14-48k-m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/speech14.m4a"
+  },
+  {
+    "id": "he48.adts",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/he48.adts"
+  },
+  {
+    "id": "he48.latm",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/he48.latm"
+  },
+  {
+    "id": "he48.m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/he48.m4a"
+  },
+  {
+    "id": "ps48.adts",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/ps48.adts"
+  },
+  {
+    "id": "ps48.m4a",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/ps48.m4a"
+  },
+  {
+    "id": "ld48.loas",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/ld48.loas"
+  },
+  {
+    "id": "fmp4_he2.mp4",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/fmp4_he2.mp4"
+  },
+  {
+    "id": "lc.latm",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/lc.latm"
+  },
+  {
+    "id": "lc-fragmented.mp4",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/lc-fragmented.mp4"
+  },
+  {
+    "id": "lc.mka",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/lc.mka"
+  },
+  {
+    "id": "mp3.mp4",
+    "path": "/home/ekhodzitsky/.cache/gigastt/aac-audit/fixtures/mp3.mp4"
+  },
+  {
+    "id": "long-stereo-file",
+    "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "file"
+  },
+  {
+    "id": "long-stereo-bytes",
+    "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "bytes"
+  },
+  {
+    "id": "long-stereo-split",
+    "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a",
+    "mode": "split"
+  },
+  {
+    "id": "lc960-m48-long.loas",
+    "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc960-m48-long.loas"
+  },
+  {
+    "id": "lc960-s48-long.loas",
+    "path": "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc960-s48-long.loas"
+  }
+]

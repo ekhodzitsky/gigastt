@@ -1,0 +1,2865 @@
+{
+  "version": 1,
+  "model_encoder_sha256": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+  "model_files": {
+    "v3_rnnt_encoder_int8.onnx": "1d5a6f580b692e38ba35ed98d0f54648808f27b0a147dc11bd8978c15dc1a18f",
+    "v3_rnnt_decoder.onnx": "443c3b7bd42b453611618135d6b1e7d9467e5dd97c8a68501da4aa355750c0da",
+    "v3_rnnt_joint.onnx": "fd1d02f45c2ad3d6b67cc149811ad794ab4b020ed49a0a9e2790a8619d1cddd8",
+    "v3_vocab.txt": "a9143c30844d3c0bee3e9e927e4084774eb1b9eeaafc473b2c4521e4911a7c07"
+  },
+  "static_ort_archive_sha256": "0bb8a9982b44df690195c2c34b75ca791c3b9f20070b8cecbd8f50c6264dd2e2",
+  "cases": {
+    "golos_00-wav": {
+      "input_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "source_wav_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "presentation_seconds": 4.0,
+      "source_wav_seconds": 4.0,
+      "source_wav_frames": 64000,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 64000,
+      "ffmpeg_applied_presentation_seconds": 4.0,
+      "ffmpeg_presentation_pcm_sha256": "6e1ef5f004c5fea339e842eb5116124c8b1230efed642d052d3980e55414a40a",
+      "ffmpeg_full_samples": 64000,
+      "ffmpeg_full_pcm_sha256": "6e1ef5f004c5fea339e842eb5116124c8b1230efed642d052d3980e55414a40a",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 64000,
+      "baseline_samples": 64000
+    },
+    "golos_00-aac": {
+      "input_sha256": "a662b21e9eb8e5987a2c4e6fc87ed953e3d72e1b0a4e94a12fe93aff5126e870",
+      "source_wav_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+      "presentation_seconds": 4.0,
+      "source_wav_seconds": 4.0,
+      "source_wav_frames": 64000,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 64000,
+      "ffmpeg_applied_presentation_seconds": 4.0,
+      "ffmpeg_presentation_pcm_sha256": "6a753fea990a0ddf3cc2c6d107d5ad6b3ad20208b2fdfdc1d85f5d7b6987542b",
+      "ffmpeg_full_samples": 64512,
+      "ffmpeg_full_pcm_sha256": "b041731b0a3b39941ea901b9e435bb3d8f6657054a5f0350d3db0c5572c46251",
+      "ffmpeg_surplus_samples": 512,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 64000,
+      "baseline_samples": 65536
+    },
+    "golos_01-wav": {
+      "input_sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "source_wav_sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "presentation_seconds": 3.43,
+      "source_wav_seconds": 3.43,
+      "source_wav_frames": 54880,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 54880,
+      "ffmpeg_applied_presentation_seconds": 3.43,
+      "ffmpeg_presentation_pcm_sha256": "fe73e678cc5c86707c01eff236e7bbe9506b3caf78de53b313dd076ee16cde2b",
+      "ffmpeg_full_samples": 54880,
+      "ffmpeg_full_pcm_sha256": "fe73e678cc5c86707c01eff236e7bbe9506b3caf78de53b313dd076ee16cde2b",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 54880,
+      "baseline_samples": 54880
+    },
+    "golos_01-aac": {
+      "input_sha256": "87bf8aa989a2e35661649af67e9729980301aeb0e9b72868637d73e48e355758",
+      "source_wav_sha256": "63666d51b938f5c9acf4d92e9984251fff122d9425232c75ec45ee81cf7aab1c",
+      "presentation_seconds": 3.43,
+      "source_wav_seconds": 3.43,
+      "source_wav_frames": 54880,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 54880,
+      "ffmpeg_applied_presentation_seconds": 3.43,
+      "ffmpeg_presentation_pcm_sha256": "fce36534ef1954321e37373c853b269fa9e9c415c1a043c048836dfacbf5ca5b",
+      "ffmpeg_full_samples": 55296,
+      "ffmpeg_full_pcm_sha256": "7f811817ee8dd4ebf044eeec60d1c94efc97ab174d14c063a1c16a763fa8b320",
+      "ffmpeg_surplus_samples": 416,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 54880,
+      "baseline_samples": 56320
+    },
+    "golos_02-wav": {
+      "input_sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "source_wav_sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "presentation_seconds": 3.06,
+      "source_wav_seconds": 3.06,
+      "source_wav_frames": 48960,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 48960,
+      "ffmpeg_applied_presentation_seconds": 3.06,
+      "ffmpeg_presentation_pcm_sha256": "3fb109f054a8d6761e271df03cdd5d77f5a4de046dc9f63cc7efb911f7fe6901",
+      "ffmpeg_full_samples": 48960,
+      "ffmpeg_full_pcm_sha256": "3fb109f054a8d6761e271df03cdd5d77f5a4de046dc9f63cc7efb911f7fe6901",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 48960,
+      "baseline_samples": 48960
+    },
+    "golos_02-aac": {
+      "input_sha256": "bbae30dd1eafd2899db2fb9faa5c650a444693d7a0ec343df4d07dfeb236244a",
+      "source_wav_sha256": "101105b34eb3dbad83eb27849218c1b56756b2265f85d1922f32983876462e1f",
+      "presentation_seconds": 3.06,
+      "source_wav_seconds": 3.06,
+      "source_wav_frames": 48960,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 48960,
+      "ffmpeg_applied_presentation_seconds": 3.06,
+      "ffmpeg_presentation_pcm_sha256": "f51903444dea0c4865791a26f20a8c2aec04684d84f35f7cfe9d2b3af053c738",
+      "ffmpeg_full_samples": 49152,
+      "ffmpeg_full_pcm_sha256": "09b57cbe252e56f684e866bbfc1bf49770b9331038b842489bad5cdbc1630532",
+      "ffmpeg_surplus_samples": 192,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 48960,
+      "baseline_samples": 50176
+    },
+    "golos_03-wav": {
+      "input_sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "source_wav_sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "presentation_seconds": 5.44,
+      "source_wav_seconds": 5.44,
+      "source_wav_frames": 87040,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 87040,
+      "ffmpeg_applied_presentation_seconds": 5.44,
+      "ffmpeg_presentation_pcm_sha256": "a3541c95d77529aeb2acb4185bbc27a140c3ed440d4e756ef7c2ed912096fc6f",
+      "ffmpeg_full_samples": 87040,
+      "ffmpeg_full_pcm_sha256": "a3541c95d77529aeb2acb4185bbc27a140c3ed440d4e756ef7c2ed912096fc6f",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 87040,
+      "baseline_samples": 87040
+    },
+    "golos_03-aac": {
+      "input_sha256": "041043a8beddbce68a5b357b68e46920010a58a047b232f65f19a8e071cb75eb",
+      "source_wav_sha256": "d5e5002ab533245a61757ef267c75c298dfc7a22904fdb5385374ade2276a240",
+      "presentation_seconds": 5.44,
+      "source_wav_seconds": 5.44,
+      "source_wav_frames": 87040,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 87040,
+      "ffmpeg_applied_presentation_seconds": 5.44,
+      "ffmpeg_presentation_pcm_sha256": "d85542ded5af47c76843eb1c16a59cf2cab476b36b8251a5d3d7c07b63a83f63",
+      "ffmpeg_full_samples": 87040,
+      "ffmpeg_full_pcm_sha256": "d85542ded5af47c76843eb1c16a59cf2cab476b36b8251a5d3d7c07b63a83f63",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 87040,
+      "baseline_samples": 88064
+    },
+    "golos_04-wav": {
+      "input_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "source_wav_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "presentation_seconds": 5.22,
+      "source_wav_seconds": 5.22,
+      "source_wav_frames": 83520,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 83520,
+      "ffmpeg_applied_presentation_seconds": 5.22,
+      "ffmpeg_presentation_pcm_sha256": "ad98cc92f1904d9f0f80b894913fe1eb349a3ca7bf942055b88912514a195245",
+      "ffmpeg_full_samples": 83520,
+      "ffmpeg_full_pcm_sha256": "ad98cc92f1904d9f0f80b894913fe1eb349a3ca7bf942055b88912514a195245",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 83520,
+      "baseline_samples": 83520
+    },
+    "golos_04-aac": {
+      "input_sha256": "d681d1c01582c90765ccf186c2faed4daeb9ecc0aa020736539adb0c61189a6f",
+      "source_wav_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "presentation_seconds": 5.22,
+      "source_wav_seconds": 5.22,
+      "source_wav_frames": 83520,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 83520,
+      "ffmpeg_applied_presentation_seconds": 5.22,
+      "ffmpeg_presentation_pcm_sha256": "bb60115951a76aa0b2969d050deb45a0cbe673df5868fd993273400e163fd84d",
+      "ffmpeg_full_samples": 83968,
+      "ffmpeg_full_pcm_sha256": "99ff42f1cddab22ca56afa66f015fa1c542c4432554ed54157af5ad8e487517b",
+      "ffmpeg_surplus_samples": 448,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 83520,
+      "baseline_samples": 84992
+    },
+    "golos_05-wav": {
+      "input_sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "source_wav_sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "presentation_seconds": 3.203938,
+      "source_wav_seconds": 3.2039375,
+      "source_wav_frames": 51263,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 51263,
+      "ffmpeg_applied_presentation_seconds": 3.203938,
+      "ffmpeg_presentation_pcm_sha256": "c94cacdad0efba0fb5eaaaa1382cad8a396813fb407ecd17236b4d81a18da9c2",
+      "ffmpeg_full_samples": 51263,
+      "ffmpeg_full_pcm_sha256": "c94cacdad0efba0fb5eaaaa1382cad8a396813fb407ecd17236b4d81a18da9c2",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 51263,
+      "baseline_samples": 51263
+    },
+    "golos_05-aac": {
+      "input_sha256": "c353c6b45afb5093d4303562cd671e99233456b573ad3d7b8a129f9eb95c2134",
+      "source_wav_sha256": "ed0f1cfe5a6d48694e54d8a3357901acbc0f1113dc846ee01cb00a405a112c04",
+      "presentation_seconds": 3.204,
+      "source_wav_seconds": 3.2039375,
+      "source_wav_frames": 51263,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 51264,
+      "ffmpeg_applied_presentation_seconds": 3.204,
+      "ffmpeg_presentation_pcm_sha256": "d0b6dfe60cdbe5ad16023a8671c740de98b0b4f389e7ccd1ae0ef9d49e10c8f8",
+      "ffmpeg_full_samples": 52224,
+      "ffmpeg_full_pcm_sha256": "cc368fda23703c7fec18c7a2e9d53d85997e93808156f0fee87bae7ed45cf43c",
+      "ffmpeg_surplus_samples": 960,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 51264,
+      "baseline_samples": 53248
+    },
+    "golos_06-wav": {
+      "input_sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "source_wav_sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "presentation_seconds": 5.0,
+      "source_wav_seconds": 5.0,
+      "source_wav_frames": 80000,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 80000,
+      "ffmpeg_applied_presentation_seconds": 5.0,
+      "ffmpeg_presentation_pcm_sha256": "3e8549b0ae0dac02124d1a726d83bcd67758cfc618ce6493edcb8dbb4c0f75cb",
+      "ffmpeg_full_samples": 80000,
+      "ffmpeg_full_pcm_sha256": "3e8549b0ae0dac02124d1a726d83bcd67758cfc618ce6493edcb8dbb4c0f75cb",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 80000,
+      "baseline_samples": 80000
+    },
+    "golos_06-aac": {
+      "input_sha256": "d248805919d4dc8965d00195edb59bfd534824f68dcfad4e48dcbcece165cbe3",
+      "source_wav_sha256": "eb3042fedddbe16c5c5857b3ae9443d464a42a2d0bbc829a61714af5e7b240f8",
+      "presentation_seconds": 5.0,
+      "source_wav_seconds": 5.0,
+      "source_wav_frames": 80000,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 80000,
+      "ffmpeg_applied_presentation_seconds": 5.0,
+      "ffmpeg_presentation_pcm_sha256": "217a65799ce9827d162e3739dd579660ec1f0a99aff579a0e622194ef7c9a72b",
+      "ffmpeg_full_samples": 80896,
+      "ffmpeg_full_pcm_sha256": "2728232ae6a683db6d49b5b5df8338f72036d43b0094dab33871573b89a0f38b",
+      "ffmpeg_surplus_samples": 896,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 80000,
+      "baseline_samples": 81920
+    },
+    "golos_07-wav": {
+      "input_sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "source_wav_sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "presentation_seconds": 2.04,
+      "source_wav_seconds": 2.04,
+      "source_wav_frames": 32640,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 32640,
+      "ffmpeg_applied_presentation_seconds": 2.04,
+      "ffmpeg_presentation_pcm_sha256": "79ba51a081815e220203378abf5dbe9f9396e1bcb386dc11d7e9b45ad627171d",
+      "ffmpeg_full_samples": 32640,
+      "ffmpeg_full_pcm_sha256": "79ba51a081815e220203378abf5dbe9f9396e1bcb386dc11d7e9b45ad627171d",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 32640,
+      "baseline_samples": 32640
+    },
+    "golos_07-aac": {
+      "input_sha256": "f55166821815750878af9052af29fb4f70368521f6615e79f02fddf7dcfeface",
+      "source_wav_sha256": "df9e4058f32ed3fe8cacdf9e31e92c7b6c2f49cd8adf5f50f853086ec4207867",
+      "presentation_seconds": 2.04,
+      "source_wav_seconds": 2.04,
+      "source_wav_frames": 32640,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 32640,
+      "ffmpeg_applied_presentation_seconds": 2.04,
+      "ffmpeg_presentation_pcm_sha256": "7b818d71ad30b615f512004818c90d527df62ce47394b2830d85cc965bfff900",
+      "ffmpeg_full_samples": 32768,
+      "ffmpeg_full_pcm_sha256": "ba08ab1fec772d7cbf3ddf38f5be0afbc3589b5d7ce0c564dfa34a314579c1f9",
+      "ffmpeg_surplus_samples": 128,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 32640,
+      "baseline_samples": 33792
+    },
+    "golos_08-wav": {
+      "input_sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "source_wav_sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "presentation_seconds": 4.928,
+      "source_wav_seconds": 4.928,
+      "source_wav_frames": 78848,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 78848,
+      "ffmpeg_applied_presentation_seconds": 4.928,
+      "ffmpeg_presentation_pcm_sha256": "03879c4d1deb05861569cdca54b6d12a7bbcd5582fcd59cf884e6da590c73f86",
+      "ffmpeg_full_samples": 78848,
+      "ffmpeg_full_pcm_sha256": "03879c4d1deb05861569cdca54b6d12a7bbcd5582fcd59cf884e6da590c73f86",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 78848,
+      "baseline_samples": 78848
+    },
+    "golos_08-aac": {
+      "input_sha256": "671e862060e8febec6f76e9c2aa5213685879c42057898b9070737bdd7c88735",
+      "source_wav_sha256": "23e2fcf0734d97acd6837bd85591ce998e385f5b32bd8a55ef217b689f00d8a7",
+      "presentation_seconds": 4.928,
+      "source_wav_seconds": 4.928,
+      "source_wav_frames": 78848,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 78848,
+      "ffmpeg_applied_presentation_seconds": 4.928,
+      "ffmpeg_presentation_pcm_sha256": "67ea02b7f1f44b2a20db0cf5305c0ddcc780ba88f4daa7865472c22e8513473c",
+      "ffmpeg_full_samples": 78848,
+      "ffmpeg_full_pcm_sha256": "67ea02b7f1f44b2a20db0cf5305c0ddcc780ba88f4daa7865472c22e8513473c",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 78848,
+      "baseline_samples": 79872
+    },
+    "golos_09-wav": {
+      "input_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "source_wav_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "presentation_seconds": 3.34325,
+      "source_wav_seconds": 3.34325,
+      "source_wav_frames": 53492,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 53492,
+      "ffmpeg_applied_presentation_seconds": 3.34325,
+      "ffmpeg_presentation_pcm_sha256": "7d4f35257f6bc5c5ca6059bc2fd0f43c5c15718a9c01a9906851e35a19582635",
+      "ffmpeg_full_samples": 53492,
+      "ffmpeg_full_pcm_sha256": "7d4f35257f6bc5c5ca6059bc2fd0f43c5c15718a9c01a9906851e35a19582635",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 53492,
+      "baseline_samples": 53492
+    },
+    "golos_09-aac": {
+      "input_sha256": "51b7b6d7c8d39a79356eec609180575749d4e4dbcbfd684987966544d31589ac",
+      "source_wav_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+      "presentation_seconds": 3.344,
+      "source_wav_seconds": 3.34325,
+      "source_wav_frames": 53492,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 53504,
+      "ffmpeg_applied_presentation_seconds": 3.344,
+      "ffmpeg_presentation_pcm_sha256": "e30f1fb03d9770711b6bca4b98328ce0be21917271452dfdf84cf57a70dac9e7",
+      "ffmpeg_full_samples": 54272,
+      "ffmpeg_full_pcm_sha256": "c10a886ab1048a440c8b9d77d5b801fe0904ff64fc64120d6a180d4dccf47e90",
+      "ffmpeg_surplus_samples": 768,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 53504,
+      "baseline_samples": 55296,
+      "clock_rounding": {
+        "input_sha256": "51b7b6d7c8d39a79356eec609180575749d4e4dbcbfd684987966544d31589ac",
+        "source_wav_sha256": "a23daa8fa6529d02a7e931fb507ac3be998de6c3e10475c693d4b7fc2f086b68",
+        "source_wav_frames": 53492,
+        "source_wav_rate": 16000,
+        "surplus_samples": 12,
+        "movie_timescale": 1000,
+        "movie_duration": 3344,
+        "track_duration": 3344,
+        "track_id": 1,
+        "media_timescale": 16000,
+        "media_duration": 54516,
+        "edit_duration": 3344,
+        "media_time": 1024,
+        "media_rate_integer": 1,
+        "media_rate_fraction": 0,
+        "stts_entries": [
+          [
+            53,
+            1024
+          ],
+          [
+            1,
+            244
+          ]
+        ],
+        "stts_duration": 54516
+      }
+    },
+    "golos_10-wav": {
+      "input_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "source_wav_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "presentation_seconds": 3.906188,
+      "source_wav_seconds": 3.9061875,
+      "source_wav_frames": 62499,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 62499,
+      "ffmpeg_applied_presentation_seconds": 3.906188,
+      "ffmpeg_presentation_pcm_sha256": "4d53ce650f193be7b72211ded5a81df9b25b4ab0de61692aae1d2d8b3f198b7c",
+      "ffmpeg_full_samples": 62499,
+      "ffmpeg_full_pcm_sha256": "4d53ce650f193be7b72211ded5a81df9b25b4ab0de61692aae1d2d8b3f198b7c",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 62499,
+      "baseline_samples": 62499
+    },
+    "golos_10-aac": {
+      "input_sha256": "ee8b94dde3d282459849af00038043976989706011cfd5479a687fb247565eb3",
+      "source_wav_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+      "presentation_seconds": 3.907,
+      "source_wav_seconds": 3.9061875,
+      "source_wav_frames": 62499,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 62512,
+      "ffmpeg_applied_presentation_seconds": 3.907,
+      "ffmpeg_presentation_pcm_sha256": "75cf0d7700ed43aa51ddc7cc75226b57ceb5b658d7e66e068926f94de880a111",
+      "ffmpeg_full_samples": 63488,
+      "ffmpeg_full_pcm_sha256": "9014f3827f830f5bd694e3bfc5dfa341a91b1fed3a2a86de9bad769f1e032308",
+      "ffmpeg_surplus_samples": 976,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 62512,
+      "baseline_samples": 64512,
+      "clock_rounding": {
+        "input_sha256": "ee8b94dde3d282459849af00038043976989706011cfd5479a687fb247565eb3",
+        "source_wav_sha256": "fd681926b2d8087d1772246d6c95110695f253190b0cef581d25c80977477d81",
+        "source_wav_frames": 62499,
+        "source_wav_rate": 16000,
+        "surplus_samples": 13,
+        "movie_timescale": 1000,
+        "movie_duration": 3907,
+        "track_duration": 3907,
+        "track_id": 1,
+        "media_timescale": 16000,
+        "media_duration": 63523,
+        "edit_duration": 3907,
+        "media_time": 1024,
+        "media_rate_integer": 1,
+        "media_rate_fraction": 0,
+        "stts_entries": [
+          [
+            62,
+            1024
+          ],
+          [
+            1,
+            35
+          ]
+        ],
+        "stts_duration": 63523
+      }
+    },
+    "golos_11-wav": {
+      "input_sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "source_wav_sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "presentation_seconds": 5.64,
+      "source_wav_seconds": 5.64,
+      "source_wav_frames": 90240,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 90240,
+      "ffmpeg_applied_presentation_seconds": 5.64,
+      "ffmpeg_presentation_pcm_sha256": "3ef997f35df770e6a53fc2d7ac1d7ded165c034eb56648dbdbefc9488f2d5772",
+      "ffmpeg_full_samples": 90240,
+      "ffmpeg_full_pcm_sha256": "3ef997f35df770e6a53fc2d7ac1d7ded165c034eb56648dbdbefc9488f2d5772",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 90240,
+      "baseline_samples": 90240
+    },
+    "golos_11-aac": {
+      "input_sha256": "948602e6ce2fa9bd193d118204481d0ce72c2bcd1660cedf9393f24458bd7488",
+      "source_wav_sha256": "98e3db631196538177d6e1fc1db34da93bd68e6e820b1a5b73df3bff59177f72",
+      "presentation_seconds": 5.64,
+      "source_wav_seconds": 5.64,
+      "source_wav_frames": 90240,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 90240,
+      "ffmpeg_applied_presentation_seconds": 5.64,
+      "ffmpeg_presentation_pcm_sha256": "b6772d4178354e26d9125a4e802870cc1e6eb6e65843afa383ebab3a543f3fb3",
+      "ffmpeg_full_samples": 91136,
+      "ffmpeg_full_pcm_sha256": "03e138aae07aeaa5166c52cae4cf187032d00e27e1036bca11a334717e53bf66",
+      "ffmpeg_surplus_samples": 896,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 90240,
+      "baseline_samples": 92160
+    },
+    "golos_12-wav": {
+      "input_sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "source_wav_sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "presentation_seconds": 5.943938,
+      "source_wav_seconds": 5.9439375,
+      "source_wav_frames": 95103,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 95103,
+      "ffmpeg_applied_presentation_seconds": 5.943938,
+      "ffmpeg_presentation_pcm_sha256": "8093e1aadeac6352210bf8175ffd5ac65a412dc1a493f2ed6aa495d174ec9223",
+      "ffmpeg_full_samples": 95103,
+      "ffmpeg_full_pcm_sha256": "8093e1aadeac6352210bf8175ffd5ac65a412dc1a493f2ed6aa495d174ec9223",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 95103,
+      "baseline_samples": 95103
+    },
+    "golos_12-aac": {
+      "input_sha256": "f88e12f972469a03a13a2364058668fb1ecf9334842dc485a81d2601b6405dca",
+      "source_wav_sha256": "d9b6fea6d4b9cef70df3241d4280d5dcf0ceadc0a6bd2ca240e8ee30cbef5e4b",
+      "presentation_seconds": 5.944,
+      "source_wav_seconds": 5.9439375,
+      "source_wav_frames": 95103,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 95104,
+      "ffmpeg_applied_presentation_seconds": 5.944,
+      "ffmpeg_presentation_pcm_sha256": "abc7cc79a2e992287ff59ba5ae9d6df7698e554885358309f793505da5ba5390",
+      "ffmpeg_full_samples": 95232,
+      "ffmpeg_full_pcm_sha256": "372b801dc55c654b3387da764a102d96f21b263c9c750d5b0afdb299a144fd49",
+      "ffmpeg_surplus_samples": 128,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 95104,
+      "baseline_samples": 96256
+    },
+    "golos_13-wav": {
+      "input_sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "source_wav_sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "presentation_seconds": 3.2,
+      "source_wav_seconds": 3.2,
+      "source_wav_frames": 51200,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 51200,
+      "ffmpeg_applied_presentation_seconds": 3.2,
+      "ffmpeg_presentation_pcm_sha256": "e55043cb4188c4a33c6f846f90f4c51a460cacc541a40e55ca5859256f7d8f5f",
+      "ffmpeg_full_samples": 51200,
+      "ffmpeg_full_pcm_sha256": "e55043cb4188c4a33c6f846f90f4c51a460cacc541a40e55ca5859256f7d8f5f",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 51200,
+      "baseline_samples": 51200
+    },
+    "golos_13-aac": {
+      "input_sha256": "d08ec4308ec3e217b9bc387c4681296407caed9c6c48eb14be080ff29a30314d",
+      "source_wav_sha256": "a84b9e37c1474cc57a34a9a5e30215864c52c4e9e98271b634a42541163370c0",
+      "presentation_seconds": 3.2,
+      "source_wav_seconds": 3.2,
+      "source_wav_frames": 51200,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 51200,
+      "ffmpeg_applied_presentation_seconds": 3.2,
+      "ffmpeg_presentation_pcm_sha256": "fce4fd70be1c72fb08c313636c56335f4276389c577cfd41b564f82731e58f67",
+      "ffmpeg_full_samples": 51200,
+      "ffmpeg_full_pcm_sha256": "fce4fd70be1c72fb08c313636c56335f4276389c577cfd41b564f82731e58f67",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 51200,
+      "baseline_samples": 52224
+    },
+    "golos_14-wav": {
+      "input_sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "source_wav_sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "presentation_seconds": 3.41,
+      "source_wav_seconds": 3.41,
+      "source_wav_frames": 54560,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 54560,
+      "ffmpeg_applied_presentation_seconds": 3.41,
+      "ffmpeg_presentation_pcm_sha256": "5fb51e4147b874be8d8755d5b12255cebee62cb1c6464893adee887bf0bd0b53",
+      "ffmpeg_full_samples": 54560,
+      "ffmpeg_full_pcm_sha256": "5fb51e4147b874be8d8755d5b12255cebee62cb1c6464893adee887bf0bd0b53",
+      "ffmpeg_surplus_samples": 0,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 54560,
+      "baseline_samples": 54560
+    },
+    "golos_14-aac": {
+      "input_sha256": "a064c203afd9aa8abc0a6d565ea92b76f1e94fbba88e7b9f10b37e26bf36bd0e",
+      "source_wav_sha256": "5711ab2be5b07eb1c0c2af925f5586da5db3805cad0a0b7c1a8b84a03b894cb8",
+      "presentation_seconds": 3.41,
+      "source_wav_seconds": 3.41,
+      "source_wav_frames": 54560,
+      "source_wav_rate": 16000,
+      "ffmpeg_samples": 54560,
+      "ffmpeg_applied_presentation_seconds": 3.41,
+      "ffmpeg_presentation_pcm_sha256": "1182d3a8f50efed35094169704a7158dc5c68291d153fe65b5f84a5e187601bc",
+      "ffmpeg_full_samples": 55296,
+      "ffmpeg_full_pcm_sha256": "f371f3fca5d7aae64f61433d038477e250b8faa3d3800b7e06aa6fe387c988f4",
+      "ffmpeg_surplus_samples": 736,
+      "ffmpeg_presentation_is_full_prefix": true,
+      "candidate_samples": 54560,
+      "baseline_samples": 56320
+    }
+  },
+  "transcript_references": {
+    "golos_04-aac": {
+      "input_sha256": "d681d1c01582c90765ccf186c2faed4daeb9ecc0aa020736539adb0c61189a6f",
+      "source_wav_sha256": "606918e23e0894f7c330441d3e8e4eacb37374722f95fc0a73cf91515a4cc758",
+      "human_text_sha256": "124eb2de844ac71a5dea5946d353394a6d7d279be953ecbf6fd6dc5f26811a65",
+      "wav_text_sha256": "124eb2de844ac71a5dea5946d353394a6d7d279be953ecbf6fd6dc5f26811a65",
+      "ffmpeg_text_sha256": "124eb2de844ac71a5dea5946d353394a6d7d279be953ecbf6fd6dc5f26811a65",
+      "ffmpeg_input_sha256": "11938f9106d572fd96a8c8e35c0d922379f6c0ef8a45dd5fc9a47058488e09da",
+      "asr_result_sha256": "d77fcafd5d5affababb166316bab695edb20b2df929b17bcf8c420a33a5f8dae"
+    }
+  },
+  "commands": [
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+        "-t",
+        "4.0",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_00.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_00.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_00.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_00.m4a",
+        "-t",
+        "4.0",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_00.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_00.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_00-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+        "-t",
+        "3.43",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_01.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_01.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_01.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_01.m4a",
+        "-t",
+        "3.43",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_01.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_01.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_01-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+        "-t",
+        "3.06",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_02.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_02.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_02.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_02.m4a",
+        "-t",
+        "3.06",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_02.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_02.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_02-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+        "-t",
+        "5.44",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_03.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_03.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_03.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_03.m4a",
+        "-t",
+        "5.44",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_03.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_03.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_03-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+        "-t",
+        "5.22",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_04.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_04.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_04.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_04.m4a",
+        "-t",
+        "5.22",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_04.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_04.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_04-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-y",
+        "-f",
+        "f32le",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-i",
+        "/home/ekhodzitsky/.cache/gigastt/aac-0101/independent/golos04-ffmpeg-presentation.f32",
+        "-c:a",
+        "pcm_f32le",
+        "/home/ekhodzitsky/.cache/gigastt/aac-0101/independent/golos04-ffmpeg-presentation.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "reference-wave.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/gigastt",
+        "--offline",
+        "transcribe",
+        "/home/ekhodzitsky/.cache/gigastt/aac-0101/independent/golos04-ffmpeg-presentation.wav",
+        "--model-dir",
+        "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+        "--model-variant",
+        "rnnt",
+        "--encoder-intra-threads",
+        "2",
+        "--punctuation",
+        "off",
+        "--itn",
+        "off",
+        "--format",
+        "json",
+        "--output",
+        "/home/ekhodzitsky/.cache/gigastt/aac-0101/independent/golos04-ffmpeg-asr.json"
+      ],
+      "exit_code": 0,
+      "log": "reference-asr.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+        "-t",
+        "3.203938",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_05.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_05.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_05.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_05.m4a",
+        "-t",
+        "3.204",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_05.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_05.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_05-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+        "-t",
+        "5.0",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_06.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_06.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_06.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_06.m4a",
+        "-t",
+        "5.0",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_06.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_06.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_06-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+        "-t",
+        "2.04",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_07.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_07.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_07.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_07.m4a",
+        "-t",
+        "2.04",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_07.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_07.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_07-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+        "-t",
+        "4.928",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_08.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_08.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_08.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_08.m4a",
+        "-t",
+        "4.928",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_08.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_08.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_08-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+        "-t",
+        "3.34325",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_09.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a",
+        "-t",
+        "3.344",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_09.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_09-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+        "-t",
+        "3.906188",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_10.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a",
+        "-t",
+        "3.907",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_10.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_10-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+        "-t",
+        "5.64",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_11.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_11.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_11.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_11.m4a",
+        "-t",
+        "5.64",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_11.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_11.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_11-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+        "-t",
+        "5.943938",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_12.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_12.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_12.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_12.m4a",
+        "-t",
+        "5.944",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_12.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_12.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_12-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+        "-t",
+        "3.2",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_13.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_13.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_13.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_13.m4a",
+        "-t",
+        "3.2",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_13.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_13.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_13-aac-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-wav-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-wav-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+        "-t",
+        "3.41",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-wav-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-wav-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/gigastt/crates/gigastt/tests/fixtures/golos_14.wav",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-wav-candidate-probe.log"
+    },
+    {
+      "command": [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "json",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_14.m4a"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-aac-ffprobe.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_14.m4a",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-aac-ffmpeg-full.log"
+    },
+    {
+      "command": [
+        "ffmpeg",
+        "-nostdin",
+        "-v",
+        "error",
+        "-i",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_14.m4a",
+        "-t",
+        "3.41",
+        "-ar",
+        "16000",
+        "-ac",
+        "1",
+        "-f",
+        "f32le",
+        "pipe:1"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-aac-ffmpeg.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_14.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-aac-baseline-probe.log"
+    },
+    {
+      "command": [
+        "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+        "file",
+        "/home/ekhodzitsky/Projects/syom/target/consumer-audit/inputs/golos_14.m4a",
+        "0"
+      ],
+      "exit_code": 0,
+      "stderr_log": "golos_14-aac-candidate-probe.log"
+    }
+  ],
+  "input_canary_sha256": "e1bb494e73db1f66caf8c8d983eb255f5c0cd283ef754f1f878b3ba7e5fc9b71",
+  "probe_binary_sha256": {
+    "baseline": "3b4f72606f16dda7ab5164c911ac5af461d943cb50b6f6a273dc82f78137d181",
+    "candidate": "7974c96f9160315f81df036042e1c71f3e0a63e2e29dfcc27ef799bf19f0c3d3"
+  },
+  "ffprobe": "ffprobe version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2007-2024 the FFmpeg developers",
+  "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers"
+}

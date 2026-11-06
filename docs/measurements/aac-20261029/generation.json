@@ -1,0 +1,61 @@
+{
+  "source_sha256": "500d2e88a1634ee766fec46f83cb903f3a1c276b2cedb36f11db800a1c4c14d0",
+  "commands": [
+    [
+      "ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-y",
+      "-i",
+      "/home/ekhodzitsky/.cache/gigastt-worktrees/syom-0.8.1/crates/gigastt/tests/fixtures/golos_00.wav",
+      "-ar",
+      "48000",
+      "-ac",
+      "1",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "64k",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a"
+    ],
+    [
+      "ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-y",
+      "-i",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/speech0.m4a",
+      "-c:a",
+      "copy",
+      "-f",
+      "adts",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/lc.adts"
+    ],
+    [
+      "ffmpeg",
+      "-hide_banner",
+      "-loglevel",
+      "error",
+      "-nostdin",
+      "-y",
+      "-stream_loop",
+      "19",
+      "-i",
+      "/home/ekhodzitsky/.cache/gigastt-worktrees/syom-0.8.1/crates/gigastt/tests/fixtures/golos_00.wav",
+      "-ar",
+      "48000",
+      "-ac",
+      "2",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "128k",
+      "/home/ekhodzitsky/.cache/gigastt-syom-081/fixtures/long-stereo.m4a"
+    ]
+  ],
+  "ffmpeg": "ffmpeg version 7.0.2-static https://johnvansickle.com/ffmpeg/  Copyright (c) 2000-2024 the FFmpeg developers\nbuilt with gcc 8 (Debian 8.3.0-6)\nconfiguration: --enable-gpl --enable-version3 --enable-static --disable-debug --disable-ffplay --disable-indev=sndio --disable-outdev=sndio --cc=gcc --enable-fontconfig --enable-frei0r --enable-gnutls --enable-gmp --enable-libgme --enable-gray --enable-libaom --enable-libfribidi --enable-libass --enable-libvmaf --enable-libfreetype --enable-libmp3lame --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenjpeg --enable-librubberband --enable-libsoxr --enable-libspeex --enable-libsrt --enable-libvorbis --enable-libopus --enable-libtheora --enable-libvidstab --enable-libvo-amrwbenc --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libdav1d --enable-libxvid --enable-libzvbi --enable-libzimg\nlibavutil      59.  8.100 / 59.  8.100\nlibavcodec     61.  3.100 / 61.  3.100\nlibavformat    61.  1.100 / 61.  1.100\nlibavdevice    61.  1.100 / 61.  1.100\nlibavfilter    10.  1.100 / 10.  1.100\nlibswscale      8.  1.100 /  8.  1.100\nlibswresample   5.  1.100 /  5.  1.100\nlibpostproc    58.  1.100 / 58.  1.100\n"
+}

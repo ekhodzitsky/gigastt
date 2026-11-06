@@ -56,6 +56,7 @@ candle = ["gigastt-core/candle"]
 ane = ["gigastt-core/ane"]
 diarization = ["gigastt-core/diarization"]
 quantize = ["gigastt-core/quantize"]
+extended-aac = ["gigastt-core/extended-aac"]
 
 [dependencies]
 gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["net", "async-pool", "file-decode", "quantize"] }

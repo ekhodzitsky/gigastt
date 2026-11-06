@@ -1,0 +1,81 @@
+[
+  {
+    "stage": "canary",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/run_http_canary.py",
+      "--baseline",
+      "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/gigastt",
+      "--candidate",
+      "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/gigastt",
+      "--model-dir",
+      "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+      "--ort",
+      "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+      "--manifest",
+      "/home/ekhodzitsky/Projects/syom/lab/release-audit/runs/http-canary-0.8.1/manifest.json",
+      "--out",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/canary"
+    ],
+    "exit": 1
+  },
+  {
+    "stage": "independent",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/presentation_evidence.py",
+      "--baseline-probe",
+      "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/examples/aac_probe",
+      "--candidate-probe",
+      "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/examples/aac_probe",
+      "--candidate-server",
+      "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/gigastt",
+      "--model-dir",
+      "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+      "--ort",
+      "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+      "--canary",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/canary/result.json",
+      "--manifest",
+      "/home/ekhodzitsky/Projects/syom/lab/release-audit/runs/http-canary-0.8.1/manifest.json",
+      "--out",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/independent"
+    ],
+    "exit": 0
+  },
+  {
+    "stage": "reference",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/http_reference.py",
+      "--canary",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/canary/result.json",
+      "--independent",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/independent/independent.json",
+      "--out",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/reference.json"
+    ],
+    "exit": 0
+  },
+  {
+    "stage": "load",
+    "command": [
+      "/home/ekhodzitsky/Projects/syom/lab/consume/gigastt/run_http_load.py",
+      "--upload-admission",
+      "--baseline",
+      "/home/ekhodzitsky/.cache/gigastt/aac-current-main-target/release/gigastt",
+      "--candidate",
+      "/home/ekhodzitsky/.cache/gigastt/aac-090-target/release/gigastt",
+      "--model-dir",
+      "/home/ekhodzitsky/.cache/gigastt/rnnt-quality-2026-10-09/released-download/rnnt",
+      "--ort",
+      "/home/ekhodzitsky/.cache/ort.pyke.io/dfbin/x86_64-unknown-linux-gnu/e454f710f8a49f53aa5b4ff51e3454ae1835777e431c6c35c5255ce6f205fd68/libonnxruntime.a",
+      "--manifest",
+      "/home/ekhodzitsky/Projects/syom/lab/release-audit/runs/http-canary-0.8.1/manifest.json",
+      "--reference",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/reference.json",
+      "--long-input",
+      "/home/ekhodzitsky/Projects/syom/target/rollout-canary/inputs/load-180s.m4a",
+      "--out",
+      "/home/ekhodzitsky/.cache/gigastt/aac-0101/load"
+    ],
+    "exit": 1
+  }
+]
