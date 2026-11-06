@@ -232,3 +232,6 @@ faster decoder or enable it in default releases based on this one-host audit.
 The [syom 0.10.0 current-main follow-up](measurements/aac-20261104/README.md)
 records failing decoder and HTTP parity gates; this optional integration is not
 yet accepted for merge on current main.
+
+The [published syom 0.10.1 and pull-adapter follow-up](measurements/aac-20261106/README.md)
+passes both fresh decoder campaigns but retains a load-latency failure.
