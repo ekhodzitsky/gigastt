@@ -186,9 +186,9 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-codec"
-version = "0.4.13"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fde8feef1948bfc57c451e36665deece149e8ef9c015fae52e06da30d2fa154"
+checksum = "64f80e3a583b5458e1bc164971cd0102f30a84812ddb2524b618bc298f29a086"
 dependencies = [
  "fearless_simd",
  "libm",
