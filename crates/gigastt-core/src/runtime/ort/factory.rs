@@ -178,7 +178,10 @@ pub(crate) fn shared_environment() -> Result<ort::environment::Environment, Runt
             Ok(environment)
         })
         .clone()
-        .map_err(RuntimeError::InitializationFailed)
+        .map_err(|message| RuntimeError::LoadFailed {
+            path: std::path::PathBuf::new(),
+            message: format!("runtime initialization failed: {message}"),
+        })
 }
 
 impl RuntimeFactory for OrtFactory {

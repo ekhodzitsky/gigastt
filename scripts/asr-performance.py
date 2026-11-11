@@ -16,7 +16,9 @@ import tempfile
 import wave
 
 ROOT = Path(__file__).resolve().parents[1]
-ASSETS = json.loads((ROOT / 'scripts/asr-performance-assets.json').read_text())
+ASSETS_FILE = ROOT / 'scripts/asr-performance-assets.json'
+ASSETS = json.loads(ASSETS_FILE.read_text())
+REVIEW_FILE = ROOT / 'scripts/asr-reviewed-text.json'
 HEADS = ('rnnt', 'e2e_rnnt')
 CASES = ('golos_00.wav', 'golos_01.wav', 'golos_02.wav', 'long.wav')
 TEST = 'inference::engine::asr_revision_probe::test_asr_revision_probe'
@@ -54,8 +56,38 @@ def pinned_cpus():
         os.sched_setaffinity(0, original)
 
 
+def reviewed_texts(report):
+    """Only protocol 2 can use an exact, source-controlled quality review."""
+    if report['protocol'] == 1:
+        return []
+    if report.get('reviewed_text_sha256') != digest(REVIEW_FILE):
+        raise ValueError('missing or changed reviewed-text fingerprint')
+    document = json.loads(REVIEW_FILE.read_text())
+    if document.get('schema') != 1 or not isinstance(document.get('reviews'), list):
+        raise ValueError('invalid reviewed-text document')
+    reviews = document['reviews']
+    seen = set()
+    for review in reviews:
+        if (review['head'] not in HEADS or review['case'] not in CASES
+                or not re.fullmatch('[a-f0-9]{40}', review['base_revision'])
+                or review['assets_sha256'] != digest(ASSETS_FILE)
+                or not isinstance(review['rationale'], str) or not review['rationale'].strip()):
+            raise ValueError('invalid reviewed-text scope')
+        before, after = review['base_text'], review['candidate_text']
+        if not isinstance(before, str) or not isinstance(after, str) or not before.strip() or not after.strip() or before == after:
+            raise ValueError('invalid reviewed-text pair')
+        # This validates the review, never normalizes measured transcripts.
+        if re.findall(r'[^\W_]+', before) != re.findall(r'[^\W_]+', after):
+            raise ValueError('reviewed-text pair changes lexical content')
+        identity = (review['base_revision'], review['head'], review['case'], before, after)
+        if identity in seen:
+            raise ValueError('duplicate reviewed-text pair')
+        seen.add(identity)
+    return reviews
+
+
 def check(report):
-    """Never treat absent measurements, changed workloads or changed text as success."""
+    """Fail closed; reviewed differences never relax per-side stability or limits."""
     try:
         cpus = report['cpu_affinity']
         expected_affinity = affinity_label(cpus)
@@ -65,8 +97,12 @@ def check(report):
             raise ValueError('audio fingerprints missing or changed')
         if not re.fullmatch('[a-f0-9]{64}', report['harness_sha256']):
             raise ValueError('missing probe fingerprint')
-        if type(report['protocol']) is not int or report['protocol'] != 1 or report['assets'] != ASSETS or set(report['heads']) != set(HEADS):
+        if type(report['protocol']) is not int or report['protocol'] not in (1, 2) or report['assets'] != ASSETS or set(report['heads']) != set(HEADS):
             raise ValueError('incompatible ASR protocol/assets/heads')
+        reviews = reviewed_texts(report)
+        applied_reviews = []
+        if report['protocol'] == 2:
+            report['applied_text_reviews'] = applied_reviews
         for side in ('base', 'candidate'):
             if not re.fullmatch('[a-f0-9]{40}', report['revisions'][side]):
                 raise ValueError('missing immutable revision')
@@ -78,6 +114,22 @@ def check(report):
             if len(base) != ROUNDS or len(candidate) != ROUNDS:
                 raise ValueError('require seven complete pairs for each head')
             reference = base[0]
+            for samples in (base, candidate):
+                for sample in samples:
+                    if sample['first_text'] != samples[0]['first_text']:
+                        raise ValueError('first-call repetition changed')
+                    for name in CASES:
+                        if sample['cases'][name]['text'] != samples[0]['cases'][name]['text']:
+                            raise ValueError(f'ASR repetition changed: {head}/{name}')
+            for name in CASES:
+                before, after = base[0]['cases'][name]['text'], candidate[0]['cases'][name]['text']
+                if before != after:
+                    matches = [r for r in reviews if r['base_revision'] == report['revisions']['base']
+                               and r['head'] == head and r['case'] == name
+                               and r['base_text'] == before and r['candidate_text'] == after]
+                    if len(matches) != 1:
+                        raise ValueError(f'ASR transcript changed: {head}/{name}')
+                    applied_reviews.append(dict(matches[0]))
             for sample in base + candidate:
                 if sample['provider'] != 'cpu' or type(sample['pool_size']) is not int or sample['pool_size'] != 1 or type(sample['threads']) is not int or sample['threads'] not in (1, 2):
                     raise ValueError('unexpected ASR execution configuration')
@@ -97,7 +149,7 @@ def check(report):
                         raise ValueError('warm iteration count differs from pinned workload')
                     if abs(case['duration'] - ASSETS['workload'][name]['duration']) > 0.001:
                         raise ValueError('audio duration differs from pinned workload')
-                    if not isinstance(case['text'], str) or not case['text'].strip() or case['text'] != expected['text']:
+                    if not isinstance(case['text'], str) or not case['text'].strip():
                         raise ValueError(f'ASR transcript changed: {head}/{name}')
                     if abs(case['duration'] - expected['duration']) > 0.001:
                         raise ValueError('ASR duration changed')
@@ -155,7 +207,8 @@ def compare(args):
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     # A failed rerun must not leave a previous green report behind.
-    report = {'protocol': 1, 'assets': ASSETS, 'revisions': {}, 'binary_sha256': {},
+    report = {'protocol': 2, 'reviewed_text_sha256': digest(REVIEW_FILE),
+              'applied_text_reviews': [], 'assets': ASSETS, 'revisions': {}, 'binary_sha256': {},
               'heads': {h: {'base': [], 'candidate': []} for h in HEADS}}
     def save(): (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
     save()
@@ -226,7 +279,11 @@ def compare(args):
                 raise ValueError('audio changed during measurement')
             report['inputs_verified'] = True
             save()
-            print(json.dumps(check(report), indent=2))
+            try:
+                ratios = check(report)
+            finally:
+                save()
+            print(json.dumps({'ratios': ratios, 'applied_text_reviews': report['applied_text_reviews']}, indent=2))
         finally:
             for tree in reversed(trees): command('git', 'worktree', 'remove', '--force', str(tree))
 
@@ -239,7 +296,10 @@ def main():
     parser.add_argument('--output', type=Path, default=ROOT / 'target/asr-revisions')
     parser.add_argument('--target-dir', type=Path, default=ROOT / 'target')
     args = parser.parse_args()
-    if args.check: print(json.dumps(check(json.loads(args.check.read_text())), indent=2))
+    if args.check:
+        report = json.loads(args.check.read_text())
+        ratios = check(report)
+        print(json.dumps({'ratios': ratios, 'applied_text_reviews': report.get('applied_text_reviews', [])}, indent=2))
     elif not args.base: parser.error('--base is required for measurement')
     else: compare(args)
 

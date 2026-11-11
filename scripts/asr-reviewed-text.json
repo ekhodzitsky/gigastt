@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "reviews": [
+    {
+      "base_revision": "adf4db0d7b06a150534734b69b925e3136f0a631",
+      "assets_sha256": "2f08ab64a2b26261c20e94c7ed2b51772a93ccdca744608d184a7ad135756073",
+      "head": "e2e_rnnt",
+      "case": "long.wav",
+      "base_text": "60 000 тенге — сколько будет стоить? Покажи мне на смотрешке телеканал Synergy TV. Заказать яблоки зелёные. 60 000 тенге — сколько будет стоить? Покажи мне на смотрешке телеканал Synergy TV. Заказать яблоки зелёные. 60 000 тенге сколько будет стоить? Покажи мне на смотрешке телеканал Synergy TV. Заказать яблоки зелёные.",
+      "candidate_text": "60 000 тенге — сколько будет стоить? Покажи мне на смотрешке телеканал Synergy TV. Заказать яблоки зелёные. 60 000 тенге сколько будет стоить? Покажи мне на смотрешке телеканал Synergy TV. Заказать яблоки зелёные. 60 000 тенге сколько будет стоить? Покажи мне на смотрешке телеканал Synergy TV. Заказать яблоки зелёные.",
+      "rationale": "The candidate removes only the middle repetition’s em dash and following space. All 48 lexical tokens, numerals and their order are unchanged. Seven samples on each side were stable. This exact punctuation change is reviewed for this pinned workload; it is not a phrase-recovery claim or permission to normalize other output differences."
+    }
+  ]
+}

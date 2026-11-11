@@ -31,6 +31,89 @@ def report():
 
 
 class ComparisonTests(unittest.TestCase):
+    def reviewed_report(self):
+        r = report()
+        review = json.loads(Path(asr.__file__).with_name('asr-reviewed-text.json').read_text())['reviews'][0]
+        r['protocol'] = 2
+        r['reviewed_text_sha256'] = asr.digest(Path(asr.__file__).with_name('asr-reviewed-text.json'))
+        r['revisions']['base'] = review['base_revision']
+        for side in ('base', 'candidate'):
+            for sample in r['heads'][review['head']][side]:
+                sample['cases'][review['case']]['text'] = review[f'{side}_text']
+        return r
+
+    def test_exact_reviewed_pair_passes_and_reports_review(self):
+        r = self.reviewed_report()
+        self.assertTrue(asr.check(r))
+        self.assertEqual(len(r['applied_text_reviews']), 1)
+        self.assertEqual(r['applied_text_reviews'][0]['case'], 'long.wav')
+
+    def test_review_never_changes_protocol_one_acceptance(self):
+        r = self.reviewed_report()
+        r['protocol'] = 1
+        with self.assertRaisesRegex(ValueError, 'transcript changed'):
+            asr.check(r)
+
+    def test_review_rejects_content_and_other_punctuation_changes(self):
+        for old, new in [('тенге', 'рублей'), ('60 000', '61 000'),
+                         ('будет', 'не будет'), ('?', '!')]:
+            with self.subTest(old=old, new=new):
+                r = self.reviewed_report()
+                for s in r['heads']['e2e_rnnt']['candidate']:
+                    s['cases']['long.wav']['text'] = s['cases']['long.wav']['text'].replace(old, new, 1)
+                with self.assertRaises(ValueError):
+                    asr.check(r)
+
+    def test_review_rejects_wrong_scope_and_missing_fingerprint(self):
+        mutations = [lambda r: r['revisions'].update(base='c' * 40),
+                     lambda r: r['assets']['models']['rnnt'].clear(),
+                     lambda r: r.pop('reviewed_text_sha256'),
+                     lambda r: r.update(reviewed_text_sha256='0' * 64),
+                     lambda r: r['heads'].update(rnnt=r['heads']['e2e_rnnt'])]
+        for mutate in mutations:
+            with self.subTest(mutation=mutate):
+                r = self.reviewed_report()
+                mutate(r)
+                with self.assertRaises(ValueError):
+                    asr.check(r)
+        r = self.reviewed_report()
+        for side in ('base', 'candidate'):
+            for s in r['heads']['e2e_rnnt'][side]:
+                s['cases']['golos_01.wav']['text'] = s['cases']['long.wav']['text']
+        with self.assertRaises(ValueError):
+            asr.check(r)
+
+    def test_review_does_not_allow_mixed_repetitions(self):
+        r = self.reviewed_report()
+        r['heads']['e2e_rnnt']['candidate'][3]['cases']['long.wav']['text'] = r['heads']['e2e_rnnt']['base'][0]['cases']['long.wav']['text']
+        with self.assertRaisesRegex(ValueError, 'repetition'):
+            asr.check(r)
+
+    def test_review_does_not_allow_resource_or_latency_regression(self):
+        for metric in [*asr.LIMITS, *asr.CASES]:
+            with self.subTest(metric=metric):
+                r = self.reviewed_report()
+                for s in r['heads']['e2e_rnnt']['candidate']:
+                    if metric in asr.CASES:
+                        s['cases'][metric]['seconds'] *= 2
+                    else:
+                        s[metric] *= 2
+                        if metric == 'rss_kib': s['peak_rss_kib'] *= 2
+                with self.assertRaisesRegex(ValueError, 'ASR regression'):
+                    asr.check(r)
+
+    def test_review_itself_rejects_lexical_change(self):
+        r = self.reviewed_report()
+        document = json.loads(Path(asr.__file__).with_name('asr-reviewed-text.json').read_text())
+        document['reviews'][0]['candidate_text'] += ' нет'
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'reviews.json'
+            path.write_text(json.dumps(document))
+            r['reviewed_text_sha256'] = asr.digest(path)
+            with patch.object(asr, 'REVIEW_FILE', path):
+                with self.assertRaisesRegex(ValueError, 'lexical'):
+                    asr.check(r)
+
     def test_equal_pair_passes(self):
         self.assertTrue(asr.check(report()))
 

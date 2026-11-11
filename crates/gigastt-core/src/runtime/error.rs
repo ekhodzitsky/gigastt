@@ -7,9 +7,6 @@ use super::tensor::{ElementType, Shape};
 /// Errors produced by the runtime abstraction layer.
 #[derive(Debug, Error)]
 pub enum RuntimeError {
-    #[error("runtime initialization failed: {0}")]
-    InitializationFailed(String),
-
     #[error("failed to load model: {message}")]
     LoadFailed { path: PathBuf, message: String },
 
@@ -34,6 +31,24 @@ mod tests {
     use std::path::PathBuf;
 
     use super::*;
+
+    #[test]
+    fn test_original_runtime_error_exhaustive_match_remains_compatible() {
+        fn category(error: RuntimeError) -> &'static str {
+            match error {
+                RuntimeError::LoadFailed { .. } => "load",
+                RuntimeError::InferenceFailed(_) => "inference",
+                RuntimeError::InvalidShape { .. } => "shape",
+                RuntimeError::UnsupportedElementType(_) => "type",
+                RuntimeError::InvalidInputCount { .. } => "inputs",
+                RuntimeError::DataLengthMismatch { .. } => "length",
+            }
+        }
+        assert_eq!(
+            category(RuntimeError::InferenceFailed("test".into())),
+            "inference"
+        );
+    }
 
     #[test]
     fn test_load_failed_display() {

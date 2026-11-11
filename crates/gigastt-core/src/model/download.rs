@@ -204,13 +204,14 @@ pub async fn ensure_model_variant(
 ) -> Result<ModelVariant> {
     let dir = Path::new(model_dir);
 
-    if let Some(manifest) = super::manifest::ModelManifest::load(dir)? {
+    if let Some(configured) = super::manifest::ConfiguredManifest::load(dir)? {
+        let manifest = &configured.manifest;
         anyhow::ensure!(
             requested.is_none_or(|variant| variant == manifest.architecture),
             "requested model variant conflicts with manifest architecture '{}'",
             manifest.architecture.as_str()
         );
-        let encoder = manifest.resolve_encoder(dir)?;
+        let encoder = configured.resolve_encoder(dir)?;
         let files = [
             Some(encoder.path),
             Some(manifest.vocab_path(dir)),

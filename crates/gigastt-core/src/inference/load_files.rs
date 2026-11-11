@@ -6,7 +6,7 @@
 use std::path::Path;
 
 use crate::error::GigasttError;
-use crate::model::{ModelManifest, ModelVariant};
+use crate::model::{ConfiguredManifest, ModelManifest, ModelVariant};
 
 /// Resolve which recognition head the engine should load.
 ///
@@ -64,12 +64,13 @@ pub(crate) struct ResolvedModelFiles {
 
 impl ResolvedModelFiles {
     pub(crate) fn resolve(dir: &Path, variant: ModelVariant) -> anyhow::Result<Self> {
-        if let Some(m) = ModelManifest::load(dir)? {
+        if let Some(configured) = ConfiguredManifest::load(dir)? {
+            let m = &configured.manifest;
             anyhow::ensure!(
                 m.architecture == variant,
                 "requested model variant conflicts with manifest architecture"
             );
-            let encoder = m.resolve_encoder(dir)?;
+            let encoder = configured.resolve_encoder(dir)?;
             return Ok(Self {
                 encoder: encoder.path,
                 decoder: m.decoder_path(dir),

@@ -170,7 +170,7 @@ pub fn prune_optimized_cache_dir(
 
     // A manifest install may rename the encoder away from the hardcoded
     // variant basenames; the engine loads that name, so keep its graph too.
-    if let Some(manifest) = super::manifest::ModelManifest::load(model_dir)? {
+    if let Some(manifest) = super::manifest::ConfiguredManifest::load(model_dir)? {
         encoders.push(manifest.preferred_encoder_path(model_dir));
     }
 

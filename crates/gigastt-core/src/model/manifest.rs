@@ -21,8 +21,6 @@ pub const MANIFEST_FILE: &str = "manifest.toml";
 pub struct ModelManifest {
     /// Decode / recognition head selected by this pack.
     pub architecture: ModelVariant,
-    /// Encoder precision; omitted manifest precision defaults to INT8.
-    pub precision: ModelPrecision,
     /// ONNX and vocab basenames for this pack.
     pub files: ManifestFiles,
 }
@@ -88,22 +86,13 @@ impl ModelManifest {
     /// - Missing file → `Ok(None)` (not an error; callers use hardcoded names).
     /// - Present but invalid → `Err` with a clear context message.
     pub fn load(dir: &Path) -> Result<Option<Self>> {
-        let path = dir.join(MANIFEST_FILE);
-        if !path.is_file() {
-            return Ok(None);
-        }
-        let text = std::fs::read_to_string(&path)
-            .with_context(|| format!("failed to read model manifest {}", path.display()))?;
-        Self::parse(&text)
-            .with_context(|| format!("invalid model manifest {}", path.display()))
-            .map(Some)
+        Ok(ConfiguredManifest::load(dir)?.map(|configured| configured.manifest))
     }
 
-    /// Parse a manifest TOML document (no filesystem access).
+    /// Parse the public architecture/file description, validating configuration too.
+    /// Engine loading separately retains the manifest's explicit precision selection.
     pub fn parse(text: &str) -> Result<Self> {
-        let raw: RawManifest =
-            toml::from_str(text).context("failed to parse model manifest TOML")?;
-        Self::from_raw(raw)
+        Ok(ConfiguredManifest::parse(text)?.manifest)
     }
 
     fn from_raw(raw: RawManifest) -> Result<Self> {
@@ -139,7 +128,6 @@ impl ModelManifest {
 
         Ok(Self {
             architecture,
-            precision: raw.precision,
             files: ManifestFiles {
                 encoder,
                 encoder_int8,
@@ -150,43 +138,9 @@ impl ModelManifest {
         })
     }
 
-    /// Resolve the explicitly selected encoder without falling back to another precision.
-    ///
-    /// # Errors
-    /// Returns an error for unsupported FP32 architectures or a missing encoder file.
-    pub fn resolve_encoder(&self, dir: &Path) -> Result<ResolvedEncoder> {
-        let (name, using_int8) = match self.precision {
-            ModelPrecision::Int8 => (
-                self.files.encoder_int8.as_deref().ok_or_else(|| {
-                    anyhow::anyhow!("manifest files.encoder_int8 is required for precision 'int8'")
-                })?,
-                true,
-            ),
-            ModelPrecision::Fp32 => {
-                if self.architecture != ModelVariant::E2eRnnt {
-                    bail!("precision 'fp32' is supported only for architecture 'e2e_rnnt'");
-                }
-                (self.files.encoder.as_str(), false)
-            }
-        };
-        let path = dir.join(name);
-        if !path.is_file() {
-            let field = if using_int8 {
-                "encoder_int8"
-            } else {
-                "encoder"
-            };
-            bail!("manifest {field} file missing: {}", path.display());
-        }
-        Ok(ResolvedEncoder { path, using_int8 })
-    }
-
-    /// Legacy path hint; explicit FP32 selects `files.encoder`.
-    /// Use [`Self::resolve_encoder`] for validated loading without fallback.
+    /// Legacy path hint: prefer a declared existing INT8 file.
+    /// Engine loading uses the separately parsed precision configuration.
     pub fn preferred_encoder_path(&self, dir: &Path) -> PathBuf {
-        if self.precision == ModelPrecision::Fp32 {
-            return dir.join(&self.files.encoder);
-        }
         if let Some(ref int8_name) = self.files.encoder_int8 {
             let int8 = dir.join(int8_name);
             if int8.exists() {
@@ -196,15 +150,12 @@ impl ModelManifest {
         dir.join(&self.files.encoder)
     }
 
-    /// True when INT8 is selected and its declared file exists.
-    /// Use [`Self::resolve_encoder`] to validate that it is a regular file.
+    /// True when a declared INT8 file exists (legacy path hint).
     pub fn prefers_int8(&self, dir: &Path) -> bool {
-        self.precision == ModelPrecision::Int8
-            && self
-                .files
-                .encoder_int8
-                .as_ref()
-                .is_some_and(|name| dir.join(name).exists())
+        self.files
+            .encoder_int8
+            .as_ref()
+            .is_some_and(|name| dir.join(name).exists())
     }
 
     /// Decoder path when configured (non-empty); `None` for CTC / empty.
@@ -220,6 +171,78 @@ impl ModelManifest {
     /// Vocabulary path.
     pub fn vocab_path(&self, dir: &Path) -> PathBuf {
         dir.join(&self.files.vocab)
+    }
+}
+
+/// Runtime selection kept separate from the public struct-literal API.
+#[derive(Debug)]
+pub(crate) struct ConfiguredManifest {
+    pub(crate) manifest: ModelManifest,
+    precision: ModelPrecision,
+}
+
+impl ConfiguredManifest {
+    /// Cache maintenance must retain the selected custom encoder, even when
+    /// both precision files are present. This is a hint, not load validation.
+    pub(crate) fn preferred_encoder_path(&self, dir: &Path) -> PathBuf {
+        match self.precision {
+            ModelPrecision::Fp32 => dir.join(&self.manifest.files.encoder),
+            ModelPrecision::Int8 => self.manifest.preferred_encoder_path(dir),
+        }
+    }
+
+    pub(crate) fn load(dir: &Path) -> Result<Option<Self>> {
+        let path = dir.join(MANIFEST_FILE);
+        if !path.is_file() {
+            return Ok(None);
+        }
+        let text = std::fs::read_to_string(&path)
+            .with_context(|| format!("failed to read model manifest {}", path.display()))?;
+        Self::parse(&text)
+            .with_context(|| format!("invalid model manifest {}", path.display()))
+            .map(Some)
+    }
+
+    /// Parse a manifest TOML document (no filesystem access).
+    fn parse(text: &str) -> Result<Self> {
+        let raw: RawManifest =
+            toml::from_str(text).context("failed to parse model manifest TOML")?;
+        let precision = raw.precision;
+        Ok(Self {
+            manifest: ModelManifest::from_raw(raw)?,
+            precision,
+        })
+    }
+
+    /// Resolve the explicitly selected encoder without falling back to another precision.
+    ///
+    /// # Errors
+    /// Returns an error for unsupported FP32 architectures or a missing encoder file.
+    pub(crate) fn resolve_encoder(&self, dir: &Path) -> Result<ResolvedEncoder> {
+        let (name, using_int8) = match self.precision {
+            ModelPrecision::Int8 => (
+                self.manifest.files.encoder_int8.as_deref().ok_or_else(|| {
+                    anyhow::anyhow!("manifest files.encoder_int8 is required for precision 'int8'")
+                })?,
+                true,
+            ),
+            ModelPrecision::Fp32 => {
+                if self.manifest.architecture != ModelVariant::E2eRnnt {
+                    bail!("precision 'fp32' is supported only for architecture 'e2e_rnnt'");
+                }
+                (self.manifest.files.encoder.as_str(), false)
+            }
+        };
+        let path = dir.join(name);
+        if !path.is_file() {
+            let field = if using_int8 {
+                "encoder_int8"
+            } else {
+                "encoder"
+            };
+            bail!("manifest {field} file missing: {}", path.display());
+        }
+        Ok(ResolvedEncoder { path, using_int8 })
     }
 }
 
