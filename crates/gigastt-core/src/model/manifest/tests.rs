@@ -142,6 +142,7 @@ fn test_preferred_encoder_path_prefers_int8_when_present() {
     fs::write(dir.path().join("enc.onnx"), b"fp32").unwrap();
     fs::write(dir.path().join("enc_int8.onnx"), b"int8").unwrap();
     let m = ModelManifest {
+        precision: super::ModelPrecision::Int8,
         architecture: ModelVariant::Rnnt,
         files: ManifestFiles {
             encoder: "enc.onnx".into(),
@@ -165,6 +166,7 @@ fn test_preferred_encoder_path_without_int8_file_is_not_int8() {
     let dir = tempfile::tempdir().expect("tempdir");
     fs::write(dir.path().join("enc.onnx"), b"fp32").unwrap();
     let m = ModelManifest {
+        precision: super::ModelPrecision::Int8,
         architecture: ModelVariant::Rnnt,
         files: ManifestFiles {
             encoder: "enc.onnx".into(),
@@ -190,4 +192,29 @@ fn test_load_invalid_manifest_returns_error() {
         format!("{err:#}").contains("manifest"),
         "expected manifest context, got {err:#}"
     );
+}
+
+#[test]
+fn test_precision_rejects_typos_and_unsupported_fp32_heads() {
+    let template = r#"
+architecture = "e2e_rnnt"
+precision = "fp32"
+[files]
+encoder = "custom.onnx"
+decoder = "decoder.onnx"
+joint = "joint.onnx"
+vocab = "vocab.txt"
+"#;
+    assert!(ModelManifest::parse(template).is_ok());
+    for precision in ["fp16", "FP32", "", "fp322"] {
+        assert!(
+            ModelManifest::parse(&template.replace("\"fp32\"", &format!("{precision:?}"))).is_err()
+        );
+    }
+    for architecture in ["rnnt", "ml_ctc", "ml_ctc_large"] {
+        assert!(
+            ModelManifest::parse(&template.replace("\"e2e_rnnt\"", &format!("{architecture:?}")))
+                .is_err()
+        );
+    }
 }

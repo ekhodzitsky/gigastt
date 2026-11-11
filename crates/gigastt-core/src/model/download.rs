@@ -210,12 +210,9 @@ pub async fn ensure_model_variant(
             "requested model variant conflicts with manifest architecture '{}'",
             manifest.architecture.as_str()
         );
-        anyhow::ensure!(
-            manifest.prefers_int8(dir),
-            "custom model pack requires an existing encoder_int8 file"
-        );
+        let encoder = manifest.resolve_encoder(dir)?;
         let files = [
-            Some(manifest.preferred_encoder_path(dir)),
+            Some(encoder.path),
             Some(manifest.vocab_path(dir)),
             manifest.decoder_path(dir),
             manifest.joint_path(dir),
@@ -346,7 +343,8 @@ pub async fn ensure_fp32_model_variant(
 /// renamed, reusing the same download primitive as [`ensure_model_variant`].
 ///
 /// If the **pre-quantized INT8 set** is already present, it is used as-is.
-/// An FP32-only tree is **not** treated as ready (runtime is INT8-only).
+/// An FP32-only tree is not a builtin INT8 bundle. Explicit manifests are
+/// validated separately by `ensure_model_variant`.
 #[cfg(feature = "net")]
 pub async fn ensure_prequantized_model_variant(
     requested: Option<ModelVariant>,
@@ -410,11 +408,11 @@ pub fn is_prequantized_present(variant: ModelVariant, dir: &Path) -> bool {
         .all(|f| dir.join(f).exists())
 }
 
-/// True when the engine can load `variant` from `dir` without a download.
+/// True when a builtin pack for `variant` is present without a download.
 ///
 /// **INT8 only:** the lean pre-quantized set ([`is_prequantized_present`]) or,
 /// for CTC heads, the same INT8-on-disk layout as [`is_model_present`] (CTC
-/// download files are already INT8). An FP32-only install is **not** usable.
+/// download files are already INT8). Explicit manifest packs are validated separately.
 pub fn is_usable_present(variant: ModelVariant, dir: &Path) -> bool {
     if variant.is_ctc() {
         // CTC download set is the INT8 encoder + vocab (no separate prequant list).

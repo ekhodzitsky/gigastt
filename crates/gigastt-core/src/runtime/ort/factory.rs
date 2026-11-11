@@ -163,21 +163,29 @@ impl OrtFactory {
     }
 }
 
-static ORT_INIT: OnceLock<bool> = OnceLock::new();
+// ort permits environment creation only once per process. Retain the default
+// across independent engines and admin reloads; runtimes and sessions clone it.
+static ORT_ENVIRONMENT: OnceLock<Result<ort::environment::Environment, String>> = OnceLock::new();
 
-fn ensure_ort_initialized() {
-    let initialized_by_us = ORT_INIT.get_or_init(|| ort::init().with_name("gigastt").commit());
-    if !initialized_by_us {
-        tracing::warn!(
-            "ort environment was already configured before gigastt initialization; execution provider settings may not apply"
-        );
-    }
+pub(crate) fn shared_environment() -> Result<ort::environment::Environment, RuntimeError> {
+    ORT_ENVIRONMENT
+        .get_or_init(|| {
+            let environment = ort::init()
+                .with_name("gigastt")
+                .build()
+                .map_err(|error| error.to_string())?;
+            tracing::info!(runtime_info = ort::info(), "ONNX Runtime initialized");
+            Ok(environment)
+        })
+        .clone()
+        .map_err(RuntimeError::InitializationFailed)
 }
 
 impl RuntimeFactory for OrtFactory {
     fn create(&self, intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError> {
-        ensure_ort_initialized();
+        let environment = shared_environment()?;
         Ok(Box::new(OrtRuntime::new(
+            environment,
             intra_threads,
             self.provider,
             self.secondary_cpu,
@@ -247,12 +255,19 @@ pub fn cpu_factory() -> Box<dyn RuntimeFactory> {
 /// Speaker pools need threaded CPU inference without idle workers competing
 /// with another slot or the recognition encoder between embedding calls.
 #[cfg(feature = "diarization")]
-pub(crate) fn speaker_runtime(intra_threads: usize) -> Box<dyn Runtime> {
-    ensure_ort_initialized();
-    Box::new(
-        OrtRuntime::new(intra_threads, OrtExecutionProvider::Cpu, true, None, None)
-            .without_spinning(),
-    )
+pub(crate) fn speaker_runtime(intra_threads: usize) -> Result<Box<dyn Runtime>, RuntimeError> {
+    let environment = shared_environment()?;
+    Ok(Box::new(
+        OrtRuntime::new(
+            environment,
+            intra_threads,
+            OrtExecutionProvider::Cpu,
+            true,
+            None,
+            None,
+        )
+        .without_spinning(),
+    ))
 }
 
 /// Returns a production `ort` factory that preserves the provider selection and

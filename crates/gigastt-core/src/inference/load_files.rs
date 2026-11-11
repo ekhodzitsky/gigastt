@@ -66,16 +66,16 @@ impl ResolvedModelFiles {
     pub(crate) fn resolve(dir: &Path, variant: ModelVariant) -> anyhow::Result<Self> {
         if let Some(m) = ModelManifest::load(dir)? {
             anyhow::ensure!(
-                m.prefers_int8(dir),
-                "manifest resolves to a non-INT8 encoder — gigastt runs INT8 only. \
-                 Install the INT8 encoder (`gigastt download`) or fix encoder_int8 in manifest.toml."
+                m.architecture == variant,
+                "requested model variant conflicts with manifest architecture"
             );
+            let encoder = m.resolve_encoder(dir)?;
             return Ok(Self {
-                encoder: m.preferred_encoder_path(dir),
+                encoder: encoder.path,
                 decoder: m.decoder_path(dir),
                 joint: m.joint_path(dir),
                 vocab: m.vocab_path(dir),
-                using_int8: true,
+                using_int8: encoder.using_int8,
                 encoder_hash: None,
             });
         }
@@ -83,13 +83,12 @@ impl ResolvedModelFiles {
     }
 
     pub(crate) fn from_variant(dir: &Path, variant: ModelVariant) -> anyhow::Result<Self> {
-        // Product policy: only the INT8 encoder is supported. FP32 ONNX is not
-        // loaded (no silent fallback). Fix: `gigastt download` (lean INT8).
+        // Without an explicit manifest, builtin packs require INT8; never fall back.
         let int8 = dir.join(variant.encoder_int8_file());
         anyhow::ensure!(
             int8.is_file(),
-            "INT8 encoder not found at {} — gigastt runs INT8 only. \
-             Run `gigastt download` (lean INT8 bundle). FP32 encoders are not supported.",
+            "INT8 encoder not found at {} — a builtin pack requires INT8. \
+             Run `gigastt download`, or configure an explicit FP32 E2E manifest.",
             int8.display()
         );
         if variant.is_ctc() {
@@ -159,7 +158,7 @@ use super::N_MELS;
 use super::pool::SessionTriplet;
 use super::sizing;
 
-/// Path to the preferred INT8 encoder for `variant`. Honors `manifest.toml`
+/// Path to the selected encoder for `variant`. Honors manifest precision
 /// when present; falls back to the expected INT8 basename when resolve fails
 /// (tests may call this without a full install).
 pub(crate) fn encoder_model_path(dir: &Path, variant: ModelVariant) -> std::path::PathBuf {

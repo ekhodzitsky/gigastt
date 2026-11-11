@@ -21,8 +21,30 @@ pub const MANIFEST_FILE: &str = "manifest.toml";
 pub struct ModelManifest {
     /// Decode / recognition head selected by this pack.
     pub architecture: ModelVariant,
+    /// Encoder precision; omitted manifest precision defaults to INT8.
+    pub precision: ModelPrecision,
     /// ONNX and vocab basenames for this pack.
     pub files: ManifestFiles,
+}
+
+/// Encoder precision explicitly selected by a model pack.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ModelPrecision {
+    /// Default published encoder.
+    #[default]
+    Int8,
+    /// Explicitly supplied FP32 E2E RNN-T encoder.
+    Fp32,
+}
+
+/// Validated encoder selection, shared by preflight and engine loading.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedEncoder {
+    /// Existing encoder file in the model directory.
+    pub path: PathBuf,
+    /// Whether the pack selects the INT8 encoder.
+    pub using_int8: bool,
 }
 
 /// File basenames listed under `[files]` in `manifest.toml`.
@@ -43,6 +65,8 @@ pub struct ManifestFiles {
 #[derive(Debug, Deserialize)]
 struct RawManifest {
     architecture: String,
+    #[serde(default)]
+    precision: ModelPrecision,
     files: RawFiles,
 }
 
@@ -88,6 +112,10 @@ impl ModelManifest {
             .parse()
             .map_err(|e: String| anyhow::anyhow!("invalid architecture: {e}"))?;
 
+        if raw.precision == ModelPrecision::Fp32 && architecture != ModelVariant::E2eRnnt {
+            bail!("precision 'fp32' is supported only for architecture 'e2e_rnnt'");
+        }
+
         let encoder = normalize_required_basename("encoder", &raw.files.encoder)?;
         let vocab = normalize_required_basename("vocab", &raw.files.vocab)?;
         let encoder_int8 = normalize_optional_basename("encoder_int8", raw.files.encoder_int8)?;
@@ -111,6 +139,7 @@ impl ModelManifest {
 
         Ok(Self {
             architecture,
+            precision: raw.precision,
             files: ManifestFiles {
                 encoder,
                 encoder_int8,
@@ -121,8 +150,43 @@ impl ModelManifest {
         })
     }
 
-    /// Preferred encoder path: INT8 basename when that file exists, else FP32.
+    /// Resolve the explicitly selected encoder without falling back to another precision.
+    ///
+    /// # Errors
+    /// Returns an error for unsupported FP32 architectures or a missing encoder file.
+    pub fn resolve_encoder(&self, dir: &Path) -> Result<ResolvedEncoder> {
+        let (name, using_int8) = match self.precision {
+            ModelPrecision::Int8 => (
+                self.files.encoder_int8.as_deref().ok_or_else(|| {
+                    anyhow::anyhow!("manifest files.encoder_int8 is required for precision 'int8'")
+                })?,
+                true,
+            ),
+            ModelPrecision::Fp32 => {
+                if self.architecture != ModelVariant::E2eRnnt {
+                    bail!("precision 'fp32' is supported only for architecture 'e2e_rnnt'");
+                }
+                (self.files.encoder.as_str(), false)
+            }
+        };
+        let path = dir.join(name);
+        if !path.is_file() {
+            let field = if using_int8 {
+                "encoder_int8"
+            } else {
+                "encoder"
+            };
+            bail!("manifest {field} file missing: {}", path.display());
+        }
+        Ok(ResolvedEncoder { path, using_int8 })
+    }
+
+    /// Legacy path hint; explicit FP32 selects `files.encoder`.
+    /// Use [`Self::resolve_encoder`] for validated loading without fallback.
     pub fn preferred_encoder_path(&self, dir: &Path) -> PathBuf {
+        if self.precision == ModelPrecision::Fp32 {
+            return dir.join(&self.files.encoder);
+        }
         if let Some(ref int8_name) = self.files.encoder_int8 {
             let int8 = dir.join(int8_name);
             if int8.exists() {
@@ -132,12 +196,15 @@ impl ModelManifest {
         dir.join(&self.files.encoder)
     }
 
-    /// True when the preferred encoder path is the INT8 basename and exists.
+    /// True when INT8 is selected and its declared file exists.
+    /// Use [`Self::resolve_encoder`] to validate that it is a regular file.
     pub fn prefers_int8(&self, dir: &Path) -> bool {
-        self.files
-            .encoder_int8
-            .as_ref()
-            .is_some_and(|name| dir.join(name).exists())
+        self.precision == ModelPrecision::Int8
+            && self
+                .files
+                .encoder_int8
+                .as_ref()
+                .is_some_and(|name| dir.join(name).exists())
     }
 
     /// Decoder path when configured (non-empty); `None` for CTC / empty.

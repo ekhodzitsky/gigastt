@@ -7,6 +7,9 @@ use super::tensor::{ElementType, Shape};
 /// Errors produced by the runtime abstraction layer.
 #[derive(Debug, Error)]
 pub enum RuntimeError {
+    #[error("runtime initialization failed: {0}")]
+    InitializationFailed(String),
+
     #[error("failed to load model: {message}")]
     LoadFailed { path: PathBuf, message: String },
 

@@ -353,3 +353,43 @@ fn test_endpoint_silence_validation_and_frame_rounding() {
     }
     assert_eq!(EndpointSilence::default().frames(), 15);
 }
+
+#[test]
+fn test_feature_extractor_variant_preserves_non_e2e_frontend() {
+    use crate::model::ModelVariant;
+    let samples: Vec<f32> = (0..3200).map(|i| (i as f32 * 0.17).sin() * 0.3).collect();
+    let legacy = FeatureExtractor::new().compute(&samples);
+    for variant in [
+        ModelVariant::Rnnt,
+        ModelVariant::MlCtc,
+        ModelVariant::MlCtcLarge,
+    ] {
+        assert_eq!(
+            FeatureExtractor::for_variant(variant).compute(&samples),
+            legacy
+        );
+    }
+    assert_ne!(
+        FeatureExtractor::for_variant(ModelVariant::E2eRnnt)
+            .compute(&samples)
+            .0,
+        legacy.0
+    );
+}
+
+#[test]
+fn test_e2e_streaming_features_preserve_legacy_coefficients() {
+    let samples: Vec<f32> = (0..1600).map(|i| (i as f32 * 0.071).sin() * 0.3).collect();
+    let legacy = FeatureExtractor::new().compute(&samples);
+    let e2e = FeatureExtractor::for_variant(crate::model::ModelVariant::E2eRnnt);
+    let mut fft = Vec::new();
+    let mut power = Vec::new();
+    let mut streaming = Vec::new();
+    let frames = e2e.compute_mel(&samples, &mut fft, &mut power, &mut streaming);
+    assert_eq!(frames, legacy.1);
+    assert!(
+        streaming == legacy.0,
+        "streaming must retain the legacy frontend"
+    );
+    assert_ne!(e2e.compute(&samples).0, legacy.0);
+}
