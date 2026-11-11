@@ -215,6 +215,22 @@ impl MelSpectrogram {
         power: &mut Vec<f32>,
         output: &mut Vec<f32>,
     ) -> usize {
+        // Select the log policy once; keep both frame loops free of a runtime
+        // frontend branch without changing their floating-point arithmetic.
+        if self.author_frontend {
+            self.compute_with_policy::<true>(samples, fft_input, power, output)
+        } else {
+            self.compute_with_policy::<false>(samples, fft_input, power, output)
+        }
+    }
+
+    fn compute_with_policy<const AUTHOR: bool>(
+        &self,
+        samples: &[f32],
+        fft_input: &mut Vec<Complex<f32>>,
+        power: &mut Vec<f32>,
+        output: &mut Vec<f32>,
+    ) -> usize {
         let n_freqs = self.n_fft / 2 + 1;
 
         // Number of frames (center=false)
@@ -269,7 +285,7 @@ impl MelSpectrogram {
                     mel_energy += w * power[band.start + i];
                 }
                 // Log with floor
-                output[m * num_frames + frame_idx] = if self.author_frontend {
+                output[m * num_frames + frame_idx] = if AUTHOR {
                     mel_energy.clamp(1e-9, 1e9).ln()
                 } else {
                     mel_energy.max(1e-10).ln()
