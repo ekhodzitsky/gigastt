@@ -162,12 +162,33 @@ its warmup. Every repetition must preserve its transcript and duration.
 Median **paired** ratios
 must be at most 1.20 for load and first transcription, and 1.10 for each warmed
 file, RSS and peak RSS. No aggregate average may hide a slow individual case.
-All texts must be nonempty and identical between repetitions and revisions;
+All texts must be nonempty and identical between repetitions. Between revisions,
+exact equality is required except for a source-controlled, explicitly reviewed
+pair of complete strings described below;
 durations and configuration must match the pinned workload. Missing rounds,
 failed subprocesses, malformed numbers or changed inputs fail the gate.
 The tolerances account for measurement variability, not permission to ship a
 known slowdown. A legitimate recognition change requires a reviewed quality
 comparison, not silently disabling the text check.
+
+Protocol 2 fingerprints `scripts/asr-reviewed-text.json` and records every
+applied review in the report. A review matches only its exact accepted base
+revision, assets-manifest checksum, head, file and complete before/after
+strings. It cannot authorize another punctuation change, a different workload
+or a different baseline. The review itself must preserve the sequence of
+lexical tokens and numerals. Measured transcripts are never normalized to make
+them pass. Both sides must still be individually stable across all seven
+processes; mixing the old and new strings within one side fails. First-call
+equality, all configuration/input checks and all numerical limits remain
+unchanged.
+
+The initial review covers only removal of the middle repetition's em dash and
+following space in E2E `long.wav` against the pinned accepted revision. All 48
+lexical tokens and their order are unchanged. It does not establish phrase
+recovery or authorize other recognition changes. Protocol 1 reports retain
+their original exact-equality rule: their recorded failures are not
+retroactively accepted by adding a review. New measurements use protocol 2;
+`--check` reports which exact reviews were applied without rewriting its input.
 
 Raw build/process logs, immutable commit and executable hashes, probe hash,
 asset hashes and measurements are retained under `target/asr-revisions/` and in

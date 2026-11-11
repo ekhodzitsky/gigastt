@@ -25,6 +25,7 @@ pub struct MelSpectrogram {
     /// Sparse HTK mel filterbank (one band per mel bin).
     mel_bands: Vec<SparseMelBand>,
     fft: Arc<dyn Fft<f32>>,
+    author_frontend: bool,
 }
 
 impl Default for MelSpectrogram {
@@ -61,6 +62,7 @@ impl MelSpectrogram {
             window,
             mel_bands,
             fft,
+            author_frontend: false,
         }
     }
 
@@ -121,6 +123,47 @@ impl MelSpectrogram {
         filterbank
     }
 
+    /// Exact checkpoint frontend, selected only for the E2E recognition head.
+    pub(crate) fn new_e2e_rnnt() -> Self {
+        let n_fft = super::N_FFT;
+        let hop_length = super::HOP_LENGTH;
+        let n_mels = super::N_MELS;
+        // Checkpoint buffers are BF16-rounded, including the periodic Hann window.
+        let window = Self::decode_frontend_coefficients(&Self::FRONTEND[..n_fft * 2]);
+        let mel_filterbank = Self::checkpoint_mel_filterbank();
+        let mel_bands = Self::sparsify_mel_filterbank(&mel_filterbank, n_mels, n_fft / 2 + 1);
+
+        // Pre-plan FFT
+        let mut planner = FftPlanner::<f32>::new();
+        let fft = planner.plan_fft_forward(n_fft);
+
+        Self {
+            n_fft,
+            hop_length,
+            window,
+            mel_bands,
+            fft,
+            author_frontend: true,
+        }
+    }
+
+    // GigaAM v3 RNNT and E2E checkpoints share these exact frontend buffers.
+    // Little-endian BF16: 320 window coefficients, then 64 × 161 mel-major weights.
+    const FRONTEND: &'static [u8; 21248] = include_bytes!("features/gigaam_v3_frontend.bf16");
+
+    fn decode_frontend_coefficients(bytes: &[u8]) -> Vec<f32> {
+        bytes
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| f32::from_bits(u32::from(u16::from_le_bytes(*pair)) << 16))
+            .collect()
+    }
+
+    fn checkpoint_mel_filterbank() -> Vec<f32> {
+        Self::decode_frontend_coefficients(&Self::FRONTEND[super::N_FFT * 2..])
+    }
+
     /// Convert a dense `[n_mels × n_freqs]` HTK filterbank into per-band sparse
     /// slices. Empty rows become a zero-weight single bin at index 0 so apply
     /// still has a well-defined band object (energy stays at the log floor).
@@ -166,6 +209,22 @@ impl MelSpectrogram {
     /// `fft_input` retains both the FFT input and the plan-specific scratch storage;
     /// `power` retains the power spectrum. Both grow automatically when needed.
     pub fn compute_with_buffers(
+        &self,
+        samples: &[f32],
+        fft_input: &mut Vec<Complex<f32>>,
+        power: &mut Vec<f32>,
+        output: &mut Vec<f32>,
+    ) -> usize {
+        // Select the log policy once; keep both frame loops free of a runtime
+        // frontend branch without changing their floating-point arithmetic.
+        if self.author_frontend {
+            self.compute_with_policy::<true>(samples, fft_input, power, output)
+        } else {
+            self.compute_with_policy::<false>(samples, fft_input, power, output)
+        }
+    }
+
+    fn compute_with_policy<const AUTHOR: bool>(
         &self,
         samples: &[f32],
         fft_input: &mut Vec<Complex<f32>>,
@@ -226,7 +285,11 @@ impl MelSpectrogram {
                     mel_energy += w * power[band.start + i];
                 }
                 // Log with floor
-                output[m * num_frames + frame_idx] = (mel_energy.max(1e-10)).ln();
+                output[m * num_frames + frame_idx] = if AUTHOR {
+                    mel_energy.clamp(1e-9, 1e9).ln()
+                } else {
+                    mel_energy.max(1e-10).ln()
+                };
             }
         }
 

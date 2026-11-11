@@ -304,3 +304,79 @@ vocab = "custom-vocab.txt"
     );
     assert_ne!(first.encoder_hash, second.encoder_hash);
 }
+
+#[test]
+fn test_explicit_fp32_encoder_selection_and_no_fallback() {
+    let dir = tempfile::tempdir().unwrap();
+    let manifest = r#"
+architecture = "e2e_rnnt"
+precision = "fp32"
+[files]
+encoder = "custom_fp32.onnx"
+encoder_int8 = "custom_int8.onnx"
+decoder = "decoder.onnx"
+joint = "joint.onnx"
+vocab = "vocab.txt"
+"#;
+    std::fs::write(dir.path().join(crate::model::MANIFEST_FILE), manifest).unwrap();
+    std::fs::write(dir.path().join("custom_int8.onnx"), b"int8").unwrap();
+    assert!(ResolvedModelFiles::resolve(dir.path(), ModelVariant::E2eRnnt).is_err());
+    std::fs::write(dir.path().join("custom_fp32.onnx"), b"fp32").unwrap();
+    let files = ResolvedModelFiles::resolve(dir.path(), ModelVariant::E2eRnnt).unwrap();
+    assert_eq!(files.encoder, dir.path().join("custom_fp32.onnx"));
+    assert!(!files.using_int8);
+    assert!(ResolvedModelFiles::resolve(dir.path(), ModelVariant::Rnnt).is_err());
+}
+
+#[test]
+fn test_default_manifest_precision_never_falls_back_to_fp32() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("custom_fp32.onnx"), b"fp32").unwrap();
+    std::fs::write(
+        dir.path().join(crate::model::MANIFEST_FILE),
+        r#"
+architecture = "e2e_rnnt"
+[files]
+encoder = "custom_fp32.onnx"
+encoder_int8 = "missing_int8.onnx"
+decoder = "decoder.onnx"
+joint = "joint.onnx"
+vocab = "vocab.txt"
+"#,
+    )
+    .unwrap();
+    assert!(ResolvedModelFiles::resolve(dir.path(), ModelVariant::E2eRnnt).is_err());
+}
+
+#[test]
+fn test_explicit_fp32_preserves_published_encoder_checksum() {
+    let dir = tempfile::tempdir().unwrap();
+    let name = ModelVariant::E2eRnnt.encoder_file();
+    std::fs::write(dir.path().join(name), b"invalid encoder").unwrap();
+    std::fs::write(
+        dir.path().join(crate::model::MANIFEST_FILE),
+        format!(
+            r#"
+architecture = "e2e_rnnt"
+precision = "fp32"
+[files]
+encoder = "{name}"
+decoder = "custom_decoder.onnx"
+joint = "custom_joint.onnx"
+vocab = "custom_vocab.txt"
+"#
+        ),
+    )
+    .unwrap();
+    let mut files = ResolvedModelFiles::resolve(dir.path(), ModelVariant::E2eRnnt).unwrap();
+    assert!(!files.using_int8);
+    assert_eq!(
+        ModelVariant::E2eRnnt.checksum(name),
+        Some("cd60b3764a832e8560ae6d3ad0b10adc1a42ffae412b9476f25620aae4f4a508")
+    );
+    assert!(
+        files
+            .verify_pinned_checksums(ModelVariant::E2eRnnt)
+            .is_err()
+    );
+}

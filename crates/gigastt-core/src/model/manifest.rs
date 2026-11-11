@@ -25,6 +25,26 @@ pub struct ModelManifest {
     pub files: ManifestFiles,
 }
 
+/// Encoder precision explicitly selected by a model pack.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ModelPrecision {
+    /// Default published encoder.
+    #[default]
+    Int8,
+    /// Explicitly supplied FP32 E2E RNN-T encoder.
+    Fp32,
+}
+
+/// Validated encoder selection, shared by preflight and engine loading.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedEncoder {
+    /// Existing encoder file in the model directory.
+    pub path: PathBuf,
+    /// Whether the pack selects the INT8 encoder.
+    pub using_int8: bool,
+}
+
 /// File basenames listed under `[files]` in `manifest.toml`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ManifestFiles {
@@ -43,6 +63,8 @@ pub struct ManifestFiles {
 #[derive(Debug, Deserialize)]
 struct RawManifest {
     architecture: String,
+    #[serde(default)]
+    precision: ModelPrecision,
     files: RawFiles,
 }
 
@@ -64,22 +86,13 @@ impl ModelManifest {
     /// - Missing file → `Ok(None)` (not an error; callers use hardcoded names).
     /// - Present but invalid → `Err` with a clear context message.
     pub fn load(dir: &Path) -> Result<Option<Self>> {
-        let path = dir.join(MANIFEST_FILE);
-        if !path.is_file() {
-            return Ok(None);
-        }
-        let text = std::fs::read_to_string(&path)
-            .with_context(|| format!("failed to read model manifest {}", path.display()))?;
-        Self::parse(&text)
-            .with_context(|| format!("invalid model manifest {}", path.display()))
-            .map(Some)
+        Ok(ConfiguredManifest::load(dir)?.map(|configured| configured.manifest))
     }
 
-    /// Parse a manifest TOML document (no filesystem access).
+    /// Parse the public architecture/file description, validating configuration too.
+    /// Engine loading separately retains the manifest's explicit precision selection.
     pub fn parse(text: &str) -> Result<Self> {
-        let raw: RawManifest =
-            toml::from_str(text).context("failed to parse model manifest TOML")?;
-        Self::from_raw(raw)
+        Ok(ConfiguredManifest::parse(text)?.manifest)
     }
 
     fn from_raw(raw: RawManifest) -> Result<Self> {
@@ -87,6 +100,10 @@ impl ModelManifest {
             .architecture
             .parse()
             .map_err(|e: String| anyhow::anyhow!("invalid architecture: {e}"))?;
+
+        if raw.precision == ModelPrecision::Fp32 && architecture != ModelVariant::E2eRnnt {
+            bail!("precision 'fp32' is supported only for architecture 'e2e_rnnt'");
+        }
 
         let encoder = normalize_required_basename("encoder", &raw.files.encoder)?;
         let vocab = normalize_required_basename("vocab", &raw.files.vocab)?;
@@ -121,7 +138,8 @@ impl ModelManifest {
         })
     }
 
-    /// Preferred encoder path: INT8 basename when that file exists, else FP32.
+    /// Legacy path hint: prefer a declared existing INT8 file.
+    /// Engine loading uses the separately parsed precision configuration.
     pub fn preferred_encoder_path(&self, dir: &Path) -> PathBuf {
         if let Some(ref int8_name) = self.files.encoder_int8 {
             let int8 = dir.join(int8_name);
@@ -132,7 +150,7 @@ impl ModelManifest {
         dir.join(&self.files.encoder)
     }
 
-    /// True when the preferred encoder path is the INT8 basename and exists.
+    /// True when a declared INT8 file exists (legacy path hint).
     pub fn prefers_int8(&self, dir: &Path) -> bool {
         self.files
             .encoder_int8
@@ -153,6 +171,78 @@ impl ModelManifest {
     /// Vocabulary path.
     pub fn vocab_path(&self, dir: &Path) -> PathBuf {
         dir.join(&self.files.vocab)
+    }
+}
+
+/// Runtime selection kept separate from the public struct-literal API.
+#[derive(Debug)]
+pub(crate) struct ConfiguredManifest {
+    pub(crate) manifest: ModelManifest,
+    precision: ModelPrecision,
+}
+
+impl ConfiguredManifest {
+    /// Cache maintenance must retain the selected custom encoder, even when
+    /// both precision files are present. This is a hint, not load validation.
+    pub(crate) fn preferred_encoder_path(&self, dir: &Path) -> PathBuf {
+        match self.precision {
+            ModelPrecision::Fp32 => dir.join(&self.manifest.files.encoder),
+            ModelPrecision::Int8 => self.manifest.preferred_encoder_path(dir),
+        }
+    }
+
+    pub(crate) fn load(dir: &Path) -> Result<Option<Self>> {
+        let path = dir.join(MANIFEST_FILE);
+        if !path.is_file() {
+            return Ok(None);
+        }
+        let text = std::fs::read_to_string(&path)
+            .with_context(|| format!("failed to read model manifest {}", path.display()))?;
+        Self::parse(&text)
+            .with_context(|| format!("invalid model manifest {}", path.display()))
+            .map(Some)
+    }
+
+    /// Parse a manifest TOML document (no filesystem access).
+    fn parse(text: &str) -> Result<Self> {
+        let raw: RawManifest =
+            toml::from_str(text).context("failed to parse model manifest TOML")?;
+        let precision = raw.precision;
+        Ok(Self {
+            manifest: ModelManifest::from_raw(raw)?,
+            precision,
+        })
+    }
+
+    /// Resolve the explicitly selected encoder without falling back to another precision.
+    ///
+    /// # Errors
+    /// Returns an error for unsupported FP32 architectures or a missing encoder file.
+    pub(crate) fn resolve_encoder(&self, dir: &Path) -> Result<ResolvedEncoder> {
+        let (name, using_int8) = match self.precision {
+            ModelPrecision::Int8 => (
+                self.manifest.files.encoder_int8.as_deref().ok_or_else(|| {
+                    anyhow::anyhow!("manifest files.encoder_int8 is required for precision 'int8'")
+                })?,
+                true,
+            ),
+            ModelPrecision::Fp32 => {
+                if self.manifest.architecture != ModelVariant::E2eRnnt {
+                    bail!("precision 'fp32' is supported only for architecture 'e2e_rnnt'");
+                }
+                (self.manifest.files.encoder.as_str(), false)
+            }
+        };
+        let path = dir.join(name);
+        if !path.is_file() {
+            let field = if using_int8 {
+                "encoder_int8"
+            } else {
+                "encoder"
+            };
+            bail!("manifest {field} file missing: {}", path.display());
+        }
+        Ok(ResolvedEncoder { path, using_int8 })
     }
 }
 

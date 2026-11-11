@@ -7,11 +7,34 @@ use crate::test_support;
 use crate::vad::VadConfig;
 
 #[test]
+fn test_rnnt_precision_uses_selected_backend_not_build_features() {
+    let tmp = tempfile::tempdir().expect("tempdir");
+    test_support::write_rnnt_layout(tmp.path()).expect("rnnt layout");
+    for (backend, expected_int8) in [("cpu", true), ("candle", false)] {
+        // Mock sessions exercise loader metadata, not actual Metal execution.
+        let engine = Engine::load_with_factory(
+            tmp.path(),
+            Some(ModelVariant::Rnnt),
+            1,
+            1,
+            0,
+            Box::new(test_support::rnnt_factory()),
+            1,
+            false,
+            backend,
+        )
+        .expect("mock engine");
+        assert_eq!(engine.execution_provider(), backend);
+        assert_eq!(engine.is_int8(), expected_int8, "backend: {backend}");
+    }
+}
+
+#[test]
 fn test_engine_config_getters_and_builders() {
     let (engine, _tmp) = test_support::rnnt_engine();
-    // Candle ignores the INT8 ONNX encoder and loads FP32 safetensors, so
-    // `Engine::load` reports `is_int8() == false` under that feature.
-    assert_eq!(engine.is_int8(), !cfg!(feature = "candle"));
+    // This helper injects CPU sessions, even when Candle support is compiled.
+    assert_eq!(engine.execution_provider(), "cpu");
+    assert!(engine.is_int8());
     assert_eq!(engine.variant(), ModelVariant::Rnnt);
     assert_eq!(engine.vocab_size(), 2);
     assert!(!engine.has_punctuator());

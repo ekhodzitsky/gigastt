@@ -33,6 +33,24 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_original_runtime_error_exhaustive_match_remains_compatible() {
+        fn category(error: RuntimeError) -> &'static str {
+            match error {
+                RuntimeError::LoadFailed { .. } => "load",
+                RuntimeError::InferenceFailed(_) => "inference",
+                RuntimeError::InvalidShape { .. } => "shape",
+                RuntimeError::UnsupportedElementType(_) => "type",
+                RuntimeError::InvalidInputCount { .. } => "inputs",
+                RuntimeError::DataLengthMismatch { .. } => "length",
+            }
+        }
+        assert_eq!(
+            category(RuntimeError::InferenceFailed("test".into())),
+            "inference"
+        );
+    }
+
+    #[test]
     fn test_load_failed_display() {
         let e = RuntimeError::LoadFailed {
             path: PathBuf::from("encoder.onnx"),

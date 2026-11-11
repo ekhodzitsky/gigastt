@@ -15,6 +15,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- Support explicitly selected FP32 E2E RNNT model packs on CPU, with a pinned
+  installer and checkpoint feature extraction for file transcription. Default
+  downloads and manifests remain INT8, with no implicit FP32 fallback. Both
+  profiles retain greedy decoding; known omissions and setup are documented in
+  [FP32 on CPU](docs/fp32-cpu.md).
+
 - Configure non-VAD streaming blank-run endpoint duration with
   `serve --endpoint-silence-ms` / `GIGASTT_ENDPOINT_SILENCE_MS` or WebSocket
   `configure.endpoint_silence_ms` (protocol 1.3; clients 1.0–1.2 remain accepted).
@@ -32,6 +38,8 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 - Update TLS verification and root certificates in workspace/fuzz lockfiles; patch Candle ZIP handling and Askama TOML parsing to remove vulnerable or unmaintained dependencies from repository builds. See [dependency patch scope](vendor/README.md), including the limitation for downstream crates.io consumers.
 
 ### Changed
+
+- Update `ort` to `2.0.0-rc.15` and the native ONNX Runtime dependency to 1.31.
 
 - Reorganize the README and documentation around installation, model selection,
   operation and validation. Distinguish published bundles from main, correct SDK

@@ -26,7 +26,7 @@ impl SpeakerEmbedder {
         // Preserve the pre-tract CPU budget and its existing environment knobs.
         // CPU selection and idle-worker policy live at the runtime seam.
         let pool_size = polyvoice::onnx::resolve_session_pool_size(pool_size);
-        let runtime = speaker_runtime(polyvoice::onnx::resolve_intra_threads(pool_size));
+        let runtime = speaker_runtime(polyvoice::onnx::resolve_intra_threads(pool_size))?;
         let sessions = (0..pool_size)
             .map(|_| runtime.load_session(path, true))
             .collect::<Result<Vec<_>, _>>()?;
