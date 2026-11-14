@@ -432,3 +432,41 @@ fn test_stream_flush_tail_failure_returns_null_and_preserves_state() {
         }
     }
 }
+
+#[test]
+fn test_engine_new_with_threads_null() {
+    let engine = unsafe { gigastt_engine_new_with_threads(ptr::null(), 1, 4) };
+    assert!(engine.is_null());
+}
+
+#[test]
+fn test_engine_new_with_threads_invalid_utf8() {
+    let bad = [0x80u8, 0x81, 0x82, 0];
+    let engine = unsafe { gigastt_engine_new_with_threads(bad.as_ptr() as *const c_char, 1, 4) };
+    assert!(engine.is_null());
+}
+
+/// A model-less directory must yield a NULL handle for any thread count,
+/// including the out-of-range values 0 and a very large one (both clamped).
+#[test]
+fn test_engine_new_with_threads_missing_model_returns_null() {
+    let tmp = std::env::temp_dir().join(format!("gigastt_ffi_threads_{}", std::process::id()));
+    std::fs::create_dir_all(&tmp).unwrap();
+    let dir = CString::new(tmp.to_str().unwrap()).unwrap();
+    for threads in [0usize, 1, 4, usize::MAX] {
+        let engine = unsafe { gigastt_engine_new_with_threads(dir.as_ptr(), 1, threads) };
+        assert!(engine.is_null(), "threads = {threads}");
+    }
+    let _ = std::fs::remove_dir_all(&tmp);
+}
+
+#[test]
+#[ignore = "requires model"]
+fn test_engine_new_with_threads_success() {
+    let dir = CString::new(gigastt_core::model::default_model_dir()).unwrap();
+    for threads in [1usize, 2] {
+        let engine = unsafe { gigastt_engine_new_with_threads(dir.as_ptr(), 1, threads) };
+        assert!(!engine.is_null(), "threads = {threads}");
+        unsafe { gigastt_engine_free(engine) };
+    }
+}
