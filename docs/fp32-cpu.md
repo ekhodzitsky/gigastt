@@ -94,9 +94,10 @@ default INT8 bundles; the separate installer creates the opt-in FP32 pack.
 When pointed at a complete explicit FP32 pack, `download` validates its files
 without replacing them with INT8 weights.
 
-Rust callers constructing `ModelManifest` directly must supply its new
-`precision` field (`ModelPrecision::Int8` retains the previous policy).
-Existing manifests without that field continue to parse with INT8 precision.
+The public Rust `ModelManifest` struct retains its existing fields, so existing
+struct literals remain compatible. Set `precision = "fp32"` in `manifest.toml`
+to opt in; the engine retains that selection in its internal configuration.
+Manifests without the setting continue to select INT8.
 
 ## Recognition behavior
 
