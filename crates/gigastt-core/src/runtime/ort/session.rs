@@ -11,6 +11,7 @@ use super::{factory::OrtExecutionProvider, tensor::value_to_tensor};
 
 /// `ort`-backed runtime that loads sessions for a specific execution provider.
 pub struct OrtRuntime {
+    environment: ort::environment::Environment,
     intra_threads: usize,
     allow_spinning: bool,
     provider: OrtExecutionProvider,
@@ -29,6 +30,7 @@ pub struct OrtRuntime {
 
 impl OrtRuntime {
     pub(crate) fn new(
+        environment: ort::environment::Environment,
         intra_threads: usize,
         provider: OrtExecutionProvider,
         secondary_cpu: bool,
@@ -36,6 +38,7 @@ impl OrtRuntime {
         optimized_cache_dir: Option<std::path::PathBuf>,
     ) -> Self {
         Self {
+            environment,
             intra_threads,
             allow_spinning: true,
             provider,
@@ -206,7 +209,9 @@ impl OrtRuntime {
         model_path: &Path,
         is_encoder: bool,
     ) -> Result<ort::session::builder::SessionBuilder, RuntimeError> {
-        let mut builder = Session::builder()
+        let mut builder = Session::builder(&self.environment)
+            .map_err(|e| load_failed(model_path, e))?
+            .with_auto_device(ort::session::builder::AutoDevicePolicy::PreferCPU)
             .map_err(|e| load_failed(model_path, e))?
             .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
             .map_err(|e| load_failed(model_path, e))?;
@@ -581,6 +586,7 @@ mod tests {
 
     fn cached_runtime(cache_dir: &Path) -> OrtRuntime {
         OrtRuntime::new(
+            super::super::factory::shared_environment().unwrap(),
             1,
             OrtExecutionProvider::Cpu,
             true,
