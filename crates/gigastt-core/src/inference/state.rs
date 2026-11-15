@@ -449,6 +449,54 @@ impl TranscriptAssembler {
         self.committed_words.last()
     }
 
+    /// Match the entire committed suffix whose predicted intervals remain in
+    /// this PCM window. This is a lexical reconciliation heuristic, not proof
+    /// that re-decoded words describe the same acoustic occurrences. Leading
+    /// words already rejected by time coverage may precede the match. Returns
+    /// the full consumed prefix length, choosing the first eligible match.
+    pub(crate) fn covered_committed_prefix_len(
+        &self,
+        raw: &[WordInfo],
+        window_start_samples: usize,
+        window_end_samples: usize,
+        context_boundary_s: f64,
+    ) -> usize {
+        let start = window_start_samples as f64 / 16000.0;
+        let end = window_end_samples as f64 / 16000.0;
+        let count = self
+            .committed_words
+            .iter()
+            .rev()
+            .take_while(|word| {
+                word.start.is_finite()
+                    && word.end.is_finite()
+                    && word.start >= 0.0
+                    && word.start <= word.end
+                    && word.start >= start
+                    && word.end <= end
+            })
+            .count();
+        if count == 0 || raw.len() < count {
+            return 0;
+        }
+        let anchors = &self.committed_words[self.committed_words.len() - count..];
+        for offset in 0..=raw.len() - count {
+            if anchors
+                .iter()
+                .zip(&raw[offset..])
+                .all(|(old, new)| old.word == new.word)
+            {
+                return offset + count;
+            }
+            // Advance only across words rejected by the existing time-coverage
+            // filter. A live or straddling word prevents any later match.
+            if context_boundary_s <= 0.0 || raw[offset].end > context_boundary_s + f64::EPSILON {
+                break;
+            }
+        }
+        0
+    }
+
     /// Move only the first `n` live words into the committed prefix
     /// (stable-prefix commit): words two consecutive window decodes agreed on.
     /// The rest of the tail stays live and revisable by the next decode.

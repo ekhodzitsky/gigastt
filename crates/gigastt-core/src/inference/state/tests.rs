@@ -353,3 +353,72 @@ fn test_endpoint_silence_validation_and_frame_rounding() {
     }
     assert_eq!(EndpointSilence::default().frames(), 15);
 }
+
+#[test]
+fn test_covered_prefix_requires_complete_ordered_buffered_suffix_and_resets() {
+    let mut asm = TranscriptAssembler::new();
+    asm.append(vec![
+        word("старое", 0.0, 0.5),
+        word("да", 1.0, 1.0),
+        word("не", 1.2, 1.3),
+    ]);
+    asm.commit_live();
+    let raw = vec![
+        word("да", 1.1, 1.1),
+        word("не", 1.4, 1.5),
+        word("молчи", 1.6, 1.8),
+    ];
+    assert_eq!(asm.covered_committed_prefix_len(&raw, 8000, 32000, 0.0), 2);
+    assert_eq!(
+        asm.covered_committed_prefix_len(&raw[..1], 8000, 32000, 0.0),
+        0
+    );
+    assert_eq!(
+        asm.covered_committed_prefix_len(&raw[1..], 8000, 32000, 0.0),
+        0
+    );
+    assert_eq!(asm.covered_committed_prefix_len(&raw, 21000, 32000, 0.0), 0);
+    asm.finalize(2.0);
+    assert_eq!(asm.covered_committed_prefix_len(&raw, 0, 32000, 0.0), 0);
+}
+
+#[test]
+fn test_covered_prefix_rejects_invalid_anchor_intervals() {
+    for (start, end) in [
+        (f64::NAN, 1.0),
+        (0.0, f64::INFINITY),
+        (-0.1, 1.0),
+        (1.1, 1.0),
+    ] {
+        let mut asm = TranscriptAssembler::new();
+        asm.append(vec![word("да", start, end)]);
+        asm.commit_live();
+        assert_eq!(
+            asm.covered_committed_prefix_len(&[word("да", 1.0, 1.2)], 0, 32000, 0.0),
+            0
+        );
+    }
+}
+
+#[test]
+fn test_covered_prefix_offset_obeys_exact_coverage_boundary() {
+    let mut asm = TranscriptAssembler::new();
+    asm.append(vec![word("да", 0.5, 0.6)]);
+    asm.commit_live();
+    for (end, consumed) in [
+        (1.0, 2),
+        (1.0 + f64::EPSILON, 2),
+        (1.0 + 2.0 * f64::EPSILON, 0),
+    ] {
+        let raw = vec![
+            word("старое", 0.0, end),
+            word("да", 1.1, 1.2),
+            word("не", 1.3, 1.4),
+        ];
+        assert_eq!(
+            asm.covered_committed_prefix_len(&raw, 0, 32000, 1.0),
+            consumed
+        );
+        assert_eq!(asm.covered_committed_prefix_len(&raw, 0, 32000, 0.0), 0);
+    }
+}
