@@ -114,9 +114,10 @@ pub unsafe extern "C" fn gigastt_engine_new_with_pool_size(
 /// `gigastt_engine_new` and `gigastt_engine_new_with_pool_size` always build
 /// the encoder with one intra-op thread, so on a phone the dominant encoder
 /// runs on a single core. `encoder_intra_threads > 1` lets ONNX Runtime spread
-/// it over several cores. The count is clamped so that
-/// `pool_size * encoder_intra_threads` never exceeds the logical CPU count,
-/// and `0` is treated as `1`. `encoder_intra_threads = 1` builds sessions
+/// it over several cores. The count is capped by the logical CPU budget per
+/// pool slot, with a minimum of one thread per slot; `0` is treated as `1`.
+/// A pool larger than the CPU count still uses one thread per slot.
+/// `encoder_intra_threads = 1` builds sessions
 /// identical to `gigastt_engine_new_with_pool_size`.
 ///
 /// The best value depends on the SoC (big.LITTLE layout); measure it on the

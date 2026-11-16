@@ -139,10 +139,10 @@ impl Engine {
 
     /// Load with an explicit session-pool size and encoder intra-op thread
     /// count. The other constructors use one encoder thread, which on a phone
-    /// keeps inference on a single core. The count is clamped so that
-    /// `pool_size * encoder_intra_threads` never exceeds the logical CPU count
-    /// (`0` is treated as `1`); the best value depends on the SoC, so measure
-    /// it on the target device.
+    /// keeps inference on a single core. The count is capped by the logical CPU
+    /// budget per pool slot, with a minimum of one thread per slot; `0` is
+    /// treated as `1`. A pool larger than the CPU count still uses one thread
+    /// per slot. The best value depends on the SoC, so measure it on the device.
     #[uniffi::constructor]
     pub fn new_with_threads(
         model_dir: String,
