@@ -45,6 +45,7 @@ crate-type = ["rlib"]
 bench = false
 
 [features]
+unlace = ["file-decode", "dep:unlace"]
 default = ["diarization", "net", "async-pool", "file-decode", "quantize"]
 coreml = ["ort/coreml"]
 cuda = ["ort/cuda"]
@@ -66,6 +67,7 @@ ane = ["dep:tar", "dep:objc2", "dep:objc2-core-ml", "dep:objc2-foundation", "dep
 __internals = []
 
 [dependencies]
+unlace = { version = "=0.2.4", optional = true }
 # Hash every encoder byte before graph-cache lookup; portable CPU acceleration.
 sha2 = { version = "0.11", default-features = false }
 memchr = { version = "2", default-features = false }

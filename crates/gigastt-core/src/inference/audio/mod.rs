@@ -8,6 +8,8 @@ mod pcm;
 mod resample;
 mod stream;
 mod telephony;
+#[cfg(feature = "unlace")]
+mod unlace;
 #[cfg(feature = "file-decode")]
 mod vad_windows;
 #[cfg(feature = "file-decode")]

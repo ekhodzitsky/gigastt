@@ -27,6 +27,12 @@ use crate::error::GigasttError;
 /// WAVE-family ryf pull, or Opus via `opus-rs`.
 #[cfg(feature = "file-decode")]
 enum Source {
+    #[cfg(feature = "unlace")]
+    Unlace {
+        stream: Box<super::super::unlace::UnlaceSource>,
+        resampler: Box<ResampleTo16k>,
+        pending: Vec<f32>,
+    },
     /// Container decoded packet-by-packet, resampled to 16 kHz as it goes.
     Streaming {
         format: Box<dyn FormatReader>,
@@ -116,6 +122,14 @@ impl FileWindows {
     /// Open a file for windowed decode. WAVE containers go through ryf; everything
     /// else is probed by symphonia.
     pub(crate) fn open(path: &str, spec: WindowSpec, max_audio_secs: Option<f64>) -> Result<Self> {
+        #[cfg(feature = "unlace")]
+        if let Some(stream) = super::super::unlace::UnlaceSource::probe(
+            std::fs::File::open(path)?,
+            ChannelSelect::Mono,
+            max_audio_secs,
+        )? {
+            return Ok(Self::from_unlace(stream, spec, ChannelSelect::Mono));
+        }
         if let Some(wave) = try_open_path(path, ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::Mono));
         }
@@ -139,6 +153,14 @@ impl FileWindows {
         spec: WindowSpec,
         max_audio_secs: Option<f64>,
     ) -> Result<Self> {
+        #[cfg(feature = "unlace")]
+        if let Some(stream) = super::super::unlace::UnlaceSource::probe(
+            std::io::Cursor::new(data.clone()),
+            ChannelSelect::Mono,
+            max_audio_secs,
+        )? {
+            return Ok(Self::from_unlace(stream, spec, ChannelSelect::Mono));
+        }
         if let Some(wave) = try_open_bytes(data.clone(), ChannelSelect::Mono, max_audio_secs)? {
             return Ok(Self::from_wave(wave, spec, ChannelSelect::Mono));
         }
@@ -280,6 +302,14 @@ impl FileWindows {
         max_audio_secs: Option<f64>,
         channel: usize,
     ) -> Result<Self> {
+        #[cfg(feature = "unlace")]
+        if let Some(stream) = super::super::unlace::UnlaceSource::probe(
+            std::io::Cursor::new(data.clone()),
+            ChannelSelect::One(channel),
+            max_audio_secs,
+        )? {
+            return Ok(Self::from_unlace(stream, spec, ChannelSelect::One(channel)));
+        }
         if let Some(wave) =
             try_open_bytes(data.clone(), ChannelSelect::One(channel), max_audio_secs)?
         {
@@ -299,6 +329,28 @@ impl FileWindows {
     fn from_wave(wave: WaveSource, spec: WindowSpec, channel: ChannelSelect) -> Self {
         Self {
             src: Source::Wave(Box::new(wave)),
+            eof: false,
+            finished: false,
+            buf: Vec::new(),
+            buf_start_abs: 0,
+            decoded_16k_total: 0,
+            channel,
+            cursor: WindowCursor::new(spec),
+        }
+    }
+
+    #[cfg(feature = "unlace")]
+    pub(in crate::inference::audio) fn from_unlace(
+        stream: super::super::unlace::UnlaceSource,
+        spec: WindowSpec,
+        channel: ChannelSelect,
+    ) -> Self {
+        Self {
+            src: Source::Unlace {
+                stream: Box::new(stream),
+                resampler: Box::new(ResampleTo16k::new(SampleRate(OPUS_DECODE_RATE), None)),
+                pending: Vec::new(),
+            },
             eof: false,
             finished: false,
             buf: Vec::new(),
@@ -357,10 +409,59 @@ impl FileWindows {
     ) -> Result<()> {
         check_decode_abort(abort)?;
         match self.src {
+            #[cfg(feature = "unlace")]
+            Source::Unlace { .. } => self.fill_unlace(target, abort),
             Source::Streaming { .. } => self.fill_streaming(target, abort),
             Source::Opus { .. } => self.fill_opus(target, abort),
             Source::Wave(_) => self.fill_wave(target, abort),
         }
+    }
+
+    #[cfg(feature = "unlace")]
+    fn fill_unlace(
+        &mut self,
+        target: usize,
+        abort: Option<&(dyn Fn() -> bool + Sync)>,
+    ) -> Result<()> {
+        let Source::Unlace {
+            stream,
+            resampler,
+            pending,
+        } = &mut self.src
+        else {
+            return Ok(());
+        };
+        while !self.eof && self.decoded_16k_total < target {
+            check_decode_abort(abort)?;
+            match stream.next_block(abort)? {
+                Some(block) => pending.extend_from_slice(block),
+                None => {
+                    self.eof = true;
+                    break;
+                }
+            }
+            while pending.len() >= RESAMPLE_STAGING_FRAMES {
+                check_decode_abort(abort)?;
+                resampler
+                    .stage()
+                    .extend_from_slice(&pending[..RESAMPLE_STAGING_FRAMES]);
+                pending.drain(..RESAMPLE_STAGING_FRAMES);
+                resampler.flush_full()?;
+            }
+            let before = self.buf.len();
+            resampler.drain_ready_into(&mut self.buf);
+            self.decoded_16k_total += self.buf.len() - before;
+        }
+        check_decode_abort(abort)?;
+        if self.eof && !self.finished {
+            resampler.stage().extend_from_slice(pending);
+            pending.clear();
+            let before = self.buf.len();
+            resampler.finish_into(&mut self.buf)?;
+            self.decoded_16k_total += self.buf.len() - before;
+            self.finished = true;
+        }
+        Ok(())
     }
 
     /// [`FileWindows::fill_to`] for a container symphonia can decode itself.

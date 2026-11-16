@@ -1754,6 +1754,7 @@ dependencies = [
  "tokio",
  "toml 1.1.6+spec-1.1.0",
  "tracing",
+ "unlace",
  "wiremock",
 ]
 
@@ -5218,6 +5219,12 @@ dependencies = [
  "uniffi_meta",
  "weedle2",
 ]
+
+[[package]]
+name = "unlace"
+version = "0.2.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "350514bd4728a4a72a51f189fc20610347a9fee0b5a7205d83477b155ba97e34"
 
 [[package]]
 name = "untrusted"

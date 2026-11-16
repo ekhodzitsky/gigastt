@@ -355,6 +355,7 @@ fn test_decode_audio_bytes_opus_code3_multiframe_matches_ffmpeg_reference() {
     miri,
     ignore = "opus-rs decode plus resample does not finish under Miri"
 )]
+#[cfg(not(feature = "unlace"))]
 fn test_decode_audio_bytes_webm_opus_live_matches_ffmpeg_reference() {
     // A browser's MediaRecorder writes a *live* WebM: the Segment and every
     // Cluster carry an unknown size, because the length is not known while
@@ -389,6 +390,7 @@ fn test_decode_audio_bytes_webm_opus_live_matches_ffmpeg_reference() {
     miri,
     ignore = "opus-rs decode plus resample does not finish under Miri"
 )]
+#[cfg(not(feature = "unlace"))]
 fn test_decode_audio_file_webm_extension_matches_bytes() {
     // Uploads arrive as bytes and are sniffed by content; the CLI goes through
     // the path-based probe with a `.webm` hint. Both must reach the same
@@ -410,6 +412,7 @@ fn test_decode_audio_file_webm_extension_matches_bytes() {
     miri,
     ignore = "opus-rs decode plus resample does not finish under Miri"
 )]
+#[cfg(not(feature = "unlace"))]
 fn test_opus_container_rate_tag_does_not_change_decoded_pcm() {
     // libopus always emits 48 kHz PCM (RFC 7845). These four files are one
     // encode of tone_src.wav; the 16 kHz copies only rewrite OpusHead's input
