@@ -433,9 +433,22 @@ impl Engine {
         let context_boundary_s = window_start_s + state.context_samples as f64 / 16000.0;
         let stable = self.stable_prefix_enabled(state);
         let decoded = all_words.len();
+        let reconciled_prefix = if stable && self.variant.is_ctc() {
+            state.assembler.covered_committed_prefix_len(
+                &all_words,
+                state.window_start_samples,
+                state
+                    .window_start_samples
+                    .saturating_add(state.audio_buffer.len()),
+                context_boundary_s,
+            )
+        } else {
+            0
+        };
         #[cfg_attr(not(feature = "diarization"), allow(unused_mut))]
         let mut tail: Vec<WordInfo> = all_words
             .into_iter()
+            .skip(reconciled_prefix)
             .filter(|w| {
                 if stable {
                     context_boundary_s <= 0.0 || w.end > context_boundary_s + f64::EPSILON
@@ -449,7 +462,10 @@ impl Engine {
         // in this decode would be re-emitted as a duplicate of the last
         // committed word — drop the leading re-emission (same text, starting
         // within a frame-scale window after the boundary).
+        // A covered prefix already consumed the old occurrence. Applying the
+        // same-word seam again could remove a genuine repeat from the tail.
         if stable
+            && reconciled_prefix == 0
             && let Some(last) = state.assembler.committed_last()
             && let Some(first) = tail.first()
             && first.word == last.word
