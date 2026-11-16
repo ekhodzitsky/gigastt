@@ -94,9 +94,9 @@ MIT.
 
 ## Native runtime compatibility
 
-The official Microsoft AAR is pinned to **1.27.0** with its SHA-256 in
-[`onnxruntime.json`](onnxruntime.json). Its C header provides API 27, matching
-`ort` 2.0.0-rc.13 default features. The previous 1.24.2 library could not satisfy
+The official Microsoft AAR is pinned to **1.31.0** with its SHA-256 in
+[`onnxruntime.json`](onnxruntime.json). Its C header provides API 31, matching
+`ort` 2.0.0-rc.15 default features. The previous 1.27.0 library could not satisfy
 that API request. The archive contains ELF libraries for all three packaged ABIs:
 `arm64-v8a`, `armeabi-v7a`, and `x86_64`.
 
@@ -106,9 +106,13 @@ and checks each ABI library. PR CI checks dependency-versus-pin drift without
 downloading the AAR. Tagged builds use the validator and pin from the invoking
 workflow revision, even when the selected source tag predates those files.
 
-Archive/header checks and x86_64 symbol inspection establish the supplied API.
-The nonpublishing CI run above also passed the runtime archive/API checks, native builds for
+Archive/header and ABI-entry checks establish the supplied API version and
+packaged libraries.
+The historical nonpublishing CI run above, using the earlier runtime pin, passed
+the runtime archive/API checks, native builds for
 all three ABIs, Kotlin generation, and Gradle assembly on source commit
 `673d1e2`. It did not execute the library on an Android device, publish to Maven,
-or attach an AAR to a release; those remain unverified.
+or attach an AAR to a release; those remain unverified. The updated 1.31.0 pin
+has archive, header and ABI checks only; Android native builds and device
+execution have not been repeated for this pin.
 Official installation guidance: [ONNX Runtime for Android](https://onnxruntime.ai/docs/install/#install-on-android).
