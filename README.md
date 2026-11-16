@@ -104,6 +104,10 @@ formatting policy and upgrades; [Languages](docs/languages.md) reports measured
 multilingual quality. Choose using recognition quality, speed and memory on your
 workload, as well as punctuation.
 
+An optional [FP32 E2E RNNT pack for CPU](docs/fp32-cpu.md) uses a separate model
+directory. It can recover some omitted phrases, but has known omissions of its
+own and needs more resources. Default downloads remain INT8.
+
 ## Performance
 
 The current main-branch RNN-T ASR bundle is about **310 MiB on disk**. It uses

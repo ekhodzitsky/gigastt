@@ -137,6 +137,30 @@ impl Engine {
         Ok(Arc::new(Self { inner }))
     }
 
+    /// Load with an explicit session-pool size and encoder intra-op thread
+    /// count. The other constructors use one encoder thread, which on a phone
+    /// keeps inference on a single core. The count is capped by the logical CPU
+    /// budget per pool slot, with a minimum of one thread per slot; `0` is
+    /// treated as `1`. A pool larger than the CPU count still uses one thread
+    /// per slot. The best value depends on the SoC, so measure it on the device.
+    #[uniffi::constructor]
+    pub fn new_with_threads(
+        model_dir: String,
+        pool_size: u32,
+        encoder_intra_threads: u32,
+    ) -> Result<Arc<Self>, GigasttFfiError> {
+        let pool = pool_size as usize;
+        let inner = CoreEngine::load_with_pools_threads(
+            &model_dir,
+            pool,
+            pool,
+            0,
+            encoder_intra_threads as usize,
+        )
+        .map_err(|e| GigasttFfiError::ModelNotFound { msg: e.to_string() })?;
+        Ok(Arc::new(Self { inner }))
+    }
+
     /// Transcribe an audio file (WAV / MP3 / M4A / OGG / FLAC) to text + word
     /// timings. Blocks until inference completes.
     pub fn transcribe_file(&self, path: String) -> Result<Transcript, GigasttFfiError> {
@@ -248,6 +272,22 @@ impl Stream {
 mod tests {
     use super::*;
     use gigastt_core::error::GigasttError as CoreError;
+
+    #[test]
+    fn test_new_with_threads_missing_model_is_model_not_found() {
+        let tmp =
+            std::env::temp_dir().join(format!("gigastt_uniffi_threads_{}", std::process::id()));
+        std::fs::create_dir_all(&tmp).unwrap();
+        let dir = tmp.to_str().unwrap().to_string();
+        for threads in [0u32, 1, 4] {
+            match Engine::new_with_threads(dir.clone(), 1, threads) {
+                Err(GigasttFfiError::ModelNotFound { .. }) => {}
+                Err(other) => panic!("threads = {threads}: expected ModelNotFound, got {other}"),
+                Ok(_) => panic!("threads = {threads}: expected an error for an empty directory"),
+            }
+        }
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
 
     #[test]
     fn test_from_model_load_maps_to_model_not_found() {

@@ -69,7 +69,7 @@ __internals = []
 # Hash every encoder byte before graph-cache lookup; portable CPU acceleration.
 sha2 = { version = "0.11", default-features = false }
 memchr = { version = "2", default-features = false }
-ort = "=2.0.0-rc.13"
+ort = "=2.0.0-rc.15"
 candle-core = { version = "0.11", optional = true }
 candle-nn = { version = "0.11", optional = true }
 safetensors = { version = "0.8", optional = true }

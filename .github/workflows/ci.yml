@@ -274,6 +274,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
+      - name: Test CoreML compiler-runtime discovery
+        run: python3 scripts/test_coreml_build.py
       - name: Validate Docker dependency-cache targets
         run: python3 scripts/test_docker_cache.py
       - name: Install protoc

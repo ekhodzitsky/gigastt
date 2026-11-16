@@ -108,6 +108,68 @@ pub unsafe extern "C" fn gigastt_engine_new_with_pool_size(
     .unwrap_or(ptr::null_mut())
 }
 
+/// Load the ONNX models with a custom session pool size and an explicit
+/// encoder intra-op thread count.
+///
+/// `gigastt_engine_new` and `gigastt_engine_new_with_pool_size` always build
+/// the encoder with one intra-op thread, so on a phone the dominant encoder
+/// runs on a single core. `encoder_intra_threads > 1` lets ONNX Runtime spread
+/// it over several cores. The count is capped by the logical CPU budget per
+/// pool slot, with a minimum of one thread per slot; `0` is treated as `1`.
+/// A pool larger than the CPU count still uses one thread per slot.
+/// `encoder_intra_threads = 1` builds sessions
+/// identical to `gigastt_engine_new_with_pool_size`.
+///
+/// The best value depends on the SoC (big.LITTLE layout); measure it on the
+/// target device, for example by trying 1, 2, 4, 6 and 8.
+///
+/// # Safety
+/// `model_dir` must be a valid, null-terminated UTF-8 string.
+/// Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn gigastt_engine_new_with_threads(
+    model_dir: *const c_char,
+    pool_size: usize,
+    encoder_intra_threads: usize,
+) -> *mut GigasttEngine {
+    if model_dir.is_null() {
+        tracing::error!("gigastt_engine_new_with_threads: model_dir is null");
+        eprintln!("gigastt_engine_new_with_threads: model_dir is null");
+        return ptr::null_mut();
+    }
+
+    catch_ffi_panic("gigastt_engine_new_with_threads", || {
+        let dir_str = match unsafe { CStr::from_ptr(model_dir) }.to_str() {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::error!(
+                    "gigastt_engine_new_with_threads: model_dir is not valid UTF-8: {e}"
+                );
+                eprintln!("gigastt_engine_new_with_threads: model_dir is not valid UTF-8: {e}");
+                return ptr::null_mut();
+            }
+        };
+
+        // Same pool semantics as `gigastt_engine_new_with_pool_size`
+        // (min_size = pool_size, no batch pool), plus the thread count.
+        match Engine::load_with_pools_threads(
+            dir_str,
+            pool_size,
+            pool_size,
+            0,
+            encoder_intra_threads,
+        ) {
+            Ok(engine) => insert_engine(engine),
+            Err(e) => {
+                tracing::error!("gigastt_engine_new_with_threads: failed to load engine: {e}");
+                eprintln!("gigastt_engine_new_with_threads: failed to load engine: {e}");
+                ptr::null_mut()
+            }
+        }
+    })
+    .unwrap_or(ptr::null_mut())
+}
+
 /// Transcribe an audio file and return the recognized text as a newly allocated C string.
 ///
 /// # Safety

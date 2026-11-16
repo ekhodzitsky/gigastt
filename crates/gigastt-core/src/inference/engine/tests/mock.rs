@@ -8,21 +8,35 @@ use crate::runtime::tensor::{Shape, Tensor, TensorData};
 const ENC_DIM: usize = 768;
 
 fn tiny_mock_engine() -> (Engine, tempfile::TempDir) {
+    tiny_mock_engine_variant(crate::model::ModelVariant::Rnnt)
+}
+
+fn tiny_mock_engine_variant(variant: crate::model::ModelVariant) -> (Engine, tempfile::TempDir) {
+    let prefix = if variant == crate::model::ModelVariant::E2eRnnt {
+        "v3_e2e_rnnt"
+    } else {
+        "v3_rnnt"
+    };
+    let vocab_file = if variant == crate::model::ModelVariant::E2eRnnt {
+        "v3_e2e_rnnt_vocab.txt"
+    } else {
+        "v3_vocab.txt"
+    };
     let tmp = tempfile::tempdir().expect("tempdir");
     let dir = tmp.path();
 
     // Empty model files are enough for variant detection; the mock
     // runtime intercepts all session loading before the filesystem is
-    // read for ONNX data. Product path is INT8-only (stem keys the mock).
-    std::fs::write(dir.join("v3_rnnt_encoder_int8.onnx"), b"").unwrap();
-    std::fs::write(dir.join("v3_rnnt_decoder.onnx"), b"").unwrap();
-    std::fs::write(dir.join("v3_rnnt_joint.onnx"), b"").unwrap();
+    // read for ONNX data. Builtin packs use INT8 (the stem keys the mock).
+    std::fs::write(dir.join(format!("{prefix}_encoder_int8.onnx")), b"").unwrap();
+    std::fs::write(dir.join(format!("{prefix}_decoder.onnx")), b"").unwrap();
+    std::fs::write(dir.join(format!("{prefix}_joint.onnx")), b"").unwrap();
     // vocab: index 0 = "▁hi", index 1 = "<blk>" (blank wins on ties).
-    std::fs::write(dir.join("v3_vocab.txt"), "\u{2581}hi\n<blk>\n").unwrap();
+    std::fs::write(dir.join(vocab_file), "\u{2581}hi\n<blk>\n").unwrap();
 
     let mut sessions: HashMap<String, Arc<MockSession>> = HashMap::new();
     sessions.insert(
-        "v3_rnnt_encoder_int8".into(),
+        format!("{prefix}_encoder_int8"),
         Arc::new(MockSession::new(
             vec![Shape::new(vec![1, 64, 1]), Shape::new(vec![1])],
             vec![
@@ -36,7 +50,7 @@ fn tiny_mock_engine() -> (Engine, tempfile::TempDir) {
         )),
     );
     sessions.insert(
-        "v3_rnnt_decoder".into(),
+        format!("{prefix}_decoder"),
         Arc::new(MockSession::new(
             vec![
                 Shape::new(vec![1, 1]),
@@ -63,7 +77,7 @@ fn tiny_mock_engine() -> (Engine, tempfile::TempDir) {
         )),
     );
     sessions.insert(
-        "v3_rnnt_joint".into(),
+        format!("{prefix}_joint"),
         Arc::new(MockSession::new(
             vec![
                 Shape::new(vec![1, ENC_DIM, 1]),
@@ -1191,4 +1205,303 @@ fn test_blank_only_window_finishes_previously_committed_utterance() {
     assert!(segments[0].is_final);
     assert_eq!(segments[0].text, "earlier");
     assert_eq!(segments[0].endpoint_reason, Some(EndpointReason::Blank));
+}
+
+// Mock CPU sessions verify precision, frontend and single-pass decoding.
+mod precision_greedy {
+    use super::*;
+    use crate::error::GigasttError;
+
+    #[test]
+    fn test_precision_greedy_loaded_e2e_ort_int8_ignores_candle_build_feature() {
+        let (engine, _tmp) = tiny_mock_engine_variant(crate::model::ModelVariant::E2eRnnt);
+        assert_eq!(engine.execution_provider, "cpu");
+        assert!(
+            engine.int8,
+            "actual ORT INT8 precision must not depend on compiled Candle support"
+        );
+        assert_eq!(
+            engine.features.compute(&frontend_signal()),
+            crate::inference::FeatureExtractor::new().compute(&frontend_signal())
+        );
+    }
+
+    struct GapJoiner(Arc<std::sync::atomic::AtomicUsize>);
+
+    impl crate::runtime::RuntimeSession for GapJoiner {
+        fn run(&self, _inputs: &[Tensor]) -> Result<Vec<Tensor>, crate::runtime::RuntimeError> {
+            let call = self.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let logits = if call == 0 || call == 41 {
+                vec![10.0, 0.0]
+            } else {
+                vec![0.0, 10.0]
+            };
+            Ok(vec![
+                Tensor::new(Shape::new(vec![1, 1, 2]), TensorData::F32(logits)).unwrap(),
+            ])
+        }
+    }
+
+    #[test]
+    fn test_precision_greedy_long_gap_never_starts_secondary_search() {
+        for int8 in [false, true] {
+            let (engine, _tmp) = precision_engine(int8);
+            let mut guard = engine.pool.checkout_blocking().unwrap();
+            guard.encoder = Box::new(MockSession::unconstrained(vec![
+                Tensor::new(
+                    Shape::new(vec![1, ENC_DIM, 60]),
+                    TensorData::F32(vec![0.0; ENC_DIM * 60]),
+                )
+                .unwrap(),
+                Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![60])).unwrap(),
+            ]));
+            let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+            guard.joiner = Some(Box::new(GapJoiner(Arc::clone(&calls))));
+            let words = engine
+                .decode_words(&vec![0.25; 38400], &mut guard, None, Default::default())
+                .unwrap();
+            assert_eq!(words.len(), 2);
+            assert_eq!(
+                calls.load(std::sync::atomic::Ordering::SeqCst),
+                62,
+                "60 blanks plus two labels, int8={int8}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_precision_greedy_encoder_failure_and_cancellation_propagate() {
+        for int8 in [true, false] {
+            let (engine, _tmp) = precision_engine(int8);
+            let mut guard = engine.pool.checkout_blocking().unwrap();
+            capture_dynamic_encoder(&mut guard);
+            let calls = observe_encoder(&mut guard, Some(1));
+            let error = engine
+                .decode_words(&frontend_signal(), &mut guard, None, Default::default())
+                .unwrap_err();
+            assert!(matches!(error, GigasttError::Inference { .. }));
+            assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+
+            capture_dynamic_encoder(&mut guard);
+            let calls = observe_encoder(&mut guard, None);
+            let abort = || calls.load(std::sync::atomic::Ordering::SeqCst) >= 1;
+            let error = engine
+                .decode_words(
+                    &frontend_signal(),
+                    &mut guard,
+                    None,
+                    crate::inference::engine::DecodeControls {
+                        abort: Some(&abort),
+                        ..Default::default()
+                    },
+                )
+                .unwrap_err();
+            assert!(matches!(error, GigasttError::Cancelled));
+            assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+        }
+    }
+
+    fn precision_engine(int8: bool) -> (Engine, tempfile::TempDir) {
+        let (engine, tmp) = tiny_mock_engine();
+        let engine = Engine::from_loaded_parts(
+            engine.pool,
+            engine.batch_pool,
+            engine.tokenizer,
+            crate::model::ModelVariant::E2eRnnt,
+            int8,
+            false,
+            "cpu",
+            #[cfg(feature = "diarization")]
+            None,
+        );
+        (engine, tmp)
+    }
+
+    #[test]
+    fn test_precision_greedy_int8_uses_one_legacy_encoder_pass() {
+        let (engine, _tmp) = precision_engine(true);
+        let samples = frontend_signal();
+        let expected = crate::inference::FeatureExtractor::new().compute(&samples);
+        assert_eq!(engine.features.compute(&samples), expected);
+        let mut guard = engine.pool.checkout_blocking().unwrap();
+        let captured = capture_dynamic_encoder(&mut guard);
+        engine
+            .decode_words(&samples, &mut guard, None, Default::default())
+            .unwrap();
+        let runs = captured.lock().unwrap();
+        assert_eq!(runs.len(), 1);
+        assert_eq!(
+            runs[0][0],
+            expected.0.into_iter().map(f64::from).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn test_precision_greedy_fp32_uses_one_author_encoder_pass() {
+        let (engine, _tmp) = precision_engine(false);
+        let samples = frontend_signal();
+        let author =
+            crate::inference::FeatureExtractor::for_variant(engine.variant).compute(&samples);
+        assert_ne!(
+            author.0,
+            crate::inference::FeatureExtractor::new()
+                .compute(&samples)
+                .0
+        );
+        assert_eq!(engine.features.compute(&samples), author);
+        let mut guard = engine.pool.checkout_blocking().unwrap();
+        let captured = capture_dynamic_encoder(&mut guard);
+        engine
+            .decode_words(&samples, &mut guard, None, Default::default())
+            .unwrap();
+        let runs = captured.lock().unwrap();
+        assert_eq!(runs.len(), 1);
+        assert_eq!(
+            runs[0][0],
+            author.0.into_iter().map(f64::from).collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
+    fn test_precision_greedy_unchanged_result_has_no_duplicate_partial() {
+        let (engine, _tmp) = tiny_mock_engine();
+        let mut guard = engine.pool.checkout_blocking().unwrap();
+        guard.encoder = Box::new(MockSession::unconstrained(vec![
+            Tensor::new(
+                Shape::new(vec![1, ENC_DIM, 1]),
+                TensorData::F32(vec![0.0; ENC_DIM]),
+            )
+            .unwrap(),
+            Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![1])).unwrap(),
+        ]));
+        let calls = observe_encoder(&mut guard, None);
+        let partials = std::cell::Cell::new(0);
+        let publish = |_: crate::inference::engine::WordUpdate| partials.set(partials.get() + 1);
+        let ctl = crate::inference::engine::DecodeControls {
+            on_partial: Some(&publish),
+            ..Default::default()
+        };
+        engine
+            .decode_words(&vec![0.0; 40 * 16000], &mut guard, None, ctl)
+            .unwrap();
+        let windows = calls.load(std::sync::atomic::Ordering::SeqCst);
+        assert!(windows > 1);
+        assert_eq!(
+            partials.get(),
+            windows,
+            "an unchanged final result must not republish the last window"
+        );
+    }
+
+    struct ObservedEncoder {
+        inner: Box<dyn crate::runtime::RuntimeSession>,
+        calls: Arc<std::sync::atomic::AtomicUsize>,
+        fail_call: Option<usize>,
+    }
+
+    impl crate::runtime::RuntimeSession for ObservedEncoder {
+        fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, crate::runtime::RuntimeError> {
+            let call = self.calls.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
+            if self.fail_call == Some(call) {
+                return Err(crate::runtime::RuntimeError::InferenceFailed(
+                    "injected encoder failure".into(),
+                ));
+            }
+            self.inner.run(inputs)
+        }
+    }
+
+    fn observe_encoder(
+        triplet: &mut crate::inference::pool::SessionTriplet,
+        fail_call: Option<usize>,
+    ) -> Arc<std::sync::atomic::AtomicUsize> {
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let inner = std::mem::replace(
+            &mut triplet.encoder,
+            Box::new(MockSession::unconstrained(vec![])),
+        );
+        triplet.encoder = Box::new(ObservedEncoder {
+            inner,
+            calls: calls.clone(),
+            fail_call,
+        });
+        calls
+    }
+
+    type CapturedRuns = Arc<std::sync::Mutex<Vec<Vec<Vec<f64>>>>>;
+
+    struct CapturingSession {
+        inner: Box<dyn crate::runtime::RuntimeSession>,
+        inputs: CapturedRuns,
+    }
+
+    impl crate::runtime::RuntimeSession for CapturingSession {
+        fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, crate::runtime::RuntimeError> {
+            use crate::runtime::tensor::TensorDataView;
+            let values = inputs
+                .iter()
+                .map(|t| match t.view().data() {
+                    TensorDataView::F32(v) => v.iter().map(|&x| f64::from(x)).collect(),
+                    TensorDataView::I64(v) => v.iter().map(|&x| x as f64).collect(),
+                    _ => panic!("unexpected mock input type"),
+                })
+                .collect();
+            self.inputs.lock().unwrap().push(values);
+            self.inner.run(inputs)
+        }
+    }
+
+    fn capture_session(session: &mut Box<dyn crate::runtime::RuntimeSession>) -> CapturedRuns {
+        let inputs = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let inner = std::mem::replace(session, Box::new(MockSession::unconstrained(vec![])));
+        *session = Box::new(CapturingSession {
+            inner,
+            inputs: inputs.clone(),
+        });
+        inputs
+    }
+
+    fn frontend_capture_engine() -> (Engine, tempfile::TempDir) {
+        let (mut engine, tmp) = tiny_mock_engine();
+        engine.variant = crate::model::ModelVariant::E2eRnnt;
+        engine.features = crate::inference::FeatureExtractor::for_variant(engine.variant);
+        (engine, tmp)
+    }
+
+    fn capture_dynamic_encoder(
+        triplet: &mut crate::inference::pool::SessionTriplet,
+    ) -> CapturedRuns {
+        triplet.encoder = Box::new(MockSession::unconstrained(vec![
+            Tensor::new(
+                Shape::new(vec![1, ENC_DIM, 1]),
+                TensorData::F32(vec![0.0; ENC_DIM]),
+            )
+            .unwrap(),
+            Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![1])).unwrap(),
+        ]));
+        capture_session(&mut triplet.encoder)
+    }
+
+    fn frontend_signal() -> Vec<f32> {
+        (0..3200)
+            .map(|i| ((i as f32 * 0.17).sin() + (i as f32 * 0.031).cos()) * 0.17)
+            .collect()
+    }
+
+    #[test]
+    fn test_precision_greedy_streaming_keeps_single_legacy_pass() {
+        let (engine, _tmp) = frontend_capture_engine();
+        let mut guard = engine.pool.checkout_blocking().unwrap();
+        let calls = capture_dynamic_encoder(&mut guard);
+        let mut state = engine.create_state(false);
+        state.audio_buffer = frontend_signal();
+        let (legacy, _) = crate::inference::FeatureExtractor::new().compute(&state.audio_buffer);
+        engine.decode_window(&mut state, &mut guard).unwrap();
+        let inputs = calls.lock().unwrap();
+        assert_eq!(inputs.len(), 1);
+        assert_eq!(
+            inputs[0][0],
+            legacy.into_iter().map(f64::from).collect::<Vec<_>>()
+        );
+    }
 }

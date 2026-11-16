@@ -272,8 +272,8 @@ bundle into `~/.gigastt/models/`: default RNN-T heads from the pinned **GitHub
 Release**, CTC heads (`ml_ctc` / `ml_ctc_large`) from **HuggingFace**. Each
 file streams to a `.partial` path, is SHA-256-verified, then atomically
 renamed. Concurrent processes coordinate via an advisory `flock`; downloads use
-connect/read timeouts and a bounded redirect policy. Runtime never downloads or
-loads FP32.
+connect/read timeouts and a bounded redirect policy. These downloads remain
+INT8. An explicit [FP32 E2E pack](fp32-cpu.md) is installed separately.
 
 **Symptoms & recovery**
 - *SHA-256 mismatch* — a corrupt or tampered mirror. The `.partial` is deleted
@@ -287,10 +287,10 @@ loads FP32.
 - *Air-gapped / repeatable deploys* — bake the model into the image
   (`GIGASTT_BAKE_MODEL=1`, see `docs/deployment.md`) or pre-populate
   `~/.gigastt/models/` from a trusted copy.
-- *Lean INT8-only tree* — four files for default `rnnt` (~220 MB class):
+- *Default INT8 tree* — four files for default `rnnt` (~310 MiB):
   `v3_rnnt_encoder_int8.onnx`, `v3_rnnt_decoder.onnx`, `v3_rnnt_joint.onnx`,
-  `v3_vocab.txt`. Use `gigastt download` or copy those files; serve **requires**
-  this INT8 set (FP32-only is rejected). See
+  `v3_vocab.txt`. Use `gigastt download` or copy those files. Missing INT8 files
+  never cause an FP32 fallback; FP32 E2E requires an explicit manifest. See
   [Lean INT8-only install](deployment.md#lean-int8-only-install).
 
 To force a clean re-download, remove `~/.gigastt/models/` and re-run.
@@ -306,7 +306,8 @@ ConvInteger bundle and are not a current-model sizing guarantee.
 See [model measurements and trade-offs](rnnt-quantization.md).
 
 **Reduce footprint**
-- Runtime is **INT8 only** (`gigastt download` / first `serve`).
+- Use the default **INT8** bundle (`gigastt download` / first `serve`); an
+  explicitly installed FP32 E2E pack needs a separate memory budget.
 - Lower `--pool-size` (e.g. `1`–`2` on a 4 GB box). See also
   [Pool size tradeoffs](#pool-size-tradeoffs-ram-vs-concurrency-vs-rtf).
 - `--pool-min-size 1` lets the server **boot on a degraded pool** if some

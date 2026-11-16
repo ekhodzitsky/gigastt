@@ -1,4 +1,58 @@
 use super::*;
+
+#[test]
+fn test_public_manifest_original_struct_literal_remains_compatible() {
+    let manifest = ModelManifest {
+        architecture: ModelVariant::E2eRnnt,
+        files: ManifestFiles {
+            encoder: "encoder.onnx".into(),
+            encoder_int8: Some("encoder_int8.onnx".into()),
+            decoder: Some("decoder.onnx".into()),
+            joint: Some("joint.onnx".into()),
+            vocab: "vocab.txt".into(),
+        },
+    };
+    assert_eq!(manifest.architecture, ModelVariant::E2eRnnt);
+}
+
+#[test]
+fn test_runtime_precision_is_separate_from_public_manifest_file_metadata() {
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("encoder.onnx"), b"fp32").unwrap();
+    std::fs::write(dir.path().join("encoder_int8.onnx"), b"int8").unwrap();
+    let text = r#"
+architecture = "e2e_rnnt"
+precision = "fp32"
+[files]
+encoder = "encoder.onnx"
+encoder_int8 = "encoder_int8.onnx"
+decoder = "decoder.onnx"
+joint = "joint.onnx"
+vocab = "vocab.txt"
+"#;
+    let configured = ConfiguredManifest::parse(text).unwrap();
+    let public = ModelManifest::parse(text).unwrap();
+    assert_eq!(configured.manifest, public);
+    assert_eq!(
+        public.files.encoder_int8.as_deref(),
+        Some("encoder_int8.onnx")
+    );
+    let selected = configured.resolve_encoder(dir.path()).unwrap();
+    assert_eq!(selected.path, dir.path().join("encoder.onnx"));
+    assert!(!selected.using_int8);
+    assert_eq!(configured.preferred_encoder_path(dir.path()), selected.path);
+    // Original public path helpers remain hints with their existing semantics.
+    assert_eq!(
+        public.preferred_encoder_path(dir.path()),
+        dir.path().join("encoder_int8.onnx")
+    );
+    let default = ConfiguredManifest::parse(&text.replace("precision = \"fp32\"", "")).unwrap();
+    let selected = default.resolve_encoder(dir.path()).unwrap();
+    assert!(selected.using_int8);
+    assert_eq!(selected.path, dir.path().join("encoder_int8.onnx"));
+    std::fs::remove_file(dir.path().join("encoder.onnx")).unwrap();
+    assert!(configured.resolve_encoder(dir.path()).is_err());
+}
 use std::fs;
 
 #[test]
@@ -190,4 +244,29 @@ fn test_load_invalid_manifest_returns_error() {
         format!("{err:#}").contains("manifest"),
         "expected manifest context, got {err:#}"
     );
+}
+
+#[test]
+fn test_precision_rejects_typos_and_unsupported_fp32_heads() {
+    let template = r#"
+architecture = "e2e_rnnt"
+precision = "fp32"
+[files]
+encoder = "custom.onnx"
+decoder = "decoder.onnx"
+joint = "joint.onnx"
+vocab = "vocab.txt"
+"#;
+    assert!(ModelManifest::parse(template).is_ok());
+    for precision in ["fp16", "FP32", "", "fp322"] {
+        assert!(
+            ModelManifest::parse(&template.replace("\"fp32\"", &format!("{precision:?}"))).is_err()
+        );
+    }
+    for architecture in ["rnnt", "ml_ctc", "ml_ctc_large"] {
+        assert!(
+            ModelManifest::parse(&template.replace("\"e2e_rnnt\"", &format!("{architecture:?}")))
+                .is_err()
+        );
+    }
 }

@@ -65,6 +65,23 @@ class AndroidRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'one ort-sys'):
             runtime.check(self.metadata, self.pin)
 
+    def test_repository_pin_supports_current_api_31(self):
+        root = Path(__file__).resolve().parent.parent
+        pin = json.loads((root / 'packaging/android/onnxruntime.json').read_text())
+        self.metadata['resolve']['nodes'][0]['features'].append('api-31')
+        runtime.check(self.metadata, pin)
+
+    def test_api_31_requires_matching_header_and_rejects_api_27(self):
+        self.metadata['resolve']['nodes'][0]['features'].append('api-31')
+        with self.assertRaisesRegex(ValueError, 'API 31'):
+            runtime.check(self.metadata, self.pin)
+        self.pin['version'] = '1.31.0'
+        self.make_archive(api=31)
+        runtime.check(self.metadata, self.pin, self.archive)
+        self.make_archive(api=27)
+        with self.assertRaisesRegex(ValueError, 'header'):
+            runtime.check(self.metadata, self.pin, self.archive)
+
     def test_workflow_checks_archive_before_build_with_trusted_tools(self):
         root = Path(__file__).resolve().parent.parent
         workflow = (root / '.github/workflows/android-aar.yml').read_text()

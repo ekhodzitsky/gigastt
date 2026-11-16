@@ -46,6 +46,30 @@ struct GigasttEngine *gigastt_engine_new(const char *model_dir);
 struct GigasttEngine *gigastt_engine_new_with_pool_size(const char *model_dir, uintptr_t pool_size);
 
 /**
+ * Load the ONNX models with a custom session pool size and an explicit
+ * encoder intra-op thread count.
+ *
+ * `gigastt_engine_new` and `gigastt_engine_new_with_pool_size` always build
+ * the encoder with one intra-op thread, so on a phone the dominant encoder
+ * runs on a single core. `encoder_intra_threads > 1` lets ONNX Runtime spread
+ * it over several cores. The count is capped by the logical CPU budget per
+ * pool slot, with a minimum of one thread per slot; `0` is treated as `1`.
+ * A pool larger than the CPU count still uses one thread per slot.
+ * `encoder_intra_threads = 1` builds sessions
+ * identical to `gigastt_engine_new_with_pool_size`.
+ *
+ * The best value depends on the SoC (big.LITTLE layout); measure it on the
+ * target device, for example by trying 1, 2, 4, 6 and 8.
+ *
+ * # Safety
+ * `model_dir` must be a valid, null-terminated UTF-8 string.
+ * Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
+ */
+struct GigasttEngine *gigastt_engine_new_with_threads(const char *model_dir,
+                                                      uintptr_t pool_size,
+                                                      uintptr_t encoder_intra_threads);
+
+/**
  * Transcribe an audio file and return the recognized text as a newly allocated C string.
  *
  * # Safety

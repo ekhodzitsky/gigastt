@@ -35,6 +35,7 @@ This document describes the architecture, build process, and integration steps n
 3. **Rust FFI layer** — `crates/gigastt-ffi/src/lib.rs` exposes:
    - `gigastt_engine_new(model_dir)` → opaque engine handle
    - `gigastt_engine_new_with_pool_size(model_dir, pool_size)` → opaque engine handle
+   - `gigastt_engine_new_with_threads(model_dir, pool_size, encoder_intra_threads)` → opaque engine handle with more encoder threads (see *Encoder threads* below)
    - `gigastt_transcribe_file(engine, wav_path)` → allocated C string
    - `gigastt_stream_new(engine)` → opaque stream handle
    - `gigastt_stream_process_chunk(engine, stream, pcm16_bytes, len, sample_rate)` → JSON segments
@@ -251,6 +252,17 @@ Tips to reduce binary size:
 4. **Model directory layout is fixed** — `Engine::load` expects exactly the filenames from the download and auto-detects the head from them: the default `rnnt` head (`v3_rnnt_encoder_int8.onnx`, `v3_rnnt_decoder.onnx`, `v3_rnnt_joint.onnx`, `v3_vocab.txt`), or the `e2e_rnnt` head (`v3_e2e_rnnt_*`). Runtime is INT8 only — an FP32 `v3_rnnt_encoder.onnx` is not a fallback. Do not rename files.
 
 5. **Memory footprint** — use `pool_size = 1` on mobile and measure peak memory on the target device. The current 305 MiB encoder has higher memory cost than the old ConvInteger bundle; historical M1 figures are not Android memory budgets. See [model evidence](rnnt-quantization.md).
+6. **Encoder threads** — `gigastt_engine_new` and `gigastt_engine_new_with_pool_size` run the encoder on one intra-op thread. Use `gigastt_engine_new_with_threads(model_dir, 1, n)` (UniFFI: `Engine.new_with_threads`) to give it more cores. The best `n` depends on the big.LITTLE layout, so measure it on the device (try 1, 2, 4, 6, 8) and keep the smallest value within a few percent of the fastest.
+
+   Measured with this change applied to v2.15.0, the e2e INT8 head, `pool_size = 1`, a 3.0 s Russian clip, median of 3 runs after one warm-up run (single session per device):
+
+   | Device (SoC, cores) | 1 thread | 2 | 4 | 6 | 8 | Best |
+   |---|---|---|---|---|---|---|
+   | Redmi Note 8T (Snapdragon 665, 4+4) | 2.77 s | 1.60 s | 1.06 s | 1.06 s | 1.10 s | 4 (2.6x) |
+   | Redmi Note 10S (Helio G95, 2+6) | 1.18 s | 1.12 s | 0.70 s | 0.69 s | 0.61 s | 8 (1.9x) |
+   | Pixel 9a (Tensor G4, 1+3+4) | 0.52 s | 0.56 s | 0.47 s | 0.40 s | 0.49 s | 6 (1.3x) |
+
+   Resident memory did not change measurably with the thread count (540–800 MiB with `pool_size = 1`).
 
 ---
 
