@@ -1109,6 +1109,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
+      - name: Verify revision build isolation
+        run: python3 scripts/test-revision-builds.py
       - name: Install protoc
         timeout-minutes: 8
         run: bash scripts/install-ci-prerequisites.sh
@@ -1117,22 +1119,13 @@ jobs:
           shared-key: ci
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: Measure the immutable base revision
+      - name: Compare independently built revisions
         env:
           BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
-          BASE_WORKTREE: ${{ runner.temp }}/benchmark-base
         run: |
           set -euo pipefail
-          test -n "$BASE_SHA"
-          git cat-file -e "$BASE_SHA^{commit}"
           rm -rf target/criterion
-          git worktree add --detach "$BASE_WORKTREE" "$BASE_SHA"
-          cargo bench --manifest-path "$BASE_WORKTREE/Cargo.toml" --target-dir "$GITHUB_WORKSPACE/target" -p gigastt-core --locked --features __internals -- --save-baseline main
-
-      - name: Run benchmarks
-        run: |
-          set -euo pipefail
-          cargo bench -p gigastt-core --locked --features __internals -- --baseline main 2>&1 | tee benchmark.log
+          python3 scripts/compare-benchmark-revisions.py --base "$BASE_SHA" 2>&1 | tee benchmark.log
 
       - name: Require complete measurements and reject regressions
         run: python3 scripts/performance-gates.py criterion target/criterion

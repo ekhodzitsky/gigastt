@@ -132,6 +132,7 @@ const DEFAULT_POOL_SIZE: usize = 2;
 /// For streaming recognition, use [`create_state`](Engine::create_state) +
 /// [`process_chunk`](Engine::process_chunk) + [`flush_state`](Engine::flush_state).
 pub struct Engine {
+    speech_admission: Option<Box<Engine>>,
     /// Pool of session triplets for interactive inference (WebSocket + SSE
     /// streaming). REST file transcription uses [`Engine::batch_pool`] when it
     /// is set, so a long batch job can't starve real-time streaming.
@@ -220,6 +221,7 @@ mod infer;
 #[cfg(test)]
 mod live_probe;
 mod load;
+mod speech_admission;
 mod stream;
 #[cfg(test)]
 mod tests;

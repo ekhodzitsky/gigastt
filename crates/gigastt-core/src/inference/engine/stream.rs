@@ -1,5 +1,11 @@
 //! `impl Engine` methods — split out of the former god-file.
 use super::*;
+
+#[derive(Default)]
+pub(crate) struct WindowDecodeOutcome {
+    endpoint: bool,
+    vetoed: bool,
+}
 impl Engine {
     /// Return `true` if a speaker model file was present at boot and diarization
     /// can be requested. The ONNX session may still be unloaded until the first
@@ -168,8 +174,15 @@ impl Engine {
             state.failed = true;
             return Err(GigasttError::Cancelled);
         }
-        let endpoint = decoded.map_err(|e| GigasttError::Inference { source: e.into() })?;
+        let outcome = decoded.map_err(|e| GigasttError::Inference { source: e.into() })?;
+        let endpoint = outcome.endpoint;
         state.pending_samples = 0;
+        if outcome.vetoed {
+            if over_cap {
+                Self::slide_uncommitted_speech_window(state);
+            }
+            return Ok(vec![]);
+        }
         let ts = now_timestamp();
 
         // True utterance endpoints only — never the encoder window cap.
@@ -369,10 +382,19 @@ impl Engine {
         &self,
         state: &mut StreamingState,
         triplet: &mut SessionTriplet,
-    ) -> anyhow::Result<bool> {
+    ) -> anyhow::Result<WindowDecodeOutcome> {
+        self.decode_window_inner(state, triplet, true)
+    }
+
+    fn decode_window_inner(
+        &self,
+        state: &mut StreamingState,
+        triplet: &mut SessionTriplet,
+        confirm_automatic_endpoint: bool,
+    ) -> anyhow::Result<WindowDecodeOutcome> {
         if state.abort_requested() {
             state.failed = true;
-            return Ok(false);
+            return Ok(WindowDecodeOutcome::default());
         }
         #[cfg(test)]
         super::live_probe::window(state);
@@ -392,7 +414,19 @@ impl Engine {
             "mel_compute"
         );
         if num_frames == 0 {
-            return Ok(false);
+            return Ok(WindowDecodeOutcome::default());
+        }
+
+        let admission = self.empty_speech_observation(state, num_frames)?;
+        let vetoed = admission.is_some_and(|observation| observation.all_blank);
+        if state.abort_requested() {
+            return Ok(WindowDecodeOutcome::default());
+        }
+        if vetoed {
+            return Ok(WindowDecodeOutcome {
+                endpoint: false,
+                vetoed: true,
+            });
         }
 
         // Encoder-frame offset of the window start (drift-free: a single division
@@ -451,7 +485,12 @@ impl Engine {
             .skip(reconciled_prefix)
             .filter(|w| {
                 if stable {
-                    context_boundary_s <= 0.0 || w.end > context_boundary_s + f64::EPSILON
+                    // A research veto slide retains uncommitted PCM at a positive origin.
+                    (self.speech_admission_attached()
+                        && state.assembler.is_empty()
+                        && state.context_samples == 0)
+                        || context_boundary_s <= 0.0
+                        || w.end > context_boundary_s + f64::EPSILON
                 } else {
                     w.start + f64::EPSILON >= context_boundary_s
                 }
@@ -472,6 +511,46 @@ impl Engine {
             && first.start < context_boundary_s + 0.1
         {
             tail.remove(0);
+        }
+
+        // Confirm only a real automatic endpoint proposal, before changing text
+        // or agreement state. The native decoder already evaluated every frame.
+        let trailing_blank_proposal = !state.abort_requested()
+            && (state.assembler.committed_last().is_some() || !tail.is_empty())
+            && decoder_state.consecutive_blanks >= state.endpoint_silence.frames();
+        let mut endpoint_confirmed = true;
+        if confirm_automatic_endpoint
+            && state.endpoint_mode == EndpointMode::Auto
+            && state.vad_endpointer.is_none()
+            && self.speech_admission_attached()
+            && !state.abort_requested()
+            && (endpoint || trailing_blank_proposal)
+        {
+            #[cfg(feature = "__internals")]
+            let reused = admission.is_some();
+            let observation = match admission {
+                Some(observation) => Ok(Some(observation)),
+                None => self.observe_ctc_window(state, num_frames, "endpoint"),
+            }
+            .and_then(|observation| observation.context("CTC endpoint observation unavailable"))
+            .inspect_err(|_| {
+                state.failed = true;
+            })?;
+            if state.abort_requested() {
+                state.failed = true;
+                return Ok(WindowDecodeOutcome::default());
+            }
+            endpoint_confirmed = observation.trailing_blanks >= state.endpoint_silence.frames();
+            #[cfg(feature = "__internals")]
+            tracing::info!(
+                window_start_samples = state.window_start_samples,
+                window_samples = state.audio_buffer.len(),
+                reused,
+                trailing_blanks = observation.trailing_blanks,
+                threshold = state.endpoint_silence.frames(),
+                confirmed = endpoint_confirmed,
+                "speech_endpoint_confirmation"
+            );
         }
 
         // Hypothesis stability: longest text-equal prefix shared by the
@@ -520,7 +599,10 @@ impl Engine {
         let trailing_blank_endpoint = !state.abort_requested()
             && !state.assembler.is_empty()
             && decoder_state.consecutive_blanks >= state.endpoint_silence.frames();
-        Ok(endpoint || trailing_blank_endpoint)
+        Ok(WindowDecodeOutcome {
+            endpoint: (endpoint || trailing_blank_endpoint) && endpoint_confirmed,
+            vetoed: false,
+        })
     }
 
     fn publish_stream_partial(&self, state: &StreamingState) {
@@ -562,11 +644,16 @@ impl Engine {
             if state.abort_requested() {
                 return Err(GigasttError::Cancelled);
             }
+            let mut idle_slide = self.speech_admission_attached()
+                && state.assembler.is_empty()
+                && state.pending_samples == 0;
             if state.pending_samples > 0 && state.audio_buffer.len() >= N_FFT {
-                self.decode_window(state, triplet)
+                idle_slide = self
+                    .decode_window_inner(state, triplet, false)
                     .map_err(|error| GigasttError::Inference {
                         source: error.into(),
-                    })?;
+                    })?
+                    .vetoed;
             }
             if state.abort_requested() {
                 return Err(GigasttError::Cancelled);
@@ -582,7 +669,11 @@ impl Engine {
             // reusable flush can combine it with the next chunk.
             if state.audio_buffer.len() >= N_FFT {
                 state.pending_samples = 0;
-                Self::slide_streaming_window(state);
+                if idle_slide {
+                    Self::slide_uncommitted_speech_window(state);
+                } else {
+                    Self::slide_streaming_window(state);
+                }
             }
             Ok(segment)
         }));

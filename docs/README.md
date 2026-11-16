@@ -12,6 +12,7 @@ release tag when integrating a packaged version.
 | [Models](models.md) | Supported heads, files, downloads, formatting and offline setup |
 | [FP32 on CPU](fp32-cpu.md) | Explicit E2E RNNT installation, precision selection and known omissions |
 | [CTC streaming](ctc-streaming.md) | Explicit Linux CPU selection, streaming behavior and bounded validation |
+| [RNN-T with CTC confirmation](stream-ctc-confirmation.md) | Opt-in speech/endpoint confirmation, supported configuration and costs |
 | [Languages](languages.md) | Measured multilingual reading/conversation quality and limitations |
 | [CLI](cli.md) | Commands, flags, environment variables and defaults |
 | [API](api.md) | HTTP, WebSocket, SSE, jobs, errors and output contracts |

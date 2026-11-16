@@ -8,6 +8,8 @@ import shutil
 import subprocess
 import tempfile
 
+from revision_build import build, executable_record, target_directory
+
 ROOT = Path(__file__).resolve().parent.parent
 TEST = 'inference::diarization::revision_probe::test_speaker_revision_probe'
 
@@ -50,23 +52,26 @@ def main():
                 with module.open('a') as target:
                     target.write('\n#[cfg(all(test, feature = "file-decode", target_os = "linux"))]\n'
                                  '#[path = "speaker_revision_probe.rs"]\nmod revision_probe;\n')
-                build = subprocess.run(['cargo', 'test', '--manifest-path', str(tree / 'Cargo.toml'),
-                            '--target-dir', str(ROOT / 'target'), '-p', 'gigastt-core',
-                            '--release', '--locked', '--lib', '--no-run', '--message-format=json'],
-                            cwd=ROOT, text=True, stdout=subprocess.PIPE, check=False)
-                (output / f'{label}-build.jsonl').write_text(build.stdout)
-                artifacts = [json.loads(line) for line in build.stdout.splitlines() if line.startswith('{')]
-                if build.returncode:
-                    for artifact in artifacts:
-                        if artifact.get('reason') == 'compiler-message':
-                            print(artifact['message'].get('rendered', ''), flush=True)
-                    build.check_returncode()
-                tests = [a['executable'] for a in artifacts if a.get('reason') == 'compiler-artifact'
-                         and a.get('executable') and a.get('profile', {}).get('test')]
+                target_dir = target_directory(ROOT / 'target/speaker-builds', label,
+                                              report[f'{label}_revision']) / report['harness_sha256']
+                provenance = build(tree, target_dir,
+                                   ['test', '-p', 'gigastt-core', '--release', '--locked',
+                                    '--lib', '--no-run'], output / f'{label}-build.jsonl')
+                if provenance['source_revision'] != report[f'{label}_revision']:
+                    raise ValueError('source revision changed during comparison')
+                provenance['injected_harness_sha256'] = report['harness_sha256']
+                report.setdefault('builds', {})[label] = provenance
+                (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
+                tests = [a['path'] for a in provenance['executables'] if a['test']]
                 if len(tests) != 1:
                     raise ValueError(f'expected one test executable for {label}, got {tests}')
                 binary = Path(tmp) / f'{label}-probe'
+                original = executable_record(tests[0], target_dir)
                 shutil.copy2(tests[0], binary)
+                copied_sha = hashlib.sha256(binary.read_bytes()).hexdigest()
+                if copied_sha != original['sha256']:
+                    raise ValueError('copied speaker executable differs from Cargo artifact')
+                provenance['measured_binary_sha256'] = copied_sha
                 listing = run(str(binary), TEST, '--ignored', '--exact', '--list', capture_output=True)
                 if f'{TEST}: test' not in listing.stdout.splitlines():
                     raise ValueError(f'missing revision probe in {label}')

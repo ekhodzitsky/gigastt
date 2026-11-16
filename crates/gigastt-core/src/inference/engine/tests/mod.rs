@@ -23,3 +23,5 @@ mod transcribe;
 mod runtime_workspace;
 
 mod ctc_prefix;
+
+mod speech_admission;

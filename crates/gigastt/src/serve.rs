@@ -48,6 +48,12 @@ pub(crate) struct ServeArgs {
     #[arg(long, default_value_t = model::default_model_dir())]
     pub(crate) model_dir: String,
 
+    /// Cached ml_ctc_large directory for optional RNNT streaming confirmation.
+    /// No automatic download. Requires CPU RNNT, pool/min-size 1, batch 0,
+    /// encoder threads 1, stable-prefix on, auto endpoint and VAD off.
+    #[arg(long, env = "GIGASTT_STREAM_CTC_MODEL_DIR")]
+    pub(crate) stream_ctc_model_dir: Option<String>,
+
     /// Deploy profile: `default` (stock) or `edge` (pool-size 1 + VAD when
     /// those flags are left at defaults). Explicit `--pool-size` / `--vad`
     /// always win. Env: GIGASTT_PROFILE.
@@ -477,10 +483,8 @@ pub(crate) async fn run_serve(
         optimized_cache_dir: args.optimized_cache_dir,
         execution_provider: args.execution_provider,
     };
-    let build_engine: server::EngineBuilder = {
-        let recipe = recipe.clone();
-        std::sync::Arc::new(move || recipe.build_engine())
-    };
+    validate_stream_ctc_recipe(&recipe, args.stream_ctc_model_dir.as_deref())?;
+    let build_engine = make_engine_builder(recipe.clone(), args.stream_ctc_model_dir);
 
     // Build the engine in the background while a minimal bootstrap
     // responder serves /health (200) and /ready (503 initializing) on the
@@ -497,6 +501,65 @@ pub(crate) async fn run_serve(
             .context("engine load task panicked")?
     };
     server::run_with_config_loading_reloadable(server_config, None, load, Some(build_engine)).await
+}
+
+/// Shared by initial boot and administrative reload; never provisions sidecar assets.
+fn make_engine_builder(recipe: EngineRecipe, sidecar_dir: Option<String>) -> server::EngineBuilder {
+    std::sync::Arc::new(move || {
+        validate_stream_ctc_recipe(&recipe, sidecar_dir.as_deref())?;
+        let sidecar = sidecar_dir
+            .as_deref()
+            .map(load_stream_ctc_sidecar)
+            .transpose()?;
+        let mut engine = recipe.build_engine()?;
+        if let Some(sidecar) = sidecar {
+            engine.attach_ctc_speech_admission(sidecar)?;
+            tracing::info!(
+                "CPU RNNT streaming CTC confirmation enabled (ml_ctc_large, single-slot)"
+            );
+        }
+        Ok(engine)
+    })
+}
+
+fn load_stream_ctc_sidecar(
+    path: &str,
+) -> Result<gigastt_core::inference::Engine, gigastt_core::error::GigasttError> {
+    // Explicit load only: unlike ensure_model_variant, this never downloads files.
+    gigastt_core::inference::Engine::load_with_execution_provider(
+        path,
+        Some(ModelVariant::MlCtcLarge),
+        1,
+        1,
+        0,
+        1,
+        None,
+        gigastt_core::ExecutionProviderChoice::Cpu,
+    )
+}
+
+fn validate_stream_ctc_recipe(
+    recipe: &EngineRecipe,
+    sidecar_dir: Option<&str>,
+) -> anyhow::Result<()> {
+    let Some(path) = sidecar_dir else {
+        return Ok(());
+    };
+    anyhow::ensure!(!path.is_empty(), "--stream-ctc-model-dir must not be empty");
+    anyhow::ensure!(
+        recipe.model_variant == Some(ModelVariant::Rnnt)
+            && recipe.execution_provider == gigastt_core::ExecutionProviderChoice::Cpu
+            && recipe.pool_size == 1
+            && recipe.pool_min_size == 1
+            && recipe.batch_pool_size == 0
+            && recipe.encoder_intra_threads == Some(1)
+            && recipe.file_window_concurrency == 1
+            && !recipe.vad
+            && recipe.stream_stable_prefix
+            && recipe.endpoint_mode.as_deref() == Some("auto"),
+        "--stream-ctc-model-dir requires --model-variant rnnt --execution-provider cpu --pool-size 1 --pool-min-size 1 --batch-pool-size 0 --encoder-intra-threads 1, file-window-concurrency 1, stable-prefix on, endpoint-mode auto and VAD off"
+    );
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

@@ -15,6 +15,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- Add opt-in RNN-T WebSocket speech and automatic-endpoint confirmation with a
+  separately cached large CTC model (`--stream-ctc-model-dir`). The default
+  remains off; the supported CPU configuration, extra memory/CPU cost and
+  possible delayed partials are documented in
+  [the guide](docs/stream-ctc-confirmation.md). File/REST transcription is unchanged.
+
 - Support explicitly selected FP32 E2E RNNT model packs on CPU, with a pinned
   installer and checkpoint feature extraction for file transcription. Default
   downloads and manifests remain INT8, with no implicit FP32 fallback. Both

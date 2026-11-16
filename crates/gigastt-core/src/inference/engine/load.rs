@@ -222,6 +222,7 @@ impl Engine {
         #[cfg(feature = "diarization")] speaker_encoder: Option<LazySpeakerEncoder>,
     ) -> Self {
         Self {
+            speech_admission: None,
             pool,
             batch_pool,
             tokenizer,

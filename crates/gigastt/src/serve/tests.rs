@@ -312,3 +312,98 @@ fn test_ensure_bind_allowed_env_opt_in() {
     }
     assert!(result.is_ok(), "env opt-in must allow non-loopback bind");
 }
+
+fn ctc_recipe() -> gigastt::boot::EngineRecipe {
+    use gigastt::boot::{EngineRecipe, ItnMode, PunctuationMode};
+    let mut r = EngineRecipe::offline(
+        "/primary".into(),
+        Some(gigastt_core::model::ModelVariant::Rnnt),
+        PunctuationMode::Off,
+        "/punct".into(),
+        ItnMode::Off,
+        None,
+        false,
+        None,
+        false,
+        None,
+        None,
+        "/vad".into(),
+        Some(1),
+        1,
+    );
+    r.execution_provider = gigastt_core::ExecutionProviderChoice::Cpu;
+    r.endpoint_mode = Some("auto".into());
+    r.stream_stable_prefix = true;
+    r
+}
+
+#[test]
+fn test_stream_ctc_envelope_and_default_off() {
+    let r = ctc_recipe();
+    assert!(super::validate_stream_ctc_recipe(&r, Some("/ctc")).is_ok());
+    let mut invalid = Vec::new();
+    let mut v = r.clone();
+    v.pool_size = 2;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.pool_min_size = 0;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.batch_pool_size = 1;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.encoder_intra_threads = None;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.encoder_intra_threads = Some(2);
+    invalid.push(v);
+    let mut v = r.clone();
+    v.model_variant = None;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.model_variant = Some(gigastt_core::model::ModelVariant::MlCtcLarge);
+    invalid.push(v);
+    let mut v = r.clone();
+    v.execution_provider = gigastt_core::ExecutionProviderChoice::Auto;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.vad = true;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.stream_stable_prefix = false;
+    invalid.push(v);
+    let mut v = r.clone();
+    v.endpoint_mode = Some("assistant".into());
+    invalid.push(v);
+    let mut v = r.clone();
+    v.file_window_concurrency = 2;
+    invalid.push(v);
+    for r in invalid {
+        assert!(super::validate_stream_ctc_recipe(&r, Some("/ctc")).is_err());
+        assert!(super::validate_stream_ctc_recipe(&r, None).is_ok());
+    }
+    assert!(super::validate_stream_ctc_recipe(&r, Some("")).is_err());
+}
+
+#[test]
+fn test_stream_ctc_boot_and_reload_fail_closed_on_missing_sidecar() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("not-downloaded");
+    let path = path.to_str().unwrap();
+    let builder = super::make_engine_builder(ctc_recipe(), Some(path.into()));
+    let reload = builder.clone();
+    for build in [builder, reload] {
+        let error = match build() {
+            Ok(_) => panic!("missing model accepted"),
+            Err(e) => e,
+        };
+        assert!(matches!(
+            error.downcast_ref::<gigastt_core::error::GigasttError>(),
+            Some(gigastt_core::error::GigasttError::ModelLoad { .. })
+        ));
+        assert!(
+            !std::path::Path::new(path).exists(),
+            "must not download/create missing model directory"
+        );
+    }
+}
