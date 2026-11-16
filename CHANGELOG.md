@@ -15,6 +15,11 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- Optional, default-off `unlace` feature for bounded sequential WebM/Matroska
+  Opus file decoding with whole-block padding and pre-skip handling. Its strict
+  metadata and truncation checks intentionally differ from the legacy path;
+  see [experimental demuxing](docs/unlace.md).
+
 - Support explicitly selected FP32 E2E RNNT model packs on CPU, with a pinned
   installer and checkpoint feature extraction for file transcription. Default
   downloads and manifests remain INT8, with no implicit FP32 fallback. Both

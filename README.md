@@ -57,6 +57,8 @@ gigastt watch inbox/ transcripts/
 ```
 
 Files include WAV, AAC/M4A, MP3, FLAC, OGG/Vorbis, OGG/Opus and WebM/Opus.
+An optional, default-off [unlace WebM/Matroska adapter](docs/unlace.md) provides
+strict Opus trim and completeness checks with different file admission rules.
 WAV telephony codecs and raw G.711/G.722 are supported; see the
 [format and codec reference](docs/api.md#audio-formats-and-telephony-codecs).
 

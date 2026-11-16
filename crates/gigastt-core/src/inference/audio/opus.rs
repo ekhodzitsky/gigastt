@@ -137,6 +137,11 @@ pub(super) struct OpusStream {
 
 #[cfg(feature = "file-decode")]
 impl OpusStream {
+    #[cfg(feature = "unlace")]
+    pub(super) fn packet_frames(data: &[u8]) -> Result<usize> {
+        Ok(split_opus_packet(data)?.packet_samples())
+    }
+
     pub(super) fn new(channels: usize, channel: ChannelSelect) -> Result<Self> {
         check_opus_channels(channels)?;
         Ok(Self {

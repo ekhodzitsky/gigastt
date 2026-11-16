@@ -35,6 +35,12 @@ pub(crate) fn load_audio_channels_bounded(
     path: &str,
     max_audio_secs: Option<f64>,
 ) -> Result<Vec<Vec<f32>>> {
+    #[cfg(feature = "unlace")]
+    if let Some(channels) =
+        try_unlace_channels(|| Ok(std::fs::File::open(path)?), max_audio_secs, None)?
+    {
+        return Ok(channels);
+    }
     let file =
         std::fs::File::open(path).with_context(|| format!("Failed to open audio file: {path}"))?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
@@ -87,9 +93,53 @@ pub fn decode_audio_bytes_shared_channels_bounded_with_abort(
     abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<Vec<Vec<f32>>> {
     check_decode_abort(abort)?;
+    #[cfg(feature = "unlace")]
+    if let Some(channels) = try_unlace_channels(
+        || Ok(std::io::Cursor::new(data.clone())),
+        max_audio_secs,
+        abort,
+    )? {
+        return Ok(channels);
+    }
     let source = BytesMediaSource::new(data);
     let mss = MediaSourceStream::new(Box::new(source), Default::default());
     decode_audio_inner_channels(mss, Hint::new(), "bytes", max_audio_secs, abort)
+}
+
+#[cfg(feature = "unlace")]
+fn try_unlace_channels<R: std::io::Read + std::io::Seek + Send + Sync + 'static>(
+    mut open: impl FnMut() -> Result<R>,
+    max_audio_secs: Option<f64>,
+    abort: Option<&(dyn Fn() -> bool + Sync)>,
+) -> Result<Option<Vec<Vec<f32>>>> {
+    use super::super::stream::{ChannelSelect, FileWindows, WindowSpec};
+    use super::super::unlace::UnlaceSource;
+    check_decode_abort(abort)?;
+    let limit = Some(whole_buffer_limit_secs(max_audio_secs));
+    let Some(first) = UnlaceSource::probe(open()?, ChannelSelect::One(0), limit)? else {
+        return Ok(None);
+    };
+    let count = first.channels();
+    let mut first = Some(first);
+    let mut channels = Vec::with_capacity(count);
+    for channel in 0..count {
+        check_decode_abort(abort)?;
+        let stream = if let Some(stream) = first.take() {
+            stream
+        } else {
+            UnlaceSource::probe(open()?, ChannelSelect::One(channel), limit)?
+                .context("WebM source changed between channel reads")?
+        };
+        channels.push(
+            FileWindows::from_unlace(
+                stream,
+                WindowSpec::new(16_000, 16_000, 0),
+                ChannelSelect::One(channel),
+            )
+            .drain_to_vec_with_abort(abort)?,
+        );
+    }
+    Ok(Some(channels))
 }
 
 /// Shared non-mixing decode: probe → format → decode → per-channel resample.

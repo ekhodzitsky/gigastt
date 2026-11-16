@@ -49,6 +49,7 @@ conf-files = ["/etc/gigastt/gigastt.env"]
 maintainer-scripts = "../../packaging/debian/"
 
 [features]
+unlace = ["gigastt-core/unlace"]
 default = ["diarization"]
 coreml = ["gigastt-core/coreml"]
 cuda = ["gigastt-core/cuda"]
