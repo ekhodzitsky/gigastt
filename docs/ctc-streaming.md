@@ -5,6 +5,10 @@ existing WebSocket endpoint and INT8 model; no training or GPU is required.
 This guide describes the tested Linux CPU configuration, not a change to the
 default model or a general solution to recognition errors.
 
+To keep the RNN-T transcript head and use CTC only to confirm streaming speech
+and automatic endpoints, see [RNN-T with CTC confirmation](stream-ctc-confirmation.md).
+That opt-in mode loads both models and has different resource and latency costs.
+
 ## Download and run
 
 ```sh

@@ -595,3 +595,35 @@ fn test_speech_admission_endpoint_cancellation_keeps_prior_text() {
     assert_eq!(state.assembler.partial(0.0).text, "не");
     assert_eq!(state.agreed_prefix, 7);
 }
+
+#[test]
+fn test_speech_admission_rejects_duplicate_attachment_atomically() {
+    let (mut engine, _tmp) = crate::test_support::rnnt_engine();
+    attach(&mut engine, true);
+    let (mut other, _tmp2) = crate::test_support::rnnt_engine();
+    attach(&mut other, false);
+    let sidecar = *other.speech_admission.take().unwrap();
+    assert!(engine.attach_ctc_speech_admission(sidecar).is_err());
+}
+
+#[test]
+fn test_speech_admission_attachment_rejects_incompatible_sidecars() {
+    for bad in 0..5 {
+        let (mut engine, _tmp) = crate::test_support::rnnt_engine();
+        let (mut holder, _tmp2) = crate::test_support::rnnt_engine();
+        attach(&mut holder, true);
+        let mut sidecar = *holder.speech_admission.take().unwrap();
+        match bad {
+            0 => sidecar.variant = ModelVariant::MlCtc,
+            1 => sidecar.execution_provider = "cuda".into(),
+            2 => sidecar.int8 = false,
+            3 => engine.variant = ModelVariant::E2eRnnt,
+            _ => engine.batch_pool = Some(crate::inference::SessionPool::new(vec![])),
+        }
+        assert!(matches!(
+            engine.attach_ctc_speech_admission(sidecar),
+            Err(GigasttError::ModelLoad { .. })
+        ));
+        assert!(engine.speech_admission.is_none());
+    }
+}

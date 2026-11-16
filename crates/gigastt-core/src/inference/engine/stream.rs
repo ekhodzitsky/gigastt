@@ -526,6 +526,7 @@ impl Engine {
             && !state.abort_requested()
             && (endpoint || trailing_blank_proposal)
         {
+            #[cfg(feature = "__internals")]
             let reused = admission.is_some();
             let observation = match admission {
                 Some(observation) => Ok(Some(observation)),
@@ -540,6 +541,7 @@ impl Engine {
                 return Ok(WindowDecodeOutcome::default());
             }
             endpoint_confirmed = observation.trailing_blanks >= state.endpoint_silence.frames();
+            #[cfg(feature = "__internals")]
             tracing::info!(
                 window_start_samples = state.window_start_samples,
                 window_samples = state.audio_buffer.len(),

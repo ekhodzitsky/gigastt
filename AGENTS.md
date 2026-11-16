@@ -85,6 +85,10 @@ still apply to merging and publishing; see
 - Streaming blank-run duration: `serve --endpoint-silence-ms` /
   `GIGASTT_ENDPOINT_SILENCE_MS` (40–2000 ms, default 600), overridden by
   `configure.endpoint_silence_ms`; applies only to auto mode without VAD.
+- Optional streaming CTC confirmation: `serve --stream-ctc-model-dir` /
+  `GIGASTT_STREAM_CTC_MODEL_DIR`, absent by default. It requires a cached
+  `ml_ctc_large` sidecar and the restricted CPU RNN-T configuration described in
+  [the guide](docs/stream-ctc-confirmation.md); it does not change file decoding.
 - Keep CLI flags/env vars synchronized with [CLI](docs/cli.md), and endpoint
   behavior with [API](docs/api.md), [OpenAPI](docs/openapi.yaml) and
   [AsyncAPI](docs/asyncapi.yaml). Run the documentation drift check.

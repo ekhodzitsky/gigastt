@@ -717,3 +717,39 @@ fn test_cli_endpoint_silence_range() {
         assert_eq!(args.endpoint_silence_ms, ms.parse::<u32>().unwrap());
     }
 }
+
+#[test]
+fn test_cli_stream_ctc_explicit_local_path_is_accepted() {
+    assert!(
+        Cli::try_parse_from(["gigastt", "serve", "--stream-ctc-model-dir", "/cached/ctc"]).is_ok()
+    );
+}
+
+#[test]
+fn test_cli_stream_ctc_default_env_and_override() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    let _restore = EnvRestore(
+        "GIGASTT_STREAM_CTC_MODEL_DIR",
+        std::env::var("GIGASTT_STREAM_CTC_MODEL_DIR").ok(),
+    );
+    unsafe {
+        std::env::remove_var("GIGASTT_STREAM_CTC_MODEL_DIR");
+    }
+    let Commands::Serve(a) = Cli::parse_from(["gigastt", "serve"]).command else {
+        panic!()
+    };
+    assert!(a.stream_ctc_model_dir.is_none());
+    unsafe {
+        std::env::set_var("GIGASTT_STREAM_CTC_MODEL_DIR", "/cached/env");
+    }
+    let Commands::Serve(a) = Cli::parse_from(["gigastt", "serve"]).command else {
+        panic!()
+    };
+    assert_eq!(a.stream_ctc_model_dir.as_deref(), Some("/cached/env"));
+    let Commands::Serve(a) =
+        Cli::parse_from(["gigastt", "serve", "--stream-ctc-model-dir", "/cached/flag"]).command
+    else {
+        panic!()
+    };
+    assert_eq!(a.stream_ctc_model_dir.as_deref(), Some("/cached/flag"));
+}

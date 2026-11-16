@@ -1,4 +1,4 @@
-//! Research-only admission experiment; no product configuration surface.
+//! Optional CTC admission and automatic endpoint confirmation for RNNT streaming.
 use super::*;
 
 #[derive(Clone, Copy)]
@@ -8,22 +8,45 @@ pub(super) struct CtcObservation {
 }
 
 impl Engine {
-    /// Attach an explicitly loaded CPU CTC sidecar for streaming research.
-    /// This experimental hook is unavailable in ordinary product builds.
-    #[cfg(any(test, feature = "__internals"))]
-    pub fn attach_ctc_speech_admission(&mut self, sidecar: Engine) -> anyhow::Result<()> {
-        anyhow::ensure!(
-            self.variant == ModelVariant::Rnnt && self.int8 && self.execution_provider == "cpu",
-            "speech admission requires CPU INT8 RNNT"
-        );
-        anyhow::ensure!(
-            sidecar.variant.is_ctc()
-                && sidecar.int8
-                && sidecar.execution_provider == "cpu"
-                && sidecar.tokenizer.vocab_size() == 71
-                && sidecar.tokenizer.blank_id() == 70,
-            "speech admission requires CPU INT8 71-class CTC"
-        );
+    /// Attach a cached CPU INT8 multilingual-large CTC engine to RNNT streaming.
+    ///
+    /// File transcription is unchanged. Both engines must have one interactive
+    /// slot and no batch pool. Callers must load both with one encoder thread.
+    /// The attachment is opt-in and consumes the sidecar; it performs no download.
+    ///
+    /// # Errors
+    /// Returns [`GigasttError::ModelLoad`] for incompatible engines or an existing
+    /// attachment. Validation leaves the recipient unchanged on failure.
+    pub fn attach_ctc_speech_admission(&mut self, sidecar: Engine) -> Result<(), GigasttError> {
+        let error = |message: &str| GigasttError::ModelLoad {
+            path: "CTC streaming attachment".into(),
+            source: Some(anyhow::anyhow!("{message}").into()),
+        };
+        if self.speech_admission.is_some() || sidecar.speech_admission.is_some() {
+            return Err(error("CTC streaming attachment already present"));
+        }
+        if self.variant != ModelVariant::Rnnt || !self.int8 || self.execution_provider != "cpu" {
+            return Err(error("CTC streaming confirmation requires CPU INT8 RNNT"));
+        }
+        if sidecar.variant != ModelVariant::MlCtcLarge
+            || !sidecar.int8
+            || sidecar.execution_provider != "cpu"
+            || sidecar.tokenizer.vocab_size() != 71
+            || sidecar.tokenizer.blank_id() != 70
+        {
+            return Err(error(
+                "CTC streaming confirmation requires CPU INT8 ml_ctc_large",
+            ));
+        }
+        if self.pool.total() != 1
+            || sidecar.pool.total() != 1
+            || self.batch_pool.is_some()
+            || sidecar.batch_pool.is_some()
+        {
+            return Err(error(
+                "CTC streaming confirmation requires single-slot engines without batch pools",
+            ));
+        }
         self.speech_admission = Some(Box::new(sidecar));
         Ok(())
     }
@@ -31,14 +54,7 @@ impl Engine {
 
 impl Engine {
     pub(super) fn speech_admission_attached(&self) -> bool {
-        #[cfg(any(test, feature = "__internals"))]
-        {
-            self.speech_admission.is_some()
-        }
-        #[cfg(not(any(test, feature = "__internals")))]
-        {
-            false
-        }
+        self.speech_admission.is_some()
     }
 
     pub(super) fn empty_speech_observation(
@@ -48,6 +64,7 @@ impl Engine {
     ) -> anyhow::Result<Option<CtcObservation>> {
         if !state.assembler.is_empty() {
             if self.speech_admission_attached() {
+                #[cfg(feature = "__internals")]
                 tracing::debug!("speech_admission_nonempty_bypass");
             }
             return Ok(None);
@@ -61,13 +78,8 @@ impl Engine {
         num_frames: usize,
         purpose: &'static str,
     ) -> anyhow::Result<Option<CtcObservation>> {
-        #[cfg(not(any(test, feature = "__internals")))]
         {
-            let _ = (state, num_frames, purpose);
-            Ok(None)
-        }
-        #[cfg(any(test, feature = "__internals"))]
-        {
+            let _ = purpose;
             let Some(sidecar) = self.speech_admission.as_ref() else {
                 return Ok(None);
             };
@@ -128,6 +140,7 @@ impl Engine {
                     trailing_blanks = 0;
                 }
             }
+            #[cfg(feature = "__internals")]
             tracing::info!(
                 window_start_samples = state.window_start_samples,
                 window_samples = state.audio_buffer.len(),
@@ -154,6 +167,7 @@ impl Engine {
         audio::consume_audio_buffer(&mut state.audio_buffer, drop);
         state.window_start_samples += drop;
         state.context_samples = old_context.saturating_sub(drop);
+        #[cfg(feature = "__internals")]
         tracing::info!(
             drop,
             keep,
