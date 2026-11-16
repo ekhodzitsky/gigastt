@@ -8,7 +8,7 @@ Wraps the synchronous `gigastt-core` engine: models are **side-loaded** (no HTTP
 
 | Type | Methods |
 |---|---|
-| `Engine` | `new(model_dir)` · `new_with_pool_size(model_dir, pool_size)` · `transcribe_file(path) -> Transcript` |
+| `Engine` | `new(model_dir)` · `new_with_pool_size(model_dir, pool_size)` · `new_with_threads(model_dir, pool_size, encoder_intra_threads)` · `transcribe_file(path) -> Transcript` |
 | `Stream` | `new(engine)` · `process_chunk(pcm16, sample_rate) -> [TranscriptSegment]` · `flush() -> [TranscriptSegment]` |
 | records | `Transcript { text, words, duration_s }` · `TranscriptSegment { text, words, is_final }` · `Word { text, start_s, end_s, confidence, speaker }` |
 | errors | `GigasttFfiError`: `ModelNotFound` · `InvalidAudio` · `PoolExhausted` · `Inference` · `InvalidArgument` |

@@ -21,6 +21,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   profiles retain greedy decoding; known omissions and setup are documented in
   [FP32 on CPU](docs/fp32-cpu.md).
 
+- Choose the encoder intra-op thread count from the mobile bindings:
+  C FFI `gigastt_engine_new_with_threads(model_dir, pool_size, encoder_intra_threads)`
+  and UniFFI `Engine.new_with_threads(...)`. The existing constructors keep one
+  encoder thread. On Android phones 4–8 threads made file transcription
+  1.3–2.6x faster than one thread (see `docs/android.md`).
+
 - Configure non-VAD streaming blank-run endpoint duration with
   `serve --endpoint-silence-ms` / `GIGASTT_ENDPOINT_SILENCE_MS` or WebSocket
   `configure.endpoint_silence_ms` (protocol 1.3; clients 1.0–1.2 remain accepted).
