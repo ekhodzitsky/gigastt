@@ -135,6 +135,11 @@ impl Engine {
             "Decoded tokens"
         );
 
+        #[cfg(feature = "__internals")]
+        tracing::debug!(frame_offset, num_frames, low_latency, tokens = ?result.tokens,
+            raw_words = ?words, endpoint = result.endpoint_detected,
+            "rnnt_before_word_filter");
+
         Ok((words, result.endpoint_detected))
     }
 

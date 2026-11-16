@@ -222,6 +222,8 @@ impl Engine {
         #[cfg(feature = "diarization")] speaker_encoder: Option<LazySpeakerEncoder>,
     ) -> Self {
         Self {
+            #[cfg(any(test, feature = "__internals"))]
+            speech_admission: None,
             pool,
             batch_pool,
             tokenizer,
