@@ -278,3 +278,55 @@ fn allocating_reference(mel: &MelSpectrogram, samples: &[f32], output: &mut Vec<
     }
     frames
 }
+
+#[cfg(feature = "file-decode")]
+#[test]
+fn test_fp32_golos_00_mel_matches_author_preprocessor() {
+    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let wav = root.join("../gigastt/tests/fixtures/golos_00.wav");
+    let author_path = root.join("../../benchmark/oracle/golos_00_author_mel.f32");
+    let samples =
+        crate::inference::audio::decode_audio_file(wav.to_str().expect("fixture path is utf-8"))
+            .expect("decode golos_00");
+    assert_eq!(samples.len(), 64_000, "golos_00 is 4 seconds at 16 kHz");
+    let (features, frames) = MelSpectrogram::new_e2e_rnnt().compute(&samples);
+    assert_eq!(frames, 399);
+    let bytes = std::fs::read(&author_path).expect("author mel dump");
+    let (chunks, rest) = bytes.as_chunks::<4>();
+    assert!(
+        rest.is_empty(),
+        "author mel dump is not a whole number of f32s"
+    );
+    assert_eq!(chunks.len(), features.len());
+    let author: Vec<f32> = chunks.iter().copied().map(f32::from_le_bytes).collect();
+    let author_floor = (1e-9_f32).ln();
+    let mut max_abs = 0.0_f32;
+    let mut active_max = 0.0_f32;
+    let mut active_sum = 0.0_f64;
+    let mut active = 0_usize;
+    for (&ours, &theirs) in features.iter().zip(author.iter()) {
+        let delta = (ours - theirs).abs();
+        max_abs = max_abs.max(delta);
+        if (theirs - author_floor).abs() > 0.05 {
+            active_max = active_max.max(delta);
+            active_sum += f64::from(delta);
+            active += 1;
+        }
+    }
+    assert!(
+        active > 1_000,
+        "expected speech bins above the author floor, got {active}"
+    );
+    let active_mean = active_sum / active as f64;
+    // FFT and sparse filterbank accumulation may differ by float32 rounding;
+    // silent bins must no longer have a systematic log-floor offset.
+    assert!(
+        max_abs < 1e-3,
+        "mel max abs {max_abs}; expected author frontend within float32 tolerance"
+    );
+    assert!(
+        active_max < 1e-3,
+        "active-bin mel max abs {active_max} over {active} bins (mean {active_mean})"
+    );
+    assert!(active_mean < 1e-5, "active-bin mel mean abs {active_mean}");
+}

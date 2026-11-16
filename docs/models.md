@@ -17,10 +17,16 @@ The published v2.22.0 binary uses the June RNN-T bundle. Current main selects th
 
 The RNN-T files come from a pinned GitHub model release. Multilingual encoders
 come from the pinned Hugging Face repositories listed in the source catalog.
-Standard ONNX inference requires the prequantized encoder. Its convolutions and
+Default ONNX inference uses the prequantized encoder. Its convolutions and
 RNN-T decoder/joiner may still use floating point; “INT8 bundle” does not mean
 every operator is integer. `quantize` rebuilds an encoder from a separately
 provisioned FP32 source and is not needed for normal installation.
+
+An explicit [FP32 E2E RNNT pack](fp32-cpu.md) can be installed in a separate
+directory for CPU use. It changes both encoder precision and file feature
+extraction. It can recover some phrases but also has known omissions that INT8
+does not share; it is not a universal accuracy upgrade. Downloads remain INT8
+and missing INT8 files never trigger an FP32 fallback.
 
 The experimental [Candle](candle-backend.md) and [ANE](ane-backend.md) backends
 use separate converted assets and have their own precision and compatibility

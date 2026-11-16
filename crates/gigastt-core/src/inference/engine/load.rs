@@ -225,7 +225,11 @@ impl Engine {
             pool,
             batch_pool,
             tokenizer,
-            features: FeatureExtractor::new(),
+            features: if int8 {
+                FeatureExtractor::new()
+            } else {
+                FeatureExtractor::for_variant(variant)
+            },
             variant,
             punctuator: None,
             itn: false,
@@ -289,21 +293,26 @@ impl Engine {
         // INT8 ONNX encoder, so report no INT8 there and gate out the INT8 / ONNX
         // / CPU-EP logs below (which are wrong for candle), emitting an accurate
         // candle line instead. The default (ort) logging is unchanged.
-        let is_int8 = !cfg!(feature = "candle") && files.using_int8;
-        if !cfg!(feature = "candle") {
-            // ORT product path is INT8-only (`ResolvedModelFiles` rejects FP32).
-            tracing::info!("Using INT8 quantized encoder");
+        let is_candle = execution_provider == "candle";
+        let is_int8 = !is_candle && files.using_int8;
+        if !is_candle {
+            if files.using_int8 {
+                tracing::info!("Using INT8 quantized encoder");
+            } else {
+                tracing::info!("Using explicitly configured FP32 encoder");
+            }
             tracing::info!(
                 "Loading ONNX models from {} (pool_size={pool_size})...",
                 model_dir.display()
             );
         }
 
-        #[cfg(feature = "candle")]
-        tracing::info!(
-            "Loading Candle models from {} (pool_size={pool_size})...",
-            model_dir.display()
-        );
+        if is_candle {
+            tracing::info!(
+                "Loading Candle models from {} (pool_size={pool_size})...",
+                model_dir.display()
+            );
+        }
         #[cfg(feature = "coreml")]
         tracing::info!("Using CoreML execution provider (Neural Engine + CPU)");
         #[cfg(feature = "cuda")]

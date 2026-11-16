@@ -995,3 +995,107 @@ async fn test_ensure_model_variant_standalone_pack_validation() {
         "validation must not create download files"
     );
 }
+
+#[tokio::test]
+#[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
+async fn test_ensure_model_variant_explicit_fp32_pack_without_download() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    std::fs::write(
+        dir.join("manifest.toml"),
+        "architecture = \"e2e_rnnt\"\nprecision = \"fp32\"\n[files]\nencoder = \"encoder.fp32.onnx\"\ndecoder = \"decoder.onnx\"\njoint = \"joint.onnx\"\nvocab = \"vocab.txt\"\n",
+    ).unwrap();
+    for file in [
+        "encoder.fp32.onnx",
+        "decoder.onnx",
+        "joint.onnx",
+        "vocab.txt",
+    ] {
+        std::fs::write(dir.join(file), b"local").unwrap();
+    }
+
+    assert_eq!(
+        ensure_model_variant(None, dir.to_str().unwrap())
+            .await
+            .unwrap(),
+        ModelVariant::E2eRnnt
+    );
+    assert_eq!(
+        ensure_model_variant(Some(ModelVariant::E2eRnnt), dir.to_str().unwrap())
+            .await
+            .unwrap(),
+        ModelVariant::E2eRnnt
+    );
+    assert_eq!(std::fs::read_dir(dir).unwrap().count(), 5);
+    assert!(!dir.join(ModelVariant::E2eRnnt.encoder_int8_file()).exists());
+}
+
+#[tokio::test]
+#[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
+async fn test_ensure_model_variant_fp32_requires_explicit_valid_precision() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    for file in [
+        "encoder.fp32.onnx",
+        "decoder.onnx",
+        "joint.onnx",
+        "vocab.txt",
+    ] {
+        std::fs::write(dir.join(file), b"local").unwrap();
+    }
+    for precision in ["", "precision = \"fp16\"\n"] {
+        std::fs::write(
+            dir.join("manifest.toml"),
+            format!("architecture = \"e2e_rnnt\"\n{precision}[files]\nencoder = \"encoder.fp32.onnx\"\ndecoder = \"decoder.onnx\"\njoint = \"joint.onnx\"\nvocab = \"vocab.txt\"\n"),
+        ).unwrap();
+        assert!(
+            ensure_model_variant(None, dir.to_str().unwrap())
+                .await
+                .is_err()
+        );
+        assert_eq!(std::fs::read_dir(dir).unwrap().count(), 5);
+    }
+}
+
+#[tokio::test]
+#[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
+async fn test_ensure_model_variant_fp32_pack_errors_do_not_download_or_fallback() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    std::fs::write(
+        dir.join("manifest.toml"),
+        "architecture = \"e2e_rnnt\"\nprecision = \"fp32\"\n[files]\nencoder = \"encoder.fp32.onnx\"\nencoder_int8 = \"encoder.int8.onnx\"\ndecoder = \"decoder.onnx\"\njoint = \"joint.onnx\"\nvocab = \"vocab.txt\"\n",
+    ).unwrap();
+    for file in [
+        "encoder.fp32.onnx",
+        "encoder.int8.onnx",
+        "decoder.onnx",
+        "joint.onnx",
+        "vocab.txt",
+    ] {
+        std::fs::write(dir.join(file), b"local").unwrap();
+    }
+    assert!(
+        ensure_model_variant(Some(ModelVariant::Rnnt), dir.to_str().unwrap())
+            .await
+            .unwrap_err()
+            .to_string()
+            .contains("conflicts")
+    );
+    for file in [
+        "encoder.fp32.onnx",
+        "decoder.onnx",
+        "joint.onnx",
+        "vocab.txt",
+    ] {
+        std::fs::remove_file(dir.join(file)).unwrap();
+        assert!(
+            ensure_model_variant(None, dir.to_str().unwrap())
+                .await
+                .is_err(),
+            "missing {file} must fail even with an INT8 encoder present"
+        );
+        assert_eq!(std::fs::read_dir(dir).unwrap().count(), 5);
+        std::fs::write(dir.join(file), b"local").unwrap();
+    }
+}

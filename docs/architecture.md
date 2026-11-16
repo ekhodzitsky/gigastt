@@ -60,10 +60,14 @@ Server surfaces (single process, one primary port unless metrics is enabled):
 ## Models
 
 The supported catalog, exact file sets, formatting policy and current bundle
-sizes are documented in [Models](models.md). The standard ONNX path loads
+sizes are documented in [Models](models.md). The default ONNX path loads
 prequantized encoders; RNN-T convolutions and decoder/joiner remain floating
 point. Multilingual CTC is encoder-only and has different output geometry and
 vocabulary. No per-request language field changes the loaded head.
+
+An explicit [FP32 E2E RNNT manifest](fp32-cpu.md) selects the original encoder
+and checkpoint feature extraction for files. It retains greedy decoding and
+does not change streaming feature extraction or the default INT8 profile.
 
 Use [Languages](languages.md) and [Benchmarks](benchmarks.md) for measured
 quality. Larger models and built-in formatting do not establish a universal

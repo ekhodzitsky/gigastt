@@ -236,6 +236,7 @@ pub use snapshot::TranscriptSnapshot;
 /// own the low-level signal-processing details directly.
 pub struct FeatureExtractor {
     mel: MelSpectrogram,
+    file_mel: Option<MelSpectrogram>,
 }
 
 impl Default for FeatureExtractor {
@@ -245,10 +246,24 @@ impl Default for FeatureExtractor {
 }
 
 impl FeatureExtractor {
+    /// Select the author's E2E file frontend when explicitly requested.
+    /// Engine loading uses this for FP32 packs; INT8 and streaming keep legacy coefficients.
+    pub(crate) fn for_variant(variant: crate::model::ModelVariant) -> Self {
+        if variant == crate::model::ModelVariant::E2eRnnt {
+            Self {
+                mel: MelSpectrogram::new(),
+                file_mel: Some(MelSpectrogram::new_e2e_rnnt()),
+            }
+        } else {
+            Self::new()
+        }
+    }
+
     /// Create a new feature extractor with a freshly initialized mel spectrogram.
     pub fn new() -> Self {
         Self {
             mel: MelSpectrogram::new(),
+            file_mel: None,
         }
     }
 
@@ -272,7 +287,7 @@ impl FeatureExtractor {
 
     /// One-shot mel computation (for file transcription where buffer reuse is unnecessary).
     pub fn compute(&self, samples: &[f32]) -> (Vec<f32>, usize) {
-        self.mel.compute(samples)
+        self.file_mel.as_ref().unwrap_or(&self.mel).compute(samples)
     }
 }
 

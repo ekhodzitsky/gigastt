@@ -202,8 +202,8 @@ gigastt download [OPTIONS]
   --progress <FORMAT>    Progress output: human (default) | json.
                          Env: GIGASTT_DOWNLOAD_PROGRESS.
 
-  Always fetches the lean **INT8** bundle (~310 MiB). There is no FP32 download
-  path and no on-device quantize step for runtime.
+  Fetches the default **INT8** bundle (~310 MiB). This command does not provision
+  FP32 or quantize models. See docs/fp32-cpu.md for the separate FP32 installer.
 
   Machine-readable progress (--progress=json)
     stdout carries one NDJSON event per line and nothing else (the human

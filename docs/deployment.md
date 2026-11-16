@@ -325,11 +325,12 @@ If you observe clients hanging past the cap or not receiving `Final` on deploy, 
 
 ## Lean INT8-only install
 
-Production inference needs only the **pre-quantized INT8 set** for one head —
+Default inference needs only the **pre-quantized INT8 set** for one head —
 about **310 MiB** on disk for current main's `rnnt` bundle.
-Released binaries may pin older weights; see [Models](models.md). The engine **requires**
-`*_encoder_int8.onnx` (or the CTC INT8 basename); FP32-only trees are not
-loadable. There is no FP32 download path for runtime.
+Released binaries may pin older weights; see [Models](models.md). This default
+profile requires `*_encoder_int8.onnx` (or the CTC INT8 basename) and never
+falls back to FP32. An optional [FP32 E2E pack](fp32-cpu.md) requires an explicit
+manifest and a separate installer; `gigastt download` provisions INT8.
 
 **Minimum files for `rnnt` (default):**
 
@@ -348,7 +349,7 @@ loadable. There is no FP32 download path for runtime.
 `multilingual_vocab.txt`.
 
 ```sh
-# Lean INT8 bundle from the pinned GitHub Release (only runtime path)
+# Default INT8 bundle from the pinned GitHub Release
 gigastt download
 # or copy the four rnnt INT8 files into --model-dir / a volume, then:
 GIGASTT_OFFLINE=1 gigastt serve --model-dir /path/to/models --pool-size 1
@@ -362,7 +363,7 @@ Optional side models (not required for core ASR):
 | `vad/silero_vad.onnx` | `--vad` |
 | `wespeaker_resnet34.onnx` | provisioned by `download`; loaded lazily for diarization |
 
-The standard ONNX path requires a prequantized encoder; some operators remain
+The default ONNX path uses a prequantized encoder; some operators remain
 floating point. `gigastt quantize` is packaging-only (needs a local
 FP32 ONNX as source). `gigastt cache-gc` drops stale ORT optimized graphs.
 
