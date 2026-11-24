@@ -96,6 +96,47 @@ def test_clear_cache_removes_entries():
         assert cache.get(_FakeRunner(), "b.wav") is None
 
 
+def test_clear_cache_preserves_unrelated_json(tmp_path):
+    cache = DiskCache(tmp_path)
+    cache.set(_FakeRunner(), "clip.wav", "one", 1.0)
+    unrelated = {
+        "results.json": '{"samples": 12}',
+        "a" * 64 + ".json": '{"hypothesis": "report", "proc_time": 0.1}',
+        "b" * 64 + ".json": "corrupt or unrelated",
+    }
+    for name, contents in unrelated.items():
+        (tmp_path / name).write_text(contents)
+
+    assert cache.clear() == 1
+    for name, contents in unrelated.items():
+        assert (tmp_path / name).read_text() == contents
+
+
+def test_clear_cache_ignores_disappearing_entry(tmp_path, monkeypatch):
+    cache = DiskCache(tmp_path)
+    cache.set(_FakeRunner(), "clip.wav", "one", 1.0)
+    unlink = Path.unlink
+
+    def disappear(path):
+        unlink(path)
+        raise FileNotFoundError(path)
+
+    monkeypatch.setattr(Path, "unlink", disappear)
+    assert cache.clear() == 0
+
+
+def test_clear_cache_reports_unexpected_removal_error(tmp_path, monkeypatch):
+    cache = DiskCache(tmp_path)
+    cache.set(_FakeRunner(), "clip.wav", "one", 1.0)
+
+    def deny_unlink(path):
+        raise PermissionError(path)
+
+    monkeypatch.setattr(Path, "unlink", deny_unlink)
+    with pytest.raises(PermissionError):
+        cache.clear()
+
+
 def test_cache_writes_are_atomic():
     with tempfile.TemporaryDirectory() as tmp:
         cache = DiskCache(tmp)

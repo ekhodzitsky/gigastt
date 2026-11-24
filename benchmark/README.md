@@ -423,6 +423,11 @@ If the external dataset is missing, the benchmark falls back to the bundled fixt
 
 Existing result files were recomputed with the new symmetric words-to-digits normalization (`benchmark/recompute_wer.py`). The full 4×4 matrix below now includes the previously missing `openstt_calls` and `openstt_youtube` pairs, generated with the new normalization.
 
+Run `python3 benchmark/recompute_wer.py` to read the archived reports in
+`benchmark/results_full/` and write a fresh recomputation under the ignored
+`benchmark/results_local/recompute_wer/` directory. Use `--input-dir` and
+`--output-dir` to select other locations.
+
 | Dataset | Engine | Old WER | Old CI | New WER | New CI | Δ WER |
 |---|---|---|---|---|---|---|
 | golos_crowd_1k | faster-whisper | 15.54 | 14.06–16.96 | 15.53 | 13.94–17.10 | -0.01 |

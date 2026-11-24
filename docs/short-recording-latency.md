@@ -21,8 +21,9 @@ Bytes, SHA-256, and the source duration are in
 [`benchmark/short_notes/corpus.json`](../benchmark/short_notes/corpus.json).
 The encoded files are
 [`benchmark/short_notes/encoded/`](../benchmark/short_notes/encoded/).
-Regenerate them with `python3 benchmark/measure_short_notes.py` (that script
-also repeats the timing run).
+To regenerate the encodes and repeat the timing run, use
+`python3 benchmark/measure_short_notes.py`. New encodes, reports, and logs
+go under the ignored `benchmark/results_local/short_notes/` directory.
 
 Every number below is an HTTP `POST /v1/transcribe` of the whole file against
 a release binary built from commit `824bf8ae094c` (`gigastt --version` still

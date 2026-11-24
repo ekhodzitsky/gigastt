@@ -9,6 +9,8 @@ run, subsequent runs only compute WER on cached hypotheses.
 import hashlib
 import json
 import os
+import re
+import stat
 import tempfile
 import time
 from pathlib import Path
@@ -87,14 +89,27 @@ class DiskCache:
             raise
 
     def clear(self) -> int:
-        """Remove all cached entries. Returns number of files removed."""
-        if not self.cache_dir.exists():
+        """Remove recognizable cache entries. Returns number of files removed."""
+        try:
+            paths = list(self.cache_dir.iterdir())
+        except FileNotFoundError:
             return 0
         removed = 0
-        for path in self.cache_dir.glob("*.json"):
+        for path in paths:
+            if not re.fullmatch(r"[0-9a-f]{64}\.json", path.name):
+                continue
             try:
+                if not stat.S_ISREG(path.lstat().st_mode):
+                    continue
+                with path.open(encoding="utf-8") as handle:
+                    entry = json.load(handle)
+                # Keep ambiguous files, even when they have a digest-like name.
+                if not isinstance(entry, dict) or entry.keys() != {
+                    "hypothesis", "proc_time", "cached_at", "runner", "config", "wav_sha256",
+                }:
+                    continue
                 path.unlink()
-                removed += 1
-            except Exception:
-                pass
+            except (FileNotFoundError, UnicodeDecodeError, json.JSONDecodeError):
+                continue
+            removed += 1
         return removed

@@ -4,4 +4,5 @@ results.json
 results_*.json
 results_full/
 /results_local/
+/results/**/*.lock
 logs/
