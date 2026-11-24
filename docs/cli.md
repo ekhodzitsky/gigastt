@@ -310,7 +310,10 @@ gigastt transcribe-batch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
   Recursively transcribe every audio file (WAV, MP3, M4A, OGG, FLAC, WebM) under
   INPUT_DIR, writing one `<stem>.<ext>` file per format into OUTPUT_DIR.
   Files are processed in parallel (--pool-size workers). Files already inside
-  a --move-to directory are excluded from the scan.
+  a --move-to directory are excluded from the scan. Batch rejects duplicate
+  destination names and existing reports or archives before processing.
+  Reports are staged before publication. If another writer claims a name
+  mid-run, files already published remain in place and the source is kept.
   --model-dir <DIR>           Model directory [default: ~/.gigastt/models]
   --model-variant <V>         Recognition head: rnnt | e2e_rnnt | ml_ctc | ml_ctc_large.
                               Omit to auto-detect. Env: GIGASTT_MODEL_VARIANT.
@@ -350,7 +353,9 @@ gigastt watch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
   consecutive polls, so partially-copied files are never picked up. Files
   already present at startup are registered but NOT transcribed (use
   transcribe-batch for the backlog). Ctrl-C stops polling and waits for
-  in-flight files before exiting.
+  in-flight files before exiting. Watch reports destination conflicts, keeps
+  the affected source, and continues with unrelated files. To retry a retained
+  file, move the earlier reports or archive aside and run transcribe-batch.
   Same options as transcribe-batch, plus:
   --poll-interval-ms <MS>     Poll interval [default: 1000].
                               Env: GIGASTT_WATCH_POLL_INTERVAL_MS.
