@@ -83,6 +83,7 @@ A manual Release dispatch first resolves an existing
 Docker tag. The tag version must match the workspace and every workspace
 package's effective version. Missing tags and mismatches stop all publishing
 jobs.
+GitHub Releases for tags with a prerelease suffix are marked as prereleases.
 
 Every binary build, SBOM and container context uses the same resolved commit,
 even when manual dispatch selects a different workflow ref. Container revision

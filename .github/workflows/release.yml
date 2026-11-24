@@ -28,6 +28,7 @@ jobs:
       tag: ${{ steps.source.outputs.tag }}
       commit: ${{ steps.source.outputs.commit }}
       version: ${{ steps.source.outputs.version }}
+      prerelease: ${{ steps.source.outputs.prerelease }}
       predicate: ${{ steps.source.outputs.predicate }}
     steps:
       # The validator comes from the invoking workflow revision; artifact
@@ -486,7 +487,7 @@ jobs:
           tag_name: ${{ needs.resolve-release.outputs.tag }}
           name: ${{ needs.resolve-release.outputs.tag }}
           draft: false
-          prerelease: false
+          prerelease: ${{ needs.resolve-release.outputs.prerelease }}
           fail_on_unmatched_files: true
           generate_release_notes: true
           files: ${{ steps.assets.outputs.files }}
