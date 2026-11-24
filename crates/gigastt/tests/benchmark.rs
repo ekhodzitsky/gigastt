@@ -459,6 +459,26 @@ fn ceilings_from_baseline(baseline: &serde_json::Value) -> QualityCeilings {
     c
 }
 
+fn wer_failures(wer: f64, baseline: Option<f64>, ceilings: QualityCeilings) -> Vec<String> {
+    let mut failures = Vec::new();
+    if wer >= ceilings.max_wer {
+        failures.push(format!(
+            "WER {wer:.1}% exceeds absolute ceiling {max:.1}%",
+            max = ceilings.max_wer
+        ));
+    }
+    if let Some(base) = baseline {
+        let delta = wer - base;
+        if delta > ceilings.wer_tolerance_pp {
+            failures.push(format!(
+                "WER regressed {delta:+.1}pp vs baseline {base:.1}% (current {wer:.1}%, tolerance {tol:.1}pp)",
+                tol = ceilings.wer_tolerance_pp
+            ));
+        }
+    }
+    failures
+}
+
 /// Pure multi-metric regression gate. Empty return = pass. Factored out of
 /// `main` so the comparison (sign, boundary, null-skip) can be self-tested
 /// model-free — the rest of the benchmark needs the ~225 MB INT8 model, this does
@@ -469,17 +489,10 @@ fn gate_verdict_quality(
     set_key: &str,
     ceilings: QualityCeilings,
 ) -> Vec<String> {
-    let mut failures = Vec::new();
     let set = &baseline["sets"][set_key];
+    let mut failures = wer_failures(m.wer, set["wer"].as_f64(), ceilings);
 
     // ---- absolute ceilings (always) ----
-    if m.wer >= ceilings.max_wer {
-        failures.push(format!(
-            "WER {wer:.1}% exceeds absolute ceiling {max:.1}%",
-            wer = m.wer,
-            max = ceilings.max_wer
-        ));
-    }
     if m.rtf > ceilings.max_rtf {
         failures.push(format!(
             "RTF {rtf:.3} exceeds absolute ceiling {max:.3}",
@@ -510,16 +523,6 @@ fn gate_verdict_quality(
     }
 
     // ---- relative baselines (only when committed) ----
-    if let Some(base) = set["wer"].as_f64() {
-        let delta = m.wer - base;
-        if delta > ceilings.wer_tolerance_pp {
-            failures.push(format!(
-                "WER regressed {delta:+.1}pp vs baseline {base:.1}% (current {wer:.1}%, tolerance {tol:.1}pp)",
-                wer = m.wer,
-                tol = ceilings.wer_tolerance_pp
-            ));
-        }
-    }
     if let Some(base) = set["rtf"].as_f64() {
         let delta = m.rtf - base;
         if delta > ceilings.rtf_tolerance_abs {
@@ -608,6 +611,22 @@ fn current_rss_mb() -> u64 {
     }
 }
 
+fn wer_summary_row(wer: f64, baseline: Option<f64>, ceilings: QualityCeilings) -> String {
+    let base = baseline
+        .map(|b| format!("{b:.1}%"))
+        .unwrap_or_else(|| "—".into());
+    let verdict = if wer_failures(wer, baseline, ceilings).is_empty() {
+        "ok"
+    } else {
+        "FAIL"
+    };
+    format!(
+        "  | WER               | {base:>8} | {wer:5.1}% | ±{tol:.1}pp / <{max:.0}% | {verdict} |",
+        tol = ceilings.wer_tolerance_pp,
+        max = ceilings.max_wer
+    )
+}
+
 /// Model-free assertions for `gate_verdict` + `read_baseline`, run via
 /// `cargo test --test benchmark -- --self-test` (see CI). Guards against a
 /// sign error / off-by-tolerance / broken null-skip in the gate shipping
@@ -645,6 +664,25 @@ fn run_gate_self_test() {
             .any(|f| f.contains("ceiling")),
         "wer == MAX_WER must fail on the absolute ceiling"
     );
+    let ceilings = QualityCeilings {
+        max_wer: 15.0,
+        wer_tolerance_pp: 1.5,
+        ..QualityCeilings::default()
+    };
+    for (wer, baseline, verdict) in [
+        (15.0, Some(14.9), "FAIL"),
+        (15.1, None, "FAIL"),
+        (2.6, Some(1.0), "FAIL"),
+        (2.5, Some(1.0), "ok"),
+        (5.0, None, "ok"),
+    ] {
+        assert_eq!(
+            gate_verdict(wer, baseline, ceilings.wer_tolerance_pp, ceilings.max_wer).is_empty(),
+            verdict == "ok",
+        );
+        let row = wer_summary_row(wer, baseline, ceilings);
+        assert!(row.ends_with(&format!("| {verdict} |")), "{row}");
+    }
     // read_baseline: a missing file falls back to tolerance 0.5 / empty sets.
     let missing = read_baseline(Path::new("/nonexistent/benchmark_baseline.json"));
     assert_eq!(missing["tolerance_pp"].as_f64(), Some(0.5));
@@ -777,8 +815,7 @@ fn main() {
         println!("benchmark: test");
         return;
     }
-    // Model-free gate self-test (CI runs this on every PR; the full benchmark
-    // is model-gated and skipped). Panics on failure → non-zero exit.
+    // Manual CI runs this model-free self-test. Panics exit nonzero.
     if args.iter().any(|a| a == "--self-test") {
         run_gate_self_test();
         println!("benchmark gate self-test: ok");
@@ -1046,31 +1083,13 @@ fn main() {
         cold_start_ms,
     };
 
+    let baseline_wer = baseline["sets"][set_key]["wer"].as_f64();
+
     // Presentation table (pass/fail decision is pure gate_verdict_quality).
     eprintln!("\n  Quality gate [{set_key}]:");
     eprintln!("  | metric            | baseline | current | tol / ceiling | verdict |");
     eprintln!("  |-------------------|----------|---------|---------------|---------|");
-    {
-        let base = baseline["sets"][set_key]["wer"].as_f64();
-        let (base_s, delta_s, verdict) = match base {
-            Some(b) => {
-                let d = wer - b;
-                let v = if d > ceilings.wer_tolerance_pp {
-                    "FAIL"
-                } else {
-                    "ok"
-                };
-                (format!("{b:.1}%"), format!("{d:+.1}pp"), v)
-            }
-            None => ("—".into(), "—".into(), "skip"),
-        };
-        eprintln!(
-            "  | WER               | {base_s:>8} | {wer:5.1}% | ±{tol:.1}pp / <{max:.0}% | {verdict} |",
-            tol = ceilings.wer_tolerance_pp,
-            max = ceilings.max_wer
-        );
-        let _ = (delta_s,);
-    }
+    eprintln!("{}", wer_summary_row(wer, baseline_wer, ceilings));
     {
         let base = baseline["sets"][set_key]["rtf"].as_f64();
         let verdict = if rtf > ceilings.max_rtf {
@@ -1147,7 +1166,6 @@ fn main() {
 
     let failures = gate_verdict_quality(metrics, &baseline, set_key, ceilings);
     let passed = failures.is_empty();
-    let baseline_wer = baseline["sets"][set_key]["wer"].as_f64();
 
     let output = serde_json::json!({
         "pass": passed,

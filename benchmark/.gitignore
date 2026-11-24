@@ -3,4 +3,5 @@ __pycache__/
 results.json
 results_*.json
 results_full/
+/results_local/
 logs/
