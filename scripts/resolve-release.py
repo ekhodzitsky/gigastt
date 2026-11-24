@@ -88,6 +88,7 @@ def provenance(source, env):
 
 def main():
     result = resolve(os.environ['RELEASE_TAG'])
+    result['prerelease'] = 'true' if '-' in result['version'] else 'false'
     result['predicate'] = json.dumps(provenance(result, os.environ), separators=(',', ':'))
     metadata = {
         'schema': 1, 'tag': result['tag'], 'commit': result['commit'],

@@ -61,6 +61,7 @@ class ReleaseSourceTests(unittest.TestCase):
         self.assertEqual(metadata, {'schema': 1, 'tag': 'v2.22.0', 'commit': self.release,
                                    'repository': 'example/repo', 'run_id': 123, 'run_attempt': 2})
         outputs = dict(line.split('=', 1) for line in self.output.read_text().splitlines())
+        self.assertEqual(outputs['prerelease'], 'false')
         predicate = json.loads(outputs['predicate'])
         self.assertEqual(predicate['buildDefinition']['externalParameters']['inputs'], {'tag': 'v2.22.0'})
         self.assertEqual(predicate['buildDefinition']['internalParameters']['github'], {
@@ -92,6 +93,16 @@ class ReleaseSourceTests(unittest.TestCase):
         self.git('tag', 'v2.23.0-rc.1')
         result = self.run_resolver('v2.23.0-rc.1')
         self.assertEqual(result.returncode, 0, result.stderr)
+        outputs = dict(line.split('=', 1) for line in self.output.read_text().splitlines())
+        self.assertEqual(outputs['prerelease'], 'true')
+
+    def test_workflow_passes_resolved_prerelease_flag_to_publisher(self):
+        workflow = (SCRIPT.parent.parent / '.github/workflows/release.yml').read_text()
+        resolve_job, remaining_jobs = workflow.split('  resolve-release:\n', 1)[1].split('  build:\n', 1)
+        self.assertIn('prerelease: ${{ steps.source.outputs.prerelease }}', resolve_job)
+        release_action = remaining_jobs.split('uses: softprops/action-gh-release@', 1)[1]
+        release_inputs = release_action.split('  docker-publish:', 1)[0]
+        self.assertIn('prerelease: ${{ needs.resolve-release.outputs.prerelease }}', release_inputs)
 
     def test_missing_or_invalid_tags_emit_no_outputs(self):
         for tag in ['v2.99.0', 'main', 'v02.22.0', 'v2.22.0-01', 'v2.22.0-rc..1', 'v2.22.0+build', 'v2.22.0\ninjected=yes']:
