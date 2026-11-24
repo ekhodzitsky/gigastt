@@ -23,31 +23,60 @@ def number(value, positive=False):
     return value
 
 
+CRITERION_REGRESSION_LIMIT = 0.05
+
+
+def criterion_interval(benchmark):
+    try:
+        for version in ['main', 'new']:
+            estimate = json.loads((benchmark / version / 'estimates.json').read_text())
+            number(estimate['mean']['point_estimate'], positive=True)
+        change = json.loads((benchmark / 'change/estimates.json').read_text())
+        interval = change['mean']['confidence_interval']
+        lower = number(interval['lower_bound'])
+        upper = number(interval['upper_bound'])
+        if lower > upper or lower <= -1:
+            raise ValueError('invalid confidence interval')
+    except (OSError, KeyError, TypeError, ValueError) as error:
+        raise ValueError(f'invalid or missing benchmark data for {benchmark}: {error}') from error
+    return lower, upper
+
+
 def check_criterion(root):
     root = Path(root)
-    baseline = {p.parent.parent for p in root.glob('**/main/estimates.json')}
-    current = {p.parent.parent for p in root.glob('**/new/estimates.json')}
+    order_reports = root / 'order-check'
+    baseline = {p.parent.parent for p in root.glob('**/main/estimates.json')
+                if not p.is_relative_to(order_reports)}
+    current = {p.parent.parent for p in root.glob('**/new/estimates.json')
+               if not p.is_relative_to(order_reports)}
     if not baseline or baseline != current:
         raise ValueError(f'missing benchmark measurements: baseline-only={baseline-current}, current-only={current-baseline}')
     regressions = []
     for benchmark in sorted(baseline):
-        try:
-            for version in ['main', 'new']:
-                estimate = json.loads((benchmark / version / 'estimates.json').read_text())
-                number(estimate['mean']['point_estimate'], positive=True)
-            change = json.loads((benchmark / 'change/estimates.json').read_text())
-            interval = change['mean']['confidence_interval']
-            lower = number(interval['lower_bound'])
-            upper = number(interval['upper_bound'])
-            if lower > upper:
-                raise ValueError('reversed confidence interval')
-        except (OSError, KeyError, TypeError, ValueError) as error:
-            raise ValueError(f'invalid or missing benchmark data for {benchmark}: {error}') from error
-        if lower > 0.05:
+        lower, _ = criterion_interval(benchmark)
+        if lower > CRITERION_REGRESSION_LIMIT:
             regressions.append(f'{benchmark.relative_to(root)}: lower confidence bound +{lower:.1%}')
     if regressions:
         raise ValueError('performance regressions above 5%:\n' + '\n'.join(regressions))
     return len(baseline)
+
+
+def check_tokenizer_order(root):
+    tokenizer = Path('tokenizer_decode/decode_64_ids')
+    order_reports = Path(root) / 'order-check'
+    control_lower, control_upper = criterion_interval(order_reports / 'control' / tokenizer)
+    limit = CRITERION_REGRESSION_LIMIT
+    if control_lower < -limit or control_upper > limit:
+        raise ValueError(f'unstable tokenizer measurement: same-binary interval '
+                         f'[{control_lower:+.2%}, {control_upper:+.2%}] exceeds ±{limit:.0%}')
+
+    _, reverse_upper = criterion_interval(order_reports / 'reverse' / tokenizer)
+    # The reverse run reports base/candidate; the ratio's upper bound
+    # becomes the lower bound after inversion into candidate/base.
+    if reverse_upper < 1 / (1 + limit) - 1:
+        candidate_lower = 1 / (1 + reverse_upper) - 1
+        raise ValueError(f'tokenizer regression in reverse run: lower confidence bound '
+                         f'{candidate_lower:+.2%} exceeds {limit:.0%}')
 
 
 def latest_main_run(runs, commit):
@@ -129,7 +158,9 @@ def main():
     sub.add_parser('release').add_argument('commit')
     args = parser.parse_args()
     if args.command == 'criterion':
-        print(f'Validated {check_criterion(args.directory)} benchmark comparisons')
+        count = check_criterion(args.directory)
+        check_tokenizer_order(args.directory)
+        print(f'Validated {count} benchmark comparisons and tokenizer order controls')
     elif args.command == 'speaker-revisions':
         print(json.dumps(check_speaker_revisions(json.loads(args.report.read_text())), indent=2))
     else:

@@ -68,6 +68,40 @@ class CriterionTests(unittest.TestCase):
             gates.check_criterion(self.root)
 
 
+    def order_interval(self, pair, lower, upper):
+        report = f'order-check/{pair}/tokenizer_decode/decode_64_ids'
+        for version in ('main', 'new'):
+            self.write(f'{report}/{version}/estimates.json', {'mean': {'point_estimate': 100.0}})
+        self.write(f'{report}/change/estimates.json', {'mean': {'confidence_interval': {
+            'lower_bound': lower, 'upper_bound': upper}}})
+
+    def test_tokenizer_order_requires_complete_stable_control(self):
+        self.order_interval('reverse', -0.03, 0.01)
+        with self.assertRaises(ValueError):
+            gates.check_tokenizer_order(self.root)
+        self.order_interval('control', -0.05, 0.05)
+        gates.check_tokenizer_order(self.root)
+        self.order_interval('control', -0.0587, -0.0458)
+        with self.assertRaisesRegex(ValueError, 'unstable'):
+            gates.check_tokenizer_order(self.root)
+
+    def test_reverse_order_is_inverted_into_candidate_coordinates(self):
+        self.order_interval('control', -0.01, 0.01)
+        self.order_interval('reverse', -0.07, -0.06)
+        with self.assertRaisesRegex(ValueError, 'regression'):
+            gates.check_tokenizer_order(self.root)
+        self.order_interval('reverse', 0.06, 0.08)
+        gates.check_tokenizer_order(self.root)
+
+    def test_order_pair_does_not_replace_primary_gate(self):
+        self.order_interval('reverse', -0.1, -0.08)
+        self.order_interval('control', -0.01, 0.01)
+        self.assertEqual(gates.check_criterion(self.root), 1)
+        self.change(0.06)
+        with self.assertRaisesRegex(ValueError, 'regressions'):
+            gates.check_criterion(self.root)
+
+
 class ReleaseTests(unittest.TestCase):
     def run_record(self, **kw):
         return {'id': 10, 'head_sha': 'a' * 40, 'event': 'push', 'head_branch': 'main',
