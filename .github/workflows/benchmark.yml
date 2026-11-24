@@ -1,93 +1,141 @@
 name: benchmark
+run-name: Tokenizer order diagnostic
 
 on:
   workflow_dispatch:
-    inputs:
-      max_samples:
-        description: "Max samples (0 = unlimited)"
-        required: false
-        default: "100"
-      runners:
-        description: "Comma-separated runners or 'all'"
-        required: false
-        default: "all"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  benchmark:
-    runs-on: ubuntu-latest
+  tokenizer-order:
+    if: github.ref == 'refs/heads/research/tokenizer-order-check'
+    name: Tokenizer order diagnostic
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    env:
+      BASE_REVISION: 90fd3607f5e9ad84c5a7896f8d209b4fb5475309
+      CANDIDATE_REVISION: b38a811403a187b330730229dc1de1416731cb06
+      BASE_EXPECTED_SHA256: 883f0388df1d8b8ed1da4c64561f65837f9050d2d2328fd8a10effaa84881bb8
+      CANDIDATE_EXPECTED_SHA256: d6ea4acd5f492dc9e3dd7459fabc7628ff98eaf1a4631ceeca3cc3ccf9bb10ce
+      CARGO_INCREMENTAL: '0'
     steps:
       - uses: actions/checkout@v7
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
+          ref: ${{ env.CANDIDATE_REVISION }}
+          fetch-depth: 0
+          persist-credentials: false
 
-      - name: Cache Rust build
-        uses: Swatinem/rust-cache@v2
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          shared-key: benchmark-release
+          toolchain: '1.100.0'
 
-      - name: Cache models
-        uses: actions/cache@v6
-        with:
-          path: ~/.gigastt/models
-          key: gigastt-models-${{ hashFiles('crates/gigastt-core/src/model/**') }}
+      - name: Install native build prerequisites
+        timeout-minutes: 8
+        run: bash scripts/install-ci-prerequisites.sh
 
-      - name: Cache competitor models
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cache/whisper.cpp
-            ~/.cache/vosk
-          key: asr-models-2025
-
-      - name: Build gigastt
-        run: cargo build --release -p gigastt
-
-      - name: Download gigastt model
-        run: ./target/release/gigastt download
-
-      - name: Install Python dependencies
+      - name: Build both isolated tokenizer executables
+        shell: bash
         run: |
-          pip install --upgrade pip
-          pip install -r benchmark/requirements.lock.txt
+          set -euo pipefail
+          git worktree add --detach "$RUNNER_TEMP/tokenizer-base" "$BASE_REVISION"
+          rustc +1.100.0 -vV
+          rustc +1.100.0 -vV | grep -Fx 'commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a'
+          for arm in base candidate; do
+            if [[ "$arm" == base ]]; then
+              source_tree="$RUNNER_TEMP/tokenizer-base"
+              revision="$BASE_REVISION"
+            else
+              source_tree="$GITHUB_WORKSPACE"
+              revision="$CANDIDATE_REVISION"
+            fi
+            target_dir="$GITHUB_WORKSPACE/target/benchmark-builds/$arm/$revision"
+            test "$(git -C "$source_tree" rev-parse HEAD)" = "$revision"
+            git -C "$source_tree" diff --exit-code HEAD
+            (
+              cd "$source_tree"
+              CARGO_TARGET_DIR="$target_dir" cargo +1.100.0 bench -p gigastt-core --locked \
+                --features __internals --bench tokenizer --no-run --message-format=json
+            ) > "$RUNNER_TEMP/$arm-build.jsonl"
+            executable=$(jq -ers '
+              map(select(.reason == "compiler-artifact" and .target.name == "tokenizer" and .executable != null))
+              | if length == 1 then .[0].executable else error("expected one tokenizer executable") end
+            ' "$RUNNER_TEMP/$arm-build.jsonl")
+            executable=$(realpath "$executable")
+            [[ "$executable" == "$target_dir/"* ]]
+            printf '%s\n' "$executable" > "$RUNNER_TEMP/$arm-path"
+            sha256sum "$executable" > "$RUNNER_TEMP/$arm-sha256"
+            printf '%s revision=%s sha256=%s\n' "$arm" "$revision" "$(cut -d' ' -f1 "$RUNNER_TEMP/$arm-sha256")"
+          done
 
-      - name: Run benchmark
+      - name: Measure both orders and the identical-binary control
+        shell: bash
         run: |
-          cd benchmark
-          python benchmark.py \
-            --max-samples ${{ github.event.inputs.max_samples || 100 }} \
-            --runners ${{ github.event.inputs.runners || 'all' }} \
-            --output results.json
-        env:
-          GIGASTT_BENCHMARK_MAX_SAMPLES: ${{ github.event.inputs.max_samples || 100 }}
+          set -euo pipefail
+          export DIAGNOSTIC_CPU
+          DIAGNOSTIC_CPU=$(python3 -c 'import os; print(min(os.sched_getaffinity(0)))')
+          taskset -c "$DIAGNOSTIC_CPU" python3 -c '
+          import os
+          cpu = int(os.environ["DIAGNOSTIC_CPU"])
+          assert os.sched_getaffinity(0) == {cpu}
+          '
+          printf 'Image=%s version=%s CPU=%s\n' "${ImageOS:-unknown}" "${ImageVersion:-unknown}" "$DIAGNOSTIC_CPU"
+          uname -sr
+          getconf GNU_LIBC_VERSION
+          LC_ALL=C lscpu | grep -E '^(Architecture|CPU\(s\)|Vendor ID|Model name|CPU family|Model:|Stepping|Thread\(s\) per core|Hypervisor vendor):?' || true
+          grep '^Cpus_allowed_list:' /proc/self/status
+          for path in /sys/fs/cgroup/cpu.max \
+            "/sys/devices/system/cpu/cpu$DIAGNOSTIC_CPU/topology/thread_siblings_list" \
+            "/sys/devices/system/cpu/cpu$DIAGNOSTIC_CPU/cpufreq/scaling_governor"; do
+            if [[ -r "$path" ]]; then printf '%s=%s\n' "${path##*/}" "$(cat "$path")"; fi
+          done
+          export MATCHES_PRIOR_ELFS=false
+          if [[ "$(cut -d' ' -f1 "$RUNNER_TEMP/base-sha256")" == "$BASE_EXPECTED_SHA256" &&
+                "$(cut -d' ' -f1 "$RUNNER_TEMP/candidate-sha256")" == "$CANDIDATE_EXPECTED_SHA256" ]]; then
+            MATCHES_PRIOR_ELFS=true
+          fi
 
-      - name: Upload results artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-results
-          path: benchmark/results.json
+          for arm in base candidate; do sha256sum --status -c "$RUNNER_TEMP/$arm-sha256"; done
+          run_pair() {
+            local pair=$1 first=$2 second=$3
+            export CRITERION_HOME="$RUNNER_TEMP/tokenizer-order-$pair"
+            mkdir "$CRITERION_HOME"
+            printf 'pair=%s first=%s second=%s start=%s\n' "$pair" "$first" "$second" "$(date -u +%FT%TZ)"
+            taskset -c "$DIAGNOSTIC_CPU" "$(cat "$RUNNER_TEMP/$first-path")" --bench \
+              tokenizer_decode/decode_64_ids --save-baseline first --noplot > "$CRITERION_HOME/first.log" 2>&1
+            taskset -c "$DIAGNOSTIC_CPU" "$(cat "$RUNNER_TEMP/$second-path")" --bench \
+              tokenizer_decode/decode_64_ids --baseline first --noplot > "$CRITERION_HOME/second.log" 2>&1
+            printf 'pair=%s finish=%s\n' "$pair" "$(date -u +%FT%TZ)"
+          }
+          run_pair AB base candidate
+          run_pair BA candidate base
+          run_pair AA base base
+          for arm in base candidate; do sha256sum --status -c "$RUNNER_TEMP/$arm-sha256"; done
 
-      - name: Commit results to benchmark-results-local branch
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan benchmark-results-local-tmp
-          cp benchmark/results.json /tmp/results.json
-          git rm -rf .
-          cp /tmp/results.json results.json
-          git add results.json
-          git commit -m "benchmark: update results ($(date -u +%Y-%m-%d))"
-          git branch -M benchmark-results-local
-          git push -f origin benchmark-results-local
+          python3 - <<'PY'
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          runner_temp = Path(os.environ['RUNNER_TEMP'])
+          print('Matches prior hosted executables:', os.environ['MATCHES_PRIOR_ELFS'], flush=True)
+          for pair in ('AB', 'BA', 'AA'):
+              report = runner_temp / f'tokenizer-order-{pair}' / 'tokenizer_decode' / 'decode_64_ids'
+              for side in ('first', 'new'):
+                  sample = json.loads((report / side / 'sample.json').read_bytes())
+                  assert len(sample['iters']) == len(sample['times']) == 100
+                  assert all(math.isfinite(x) and x > 0 for field in ('iters', 'times') for x in sample[field])
+              estimate = json.loads((report / 'change' / 'estimates.json').read_bytes())['mean']
+              interval = estimate['confidence_interval']
+              lo, point, hi = interval['lower_bound'], estimate['point_estimate'], interval['upper_bound']
+              assert interval['confidence_level'] == 0.95
+              assert all(math.isfinite(x) and x > -1 for x in (lo, point, hi))
+              assert lo <= hi
+              if pair == 'BA':
+                  lo, point, hi = (1 / (1 + x) - 1 for x in (hi, point, lo))
+              print('TOKENIZER_ORDER_RESULT ' + json.dumps({
+                  'pair': pair, 'coordinate': 'candidate/base' if pair != 'AA' else 'repeat/first',
+                  'lower': lo, 'mean': point, 'upper': hi, 'lower_exceeds_five_percent': lo > 0.05,
+              }), flush=True)
+          PY
