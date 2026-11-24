@@ -12,9 +12,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 mod paths;
+mod storage;
 pub use paths::{
     SUPPORTED_EXTENSIONS, collect_audio_files, is_audio_file, output_path_for, parse_formats,
 };
+use storage::{Destinations, Directories};
 
 /// Injectable transcription step: maps an audio file path to its result. The
 /// production closure checks out a pool triplet and calls
@@ -74,19 +76,6 @@ pub struct WatchOptions {
     pub settle_polls: u32,
 }
 
-/// Move a file, falling back to copy + remove when `rename` cannot cross
-/// filesystems.
-fn move_file(source: &Path, dest: &Path) -> anyhow::Result<()> {
-    if std::fs::rename(source, dest).is_ok() {
-        return Ok(());
-    }
-    std::fs::copy(source, dest)
-        .with_context(|| format!("failed to move {} to {}", source.display(), dest.display()))?;
-    std::fs::remove_file(source)
-        .with_context(|| format!("failed to remove {}", source.display()))?;
-    Ok(())
-}
-
 /// Shared per-run state handed to every processing task.
 struct ProcessCtx {
     output_dir: PathBuf,
@@ -100,24 +89,39 @@ struct ProcessCtx {
 /// One attempt: transcribe, render every format, then apply the post-success
 /// source policy (move / delete). Runs on a blocking thread because both the
 /// engine call and the file IO are synchronous.
-async fn process_one_attempt(path: PathBuf, ctx: Arc<ProcessCtx>) -> anyhow::Result<()> {
-    let task_path = path.clone();
+async fn process_one_attempt(
+    path: PathBuf,
+    ctx: Arc<ProcessCtx>,
+    signature: FileSignature,
+) -> anyhow::Result<()> {
     tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
-        let result = (ctx.transcribe)(task_path.clone())?;
-        for fmt in &ctx.formats {
-            let rendered = fmt.render(&result, &ctx.render_opts);
-            let out = output_path_for(&task_path, &ctx.output_dir, fmt.extension());
-            std::fs::write(&out, rendered)
-                .with_context(|| format!("failed to write {}", out.display()))?;
+        signature.ensure_unchanged(&path)?;
+        let destinations =
+            Destinations::plan(&path, &ctx.output_dir, &ctx.formats, ctx.move_to.as_deref())?;
+        destinations.ensure_unused()?;
+        let result = (ctx.transcribe)(path.clone())?;
+        signature.ensure_unchanged(&path)?;
+
+        let staged = ctx
+            .formats
+            .iter()
+            .zip(&destinations.reports)
+            .map(|(format, destination)| {
+                let rendered = format.render(&result, &ctx.render_opts);
+                storage::stage_report(destination, &rendered)
+            })
+            .collect::<anyhow::Result<Vec<_>>>()?;
+        // Report any occupied name before publishing. Exclusive publication
+        // is still required because another writer can commit after this check.
+        destinations.ensure_unused()?;
+        signature.ensure_unchanged(&path)?;
+        for (file, destination) in staged.into_iter().zip(&destinations.reports) {
+            storage::publish(file, destination)?;
         }
-        if let Some(move_to) = &ctx.move_to {
-            let file_name = task_path
-                .file_name()
-                .ok_or_else(|| anyhow::anyhow!("no file name: {}", task_path.display()))?;
-            move_file(&task_path, &move_to.join(file_name))?;
+        if let Some(destination) = destinations.archive {
+            storage::move_file(&path, &destination, signature)?;
         } else if ctx.delete_source {
-            std::fs::remove_file(&task_path)
-                .with_context(|| format!("failed to delete {}", task_path.display()))?;
+            storage::remove_source(&path, signature)?;
         }
         Ok(())
     })
@@ -131,10 +135,15 @@ async fn process_with_retries(
     path: PathBuf,
     ctx: Arc<ProcessCtx>,
     retries: u32,
+    settled: Option<FileSignature>,
 ) -> (PathBuf, anyhow::Result<()>) {
+    let signature = match settled.map_or_else(|| FileSignature::read(&path), Ok) {
+        Ok(signature) => signature,
+        Err(error) => return (path, Err(error)),
+    };
     let mut attempt = 0_u32;
     loop {
-        match process_one_attempt(path.clone(), ctx.clone()).await {
+        match process_one_attempt(path.clone(), ctx.clone(), signature).await {
             Ok(()) => return (path, Ok(())),
             Err(e) => {
                 attempt += 1;
@@ -153,31 +162,6 @@ async fn process_with_retries(
     }
 }
 
-/// Canonicalize the input directory and create the output / move-to
-/// directories. Returns the canonical input root plus the canonical move-to
-/// dir (so files already inside it can be excluded from scans).
-fn prepare_dirs(opts: &BatchOptions) -> anyhow::Result<(PathBuf, Option<PathBuf>)> {
-    let input_root = opts
-        .input_dir
-        .canonicalize()
-        .with_context(|| format!("input directory not found: {}", opts.input_dir.display()))?;
-    std::fs::create_dir_all(&opts.output_dir).with_context(|| {
-        format!(
-            "failed to create output directory {}",
-            opts.output_dir.display()
-        )
-    })?;
-    let move_to = match &opts.move_to {
-        Some(dir) => {
-            std::fs::create_dir_all(dir)
-                .with_context(|| format!("failed to create move-to directory {}", dir.display()))?;
-            Some(dir.canonicalize().unwrap_or_else(|_| dir.clone()))
-        }
-        None => None,
-    };
-    Ok((input_root, move_to))
-}
-
 /// Scan the input root, excluding anything under the move-to directory (files
 /// moved there by earlier runs must not be picked up again).
 fn scan_inputs(input_root: &Path, move_to: Option<&Path>) -> anyhow::Result<Vec<PathBuf>> {
@@ -188,20 +172,30 @@ fn scan_inputs(input_root: &Path, move_to: Option<&Path>) -> anyhow::Result<Vec<
     Ok(files)
 }
 
-/// Log a warning when two inputs would render to the same output file.
-fn warn_duplicate_outputs(files: &[PathBuf], output_dir: &Path, formats: &[ExportFormat]) {
-    let mut seen = std::collections::HashSet::new();
-    for f in files {
-        for fmt in formats {
-            let out = output_path_for(f, output_dir, fmt.extension());
-            if !seen.insert(out.clone()) {
-                tracing::warn!(
-                    "duplicate output {} — inputs with equal file stems overwrite each other",
-                    out.display()
+/// Refuse a conflicting batch before any report or archive is published.
+fn check_batch_destinations(
+    files: &[PathBuf],
+    dirs: &Directories,
+    formats: &[ExportFormat],
+) -> anyhow::Result<()> {
+    let mut planned = std::collections::HashMap::new();
+    for source in files {
+        let destinations =
+            Destinations::plan(source, &dirs.output, formats, dirs.archive.as_deref())?;
+        for path in destinations.paths() {
+            if let Some(other) = planned.insert(path.to_path_buf(), source) {
+                anyhow::bail!(
+                    "destination {} is shared by {} and {}",
+                    path.display(),
+                    other.display(),
+                    source.display()
                 );
             }
+            storage::ensure_unused(path)
+                .with_context(|| format!("destination conflict for {}", source.display()))?;
         }
     }
+    Ok(())
 }
 
 /// Process every supported audio file under `input_dir` once, up to
@@ -212,13 +206,13 @@ pub async fn run_batch(
     transcribe: TranscribeFn,
     shutdown: tokio_util::sync::CancellationToken,
 ) -> anyhow::Result<BatchSummary> {
-    let (input_root, move_to_canonical) = prepare_dirs(opts)?;
-    let files = scan_inputs(&input_root, move_to_canonical.as_deref())?;
+    let dirs = Directories::prepare(opts)?;
+    let files = scan_inputs(&dirs.input, dirs.archive.as_deref())?;
     if files.is_empty() {
-        tracing::info!("no audio files found in {}", input_root.display());
+        tracing::info!("no audio files found in {}", dirs.input.display());
         return Ok(BatchSummary::default());
     }
-    warn_duplicate_outputs(&files, &opts.output_dir, &opts.formats);
+    check_batch_destinations(&files, &dirs, &opts.formats)?;
     tracing::info!(
         total = files.len(),
         concurrency = opts.concurrency,
@@ -226,10 +220,10 @@ pub async fn run_batch(
     );
 
     let ctx = Arc::new(ProcessCtx {
-        output_dir: opts.output_dir.clone(),
+        output_dir: dirs.output,
         formats: opts.formats.clone(),
         render_opts: opts.render_opts,
-        move_to: opts.move_to.clone(),
+        move_to: dirs.archive,
         delete_source: opts.delete_source,
         transcribe,
     });
@@ -244,7 +238,7 @@ pub async fn run_batch(
         while !shutdown.is_cancelled() && set.len() < concurrency {
             match iter.next() {
                 Some(path) => {
-                    set.spawn(process_with_retries(path, ctx.clone(), opts.retries));
+                    set.spawn(process_with_retries(path, ctx.clone(), opts.retries, None));
                 }
                 None => break,
             }
@@ -288,14 +282,37 @@ pub async fn run_batch(
 struct FileSignature {
     len: u64,
     mtime: Option<std::time::SystemTime>,
+    #[cfg(unix)]
+    identity: (u64, u64),
+}
+
+impl FileSignature {
+    fn read(path: &Path) -> anyhow::Result<Self> {
+        let metadata = std::fs::metadata(path)
+            .with_context(|| format!("failed to inspect source {}", path.display()))?;
+        Ok(Self {
+            len: metadata.len(),
+            mtime: metadata.modified().ok(),
+            #[cfg(unix)]
+            identity: {
+                use std::os::unix::fs::MetadataExt;
+                (metadata.dev(), metadata.ino())
+            },
+        })
+    }
+
+    fn ensure_unchanged(self, path: &Path) -> anyhow::Result<()> {
+        anyhow::ensure!(
+            Self::read(path)? == self,
+            "source changed while processing {}",
+            path.display()
+        );
+        Ok(())
+    }
 }
 
 fn signature_of(path: &Path) -> Option<FileSignature> {
-    let meta = std::fs::metadata(path).ok()?;
-    Some(FileSignature {
-        len: meta.len(),
-        mtime: meta.modified().ok(),
-    })
+    FileSignature::read(path).ok()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -328,14 +345,14 @@ pub async fn run_watch(
     transcribe: TranscribeFn,
     shutdown: tokio_util::sync::CancellationToken,
 ) -> anyhow::Result<WatchSummary> {
-    let (input_root, move_to_canonical) = prepare_dirs(&opts.batch)?;
+    let dirs = Directories::prepare(&opts.batch)?;
     let settle_polls = opts.settle_polls.max(1);
     let concurrency = opts.batch.concurrency.max(1);
     let ctx = Arc::new(ProcessCtx {
-        output_dir: opts.batch.output_dir.clone(),
+        output_dir: dirs.output,
         formats: opts.batch.formats.clone(),
         render_opts: opts.batch.render_opts,
-        move_to: opts.batch.move_to.clone(),
+        move_to: dirs.archive,
         delete_source: opts.batch.delete_source,
         transcribe,
     });
@@ -344,7 +361,7 @@ pub async fn run_watch(
         std::collections::HashMap::new();
     // Register the pre-existing backlog as Done so only genuinely new or
     // changed files are picked up.
-    for f in scan_inputs(&input_root, move_to_canonical.as_deref())? {
+    for f in scan_inputs(&dirs.input, ctx.move_to.as_deref())? {
         if let Some(sig) = signature_of(&f) {
             known.insert(
                 f,
@@ -361,7 +378,7 @@ pub async fn run_watch(
         backlog = known.len(),
         poll_ms = opts.poll_interval.as_millis() as u64,
         "watching {}",
-        input_root.display()
+        dirs.input.display()
     );
 
     let mut summary = WatchSummary::default();
@@ -416,7 +433,7 @@ pub async fn run_watch(
             }
         }
 
-        let files = match scan_inputs(&input_root, move_to_canonical.as_deref()) {
+        let files = match scan_inputs(&dirs.input, ctx.move_to.as_deref()) {
             Ok(files) => files,
             Err(e) => {
                 tracing::warn!(error = %format!("{e:#}"), "scan failed; retrying next poll");
@@ -458,6 +475,7 @@ pub async fn run_watch(
                                 f.clone(),
                                 ctx.clone(),
                                 opts.batch.retries,
+                                Some(sig),
                             ));
                         }
                     }

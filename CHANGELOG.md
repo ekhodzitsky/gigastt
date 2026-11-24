@@ -40,6 +40,9 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
+- Preserve input audio and existing reports when batch or watch encounters a
+  conflicting output or archive destination.
+
 - Send default cross-engine benchmark reruns to an ignored local directory and
   report WER failures consistently in the benchmark table.
 - Keep WER recomputation and short-recording measurements out of archived

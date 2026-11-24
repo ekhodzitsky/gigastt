@@ -75,6 +75,7 @@ anyhow = "1"
 arc-swap = "1"
 parking_lot = "0.12"
 uuid = { version = "1", features = ["v7"] }
+tempfile = "3.27"
 
 [dev-dependencies]
 # Extra `__internals` feature exposes `gigastt_core::test_support` so HTTP /
@@ -87,7 +88,6 @@ gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features 
     "diarization",
     "__internals",
 ] }
-tempfile = "3"
 # `test-util` (paused clock) is test-only; it unifies with the production tokio
 # dependency's features only when building tests, keeping it out of the binary.
 tokio = { version = "1", features = ["test-util", "macros", "rt-multi-thread"] }

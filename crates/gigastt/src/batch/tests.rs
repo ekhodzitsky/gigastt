@@ -399,3 +399,5 @@ async fn test_watch_skips_move_to_directory() {
     assert_eq!(summary.processed, 1);
     assert!(output.join("a.txt").exists());
 }
+
+mod collisions;
