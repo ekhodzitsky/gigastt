@@ -7,7 +7,7 @@ Telegram-style Ogg/Opus and browser-style WebM/Opus are encoded locally.
 The server is pinned to two logical CPUs with taskset. That is not the
 two-vCPU Xeon VM from the report.
 
-Writes benchmark/short_notes/measurements.json and corpus.json.
+Writes reports and encodes under benchmark/results_local/short_notes/.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from common import compute_wer, compute_wer_naive  # noqa: E402
 
 FIXTURE_DIR = ROOT / "crates/gigastt/tests/fixtures"
 MANIFEST = FIXTURE_DIR / "manifest.json"
-OUT_DIR = ROOT / "benchmark/short_notes"
+OUT_DIR = ROOT / "benchmark/results_local/short_notes"
 ENCODED = OUT_DIR / "encoded"
 BIN = ROOT / "target/release/gigastt"
 PORT = 9891

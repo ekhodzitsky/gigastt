@@ -3,6 +3,7 @@
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,15 +13,20 @@ import benchmark
 
 def test_clear_cache_flag_removes_entries_and_exits(tmp_path):
     cache_dir = tmp_path / "cache"
-    cache_dir.mkdir()
-    (cache_dir / "entry.json").write_text('{"hypothesis": "x"}')
+    cache = benchmark.DiskCache(cache_dir)
+    runner = SimpleNamespace(name="fake")
+    cache.set(runner, "clip.wav", "x", 0.5)
+    report = cache_dir / "results.json"
+    report.write_text('{"samples": 1}')
 
     with pytest.raises(SystemExit) as exc:
         with patch.object(sys, "argv", ["benchmark.py", "--cache-dir", str(cache_dir), "--clear-cache"]):
             benchmark._main()
 
     assert exc.value.code == 0
-    assert not list(cache_dir.iterdir())
+    assert cache.get(runner, "clip.wav") is None
+    assert list(cache_dir.iterdir()) == [report]
+    assert report.read_text() == '{"samples": 1}'
 
 
 def _fake_runner(name: str, available: bool = True):

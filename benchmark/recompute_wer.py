@@ -2,8 +2,9 @@
 """Recompute WER for existing benchmark result files using new normalization.
 
 Reads ``benchmark/results_full/*.json`` files, recomputes per-sample and
-aggregate WER with ``common.compute_wer`` and ``common.bootstrap_ci``, writes
-``*_renorm.json`` files, and emits a Markdown before/after summary.
+aggregate WER with ``common.compute_wer`` and ``common.bootstrap_ci``, and writes
+``*_renorm.json`` files and a Markdown summary under
+``benchmark/results_local/recompute_wer/`` by default.
 """
 
 import argparse
@@ -16,10 +17,6 @@ _SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_SCRIPT_DIR))
 
 import common  # noqa: E402
-
-
-def _replace_suffix(path: Path) -> Path:
-    return path.with_name(f"{path.stem}_renorm.json")
 
 
 def recompute_file(input_path: Path, output_path: Path) -> list[dict]:
@@ -168,7 +165,7 @@ def main() -> int:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=_SCRIPT_DIR / "results_full",
+        default=_SCRIPT_DIR / "results_local" / "recompute_wer",
         help="Directory where *_renorm.json files and summary are written",
     )
     args = parser.parse_args()
@@ -180,13 +177,14 @@ def main() -> int:
         if input_path.name.endswith("_renorm.json"):
             continue
 
-        output_path = args.output_dir / _replace_suffix(input_path)
+        output_path = args.output_dir / f"{input_path.stem}_renorm.json"
         rows = recompute_file(input_path, output_path)
         all_rows.extend(rows)
         print(f"Recomputed {input_path.name} -> {output_path.name}", file=sys.stderr)
 
     summary_md = build_summary_table(all_rows)
 
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     summary_path = args.output_dir / "renorm_summary.md"
     summary_path.write_text(summary_md, encoding="utf-8")
 

@@ -243,7 +243,7 @@ jobs:
         run: |
           python -m pytest tests/test_streaming.py tests/test_latency.py \
             tests/test_benchmark.py tests/test_common.py tests/test_histograms.py \
-            tests/test_cache.py -q --tb=short
+            tests/test_cache.py tests/test_recompute_wer.py -q --tb=short
 
   clippy:
     needs: status-start
