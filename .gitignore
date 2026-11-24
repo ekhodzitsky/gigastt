@@ -2,8 +2,8 @@
 **/target/
 .omc/
 
-# Override global gitignore — CLAUDE.md is part of the project
-!CLAUDE.md
+# Optional local Claude instructions.
+/CLAUDE.md
 gigastt-*.tar.gz
 check_raw
 missions/

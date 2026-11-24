@@ -224,17 +224,19 @@ Reproduce a held-out set (Apple M1 CPU numbers in the docs):
 python ../scripts/prepare_tone_webinars.py   # or prepare_* for other sets
 
 # 2) Run engines (Vosk 0.54 CLI id is vosk-0.54 → vosk_0_54)
+mkdir -p results_local
 python benchmark.py --dataset tone_webinars --runners gigastt --max-samples 0 \
-  --output results_full/tone_webinars_gigastt.json
+  --output results_local/tone_webinars_gigastt.json
 python benchmark.py --dataset tone_webinars --runners vosk-0.54 --max-samples 0 \
-  --output results_full/tone_webinars_vosk054.json
+  --output results_local/tone_webinars_vosk054.json
 python benchmark.py --dataset tone_webinars --runners faster_whisper --max-samples 0 \
-  --output results_full/tone_webinars_faster_whisper.json
+  --output results_local/tone_webinars_faster_whisper.json
 ```
 
-`results_full/` is gitignored for new artifacts (large per-sample JSON); ~50
-historical result files are committed. Published WER/CI/RTF live in
-`docs/benchmarks.md`. Re-run and compare if you need local artifacts.
+From `benchmark/`, `bash run_full_suite.sh` writes fresh results under the
+ignored `results_local/` directory. Set `BENCHMARK_RESULTS_DIR` to choose an
+output directory. The committed files in `results_full/` support the historical
+WER, confidence intervals, and RTF in [the benchmark report](../docs/benchmarks.md).
 
 ### Golos crowd
 
@@ -402,8 +404,9 @@ usable RU rows (Cyrillic majority), then `seed=42` → n=1000 (~7.1 h audio).
 
 ```bash
 python ../scripts/prepare_tone_webinars.py --split validation --slice-size 1000 --seed 42 --max-scan 2500
+mkdir -p results_local
 python benchmark.py --dataset tone_webinars --runners faster_whisper --max-samples 0 \
-  --output results_full/tone_webinars_faster_whisper.json
+  --output results_local/tone_webinars_faster_whisper.json
 ```
 
 Run the benchmark on the Common Voice slice:

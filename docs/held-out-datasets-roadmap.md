@@ -52,8 +52,9 @@ For an existing manifest, a gigastt run uses the cross-engine harness:
 
 ```sh
 cd benchmark
+mkdir -p results_local
 python benchmark.py --dataset fleurs_ru --max-samples 0 \
-  --runners gigastt --output results_full/fleurs_ru_gigastt.json
+  --runners gigastt --output results_local/fleurs_ru_gigastt.json
 ```
 
 Check the benchmark guide for environment setup and runner configuration before

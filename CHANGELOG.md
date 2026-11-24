@@ -40,6 +40,9 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Fixed
 
+- Send default cross-engine benchmark reruns to an ignored local directory and
+  report WER failures consistently in the benchmark table.
+
 - Clear a decoder endpoint signal when speech resumes later in the same window,
   preventing an internal pause from finalizing an utterance that is still spoken.
 - Finalize an already committed utterance after a trailing blank-only window,

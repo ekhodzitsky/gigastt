@@ -5,7 +5,7 @@ set -euo pipefail
 
 DATASETS=(golos_crowd_1k golos_farfield openstt_calls openstt_youtube)
 RUNNERS=(gigastt whisper_cpp faster_whisper vosk)
-RESULTS_DIR="${BENCHMARK_RESULTS_DIR:-$(pwd)/results_full}"
+RESULTS_DIR="${BENCHMARK_RESULTS_DIR:-$(pwd)/results_local}"
 LOG_DIR="${BENCHMARK_LOG_DIR:-$RESULTS_DIR/logs}"
 
 mkdir -p "$RESULTS_DIR" "$LOG_DIR"
