@@ -33,8 +33,12 @@ missing, renamed and removed benchmark results require investigation.
   It measures the explicitly selected immutable ancestor
   and the candidate on the same runner with locked dependencies. It fails if
   either build/run fails, any comparison is absent or invalid, or the lower
-  confidence bound of a Criterion mean increase exceeds 5%. It uses structured
-  reports rather than interpreting the absence of a log message as success.
+  confidence bound of a Criterion mean increase exceeds 5%. Both revisions
+  finish building before timed runs start. The short tokenizer case also runs
+  in reverse order and with the same base binary on both sides. Both orders
+  enforce the existing regression limit. A same-binary confidence interval
+  outside ±5% fails the check as an unstable measurement. The artifact retains
+  the ordinary, reverse-order and same-binary Criterion reports.
 - **Speaker performance** downloads and verifies the 26 MB WeSpeaker model.
   Its release-mode test exercises real Golos speech prefixes of 0.5, 1.5 and
   3 seconds, short inputs, silence, concurrent pool users, offline turns and
