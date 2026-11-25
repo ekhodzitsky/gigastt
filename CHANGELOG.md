@@ -21,6 +21,10 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
   emitted. See [long recordings](docs/long-recordings.md#experimental-jobs-zero-context)
   for supported settings, resource costs and limited evidence.
 
+- Allow server builds without the model quantizer via `--no-default-features`
+  (optionally with `--features diarization`). Default builds retain quantization;
+  lean builds use prequantized INT8 models.
+
 - Add opt-in RNN-T WebSocket speech and automatic-endpoint confirmation with a
   separately cached large CTC model (`--stream-ctc-model-dir`). The default
   remains off; the supported CPU configuration, extra memory/CPU cost and

@@ -288,6 +288,15 @@ jobs:
       - run: cargo test --workspace --lib --bins
       - name: Model-free CLI integration tests
         run: cargo test -p gigastt --test e2e_cli
+      - name: Lean server CLI and dependency graph
+        run: |
+          tree=$(cargo tree --locked -p gigastt --no-default-features -e all --prefix none)
+          if grep -q '^gigastt-quantize ' <<<"$tree"; then
+            echo "Lean server unexpectedly depends on the quantizer"
+            exit 1
+          fi
+          cargo test --locked -p gigastt --no-default-features --test e2e_cli
+          cargo test --locked -p gigastt --no-default-features --lib ensure_int8_encoder
       - name: Runtime output allocation regression
         run: cargo test -p gigastt-core --test runtime_output_workspace
       - name: Completed-job status allocation regression

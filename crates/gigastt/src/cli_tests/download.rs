@@ -100,6 +100,7 @@ fn test_cli_cache_gc_optimized_cache_dir_env_var() {
     }
 }
 
+#[cfg(feature = "quantize")]
 #[test]
 fn test_cli_quantize_parsing() {
     let cli = Cli::parse_from(["gigastt", "quantize", "--force"]);
@@ -125,6 +126,7 @@ fn test_cli_quantize_parsing() {
     }
 }
 
+#[cfg(feature = "quantize")]
 #[test]
 fn test_cli_quantize_explicit_head_and_legacy_recipe() {
     let cli = Cli::try_parse_from([

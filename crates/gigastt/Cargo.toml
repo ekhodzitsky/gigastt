@@ -49,7 +49,7 @@ conf-files = ["/etc/gigastt/gigastt.env"]
 maintainer-scripts = "../../packaging/debian/"
 
 [features]
-default = ["diarization"]
+default = ["diarization", "quantize"]
 coreml = ["gigastt-core/coreml"]
 cuda = ["gigastt-core/cuda"]
 candle = ["gigastt-core/candle"]
@@ -58,7 +58,7 @@ diarization = ["gigastt-core/diarization"]
 quantize = ["gigastt-core/quantize"]
 
 [dependencies]
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["net", "async-pool", "file-decode", "quantize"] }
+gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["net", "async-pool", "file-decode"] }
 
 axum = { version = "0.8", features = ["ws", "multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"] }
@@ -85,7 +85,6 @@ gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features 
     "net",
     "async-pool",
     "file-decode",
-    "quantize",
     "diarization",
     "__internals",
 ] }

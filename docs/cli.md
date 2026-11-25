@@ -23,7 +23,7 @@ Commands:
   transcribe   Transcribe audio file (offline)
   transcribe-batch  Transcribe every audio file in a directory (offline)
   watch        Watch a directory and transcribe new/changed audio files
-  quantize     Quantize encoder to INT8 (always available since v0.9.0)
+  quantize     Quantize encoder to INT8 (requires quantize feature; default on)
   cache-gc     Prune stale ORT optimized graphs and stale CoreML compiled-model
                caches; optional content-hash dedupe
 
@@ -373,7 +373,7 @@ gigastt watch [OPTIONS] <INPUT_DIR> <OUTPUT_DIR>
     gigastt watch inbox/ out/ --move-to inbox/done/
     gigastt watch inbox/ out/ --format txt --delete-source
 
-gigastt quantize [OPTIONS]          # packaging only (needs local FP32 source)
+gigastt quantize [OPTIONS]          # packaging only (local FP32 source; quantize feature)
   --model-dir <DIR>      Model directory holding the FP32 encoder
   --model-variant <HEAD> Rebuild this head; otherwise detect from local files.
                          Env: GIGASTT_MODEL_VARIANT. Use this in mixed-head dirs.

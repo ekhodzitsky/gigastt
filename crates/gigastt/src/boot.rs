@@ -110,7 +110,8 @@ pub struct EngineRecipe {
     /// Product serve/download leave this false — they fetch lean INT8 only.
     pub quantize: bool,
     /// When `quantize` is true and INT8 is missing: if true, error (no FP32
-    /// load); if false, attempt on-device quantize from a local FP32 encoder.
+    /// load); if false, attempt on-device quantize from a local FP32 encoder
+    /// when built with the `quantize` feature; otherwise return an error.
     pub skip_quantize: bool,
     /// Optional endpoint-mode token (`auto` / `assistant` / …). `None` leaves
     /// the engine default (offline paths). Serve always sets this.
