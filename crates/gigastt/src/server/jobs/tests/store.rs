@@ -249,7 +249,7 @@ async fn test_legacy_store_defaults_preserve_lifecycle_and_retry() {
             .unwrap(),
         TransitionOutcome::Missing
     );
-    let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, _rx) = job_event_channel();
     assert!(!store.subscribe("missing", tx).await.unwrap());
     let id = store
         .create(Job::queued(
@@ -269,7 +269,7 @@ async fn test_legacy_store_defaults_preserve_lifecycle_and_retry() {
     );
     assert_eq!(store.next_queued().await.unwrap(), Some(id.clone()));
     store.transition(&id, JobTransition::Start).await.unwrap();
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, mut rx) = job_event_channel();
     assert!(store.subscribe(&id, tx).await.unwrap());
     store
         .transition(&id, JobTransition::Fail("sanitized failure".into()))
@@ -282,7 +282,7 @@ async fn test_legacy_store_defaults_preserve_lifecycle_and_retry() {
         store.transition(&id, JobTransition::Cancel).await.unwrap(),
         TransitionOutcome::Rejected(JobStatus::Failed)
     );
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, mut rx) = job_event_channel();
     assert!(store.subscribe(&id, tx).await.unwrap());
     assert!(matches!(rx.try_recv(), Ok(JobEvent::Failed { .. })));
     let owned = store.get(&id).await.unwrap().unwrap();

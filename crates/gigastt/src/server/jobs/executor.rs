@@ -8,8 +8,9 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use super::super::config::RuntimeLimits;
 use super::super::http::ExportParams;
+use super::events::JobEvent;
 use super::queue::{JobExecution, broadcast_event};
-use super::store::{JobEvent, JobStatus, JobStore};
+use super::store::{JobStatus, JobStore};
 
 /// Production executor: decodes audio to size the job, runs inference against
 /// the batch pool, and emits timer-based progress events.

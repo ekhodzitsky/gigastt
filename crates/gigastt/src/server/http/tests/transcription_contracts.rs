@@ -90,7 +90,7 @@ async fn test_rest_and_job_split_modes_preserve_observable_request_override() {
             .await
             .unwrap();
         store.transition(&id, JobTransition::Start).await.unwrap();
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let (tx, mut rx) = crate::server::jobs::job_event_channel();
         store.subscribe(&id, tx).await.unwrap();
         let executor = RealJobExecutor::new(
             state.engine.clone(),
@@ -165,7 +165,7 @@ async fn test_cancel_before_executor_registration_preserves_terminal_subscriptio
         .await
         .unwrap();
     store.transition(&id, JobTransition::Start).await.unwrap();
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, mut rx) = crate::server::jobs::job_event_channel();
     store.subscribe(&id, tx).await.unwrap();
     store.transition(&id, JobTransition::Cancel).await.unwrap();
     let executor = RealJobExecutor::new(

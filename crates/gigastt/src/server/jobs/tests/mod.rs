@@ -75,6 +75,7 @@ impl JobExecution for BodyLenRecorder {
     }
 }
 
+mod bounded_events;
 mod events;
 mod executor;
 mod queue;

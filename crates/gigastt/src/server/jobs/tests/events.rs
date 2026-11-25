@@ -59,9 +59,9 @@ async fn test_broadcast_event_prunes_dead_channels() {
         .unwrap();
 
     // Add a live channel and a channel that will be dropped before broadcast.
-    let (live_tx, mut live_rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+    let (live_tx, mut live_rx) = job_event_channel();
     {
-        let (dead_tx, _dead_rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+        let (dead_tx, _dead_rx) = job_event_channel();
         store
             .update(
                 &id,
@@ -104,11 +104,11 @@ fn test_job_status_response_percent() {
 #[test]
 fn test_subscribe_prunes_closed_channels() {
     let mut job = Job::queued(Bytes::new(), ExportParams::default());
-    let (dead_tx, dead_rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+    let (dead_tx, dead_rx) = job_event_channel();
     job.event_channels.push(dead_tx);
     drop(dead_rx);
 
-    let (live_tx, _live_rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+    let (live_tx, _live_rx) = job_event_channel();
     job.subscribe(live_tx);
 
     assert_eq!(job.event_channels.len(), 1);
@@ -119,13 +119,13 @@ fn test_subscribe_evicts_oldest_at_cap() {
     let mut job = Job::queued(Bytes::new(), ExportParams::default());
     let mut rxs = Vec::new();
     for _ in 0..MAX_JOB_EVENT_SUBSCRIBERS {
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+        let (tx, rx) = job_event_channel();
         job.subscribe(tx);
         rxs.push(rx);
     }
     assert_eq!(job.event_channels.len(), MAX_JOB_EVENT_SUBSCRIBERS);
 
-    let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+    let (tx, rx) = job_event_channel();
     job.subscribe(tx);
     rxs.push(rx);
 
@@ -160,7 +160,7 @@ async fn test_terminal_transition_and_subscription_in_both_orders() {
             .create(Job::queued(Bytes::new(), ExportParams::default()))
             .await
             .unwrap();
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let (tx, mut rx) = job_event_channel();
         if subscribe_first {
             store.subscribe(&id, tx).await.unwrap();
             store.transition(&id, JobTransition::Cancel).await.unwrap();
@@ -186,7 +186,7 @@ async fn test_completion_and_cancellation_publish_only_winning_transition() {
             .await
             .unwrap();
         store.transition(&id, JobTransition::Start).await.unwrap();
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let (tx, mut rx) = job_event_channel();
         store.subscribe(&id, tx).await.unwrap();
         let completed = JobTransition::Complete(ok_result().unwrap());
         let (first, second) = if cancel_first {
@@ -219,7 +219,7 @@ async fn test_broadcast_and_subscription_in_both_orders_retain_terminal_delivery
             .create(Job::queued(Bytes::new(), ExportParams::default()))
             .await
             .unwrap();
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let (tx, mut rx) = job_event_channel();
         let event = JobEvent::Progress {
             percent: 1,
             processed_seconds: 0.1,
@@ -284,7 +284,7 @@ async fn test_concurrent_subscribe_broadcast_and_completion_deliver_terminal() {
         .unwrap();
     store.transition(&id, JobTransition::Start).await.unwrap();
     let barrier = Arc::new(tokio::sync::Barrier::new(3));
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, mut rx) = job_event_channel();
     let subscriber = tokio::spawn({
         let (store, id, barrier) = (store.clone(), id.clone(), barrier.clone());
         async move {
@@ -352,7 +352,7 @@ async fn test_concurrent_cancel_and_complete_agree_with_final_state() {
         )
         .await
         .unwrap();
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, mut rx) = job_event_channel();
     store.subscribe(&id, tx).await.unwrap();
     let barrier = Arc::new(tokio::sync::Barrier::new(2));
     let cancel = tokio::spawn({

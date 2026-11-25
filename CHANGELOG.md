@@ -53,6 +53,10 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 - Keep punctuation and casing labels aligned with transcript words after internal
   hyphens, decimals and other punctuation, including across long-text windows.
 
+- Bound per-reader jobs SSE progress buffering without delaying other listeners;
+  reserve room for a final done, failed, or cancelled event and close the stream
+  when that event is delivered.
+
 - Preserve input audio and existing reports when batch or watch encounters a
   conflicting output or archive destination.
 

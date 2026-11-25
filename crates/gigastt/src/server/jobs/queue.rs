@@ -4,7 +4,8 @@ use axum::body::Bytes;
 use std::sync::Arc;
 
 use super::super::http::ExportParams;
-use super::store::{JobEvent, JobStatus, JobStore, JobTransition, TransitionOutcome};
+use super::events::JobEvent;
+use super::store::{JobStatus, JobStore, JobTransition, TransitionOutcome};
 
 pub trait JobExecution: Send + Sync {
     /// Run one transcription attempt. The executor may update progress via the

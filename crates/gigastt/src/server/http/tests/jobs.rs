@@ -196,7 +196,7 @@ async fn test_cancel_completed_job_preserves_terminal_event() {
         .await
         .unwrap();
     store.transition(&id, JobTransition::Start).await.unwrap();
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let (tx, mut rx) = crate::server::jobs::job_event_channel();
     store.subscribe(&id, tx).await.unwrap();
     store
         .transition(&id, JobTransition::Complete(sample_export_result()))
@@ -293,4 +293,37 @@ async fn test_submit_job_handles_advisory_and_atomic_capacity_rejections() {
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(json["code"], "queue_full");
     }
+}
+
+#[tokio::test]
+async fn test_job_sse_ends_after_terminal_even_with_job_snapshot() {
+    let state = jobs_state(test_engine(), RuntimeLimits::default());
+    let store = &state.jobs.as_ref().unwrap().store;
+    let id = store
+        .create(Job::queued(Bytes::new(), ExportParams::default()))
+        .await
+        .unwrap();
+    let response = job_events(State(state.clone()), Path(id.clone()))
+        .await
+        .unwrap()
+        .into_response();
+    // A cloned job can retain a sender independently of the store.
+    let snapshot = store.get(&id).await.unwrap().unwrap();
+    assert_eq!(snapshot.event_channels.len(), 1);
+    store
+        .transition(&id, crate::server::jobs::JobTransition::Cancel)
+        .await
+        .unwrap();
+    let bytes = tokio::time::timeout(
+        std::time::Duration::from_secs(1),
+        axum::body::to_bytes(response.into_body(), 1024),
+    )
+    .await
+    .expect("terminal event ends the response")
+    .unwrap();
+    assert_eq!(
+        std::str::from_utf8(&bytes).unwrap(),
+        "data: {\"type\":\"cancelled\"}\n\n"
+    );
+    drop(snapshot);
 }
