@@ -61,6 +61,29 @@ fn test_golden_fixtures_replay_reduced_vocab() {
     assert_replays(&tokenizer);
 }
 
+/// Pretokenized input keeps the caller's whitespace word identity while
+/// preserving the model's token IDs and applying the special template once.
+#[test]
+fn test_encode_words_retains_input_word_indices() {
+    let tokenizer = Tokenizer::from_file(&fixtures_dir().join("wordpiece_tokenizer.json"))
+        .expect("load reduced vocab fixture");
+    let text = "какой-то \u{200b} 3.14 中 [SEP] привет";
+    let raw = tokenizer.encode(text, true);
+    let words = tokenizer.encode_words(text, true);
+    assert_eq!(words.get_ids(), raw.get_ids());
+    assert_eq!(words.get_attention_mask(), raw.get_attention_mask());
+
+    let mut expected = vec![None];
+    for (i, word) in text.split_whitespace().enumerate() {
+        let count = tokenizer.encode(word, false).get_ids().len();
+        expected.extend(std::iter::repeat_n(Some(i as u32), count));
+    }
+    expected.push(None);
+    assert_eq!(words.get_word_ids(), expected);
+    assert!(!expected.contains(&Some(1))); // normalization removes the word
+    assert_ne!(words.get_word_ids(), raw.get_word_ids());
+}
+
 /// Same replay against the real punct model tokenizer.json (full 83 828
 /// entry vocab). Guards against the reduced vocab masking a divergence.
 #[test]

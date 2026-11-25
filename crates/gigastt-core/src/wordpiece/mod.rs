@@ -33,7 +33,7 @@ pub(super) use unicode::{is_bert_punc, is_chinese_char, is_control};
 /// WordPiece tokenizer loaded from a HuggingFace `tokenizer.json`.
 ///
 /// Exposes only the surface the punctuation backends use: [`Tokenizer::from_file`],
-/// [`Tokenizer::encode`], and the [`Encoding`] getters.
+/// [`Tokenizer::encode_words`], and the [`Encoding`] getters.
 pub(crate) struct Tokenizer {
     vocab: HashMap<String, u32>,
     unk_id: u32,
@@ -54,10 +54,10 @@ pub(crate) struct Tokenizer {
     sep: Option<u32>,
 }
 
-/// The result of [`Tokenizer::encode`]: token ids, an all-ones attention mask
-/// (no padding is ever applied), and per-token word indices (`None` for the
-/// `[CLS]` / `[SEP]` template tokens), matching the semantics of the upstream
-/// `tokenizers::Encoding`.
+/// Encoded token ids, an all-ones attention mask (no padding is ever applied),
+/// and per-token word indices (`None` for the `[CLS]` / `[SEP]` template tokens).
+/// Indices identify caller-supplied words for pre-tokenized input, otherwise
+/// the BERT pre-tokenizer's splits.
 pub(crate) struct Encoding {
     ids: Vec<u32>,
     attention_mask: Vec<u32>,
@@ -194,7 +194,28 @@ impl Tokenizer {
     /// add_special_tokens)` for the supported scheme: added-token extraction,
     /// BertNormalizer, BertPreTokenizer, greedy WordPiece, `[CLS]`/`[SEP]`
     /// template. Infallible: every fallible condition is rejected at load.
+    #[cfg(test)]
     pub(crate) fn encode(&self, text: &str, add_special_tokens: bool) -> Encoding {
+        self.encode_segments([(text, None)], add_special_tokens)
+    }
+
+    /// Encode caller-supplied whitespace words, as pre-tokenized input.
+    /// Punctuation and CJK splits within a word inherit its index, and a
+    /// word removed by normalization does not consume the next word's index.
+    /// The special-token template is still applied once to the full sequence.
+    pub(crate) fn encode_words(&self, text: &str, add_special_tokens: bool) -> Encoding {
+        let segments = text
+            .split_whitespace()
+            .enumerate()
+            .map(|(i, word)| (word, Some(i as u32)));
+        self.encode_segments(segments, add_special_tokens)
+    }
+
+    fn encode_segments<'a>(
+        &self,
+        segments: impl IntoIterator<Item = (&'a str, Option<u32>)>,
+        add_special_tokens: bool,
+    ) -> Encoding {
         let mut ids: Vec<u32> = Vec::new();
         let mut word_ids: Vec<Option<u32>> = Vec::new();
 
@@ -203,31 +224,29 @@ impl Tokenizer {
             word_ids.push(None);
         }
 
-        // Word index per pre-tokenized split (added-token splits included),
-        // matching `PreTokenizedString::into_encoding` upstream.
         let mut next_word: u32 = 0;
-        for span in self.extract_added(text) {
-            match span {
-                Span::Added(idx) => {
-                    ids.push(self.added_tokens[idx].id);
-                    word_ids.push(Some(next_word));
-                    next_word += 1;
-                }
-                Span::Text(slice) => {
-                    let normalized = self.normalize(slice);
-                    let words = if self.bert_pre_tokenizer {
-                        bert_pre_tokenize(&normalized)
-                    } else if normalized.is_empty() {
-                        Vec::new()
-                    } else {
-                        vec![normalized.as_str()]
-                    };
-                    for word in words {
-                        // tokenize_word always emits at least one token ([UNK]
-                        // at worst), so the word index is always consumed.
-                        self.tokenize_word(word, &mut ids);
-                        word_ids.resize(ids.len(), Some(next_word));
+        for (text, input_word) in segments {
+            for span in self.extract_added(text) {
+                match span {
+                    Span::Added(idx) => {
+                        ids.push(self.added_tokens[idx].id);
+                        word_ids.push(Some(input_word.unwrap_or(next_word)));
                         next_word += 1;
+                    }
+                    Span::Text(slice) => {
+                        let normalized = self.normalize(slice);
+                        let words = if self.bert_pre_tokenizer {
+                            bert_pre_tokenize(&normalized)
+                        } else if normalized.is_empty() {
+                            Vec::new()
+                        } else {
+                            vec![normalized.as_str()]
+                        };
+                        for word in words {
+                            self.tokenize_word(word, &mut ids);
+                            word_ids.resize(ids.len(), Some(input_word.unwrap_or(next_word)));
+                            next_word += 1;
+                        }
                     }
                 }
             }

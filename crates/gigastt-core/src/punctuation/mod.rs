@@ -258,7 +258,7 @@ impl Punctuator {
         // table. A transcript that fits in one window takes exactly the single
         // encode + single run it always did.
         let windows = plan_windows(spans.len());
-        let mut per_window: Vec<Option<Vec<usize>>> = Vec::with_capacity(windows.len());
+        let mut per_window: Vec<Option<Vec<Option<usize>>>> = Vec::with_capacity(windows.len());
         let mut first_error: Option<anyhow::Error> = None;
         for window in &windows {
             match self.label_word_range(text, &spans, window.start, window.end) {
@@ -322,7 +322,7 @@ impl Punctuator {
         spans: &[(usize, usize)],
         start: usize,
         end: usize,
-    ) -> Result<Vec<usize>> {
+    ) -> Result<Vec<Option<usize>>> {
         if start >= end || end > spans.len() {
             anyhow::bail!(
                 "invalid word window {start}..{end} over {} words",
@@ -331,7 +331,7 @@ impl Punctuator {
         }
         let chunk = &text[spans[start].0..spans[end - 1].1];
 
-        let encoding = self.tokenizer.encode(chunk, true);
+        let encoding = self.tokenizer.encode_words(chunk, true);
 
         let seq = encoding.get_ids().len();
         if seq > MAX_WINDOW_SUBTOKENS {
