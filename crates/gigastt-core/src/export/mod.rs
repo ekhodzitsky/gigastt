@@ -4,7 +4,7 @@
 //! [`TranscribeResult`] structure returned by the inference engine.
 
 use crate::error::GigasttError;
-use crate::inference::{TranscribeResult, WordInfo};
+use crate::transcript::{TranscribeResult, WordInfo};
 use serde::Serialize;
 use std::str::FromStr;
 

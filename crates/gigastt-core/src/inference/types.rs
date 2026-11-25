@@ -1,8 +1,6 @@
-//! File-transcription result types and per-request overrides.
+//! File-transcription requests, overrides and channel result assembly.
 
-use serde::Serialize;
-
-use super::state::{WordInfo, aggregate_confidence};
+use crate::transcript::{TranscribeResult, aggregate_confidence};
 
 mod overrides;
 mod request;
@@ -12,23 +10,6 @@ pub use overrides::{
     MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides,
 };
 pub use request::{TranscribeRequest, TranscribeSource};
-
-#[derive(Debug, Clone, Serialize)]
-pub struct TranscribeResult {
-    /// Full recognized transcript text (words joined with spaces).
-    pub text: String,
-    /// Word-level timing, confidence, and optional speaker annotations.
-    pub words: Vec<WordInfo>,
-    /// Duration of the decoded audio in seconds.
-    pub duration_s: f64,
-    /// Mean confidence across all words (duration-weighted average of
-    /// `words[].confidence`; plain average when every word has zero
-    /// duration). An average of per-word softmax scores — **not** a
-    /// calibrated probability that the transcript is correct. `None` when no
-    /// words were decoded; omitted from JSON in that case.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub confidence: Option<f32>,
-}
 
 /// Merge per-channel [`TranscribeResult`]s into a single chronologically ordered
 /// result. Each channel is assigned a zero-based speaker label (`speaker_0`,
@@ -103,8 +84,8 @@ pub enum DiarizationOutcome {
 
 #[cfg(test)]
 mod override_and_merge_tests {
-    use super::super::state::WordInfo;
     use super::*;
+    use crate::transcript::WordInfo;
 
     #[test]
     fn test_transcribe_overrides_default_all_none() {

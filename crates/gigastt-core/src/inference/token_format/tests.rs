@@ -1,9 +1,9 @@
 use super::super::decode;
-use super::super::state::WordInfo;
 use super::super::tokenizer::Tokenizer;
 use super::super::windows::CHUNK_OVERLAP_SAMPLES;
 use super::super::{ENCODER_SUBSAMPLING, HOP_LENGTH};
 use super::*;
+use crate::transcript::WordInfo;
 
 #[test]
 fn test_token_formatter_groups_words() {

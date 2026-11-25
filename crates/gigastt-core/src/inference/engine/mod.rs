@@ -9,6 +9,9 @@ use crate::model::ModelVariant;
 use crate::runtime::factory::RuntimeFactory;
 use crate::runtime::production_factory_variant_with_cache;
 use crate::runtime::tensor::{Shape, TensorDataView};
+use crate::transcript::{
+    EndpointReason, TranscribeResult, TranscriptSegment, WordInfo, aggregate_confidence,
+};
 
 use super::audio;
 use super::audio::{PcmWindow, PcmWindows, SliceWindows, WindowSpec};
@@ -21,15 +24,14 @@ use super::load_files::{
 use super::pool::{Pool, PoolError, PoolGuard, SessionPool, SessionTriplet};
 use super::sizing;
 use super::state::{
-    CommitPolicy, DecoderState, EndpointMode, EndpointReason, FeatureExtractor, StreamingState,
-    TranscriptAssembler, TranscriptSegment, WordInfo, aggregate_confidence,
+    CommitPolicy, DecoderState, EndpointMode, FeatureExtractor, StreamingState, TranscriptAssembler,
 };
 use super::token_format::{TokenFormatter, overlap_seconds, stitch_chunk_words_retained};
 use super::tokenizer::Tokenizer;
 use super::types::{
     DEFAULT_HOTWORDS_BOOST, DiarizationOutcome, HotwordError, HotwordOverride,
     MAX_HOTWORD_PHRASE_CHARS, MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides,
-    TranscribeRequest, TranscribeResult, TranscribeSource, merge_channel_results,
+    TranscribeRequest, TranscribeSource, merge_channel_results,
 };
 use super::windows::{
     STREAM_CAP_STREAK_MAX, STREAM_COMMIT_HORIZON_SECS, STREAM_DECODE_STRIDE_SAMPLES,

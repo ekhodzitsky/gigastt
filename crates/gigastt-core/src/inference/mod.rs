@@ -38,6 +38,9 @@ compile_error!("Features `coreml` and `cuda` are mutually exclusive. Choose one.
 // Public re-exports (stable paths: `gigastt_core::inference::Engine`, etc.)
 // ---------------------------------------------------------------------------
 
+pub use crate::transcript::{
+    EndpointReason, TranscribeResult, TranscriptSegment, WordInfo, now_timestamp,
+};
 pub use engine::Engine;
 pub use pool::{OwnedReservation, Pool, PoolError, PoolGuard, SessionPool, SessionTriplet};
 // Diarization adapter/types: all `#[allow(deprecated)]` polyvoice usage lives in
@@ -45,13 +48,13 @@ pub use pool::{OwnedReservation, Pool, PoolError, PoolGuard, SessionPool, Sessio
 #[cfg(feature = "diarization")]
 pub use diarization::{SharedExtractor, SpeakerEncoder, StreamingDiarizationState};
 pub use state::{
-    CommitPolicy, DecoderState, EndpointMode, EndpointReason, EndpointSilence, FeatureExtractor,
-    StreamingState, TranscriptAssembler, TranscriptSegment, TranscriptSnapshot, WordInfo,
+    CommitPolicy, DecoderState, EndpointMode, EndpointSilence, FeatureExtractor, StreamingState,
+    TranscriptAssembler, TranscriptSnapshot,
 };
 pub use types::{
     DEFAULT_HOTWORDS_BOOST, DiarizationOutcome, HotwordError, HotwordOverride,
     MAX_HOTWORD_PHRASE_CHARS, MAX_HOTWORDS_PER_REQUEST, OverrideError, TranscribeOverrides,
-    TranscribeRequest, TranscribeResult, TranscribeSource, merge_channel_results,
+    TranscribeRequest, TranscribeSource, merge_channel_results,
 };
 
 /// Number of mel frequency bins used for spectrogram features.
@@ -67,52 +70,3 @@ pub const PRED_HIDDEN: usize = 320;
 const ENCODER_SUBSAMPLING: usize = 4;
 /// Seconds per encoder frame (HOP_LENGTH * ENCODER_SUBSAMPLING / 16000 = 0.04s).
 const SECONDS_PER_FRAME: f64 = (HOP_LENGTH as f64 * ENCODER_SUBSAMPLING as f64) / 16000.0;
-
-pub fn now_timestamp() -> f64 {
-    use std::sync::OnceLock;
-    use std::time::{Instant, SystemTime, UNIX_EPOCH};
-    // Anchor the wall-clock epoch to a monotonic `Instant` captured once, then
-    // advance from it via `Instant::elapsed()`. Wire-visible timestamps stay
-    // epoch-aligned (unchanged contract) but advance monotonically, immune to
-    // NTP steps / wall-clock jumps mid-process.
-    static ANCHOR: OnceLock<(SystemTime, Instant)> = OnceLock::new();
-    let (epoch, start) = ANCHOR.get_or_init(|| (SystemTime::now(), Instant::now()));
-    let base = match epoch.duration_since(UNIX_EPOCH) {
-        Ok(d) => d.as_secs_f64(),
-        Err(e) => {
-            tracing::warn!("System clock is before Unix epoch: {e}");
-            0.0
-        }
-    };
-    base + start.elapsed().as_secs_f64()
-}
-
-#[cfg(test)]
-mod timestamp_tests {
-    use super::now_timestamp;
-
-    #[test]
-    fn test_now_timestamp_non_negative() {
-        let ts = now_timestamp();
-        assert!(ts >= 0.0, "timestamp must be non-negative");
-    }
-
-    #[test]
-    fn test_now_timestamp_monotonic_and_epoch_aligned() {
-        // Locks in the monotonic-anchor contract: two successive reads never go
-        // backwards (immune to NTP steps), and the value stays Unix-epoch
-        // aligned. A regression to a plain wall-clock read could violate either.
-        let a = now_timestamp();
-        let b = now_timestamp();
-        assert!(
-            b >= a,
-            "now_timestamp must be non-decreasing (monotonic anchor)"
-        );
-        // Comfortably after 2023-11-14 and before a far-future sanity bound.
-        assert!(
-            a > 1_700_000_000.0,
-            "timestamp must stay Unix-epoch aligned"
-        );
-        assert!(a < 4_000_000_000.0, "timestamp exceeds a sane upper bound");
-    }
-}

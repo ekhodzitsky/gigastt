@@ -23,6 +23,7 @@ pub mod lexicon;
 pub mod model;
 pub mod protocol;
 pub mod punctuation;
+pub mod transcript;
 
 /// INT8 quantizer, re-exported so `gigastt_core::quantize::quantize_model`
 /// keeps working. Behind the default-on `quantize` feature: lean embedders that
