@@ -66,7 +66,7 @@ justify it.
 ## Observed results
 
 Measured on 2026-10-01 on AMD Ryzen AI 9 HX 370 (24 logical CPUs), Linux,
-Rust 1.98.1 and debug profile. The [recorded artifacts](../benchmark/results/sidecar-contention/summary.json)
+Rust 1.98.1 and debug profile. The [recorded artifacts (archive v1)](https://github.com/ekhodzitsky/gigastt/releases/download/benchmark-sidecar-contention-20261001-v1/benchmark-sidecar-contention-20261001-v1.zip)
 include raw observations, recognition outputs, cold measurements, source/model
 hashes and tick units. All fifteen cases passed concurrent-versus-serial output
 equivalence. These exploratory runs are not release RTF claims.
@@ -156,7 +156,26 @@ included in this research change.
 
 ## Reproduction
 
-Install rnnt, punctuation, Silero VAD and WeSpeaker models first. The harness
+To verify the complete historical sweep without installing any models, download
+and check the versioned archive in a temporary directory:
+
+```sh
+curl -fLO https://github.com/ekhodzitsky/gigastt/releases/download/benchmark-sidecar-contention-20261001-v1/benchmark-sidecar-contention-20261001-v1.zip
+echo "17a883d99bbfd6712afe4c9fcf0cd532ca43dfe5d4f023ae58e1b4dcf5660cd8  benchmark-sidecar-contention-20261001-v1.zip" | sha256sum -c -
+unzip benchmark-sidecar-contention-20261001-v1.zip -d sidecar-contention
+python3 sidecar-contention/verify.py
+```
+
+The pinned SHA-256 identifies the intended bytes even though GitHub does not
+force release immutability for this repository. The verifier recomputes all
+15 summaries from 180 recorded requests, not fresh inference or an independent
+serial-output comparison (the original harness asserted the latter). All raw
+measurements and negative findings are preserved. Golos-derived outputs retain
+[Sber's attribution, noncommercial, share-alike license](https://github.com/sberdevices/golos/blob/master/license/en_us.pdf);
+no audio or model weights are bundled. The original source remains at the
+[pinned evidence revision](https://github.com/ekhodzitsky/gigastt/tree/60600b0ae6b2bd2350efc2188d9edd0939267dd7/benchmark/results/sidecar-contention).
+
+For a new inference run, install rnnt, punctuation, Silero VAD and WeSpeaker models first. The harness
 never downloads models. Run from the repository root:
 
 ```sh
