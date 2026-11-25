@@ -12,6 +12,11 @@ on:
         required: false
         default: false
         type: boolean
+      measurement_pilot:
+        description: 'Collect experimental paired performance measurements (does not replace gates)'
+        required: false
+        default: false
+        type: boolean
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -73,6 +78,7 @@ jobs:
       - run: python3 scripts/test-manual-workflows.py
       - run: python3 scripts/test_manual_statuses.py
       - run: python3 scripts/test-performance-gates.py
+      - run: python3 scripts/test_criterion_pilot.py
       - run: python3 scripts/test-asr-performance.py
       - run: python3 scripts/test-ci-prerequisites.py
       - run: python3 scripts/test-resolve-release.py
@@ -474,11 +480,27 @@ jobs:
         run: cargo test --release --locked -p gigastt-core --lib --features ane test_objc_autorelease -- --test-threads=1
       - name: Test Objective-C comparison harness
         run: python3 -O scripts/test_compare_objc_revisions.py
+      - name: Test cached-load pilot harness
+        run: python3 -O scripts/test_objc_cached_load_pilot.py
       - name: Compare affected Core ML bridge revisions
         if: steps.objc-delta.outputs.changed == 'true'
         env:
           BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
         run: python3 scripts/compare-objc-revisions.py --base "$BASE_SHA"
+      - name: Collect paired Core ML cached-load pilot evidence
+        if: ${{ !cancelled() && inputs.measurement_pilot }}
+        env:
+          BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
+        run: >-
+          python3 scripts/compare-objc-cached-load.py
+          --base "$BASE_SHA" --output target/objc-cached-load-pilot
+      - name: Retain Core ML cached-load pilot evidence
+        if: always() && inputs.measurement_pilot
+        uses: actions/upload-artifact@v6
+        with:
+          name: objc-cached-load-pilot
+          path: target/objc-cached-load-pilot
+          if-no-files-found: warn
       - name: Retain Core ML measurements
         if: always()
         uses: actions/upload-artifact@v6
@@ -1095,6 +1117,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Compare independently built revisions
+        id: compare
         env:
           BASE_SHA: ${{ needs.comparison-base.outputs.sha }}
         run: |
@@ -1104,6 +1127,21 @@ jobs:
 
       - name: Require complete measurements and reject regressions
         run: python3 scripts/performance-gates.py criterion target/criterion
+
+      - name: Collect paired Criterion pilot evidence
+        if: ${{ !cancelled() && inputs.measurement_pilot && steps.compare.outcome == 'success' }}
+        run: >-
+          python3 scripts/criterion_pilot.py
+          --provenance target/criterion/build-provenance.json
+          --output target/criterion-pilot
+
+      - name: Upload paired Criterion pilot evidence
+        if: always() && inputs.measurement_pilot
+        uses: actions/upload-artifact@v4
+        with:
+          name: criterion-pilot
+          path: target/criterion-pilot/
+          if-no-files-found: warn
 
       - name: Upload criterion report
         if: always()
