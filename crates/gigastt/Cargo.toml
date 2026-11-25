@@ -78,6 +78,7 @@ uuid = { version = "1", features = ["v7"] }
 tempfile = "3.27"
 
 [dev-dependencies]
+sha2 = { version = "0.11", default-features = false }
 # Extra `__internals` feature exposes `gigastt_core::test_support` so HTTP /
 # jobs / CLI unit tests can drive a mock engine without the INT8 model.
 gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = [

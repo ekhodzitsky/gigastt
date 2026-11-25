@@ -7,9 +7,15 @@
 //! Environment variables:
 //! - `GIGASTT_BENCHMARK_MAX_SAMPLES` — limit the number of samples (0 = unlimited).
 //!
-//! Outputs JSON to stdout for the autoresearch evaluator.
+//! Corpus execution requires explicit `--run`. `--run --required` verifies the
+//! pinned bundled corpus and current built-in RNNT INT8 model.
+//! Outputs measured or explicit invalid/skipped JSON to stdout.
 //! Harness is disabled (`harness = false` in Cargo.toml) so this runs as a binary.
 
+#[path = "benchmark/admission.rs"]
+mod admission;
+
+use anyhow::{Context, Result, ensure};
 use serde::Deserialize;
 use std::path::{Path, PathBuf};
 
@@ -378,14 +384,6 @@ fn bootstrap_ci(per_sample: &[(usize, usize)], iterations: usize) -> (f64, f64) 
     (lo, hi)
 }
 
-/// Load the committed WER baseline, or an empty default if it is missing/invalid.
-fn read_baseline(path: &Path) -> serde_json::Value {
-    std::fs::read_to_string(path)
-        .ok()
-        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
-        .unwrap_or_else(|| serde_json::json!({ "tolerance_pp": 0.5, "sets": {} }))
-}
-
 /// Measured quality metrics for one benchmark run. Absolute ceilings always
 /// apply; relative baselines apply only when the matching field is populated
 /// in `benchmark_baseline.json`.
@@ -683,10 +681,7 @@ fn run_gate_self_test() {
         let row = wer_summary_row(wer, baseline, ceilings);
         assert!(row.ends_with(&format!("| {verdict} |")), "{row}");
     }
-    // read_baseline: a missing file falls back to tolerance 0.5 / empty sets.
-    let missing = read_baseline(Path::new("/nonexistent/benchmark_baseline.json"));
-    assert_eq!(missing["tolerance_pp"].as_f64(), Some(0.5));
-    assert!(missing["sets"]["bundled"]["wer"].as_f64().is_none());
+    admission::self_test();
 
     // normalize_for_wer_naive: verbatim rules only — lowercase, ё→е, strip
     // punctuation, NO words-to-digits ITN, digit merging, or anglicism mapping.
@@ -816,19 +811,51 @@ fn main() {
         return;
     }
     // Manual CI runs this model-free self-test. Panics exit nonzero.
-    if args.iter().any(|a| a == "--self-test") {
+    if !args.iter().any(|a| a == "--run") || args.iter().any(|a| a == "--self-test") {
+        if args.iter().any(|a| a == "--required") {
+            eprintln!("--required needs --run");
+            std::process::exit(1);
+        }
         run_gate_self_test();
         println!("benchmark gate self-test: ok");
         return;
     }
 
+    let required = args.iter().any(|a| a == "--required");
+    if let Err(error) = run_benchmark(required) {
+        println!(
+            "{}",
+            serde_json::json!({
+                "pass": false, "score": null, "skipped": false, "status": "invalid",
+                "reason": format!("{error:#}"),
+            })
+        );
+        std::process::exit(1);
+    }
+}
+
+fn run_benchmark(required: bool) -> Result<()> {
     let max_samples = std::env::var("GIGASTT_BENCHMARK_MAX_SAMPLES")
         .ok()
-        .and_then(|s| s.parse::<usize>().ok());
+        .map(|s| s.parse::<usize>())
+        .transpose()
+        .context("invalid sample limit")?;
+    let update_baseline = match std::env::var("GIGASTT_BENCHMARK_UPDATE_BASELINE")
+        .ok()
+        .as_deref()
+    {
+        None | Some("0") => false,
+        Some("1") => true,
+        _ => anyhow::bail!("invalid baseline update flag"),
+    };
+    ensure!(
+        !required || (!update_baseline && max_samples.unwrap_or(0) == 0),
+        "required mode forbids baseline changes and sample limits"
+    );
 
     // Prefer external Golos benchmark set if available, unless CI forces the
     // hermetic bundled fixtures (stable sample count for RTF/RSS ceilings).
-    let force_bundled = std::env::var_os("GIGASTT_BENCHMARK_FORCE_BUNDLED").is_some();
+    let force_bundled = required || std::env::var_os("GIGASTT_BENCHMARK_FORCE_BUNDLED").is_some();
     let external_manifest = if force_bundled {
         None
     } else {
@@ -850,7 +877,7 @@ fn main() {
 
     let model_dir = home_dir()
         .map(|h| h.join(".gigastt").join("models"))
-        .expect("HOME not set");
+        .context("HOME not set")?;
 
     // Accept either head's encoder (rnnt default since v2.3, or e2e_rnnt; FP32 or
     // generated INT8). The engine auto-detects which variant to load.
@@ -863,37 +890,64 @@ fn main() {
     .iter()
     .any(|f| model_dir.join(f).exists());
     if !has_model {
+        ensure!(!required, "model not found");
         println!(
-            r#"{{"pass": true, "score": null, "skipped": true, "reason": "model not found"}}"#
+            "{}",
+            serde_json::json!({
+                "pass": false, "score": null, "skipped": true, "status": "skipped",
+                "reason": "model not found",
+            })
         );
-        return;
+        return Ok(());
     }
 
-    let mut manifest: Vec<Sample> = serde_json::from_str(
-        &std::fs::read_to_string(&manifest_path).expect("Failed to read manifest"),
-    )
-    .expect("Failed to parse manifest");
+    let baseline_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/benchmark_baseline.json");
+    let set_key = if using_bundled { "bundled" } else { "external" };
+    let mut baseline = admission::read_baseline(&baseline_path, set_key)?;
+    let mut manifest: Vec<Sample> =
+        serde_json::from_slice(&std::fs::read(&manifest_path).context("read manifest")?)
+            .context("parse manifest")?;
 
-    if let Some(limit) = max_samples
-        && limit > 0
-        && manifest.len() > limit
-    {
-        manifest.truncate(limit);
+    let full =
+        max_samples.unwrap_or(0) == 0 || max_samples.is_some_and(|limit| limit >= manifest.len());
+    ensure!(
+        !update_baseline || full,
+        "baseline updates require the full corpus"
+    );
+    if !full {
+        manifest.truncate(max_samples.context("missing sample limit")?);
     }
+    admission::validate_corpus(&manifest, &fixture_dir, &baseline, set_key, full)?;
 
     let model_dir_str = model_dir.to_string_lossy();
-    // Cold-start: wall time of Engine::load (model mmap + session build + pool).
+    // Cold-start: wall time of model verification (required mode) and
+    // Engine::load (model mmap + session build + pool).
     // Measured before the decode loop so RTF is pure inference throughput.
     let cold_t0 = std::time::Instant::now();
-    let engine = gigastt::inference::Engine::load(&model_dir_str).expect("Failed to load engine");
+    let engine = if required {
+        admission::verify_required_model(&model_dir)?;
+        // Match Engine::load's default pool, minimum and encoder thread settings.
+        let pool_size = if cfg!(target_os = "android") { 1 } else { 2 };
+        gigastt::inference::Engine::load_with_pools_threads_variant(
+            &model_dir_str,
+            Some(gigastt::model::ModelVariant::Rnnt),
+            pool_size,
+            pool_size,
+            0,
+            1,
+        )
+    } else {
+        gigastt::inference::Engine::load(&model_dir_str)
+    }
+    .context("load engine")?;
     let cold_start_ms = cold_t0.elapsed().as_millis() as u64;
     let rss_after_load_mb = current_rss_mb();
     eprintln!("  cold-start: {cold_start_ms} ms | RSS after load: {rss_after_load_mb} MB");
 
-    let rt = tokio::runtime::Runtime::new().expect("Failed to create tokio runtime");
+    let rt = tokio::runtime::Runtime::new().context("create tokio runtime")?;
     let mut guard = rt
         .block_on(engine.pool.checkout())
-        .expect("pool closed before benchmark started");
+        .context("checkout benchmark pool")?;
 
     let mut total_ref_words = 0usize;
     let mut total_errors = 0usize;
@@ -914,8 +968,15 @@ fn main() {
         };
 
         let hypothesis = engine
-            .transcribe_file(wav_path.to_str().unwrap(), &mut guard)
-            .expect("Transcription failed");
+            .transcribe_file(
+                wav_path.to_str().context("non-UTF8 audio path")?,
+                &mut guard,
+            )
+            .context("transcription failed")?;
+        ensure!(
+            hypothesis.duration_s.is_finite() && hypothesis.duration_s > 0.0,
+            "invalid audio duration"
+        );
         total_audio_s += hypothesis.duration_s;
 
         let ref_words = normalize_for_wer(&sample.reference);
@@ -964,6 +1025,10 @@ fn main() {
         }));
     }
 
+    ensure!(
+        total_ref_words > 0 && total_audio_s.is_finite() && total_audio_s > 0.0,
+        "no measured corpus evidence"
+    );
     let wer = if total_ref_words > 0 {
         total_errors as f64 / total_ref_words as f64 * 100.0
     } else {
@@ -1030,50 +1095,27 @@ fn main() {
     //   1. absolute ceilings for WER / RTF / RSS / cold-start (always)
     //   2. relative baselines per set when committed in benchmark_baseline.json
     // Populate relative fields with GIGASTT_BENCHMARK_UPDATE_BASELINE=1.
-    let baseline_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/benchmark_baseline.json");
-    let set_key = if using_bundled { "bundled" } else { "external" };
-
-    if std::env::var_os("GIGASTT_BENCHMARK_UPDATE_BASELINE").is_some() {
-        let mut baseline = read_baseline(&baseline_path);
-        baseline["sets"][set_key] = serde_json::json!({
-            "samples": manifest.len(),
-            "wer": wer_rounded,
-            "rtf": rtf_rounded,
-            "rss_after_load_mb": rss_after_load_mb,
-            "rss_after_decode_mb": rss_after_decode_mb,
-            "cold_start_ms": cold_start_ms,
-        });
-        // Keep ceilings/tolerances keys if already present; otherwise seed defaults.
-        if baseline.get("ceilings").is_none() {
-            let d = QualityCeilings::default();
-            baseline["ceilings"] = serde_json::json!({
-                "max_wer": d.max_wer,
-                "max_rtf": d.max_rtf,
-                "max_rss_after_load_mb": d.max_rss_after_load_mb,
-                "max_rss_after_decode_mb": d.max_rss_after_decode_mb,
-                "max_cold_start_ms": d.max_cold_start_ms,
-            });
-        }
-        if baseline.get("tolerances").is_none() {
-            let d = QualityCeilings::default();
-            baseline["tolerances"] = serde_json::json!({
-                "rtf_abs": d.rtf_tolerance_abs,
-                "rss_mb": d.rss_tolerance_mb,
-                "cold_start_ms": d.cold_start_tolerance_ms,
-            });
+    if update_baseline {
+        for (key, value) in [
+            ("wer", serde_json::json!(wer_rounded)),
+            ("rtf", serde_json::json!(rtf_rounded)),
+            ("rss_after_load_mb", serde_json::json!(rss_after_load_mb)),
+            (
+                "rss_after_decode_mb",
+                serde_json::json!(rss_after_decode_mb),
+            ),
+            ("cold_start_ms", serde_json::json!(cold_start_ms)),
+        ] {
+            baseline["sets"][set_key][key] = value;
         }
         std::fs::write(
             &baseline_path,
-            serde_json::to_string_pretty(&baseline).unwrap() + "\n",
+            serde_json::to_string_pretty(&baseline)? + "\n",
         )
-        .expect("Failed to write benchmark baseline");
-        eprintln!(
-            "  Baseline updated: set '{set_key}' → WER {wer_rounded:.1}% RTF {rtf_rounded:.3} RSS {rss_after_load_mb} MB cold-start {cold_start_ms} ms ({})",
-            baseline_path.display()
-        );
+        .context("write benchmark baseline")?;
+        eprintln!("  Baseline updated: {}", baseline_path.display());
     }
 
-    let baseline = read_baseline(&baseline_path);
     let ceilings = ceilings_from_baseline(&baseline);
     let metrics = QualityMetrics {
         wer,
@@ -1169,6 +1211,8 @@ fn main() {
 
     let output = serde_json::json!({
         "pass": passed,
+        "status": "measured",
+        "skipped": false,
         "score": score_rounded,
         "wer": wer_rounded,
         "ci_low": ci_lo_r,
@@ -1201,4 +1245,5 @@ fn main() {
         }
         std::process::exit(1);
     }
+    Ok(())
 }

@@ -43,7 +43,8 @@ cargo test -p gigastt --test e2e_rest -- --ignored --list --exact test_offline_s
 cargo test -p gigastt --test e2e_rest -- --ignored --exact test_offline_source_contracts_preserve_numerical_output --test-threads=1 --nocapture
 ```
 
-Do not use a bare `cargo test --workspace`: it also starts the long WER benchmark.
+Use `--workspace --lib --bins` for focused unit checks; the long WER benchmark
+requires explicit `--run`.
 The new checks reuse existing dependencies, fixtures and the cached RNN-T model;
 they add no model download or extra CI job. Compilation and model loading must
 be distinguished from warmed test execution when comparing timings.

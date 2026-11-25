@@ -305,7 +305,8 @@ jobs:
       # Model-free self-test of the multi-metric quality-gate decision logic
       # (WER / RTF / RSS / cold-start ceilings + relative baselines). The full
       # model-gated run is full-run only (quality-gate job).
-      - run: cargo test --test benchmark -- --self-test
+      - run: cargo test --test benchmark
+      - run: python3 scripts/check-wer-summary.py --self-test
       - name: Model packaging and long-form gate self-tests
         run: |
           python3 scripts/test-model-bundle.py
@@ -696,13 +697,9 @@ jobs:
 
       # Release build: RTF ceilings are meaningless in debug (~10× slower).
       - name: Run quality gate (bundled fixtures)
-        env:
-          # Hermetic: ignore any external Golos set on the runner so sample
-          # count / audio duration stay stable for RTF/RSS ceilings.
-          GIGASTT_BENCHMARK_FORCE_BUNDLED: "1"
         run: |
           set -euo pipefail
-          cargo test -p gigastt --release --test benchmark -- --ignored 2>&1 | tee quality_gate_output.txt
+          cargo test -p gigastt --release --test benchmark -- --run --required 2>&1 | tee quality_gate_output.txt
 
       - name: Assert multi-metric ceilings from JSON summary
         run: |
@@ -714,38 +711,7 @@ jobs:
             exit 1
           fi
           echo "summary: $JSON"
-          python3 - "$JSON" <<'PY'
-          import json, sys
-          data = json.loads(sys.argv[1])
-          assert data.get("pass") is True, f"gate reported pass=false: {data}"
-          # Dual-check against the legacy shell threshold file so the two
-          # sources of absolute WER ceilings cannot drift silently.
-          with open(".github/wer-threshold.txt") as f:
-              shell_threshold = float(f.read().strip())
-          wer = float(data["wer"])
-          if wer > shell_threshold:
-              raise SystemExit(
-                  f"WER {wer}% exceeds .github/wer-threshold.txt {shell_threshold}%"
-              )
-          required = [
-              "wer",
-              "rtf",
-              "rss_after_load_mb",
-              "rss_after_decode_mb",
-              "cold_start_ms",
-              "samples",
-          ]
-          missing = [k for k in required if k not in data]
-          if missing:
-              raise SystemExit(f"JSON summary missing keys: {missing}")
-          print(
-              f"PASS: WER={data['wer']}% RTF={data['rtf']} "
-              f"RSS_load={data['rss_after_load_mb']}MB "
-              f"RSS_decode={data['rss_after_decode_mb']}MB "
-              f"cold_start={data['cold_start_ms']}ms "
-              f"samples={data['samples']}"
-          )
-          PY
+          python3 scripts/check-wer-summary.py "$JSON"
 
       - name: Upload quality-gate results
         if: always()
