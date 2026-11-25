@@ -5,7 +5,38 @@ Run commands from the repository root after installing the
 All Actions workflows are manual; the commands below run locally. The Docs Drift
 job fails manual CI when a checked documentation contract or relative link drifts.
 
-## Fast checks without model files
+## Focused development loop
+
+Use Cargo's package, target and module filters for an ordinary edit. Do not
+download a model or run the workspace suite on every iteration.
+
+| Change | Model-free examples |
+|---|---|
+| Private tokenizer implementation | `cargo test -p gigastt-core --lib inference::tokenizer::tests` |
+| WebSocket message contract | `cargo test -p gigastt-core --lib protocol::tests` and `cargo test -p gigastt --lib server::ws::` |
+| Mel frontend hot path | `cargo test -p gigastt-core --lib inference::features::tests` and the focused benchmark below |
+
+Select direct consumers as well when a public contract changes; for WebSocket
+wire changes include the Go and JS SDK tests listed below and the relevant
+model-backed E2E tests. Verify the selected filter runs tests, not just a
+successful invocation with zero matches. Use `-- --list` to discover names.
+
+For changes to the reused mel buffers, run the existing deterministic
+synthetic-input Criterion benchmark:
+
+```sh
+cargo bench -p gigastt-core --bench mel -- 'mel_spectrogram/1s_16khz_reused'
+```
+
+A focused measurement supports local iteration, not a release performance
+claim. Compare immutable revisions with equivalent workloads and record
+same-binary controls where noise is material. When claiming inference
+performance, also run the relevant
+[whole-ASR comparison](performance-regressions.md#running-the-asr-check-locally).
+An unstable timing result is inconclusive, not evidence of improvement or
+permission to widen a threshold.
+
+## Full model-free merge checks
 
 ```sh
 make check
@@ -20,7 +51,10 @@ model-free self-tests; explicit `--run` is needed for corpus execution.
 Unit tests use synthetic inputs;
 model-dependent tests are explicitly ignored until selected below.
 
-Enable `.githooks` with `git config core.hooksPath .githooks`. The publication
+Before committing, run the full workspace checks above; the pre-commit hook
+enforces the same Rust suite. Manual CI additionally checks protected statuses,
+risk-specific model smoke and performance gates on the merge candidate.
+A failing required check blocks merging. Enable `.githooks` with `git config core.hooksPath .githooks`. The publication
 check inspects the staged tree; stage intended changes before the final check.
 
 ## Model-backed HTTP and WebSocket tests
