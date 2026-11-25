@@ -7,7 +7,7 @@ use anyhow::Result;
 use bytes::Bytes;
 
 #[cfg(feature = "file-decode")]
-use super::stream::FileWindows;
+use super::pcm_source::{ChannelSelect, PcmSource};
 #[cfg(feature = "file-decode")]
 use super::whole_buffer_limit_secs;
 
@@ -82,7 +82,12 @@ pub(crate) fn decode_audio_file_bounded(
     path: &str,
     max_audio_secs: Option<f64>,
 ) -> Result<Vec<f32>> {
-    FileWindows::decode_file(path, Some(whole_buffer_limit_secs(max_audio_secs)))
+    PcmSource::open(
+        path,
+        Some(whole_buffer_limit_secs(max_audio_secs)),
+        ChannelSelect::Mono,
+    )?
+    .drain_to_vec(None)
 }
 
 /// Decode audio from raw bytes in memory (no temp file needed).
@@ -141,7 +146,12 @@ pub fn decode_audio_bytes_shared_bounded(
     data: Bytes,
     max_audio_secs: Option<f64>,
 ) -> Result<Vec<f32>> {
-    FileWindows::decode_bytes(data, Some(whole_buffer_limit_secs(max_audio_secs)))
+    PcmSource::from_bytes(
+        data,
+        Some(whole_buffer_limit_secs(max_audio_secs)),
+        ChannelSelect::Mono,
+    )?
+    .drain_to_vec(None)
 }
 
 /// Flat decode with cooperative packet/block boundaries and the existing ceiling.
@@ -152,12 +162,12 @@ pub(crate) fn decode_audio_file_with_abort(
     abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<Vec<f32>> {
     super::check_decode_abort(abort)?;
-    FileWindows::open(
+    PcmSource::open(
         path,
-        super::WindowSpec::flat(),
         Some(whole_buffer_limit_secs(max_audio_secs)),
+        ChannelSelect::Mono,
     )?
-    .drain_to_vec_with_abort(abort)
+    .drain_to_vec(abort)
 }
 
 #[cfg(feature = "file-decode")]
@@ -167,12 +177,12 @@ pub(crate) fn decode_audio_bytes_with_abort(
     abort: Option<&(dyn Fn() -> bool + Sync)>,
 ) -> Result<Vec<f32>> {
     super::check_decode_abort(abort)?;
-    FileWindows::from_bytes(
+    PcmSource::from_bytes(
         data,
-        super::WindowSpec::flat(),
         Some(whole_buffer_limit_secs(max_audio_secs)),
+        ChannelSelect::Mono,
     )?
-    .drain_to_vec_with_abort(abort)
+    .drain_to_vec(abort)
 }
 
 #[cfg(feature = "file-decode")]
