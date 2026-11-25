@@ -19,24 +19,25 @@ pub(super) const WINDOW_OVERLAP_WORDS: usize = 40;
 /// FIRST subtoken — the token whose `word_id == Some(w)` with the lowest
 /// position. This is RUPunct's `aggregation_strategy="first"`.
 ///
-/// `word_ids` is the per-token word mapping (special tokens are `None`);
+/// `word_ids` maps tokens to caller-supplied whitespace words (special tokens
+/// are `None`);
 /// `argmax_per_token` is the pre-computed argmax label id for each token.
-/// Words with no subtoken (should not happen for real input) get label id 0.
+/// Words with no subtoken (e.g. removed by normalization) have no label.
 ///
 /// Pure (no model / I/O) so the first-subword selection is unit-testable.
 pub(super) fn first_subword_labels(
     word_ids: &[Option<u32>],
     argmax_per_token: &[usize],
     num_words: usize,
-) -> Vec<usize> {
-    let mut labels = vec![0usize; num_words];
-    let mut seen = vec![false; num_words];
+) -> Vec<Option<usize>> {
+    let mut labels = vec![None; num_words];
     for (tok_idx, wid) in word_ids.iter().enumerate() {
         let Some(w) = wid else { continue };
         let w = *w as usize;
-        if w < num_words && !seen[w] {
-            seen[w] = true;
-            labels[w] = argmax_per_token.get(tok_idx).copied().unwrap_or(0);
+        if let Some(slot) = labels.get_mut(w)
+            && slot.is_none()
+        {
+            *slot = argmax_per_token.get(tok_idx).copied();
         }
     }
     labels
@@ -119,11 +120,12 @@ pub(super) fn plan_windows(num_words: usize) -> Vec<Window> {
 /// Merge the per-window label vectors into one label per word.
 ///
 /// `per_window[i]` holds a label for every word of `windows[i]` (word `start + j`
-/// is at index `j`), or `None` when that window's inference failed. Words only a
-/// failed window covered stay `None` and are rendered unchanged.
+/// is at index `j`), or `None` when that window's inference failed. Unlabelled
+/// words and words covered only by a failed window remain `None` and are
+/// rendered unchanged.
 pub(super) fn splice_window_labels(
     windows: &[Window],
-    per_window: &[Option<Vec<usize>>],
+    per_window: &[Option<Vec<Option<usize>>>],
     num_words: usize,
 ) -> Vec<Option<usize>> {
     let mut merged = vec![None; num_words];
@@ -135,7 +137,7 @@ pub(super) fn splice_window_labels(
             continue;
         };
         for (offset, slot) in merged[keep_start..keep_end].iter_mut().enumerate() {
-            *slot = labels.get(base + offset).copied();
+            *slot = labels.get(base + offset).copied().flatten();
         }
     }
     merged

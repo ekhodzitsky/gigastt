@@ -67,16 +67,16 @@ fn test_first_subword_labels_picks_first_subtoken() {
     // its second (idx2) is 9 (must be ignored). word1 (idx3) is label 7.
     let argmax = vec![0, 3, 9, 7, 0];
     let labels = first_subword_labels(&word_ids, &argmax, 2);
-    assert_eq!(labels, vec![3, 7]);
+    assert_eq!(labels, vec![Some(3), Some(7)]);
 }
 
 #[test]
-fn test_first_subword_labels_missing_word_defaults_zero() {
-    // No subtoken maps to word index 1 → defaults to label id 0.
+fn test_first_subword_labels_missing_word_is_unlabelled() {
+    // No subtoken maps to word index 1 → no label (label ID zero is not neutral).
     let word_ids = vec![None, Some(0), None];
     let argmax = vec![0, 5, 0];
     let labels = first_subword_labels(&word_ids, &argmax, 2);
-    assert_eq!(labels, vec![5, 0]);
+    assert_eq!(labels, vec![Some(5), None]);
 }
 
 #[test]
@@ -299,9 +299,9 @@ fn test_splice_window_labels_round_trips_5000_words() {
     assert_eq!(spans.len(), n);
 
     let windows = plan_windows(spans.len());
-    let per_window: Vec<Option<Vec<usize>>> = windows
+    let per_window: Vec<Option<Vec<Option<usize>>>> = windows
         .iter()
-        .map(|w| Some((w.start..w.end).collect()))
+        .map(|w| Some((w.start..w.end).map(Some).collect()))
         .collect();
 
     let merged = splice_window_labels(&windows, &per_window, spans.len());
@@ -317,9 +317,9 @@ fn test_splice_window_labels_round_trips_5000_words() {
 fn test_splice_window_labels_failed_window_leaves_its_words_unlabelled() {
     let windows = plan_windows(600);
     assert_eq!(windows.len(), 3);
-    let mut per_window: Vec<Option<Vec<usize>>> = windows
+    let mut per_window: Vec<Option<Vec<Option<usize>>>> = windows
         .iter()
-        .map(|w| Some((w.start..w.end).map(|_| 7usize).collect()))
+        .map(|w| Some((w.start..w.end).map(|_| Some(7usize)).collect()))
         .collect();
     per_window[1] = None;
 
@@ -358,7 +358,7 @@ const SPLITTING_TOKENIZER_JSON: &str = r###"{
 #[derive(Clone)]
 struct StubSession {
     num_labels: usize,
-    label: usize,
+    label: Option<usize>,
     fail_on_call: Option<usize>,
     seqs: Arc<Mutex<Vec<usize>>>,
 }
@@ -377,8 +377,11 @@ impl RuntimeSession for StubSession {
             return Err(RuntimeError::InferenceFailed("stub window failure".into()));
         }
         let mut logits = vec![0.0f32; seq * self.num_labels];
-        for t in 0..seq {
-            logits[t * self.num_labels + self.label] = 1.0;
+        let input = inputs[0].view();
+        let ids = input.data().as_i64().expect("token ids");
+        for (t, id) in ids.iter().enumerate() {
+            let label = self.label.unwrap_or(*id as usize);
+            logits[t * self.num_labels + label] = 1.0;
         }
         Ok(vec![Tensor::new_checked(
             Shape::new(vec![1, seq, self.num_labels]),
@@ -412,7 +415,7 @@ impl Runtime for StubSession {
 fn stub_punctuator(
     tokenizer_json: &str,
     labels: &[&str],
-    label: usize,
+    label: Option<usize>,
     fail_on_call: Option<usize>,
 ) -> (Punctuator, Arc<Mutex<Vec<usize>>>) {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -442,6 +445,43 @@ fn stub_punctuator(
     (punct, seqs)
 }
 
+/// Internal punctuation is a separate BERT pre-token, not a separate
+/// whitespace word. Give each input token its own classifier label to expose
+/// any shift after the hyphen, decimal or normalization-only word.
+#[test]
+fn test_restore_preserves_label_alignment_after_internal_punctuation() {
+    let tokenizer = MINIMAL_TOKENIZER_JSON
+        .replace(
+            "\"normalizer\": null",
+            r#""normalizer": {"type":"BertNormalizer","clean_text":true,"handle_chinese_chars":true,"strip_accents":false,"lowercase":false}"#,
+        )
+        .replace(
+            r#""[UNK]": 0, "a": 1, "b": 2"#,
+            r#""[UNK]": 0, "a": 1, "b": 2, "-": 3, ".": 4, "2": 5"#,
+        );
+    let (punct, seqs) = stub_punctuator(
+        &tokenizer,
+        &[
+            "UPPER_PERIOD",
+            "LOWER_O",
+            "UPPER_PERIOD",
+            "LOWER_QUESTION",
+            "LOWER_VOSKL",
+            "LOWER_COMMA",
+        ],
+        None, // label id = input token id
+        None,
+    );
+    let input = "a-b b.2 \u{200b} a";
+    let expected = "a-b B.2. \u{200b} a";
+    assert_eq!(punct.restore(input), expected);
+    let repeats = WINDOW_WORDS / 4 + 12;
+    let text = vec![input; repeats].join(" ");
+    assert_eq!(punct.restore(&text), vec![expected; repeats].join(" "));
+    assert_eq!(seqs.lock().len(), 1 + plan_windows(repeats * 4).len());
+    assert_eq!(punct.failed_windows(), 0);
+}
+
 /// A transcript far longer than one window comes back with every word
 /// labelled, in order, one run per planned window.
 #[test]
@@ -451,7 +491,12 @@ fn test_restore_long_text_labels_every_word_one_run_per_window() {
     let n = if cfg!(miri) { 600 } else { 5000 };
     let words: Vec<String> = (0..n).map(|i| format!("w{i}")).collect();
     let text = words.join(" ");
-    let (punct, seqs) = stub_punctuator(MINIMAL_TOKENIZER_JSON, &["LOWER_O", "UPPER_O"], 1, None);
+    let (punct, seqs) = stub_punctuator(
+        MINIMAL_TOKENIZER_JSON,
+        &["LOWER_O", "UPPER_O"],
+        Some(1),
+        None,
+    );
 
     let out = punct.restore(&text);
 
@@ -477,7 +522,12 @@ fn test_restore_splits_a_window_over_the_subtoken_ceiling() {
     // 250 words × 40 subtokens ≈ 10k subtokens in one window.
     let word = "a".repeat(40);
     let text = vec![word.as_str(); WINDOW_WORDS].join(" ");
-    let (punct, seqs) = stub_punctuator(SPLITTING_TOKENIZER_JSON, &["LOWER_O", "UPPER_O"], 1, None);
+    let (punct, seqs) = stub_punctuator(
+        SPLITTING_TOKENIZER_JSON,
+        &["LOWER_O", "UPPER_O"],
+        Some(1),
+        None,
+    );
 
     let out = punct.restore(&text);
 
@@ -506,7 +556,7 @@ fn test_restore_partial_window_failure_only_bares_that_window() {
     let (punct, _seqs) = stub_punctuator(
         MINIMAL_TOKENIZER_JSON,
         &["LOWER_O", "UPPER_O"],
-        1,
+        Some(1),
         Some(1), // the middle window's run fails
     );
 
@@ -528,7 +578,7 @@ fn test_restore_partial_window_failure_only_bares_that_window() {
 #[test]
 fn test_restore_returns_input_unchanged_when_every_window_fails() {
     let text = "  привет   мир  ";
-    let (punct, _seqs) = stub_punctuator(MINIMAL_TOKENIZER_JSON, &["LOWER_O"], 0, Some(0));
+    let (punct, _seqs) = stub_punctuator(MINIMAL_TOKENIZER_JSON, &["LOWER_O"], Some(0), Some(0));
 
     assert_eq!(punct.restore(text), text);
     assert_eq!(punct.failed_windows(), 1);
