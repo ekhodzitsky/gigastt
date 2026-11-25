@@ -119,6 +119,31 @@ gh workflow run publication.yml --ref your-branch \
   -f baseline_sha=FULL_ANCESTOR_SHA -F pull_request_number=123
 ```
 
+### Experimental measurement controls
+
+Manual CI also accepts `measurement_pilot=true` to collect additional paired
+measurements after the existing required comparisons. This is an opt-in
+experiment, not an alternative way to pass a gate. A failure in a required
+comparison remains a failure even when the experimental results look favorable.
+
+The `criterion-pilot` artifact retains seven interleaved A/A (same executable)
+and A/B pairs for two tokenizer and two audio decoding workloads, alternating
+arm order. Each observation is a fresh process with a one-second warmup,
+one-second measurement window and ten raw samples. The paired ratio range is
+a conservative nominal median interval assuming independent pairs; independence
+on a hosted runner is not established. An unstable control or an interval
+crossing the 5% limit is not evidence of regression or equivalence. Workload
+identities are embedded in the recorded executables; do not use this pilot to
+qualify changed benchmark definitions or fixtures without comparing those inputs.
+
+The `objc-cached-load-pilot` artifact separately records first and repeated
+cached model loads for both requested compute policies, as well as key and
+metadata work in fresh processes. Seven interleaved A/A and A/B pairs include
+copied, content-identical A/A caches and executable and cache identities. The
+original combined load, encoder output, inference and RSS checks are unchanged.
+Neither experiment is qualified as an acceptance criterion until the hosted
+controls establish adequate reproducibility and sensitivity.
+
 After merging, explicitly run `ci.yml` on `main` with `full=true` and the accepted
 pre-change ancestor SHA. The release validator checks the exact commit, the
 latest completed run and successful required jobs; a quick run with skipped
