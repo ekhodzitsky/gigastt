@@ -72,6 +72,16 @@ receiver. Custom `JobStore` implementations of `subscribe` take a
 `JobEventSender::publish` under the same lifecycle lock as job transitions.
 The HTTP event format is unchanged.
 
+### Application Rust safety
+
+The server library, production CLI and core model-acquisition module forbid
+local unsafe Rust. This does not audit dependencies or impose the same lint on
+native inference backends. The download lock uses the standard library's
+exclusive file lock on Unix. `--offline` disables subsequent model downloads
+without mutating process environment; the existing `GIGASTT_OFFLINE` setting
+continues to work. Legacy CLI environment tests retain a test-only exception;
+new tests should use subprocess isolation instead.
+
 ## Models
 
 The supported catalog, exact file sets, formatting policy and current bundle

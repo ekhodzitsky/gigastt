@@ -48,6 +48,9 @@ pub use download::{
 };
 
 #[cfg(feature = "net")]
+pub use download::fetch::enable_offline_mode;
+
+#[cfg(feature = "net")]
 pub use progress::classify_download_error;
 pub use progress::{
     ProgressErrorKind, ProgressEvent, ProgressMode, emit_progress_event, progress_mode,
