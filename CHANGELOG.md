@@ -15,6 +15,12 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- Add experimental, default-off `serve --jobs-file-zero-context` for native
+  mono-routing CPU INT8 RNN-T jobs. It adds bounded zero context to full file
+  windows and retries the original window once if a synthetic-tail token is
+  emitted. See [long recordings](docs/long-recordings.md#experimental-jobs-zero-context)
+  for supported settings, resource costs and limited evidence.
+
 - Add opt-in RNN-T WebSocket speech and automatic-endpoint confirmation with a
   separately cached large CTC model (`--stream-ctc-model-dir`). The default
   remains off; the supported CPU configuration, extra memory/CPU cost and

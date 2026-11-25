@@ -753,3 +753,33 @@ fn test_cli_stream_ctc_default_env_and_override() {
     };
     assert_eq!(a.stream_ctc_model_dir.as_deref(), Some("/cached/flag"));
 }
+
+#[test]
+fn test_cli_serve_jobs_file_zero_context_default_and_flag() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    let _restore = EnvRestore(
+        "GIGASTT_JOBS_FILE_ZERO_CONTEXT",
+        std::env::var("GIGASTT_JOBS_FILE_ZERO_CONTEXT").ok(),
+    );
+    unsafe { std::env::remove_var("GIGASTT_JOBS_FILE_ZERO_CONTEXT") };
+    let Commands::Serve(default) = Cli::parse_from(["gigastt", "serve"]).command else {
+        panic!("expected Serve");
+    };
+    assert!(!default.jobs_file_zero_context);
+    let Commands::Serve(enabled) = Cli::parse_from([
+        "gigastt",
+        "serve",
+        "--enable-jobs",
+        "--jobs-file-zero-context",
+    ])
+    .command
+    else {
+        panic!("expected Serve");
+    };
+    assert!(enabled.jobs_file_zero_context);
+    unsafe { std::env::set_var("GIGASTT_JOBS_FILE_ZERO_CONTEXT", "true") };
+    let Commands::Serve(from_env) = Cli::parse_from(["gigastt", "serve"]).command else {
+        panic!("expected Serve");
+    };
+    assert!(from_env.jobs_file_zero_context);
+}

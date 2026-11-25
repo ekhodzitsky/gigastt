@@ -48,6 +48,7 @@ pub(crate) struct FileTranscribeOpts {
     /// Threaded into the engine's per-window decode and the `channels=split`
     /// decode; the whole-buffer decoders clamp it to their fixed safety ceiling.
     pub max_audio_secs: Option<f64>,
+    pub file_zero_context: bool,
 }
 
 impl FileTranscribeOpts {
@@ -69,6 +70,7 @@ impl FileTranscribeOpts {
             .with_partial(self.partial.clone())
             .with_progress(self.progress.clone())
             .with_max_audio_secs(self.max_audio_secs)
+            .with_file_zero_context(self.file_zero_context)
     }
 }
 
@@ -469,6 +471,7 @@ mod tests {
                                 progress_channels: Some(Arc::new(AtomicU64::new(0))),
                                 diarization_outcome: Some(Arc::new(Default::default())),
                                 max_audio_secs: Some(3.0),
+                                file_zero_context: false,
                                 ..Default::default()
                             };
                             with_file_transcribe_request(
@@ -571,6 +574,7 @@ mod tests {
                     progress_channels: Some(Arc::new(AtomicU64::new(0))),
                     diarization_outcome: Some(Arc::new(Default::default())),
                     max_audio_secs: Some(2.0),
+                    file_zero_context: false,
                 };
                 with_file_transcribe_request(body.clone(), &opts, true, |request| {
                     let TranscribeSource::Samples(samples) = request.source else {
@@ -911,6 +915,22 @@ mod tests {
             WatchdogOutcome::Joined(Ok(_)) => "Joined(Ok)",
             WatchdogOutcome::Joined(Err(_)) => "Joined(Err)",
             WatchdogOutcome::TimedOut => "TimedOut",
+        }
+    }
+
+    #[test]
+    fn test_file_zero_context_routes_default_off_and_opt_in_to_native_request() {
+        for enabled in [false, true] {
+            let opts = FileTranscribeOpts {
+                file_zero_context: enabled,
+                ..Default::default()
+            };
+            with_file_transcribe_request(Bytes::from_static(b"file"), &opts, false, |request| {
+                assert!(matches!(request.source, TranscribeSource::Bytes(_)));
+                assert_eq!(request.file_zero_context, enabled);
+                Ok(())
+            })
+            .unwrap();
         }
     }
 }

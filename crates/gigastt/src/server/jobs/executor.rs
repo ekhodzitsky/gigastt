@@ -20,6 +20,7 @@ pub struct RealJobExecutor {
     /// Server shutdown signal. A fired token flips the per-run abort flag so an
     /// in-flight job releases its triplet at the next window during a drain.
     shutdown: tokio_util::sync::CancellationToken,
+    file_zero_context: bool,
 }
 
 impl RealJobExecutor {
@@ -34,8 +35,32 @@ impl RealJobExecutor {
             engine,
             limits,
             shutdown,
+            file_zero_context: false,
         }
     }
+
+    pub(crate) fn with_file_zero_context(mut self, enabled: bool) -> Self {
+        self.file_zero_context = enabled;
+        self
+    }
+}
+
+pub(super) const FILE_ZERO_CONTEXT_PARAMS_ERROR: &str =
+    "File zero context requires mono routing without VAD, diarization, split channels or hotwords.";
+
+pub(super) fn validate_file_zero_context_params(params: &ExportParams) -> anyhow::Result<()> {
+    if params.channels.as_deref() == Some("split")
+        || params.diarization == Some(true)
+        || params.vad == Some(true)
+        || super::super::http::hotwords_from_export_params(params)
+            .is_some_and(|hotwords| !hotwords.phrases.is_empty())
+    {
+        return Err(gigastt_core::error::GigasttError::InvalidInput {
+            message: FILE_ZERO_CONTEXT_PARAMS_ERROR.into(),
+        }
+        .into());
+    }
+    Ok(())
 }
 
 impl JobExecution for RealJobExecutor {
@@ -48,6 +73,10 @@ impl JobExecution for RealJobExecutor {
     ) -> anyhow::Result<gigastt_core::inference::TranscribeResult> {
         let engine = self.engine.load_full();
         let limits = self.limits.load();
+
+        if self.file_zero_context {
+            validate_file_zero_context_params(&params)?;
+        }
 
         // Size the progress bar from the container header when it declares a
         // duration (WAV / FLAC / M4A / OGG do). A probe reads O(header) bytes
@@ -218,6 +247,7 @@ impl JobExecution for RealJobExecutor {
                 // records nothing and the response shape is untouched.
                 diarization_outcome: diar_sink.clone(),
                 max_audio_secs: limits.max_audio_secs_opt(),
+                file_zero_context: self.file_zero_context,
             };
             let handle = tokio::task::spawn_blocking(move || {
                 let _enter = span.enter();

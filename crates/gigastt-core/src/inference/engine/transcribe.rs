@@ -44,9 +44,32 @@ impl Engine {
                 .partial
                 .as_ref()
                 .map(|_| &partial_fn as &dyn Fn(WordUpdate)),
+            file_zero_context: req.file_zero_context,
         };
         ctl.check_abort()?;
         req.validate_source_budget()?;
+
+        if req.file_zero_context {
+            self.validate_file_zero_context()?;
+            #[cfg(feature = "file-decode")]
+            let native_file = matches!(
+                &req.source,
+                TranscribeSource::Bytes(_) | TranscribeSource::Path(_)
+            );
+            #[cfg(not(feature = "file-decode"))]
+            let native_file = false;
+            if !native_file
+                || req.diarization
+                || req.overrides.vad == Some(true)
+                || req
+                    .hotwords
+                    .is_some_and(|hotwords| !hotwords.phrases.is_empty())
+            {
+                return Err(GigasttError::InvalidInput {
+                    message: "File zero context requires native mono files without diarization, VAD or hotwords".into(),
+                });
+            }
+        }
 
         // Opt-in operator length limit (`--max-audio-secs`); `None` = unlimited.
         // The streaming path honors it verbatim; the whole-buffer decoders clamp

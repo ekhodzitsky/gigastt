@@ -60,6 +60,7 @@ pub(crate) struct DecodeControls<'a> {
     pub(crate) abort: Option<&'a (dyn Fn() -> bool + Sync)>,
     pub(crate) on_progress: Option<&'a dyn Fn(u64)>,
     pub(crate) on_partial: Option<PartialSink<'a>>,
+    pub(crate) file_zero_context: bool,
 }
 
 impl DecodeControls<'_> {

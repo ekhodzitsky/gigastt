@@ -1,5 +1,29 @@
 //! `impl Engine` methods — split out of the former god-file.
 use super::*;
+
+/// A successfully decoded non-blank label lies outside the physical window.
+#[derive(Debug, thiserror::Error)]
+#[error("padded inference emitted token at local frame {frame} outside physical limit {limit}")]
+pub(super) struct SyntheticTailToken {
+    frame: usize,
+    limit: usize,
+}
+
+pub(super) fn check_token_frame_limit(
+    tokens: &[decode::TokenInfo],
+    limit: Option<usize>,
+) -> anyhow::Result<()> {
+    if let Some(limit) = limit
+        && let Some(token) = tokens.iter().find(|token| token.frame_index >= limit)
+    {
+        return Err(SyntheticTailToken {
+            frame: token.frame_index,
+            limit,
+        }
+        .into());
+    }
+    Ok(())
+}
 impl Engine {
     /// Run encoder + decode. `low_latency` selects the streaming encoder path
     /// ([`RuntimeSession::run_low_latency`]) so ANE can pad underfilled short
@@ -16,6 +40,32 @@ impl Engine {
         low_latency: bool,
         biaser: Option<&bias::Biaser>,
         abort: Option<&(dyn Fn() -> bool + Sync)>,
+    ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
+        self.run_inference_with_token_limit(
+            triplet,
+            features,
+            num_frames,
+            decoder_state,
+            frame_offset,
+            low_latency,
+            biaser,
+            abort,
+            None,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)] // encoder/decode call site; bundle later if it grows again
+    pub(super) fn run_inference_with_token_limit(
+        &self,
+        triplet: &mut SessionTriplet,
+        features: &[f32],
+        num_frames: usize,
+        decoder_state: &mut DecoderState,
+        frame_offset: usize,
+        low_latency: bool,
+        biaser: Option<&bias::Biaser>,
+        abort: Option<&(dyn Fn() -> bool + Sync)>,
+        token_frame_limit: Option<usize>,
     ) -> anyhow::Result<(Vec<WordInfo>, bool)> {
         if abort.is_some_and(|abort| abort()) {
             return Ok((Vec::new(), false));
@@ -124,6 +174,10 @@ impl Engine {
             elapsed_ms = dec_start.elapsed().as_millis() as u64,
             "greedy_decode"
         );
+
+        // Validate raw non-blank labels, including punctuation/separators,
+        // before their text is grouped into words. Do not trim a partial word.
+        check_token_frame_limit(&result.tokens, token_frame_limit)?;
 
         // Convert token infos to words with timestamps
         let words = self.tokens_to_words(&result.tokens, frame_offset);

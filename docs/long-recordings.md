@@ -124,3 +124,44 @@ file again. Do not treat `partial` as recovered audio, and do not raise
 No durable queue is required for these cases. The server already refuses an
 oversized body, drops the upload when a job finishes or is cancelled, and
 keeps running a job after the events client leaves.
+
+## Experimental jobs zero context
+
+Enable with `serve --enable-jobs --jobs-file-zero-context` (or set
+`GIGASTT_JOBS_FILE_ZERO_CONTEXT=true`) to try a limited mitigation for unwanted
+RNN-T words near the ends of file windows. This is **off by default**. The
+resolved engine must be CPU INT8 `rnnt`, with `--file-window-concurrency 1`,
+VAD off and no configured hotwords. Incompatible startup and model reloads
+fail rather than silently enabling another path. A job requesting
+`channels=split`, diarization, VAD or nonempty hotwords fails explicitly.
+Ordinary mono routing, including the existing channel downmix, is supported.
+REST, synchronous file transcription and WebSocket recognition are unchanged.
+
+The option appends two seconds of zero-valued PCM **only for inference** on
+native 24-second windows. Shorter windows and single-pass windows of other
+lengths are unchanged. File duration, progress, timestamps, overlap geometry
+and stitching are based on the original input. A raw nonblank RNN-T token at
+or beyond local frame 600 invalidates the entire padded result, even if it
+would disappear during word formatting. In that case the server logs a warning
+and runs the original window once with a fresh decoder; no synthetic suffix
+is clipped or published. Other inference failures are not retried by this
+mechanism. On cancellation during an opted-in full window, only preceding
+completed window publications are retained, including if cancellation occurs
+during the fallback. There is no unbounded retry.
+
+The padded path increases encoder input from 24 to 26 seconds, needs an
+additional bounded PCM buffer of about 1.6 MiB, and uses more encoder and
+decoder work. A rejected padded result costs up to two inference runs for
+the same physical window (26 seconds then 24 seconds of model input).
+The duration and progress limits still apply to the original samples; the
+no-progress watchdog must allow the additional inference work.
+
+Local CPU experiments on a reporter's 8 kHz stereo recording through ordinary
+mono downmix, 16 kHz mono affirmative/negation controls and an independently
+selected continuous recording found improvements in provisional boundary text
+without observed loss of the checked affirmative or negation words. The
+evidence is limited to those recordings; this is not a general WER improvement,
+an elimination of all false words, or a mitigation for INT8 phrase omissions
+in a different model head. The frame guard prevents emitting labels in the
+synthetic region, but it cannot recognize hallucinated words timed within
+the physical audio. Leave the option off unless its tradeoff is acceptable.

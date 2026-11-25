@@ -245,6 +245,11 @@ pub(crate) struct ServeArgs {
     #[arg(long, env = "GIGASTT_ENABLE_JOBS", default_value_t = false)]
     pub(crate) enable_jobs: bool,
 
+    /// Experimental two-second zero context for full native mono /jobs windows.
+    /// Requires CPU INT8 RNNT, serial windows, VAD off and no hotwords.
+    #[arg(long, env = "GIGASTT_JOBS_FILE_ZERO_CONTEXT", default_value_t = false)]
+    pub(crate) jobs_file_zero_context: bool,
+
     /// TTL in seconds for finished/failed/cancelled jobs before eviction
     /// from the in-memory store [default: 3600]. Env: GIGASTT_JOBS_TTL_SECS.
     #[arg(long, env = "GIGASTT_JOBS_TTL_SECS")]
@@ -432,6 +437,18 @@ pub(crate) async fn run_serve(
     if let Some(v) = args.max_audio_secs {
         limits.max_audio_secs = v;
     }
+    anyhow::ensure!(
+        !args.jobs_file_zero_context || limits.jobs_enabled,
+        "--jobs-file-zero-context requires --enable-jobs"
+    );
+    anyhow::ensure!(
+        !args.jobs_file_zero_context
+            || (!args.vad
+                && args.file_window_concurrency <= 1
+                && args.hotwords_file.is_none()
+                && !args.hotwords_default),
+        "--jobs-file-zero-context requires VAD off, serial file windows and no configured hotwords"
+    );
     let metrics_listen = args
         .metrics_listen
         .unwrap_or_else(server::config::default_metrics_listen);
@@ -500,7 +517,14 @@ pub(crate) async fn run_serve(
             .await
             .context("engine load task panicked")?
     };
-    server::run_with_config_loading_reloadable(server_config, None, load, Some(build_engine)).await
+    server::run_with_config_loading_reloadable_and_job_context(
+        server_config,
+        None,
+        load,
+        Some(build_engine),
+        args.jobs_file_zero_context,
+    )
+    .await
 }
 
 /// Shared by initial boot and administrative reload; never provisions sidecar assets.
