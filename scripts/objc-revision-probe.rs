@@ -77,3 +77,26 @@ fn test_objc_revision_probe() {
         serde_json::json!({"fixtures": fixtures, "modes": modes})
     );
 }
+
+// Deliberately a separate process from the original combined load measurement.
+// This measures key generation (sw_vers and package stat) and sidecar checks,
+// not the native load or a quantity that can be subtracted from another run.
+#[test]
+#[ignore = "run with scripts/compare-objc-revisions.py on macOS"]
+fn test_cache_key_probe() {
+    let package = PathBuf::from(std::env::var_os("GIGASTT_OBJC_PROBE_MODEL").unwrap());
+    let started = Instant::now();
+    let key = super::cache::current_source_key(&package).unwrap();
+    let key_seconds = started.elapsed().as_secs_f64();
+    let started = Instant::now();
+    assert!(super::cache::cached_model_path(&package).is_dir());
+    assert!(super::cache::meta_matches(
+        &super::cache::cached_meta_path(&package),
+        &key,
+    ));
+    let meta_seconds = started.elapsed().as_secs_f64();
+    println!(
+        "cache key {}",
+        serde_json::json!({"key_seconds": key_seconds, "meta_seconds": meta_seconds})
+    );
+}

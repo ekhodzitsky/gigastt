@@ -83,6 +83,7 @@ fn test_usable_optimized_cache_dir_uncreatable_returns_none() {
 
 #[cfg(unix)]
 #[test]
+#[allow(unsafe_code)] // Native platform boundary.
 fn test_usable_optimized_cache_dir_read_only_returns_none() {
     // Root bypasses directory write permission bits, so the probe would
     // succeed and this test cannot exercise the read-only path.

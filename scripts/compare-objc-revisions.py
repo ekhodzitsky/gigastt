@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare the real Core ML bridge with locked dependencies on one macOS runner.
 
-Runs only when Objective-C dependencies or production bridge sources change.
+Runs only when Objective-C dependencies, bridge sources or its linker setup change.
 CPUAndNeuralEngine is a requested policy, not proof of physical ANE execution.
 """
 import argparse
@@ -22,6 +22,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
 TEST = 'runtime::coreml::bridge::revision_probe::test_objc_revision_probe'
+KEY_TEST = 'runtime::coreml::bridge::revision_probe::test_cache_key_probe'
 MODEL = 'gigaam_v3_encoder_768.mlpackage'
 MODEL_SHA = '111bd2722c46d41c0984e246752782f05892017990f50837ee6342b0dc41b5be'
 MODEL_URL = 'https://github.com/ekhodzitsky/gigastt/releases/download/ane-v3-2026-06-24/' + MODEL + '.tar'
@@ -38,7 +39,7 @@ def require_model_host(version):
             'Pinned CoreML8 encoder requires macOS 15 or newer; got ' + version)
 
 
-def validate(report):
+def summarize(report):
     require(all(len(report[a]) == 7 for a in ('base', 'candidate')), 'seven paired rounds required')
     reference = report['base'][0]
     for arm in ('base', 'candidate'):
@@ -62,10 +63,56 @@ def validate(report):
                       for a, b in zip(report['base'], report['candidate'])]
             median = statistics.median(ratios)
             summary[f'{mode}/{key}'] = {'paired_ratios': ratios, 'median_ratio': median}
-            require(median <= 1.05, f'{mode}/{key}: median regression exceeds 5%: {median}')
     ratios = [b['peak_rss_bytes'] / a['peak_rss_bytes'] for a, b in zip(report['base'], report['candidate'])]
     summary['peak_rss'] = {'paired_ratios': ratios, 'median_ratio': statistics.median(ratios)}
-    require(statistics.median(ratios) <= 1.10, 'peak RSS regression exceeds 10%')
+    return summary
+
+
+def validate(report):
+    summary = summarize(report)
+    for mode in ('cpu', 'cpu_and_ne'):
+        for key in ('seconds', 'load_seconds'):
+            median = summary[f'{mode}/{key}']['median_ratio']
+            require(median <= 1.05, f'{mode}/{key}: median regression exceeds 5%: {median}')
+    require(summary['peak_rss']['median_ratio'] <= 1.10, 'peak RSS regression exceeds 10%')
+    return summary
+
+
+def file_sha256(path):
+    with path.open('rb') as source:
+        return hashlib.file_digest(source, 'sha256').hexdigest()
+
+
+def cache_fingerprint(directory):
+    require(directory.is_dir(), 'missing compiled cache: ' + str(directory))
+    entries = {}
+    for path in sorted(directory.rglob('*')):
+        name = path.relative_to(directory).as_posix()
+        if path.is_symlink():
+            entries[name] = {'symlink': os.readlink(path)}
+        elif path.is_file():
+            entries[name] = {'sha256': file_sha256(path)}
+    require(bool(entries), 'empty compiled cache: ' + str(directory))
+    return entries
+
+
+def copy_cache(source, target):
+    fingerprint = cache_fingerprint(source)
+    shutil.copytree(source, target, symlinks=True)
+    require(cache_fingerprint(target) == fingerprint, 'copied cache fingerprint differs')
+    return fingerprint
+
+
+def summarize_key_timings(report):
+    require(all(len(report[a]) == 7 for a in ('base', 'candidate')), 'seven key timing pairs required')
+    summary = {}
+    for key in ('key_seconds', 'meta_seconds'):
+        values = {arm: [row[key] for row in report[arm]] for arm in ('base', 'candidate')}
+        require(all(math.isfinite(value) and value > 0 for arm in values.values() for value in arm),
+                'invalid cache key timing')
+        ratios = [b / a for a, b in zip(values['base'], values['candidate'])]
+        summary[key] = {'paired_ratios': ratios, 'median_ratio': statistics.median(ratios),
+                        'median_seconds': {arm: statistics.median(v) for arm, v in values.items()}}
     return summary
 
 
@@ -77,13 +124,35 @@ def git(*args):
     return run('git', *args, capture_output=True).stdout.strip()
 
 
+def comparison_build_env():
+    # Older control revisions can omit compiler-rt for ANE even though the
+    # static ORT CoreML archive requires it. Link the selected Xcode runtime
+    # equally in both arms; never patch the control's production sources.
+    resource = run('xcrun', '--sdk', 'macosx', 'clang', '--print-resource-dir',
+                   capture_output=True).stdout.rstrip('\r\n')
+    require(resource and not any(c in resource for c in ('\n', '\r', '\x1f')),
+            'invalid clang resource directory')
+    archive = Path(resource) / 'lib' / 'darwin' / 'libclang_rt.osx.a'
+    require(archive.is_file(), 'missing Apple compiler runtime: ' + str(archive))
+    env = dict(os.environ)
+    # Cargo prioritizes encoded flags over plain RUSTFLAGS. Unit separators
+    # keep a toolchain path containing spaces inside one linker argument.
+    if 'CARGO_ENCODED_RUSTFLAGS' in env:
+        flags = env['CARGO_ENCODED_RUSTFLAGS'].split('\x1f') if env['CARGO_ENCODED_RUSTFLAGS'] else []
+    else:
+        flags = env.get('RUSTFLAGS', '').split()
+    env['CARGO_ENCODED_RUSTFLAGS'] = '\x1f'.join([*flags, '-C', 'link-arg=' + str(archive)])
+    return env, archive
+
+
 def affected(base, candidate):
     def versions(ref):
         lock = tomllib.loads(git('show', ref + ':Cargo.lock'))
         return sorted((p['name'], p['version'], p.get('source', ''), p.get('checksum', '')) for p in lock['package']
                       if p['name'].startswith('objc2'))
     paths = git('diff', '--name-only', base, candidate, '--',
-                'crates/gigastt-core/src/runtime/coreml').splitlines()
+                'crates/gigastt-core/src/runtime/coreml',
+                'crates/gigastt-core/build.rs').splitlines()
     return versions(base) != versions(candidate) or any('/tests' not in p for p in paths)
 
 
@@ -104,10 +173,11 @@ def main():
         print('changed=' + str(changed).lower())
         return
     if not changed:
-        print('Objective-C dependencies and bridge unchanged; no model download or benchmark needed.')
+        print('Objective-C dependencies, bridge and linker setup unchanged; no model download or benchmark needed.')
         return
     require(sys.platform == 'darwin', 'Core ML comparison requires macOS')
     require_model_host(run('sw_vers', '-productVersion', capture_output=True).stdout.strip())
+    build_env, compiler_runtime = comparison_build_env()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     harness = (ROOT / 'scripts/objc-revision-probe.rs').read_bytes()
@@ -116,8 +186,11 @@ def main():
               'rustc': run('rustc', '-Vv', capture_output=True).stdout,
               'macos': run('sw_vers', capture_output=True).stdout,
               'machine': run('uname', '-m', capture_output=True).stdout.strip(),
+              'common_compiler_runtime': str(compiler_runtime),
               'compute_units_note': 'Requested policies; physical ANE use is not asserted.',
-              'prime': {}, 'base': [], 'candidate': []}
+              'prime': {}, 'base': [], 'candidate': [], 'binary_sha256': {},
+              'cache_fingerprints': {}, 'same_binary_control': {'prime': {}, 'base': [], 'candidate': [],
+                  'key_timings': {'base': [], 'candidate': []}}}
 
     def save():
         (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -147,7 +220,7 @@ def main():
                 build = subprocess.run(['cargo', 'test', '--manifest-path', str(tree / 'Cargo.toml'),
                     '--target-dir', str(ROOT / 'target'), '-p', 'gigastt-core', '--features', 'ane',
                     '--release', '--locked', '--lib', '--no-run', '--message-format=json'],
-                    cwd=ROOT, text=True, capture_output=True, check=False)
+                    cwd=ROOT, env=build_env, text=True, capture_output=True, check=False)
                 (output / f'{arm}-build.jsonl').write_text(build.stdout)
                 (output / f'{arm}-build.stderr').write_text(build.stderr)
                 if build.returncode:
@@ -163,6 +236,7 @@ def main():
                 require(len(tests) == 1, 'expected one test executable')
                 binaries[arm] = temp / (arm + '-probe')
                 shutil.copy2(tests[0], binaries[arm])
+                report['binary_sha256'][arm] = file_sha256(binaries[arm])
                 listing = run(str(binaries[arm]), TEST, '--ignored', '--exact', '--list', capture_output=True)
                 require(f'{TEST}: test' in listing.stdout.splitlines(), 'probe missing')
                 model_dir = temp / (arm + '-model')
@@ -170,16 +244,27 @@ def main():
                 models[arm] = model_dir / MODEL
                 models[arm].symlink_to(packages[0], target_is_directory=True)
 
-            def measure(arm, label):
+            # Use the exact same base executable for both control arms. Copy
+            # one compiled cache into the other root after priming, to exclude
+            # the variability of independently compiled Core ML artifacts.
+            for arm in ('control_base', 'control_candidate'):
+                binaries[arm] = binaries['base']
+                report['binary_sha256'][arm] = file_sha256(binaries[arm])
+                model_dir = temp / (arm + '-model')
+                model_dir.mkdir()
+                models[arm] = model_dir / MODEL
+                models[arm].symlink_to(packages[0], target_is_directory=True)
+
+            def measure(arm, label, test=TEST, prefix='objc revision'):
                 env = dict(os.environ, LC_ALL='C', GIGASTT_OBJC_PROBE_MODEL=str(models[arm]))
-                result = subprocess.run(['/usr/bin/time', '-l', str(binaries[arm]), TEST,
+                result = subprocess.run(['/usr/bin/time', '-l', str(binaries[arm]), test,
                     '--ignored', '--exact', '--test-threads=1', '--nocapture'], cwd=ROOT,
                     env=env, text=True, capture_output=True, timeout=300, check=False)
                 log = result.stdout + result.stderr
                 (output / f'{arm}-{label}.log').write_text(log)
                 result.check_returncode()
-                records = [json.loads(line.partition('objc revision ')[2]) for line in log.splitlines()
-                           if 'objc revision {' in line]
+                records = [json.loads(line.partition(prefix + ' ')[2]) for line in log.splitlines()
+                           if prefix + ' {' in line]
                 require(len(records) == 1, 'missing or duplicate probe record')
                 peak = re.findall(r'^\s*(\d+)\s+maximum resident set size\s*$', result.stderr, re.MULTILINE)
                 require(len(peak) == 1, 'missing peak RSS from macOS time')
@@ -196,6 +281,48 @@ def main():
                     report[arm].append(measure(arm, str(index)))
                     save()
                     print(f'{arm} paired round {index + 1} complete', flush=True)
+            # Retain the A/B report even if its gate fails. The diagnostic
+            # control does not replace or relax the existing revision comparison.
+            for arm in ('base', 'candidate'):
+                report['cache_fingerprints'][arm] = cache_fingerprint(
+                    models[arm].parent / 'compiled_cache')
+            report['summary'] = summarize(report)
+            save()
+            control = report['same_binary_control']
+            control['prime']['base'] = measure('control_base', 'prime')
+            control['cache_fingerprint_before'] = copy_cache(
+                models['control_base'].parent / 'compiled_cache',
+                models['control_candidate'].parent / 'compiled_cache')
+            save()
+            control['prime']['candidate'] = measure('control_candidate', 'prime')
+            save()
+            for arm in ('control_base', 'control_candidate'):
+                require(cache_fingerprint(models[arm].parent / 'compiled_cache')
+                        == control['cache_fingerprint_before'], 'copied control cache changed during priming')
+            for index in range(7):
+                for arm in (('base', 'candidate') if index % 2 == 0 else ('candidate', 'base')):
+                    control[arm].append(measure('control_' + arm, str(index)))
+                    save()
+            for arm in ('control_base', 'control_candidate'):
+                report['cache_fingerprints'][arm] = cache_fingerprint(
+                    models[arm].parent / 'compiled_cache')
+            control['summary'] = summarize(control)
+            save()
+            for arm in ('control_base', 'control_candidate'):
+                require(report['cache_fingerprints'][arm] == control['cache_fingerprint_before'],
+                        'copied control cache changed during measurement')
+            # Run a separate test process for cache-key generation and sidecar
+            # validation. Never time this inside the revision measurement or
+            # subtract it as though it were a measured native-load duration.
+            keys = control['key_timings']
+            for index in range(7):
+                for arm in (('base', 'candidate') if index % 2 == 0 else ('candidate', 'base')):
+                    keys[arm].append(measure('control_' + arm, f'key-{index}', KEY_TEST, 'cache key'))
+                    save()
+            keys['summary'] = summarize_key_timings(keys)
+            save()
+            print('Same-binary copied-cache diagnostic:', json.dumps(control['summary'], indent=2), flush=True)
+            print('Separate cache-key diagnostic:', json.dumps(keys['summary'], indent=2), flush=True)
             report['summary'] = validate(report)
             save()
             print(json.dumps(report['summary'], indent=2))

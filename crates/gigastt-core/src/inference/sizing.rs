@@ -77,6 +77,7 @@ pub(crate) fn total_ram_bytes() -> u64 {
 }
 
 #[cfg(not(miri))]
+#[allow(unsafe_code)] // Native platform boundary.
 fn host_ram_bytes() -> u64 {
     #[cfg(target_os = "macos")]
     {

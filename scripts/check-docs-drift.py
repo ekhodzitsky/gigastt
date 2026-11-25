@@ -58,6 +58,9 @@ CLI_SOURCES = (
     ROOT / "crates/gigastt/src/serve/bind.rs",
     ROOT / "crates/gigastt/src/transcribe_cmd.rs",
 )
+# Download policy is implemented in core, but its environment setting is
+# also part of the CLI contract. Read the actual consumer, not a doc allowlist.
+CLI_ENV_SOURCES = (ROOT / "crates/gigastt-core/src/model/download/fetch.rs",)
 WS_DIR = ROOT / "crates/gigastt/src/server/ws"
 SERVER_ROUTE_SOURCES = (
     ROOT / "crates/gigastt/src/server/mod.rs",
@@ -159,6 +162,8 @@ def parse_cli_definition() -> tuple[set[str], set[str]]:
             m = LONG_NAME_RE.search(attrs)
             flags.add(m.group(1) if m else field.replace("_", "-"))
             envs.update(ENV_RE.findall(attrs))
+    for path in CLI_ENV_SOURCES:
+        envs.update(ENV_CALL_RE.findall(path.read_text(encoding="utf-8")))
     return flags, envs
 
 

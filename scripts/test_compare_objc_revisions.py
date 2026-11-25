@@ -5,6 +5,7 @@ import unittest
 import os
 import re
 import subprocess
+import tempfile
 from unittest import mock
 
 spec = importlib.util.spec_from_file_location('objc_gate', Path(__file__).with_name('compare-objc-revisions.py'))
@@ -42,6 +43,51 @@ class GateTests(unittest.TestCase):
         for row in r['candidate']: row['modes']['cpu']['seconds'] = 1.1
         with self.assertRaises(ValueError): module.validate(r)
 
+    def test_diagnostic_retains_regression_without_admitting_candidate(self):
+        r = fixture()
+        for row in r['candidate']:
+            row['modes']['cpu']['load_seconds'] = 0.6
+        self.assertAlmostEqual(module.summarize(r)['cpu/load_seconds']['median_ratio'], 1.2)
+        with self.assertRaises(ValueError):
+            module.validate(r)
+
+    def test_cache_fingerprint_tracks_contents(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with self.assertRaises(ValueError):
+                module.cache_fingerprint(root)
+            path = root / 'weights'
+            path.write_bytes(b'one')
+            before = module.cache_fingerprint(root)
+            path.write_bytes(b'two')
+            self.assertNotEqual(before, module.cache_fingerprint(root))
+            (root / 'link').symlink_to('weights')
+            self.assertEqual(module.cache_fingerprint(root)['link'], {'symlink': 'weights'})
+
+    def test_copy_cache_preserves_contents_and_separates_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'source'
+            target = Path(directory) / 'target'
+            source.mkdir()
+            (source / 'weights').write_bytes(b'compiled')
+            (source / 'model.meta').write_text('source key')
+            (source / 'link').symlink_to('weights')
+            expected = module.copy_cache(source, target)
+            self.assertEqual(expected, module.cache_fingerprint(target))
+            (target / 'weights').write_bytes(b'changed')
+            self.assertEqual(expected, module.cache_fingerprint(source))
+            self.assertNotEqual(expected, module.cache_fingerprint(target))
+
+    def test_key_diagnostic_rejects_invalid_timings(self):
+        row = {'key_seconds': 0.01, 'meta_seconds': 0.001}
+        report = {arm: [dict(row) for _ in range(7)] for arm in ('base', 'candidate')}
+        self.assertEqual(module.summarize_key_timings(report)['key_seconds']['median_ratio'], 1.0)
+        for value in (0, -1, float('nan'), float('inf')):
+            invalid = copy.deepcopy(report)
+            invalid['candidate'][0]['key_seconds'] = value
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                module.summarize_key_timings(invalid)
+
     def test_memory_regression_fails(self):
         r = fixture()
         for row in r['candidate']: row['peak_rss_bytes'] = 1101
@@ -54,13 +100,51 @@ class GateTests(unittest.TestCase):
         with self.assertRaises(ValueError): module.validate(r)
 
 
+class BuildEnvironmentTests(unittest.TestCase):
+    def test_common_runtime_preserves_effective_flags_and_spaces(self):
+        with tempfile.TemporaryDirectory(prefix='Xcode Toolchain ') as directory:
+            resource = Path(directory)
+            archive = resource / 'lib' / 'darwin' / 'libclang_rt.osx.a'
+            archive.parent.mkdir(parents=True)
+            archive.write_bytes(b'test archive')
+            discovery = subprocess.CompletedProcess([], 0, stdout=str(resource) + '\n')
+            cases = [
+                ({}, []),
+                ({'RUSTFLAGS': '-C debuginfo=1'}, ['-C', 'debuginfo=1']),
+                ({'RUSTFLAGS': '-C debuginfo=1',
+                  'CARGO_ENCODED_RUSTFLAGS': '-C\x1fopt-level=3'}, ['-C', 'opt-level=3']),
+                ({'RUSTFLAGS': '-C debuginfo=1',
+                  'CARGO_ENCODED_RUSTFLAGS': ''}, []),
+            ]
+            for source, expected in cases:
+                source = {**source, 'MACOSX_DEPLOYMENT_TARGET': '11.0'}
+                with self.subTest(source=source), mock.patch.dict(os.environ, source, clear=True), \
+                        mock.patch.object(module, 'run', return_value=discovery) as tool:
+                    result, observed = module.comparison_build_env()
+                    tool.assert_called_once_with('xcrun', '--sdk', 'macosx', 'clang',
+                                                 '--print-resource-dir', capture_output=True)
+                    self.assertEqual(observed, archive)
+                    self.assertEqual(result['CARGO_ENCODED_RUSTFLAGS'].split('\x1f'),
+                                     [*expected, '-C', 'link-arg=' + str(archive)])
+                    self.assertEqual(result['MACOSX_DEPLOYMENT_TARGET'], '11.0')
+                    self.assertEqual(dict(os.environ), source)
+
+    def test_missing_runtime_fails_before_measurement(self):
+        with tempfile.TemporaryDirectory() as directory:
+            discovery = subprocess.CompletedProcess([], 0, stdout=directory + '\n')
+            with mock.patch.object(module, 'run', return_value=discovery), self.assertRaises(ValueError):
+                module.comparison_build_env()
+
+
 class AffectedTests(unittest.TestCase):
     def changed(self, base_source, candidate_source, paths=''):
         def git(*args):
             if args[0] == 'show':
                 source = base_source if args[1].startswith('base:') else candidate_source
                 return '[[package]]\nname = "objc2"\nversion = "0.6.5"\nsource = "' + source + '"\n'
-            return paths
+            pathspecs = args[args.index('--') + 1:]
+            return '\n'.join(path for path in paths.splitlines()
+                             if any(path == spec or path.startswith(spec + '/') for spec in pathspecs))
         with mock.patch.object(module, 'git', side_effect=git):
             return module.affected('base', 'candidate')
 
@@ -73,6 +157,10 @@ class AffectedTests(unittest.TestCase):
     def test_bridge_change_is_detected(self):
         self.assertTrue(self.changed('registry+same', 'registry+same',
                                     'crates/gigastt-core/src/runtime/coreml/bridge/predict.rs'))
+
+    def test_linker_setup_change_is_detected(self):
+        self.assertTrue(self.changed('registry+same', 'registry+same',
+                                    'crates/gigastt-core/build.rs'))
 
     def test_test_only_change_skips_measurement(self):
         self.assertFalse(self.changed('registry+same', 'registry+same',

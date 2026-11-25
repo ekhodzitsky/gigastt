@@ -70,8 +70,10 @@ pub struct SharedModel(pub Retained<MLModel>);
 
 // SAFETY: see the type-level doc above — prediction on a loaded MLModel is
 // documented thread-safe and we never mutate it after load.
+#[allow(unsafe_code)] // Core ML native boundary.
 unsafe impl Send for SharedModel {}
 // SAFETY: same justification — concurrent `&MLModel` prediction is supported.
+#[allow(unsafe_code)] // Core ML native boundary.
 unsafe impl Sync for SharedModel {}
 
 /// One compiled bucket model paired with its mel-frame window size.

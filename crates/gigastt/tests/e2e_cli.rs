@@ -639,6 +639,7 @@ fn cli_download_offline_env_fails_fast_with_instruction() {
 fn cli_download_offline_flag_fails_fast() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let out = Command::new(bin())
+        .env("GIGASTT_OFFLINE", "0")
         .args([
             "download",
             "--offline",

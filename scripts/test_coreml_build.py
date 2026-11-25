@@ -24,7 +24,7 @@ class CoremlBuildTests(unittest.TestCase):
     def tearDownClass(cls):
         cls.temp.cleanup()
 
-    def invoke(self, target="macos", coreml=True, tool_status=0, archive=True):
+    def invoke(self, target="macos", coreml=True, ane=False, tool_status=0, archive=True):
         with tempfile.TemporaryDirectory(prefix="coreml build ") as directory:
             root = Path(directory)
             resource = root / "Xcode Toolchain" / "lib" / "clang" / "19"
@@ -43,6 +43,8 @@ class CoremlBuildTests(unittest.TestCase):
             env.update(PATH=f"{root}:{env.get('PATH', '')}", CARGO_CFG_TARGET_OS=target)
             if coreml:
                 env["CARGO_FEATURE_COREML"] = "1"
+            if ane:
+                env["CARGO_FEATURE_ANE"] = "1"
             result = subprocess.run([str(self.binary)], env=env, text=True, capture_output=True)
             return result, library.parent
 
@@ -52,22 +54,34 @@ class CoremlBuildTests(unittest.TestCase):
         self.assertIn(f"cargo:rustc-link-search=native={directory}\n", result.stdout)
         self.assertIn("cargo:rustc-link-lib=static=clang_rt.osx\n", result.stdout)
 
+    def test_macos_ane_links_selected_toolchain_runtime(self):
+        result, directory = self.invoke(coreml=False, ane=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(f"cargo:rustc-link-search=native={directory}\n", result.stdout)
+        self.assertIn("cargo:rustc-link-lib=static=clang_rt.osx\n", result.stdout)
+
     def test_other_targets_and_cpu_only_do_not_require_xcode(self):
-        for target, coreml in [("linux", True), ("ios", True), ("macos", False)]:
-            with self.subTest(target=target, coreml=coreml):
-                result, _ = self.invoke(target, coreml, tool_status=42)
+        for target, coreml, ane in [("linux", True, False), ("ios", True, False),
+                                    ("linux", False, True), ("ios", False, True),
+                                    ("macos", False, False)]:
+            with self.subTest(target=target, coreml=coreml, ane=ane):
+                result, _ = self.invoke(target, coreml, ane, tool_status=42)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertNotIn("rustc-link-", result.stdout)
 
     def test_failed_tool_is_not_silently_ignored(self):
-        result, _ = self.invoke(tool_status=42)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertNotIn("rustc-link-lib", result.stdout)
+        for coreml in (True, False):
+            with self.subTest(coreml=coreml):
+                result, _ = self.invoke(coreml=coreml, ane=not coreml, tool_status=42)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn("rustc-link-lib", result.stdout)
 
     def test_missing_archive_is_not_silently_ignored(self):
-        result, _ = self.invoke(archive=False)
-        self.assertNotEqual(result.returncode, 0)
-        self.assertNotIn("rustc-link-lib", result.stdout)
+        for coreml in (True, False):
+            with self.subTest(coreml=coreml):
+                result, _ = self.invoke(coreml=coreml, ane=not coreml, archive=False)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertNotIn("rustc-link-lib", result.stdout)
 
 
 if __name__ == "__main__":

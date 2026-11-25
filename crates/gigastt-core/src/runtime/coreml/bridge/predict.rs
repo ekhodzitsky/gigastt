@@ -26,6 +26,7 @@ use crate::runtime::error::RuntimeError;
 // notes below) is the simplest correct path; a later revision could switch to
 // the handler API.
 #[allow(deprecated)]
+#[allow(unsafe_code)] // Core ML native boundary.
 pub fn predict_f32(
     model: &MLModel,
     input_name: &str,
@@ -160,6 +161,7 @@ pub fn predict_f32(
 // ---- helpers --------------------------------------------------------------
 
 /// Read the `shape()` NSArray<NSNumber> of an MLMultiArray as `Vec<usize>`.
+#[allow(unsafe_code)] // Core ML native boundary.
 fn shape_of(arr: &MLMultiArray) -> Result<Vec<usize>, RuntimeError> {
     // SAFETY: `shape` returns an owned NSArray<NSNumber>; element access is via
     // safe NSArray/NSNumber getters.
@@ -168,6 +170,7 @@ fn shape_of(arr: &MLMultiArray) -> Result<Vec<usize>, RuntimeError> {
 }
 
 /// Read the `strides()` NSArray<NSNumber> of an MLMultiArray as element strides.
+#[allow(unsafe_code)] // Core ML native boundary.
 fn strides_of(arr: &MLMultiArray) -> Result<Vec<usize>, RuntimeError> {
     // SAFETY: `strides` returns an owned NSArray<NSNumber> (element strides, not
     // byte strides); element access is via safe getters.
@@ -190,6 +193,7 @@ fn nsarray_usize(ns: &NSArray<NSNumber>) -> Vec<usize> {
 /// SAFETY contract: `base` points at a writable f16 buffer large enough that
 /// every `sum(idx[d] * strides[d])` offset is in bounds (true for an
 /// MLMultiArray of `shape` with `strides`). Caller holds exclusive access.
+#[allow(unsafe_code)] // Core ML native boundary.
 fn write_strided(base: *mut f16, data: &[f32], shape: &[usize], strides: &[usize]) {
     let rank = shape.len();
     let total = data.len();
@@ -216,6 +220,7 @@ fn write_strided(base: *mut f16, data: &[f32], shape: &[usize], strides: &[usize
 ///
 /// SAFETY contract: `base` points at a readable f16 buffer where every
 /// `sum(idx[d] * strides[d])` offset is in bounds.
+#[allow(unsafe_code)] // Core ML native boundary.
 fn read_strided_f16(base: *const f16, shape: &[usize], strides: &[usize]) -> Vec<f32> {
     // SAFETY (per element): `off` is in bounds per the contract above.
     read_strided_with(shape, strides, |off| unsafe { (*base.add(off)).to_f32() })
@@ -225,6 +230,7 @@ fn read_strided_f16(base: *const f16, shape: &[usize], strides: &[usize]) -> Vec
 ///
 /// SAFETY contract: `base` points at a readable f32 buffer where every
 /// `sum(idx[d] * strides[d])` offset is in bounds.
+#[allow(unsafe_code)] // Core ML native boundary.
 fn read_strided_f32(base: *const f32, shape: &[usize], strides: &[usize]) -> Vec<f32> {
     // SAFETY (per element): `off` is in bounds per the contract above.
     read_strided_with(shape, strides, |off| unsafe { *base.add(off) })

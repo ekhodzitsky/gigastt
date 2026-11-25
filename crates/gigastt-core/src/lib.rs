@@ -1,3 +1,6 @@
+#![deny(unsafe_code)]
+#![deny(unsafe_op_in_unsafe_fn)]
+
 #[cfg(all(
     feature = "candle",
     any(feature = "coreml", feature = "cuda", feature = "nnapi")
@@ -20,6 +23,7 @@ pub mod export;
 pub mod inference;
 pub mod itn;
 pub mod lexicon;
+#[forbid(unsafe_code)]
 pub mod model;
 pub mod protocol;
 pub mod punctuation;

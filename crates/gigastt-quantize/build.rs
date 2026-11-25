@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! Build script that regenerates ONNX protobuf types from `proto/onnx.proto`.
 //!
 //! Replaces the legacy `onnx-pb 0.1.4` crate (last published in 2020, pulls
