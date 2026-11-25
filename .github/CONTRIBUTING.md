@@ -74,6 +74,46 @@ For E2E, load/soak, model-backed and feature checks see [Testing](../docs/testin
 Run `python3 scripts/check-docs-drift.py` and `python3 scripts/test_docs_drift.py`
 when editing documentation. The drift gate includes crate/SDK/benchmark READMEs.
 
+## Engineering rules
+
+- **Size is a review signal.** Aim for 200–400 lines per file and 8–10k
+  implementation lines per crate. Smaller units are welcome. Count maintained
+  production source, including comments and blank lines, excluding test-only
+  files and inline test modules, generated and vendored code, and fixtures.
+  Review test code separately for cohesion. Above 400 lines in a file or 10k in
+  a crate, look for distinct responsibilities and dependencies worth separating.
+  Keep a larger cohesive unit when splitting would make it harder to understand
+  or use. These are review guidelines with no automatic line-count gate.
+- **Single responsibility and SOLID.** Give modules one clear responsibility
+  and narrow contracts. Keep domain logic independent of HTTP, CLI, filesystem
+  and inference backend details where possible. Direct dependencies toward
+  those contracts and isolate backend-specific code in adapters. Preserve
+  behavior when substituting implementations and test shared contracts across
+  implementations. Introduce traits or separate crates when a concrete
+  substitution, consumer or build-isolation benefit warrants them.
+- **DRY and simplicity.** Give shared behavioral rules, constants and validation
+  one owner. Reuse existing code and standard-library facilities before adding
+  abstractions or dependencies. Keep independent test oracles independent of
+  the implementation they check.
+- **Safe Rust and explicit failures.** Use `#![forbid(unsafe_code)]` for
+  pure application crates and modules. Isolate necessary FFI and native
+  interoperability in narrow adapters with safe interfaces for Rust callers.
+  Each unsafe block needs a local `SAFETY` argument covering its ownership,
+  lifetime and validity obligations. Document unsafe API caller obligations.
+  Avoid blanket lint exceptions. Handle expected failures with `Result` or
+  `Option`, use typed public errors and propagate errors with `?` and context.
+  No `unwrap()` / `expect()` on production paths or silent error suppression.
+  Preserve existing data on failed operations, bound resource use and define
+  cancellation and partial-completion behavior.
+- **Focused verification.** Write a failing regression test before fixing an
+  existing behavior. During development run focused module or crate tests and
+  relevant consumer contract tests when a public boundary changes. Use model-free
+  fixtures where possible, including failure cases. For performance changes use
+  focused existing microbenchmarks with equivalent inputs and a measured
+  end-to-end workload to verify the user-visible effect. Follow the existing
+  [performance policy](../docs/performance-regressions.md) for inference changes.
+  The workspace tests and required merge checks described here still apply.
+
 ## Pull requests
 
 - One logical change per PR; rebase on `main` before opening.
@@ -83,7 +123,14 @@ when editing documentation. The drift gate includes crate/SDK/benchmark READMEs.
   required statuses still need to pass before merge.
 - `cargo deny check` passes (license + advisory + sources).
 - For user-visible changes: add a bullet under the `## [Unreleased]` section of `CHANGELOG.md`.
-- Keep commit messages short and present-tense (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`).
+- Use English [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+  for commits and PR titles. The format is `type(scope): description`, with an
+  optional scope such as `core`, `server`, `cli` or `bench`. Keep subjects short
+  and present-tense. Examples include `fix(cli): preserve conflicting inputs`,
+  `perf(core): reuse mel feature buffers` and
+  `refactor(server): isolate job event delivery`. Mark incompatible changes
+  with `!` or a `BREAKING CHANGE:` footer describing the migration. Use a
+  Conventional Commit PR title as the merge or squash commit subject.
 
 ## Dependency and runtime changes
 

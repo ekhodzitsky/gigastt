@@ -20,8 +20,9 @@ latest package in every registry.
 - Use the installed `rust-skills` instructions when writing, reviewing or
   refactoring Rust. Local skill installations are optional checkout tooling;
   load only relevant rules.
-- Prefer a minimal change with a reproducible failure and regression coverage.
-  Avoid new dependencies when existing code or the standard library suffices.
+- Follow [Engineering rules](.github/CONTRIBUTING.md#engineering-rules) for
+  module design, safety and verification, and
+  [Pull requests](.github/CONTRIBUTING.md#pull-requests) for commit conventions.
 - Never bypass Git hooks or weaken required checks to publish a change.
 
 ## Build and validation
@@ -72,13 +73,12 @@ still apply to merging and publishing; see
 
 - Use `anyhow` for internal errors and typed `GigasttError` at the public API.
   Convert ORT errors to `RuntimeError` at the runtime seam.
-- No `unwrap()` / `expect()` in production paths. Use `?`, context and explicit
-  recovery. Use `tracing`, not `println!`, in library code.
+- Use `tracing`, not `println!`, in library code.
 - Keep execution-provider selection in `runtime/ort/factory.rs`, not inference.
   `runtime/factory.rs` defines the backend traits.
 - Shared inference constants belong in `inference/mod.rs`; do not duplicate them.
-- Test names use `test_<behavior>`. Write a failing regression test before fixing
-  an existing behavior; do not silently replace its acceptance baseline.
+- Test names use `test_<behavior>`. Do not silently replace an acceptance
+  baseline.
 - Preserve additive protocol compatibility. Do not remove or rename existing
   fields. A breaking wire change requires explicit versioning and integration
   coverage, not an implicit reinterpretation of the old message.
