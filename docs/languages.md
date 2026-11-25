@@ -35,6 +35,25 @@ by a seeded validation top-up. This is not the official test-only benchmark.
 These results support language recognition on reading; they do not establish
 accuracy on telephone calls, spontaneous conversation or live WebSocket input.
 
+The [Russian reading evidence archive v1](https://github.com/ekhodzitsky/gigastt/releases/download/benchmark-fleurs-ru-20261001-v1/benchmark-fleurs-ru-20261001-v1.zip)
+contains the two matched runs, manifests, provenance and an offline verifier.
+The original files remain available in the source tree. After downloading,
+verify the pinned SHA-256 and recompute all 2,000 recorded word/character scores:
+
+```sh
+echo "9e72cd06926e2f5bf8f75c42e7d291c5e5fecdf73bd38c0b732d5e67d1ef7c89  benchmark-fleurs-ru-20261001-v1.zip" | sha256sum -c -
+unzip benchmark-fleurs-ru-20261001-v1.zip -d fleurs-ru
+python3 fleurs-ru/verify.py
+```
+
+GitHub does not enforce release immutability for this repository; the pinned
+checksum identifies the intended bytes. Google FLEURS (Conneau et al., 2022),
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), is credited in the
+archive. This reproduces recorded scores, not a fresh inference run: the
+published runner's SHA-256 differs from the recorded experimental runner's,
+and the historical binary was built from a modified working tree. The Unicode scorer
+matches its recorded hash.
+
 ## Natural speech and ready-model comparison
 
 All entries in a row use identical source recordings and fixed human references.
