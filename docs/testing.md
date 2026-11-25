@@ -174,7 +174,18 @@ are disposable local files; do not commit them. Stop builds before running
 `cargo clean` to reclaim the current target directory.
 
 Published files under `benchmark/results*/` are measurement evidence, not build
-artifacts. Preserve them when cleaning a checkout. Docker excludes these results
+artifacts. Preserve them when cleaning a checkout. Completed series may move to
+checksummed public archives only after retrieval and offline verification:
+
+- [Russian FLEURS reading evidence](languages.md#reading-1000-recordings-per-language)
+  is archived, with the originals retained for the multilingual publication audit.
+- [Sidecar contention sweep](sidecar-contention.md#reproduction) is archived;
+  its original raw results no longer occupy the current source tree.
+
+Keep active publication-index inputs, model-pack acceptance evidence, test
+fixtures and replay inputs until their consumers have a verified replacement.
+Do not republish datasets with unresolved redistribution terms. Archive cleanup
+reduces a fresh checkout, not existing Git history. Docker excludes these results
 and local caches from its build context; benchmark containers use mounted datasets
 and write fresh results at runtime. Source fixtures and benchmark manifests remain
 in the context. Avoid `git clean -fdx`: it can delete unpublished research, local
