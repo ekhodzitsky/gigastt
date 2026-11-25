@@ -4,6 +4,7 @@ use gigastt_core::model;
 use gigastt_core::model::{ModelVariant, ProgressMode};
 
 /// Packaging: rebuild INT8 encoder from a local FP32 ONNX (no download).
+#[cfg(feature = "quantize")]
 pub(crate) fn run_quantize(
     model_dir: String,
     force: bool,
@@ -192,6 +193,7 @@ pub(crate) async fn run_download(
 mod tests {
     use super::*;
 
+    #[cfg(feature = "quantize")]
     #[test]
     fn test_run_quantize_explicit_head_overrides_directory_detection() {
         let tmp = tempfile::tempdir().unwrap();
@@ -208,6 +210,7 @@ mod tests {
         assert_eq!(std::fs::read(rnnt).unwrap(), b"existing rnnt");
     }
 
+    #[cfg(feature = "quantize")]
     #[test]
     fn test_run_quantize_refuses_existing_int8_without_force() {
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -217,6 +220,7 @@ mod tests {
         assert!(!tmp.path().join("v3_rnnt_encoder.onnx").exists());
     }
 
+    #[cfg(feature = "quantize")]
     #[test]
     fn test_run_quantize_legacy_recipe_refuses_existing_int8_without_force() {
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -229,6 +233,7 @@ mod tests {
         assert_eq!(std::fs::read(&int8).unwrap(), b"int8");
     }
 
+    #[cfg(feature = "quantize")]
     #[test]
     fn test_run_quantize_errors_when_fp32_missing() {
         let tmp = tempfile::tempdir().expect("tempdir");

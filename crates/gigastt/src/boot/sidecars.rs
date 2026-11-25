@@ -197,21 +197,29 @@ pub fn ensure_int8_encoder(
             int8_path.display()
         );
     }
-    let input = dir.join(variant.encoder_file());
-    if !input.exists() {
-        anyhow::bail!(
-            "Cannot quantize: FP32 encoder not found at {} \
-             (packaging source). For runtime, use `gigastt download` for INT8.",
-            input.display()
-        );
+    #[cfg(not(feature = "quantize"))]
+    anyhow::bail!(
+        "Cannot quantize: this build does not include the quantize feature. \
+         Run `gigastt download` for INT8 or enable the quantize feature."
+    );
+    #[cfg(feature = "quantize")]
+    {
+        let input = dir.join(variant.encoder_file());
+        if !input.exists() {
+            anyhow::bail!(
+                "Cannot quantize: FP32 encoder not found at {} \
+                 (packaging source). For runtime, use `gigastt download` for INT8.",
+                input.display()
+            );
+        }
+        tracing::info!("Quantizing encoder to INT8 (~2 min, one-time)…");
+        // Surface the ~2-minute pass as its own phase so a sidecar watching the
+        // NDJSON stream does not read it as a hang.
+        model::emit_progress_event(&model::ProgressEvent::Quantize {
+            file: variant.encoder_file().to_string(),
+        });
+        gigastt_core::quantize::quantize_model(&input, &int8_path)?;
+        tracing::info!("INT8 encoder saved to {}", int8_path.display());
+        Ok(())
     }
-    tracing::info!("Quantizing encoder to INT8 (~2 min, one-time)…");
-    // Surface the ~2-minute pass as its own phase so a sidecar watching the
-    // NDJSON stream does not read it as a hang.
-    model::emit_progress_event(&model::ProgressEvent::Quantize {
-        file: variant.encoder_file().to_string(),
-    });
-    gigastt_core::quantize::quantize_model(&input, &int8_path)?;
-    tracing::info!("INT8 encoder saved to {}", int8_path.display());
-    Ok(())
 }

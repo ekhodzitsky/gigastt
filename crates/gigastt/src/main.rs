@@ -7,7 +7,9 @@ use tracing_subscriber::EnvFilter;
 mod packaging;
 mod serve;
 mod transcribe_cmd;
-use packaging::{run_cache_gc, run_download, run_quantize};
+#[cfg(feature = "quantize")]
+use packaging::run_quantize;
+use packaging::{run_cache_gc, run_download};
 use serve::{ServeArgs, run_serve};
 use transcribe_cmd::{
     BatchOutputArgs, OfflineEngineArgs, run_transcribe, run_transcribe_batch, run_watch,
@@ -86,6 +88,7 @@ enum Commands {
 
     /// Packaging: quantize a local **FP32** encoder ONNX to INT8.
     /// Runtime inference never uses FP32 — prefer `gigastt download` for INT8.
+    #[cfg(feature = "quantize")]
     Quantize {
         /// Recognition head to rebuild (otherwise detected from local files)
         #[arg(long, env = "GIGASTT_MODEL_VARIANT", value_parser = parse_model_variant)]
@@ -399,6 +402,7 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
         }
+        #[cfg(feature = "quantize")]
         Commands::Quantize {
             model_variant,
             model_dir,

@@ -87,9 +87,32 @@ fn cli_unknown_subcommand_fails() {
     assert!(!out.status.success(), "unknown subcommand must fail");
 }
 
+#[cfg(not(feature = "quantize"))]
+#[test]
+fn cli_lean_build_omits_quantize() {
+    let out = Command::new(bin()).arg("--help").output().expect("run");
+    assert!(out.status.success());
+    assert!(
+        !String::from_utf8_lossy(&out.stdout)
+            .lines()
+            .any(|line| line.split_whitespace().next() == Some("quantize"))
+    );
+    let out = Command::new(bin())
+        .args(["quantize", "--help"])
+        .output()
+        .expect("run");
+    assert!(!out.status.success());
+}
+
 #[test]
 fn cli_subcommand_help_exits_zero() {
-    for sub in ["serve", "download", "quantize", "transcribe"] {
+    for sub in [
+        "serve",
+        "download",
+        #[cfg(feature = "quantize")]
+        "quantize",
+        "transcribe",
+    ] {
         let out = Command::new(bin())
             .args([sub, "--help"])
             .output()
@@ -273,6 +296,7 @@ fn cli_transcribe_bad_format_fails() {
 
 // ─── no-model: quantize overwrite protection ────────────────────────────────
 
+#[cfg(feature = "quantize")]
 #[test]
 fn cli_quantize_existing_requires_force_and_preserves_output() {
     for (head, filename) in [
@@ -463,6 +487,7 @@ fn cli_download_json_happy_path_stdout_is_pure_ndjson() {
             "--model-variant",
             "rnnt",
             "--progress=json",
+            #[cfg(feature = "diarization")]
             "--skip-diarization",
         ])
         .output()
@@ -514,6 +539,7 @@ fn cli_download_offline_rejects_fp32_only_install() {
             "--model-variant",
             "rnnt",
             "--progress=json",
+            #[cfg(feature = "diarization")]
             "--skip-diarization",
         ])
         .output()
@@ -546,6 +572,7 @@ fn cli_download_json_error_event_and_exit_code_are_consistent() {
             "--model-variant",
             "rnnt",
             "--progress=json",
+            #[cfg(feature = "diarization")]
             "--skip-diarization",
         ])
         .output()
@@ -590,6 +617,7 @@ fn cli_download_offline_env_fails_fast_with_instruction() {
             tmp.path().to_str().unwrap(),
             "--model-variant",
             "rnnt",
+            #[cfg(feature = "diarization")]
             "--skip-diarization",
         ])
         .output()
@@ -618,6 +646,7 @@ fn cli_download_offline_flag_fails_fast() {
             tmp.path().to_str().unwrap(),
             "--model-variant",
             "rnnt",
+            #[cfg(feature = "diarization")]
             "--skip-diarization",
         ])
         .output()

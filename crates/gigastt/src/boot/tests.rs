@@ -208,6 +208,7 @@ fn test_ensure_int8_encoder_missing_input() {
     assert!(msg.contains("Cannot quantize"), "unexpected error: {msg}");
 }
 
+#[cfg(feature = "quantize")]
 #[test]
 fn test_ensure_int8_encoder_e2e_targets_e2e_encoder_name() {
     // With the e2e variant, the FP32 input it looks for is the e2e encoder;
@@ -217,6 +218,22 @@ fn test_ensure_int8_encoder_e2e_targets_e2e_encoder_name() {
     let err = ensure_int8_encoder(ModelVariant::E2eRnnt, tmp.path().to_str().unwrap(), false)
         .unwrap_err();
     assert!(format!("{err}").contains("Cannot quantize"));
+}
+
+#[cfg(not(feature = "quantize"))]
+#[test]
+fn test_ensure_int8_encoder_without_quantizer_preserves_fp32() {
+    let tmp = tempfile::tempdir().unwrap();
+    let fp32 = tmp.path().join("v3_rnnt_encoder.onnx");
+    std::fs::write(&fp32, b"source").unwrap();
+    let err =
+        ensure_int8_encoder(ModelVariant::Rnnt, tmp.path().to_str().unwrap(), false).unwrap_err();
+    assert!(
+        err.to_string()
+            .contains("does not include the quantize feature")
+    );
+    assert_eq!(std::fs::read(fp32).unwrap(), b"source");
+    assert!(!tmp.path().join("v3_rnnt_encoder_int8.onnx").exists());
 }
 
 #[test]

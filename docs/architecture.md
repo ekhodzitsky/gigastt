@@ -111,10 +111,21 @@ Historical speedups on older weights are not guarantees for current bundles.
 
 ## INT8 quantization
 
-The optional `quantize` feature is a packaging tool, enabled by default. It
-requires local FP32 ONNX sources and `protoc`; normal installation downloads
-already prepared models. The accepted RNN-T recipe quantizes matrix weights
-while retaining floating convolutions. The old all-ConvInteger recipe could
+The optional `quantize` feature is a packaging tool, enabled by default for
+the server binary. It requires local FP32 ONNX sources and `protoc`; normal
+installation downloads already prepared models. Build the server without the
+quantizer:
+
+```sh
+cargo build --release -p gigastt --no-default-features --features diarization
+```
+
+Omit `--features diarization` to also remove diarization. These builds have no
+`quantize` subcommand or quantizer-specific protobuf build dependency, but
+retain download, transcription, and serving from prepared models.
+
+The accepted RNN-T recipe quantizes matrix weights while retaining floating
+convolutions. The old all-ConvInteger recipe could
 be both slower and less accurate. See the [quantization report](rnnt-quantization.md)
 for the acceptance measurements and [quantizer crate](../crates/gigastt-quantize/README.md)
 for the API. Quantization quality and resource costs must be measured per model.
