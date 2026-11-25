@@ -53,9 +53,9 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
 ```
 
-Pass `--lib --bins`: a bare `cargo test` builds only the default member and a
-bare `cargo test --workspace` pulls in the ~2.5-hour WER benchmark, which is a
-`harness = false` target and so is not skipped by `--ignored`.
+Pass `--workspace --lib --bins` for focused unit and binary tests. The custom
+WER benchmark runs model-free checks by default; explicit `--run` enables corpus
+execution, and `--run --required` enables the bundled quality gate.
 
 Enable the repository hooks once. Pre-commit checks public content, the Rust
 checks above and [`typos`](https://github.com/crate-ci/typos); commit-msg and

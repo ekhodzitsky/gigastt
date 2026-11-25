@@ -15,9 +15,9 @@ python3 scripts/check-publication.py
 ```
 
 `make check` runs formatting, strict workspace/all-target Clippy and
-`cargo test --workspace --lib --bins`. Do not use bare `cargo test` or
-`cargo test --workspace`: the custom WER benchmark has `harness = false`, so
-`--ignored` does not prevent its long run. Unit tests use synthetic inputs;
+`cargo test --workspace --lib --bins`. The custom WER benchmark defaults to
+model-free self-tests; explicit `--run` is needed for corpus execution.
+Unit tests use synthetic inputs;
 model-dependent tests are explicitly ignored until selected below.
 
 Enable `.githooks` with `git config core.hooksPath .githooks`. The publication
@@ -107,8 +107,22 @@ live tests. Native bindings have separate build and packaging requirements in
 For the intentionally long Golos WER harness:
 
 ```sh
-cargo test -p gigastt --test benchmark -- --ignored
+cargo test -p gigastt --release --test benchmark -- --run
 ```
+
+The local run prefers an installed external Golos corpus, falling back to the
+bundled fixtures. Set `GIGASTT_BENCHMARK_MAX_SAMPLES` for a local diagnostic
+subset (0 means unlimited); a missing model is explicitly reported as skipped,
+not passed. To require complete, pinned bundled evidence and the downloaded
+RNNT INT8 model, with no truncation or baseline updates:
+
+```sh
+cargo test -p gigastt --release --test benchmark -- --run --required
+```
+
+The hosted gate additionally checks the rounded WER against
+`.github/wer-threshold.txt`. Only intentional local full-corpus runs may refresh
+the baseline using `GIGASTT_BENCHMARK_UPDATE_BASELINE=1`.
 
 Use [benchmark/README.md](../benchmark/README.md) for cross-engine evaluation,
 normalization, datasets and reproducibility. Record exact model hashes before

@@ -43,8 +43,8 @@ python3 scripts/check-publication.py
 ```
 
 Always run the workspace unit/bin tests and Clippy before finishing a change.
-Do not run bare `cargo test` or `cargo test --workspace`: the custom WER target
-has `harness = false` and can run for hours even when `--ignored` is supplied.
+The custom WER target runs only model-free checks by default. Corpus execution requires
+explicit `--run`; use `--run --required` for the bundled quality gate.
 Use explicit integration targets. Model-backed, load/soak, long-form and feature
 checks are documented in [testing](docs/testing.md).
 

@@ -17,7 +17,7 @@ else
   echo "  (typos not installed — skipping; 'brew install typos-cli' or 'cargo install typos-cli' to enable)"
 fi
 
-echo "[pre-commit] Running unit + bin tests (skips the ~2.5h WER benchmark pulled in by a bare 'cargo test --workspace')..."
+echo "[pre-commit] Running unit + bin tests..."
 cargo test --workspace --lib --bins
 
 echo "[pre-commit] All checks passed."

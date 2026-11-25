@@ -20,7 +20,8 @@
       "rtf": null,
       "rss_after_load_mb": null,
       "rss_after_decode_mb": null,
-      "cold_start_ms": null
+      "cold_start_ms": null,
+      "corpus_sha256": "599348213c7c61e9ac7fe2d00b228dee47a011e24ffd8bbc46eb597e74d0c7f0"
     },
     "external": {
       "samples": 9994,
