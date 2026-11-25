@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! Version-pinned UniFFI binding generator. Run, e.g.:
 //!
 //!   cargo run -p gigastt-uniffi --bin uniffi-bindgen -- generate \

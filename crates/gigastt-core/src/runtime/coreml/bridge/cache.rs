@@ -49,6 +49,7 @@ use crate::runtime::error::RuntimeError;
 // deprecated in favor of the async completion-handler variant, but a synchronous
 // compile is exactly what this blocking, once-per-bucket path wants.
 #[allow(deprecated)]
+#[allow(unsafe_code)] // Core ML native boundary.
 pub fn compile_and_load(
     package: &Path,
     cpu_and_ne: bool,
@@ -141,6 +142,7 @@ pub fn compile_and_load(
 /// Run the synchronous Core ML compile, returning the temp `.mlmodelc` URL.
 // See `compile_and_load` for why the deprecated synchronous API is used.
 #[allow(deprecated)]
+#[allow(unsafe_code)] // Core ML native boundary.
 fn compile_package(package: &Path) -> Result<Retained<NSURL>, RuntimeError> {
     let path_str = package.to_str().ok_or_else(|| RuntimeError::LoadFailed {
         path: package.to_path_buf(),
@@ -181,6 +183,7 @@ fn load_model_from_dir(
 
 /// Load a compiled `.mlmodelc` from a URL with `config`. `package` is only used
 /// for the error path's reported path.
+#[allow(unsafe_code)] // Core ML native boundary.
 fn load_model_from_url(
     package: &Path,
     compiled_url: &NSURL,

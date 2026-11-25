@@ -1,15 +1,19 @@
+#![forbid(unsafe_code)]
+
 use std::{env, error::Error, io, path::PathBuf, process::Command};
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo:rerun-if-changed=build.rs");
     if env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("macos")
-        || env::var_os("CARGO_FEATURE_COREML").is_none()
+        || (env::var_os("CARGO_FEATURE_COREML").is_none()
+            && env::var_os("CARGO_FEATURE_ANE").is_none())
     {
         return Ok(());
     }
 
     // Rust's -nodefaultlibs omits compiler-rt, which the static CoreML provider
     // needs for Objective-C @available checks (__isPlatformVersionAtLeast).
+    // ANE also links ORT's static macOS bundle for decoder/joiner and fallback.
     // Ask the selected Xcode toolchain instead of hardcoding its version/path.
     println!("cargo:rerun-if-env-changed=DEVELOPER_DIR");
     println!("cargo:rerun-if-env-changed=PATH");

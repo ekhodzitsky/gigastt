@@ -86,6 +86,7 @@ impl Runtime for CandleRuntime {
 impl CandleRuntime {
     /// Build an F32 `VarBuilder` over a sibling `candle/*.safetensors`, with a
     /// clear error when the converted weights are missing.
+    #[allow(unsafe_code)] // Native platform boundary.
     fn var_builder(
         &self,
         st: &std::path::Path,

@@ -250,8 +250,15 @@ fn test_partial_path_unique_contains_pid_and_timestamp() {
 fn test_acquire_download_lock_creates_lock_file() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let lock = acquire_download_lock(tmp.path()).expect("acquire lock");
-    assert!(tmp.path().join(".download.lock").exists());
+    let path = tmp.path().join(".download.lock");
+    assert!(path.exists());
+    let other = std::fs::OpenOptions::new().write(true).open(path).unwrap();
+    assert!(matches!(
+        other.try_lock(),
+        Err(std::fs::TryLockError::WouldBlock)
+    ));
     drop(lock);
+    other.try_lock().expect("dropping first file releases lock");
 }
 
 #[tokio::test]

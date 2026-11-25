@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+#[allow(unsafe_code)] // Native platform boundary.
 mod objc_lifetime;
 
 fn package_path() -> PathBuf {

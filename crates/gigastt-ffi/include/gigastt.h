@@ -25,7 +25,9 @@ typedef struct GigasttStream GigasttStream;
  * `gigastt_engine_new_with_pool_size` with `pool_size = 1` to reduce RAM.
  *
  * # Safety
- * `model_dir` must be a valid, null-terminated UTF-8 string.
+ * `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+ * shorter than `isize::MAX` bytes including the terminator and not mutated
+ * for the duration of the call. Non-UTF-8 input is rejected.
  * Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
  */
 struct GigasttEngine *gigastt_engine_new(const char *model_dir);
@@ -40,7 +42,9 @@ struct GigasttEngine *gigastt_engine_new(const char *model_dir);
  * - pool_size = 2: default desktop/server
  *
  * # Safety
- * `model_dir` must be a valid, null-terminated UTF-8 string.
+ * `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+ * shorter than `isize::MAX` bytes including the terminator and not mutated
+ * for the duration of the call. Non-UTF-8 input is rejected.
  * Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
  */
 struct GigasttEngine *gigastt_engine_new_with_pool_size(const char *model_dir, uintptr_t pool_size);
@@ -62,7 +66,9 @@ struct GigasttEngine *gigastt_engine_new_with_pool_size(const char *model_dir, u
  * target device, for example by trying 1, 2, 4, 6 and 8.
  *
  * # Safety
- * `model_dir` must be a valid, null-terminated UTF-8 string.
+ * `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+ * shorter than `isize::MAX` bytes including the terminator and not mutated
+ * for the duration of the call. Non-UTF-8 input is rejected.
  * Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
  */
 struct GigasttEngine *gigastt_engine_new_with_threads(const char *model_dir,
@@ -73,8 +79,10 @@ struct GigasttEngine *gigastt_engine_new_with_threads(const char *model_dir,
  * Transcribe an audio file and return the recognized text as a newly allocated C string.
  *
  * # Safety
- * - `engine` must be a non-null pointer returned by `gigastt_engine_new` and not yet freed.
- * - `wav_path` must be a valid, null-terminated UTF-8 string.
+ * - `engine` must be a live opaque handle returned by an engine constructor.
+ * - `wav_path` must be NULL or a readable NUL-terminated string in one allocation,
+ *   shorter than `isize::MAX` bytes including the terminator and not mutated
+ *   for the duration of the call. Non-UTF-8 input is rejected.
  * - A concurrent `gigastt_engine_free` during this call is safe: the table
  *   holds an `Arc` for the duration of the call. A call after free returns
  *   `NULL`.
@@ -85,12 +93,13 @@ struct GigasttEngine *gigastt_engine_new_with_threads(const char *model_dir,
 char *gigastt_transcribe_file(struct GigasttEngine *engine, const char *wav_path);
 
 /**
- * Free a C string previously returned by `gigastt_transcribe_file` or the
- * streaming functions.
+ * Free a C string previously returned by the transcription, streaming, or
+ * quantization functions.
  *
  * # Safety
- * `s` must be a pointer returned by one of the transcription functions and not
- * yet freed, or `NULL` (in which case this is a no-op).
+ * `s` must be the original pointer returned by the library and not yet freed,
+ * or `NULL` (a no-op). Do not free with another allocator, change the string's
+ * length, or access the allocation concurrently with or after this call.
  */
 void gigastt_string_free(char *s);
 
@@ -98,7 +107,7 @@ void gigastt_string_free(char *s);
  * Free an inference engine previously created by `gigastt_engine_new`.
  *
  * # Safety
- * `engine` must be a pointer returned by `gigastt_engine_new` and not yet freed,
+ * `engine` must be a live opaque handle returned by an engine constructor,
  * or `NULL` (in which case this is a no-op). Concurrent free during an
  * in-flight call is safe (the call's `Arc` keeps the engine alive).
  */
@@ -113,7 +122,9 @@ void gigastt_engine_free(struct GigasttEngine *engine);
  * `force` is `false`, returns immediately.
  *
  * # Safety
- * `model_dir` must be a valid, null-terminated UTF-8 string.
+ * `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+ * shorter than `isize::MAX` bytes including the terminator and not mutated
+ * for the duration of the call. Non-UTF-8 input is rejected.
  *
  * Returns a newly allocated C string on both success and error.
  * The caller **must** free the returned string with `gigastt_string_free`.
@@ -128,7 +139,7 @@ char *gigastt_quantize_model(const char *model_dir, bool force);
  * returned to the pool by `gigastt_stream_free`.
  *
  * # Safety
- * `engine` must be a valid pointer returned by `gigastt_engine_new`.
+ * `engine` must be a live opaque handle returned by an engine constructor.
  * Returns a pointer to a `GigasttStream` on success, or `NULL` on failure.
  */
 struct GigasttStream *gigastt_stream_new(struct GigasttEngine *engine);
@@ -137,8 +148,11 @@ struct GigasttStream *gigastt_stream_new(struct GigasttEngine *engine);
  * Process a chunk of PCM16 audio and return any partial/final segments.
  *
  * # Safety
- * - `engine` and `stream` must be valid pointers.
- * - `pcm16_bytes` must point to at least `len` valid bytes (little-endian mono PCM16).
+ * - `stream` must be a live opaque handle returned by `gigastt_stream_new`.
+ *   The engine parameter is retained for ABI compatibility and is not dereferenced.
+ * - `pcm16_bytes` must be NULL or point to `len` initialized, readable bytes
+ *   in one allocation (little-endian mono PCM16), with `len <= isize::MAX`.
+ *   The bytes must not be mutated during the call.
  * - Concurrent free during this call is safe. A call after free returns `NULL`.
  *
  * Returns a newly allocated JSON array string on success, or `NULL` on failure.

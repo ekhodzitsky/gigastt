@@ -687,4 +687,5 @@ pub(crate) fn build_server_config(
 }
 
 #[cfg(test)]
+#[allow(unsafe_code)] // Legacy process environment tests; not production code.
 mod tests;
