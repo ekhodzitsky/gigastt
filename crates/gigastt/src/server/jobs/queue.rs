@@ -196,6 +196,11 @@ pub(crate) fn sanitize_job_error(e: &anyhow::Error) -> String {
                     "Audio too long: {observed_secs:.0}s exceeds the maximum of {limit_secs:.0}s."
                 );
             }
+            gigastt_core::error::GigasttError::InvalidInput { message }
+                if message == super::executor::FILE_ZERO_CONTEXT_PARAMS_ERROR =>
+            {
+                return super::executor::FILE_ZERO_CONTEXT_PARAMS_ERROR.into();
+            }
             gigastt_core::error::GigasttError::InvalidAudio { .. } => {
                 return "Failed to decode audio file. Check format.".into();
             }

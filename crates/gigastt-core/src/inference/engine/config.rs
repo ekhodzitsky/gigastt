@@ -16,6 +16,23 @@ impl Engine {
         self.variant
     }
 
+    /// Validate the resolved engine for experimental file zero context.
+    pub fn validate_file_zero_context(&self) -> Result<(), GigasttError> {
+        if !cfg!(feature = "file-decode")
+            || self.variant() != crate::model::ModelVariant::Rnnt
+            || self.execution_provider() != "cpu"
+            || !self.is_int8()
+            || self.file_window_concurrency() != 1
+            || self.has_vad()
+            || self.has_hotwords()
+        {
+            return Err(GigasttError::InvalidInput {
+                message: "File zero context requires CPU INT8 RNNT, serial file windows, VAD off and no configured hotwords".into(),
+            });
+        }
+        Ok(())
+    }
+
     /// Attach an optional punctuation / casing restorer, consuming and
     /// returning `self` (builder style). Pass `None` for pass-through. When set,
     /// the restorer post-processes the final text of file transcription

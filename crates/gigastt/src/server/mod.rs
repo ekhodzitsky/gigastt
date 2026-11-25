@@ -70,6 +70,7 @@ mod listen;
 pub use listen::{
     run_with_config, run_with_config_listener, run_with_config_listener_reloadable,
     run_with_config_loading, run_with_config_loading_reloadable,
+    run_with_config_loading_reloadable_and_job_context,
 };
 
 #[cfg(test)]

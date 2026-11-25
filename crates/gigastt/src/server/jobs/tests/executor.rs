@@ -65,3 +65,25 @@ async fn test_real_executor_rejects_unknown_variant() {
         "unexpected error: {err:#}"
     );
 }
+
+#[test]
+fn test_jobs_file_zero_context_rejects_conflicting_modes_with_explicit_error() {
+    use crate::server::jobs::executor::validate_file_zero_context_params;
+    let mut options = ExportParams::default();
+    assert!(validate_file_zero_context_params(&options).is_ok());
+    options.channels = Some("split".into());
+    let error = validate_file_zero_context_params(&options).unwrap_err();
+    assert!(super::sanitize_job_error(&error).contains("File zero context"));
+    assert!(!super::is_retryable_error(&error));
+    options.channels = None;
+    options.diarization = Some(true);
+    assert!(validate_file_zero_context_params(&options).is_err());
+    options.diarization = None;
+    options.vad = Some(true);
+    assert!(validate_file_zero_context_params(&options).is_err());
+    options.vad = Some(false);
+    options.hotwords = Some("".into());
+    assert!(validate_file_zero_context_params(&options).is_ok());
+    options.hotwords = Some("тест".into());
+    assert!(validate_file_zero_context_params(&options).is_err());
+}

@@ -315,6 +315,7 @@ pub(super) async fn run_file_transcription(
         progress_channels: None,
         diarization_outcome: diar_sink,
         max_audio_secs: limits.max_audio_secs_opt(),
+        file_zero_context: false,
     };
 
     // A client disconnect drops this handler future before it returns, dropping

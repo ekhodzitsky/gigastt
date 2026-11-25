@@ -175,6 +175,11 @@ gigastt serve [OPTIONS]
   --enable-jobs                 Enable the asynchronous /v1/jobs API for long-file and
                                 batch transcription (off by default; routes 404 when
                                 disabled). Env: GIGASTT_ENABLE_JOBS.
+  --jobs-file-zero-context      Experimental zero right context for full native mono
+                                /jobs windows (default off). Requires CPU INT8 RNNT,
+                                serial file windows, VAD off and no configured hotwords.
+                                Env: GIGASTT_JOBS_FILE_ZERO_CONTEXT.
+                                See long-recordings.md#experimental-jobs-zero-context.
   --jobs-ttl-secs <N>           TTL for finished/failed/cancelled jobs before eviction
                                 [default: 3600]. Env: GIGASTT_JOBS_TTL_SECS.
   --max-audio-secs <N>          Reject audio longer than N seconds on every path; 0 leaves

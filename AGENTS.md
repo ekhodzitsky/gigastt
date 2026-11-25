@@ -89,6 +89,10 @@ still apply to merging and publishing; see
   `GIGASTT_STREAM_CTC_MODEL_DIR`, absent by default. It requires a cached
   `ml_ctc_large` sidecar and the restricted CPU RNN-T configuration described in
   [the guide](docs/stream-ctc-confirmation.md); it does not change file decoding.
+- Optional file zero context: `serve --jobs-file-zero-context` /
+  `GIGASTT_JOBS_FILE_ZERO_CONTEXT`, off by default. Limited to native mono-routing
+  CPU INT8 RNNT jobs, with the restrictions and bounded fallback in
+  [long recordings](docs/long-recordings.md#experimental-jobs-zero-context).
 - Keep CLI flags/env vars synchronized with [CLI](docs/cli.md), and endpoint
   behavior with [API](docs/api.md), [OpenAPI](docs/openapi.yaml) and
   [AsyncAPI](docs/asyncapi.yaml). Run the documentation drift check.

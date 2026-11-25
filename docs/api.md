@@ -626,6 +626,9 @@ The endpoint is disabled by default. Enable it with `--enable-jobs` or
 Jobs are in-memory: a cancel or a restart does not resume the upload.
 Measured limits and the client recipe are in
 [long recordings](long-recordings.md).
+The default-off server option `--jobs-file-zero-context` is limited to ordinary
+mono-routing jobs; its restrictions, fallback and cancellation behavior are
+described in [experimental jobs zero context](long-recordings.md#experimental-jobs-zero-context).
 
 Poll for status:
 

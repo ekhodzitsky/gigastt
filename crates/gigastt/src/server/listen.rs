@@ -97,6 +97,32 @@ pub async fn run_with_config_loading_reloadable<Fut>(
 where
     Fut: std::future::Future<Output = Result<gigastt_core::inference::Engine>> + Send + 'static,
 {
+    run_with_config_loading_reloadable_and_job_context(
+        config,
+        shutdown,
+        load,
+        engine_builder,
+        false,
+    )
+    .await
+}
+
+/// Like the reloadable loading entry point, with optional zero context limited
+/// to asynchronous file jobs. The previous entry point remains default-off.
+pub async fn run_with_config_loading_reloadable_and_job_context<Fut>(
+    config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+    load: Fut,
+    engine_builder: Option<http::EngineBuilder>,
+    jobs_file_zero_context: bool,
+) -> Result<()>
+where
+    Fut: std::future::Future<Output = Result<gigastt_core::inference::Engine>> + Send + 'static,
+{
+    anyhow::ensure!(
+        !jobs_file_zero_context || config.limits.jobs_enabled,
+        "--jobs-file-zero-context requires --enable-jobs"
+    );
     let addr: SocketAddr = format!("{}:{}", config.host, config.port)
         .parse()
         .context("Invalid host:port")?;
@@ -176,12 +202,13 @@ where
         Outcome::Loaded(res) => {
             let engine = (*res).context("engine load task panicked")??;
             tracing::info!("Model ready — starting full server");
-            run_with_config_listener_reloadable(
+            run_with_config_listener_and_job_context(
                 engine,
                 config,
                 Some(real_rx),
                 listener,
                 engine_builder,
+                jobs_file_zero_context,
             )
             .await
         }
@@ -206,11 +233,58 @@ pub async fn run_with_config_listener(
 /// `run` / `run_with_shutdown` and test entry points take that path.
 pub async fn run_with_config_listener_reloadable(
     engine: gigastt_core::inference::Engine,
-    mut config: ServerConfig,
+    config: ServerConfig,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
     listener: tokio::net::TcpListener,
     engine_builder: Option<http::EngineBuilder>,
 ) -> Result<()> {
+    run_with_config_listener_and_job_context(
+        engine,
+        config,
+        shutdown,
+        listener,
+        engine_builder,
+        false,
+    )
+    .await
+}
+
+fn checked_job_context_builder(
+    builder: Option<http::EngineBuilder>,
+    enabled: bool,
+) -> Option<http::EngineBuilder> {
+    if !enabled {
+        return builder;
+    }
+    builder.map(|builder| {
+        let checked: http::EngineBuilder = Arc::new(move || {
+            let engine = builder()?;
+            engine
+                .validate_file_zero_context()
+                .context("--jobs-file-zero-context")?;
+            Ok(engine)
+        });
+        checked
+    })
+}
+
+async fn run_with_config_listener_and_job_context(
+    engine: gigastt_core::inference::Engine,
+    mut config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+    listener: tokio::net::TcpListener,
+    engine_builder: Option<http::EngineBuilder>,
+    jobs_file_zero_context: bool,
+) -> Result<()> {
+    // Validate the actual resolved engine (including model auto-detection and
+    // execution-provider fallback), and revalidate before any reload can swap.
+    if jobs_file_zero_context {
+        engine
+            .validate_file_zero_context()
+            .context("--jobs-file-zero-context")?;
+        tracing::info!("Experimental file zero context enabled for asynchronous jobs");
+    }
+    let engine_builder = checked_job_context_builder(engine_builder, jobs_file_zero_context);
     if config.limits.pool_checkout_timeout_secs == 0 {
         tracing::warn!("pool_checkout_timeout_secs=0 would make the pool unusable; clamping to 1");
         config.limits.pool_checkout_timeout_secs = 1;
@@ -294,7 +368,8 @@ pub async fn run_with_config_listener_reloadable(
             engine_swap.clone(),
             limits_swap.clone(),
             shutdown_root.clone(),
-        );
+        )
+        .with_file_zero_context(jobs_file_zero_context);
         // Spawn onto the same TaskTracker as WS / SSE so `--shutdown-drain-secs`
         // waits for in-flight jobs (not only interactive sessions).
         queue.spawn(executor, &tracker);
@@ -356,6 +431,10 @@ pub async fn run_with_config_listener_reloadable(
                         };
                         match config::load_config_file(path) {
                             Ok(new_limits) => {
+                                if jobs_file_zero_context && !new_limits.jobs_enabled {
+                                    tracing::error!("Cannot disable jobs while jobs file zero context is enabled; keeping previous runtime limits");
+                                    continue;
+                                }
                                 let old = reload_state.limits.load();
                                 tracing::info!(
                                     "RuntimeLimits reloaded from {}: idle_timeout_secs {} → {}, rate_limit_per_minute {} → {}",
@@ -630,4 +709,39 @@ pub async fn run_with_config_listener_reloadable(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod job_context_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_jobs_file_zero_context_startup_requires_jobs() {
+        let result = run_with_config_loading_reloadable_and_job_context(
+            ServerConfig::local(0),
+            None,
+            async { panic!("disabled jobs must reject before model load") },
+            None,
+            true,
+        )
+        .await;
+        assert!(format!("{:#}", result.unwrap_err()).contains("requires --enable-jobs"));
+    }
+
+    #[test]
+    fn test_jobs_file_zero_context_reload_checks_actual_engine() {
+        use gigastt_core::test_support;
+        let tmp = tempfile::tempdir().unwrap();
+        test_support::write_rnnt_layout(tmp.path()).unwrap();
+        let dir = tmp.path().to_owned();
+        let incompatible: http::EngineBuilder = Arc::new(move || {
+            Ok(test_support::load_rnnt_engine(&dir, 1)?.with_file_window_concurrency(2))
+        });
+        assert!(checked_job_context_builder(Some(incompatible.clone()), false).unwrap()().is_ok());
+        assert!(checked_job_context_builder(Some(incompatible), true).unwrap()().is_err());
+        let dir = tmp.path().to_owned();
+        let compatible: http::EngineBuilder =
+            Arc::new(move || Ok(test_support::load_rnnt_engine(&dir, 1)?));
+        assert!(checked_job_context_builder(Some(compatible), true).unwrap()().is_ok());
+    }
 }

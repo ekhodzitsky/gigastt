@@ -183,6 +183,7 @@ fn test_decode_words_honours_abort_before_single_pass() {
         on_partial: None,
         abort: Some(&|| true),
         on_progress: None,
+        file_zero_context: false,
     };
     let err = engine
         .decode_words(&[0.0; 100], &mut guard, None, aborted)
@@ -344,4 +345,33 @@ fn test_channel_progress_does_not_advance_cancelled_channels() {
     );
     assert!(matches!(result, Err(GigasttError::Cancelled)));
     assert_eq!(observed.into_inner(), vec![320]);
+}
+
+#[cfg(feature = "file-decode")]
+#[test]
+fn test_file_zero_context_validates_engine_and_request_mode() {
+    let (mut engine, _tmp) = test_support::rnnt_engine();
+    assert!(engine.validate_file_zero_context().is_ok());
+    engine.int8 = false;
+    assert!(engine.validate_file_zero_context().is_err());
+    engine.int8 = true;
+    engine.execution_provider = "cuda".into();
+    assert!(engine.validate_file_zero_context().is_err());
+    engine.execution_provider = "cpu".into();
+    engine.variant = crate::model::ModelVariant::E2eRnnt;
+    assert!(engine.validate_file_zero_context().is_err());
+    engine.variant = crate::model::ModelVariant::Rnnt;
+    engine = engine.with_file_window_concurrency(2);
+    assert!(engine.validate_file_zero_context().is_err());
+    engine = engine.with_file_window_concurrency(1);
+    let mut guard = engine.pool.checkout_blocking().unwrap();
+    let req =
+        TranscribeRequest::new(TranscribeSource::Samples(&[0.0; 100])).with_file_zero_context(true);
+    assert!(matches!(
+        engine.transcribe_request(req, &mut guard),
+        Err(GigasttError::InvalidInput { .. })
+    ));
+    // Ordinary file path still works with the feature left off.
+    let req = TranscribeRequest::new(TranscribeSource::Samples(&[0.0; 100]));
+    assert!(engine.transcribe_request(req, &mut guard).is_ok());
 }

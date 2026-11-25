@@ -103,6 +103,9 @@ pub struct TranscribeRequest<'a> {
     /// Windowed decoding has bounded PCM working storage, while upload bytes and
     /// accumulated transcript still occupy memory proportional to input/output.
     pub max_audio_secs: Option<f64>,
+    /// Experimental two-second encoder context for full native mono file
+    /// windows. Off by default. Unsupported sources or engines are rejected.
+    pub file_zero_context: bool,
 }
 
 impl<'a> TranscribeRequest<'a> {
@@ -143,7 +146,14 @@ impl<'a> TranscribeRequest<'a> {
             progress: None,
             diarization_outcome: None,
             max_audio_secs: None,
+            file_zero_context: false,
         }
+    }
+
+    /// Enable bounded zero context for native mono file windows.
+    pub fn with_file_zero_context(mut self, enabled: bool) -> Self {
+        self.file_zero_context = enabled;
+        self
     }
 
     /// Set per-request recognition-knob overrides.

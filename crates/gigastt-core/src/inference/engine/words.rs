@@ -108,6 +108,51 @@ impl<'a> From<&'a PcmWindow<'_>> for PcmSpan<'a> {
     }
 }
 
+/// Decode one physical window. Only the explicitly opted-in, full-size native
+/// window is extended. A synthetic-tail label invalidates the entire padded
+/// result; retry exactly once with the original PCM and a fresh decoder.
+fn decode_file_zero_context<T>(
+    physical: &[f32],
+    enabled: bool,
+    abort: Option<&(dyn Fn() -> bool + Sync)>,
+    mut decode: impl FnMut(&[f32], Option<usize>) -> anyhow::Result<T>,
+) -> Result<T, GigasttError> {
+    let inference_error = |e: anyhow::Error| GigasttError::Inference { source: e.into() };
+    if !enabled || physical.len() != crate::inference::windows::CHUNK_WINDOW_SAMPLES_ORT {
+        return decode(physical, None).map_err(inference_error);
+    }
+    let check_abort = || {
+        if abort.is_some_and(|abort| abort()) {
+            Err(GigasttError::Cancelled)
+        } else {
+            Ok(())
+        }
+    };
+    check_abort()?;
+    const ZERO_CONTEXT_SAMPLES: usize = 32_000;
+    let mut padded = Vec::with_capacity(physical.len() + ZERO_CONTEXT_SAMPLES);
+    padded.extend_from_slice(physical);
+    padded.resize(physical.len() + ZERO_CONTEXT_SAMPLES, 0.0);
+    let physical_frames = physical.len() / (HOP_LENGTH * ENCODER_SUBSAMPLING);
+    let candidate = decode(&padded, Some(physical_frames));
+    check_abort()?;
+    match candidate {
+        Ok(decoded) => Ok(decoded),
+        Err(error) if error.is::<super::infer::SyntheticTailToken>() => {
+            tracing::warn!(
+                %error,
+                "file zero context rejected synthetic-tail token; decoding original window once"
+            );
+            drop(padded);
+            check_abort()?;
+            let fallback = decode(physical, None);
+            check_abort()?;
+            fallback.map_err(inference_error)
+        }
+        Err(error) => Err(inference_error(error)),
+    }
+}
+
 /// Stitch one decoded window onto `merged`. `prev_end` is where the previous
 /// window ended (0 before the first), so the seam sits in the middle of the
 /// two windows' actual overlap.
@@ -437,6 +482,7 @@ impl Engine {
             triplet,
             biaser,
             ctl.abort,
+            ctl.file_zero_context,
         )?;
         let merged = stitch_report(
             merged,
@@ -456,26 +502,29 @@ impl Engine {
         triplet: &mut SessionTriplet,
         biaser: Option<&bias::Biaser>,
         abort: Option<&(dyn Fn() -> bool + Sync)>,
+        file_zero_context: bool,
     ) -> Result<WindowDecode, GigasttError> {
         let frame_samples = HOP_LENGTH * ENCODER_SUBSAMPLING;
-        let (features, num_frames) = self.features.compute(samples);
         let frame_offset = start_sample / frame_samples;
-        let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
-        self.run_inference(
-            triplet,
-            &features,
-            num_frames,
-            &mut decoder_state,
-            frame_offset,
-            false, // file-mode fill floor
-            biaser,
-            abort,
-        )
-        .map(|r| WindowDecode {
-            words: r.0,
-            completed: !abort.is_some_and(|abort| abort()),
+        decode_file_zero_context(samples, file_zero_context, abort, |input, limit| {
+            let (features, num_frames) = self.features.compute(input);
+            let mut decoder_state = DecoderState::new(self.tokenizer.blank_id());
+            self.run_inference_with_token_limit(
+                triplet,
+                &features,
+                num_frames,
+                &mut decoder_state,
+                frame_offset,
+                false, // file-mode fill floor
+                biaser,
+                abort,
+                limit,
+            )
+            .map(|r| WindowDecode {
+                words: r.0,
+                completed: !abort.is_some_and(|abort| abort()),
+            })
         })
-        .map_err(|e| GigasttError::Inference { source: e.into() })
     }
 
     fn decode_wave_parallel(
@@ -502,6 +551,7 @@ impl Engine {
                 primary,
                 biaser,
                 abort,
+                false,
             )?]);
         }
 
@@ -514,11 +564,19 @@ impl Engine {
                     primary,
                     biaser,
                     abort,
+                    false,
                 )
             }));
             for (win, guard) in wave[1..].iter().zip(extras.iter_mut()) {
                 handles.push(s.spawn(move || {
-                    self.decode_samples_window(&win.samples, win.start_sample, guard, biaser, abort)
+                    self.decode_samples_window(
+                        &win.samples,
+                        win.start_sample,
+                        guard,
+                        biaser,
+                        abort,
+                        false,
+                    )
                 }));
             }
             // Join every handle before returning: a leftover panicking sibling
@@ -745,6 +803,254 @@ mod publication_tests {
                     serde_json::to_value(snapshot.get().unwrap().words).unwrap(),
                     serde_json::to_value(&merged).unwrap()
                 );
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod file_zero_context_tests {
+    use super::*;
+    use std::cell::{Cell, RefCell};
+
+    #[test]
+    fn test_file_zero_context_defers_fallback_until_first_synthetic_token() {
+        let physical = vec![-0.25f32; crate::inference::windows::CHUNK_WINDOW_SAMPLES_ORT];
+        for index in [599, 600, 649] {
+            let calls = RefCell::new(Vec::new());
+            let result = decode_file_zero_context(&physical, true, None, |samples, limit| {
+                calls.borrow_mut().push((samples.len(), limit));
+                assert!(
+                    samples[..physical.len()]
+                        .iter()
+                        .all(|x| x.to_bits() == (-0.25f32).to_bits())
+                );
+                if let Some(limit) = limit {
+                    assert!(samples[physical.len()..].iter().all(|x| x.to_bits() == 0));
+                    super::infer::check_token_frame_limit(
+                        &[decode::TokenInfo {
+                            token_id: 0,
+                            frame_index: index,
+                            confidence: 1.0,
+                        }],
+                        Some(limit),
+                    )?;
+                    Ok("candidate")
+                } else {
+                    Ok("original")
+                }
+            })
+            .unwrap();
+            if index == 599 {
+                assert_eq!(result, "candidate");
+                assert_eq!(*calls.borrow(), [(416_000, Some(600))]);
+            } else {
+                assert_eq!(result, "original");
+                assert_eq!(*calls.borrow(), [(416_000, Some(600)), (384_000, None)]);
+            }
+        }
+    }
+
+    #[test]
+    fn test_file_zero_context_does_not_retry_real_inference_error() {
+        let physical = vec![0.; 384_000];
+        let calls = Cell::new(0);
+        let result = decode_file_zero_context(&physical, true, None, |_, _| {
+            calls.set(calls.get() + 1);
+            Err::<(), _>(anyhow::anyhow!("model error"))
+        });
+        assert!(matches!(result, Err(GigasttError::Inference { .. })));
+        assert_eq!(calls.get(), 1);
+    }
+
+    #[test]
+    fn test_file_zero_context_abort_prevents_native_fallback() {
+        let physical = vec![0.; 384_000];
+        let calls = Cell::new(0);
+        let cancelled = std::sync::atomic::AtomicBool::new(false);
+        let abort = || cancelled.load(std::sync::atomic::Ordering::Relaxed);
+        let result = decode_file_zero_context(&physical, true, Some(&abort), |_, limit| {
+            calls.set(calls.get() + 1);
+            cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
+            super::infer::check_token_frame_limit(
+                &[decode::TokenInfo {
+                    token_id: 0,
+                    frame_index: 600,
+                    confidence: 1.0,
+                }],
+                limit,
+            )
+        });
+        assert!(matches!(result, Err(GigasttError::Cancelled)));
+        assert_eq!(calls.get(), 1);
+    }
+
+    #[test]
+    fn test_file_zero_context_default_and_nonfull_windows_passthrough() {
+        for (enabled, len) in [(false, 384_000), (true, 383_999), (true, 384_001)] {
+            let physical = vec![0.; len];
+            let calls = Cell::new(0);
+            decode_file_zero_context(&physical, enabled, None, |samples, limit| {
+                calls.set(calls.get() + 1);
+                assert!(std::ptr::eq(samples.as_ptr(), physical.as_ptr()));
+                assert_eq!(samples.len(), len);
+                assert_eq!(limit, None);
+                Ok(())
+            })
+            .unwrap();
+            assert_eq!(calls.get(), 1);
+        }
+    }
+
+    #[test]
+    fn test_file_zero_context_cancelled_candidate_or_fallback_is_not_returned() {
+        let physical = vec![0.; 384_000];
+        for cancel_on_call in [1, 2] {
+            let calls = Cell::new(0);
+            let cancelled = std::sync::atomic::AtomicBool::new(false);
+            let abort = || cancelled.load(std::sync::atomic::Ordering::Relaxed);
+            let result = decode_file_zero_context(&physical, true, Some(&abort), |_, limit| {
+                let call = calls.get() + 1;
+                calls.set(call);
+                if call == cancel_on_call {
+                    // Successful decode returned its prefix, but the caller
+                    // cancelled before it could be published.
+                    cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
+                    return Ok("current window");
+                }
+                super::infer::check_token_frame_limit(
+                    &[decode::TokenInfo {
+                        token_id: 0,
+                        frame_index: 600,
+                        confidence: 1.0,
+                    }],
+                    limit,
+                )?;
+                Ok("current window")
+            });
+            assert!(matches!(result, Err(GigasttError::Cancelled)));
+            assert_eq!(calls.get(), cancel_on_call);
+        }
+    }
+
+    #[cfg(feature = "file-decode")]
+    #[test]
+    fn test_file_zero_context_native_window_fallback_and_cancel_preserve_publication() {
+        use crate::runtime::{
+            RuntimeError, RuntimeSession,
+            tensor::{Shape, Tensor, TensorData},
+        };
+        use std::{
+            collections::HashSet,
+            sync::{
+                Arc, Mutex,
+                atomic::{AtomicBool, AtomicU64, Ordering},
+            },
+        };
+
+        const ENC_DIM: usize = 768;
+        // Sentinels in channel zero identify exact frames. One nonblank per
+        // sentinel, then blank, drives the real greedy loop without weights.
+        struct Encoder {
+            calls: Arc<Mutex<Vec<i64>>>,
+            cancel_on: Option<usize>,
+        }
+        impl RuntimeSession for Encoder {
+            fn run(&self, input: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
+                let mut calls = self.calls.lock().unwrap();
+                calls.push(input[1].view().data().as_i64().unwrap()[0]);
+                let call = calls.len();
+                let len = if call == 3 { 600 } else { 650 };
+                let mut encoded = vec![0.; ENC_DIM * len];
+                encoded[if call == 1 {
+                    50
+                } else if call == 2 {
+                    200
+                } else {
+                    100
+                }] = (call * 10) as f32;
+                // Unless this is the successful-but-cancelled padded decode,
+                // emit a synthetic label. It must invalidate the whole window.
+                if call == 2 && self.cancel_on != Some(2) {
+                    encoded[600] = (call * 10 + 1) as f32;
+                }
+                if self.cancel_on == Some(call) {
+                    encoded[len - 1] = -1.;
+                }
+                Ok(vec![
+                    Tensor::new(Shape::new(vec![1, ENC_DIM, len]), TensorData::F32(encoded))
+                        .unwrap(),
+                    Tensor::new(Shape::new(vec![1]), TensorData::I64(vec![len as i64])).unwrap(),
+                ])
+            }
+        }
+        struct Joiner {
+            emitted: Mutex<HashSet<u32>>,
+            abort: Arc<AtomicBool>,
+        }
+        impl RuntimeSession for Joiner {
+            fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
+                let sentinel = inputs[0].view().data().as_f32().unwrap()[0];
+                if sentinel < 0. {
+                    self.abort.store(true, Ordering::Relaxed);
+                }
+                let emit = sentinel > 0. && self.emitted.lock().unwrap().insert(sentinel.to_bits());
+                Ok(vec![
+                    Tensor::new(
+                        Shape::new(vec![1, 1, 2]),
+                        TensorData::F32(if emit { vec![10., 0.] } else { vec![0., 10.] }),
+                    )
+                    .unwrap(),
+                ])
+            }
+        }
+        for cancel_on in [None, Some(2), Some(3)] {
+            let (engine, _tmp) = crate::test_support::rnnt_engine();
+            let mut guard = engine.pool.checkout_blocking().unwrap();
+            let calls = Arc::new(Mutex::new(Vec::new()));
+            let abort = Arc::new(AtomicBool::new(false));
+            guard.encoder = Box::new(Encoder {
+                calls: calls.clone(),
+                cancel_on,
+            });
+            guard.joiner = Some(Box::new(Joiner {
+                emitted: Mutex::new(HashSet::new()),
+                abort: abort.clone(),
+            }));
+            let snapshot = Arc::new(crate::inference::TranscriptSnapshot::default());
+            let progress = Arc::new(AtomicU64::new(0));
+            let bytes = bytes::Bytes::from(crate::test_support::pcm16_wav(
+                &vec![0; 46 * 16_000],
+                16_000,
+            ));
+            let req = TranscribeRequest::new(TranscribeSource::Bytes(bytes))
+                .with_file_zero_context(true)
+                .with_abort(Some(abort))
+                .with_partial(Some(snapshot.clone()))
+                .with_progress(Some(progress.clone()));
+            let result = engine.transcribe_request(req, &mut guard);
+            let partial = snapshot.get().expect("first complete window");
+            if let Some(cancel_on) = cancel_on {
+                assert!(matches!(result, Err(GigasttError::Cancelled)));
+                assert_eq!(calls.lock().unwrap().len(), cancel_on);
+                assert_eq!(partial.words.len(), 1);
+                assert_eq!(partial.words[0].start, 2.0);
+                assert_eq!(progress.load(Ordering::Acquire), 384_000);
+            } else {
+                let result = result.expect("fallback succeeds");
+                assert_eq!(result.duration_s, 46.);
+                assert_eq!(calls.lock().unwrap().len(), 3);
+                let calls = calls.lock().unwrap();
+                assert_eq!(calls[0], calls[1]);
+                assert!(calls[2] < calls[1], "fallback must encode physical audio");
+                assert_eq!(partial.words.len(), 2);
+                assert_eq!(partial.words[0].start, 2.0);
+                assert_eq!(partial.words[1].start, 26.0);
+                assert_eq!(
+                    serde_json::to_value(&partial.words).unwrap(),
+                    serde_json::to_value(&result.words).unwrap()
+                );
+                assert_eq!(progress.load(Ordering::Acquire), 736_000);
             }
         }
     }
