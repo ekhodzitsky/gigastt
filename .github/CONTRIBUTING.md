@@ -53,7 +53,8 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
 ```
 
-Pass `--workspace --lib --bins` for focused unit and binary tests. The custom
+During development, use [focused package and module tests](../docs/testing.md#focused-development-loop).
+Before committing, run the full model-free workspace unit and binary suite above. The custom
 WER benchmark runs model-free checks by default; explicit `--run` enables corpus
 execution, and `--run --required` enables the bundled quality gate.
 
