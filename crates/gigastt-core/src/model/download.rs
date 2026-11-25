@@ -7,10 +7,6 @@ use anyhow::Context;
 use anyhow::Result;
 use std::path::Path;
 
-#[cfg(unix)]
-#[cfg(feature = "net")]
-use std::os::fd::AsRawFd;
-
 use super::variant::ModelVariant;
 #[cfg(feature = "net")]
 use super::variant::PREQUANT_RELEASE_BASE;
@@ -126,15 +122,7 @@ pub(super) fn acquire_download_lock(dir: &Path) -> Result<std::fs::File> {
         .truncate(true)
         .open(&lock_path)
         .context("Failed to create download lock file")?;
-    let fd = file.as_raw_fd();
-    // SAFETY: `fd` is valid because it comes from `as_raw_fd()` on an owned
-    // `File` that outlives this call. `flock` is an advisory lock; the file
-    // remains owned by `file` and is closed (releasing the lock) when this
-    // function's caller drops the returned `File`.
-    let ret = unsafe { libc::flock(fd, libc::LOCK_EX) };
-    if ret != 0 {
-        anyhow::bail!("Failed to acquire download lock (another process is downloading)");
-    }
+    file.lock().context("Failed to acquire download lock")?;
     Ok(file)
 }
 

@@ -20,6 +20,7 @@ pub mod export;
 pub mod inference;
 pub mod itn;
 pub mod lexicon;
+#[forbid(unsafe_code)]
 pub mod model;
 pub mod protocol;
 pub mod punctuation;

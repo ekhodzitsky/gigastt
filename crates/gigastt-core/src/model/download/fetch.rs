@@ -111,12 +111,22 @@ pub(crate) async fn download_file(variant: ModelVariant, filename: &str, dir: &P
     stream_to_partial_then_finalize(&url, &final_dest, expected, filename).await
 }
 
-/// Whether air-gapped mode is active: `GIGASTT_OFFLINE` set to anything but
+static OFFLINE_MODE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Disable subsequent model downloads for this process, without changing its
+/// environment. Call before starting model acquisition. This setting is
+/// one-way: the environment variable cannot override an explicit opt-out.
+pub fn enable_offline_mode() {
+    OFFLINE_MODE.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Whether air-gapped mode is active: explicit opt-out or `GIGASTT_OFFLINE` set to anything but
 /// `""` / `"0"`. In this mode every would-be network fetch fails fast with an
 /// instruction naming the missing file instead of a connect timeout.
 #[cfg(feature = "net")]
 fn offline_mode() -> bool {
-    std::env::var_os("GIGASTT_OFFLINE").is_some_and(|v| !v.is_empty() && v != "0")
+    OFFLINE_MODE.load(std::sync::atomic::Ordering::Relaxed)
+        || std::env::var_os("GIGASTT_OFFLINE").is_some_and(|v| !v.is_empty() && v != "0")
 }
 
 /// Hard ceiling on a single model-file download. The largest shipped INT8

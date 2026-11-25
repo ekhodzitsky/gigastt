@@ -1,3 +1,7 @@
+#![cfg_attr(not(test), forbid(unsafe_code))]
+#![cfg_attr(test, deny(unsafe_code))]
+#![deny(unsafe_op_in_unsafe_fn)]
+
 use clap::{CommandFactory, FromArgMatches, Parser, Subcommand};
 use gigastt::boot::{ItnMode, PunctuationMode, parse_itn_mode, parse_punctuation_mode};
 use gigastt_core::model;
@@ -352,12 +356,7 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|e| e.exit());
 
     if cli.offline {
-        // Translate the flag into the env var the download guard in
-        // gigastt-core reads, so both spellings behave identically.
-        // Safety: this is the first statement after argument parsing — nothing
-        // has read or written the process environment concurrently yet (the
-        // only env readers live further down this same call path).
-        unsafe { std::env::set_var("GIGASTT_OFFLINE", "1") };
+        model::enable_offline_mode();
     }
     // NDJSON download progress owns stdout: in `--progress=json` mode the
     // tracing writer moves to stderr so stdout carries nothing but event
@@ -504,4 +503,5 @@ async fn main() -> anyhow::Result<()> {
 }
 
 #[cfg(test)]
+#[allow(unsafe_code)] // Legacy process environment tests; not production code.
 mod cli_tests;
