@@ -6,14 +6,13 @@ use axum::http::StatusCode;
 use axum::http::header;
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::response::{IntoResponse, Json, Response};
-use futures_util::StreamExt;
-use futures_util::stream::Stream;
+use futures_util::stream::{Stream, unfold};
 use serde::Serialize;
 use std::sync::Arc;
 
 use super::super::config::{pool_retry_after_ms, pool_retry_after_secs};
 use super::super::jobs::{
-    JobEvent, JobStatus, JobStore, JobStoreFull, JobTransition, TransitionOutcome,
+    JobStatus, JobStore, JobStoreFull, JobTransition, TransitionOutcome, job_event_channel,
 };
 
 use super::error::{ApiError, api_error};
@@ -245,7 +244,7 @@ pub async fn job_events(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, std::convert::Infallible>>>, ApiError> {
     let jobs = require_jobs(&state)?;
-    let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<JobEvent>();
+    let (tx, rx) = job_event_channel();
     match jobs.store.subscribe(&id, tx).await {
         Ok(true) => {}
         Ok(false) => {
@@ -265,8 +264,19 @@ pub async fn job_events(
         }
     }
 
-    let stream = tokio_stream::wrappers::UnboundedReceiverStream::new(rx)
-        .map(|event| Ok(Event::default().data(serde_json::to_string(&event).unwrap_or_default())));
+    // End the SSE response on the terminal event even if a job snapshot
+    // elsewhere still retains a cloned sender.
+    let stream = unfold(Some(rx), |receiver| async move {
+        let mut receiver = receiver?;
+        let event = receiver.recv().await?;
+        let next = if event.is_terminal() {
+            None
+        } else {
+            Some(receiver)
+        };
+        let event = Event::default().data(serde_json::to_string(&event).unwrap_or_default());
+        Some((Ok(event), next))
+    });
 
     Ok(Sse::new(stream).keep_alive(
         KeepAlive::new()

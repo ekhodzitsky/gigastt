@@ -57,6 +57,13 @@ Server surfaces (single process, one primary port unless metrics is enabled):
 | Admin | `POST /v1/admin/reload` | **Loopback peers only** |
 | Metrics | `GET /metrics` | Separate `--metrics-listen` (default `127.0.0.1:9090`) |
 
+The internal server Rust subscription seam uses
+`gigastt::server::jobs::job_event_channel()` to create the bounded sender and
+receiver. Custom `JobStore` implementations of `subscribe` take a
+`JobEventSender` rather than an unbounded Tokio sender; publish through
+`JobEventSender::publish` under the same lifecycle lock as job transitions.
+The HTTP event format is unchanged.
+
 ## Models
 
 The supported catalog, exact file sets, formatting policy and current bundle

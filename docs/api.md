@@ -677,6 +677,16 @@ curl http://127.0.0.1:9876/v1/jobs/{job_id}/events
 # data: {"type":"done"}
 ```
 
+Progress events are best-effort estimates. Each subscription's application
+queue buffers at most eight progress events, plus one reserved terminal event;
+new progress events are dropped while that reader's backlog is full. A slow
+reader does not delay the job or other readers. A connected, still-subscribed
+reader receives the
+terminal event (`done`, `failed`, or `cancelled`) and its stream then ends.
+Use `GET /v1/jobs/{id}` for the current status even if progress events were
+skipped. There are at most 32 listeners per job; at that cap, a new
+subscription evicts the oldest listener.
+
 Job submission accepts the same query parameters as `POST /v1/transcribe`
 (`format`, `word_timestamps`, `segments`, `channels`, `diarization`,
 `punctuation`, `itn`, `vad`). The result is rendered in the requested format

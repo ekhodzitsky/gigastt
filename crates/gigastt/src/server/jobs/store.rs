@@ -12,6 +12,7 @@ use parking_lot::Mutex;
 
 use super::super::config::RuntimeLimits;
 use super::super::http::ExportParams;
+use super::events::{JobEvent, JobEventSender};
 
 /// Object-safe boxed future returned by [`JobStore`] methods.
 pub type JobStoreFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
@@ -38,38 +39,6 @@ impl JobStatus {
         matches!(
             self,
             JobStatus::Done | JobStatus::Failed | JobStatus::Cancelled
-        )
-    }
-}
-
-/// Server-sent event emitted by `GET /v1/jobs/{id}/events`.
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum JobEvent {
-    /// Progress estimate while processing.
-    Progress {
-        /// Approximate fraction complete, 0–100.
-        percent: u32,
-        /// Seconds of audio considered processed so far.
-        processed_seconds: f64,
-    },
-    /// Job completed successfully.
-    Done,
-    /// Job failed.
-    Failed {
-        /// Sanitized error message (no paths or model internals).
-        error: String,
-    },
-    /// Job was cancelled.
-    Cancelled,
-}
-
-impl JobEvent {
-    /// Whether this event ends the stream.
-    pub fn is_terminal(&self) -> bool {
-        matches!(
-            self,
-            JobEvent::Done | JobEvent::Failed { .. } | JobEvent::Cancelled
         )
     }
 }
@@ -138,7 +107,7 @@ pub struct Job {
     /// Populated when status becomes `Failed`.
     pub error: Option<String>,
     /// Active SSE listeners.
-    pub event_channels: Vec<tokio::sync::mpsc::UnboundedSender<JobEvent>>,
+    pub event_channels: Vec<JobEventSender>,
     /// Cooperative-cancellation flag for the in-flight run. The executor sets it
     /// when it begins inference; `DELETE /v1/jobs/{id}` flips it so the engine
     /// releases its pooled triplet after the current runtime call instead of transcribing the
@@ -153,7 +122,7 @@ pub struct Job {
 /// Upper bound on simultaneous SSE listeners per job. Dead channels are
 /// pruned on subscribe and on broadcast, but broadcasts can be ≥500 ms apart
 /// (and rarer for a queued job), so a connect/disconnect flood could otherwise
-/// accumulate `UnboundedSender`s faster than they get cleaned up.
+/// accumulate listeners faster than they get cleaned up.
 pub(crate) const MAX_JOB_EVENT_SUBSCRIBERS: usize = 32;
 
 impl Job {
@@ -256,15 +225,15 @@ impl Job {
             return;
         }
         self.event_channels
-            .retain(|tx| tx.send(event.clone()).is_ok() && !event.is_terminal());
+            .retain(|tx| tx.publish(event.clone()) && !event.is_terminal());
     }
 
     /// Register an SSE listener, pruning closed channels first. When the
     /// subscriber cap is reached, the oldest listener is evicted (its stream
     /// ends) so a connect/disconnect flood cannot grow the list without bound.
-    pub(crate) fn subscribe(&mut self, tx: tokio::sync::mpsc::UnboundedSender<JobEvent>) {
+    pub(crate) fn subscribe(&mut self, tx: JobEventSender) {
         if let Some(event) = self.terminal_event() {
-            let _ = tx.send(event);
+            let _ = tx.publish(event);
             return;
         }
         self.event_channels.retain(|tx| !tx.is_closed());
@@ -325,11 +294,13 @@ pub trait JobStore: Send + Sync + 'static {
         Box::pin(async move { Ok(self.get(&id).await?.as_ref().map(job_status_response)) })
     }
     /// Register a live listener or send the terminal event under one lock.
+    /// Construct subscriptions with [`super::job_event_channel`] and publish
+    /// through [`JobEventSender::publish`] to preserve the terminal slot.
     /// Returns false if the job does not exist.
     fn subscribe<'a>(
         &'a self,
         id: &str,
-        tx: tokio::sync::mpsc::UnboundedSender<JobEvent>,
+        tx: JobEventSender,
     ) -> JobStoreFuture<'a, anyhow::Result<bool>> {
         let id = id.to_owned();
         Box::pin(async move {
@@ -489,7 +460,7 @@ impl JobStore for InMemoryJobStore {
     fn subscribe<'a>(
         &'a self,
         id: &str,
-        tx: tokio::sync::mpsc::UnboundedSender<JobEvent>,
+        tx: JobEventSender,
     ) -> JobStoreFuture<'a, anyhow::Result<bool>> {
         let id = id.to_owned();
         Box::pin(async move {
