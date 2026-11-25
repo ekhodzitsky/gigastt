@@ -1,3 +1,4 @@
+use super::super::pcm_source::{ChannelSelect, PcmSource};
 use super::*;
 use crate::inference::audio::encode_wav_pcm16;
 use bytes::Bytes;
@@ -80,9 +81,9 @@ fn assert_16k_geometry(spec: WindowSpec, lengths: &[usize]) {
     for &n in lengths {
         let src = signal(n, 1.0);
         let wav = encode_wav_pcm16(&src, 16000);
-        let flat = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None)
+        let flat = PcmSource::from_bytes(Bytes::copy_from_slice(&wav), None, ChannelSelect::Mono)
             .expect("open flat")
-            .drain_to_vec()
+            .drain_to_vec(None)
             .expect("drain");
         // 16 kHz is the passthrough path: no resampler, so the decoded length
         // is exact.
@@ -121,9 +122,9 @@ fn test_file_windows_48k_stereo_matches_slice_over_drain() {
     let left = signal(n, 0.3);
     let right = signal(n, 2.1);
     let wav = stereo_wav_pcm16(&left, &right, 48_000);
-    let flat = FileWindows::from_bytes(Bytes::copy_from_slice(&wav), spec, None)
+    let flat = PcmSource::from_bytes(Bytes::copy_from_slice(&wav), None, ChannelSelect::Mono)
         .expect("open flat")
-        .drain_to_vec()
+        .drain_to_vec(None)
         .expect("drain");
     assert!(
         flat.len() > spec.single_pass_max(),
@@ -167,15 +168,11 @@ fn test_file_windows_channel_select_matches_batch_per_channel_decode() {
         assert_ne!(batch[0], batch[1]);
 
         for (k, want) in batch.iter().enumerate() {
-            let streamed = FileWindows::from_bytes_channel(
-                Bytes::copy_from_slice(&wav),
-                WindowSpec::flat(),
-                None,
-                k,
-            )
-            .expect("open channel")
-            .drain_to_vec()
-            .expect("drain channel");
+            let streamed =
+                PcmSource::from_bytes(Bytes::copy_from_slice(&wav), None, ChannelSelect::One(k))
+                    .expect("open channel")
+                    .drain_to_vec(None)
+                    .expect("drain channel");
             assert_eq!(&streamed, want, "rate={rate} channel={k}");
         }
     }
@@ -187,11 +184,10 @@ fn test_file_windows_channel_select_matches_batch_per_channel_decode() {
 fn test_file_windows_channel_select_out_of_range_is_empty() {
     let src = signal(16_000, 1.0);
     let wav = encode_wav_pcm16(&src, 16000); // mono
-    let streamed =
-        FileWindows::from_bytes_channel(Bytes::copy_from_slice(&wav), WindowSpec::flat(), None, 5)
-            .expect("open")
-            .drain_to_vec()
-            .expect("drain");
+    let streamed = PcmSource::from_bytes(Bytes::copy_from_slice(&wav), None, ChannelSelect::One(5))
+        .expect("open")
+        .drain_to_vec(None)
+        .expect("drain");
     assert!(streamed.is_empty(), "got {} samples", streamed.len());
 }
 
@@ -285,7 +281,11 @@ fn zzz_streaming_decode_peak_instrument() {
     // grows with duration) for a same-build A/B against the default windowed
     // path (peak bounded by one window).
     let total = if std::env::var("GIGASTT_PEAK_MODE").as_deref() == Ok("drain") {
-        FileWindows::decode_file(p, None).expect("drain").len()
+        PcmSource::open(p, None, ChannelSelect::Mono)
+            .expect("open")
+            .drain_to_vec(None)
+            .expect("drain")
+            .len()
     } else {
         let mut fw = FileWindows::open(p, ort_spec(), None).expect("open temp wav");
         let mut counted = 0usize;

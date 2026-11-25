@@ -5,6 +5,8 @@ mod chunks;
 mod decode;
 mod opus;
 mod pcm;
+#[cfg(feature = "file-decode")]
+mod pcm_source;
 mod resample;
 mod stream;
 mod telephony;
@@ -166,7 +168,7 @@ pub use resample::{SampleRate, resample, resample_with_cache};
 pub(crate) use stream::{PcmWindow, PcmWindows, SliceWindows, WindowSpec};
 // Streaming container-backed window source: keeps peak audio memory O(one
 // window) regardless of file duration. `Engine::transcribe_request` pulls
-// windows from it; the public `decode_audio_*` functions drain it flat.
+// windows from it; the public `decode_audio_*` functions drain the PCM source flat.
 #[cfg(feature = "file-decode")]
 pub(crate) use stream::FileWindows;
 // VAD-compressed window source: same geometry over the silence-free timeline,

@@ -105,10 +105,14 @@ fn assert_matches_batch(n: usize, probs: &[f32], cfg: &VadConfig) {
     let wav = Bytes::from(encode_wav_pcm16(&samples, 16000));
     // 16 kHz PCM16 is the passthrough path, so the decoded buffer is the
     // quantized `samples` — take it from the decoder to compare like for like.
-    let decoded = FileWindows::from_bytes(wav.clone(), WindowSpec::flat(), None)
-        .expect("open flat")
-        .drain_to_vec()
-        .expect("drain");
+    let decoded = crate::inference::audio::pcm_source::PcmSource::from_bytes(
+        wav.clone(),
+        None,
+        crate::inference::audio::pcm_source::ChannelSelect::Mono,
+    )
+    .expect("open flat")
+    .drain_to_vec(None)
+    .expect("drain");
     let (want_regions, want_windows) = batch(&decoded, probs, cfg);
 
     let vad = scripted_vad(probs);

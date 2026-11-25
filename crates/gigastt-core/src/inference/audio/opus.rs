@@ -8,7 +8,7 @@ use symphonia::core::formats::FormatReader;
 #[cfg(feature = "file-decode")]
 use super::audio_too_long_err;
 #[cfg(feature = "file-decode")]
-use super::stream::ChannelSelect;
+use super::pcm_source::ChannelSelect;
 
 /// Opus always decodes at 48 kHz regardless of the container's declared input
 /// rate (RFC 7845 §5.1), so this — not the header rate — is the unit the length

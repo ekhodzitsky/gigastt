@@ -74,14 +74,6 @@ impl WindowSpec {
     pub(crate) fn is_single_pass(&self, total: usize) -> bool {
         total <= self.single_pass_max
     }
-
-    /// Sentinel geometry for flat (`drain_to_vec`) decode, which never windows.
-    /// Its window/stride are never read; only [`FileWindows::drain_to_vec`] uses
-    /// a `FileWindows` built with it.
-    #[cfg(feature = "file-decode")]
-    pub(crate) fn flat() -> Self {
-        Self::new(usize::MAX, usize::MAX, 0)
-    }
 }
 
 /// Window-cursor arithmetic shared by every window source.
@@ -216,20 +208,6 @@ impl WindowCursor {
         debug_assert!(anchored > prev_start && anchored <= nominal);
         anchored.max(prev_start + FRAME_SAMPLES).min(nominal)
     }
-}
-
-/// Which channel a windowed decode yields.
-///
-/// The default file pipeline wants the mono mix; `channels=split` wants each
-/// channel on its own, and needs it *streamed* — materializing every channel of
-/// the whole file is what pinned that path to a duration ceiling.
-#[cfg(feature = "file-decode")]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum ChannelSelect {
-    /// Mean of every channel present in the packet.
-    Mono,
-    /// A single channel, by zero-based index.
-    One(usize),
 }
 
 /// One decode window lent by a [`PcmWindows`] source.

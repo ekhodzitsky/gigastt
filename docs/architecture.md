@@ -88,6 +88,16 @@ Use [Languages](languages.md) and [Benchmarks](benchmarks.md) for measured
 quality. Larger models and built-in formatting do not establish a universal
 accuracy or speed advantage.
 
+## File PCM boundary
+
+The internal PCM source opens files or shared byte buffers, selects or mixes
+channels, incrementally decodes and resamples to 16 kHz, and owns sample
+position, source-frame limits, cancellation and end-of-stream handling.
+The recognition window consumer owns geometry and overlap; flat decoding
+does not construct a window policy. This is a reusable responsibility within
+core, not a standalone codec library or a new Cargo package. Its current
+output rate and duration/error semantics remain application contracts.
+
 ## Long recordings
 
 Files over 30 seconds use independent overlapping windows: 24 seconds on CPU,

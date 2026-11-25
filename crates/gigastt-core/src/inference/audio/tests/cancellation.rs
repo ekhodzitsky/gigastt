@@ -1,3 +1,4 @@
+use super::super::pcm_source::{ChannelSelect, PcmSource};
 use super::*;
 use bytes::Bytes;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -51,15 +52,12 @@ fn test_flat_decode_cancels_between_packets_without_changing_samples() {
             "../../../../tests/fixtures/opus/late_stereo.ogg"
         )),
     ] {
-        let decode = || FileWindows::from_bytes(data.clone(), WindowSpec::flat(), None).unwrap();
-        let expected = decode().drain_to_vec().unwrap();
-        assert_eq!(
-            expected,
-            decode().drain_to_vec_with_abort(Some(&|| false)).unwrap()
-        );
+        let decode = || PcmSource::from_bytes(data.clone(), None, ChannelSelect::Mono).unwrap();
+        let expected = decode().drain_to_vec(None).unwrap();
+        assert_eq!(expected, decode().drain_to_vec(Some(&|| false)).unwrap());
         let checks = AtomicUsize::new(0);
         let abort = || checks.fetch_add(1, Ordering::Relaxed) >= 3;
-        let error = decode().drain_to_vec_with_abort(Some(&abort)).unwrap_err();
+        let error = decode().drain_to_vec(Some(&abort)).unwrap_err();
         assert!(matches!(
             decode_error(error),
             crate::error::GigasttError::Cancelled

@@ -14,8 +14,8 @@ use anyhow::{Context, Result};
 use bytes::Bytes;
 use ryf::{ByteSource, ChannelMode, DecodeOptions, StreamBlock, WavError};
 
+use super::pcm_source::ChannelSelect;
 use super::resample::{ResampleTo16k, SampleRate};
-use super::stream::ChannelSelect;
 use super::{MAX_SAMPLE_RATE, audio_too_long_err, resolve_budget};
 use crate::error::GigasttError;
 
@@ -32,7 +32,7 @@ pub(super) enum WaveErr {
     Other(String),
 }
 
-/// Backpressured WAVE decoder feeding [`super::stream::FileWindows`].
+/// Backpressured WAVE decoder feeding [`super::pcm_source::PcmSource`].
 pub(super) struct WaveSource {
     pub(super) rx: Option<Receiver<Result<WaveBlock, WaveErr>>>,
     pub(super) join: Option<JoinHandle<()>>,
@@ -155,7 +155,7 @@ fn wave_source_from(
     let (tx, rx) = mpsc::sync_channel(1);
     let join = spawn_decode(build_source, opts, channel, tx)?;
     tracing::info!(
-        "Audio (wave): {sample_rate}Hz, {}ch (streaming windows)",
+        "Audio (wave): {sample_rate}Hz, {}ch (streaming PCM)",
         probe.channels
     );
     Ok(WaveSource {

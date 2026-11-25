@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn test_g726_wave_matches_independent_reference_and_streaming() {
-    use super::super::stream::FileWindows;
+    use super::super::pcm_source::{ChannelSelect, PcmSource};
     use bytes::Bytes;
 
     let fixtures: [(&[u8], &[u8]); 4] = [
@@ -34,11 +34,18 @@ fn test_g726_wave_matches_independent_reference_and_streaming() {
         assert!(!actual.is_empty());
         assert_eq!(actual, expected);
         assert_eq!(
-            FileWindows::decode_bytes(Bytes::copy_from_slice(encoded), None).unwrap(),
+            PcmSource::from_bytes(Bytes::copy_from_slice(encoded), None, ChannelSelect::Mono)
+                .and_then(|s| s.drain_to_vec(None))
+                .unwrap(),
             expected
         );
-        let error =
-            FileWindows::decode_bytes(Bytes::copy_from_slice(encoded), Some(0.05)).unwrap_err();
+        let error = PcmSource::from_bytes(
+            Bytes::copy_from_slice(encoded),
+            Some(0.05),
+            ChannelSelect::Mono,
+        )
+        .and_then(|s| s.drain_to_vec(None))
+        .unwrap_err();
         assert!(matches!(
             error.downcast_ref::<crate::error::GigasttError>(),
             Some(crate::error::GigasttError::AudioTooLong { .. })
@@ -48,7 +55,7 @@ fn test_g726_wave_matches_independent_reference_and_streaming() {
 
 #[test]
 fn test_wave_ambiguous_0064_is_rejected_in_both_decode_paths() {
-    use super::super::stream::FileWindows;
+    use super::super::pcm_source::{ChannelSelect, PcmSource};
     use bytes::Bytes;
 
     // A 32 kbit/s header could mean G.726; interpreting it as G.722 would
@@ -57,7 +64,8 @@ fn test_wave_ambiguous_0064_is_rejected_in_both_decode_paths() {
     let wav = make_compressed_wav(0x0064, 8000, 4000, &[0x55; 80]);
     for result in [
         decode_audio_bytes(&wav),
-        FileWindows::decode_bytes(Bytes::from(wav), None),
+        PcmSource::from_bytes(Bytes::from(wav), None, ChannelSelect::Mono)
+            .and_then(|s| s.drain_to_vec(None)),
     ] {
         assert!(result.is_err(), "ambiguous codec must not be guessed");
     }

@@ -105,10 +105,14 @@ fn test_opus_streaming_windows_match_slice_over_flat_decode() {
     ));
     // A window shorter than the clip so the overlapping geometry is exercised.
     let spec = WindowSpec::new(16_000, 16_000, 3_200);
-    let flat = FileWindows::from_bytes(bytes.clone(), WindowSpec::flat(), None)
-        .expect("open flat")
-        .drain_to_vec()
-        .expect("drain");
+    let flat = crate::inference::audio::pcm_source::PcmSource::from_bytes(
+        bytes.clone(),
+        None,
+        crate::inference::audio::pcm_source::ChannelSelect::Mono,
+    )
+    .expect("open flat")
+    .drain_to_vec(None)
+    .expect("drain");
     let mut src = FileWindows::from_bytes(bytes, spec, None).expect("open windows");
     let mut got = Vec::new();
     while let Some(w) = src.next_window().expect("window") {
