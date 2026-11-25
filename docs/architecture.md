@@ -44,6 +44,14 @@ gigastt is a **6-crate** Cargo workspace:
 
 Embed inference in any Rust project with `gigastt-core = "2.22"`. For a lean embedded build, disable defaults (`default-features = false`) to drop `tokio` / `reqwest` / `symphonia` / `ryf` / polyvoice; opt capabilities back in via the `net`, `async-pool`, `file-decode`, `diarization`, and `quantize` features (`quantize` is packaging-only — the INT8 quantizer, not a runtime path).
 
+The core's `transcript` module owns transcript value types independently of
+inference state, the wire protocol and export formatting. Existing
+`gigastt_core::inference` paths remain re-exports of the same types. Request
+configuration, streaming commitment, and channel assembly still belong to
+inference. This is a source-module boundary, **not** a separate Cargo crate:
+`cargo test -p gigastt-core --lib transcript::` exercises model-free value
+contracts, but compiles the core package and its selected runtime dependencies.
+
 Server surfaces (single process, one primary port unless metrics is enabled):
 
 | Surface | Path | Notes |

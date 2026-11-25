@@ -1,7 +1,7 @@
 //! Readable snapshots with immutable file-window chunks and owned read results.
 use std::sync::Arc;
 
-use super::{TranscriptSegment, WordInfo, aggregate_confidence};
+use crate::transcript::{TranscriptSegment, WordInfo, aggregate_confidence};
 
 struct WordChunk {
     previous: Option<Arc<WordChunk>>,

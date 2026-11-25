@@ -6,8 +6,8 @@
 
 use super::SECONDS_PER_FRAME;
 use super::decode;
-use super::state::WordInfo;
 use super::tokenizer::{self, Tokenizer};
+use crate::transcript::WordInfo;
 
 mod stitch;
 #[cfg(test)]

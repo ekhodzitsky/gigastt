@@ -48,10 +48,10 @@ pub enum ServerMessage {
     },
 
     /// Partial (interim) transcript — may change with more audio.
-    Partial(crate::inference::TranscriptSegment),
+    Partial(crate::transcript::TranscriptSegment),
 
     /// Final transcript — utterance is complete (endpointing detected or stream flushed).
-    Final(crate::inference::TranscriptSegment),
+    Final(crate::transcript::TranscriptSegment),
 
     /// Error occurred during processing.
     Error {
