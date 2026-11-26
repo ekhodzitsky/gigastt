@@ -15,15 +15,22 @@ compile_error!("feature `candle` is mutually exclusive with `coreml`/`cuda`/`nna
 ))]
 compile_error!("feature `ane` is mutually exclusive with `coreml`/`cuda`/`nnapi`/`candle`");
 
+#[forbid(unsafe_code)]
 pub mod error;
+#[forbid(unsafe_code)]
 pub mod export;
 pub mod inference;
+#[forbid(unsafe_code)]
 pub mod itn;
+#[forbid(unsafe_code)]
 pub mod lexicon;
 #[forbid(unsafe_code)]
 pub mod model;
+#[forbid(unsafe_code)]
 pub mod protocol;
+#[forbid(unsafe_code)]
 pub mod punctuation;
+#[forbid(unsafe_code)]
 pub mod transcript;
 
 /// INT8 quantizer, re-exported so `gigastt_core::quantize::quantize_model`
@@ -69,8 +76,11 @@ pub mod onnx_proto {
 }
 
 pub(crate) mod runtime;
+#[forbid(unsafe_code)]
 mod sha256;
+#[forbid(unsafe_code)]
 pub mod vad;
+#[forbid(unsafe_code)]
 mod wordpiece;
 
 pub use runtime::ExecutionProviderChoice;

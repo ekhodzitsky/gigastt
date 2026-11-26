@@ -82,6 +82,11 @@ without mutating process environment; the existing `GIGASTT_OFFLINE` setting
 continues to work. Legacy CLI environment tests retain a test-only exception;
 new tests should use subprocess isolation instead.
 
+Core also forbids local unsafe Rust in its error, export, text normalization,
+lexicon, protocol, punctuation, transcript, VAD, SHA-256 and WordPiece modules.
+The punctuation and VAD wrappers use the safe runtime interface; this does not
+impose that lint on the native runtime implementation.
+
 The quantizer library, UniFFI Rust library and binding generator, and their
 local build scripts (where present) also forbid unsafe Rust. The Node binding
 uses `deny(unsafe_code)` rather than `forbid` because napi-rs emits native
