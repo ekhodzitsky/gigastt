@@ -208,6 +208,7 @@ fn test_require_ane_tar_checksum_resolves_pinned_and_bails_unpinned() {
 /// e.g. re-quantizing the encoder and bumping only the crate constant —
 /// would break release builds at tag time; this pins the two sources of
 /// truth together in PR CI instead.
+#[cfg(feature = "net")]
 #[test]
 fn test_fetch_offline_models_script_pins_match_crate_constants() {
     let script_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

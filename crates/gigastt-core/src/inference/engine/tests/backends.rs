@@ -14,7 +14,7 @@ use std::path::Path;
 ///
 /// Run with:
 /// `cargo test -p gigastt-core --features candle --lib -- --ignored --nocapture candle_ort_transcription_parity`
-#[cfg(feature = "candle")]
+#[cfg(all(feature = "candle", feature = "file-decode"))]
 #[test]
 #[ignore = "requires v3_rnnt model + candle/*.safetensors"]
 fn candle_ort_transcription_parity() {
@@ -94,7 +94,7 @@ fn candle_ort_transcription_parity() {
 ///
 /// Run with:
 /// `cargo test -p gigastt-core --features candle --lib -- --ignored --nocapture candle_ort_streaming_parity`
-#[cfg(feature = "candle")]
+#[cfg(all(feature = "candle", feature = "file-decode"))]
 #[test]
 #[ignore = "requires v3_rnnt model + candle/*.safetensors"]
 fn candle_ort_streaming_parity() {
@@ -204,7 +204,7 @@ fn candle_ort_streaming_parity() {
 /// Word-level edit distance / WER between a reference and a hypothesis
 /// transcript (Levenshtein over whitespace tokens, normalized by reference
 /// word count). Used by the ANE measurement harness below.
-#[cfg(all(feature = "ane", target_os = "macos"))]
+#[cfg(all(feature = "ane", target_os = "macos", feature = "file-decode"))]
 fn word_error_rate(reference: &str, hypothesis: &str) -> f64 {
     let r: Vec<&str> = reference.split_whitespace().collect();
     let h: Vec<&str> = hypothesis.split_whitespace().collect();
@@ -226,7 +226,7 @@ fn word_error_rate(reference: &str, hypothesis: &str) -> f64 {
 
 /// The 15 Golos fixtures with ground-truth references (from
 /// `crates/gigastt/tests/fixtures/manifest.json`). `(path, reference)`.
-#[cfg(all(feature = "ane", target_os = "macos"))]
+#[cfg(all(feature = "ane", target_os = "macos", feature = "file-decode"))]
 fn golos_fixtures() -> Vec<(String, &'static str)> {
     const REFS: &[(&str, &str)] = &[
         (
@@ -270,7 +270,7 @@ fn golos_fixtures() -> Vec<(String, &'static str)> {
 /// the default model dir. Returns `None` (with a printed SKIP) when the
 /// rnnt model or the bucket-768 `.mlpackage` is absent so the `#[ignore]`d
 /// measurement tests degrade cleanly on machines without the assets.
-#[cfg(all(feature = "ane", target_os = "macos"))]
+#[cfg(all(feature = "ane", target_os = "macos", feature = "file-decode"))]
 fn ane_measurement_engines() -> Option<(Engine, Engine)> {
     let model_dir = crate::model::default_model_dir();
     let model_path = Path::new(&model_dir);
@@ -320,7 +320,7 @@ fn ane_measurement_engines() -> Option<(Engine, Engine)> {
 /// [`Engine::run_inference`]'s encoder setup) and return the emitted
 /// `encoded_len`. Used to compare the ANE and ort encoders' length tensors
 /// for the SAME mel input, pinning [`calc_output_length`] against ONNX drift.
-#[cfg(all(feature = "ane", target_os = "macos"))]
+#[cfg(all(feature = "ane", target_os = "macos", feature = "file-decode"))]
 fn encoder_emitted_len(engine: &Engine, features: &[f32], num_frames: usize) -> usize {
     let mut guard = engine.pool.checkout_blocking().expect("checkout");
     let triplet = &mut *guard;
@@ -359,7 +359,7 @@ fn encoder_emitted_len(engine: &Engine, features: &[f32], num_frames: usize) -> 
 ///
 /// Run with:
 /// `cargo test -p gigastt-core --features ane --lib -- --ignored --nocapture ane_ort_transcription_parity`
-#[cfg(all(feature = "ane", target_os = "macos"))]
+#[cfg(all(feature = "ane", target_os = "macos", feature = "file-decode"))]
 #[test]
 #[ignore = "requires v3_rnnt model + ~/.gigastt/models/ane/*.mlpackage + ANE hardware"]
 fn ane_ort_transcription_parity() {
@@ -513,7 +513,7 @@ fn ane_ort_transcription_parity() {
 ///
 /// Run with:
 /// `cargo test -p gigastt-core --features ane --lib -- --ignored --nocapture ane_e2e_rtfx`
-#[cfg(all(feature = "ane", target_os = "macos"))]
+#[cfg(all(feature = "ane", target_os = "macos", feature = "file-decode"))]
 #[test]
 #[ignore = "requires v3_rnnt model + ~/.gigastt/models/ane/*.mlpackage + ANE hardware"]
 fn ane_e2e_rtfx() {

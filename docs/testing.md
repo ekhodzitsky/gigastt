@@ -122,6 +122,38 @@ mutually exclusive. Compilation on a different OS does not prove the accelerator
 runs there. Use the runtime smoke tests on the target hardware before claiming
 provider compatibility or speed.
 
+### Lean core tests
+
+Check the raw-PCM-only core independently of the default server feature set:
+
+```sh
+cargo test -p gigastt-core --lib --no-default-features
+cargo clippy -p gigastt-core --lib --tests --no-default-features -- -D warnings
+cargo test -p gigastt-core --no-default-features --test lean_build --test corpus_duration_scan
+```
+
+The lean suite retains raw PCM and resampling, channel mixing, blocking pool,
+model path and checksum, progress schema, and pure manifest resolution tests.
+Tests that exercise file containers or native file wrappers require
+`file-decode`; network download and reporting implementations require `net`;
+async checkout tests require `async-pool`, independently of whether another
+feature also brings in Tokio. Speaker download tests need both `net` and
+`diarization`; ANE package extraction tests need both
+`net` and `ane`. File-backed ignored integration probes require their actual
+file-decode feature; the model-free manifest parser remains available without
+it. The default-feature configuration retains every original test and assertion.
+
+When changing these feature boundaries, repeat the lean library test and
+strict library/test lint commands with `--features` set separately to
+`file-decode`, `net`, `async-pool`, `diarization`, and `net,diarization`.
+Run the corresponding `ane` and `net,ane` cases on macOS (the Objective-C
+dependency does not compile on Linux). Keep `--no-default-features` in each command
+so the required feature is tested without incidental support from the default
+set. Do not invoke ignored model or corpus tests for this feature check.
+For optional Candle backend tests, compile the `candle`-only test targets
+without file decoding; actual file-based parity probes require both features.
+Run the full default workspace checks as usual.
+
 ## Client SDKs
 
 ```sh

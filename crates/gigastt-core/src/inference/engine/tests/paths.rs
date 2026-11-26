@@ -85,6 +85,7 @@ fn test_engine_config_getters_and_builders() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_transcribe_bytes_and_file_wrappers() {
     let (engine, tmp) = test_support::rnnt_engine();
@@ -140,6 +141,7 @@ fn test_transcribe_bytes_and_file_wrappers() {
     assert!((file_overrides.duration_s - from_bytes.duration_s).abs() < 1e-6);
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_transcribe_channels_empty_and_one_channel() {
     let (engine, _tmp) = test_support::rnnt_engine();
@@ -214,6 +216,7 @@ fn test_transcribe_request_abort_flag() {
         .expect("not aborted");
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_stream_eligible_without_diarization_request() {
     let (engine, _tmp) = test_support::rnnt_engine();
@@ -272,6 +275,7 @@ fn test_channel_progress_accumulates_across_sample_buffers() {
     assert_eq!(observed.last(), Some(&800));
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_channel_progress_accumulates_across_file_streams() {
     use std::sync::Arc;

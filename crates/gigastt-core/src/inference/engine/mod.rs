@@ -14,7 +14,9 @@ use crate::transcript::{
 };
 
 use super::audio;
-use super::audio::{PcmWindow, PcmWindows, SliceWindows, WindowSpec};
+#[cfg(feature = "file-decode")]
+use super::audio::WindowSpec;
+use super::audio::{PcmWindow, PcmWindows, SliceWindows};
 use super::bias;
 use super::ctc;
 use super::decode;

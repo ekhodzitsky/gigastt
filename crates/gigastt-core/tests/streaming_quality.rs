@@ -9,6 +9,8 @@
 //! This test streams `golos_00.wav` through `Engine::process_chunk` in 100 ms chunks
 //! and asserts the committed streaming transcript is close to the batch transcript.
 
+#![cfg(feature = "file-decode")]
+
 use std::collections::HashSet;
 
 use gigastt_core::inference::Engine;

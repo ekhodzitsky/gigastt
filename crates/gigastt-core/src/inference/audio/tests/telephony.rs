@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_g726_wave_matches_independent_reference_and_streaming() {
     use super::super::pcm_source::{ChannelSelect, PcmSource};
@@ -53,6 +54,7 @@ fn test_g726_wave_matches_independent_reference_and_streaming() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_wave_ambiguous_0064_is_rejected_in_both_decode_paths() {
     use super::super::pcm_source::{ChannelSelect, PcmSource};
@@ -114,6 +116,7 @@ fn test_telephony_codec_validate_sample_rate() {
     assert!(TelephonyCodec::G722.validate_sample_rate(44100).is_err());
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_decode_telephony_raw_pcmu_roundtrip() {
@@ -153,6 +156,7 @@ fn test_decode_telephony_raw_pcmu_roundtrip() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_decode_telephony_raw_pcma_roundtrip() {
@@ -164,6 +168,7 @@ fn test_decode_telephony_raw_pcma_roundtrip() {
     assert!(decoded.iter().all(|s| s.is_finite()));
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_telephony_raw_g722_roundtrip() {
     // 1 s of 16 kHz tone natively; G.722 output stays at its native 16 kHz.
@@ -185,12 +190,14 @@ fn test_decode_telephony_raw_g722_roundtrip() {
     assert!(rmse < 0.05, "G.722 roundtrip best-lag RMSE {rmse}");
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_telephony_raw_empty_errors() {
     assert!(decode_telephony_raw(&[], TelephonyCodec::Pcmu, 8000).is_err());
     assert!(decode_telephony_raw(&[], TelephonyCodec::G722, 16000).is_err());
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_telephony_raw_invalid_rate_errors() {
     let payload = vec![0xFFu8; 160];
@@ -198,6 +205,7 @@ fn test_decode_telephony_raw_invalid_rate_errors() {
     assert!(decode_telephony_raw(&payload, TelephonyCodec::G722, 44100).is_err());
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_decode_audio_bytes_g711_alaw_wav() {
@@ -215,6 +223,7 @@ fn test_decode_audio_bytes_g711_alaw_wav() {
     assert!(decoded.iter().all(|s| s.is_finite()));
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_decode_audio_bytes_g711_mulaw_wav() {
@@ -232,6 +241,7 @@ fn test_decode_audio_bytes_g711_mulaw_wav() {
     assert!(decoded.iter().all(|s| s.is_finite()));
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_audio_bytes_g722_wav_fallback() {
     // G.722-in-WAV (tags 0x0064 / 0x0065 / 0x028F) is decoded by ryf
@@ -255,6 +265,7 @@ fn test_decode_audio_bytes_g722_wav_fallback() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_wave_g722_malformed_inputs() {
     // Not RIFF at all → symphonia rejects it as an unsupported container.
@@ -285,6 +296,7 @@ fn test_wave_g722_malformed_inputs() {
     miri,
     ignore = "fixed-point G.722 compared with ffmpeg; numeric, runs natively"
 )]
+#[cfg(feature = "file-decode")]
 fn test_decode_audio_bytes_g722_wav_ffmpeg_fixture_matches_reference() {
     // Independent-reference verification: `g722_tone.wav` was ENCODED by
     // ffmpeg (libavcodec G.722, tag 0x028F) and `g722_tone_ffmpeg.pcm` is
@@ -322,6 +334,7 @@ fn test_decode_audio_bytes_g722_wav_ffmpeg_fixture_matches_reference() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_encode_wav_pcm16_roundtrip() {
     let n = if cfg!(miri) { 2_000 } else { 16_000 };
@@ -334,6 +347,7 @@ fn test_encode_wav_pcm16_roundtrip() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_encode_wav_pcm16_clamps_and_sanitizes() {
     let samples = [2.0f32, -2.0, f32::NAN, 0.5];
@@ -345,6 +359,7 @@ fn test_encode_wav_pcm16_clamps_and_sanitizes() {
     assert!((decoded[3] - 0.5).abs() < 1e-3);
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_in_place_pcm16_precision_matches_wav_for_every_code_and_edges() {
     let mut samples: Vec<f32> = (i16::MIN..=i16::MAX)
@@ -367,6 +382,7 @@ fn test_in_place_pcm16_precision_matches_wav_for_every_code_and_edges() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_raw_budget_uses_audio_rate_and_exact_sample_boundaries() {
@@ -430,6 +446,7 @@ fn test_raw_budget_uses_audio_rate_and_exact_sample_boundaries() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_raw_budget_rejects_before_codec_and_preserves_disabled_limit_semantics() {
     use std::sync::atomic::{AtomicUsize, Ordering};
@@ -471,6 +488,7 @@ fn test_raw_budget_rejects_before_codec_and_preserves_disabled_limit_semantics()
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_raw_decode_cancels_before_codec_and_between_resampling_stages() {
@@ -505,6 +523,7 @@ fn test_raw_decode_cancels_before_codec_and_between_resampling_stages() {
     ));
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_fixture_mulaw_encoder_preserves_independent_codepoints() {
     // FFmpeg decoded every mu-law byte (0..=255) into this independent PCM

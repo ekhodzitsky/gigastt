@@ -1,10 +1,12 @@
 use super::*;
+#[cfg(feature = "file-decode")]
 use bytes::Bytes;
 
 // --- streaming resample equivalence (whole-buffer reference) ---
 
 /// PCM16 samples of a committed 16 kHz mono WAV fixture, used as a real-signal
 /// input for the streaming-resample equivalence tests.
+#[cfg(feature = "file-decode")]
 fn fixture_tone_pcm() -> Vec<i16> {
     let wav = include_bytes!("../../../../tests/fixtures/telephony/tone_src.wav");
     let data = crate::inference::audio::telephony::find_riff_chunk(wav, b"data")
@@ -18,6 +20,7 @@ fn fixture_tone_pcm() -> Vec<i16> {
 
 /// Linear sine sweep, PCM16. Sweeping across the whole band is the adversarial
 /// case for a resampler seam: any FIR-history reset shows up as a spike.
+#[cfg(feature = "file-decode")]
 fn sweep_pcm(rate: u32, seconds: f32) -> Vec<i16> {
     let n = (rate as f32 * seconds) as usize;
     (0..n)
@@ -35,6 +38,7 @@ fn sweep_pcm(rate: u32, seconds: f32) -> Vec<i16> {
 /// path can be scored against the truth instead of only against the other one.
 /// `freq` is chosen to complete a whole number of cycles per 16 kHz analysis
 /// window, which makes the phase estimate below leakage-free.
+#[cfg(feature = "file-decode")]
 fn tone_pcm(rate: u32, seconds: f64, freq: f64) -> Vec<i16> {
     let n = (f64::from(rate) * seconds) as usize;
     (0..n)
@@ -49,6 +53,7 @@ fn tone_pcm(rate: u32, seconds: f64, freq: f64) -> Vec<i16> {
 /// `freq` from the phase of the first window. A resampler whose fractional read
 /// position accumulates error stretches time slightly, which shows up here as a
 /// phase that walks away from where it started.
+#[cfg(feature = "file-decode")]
 fn max_phase_drift_16k(samples: &[f32], freq: f64) -> f64 {
     const WINDOW: usize = 16_000;
     let phase_of = |start: usize| {
@@ -73,6 +78,7 @@ fn max_phase_drift_16k(samples: &[f32], freq: f64) -> f64 {
 }
 
 /// Signal-to-error ratio, in dB, of `candidate` measured against `reference`.
+#[cfg(feature = "file-decode")]
 fn signal_to_error_db(reference: &[f32], candidate: &[f32]) -> f64 {
     let mut err = 0.0f64;
     let mut sig = 0.0f64;
@@ -90,6 +96,7 @@ fn signal_to_error_db(reference: &[f32], candidate: &[f32]) -> f64 {
 /// Assert the streaming path agrees with a whole-buffer `resample()` of the
 /// same decoded signal: same length within one sample, max per-sample delta
 /// below 1e-4.
+#[cfg(feature = "file-decode")]
 fn assert_matches_whole_buffer(streamed: &[f32], reference: &[f32], what: &str) {
     let len_diff = streamed.len().abs_diff(reference.len());
     assert!(
@@ -119,6 +126,7 @@ fn assert_matches_whole_buffer(streamed: &[f32], reference: &[f32], what: &str) 
 /// the result is exactly what the decoder produced) and once with a `rate`
 /// header (the streaming resample path) — must agree with running the
 /// passthrough result through the whole-buffer `resample()`.
+#[cfg(feature = "file-decode")]
 fn check_mono_equivalence(pcm: &[i16], rate: u32, what: &str) {
     let at_source = decode_audio_bytes(&make_wav_bytes(pcm, 16000)).unwrap();
     let reference = resample(&at_source, SampleRate(rate), SampleRate(16000)).unwrap();
@@ -126,6 +134,7 @@ fn check_mono_equivalence(pcm: &[i16], rate: u32, what: &str) {
     assert_matches_whole_buffer(&streamed, &reference, what);
 }
 
+#[cfg(feature = "file-decode")]
 fn check_stereo_equivalence(left: &[i16], right: &[i16], rate: u32, what: &str) {
     // Mono-mix path.
     let mixed_at_source = decode_audio_bytes(&make_stereo_wav_bytes(left, right, 16000)).unwrap();
@@ -147,6 +156,7 @@ fn check_stereo_equivalence(left: &[i16], right: &[i16], rate: u32, what: &str) 
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_streaming_decode_matches_whole_buffer_resample_48k() {
@@ -154,6 +164,7 @@ fn test_streaming_decode_matches_whole_buffer_resample_48k() {
     check_mono_equivalence(&pcm, 48_000, "48k sweep mono");
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_streaming_decode_matches_whole_buffer_resample_44k1() {
@@ -161,6 +172,7 @@ fn test_streaming_decode_matches_whole_buffer_resample_44k1() {
     check_mono_equivalence(&pcm, 44_100, "44.1k sweep mono");
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_streaming_decode_matches_whole_buffer_resample_stereo_48k() {
@@ -169,6 +181,7 @@ fn test_streaming_decode_matches_whole_buffer_resample_stereo_48k() {
     check_stereo_equivalence(&left, &right, 48_000, "48k sweep stereo");
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_streaming_decode_matches_whole_buffer_resample_stereo_44k1() {
@@ -208,6 +221,7 @@ fn test_streaming_decode_matches_whole_buffer_resample_stereo_44k1() {
 /// than a sweep; 300 s is the shortest that reaches the regime. That cost is
 /// also why it is `#[ignore]`d: PR CI runs `cargo test --workspace --lib` and
 /// stays fast, while the main-push lane runs this by name.
+#[cfg(feature = "file-decode")]
 #[test]
 #[ignore = "~50 s in debug; long-duration numeric gate, run on main push"]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
@@ -252,6 +266,7 @@ fn test_streaming_decode_long_44k1_input_holds_phase_better_than_whole_buffer() 
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_streaming_decode_matches_whole_buffer_resample_fixture() {
@@ -270,6 +285,7 @@ fn test_streaming_decode_matches_whole_buffer_resample_fixture() {
     check_mono_equivalence(&pcm, 44_100, "fixture 44.1k");
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_streaming_decode_16k_input_is_bit_identical() {
     // A 16 kHz source must never reach the resampler: every sample stays the
@@ -312,6 +328,7 @@ fn test_streaming_decode_16k_input_is_bit_identical() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_telephony_raw_streaming_matches_whole_buffer_resample() {
@@ -342,6 +359,7 @@ fn test_telephony_raw_streaming_matches_whole_buffer_resample() {
 /// The chunk sequence must be exactly `slice.chunks(n)` over the flat decode —
 /// same samples, same boundaries — because the streaming recognizer's state
 /// depends on the chunk cadence, so any drift here would change a transcript.
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_audio_chunks_match_flat_decode_chunked() {
     // 48k–120k samples of encode-plus-decode do not finish under Miri.
@@ -377,6 +395,7 @@ fn test_audio_chunks_match_flat_decode_chunked() {
 
 /// An operator length limit still trips, and as the typed `AudioTooLong` so the
 /// HTTP layer can answer 413 rather than a generic decode failure.
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_audio_chunks_honour_max_audio_secs() {
     // Five seconds natively. One second still exceeds the cap below, and it

@@ -10,6 +10,8 @@
 //! as decoding the whole clip (VAD must not eat speech), and (2) the remapped
 //! word timestamps stay on the original timeline (no compression artifacts).
 
+#![cfg(feature = "file-decode")]
+
 use std::collections::HashSet;
 use std::path::Path;
 

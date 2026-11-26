@@ -37,6 +37,8 @@
 //! ceiling) and tiled into one long buffer whose prefixes straddle that ceiling
 //! and the long-form window/stride boundaries.
 
+#![cfg(feature = "file-decode")]
+
 use gigastt_core::inference::Engine;
 use gigastt_core::inference::audio::{decode_audio_file, encode_wav_pcm16};
 use gigastt_core::inference::{TranscribeResult, WordInfo};
