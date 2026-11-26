@@ -31,8 +31,8 @@ This document describes the architecture, build process, and integration steps n
 ```
 
 1. **Kotlin layer** — thin bridge that loads `libgigastt_ffi.so` and calls the exported functions.
-2. **JNI glue** — generated headers from `javac -h` (or `cargo-jni`). The Kotlin signatures map directly to the C symbols in `crates/gigastt-ffi/src/lib.rs`.
-3. **Rust FFI layer** — `crates/gigastt-ffi/src/lib.rs` exposes:
+2. **JNI glue** — generated headers from `javac -h` (or `cargo-jni`). The Kotlin signatures map directly to the C symbols re-exported from `crates/gigastt-ffi/src/lib.rs`.
+3. **Rust FFI layer** — dedicated engine, file, stream, quantize, and boundary modules implement the API re-exported from `crates/gigastt-ffi/src/lib.rs`:
    - `gigastt_engine_new(model_dir)` → opaque engine handle
    - `gigastt_engine_new_with_pool_size(model_dir, pool_size)` → opaque engine handle
    - `gigastt_engine_new_with_threads(model_dir, pool_size, encoder_intra_threads)` → opaque engine handle with more encoder threads (see *Encoder threads* below)
