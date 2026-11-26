@@ -64,15 +64,18 @@ class PilotTests(unittest.TestCase):
             source.parent.mkdir()
             source.write_text(json.dumps(provenance))
             out = root / 'pilot'
-            with patch.object(pilot, 'measure', side_effect=lambda binary, *args: {
-                'mean_ns': 100, 'binary_sha256': binary['sha256']
-            }) as measure:
+            with patch.object(pilot, 'workload_identity', return_value={'identical': True}), \
+                 patch.object(pilot, 'measure', side_effect=lambda binary, *args: {
+                     'mean_ns': 100, 'binary_sha256': binary['sha256']
+                 }) as measure:
                 pilot.run(source, out, root)
-            self.assertEqual(measure.call_count, 4 * 7 * 2 * 2)
+            self.assertEqual(measure.call_count, 7 * 7 * 2 * 2)
             report = json.loads((out / 'report.json').read_text())
             self.assertTrue(report['complete'])
+            self.assertTrue(report['workload_identity']['identical'])
             for case in report['cases'].values():
                 self.assertEqual(case['outcome'], 'within_limit')
+                self.assertEqual(case['synthetic_10pct_slowdown'], 'regression')
                 for i, block in enumerate(case['measurements']):
                     self.assertEqual(block['index'], i // 2)
                     self.assertEqual(block['order'], ['a', 'b'] if i // 2 % 2 == 0 else ['b', 'a'])
@@ -82,6 +85,24 @@ class PilotTests(unittest.TestCase):
             Path(provenance['base']['executables'][0]['path']).write_text('changed')
             with self.assertRaisesRegex(ValueError, 'hash mismatch'):
                 pilot.validated_binaries(provenance)
+
+    def test_cpu_tick_parser(self):
+        data = 'cpu 100 0 0 100\ncpu0 12 0 2 80\ncpu15 8 0 1 85\nintr 10 4 6\n'
+        self.assertEqual(pilot.parse_cpu_ticks(data),
+                         {'cpu0': [12, 0, 2, 80], 'cpu15': [8, 0, 1, 85]})
+
+    def test_workload_identity(self):
+        provenance = {side: {'source_revision': side[0] * 40} for side in ('base', 'candidate')}
+        rows = ['100644 blob hash\tcrates/gigastt-core/benches/' + target + '.rs'
+                for target in pilot.CASES]
+        rows.append('040000 tree hash\tcrates/gigastt-core/tests/fixtures/telephony')
+        original = '\n'.join(rows)
+        changed = '\n'.join(rows[:-1] + [rows[-1].replace('hash', 'other')])
+        with patch.object(pilot.subprocess, 'check_output', side_effect=[original, changed]):
+            self.assertFalse(pilot.workload_identity(provenance, Path('.'))['identical'])
+        with patch.object(pilot.subprocess, 'check_output', return_value=''):
+            with self.assertRaisesRegex(ValueError, 'incomplete'):
+                pilot.workload_identity(provenance, Path('.'))
 
     def test_cannot_contaminate_gate_directory(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -127,14 +127,34 @@ experiment, not an alternative way to pass a gate. A failure in a required
 comparison remains a failure even when the experimental results look favorable.
 
 The `criterion-pilot` artifact retains seven interleaved A/A (same executable)
-and A/B pairs for two tokenizer and two audio decoding workloads, alternating
-arm order. Each observation is a fresh process with a one-second warmup,
+and A/B pairs for two tokenizer, three audio decoding and two resampling
+workloads, alternating arm order. Each observation is a fresh process with a one-second warmup,
 one-second measurement window and ten raw samples. The paired ratio range is
 a conservative nominal median interval assuming independent pairs; independence
 on a hosted runner is not established. An unstable control or an interval
 crossing the 5% limit is not evidence of regression or equivalence. Workload
 identities are embedded in the recorded executables; do not use this pilot to
 qualify changed benchmark definitions or fixtures without comparing those inputs.
+
+For controlled-host qualification, predeclare the same seven cases and fixed
+seven pairs per mode before measuring. Reserve one physical core (including
+its SMT siblings), stop unrelated builds and benchmarks, use a fixed frequency
+policy, and run the entire experiment with the same logical CPU affinity for
+all processes. Use two independent sessions with both revisions pointing to
+the same verified executables and retain both reports; neither
+rerunning until stable nor dropping outliers qualifies. Record the host CPU,
+frequency policy, reservation, affinity, and immutable benchmark source and
+fixture identities. The report records committed workload trees (not uncommitted
+source modifications), the process affinity and Linux per-CPU
+counters before and after each measurement, but these alone cannot establish
+exclusive use. An ordinary shared runner is not a controlled host.
+
+Both sessions must classify every same-binary case `within_limit` and detect a
+synthetic uniform 10% slowdown applied to the measured A/A ratios. This tests
+sensitivity to a known shift, not the additional variance of a genuinely slower
+binary. Qualification of a replacement decision procedure also requires a real,
+independently verified slower workload; do not substitute synthetic arithmetic
+for that evidence. Any unstable case means the experiment remains exploratory.
 
 The `objc-cached-load-pilot` artifact separately records first and repeated
 cached model loads for both requested compute policies, as well as key and
