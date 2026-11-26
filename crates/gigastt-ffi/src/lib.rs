@@ -1,3 +1,6 @@
+#![deny(unsafe_code)]
+#![deny(unsafe_op_in_unsafe_fn)]
+
 //! C-ABI FFI layer for Android / JNI integration.
 //!
 //! Exposes a minimal surface so that Kotlin (or any other JNI consumer) can:
@@ -8,12 +11,15 @@
 //! 4. Free the returned C string (`gigastt_string_free`).
 //! 5. Tear down the engine (`gigastt_engine_free`).
 //!
-//! All functions are `unsafe` by nature (raw pointers cross the FFI boundary) but
-//! the implementation checks nulls and logs errors before returning sentinel values.
+//! C entry points are explicitly unsafe; null and handle checks do not validate
+//! foreign memory. Engine and stream handles are opaque table IDs, never
+//! dereferenced by callers. For pointer/lifetime contracts, see each exported
+//! function's Safety section and the generated C header.
 
 use std::ffi::{CStr, CString, c_char};
 use std::ptr;
 
+#[forbid(unsafe_code)]
 mod handles;
 pub use handles::{GigasttEngine, GigasttStream};
 use handles::{
@@ -55,10 +61,14 @@ use gigastt_core::inference::{Engine, audio};
 /// `gigastt_engine_new_with_pool_size` with `pool_size = 1` to reduce RAM.
 ///
 /// # Safety
-/// `model_dir` must be a valid, null-terminated UTF-8 string.
+/// `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+/// shorter than `isize::MAX` bytes including the terminator and not mutated
+/// for the duration of the call. Non-UTF-8 input is rejected.
 /// Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_engine_new(model_dir: *const c_char) -> *mut GigasttEngine {
+    // SAFETY: the forwarded constructor has the same model_dir contract.
     unsafe { gigastt_engine_new_with_pool_size(model_dir, 2) }
 }
 
@@ -71,8 +81,11 @@ pub unsafe extern "C" fn gigastt_engine_new(model_dir: *const c_char) -> *mut Gi
 /// - pool_size = 2: default desktop/server
 ///
 /// # Safety
-/// `model_dir` must be a valid, null-terminated UTF-8 string.
+/// `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+/// shorter than `isize::MAX` bytes including the terminator and not mutated
+/// for the duration of the call. Non-UTF-8 input is rejected.
 /// Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_engine_new_with_pool_size(
     model_dir: *const c_char,
@@ -85,6 +98,7 @@ pub unsafe extern "C" fn gigastt_engine_new_with_pool_size(
     }
 
     catch_ffi_panic("gigastt_engine_new_with_pool_size", || {
+        // SAFETY: non-null checked above; caller guarantees the readable C string.
         let dir_str = match unsafe { CStr::from_ptr(model_dir) }.to_str() {
             Ok(s) => s,
             Err(e) => {
@@ -124,8 +138,11 @@ pub unsafe extern "C" fn gigastt_engine_new_with_pool_size(
 /// target device, for example by trying 1, 2, 4, 6 and 8.
 ///
 /// # Safety
-/// `model_dir` must be a valid, null-terminated UTF-8 string.
+/// `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+/// shorter than `isize::MAX` bytes including the terminator and not mutated
+/// for the duration of the call. Non-UTF-8 input is rejected.
 /// Returns a pointer to a `GigasttEngine` on success, or `NULL` on failure.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_engine_new_with_threads(
     model_dir: *const c_char,
@@ -139,6 +156,7 @@ pub unsafe extern "C" fn gigastt_engine_new_with_threads(
     }
 
     catch_ffi_panic("gigastt_engine_new_with_threads", || {
+        // SAFETY: non-null checked above; caller guarantees the readable C string.
         let dir_str = match unsafe { CStr::from_ptr(model_dir) }.to_str() {
             Ok(s) => s,
             Err(e) => {
@@ -173,14 +191,17 @@ pub unsafe extern "C" fn gigastt_engine_new_with_threads(
 /// Transcribe an audio file and return the recognized text as a newly allocated C string.
 ///
 /// # Safety
-/// - `engine` must be a non-null pointer returned by `gigastt_engine_new` and not yet freed.
-/// - `wav_path` must be a valid, null-terminated UTF-8 string.
+/// - `engine` must be a live opaque handle returned by an engine constructor.
+/// - `wav_path` must be NULL or a readable NUL-terminated string in one allocation,
+///   shorter than `isize::MAX` bytes including the terminator and not mutated
+///   for the duration of the call. Non-UTF-8 input is rejected.
 /// - A concurrent `gigastt_engine_free` during this call is safe: the table
 ///   holds an `Arc` for the duration of the call. A call after free returns
 ///   `NULL`.
 ///
 /// Returns a pointer to a NUL-terminated UTF-8 string on success, or `NULL` on failure.
 /// The caller **must** free the returned string with `gigastt_string_free`.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_transcribe_file(
     engine: *mut GigasttEngine,
@@ -197,6 +218,7 @@ pub unsafe extern "C" fn gigastt_transcribe_file(
         return ptr::null_mut();
     }
 
+    // SAFETY: non-null checked above; caller guarantees the readable C string.
     let path_str = match unsafe { CStr::from_ptr(wav_path) }.to_str() {
         Ok(s) => s,
         Err(e) => {
@@ -286,15 +308,18 @@ pub unsafe extern "C" fn gigastt_transcribe_file(
     }
 }
 
-/// Free a C string previously returned by `gigastt_transcribe_file` or the
-/// streaming functions.
+/// Free a C string previously returned by the transcription, streaming, or
+/// quantization functions.
 ///
 /// # Safety
-/// `s` must be a pointer returned by one of the transcription functions and not
-/// yet freed, or `NULL` (in which case this is a no-op).
+/// `s` must be the original pointer returned by the library and not yet freed,
+/// or `NULL` (a no-op). Do not free with another allocator, change the string's
+/// length, or access the allocation concurrently with or after this call.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_string_free(s: *mut c_char) {
     if !s.is_null() {
+        // SAFETY: caller transfers the original, uniquely owned CString pointer.
         let _ = unsafe { CString::from_raw(s) };
     }
 }
@@ -302,9 +327,10 @@ pub unsafe extern "C" fn gigastt_string_free(s: *mut c_char) {
 /// Free an inference engine previously created by `gigastt_engine_new`.
 ///
 /// # Safety
-/// `engine` must be a pointer returned by `gigastt_engine_new` and not yet freed,
+/// `engine` must be a live opaque handle returned by an engine constructor,
 /// or `NULL` (in which case this is a no-op). Concurrent free during an
 /// in-flight call is safe (the call's `Arc` keeps the engine alive).
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_engine_free(engine: *mut GigasttEngine) {
     let _dropped = take_engine(engine);
@@ -322,10 +348,13 @@ pub unsafe extern "C" fn gigastt_engine_free(engine: *mut GigasttEngine) {
 /// `force` is `false`, returns immediately.
 ///
 /// # Safety
-/// `model_dir` must be a valid, null-terminated UTF-8 string.
+/// `model_dir` must be NULL or a readable NUL-terminated string in one allocation,
+/// shorter than `isize::MAX` bytes including the terminator and not mutated
+/// for the duration of the call. Non-UTF-8 input is rejected.
 ///
 /// Returns a newly allocated C string on both success and error.
 /// The caller **must** free the returned string with `gigastt_string_free`.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_quantize_model(
     model_dir: *const c_char,
@@ -338,6 +367,7 @@ pub unsafe extern "C" fn gigastt_quantize_model(
     }
 
     catch_ffi_panic("gigastt_quantize_model", || {
+        // SAFETY: non-null checked above; caller guarantees the readable C string.
         let dir_str = match unsafe { CStr::from_ptr(model_dir) }.to_str() {
             Ok(s) => s,
             Err(e) => {
@@ -390,8 +420,9 @@ pub unsafe extern "C" fn gigastt_quantize_model(
 /// returned to the pool by `gigastt_stream_free`.
 ///
 /// # Safety
-/// `engine` must be a valid pointer returned by `gigastt_engine_new`.
+/// `engine` must be a live opaque handle returned by an engine constructor.
 /// Returns a pointer to a `GigasttStream` on success, or `NULL` on failure.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_stream_new(engine: *mut GigasttEngine) -> *mut GigasttStream {
     let Some(slot) = get_engine(engine) else {
@@ -424,12 +455,16 @@ pub unsafe extern "C" fn gigastt_stream_new(engine: *mut GigasttEngine) -> *mut 
 /// Process a chunk of PCM16 audio and return any partial/final segments.
 ///
 /// # Safety
-/// - `engine` and `stream` must be valid pointers.
-/// - `pcm16_bytes` must point to at least `len` valid bytes (little-endian mono PCM16).
+/// - `stream` must be a live opaque handle returned by `gigastt_stream_new`.
+///   The engine parameter is retained for ABI compatibility and is not dereferenced.
+/// - `pcm16_bytes` must be NULL or point to `len` initialized, readable bytes
+///   in one allocation (little-endian mono PCM16), with `len <= isize::MAX`.
+///   The bytes must not be mutated during the call.
 /// - Concurrent free during this call is safe. A call after free returns `NULL`.
 ///
 /// Returns a newly allocated JSON array string on success, or `NULL` on failure.
 /// The caller **must** free the returned string with `gigastt_string_free`.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_stream_process_chunk(
     engine: *mut GigasttEngine,
@@ -452,6 +487,8 @@ pub unsafe extern "C" fn gigastt_stream_process_chunk(
     let stream_ref = &mut *stream_guard;
 
     // Convert PCM16 LE bytes → f32 samples.
+    // SAFETY: non-null checked above; caller guarantees the readable buffer,
+    // allocation bounds and shared access for the duration of this call.
     let bytes = unsafe { std::slice::from_raw_parts(pcm16_bytes, len) };
     let pcm16: Vec<i16> = bytes
         .as_chunks::<2>()
@@ -515,6 +552,7 @@ pub unsafe extern "C" fn gigastt_stream_process_chunk(
 /// Returns a newly allocated JSON array string (possibly `[]`) on success,
 /// or `NULL` on failure. The caller **must** free the returned string with
 /// `gigastt_string_free`.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_stream_flush(
     engine: *mut GigasttEngine,
@@ -558,10 +596,12 @@ pub unsafe extern "C" fn gigastt_stream_flush(
 /// `stream` must be a pointer returned by `gigastt_stream_new` and not yet freed,
 /// or `NULL` (in which case this is a no-op). Concurrent free during an
 /// in-flight call is safe.
+#[allow(unsafe_code)] // Exported C ABI boundary.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn gigastt_stream_free(stream: *mut GigasttStream) {
     let _dropped = take_stream(stream);
 }
 
 #[cfg(test)]
+#[allow(unsafe_code)] // Calls the unsafe C ABI with test-owned data.
 mod tests;

@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! Dynamic INT8 (QOperator) quantization for ONNX encoder models.
 //!
 //! Packaging-only conversion exposed as the `gigastt quantize` subcommand.
