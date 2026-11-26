@@ -187,7 +187,7 @@ fn pcm16_sample(sample: f32) -> i16 {
 /// Locate a RIFF chunk payload by 4-byte id, tolerating a truncated final
 /// chunk (clamped to the buffer end so decoders see the bytes that actually
 /// arrived). Test helper for fixtures that are not WAVE-decoded end-to-end.
-#[cfg(test)]
+#[cfg(all(test, feature = "file-decode"))]
 pub(super) fn find_riff_chunk<'a>(data: &'a [u8], want: &[u8; 4]) -> Option<&'a [u8]> {
     if data.len() < 12 {
         return None;

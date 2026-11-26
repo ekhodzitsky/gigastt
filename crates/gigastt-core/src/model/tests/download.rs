@@ -55,6 +55,7 @@ fn test_partial_path_appends_suffix() {
 
 /// On the success path, `.partial` disappears and the final path
 /// appears in a single atomic step.
+#[cfg(feature = "net")]
 #[test]
 fn test_download_writes_partial_then_renames() {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -110,6 +111,7 @@ fn test_download_crash_before_rename_leaves_no_final_file() {
 
 /// SHA mismatch removes the partial and leaves the final path
 /// empty, so a retry starts from a clean slate.
+#[cfg(feature = "net")]
 #[test]
 fn test_download_rejects_sha256_mismatch() {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -134,6 +136,7 @@ fn test_download_rejects_sha256_mismatch() {
 
 /// Success path with no checksum available still renames
 /// atomically (partial gone, final present, bytes preserved).
+#[cfg(feature = "net")]
 #[test]
 fn test_download_atomic_on_success_without_checksum() {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -151,6 +154,7 @@ fn test_download_atomic_on_success_without_checksum() {
 }
 
 /// sha256_file matches the in-memory hash of the same bytes.
+#[cfg(feature = "net")]
 #[test]
 fn test_sha256_file_matches_in_memory_hash() {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -185,6 +189,7 @@ fn test_speaker_model_sha256_shape() {
 /// Mismatching bytes against `SPEAKER_MODEL_SHA256` must delete
 /// the partial and refuse to promote it — exercises the full
 /// speaker-model finalize contract without touching the network.
+#[cfg(feature = "net")]
 #[cfg(feature = "diarization")]
 #[test]
 fn test_speaker_model_rejects_sha256_mismatch() {
@@ -219,6 +224,7 @@ fn test_speaker_model_rejects_sha256_mismatch() {
 /// finalize path promotes them atomically. Network-free: we forge a
 /// "matching" partial by precomputing the hash of an arbitrary payload
 /// and passing it as the expected value.
+#[cfg(feature = "net")]
 #[cfg(feature = "diarization")]
 #[test]
 fn test_speaker_model_partial_promoted_on_match() {
@@ -237,6 +243,7 @@ fn test_speaker_model_partial_promoted_on_match() {
     assert_eq!(std::fs::read(&final_path).unwrap(), payload);
 }
 
+#[cfg(feature = "net")]
 #[test]
 fn test_partial_path_unique_contains_pid_and_timestamp() {
     let p = partial_path_unique(Path::new("/tmp/final.onnx"));
@@ -245,6 +252,7 @@ fn test_partial_path_unique_contains_pid_and_timestamp() {
     assert!(s.contains(&std::process::id().to_string()));
 }
 
+#[cfg(feature = "net")]
 #[cfg(unix)]
 #[test]
 fn test_acquire_download_lock_creates_lock_file() {
@@ -261,6 +269,7 @@ fn test_acquire_download_lock_creates_lock_file() {
     other.try_lock().expect("dropping first file releases lock");
 }
 
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_stream_to_partial_then_finalize_success() {
@@ -288,6 +297,7 @@ async fn test_stream_to_partial_then_finalize_success() {
     assert_eq!(std::fs::read(&final_path).unwrap(), payload);
 }
 
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_stream_to_partial_then_finalize_http_error() {
@@ -309,6 +319,7 @@ async fn test_stream_to_partial_then_finalize_http_error() {
     assert!(msg.contains("404"), "error should mention 404: {msg}");
 }
 
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_stream_to_partial_then_finalize_checksum_mismatch() {
@@ -337,6 +348,7 @@ async fn test_stream_to_partial_then_finalize_checksum_mismatch() {
 
 /// The RAII guard removes the staged partial on drop (early return) but
 /// leaves it alone once disarmed (successful rename).
+#[cfg(feature = "net")]
 #[test]
 fn test_partial_file_guard_drop_removes_staged_file() {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -353,6 +365,7 @@ fn test_partial_file_guard_drop_removes_staged_file() {
 
 /// A connection cut mid-stream leaves no orphan `.partial` behind: the
 /// guard cleans up the staged bytes so a retry starts clean.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_stream_to_partial_then_finalize_stream_error_removes_partial() {
@@ -406,6 +419,7 @@ async fn test_stream_to_partial_then_finalize_stream_error_removes_partial() {
 /// End-to-end NDJSON contract on a local HTTP stub: the download of one
 /// file emits a 100% `download` event followed by a `verify` event, and
 /// every line round-trips through a JSON parser (true NDJSON).
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_stream_to_partial_then_finalize_json_event_sequence() {
@@ -461,6 +475,7 @@ async fn test_stream_to_partial_then_finalize_json_event_sequence() {
 }
 
 /// No checksum pinned → no `verify` event (verification did not happen).
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_stream_to_partial_then_finalize_json_no_verify_without_checksum() {
@@ -500,6 +515,7 @@ async fn test_stream_to_partial_then_finalize_json_no_verify_without_checksum() 
     );
 }
 
+#[cfg(feature = "net")]
 #[test]
 fn test_punct_files_checksums_are_pinned() {
     // Three files, each with a 64-char lowercase hex digest — no truncation
@@ -521,6 +537,7 @@ fn test_punct_files_checksums_are_pinned() {
 
 /// `ensure_punct_model` short-circuits (no network, no `.partial`) when all
 /// three files are already present.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_punct_model_present_no_download() {
@@ -547,6 +564,7 @@ async fn test_ensure_punct_model_present_no_download() {
 
 /// Verify that `ensure_model(None, dir)` with a complete E2eRnnt **INT8**
 /// install does NOT create any `.partial` files (no download triggered).
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_none_respects_existing_e2e_install() {
@@ -615,6 +633,7 @@ fn test_fp32_only_e2e_is_not_usable() {
 /// The legacy public `ensure_model(dir)` wrapper delegates to
 /// `ensure_model_variant(None, dir)`: with a complete INT8 install already
 /// on disk it must succeed without touching the network (no `.partial` files).
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_wrapper_uses_existing_install() {
@@ -643,6 +662,7 @@ async fn test_ensure_model_wrapper_uses_existing_install() {
 
 /// `ensure_model_variant(Some(Rnnt), dir)` against a matching INT8 install
 /// is the `VariantAction::Use` branch: returns Rnnt with no download.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_explicit_match_uses_existing() {
@@ -667,6 +687,7 @@ async fn test_ensure_model_variant_explicit_match_uses_existing() {
 
 /// `ensure_vad_model` short-circuits (no network, no `.partial`) when the
 /// Silero ONNX file is already present in the VAD directory.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_vad_model_present_no_download() {
@@ -709,6 +730,7 @@ fn test_default_punct_and_vad_dirs_are_model_siblings() {
 
 /// `VAD_MODEL_SHA256` is a 64-char lowercase hex digest (no truncation or
 /// placeholder slipping into a release).
+#[cfg(feature = "net")]
 #[test]
 fn test_vad_model_sha256_shape() {
     assert_eq!(
@@ -727,6 +749,7 @@ fn test_vad_model_sha256_shape() {
 /// `ensure_model_variant` tolerates a deep, freshly-created model directory:
 /// a complete Rnnt **INT8** set pre-staged under a nested path is detected
 /// and used as-is (early `Use(...)` return) without any network access.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_uses_complete_set_in_nested_path() {
@@ -870,6 +893,7 @@ fn test_ensure_filter_accepts_prequantized_only_dir() {
 
 /// `ensure_model_variant` short-circuits (no network, no `.partial`) when
 /// only the pre-quantized INT8 set is on disk.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_accepts_prequantized_only() {
@@ -898,6 +922,7 @@ async fn test_ensure_model_variant_accepts_prequantized_only() {
 
 /// `ensure_prequantized_model_variant` short-circuits (no network, no
 /// `.partial`) when the pre-quantized set is already present.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_prequantized_present_no_download() {
@@ -923,6 +948,7 @@ async fn test_ensure_prequantized_present_no_download() {
 }
 
 /// A custom pack is authoritative even when standard model files also exist.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_custom_manifest_controls_bootstrap() {
@@ -952,6 +978,7 @@ async fn test_ensure_model_variant_custom_manifest_controls_bootstrap() {
     );
 }
 
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_standalone_pack_validation() {
@@ -1003,6 +1030,7 @@ async fn test_ensure_model_variant_standalone_pack_validation() {
     );
 }
 
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_explicit_fp32_pack_without_download() {
@@ -1037,6 +1065,7 @@ async fn test_ensure_model_variant_explicit_fp32_pack_without_download() {
     assert!(!dir.join(ModelVariant::E2eRnnt.encoder_int8_file()).exists());
 }
 
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_fp32_requires_explicit_valid_precision() {
@@ -1064,6 +1093,7 @@ async fn test_ensure_model_variant_fp32_requires_explicit_valid_precision() {
     }
 }
 
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_ensure_model_variant_fp32_pack_errors_do_not_download_or_fallback() {

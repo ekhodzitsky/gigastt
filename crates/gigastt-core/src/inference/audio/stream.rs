@@ -121,7 +121,7 @@ impl WindowCursor {
         self.done
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "file-decode"))]
     pub(crate) fn next_start(&self) -> usize {
         self.next_start
     }

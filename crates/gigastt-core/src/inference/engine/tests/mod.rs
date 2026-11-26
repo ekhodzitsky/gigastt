@@ -7,6 +7,7 @@ pub(super) fn word(text: &str, start: f64, end: f64) -> WordInfo {
     WordInfo::new(text, start, end, 1.0, None)
 }
 
+#[cfg(feature = "file-decode")]
 mod author_oracle;
 mod backends;
 mod cancellation;
@@ -15,6 +16,7 @@ mod finalization;
 mod load;
 mod mock;
 mod paths;
+#[cfg(feature = "file-decode")]
 mod predictor_probe;
 mod stream;
 mod transcribe;

@@ -238,6 +238,7 @@ fn test_partition_spec_never_anchors() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_cursor_retains_one_stride_of_look_behind() {
     let spec = ort_spec();

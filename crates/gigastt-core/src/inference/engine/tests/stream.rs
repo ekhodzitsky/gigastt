@@ -3,6 +3,7 @@ use super::*;
 use crate::inference::diarization::SPEAKER_EMBEDDING_DIM;
 #[cfg(feature = "diarization")]
 use polyvoice::Embedder;
+#[cfg(feature = "diarization")]
 use std::path::Path;
 
 #[test]

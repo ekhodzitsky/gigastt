@@ -1,5 +1,6 @@
 use super::*;
 
+#[cfg(feature = "net")]
 #[test]
 fn test_download_progress_basic() {
     let sink = ProgressSink::human();
@@ -11,6 +12,7 @@ fn test_download_progress_basic() {
     progress.finish(&sink, "model.onnx");
 }
 
+#[cfg(feature = "net")]
 #[test]
 fn test_download_progress_zero_total() {
     let sink = ProgressSink::human();
@@ -127,6 +129,7 @@ fn test_progress_error_kind_exit_codes_keep_nonzero_contract() {
 
 /// Human mode must stay byte-for-byte identical to the legacy `\r`
 /// reporter: same format strings, same trailing-space padding.
+#[cfg(feature = "net")]
 #[test]
 fn test_download_progress_human_render_matches_legacy() {
     let mut progress = DownloadProgress::new(10 * 1_048_576);
@@ -152,6 +155,7 @@ fn test_download_progress_human_render_matches_legacy() {
 
 /// Json mode: first chunk emits immediately, rapid chunks within the 200 ms
 /// window are throttled, and 100% always emits exactly once.
+#[cfg(feature = "net")]
 #[test]
 fn test_download_progress_json_first_throttled_then_final() {
     let (sink, log) = ProgressSink::capturing();
@@ -191,6 +195,7 @@ fn test_download_progress_json_first_throttled_then_final() {
 
 /// Json mode: once the throttle window has elapsed, mid-file progress
 /// emits again (integrators get a steady cadence on long downloads).
+#[cfg(feature = "net")]
 #[test]
 fn test_download_progress_json_emits_after_throttle_window() {
     let (sink, log) = ProgressSink::capturing();
@@ -215,6 +220,7 @@ fn test_download_progress_json_emits_after_throttle_window() {
 
 /// Json mode with an unknown (chunked) total: throttled events carry
 /// `bytes_total: 0`, and `finish` closes the file with one final event.
+#[cfg(feature = "net")]
 #[test]
 fn test_download_progress_json_zero_total_emits_final_on_finish() {
     let (sink, log) = ProgressSink::capturing();
@@ -241,6 +247,7 @@ fn test_download_progress_json_zero_total_emits_final_on_finish() {
 
 /// Human mode never routes events to the sink (the `\r` line is the whole
 /// output), so an integrator never sees a stray JSON line.
+#[cfg(feature = "net")]
 #[test]
 fn test_download_progress_human_sink_emits_no_events() {
     let (sink, log) = ProgressSink::capturing();
@@ -254,18 +261,21 @@ fn test_download_progress_human_sink_emits_no_events() {
     assert!(log.lock().unwrap().is_empty());
 }
 
+#[cfg(feature = "net")]
 #[test]
 fn test_classify_download_error_checksum_message() {
     let err = anyhow::anyhow!("SHA-256 mismatch for encoder.onnx: expected aa, got bb");
     assert_eq!(classify_download_error(&err), ProgressErrorKind::Checksum);
 }
 
+#[cfg(feature = "net")]
 #[test]
 fn test_classify_download_error_http_status_is_network() {
     let err = anyhow::anyhow!("Download failed for model.onnx: HTTP 404");
     assert_eq!(classify_download_error(&err), ProgressErrorKind::Network);
 }
 
+#[cfg(feature = "net")]
 #[test]
 fn test_classify_download_error_io_root_cause_is_disk() {
     let io = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
@@ -273,6 +283,7 @@ fn test_classify_download_error_io_root_cause_is_disk() {
     assert_eq!(classify_download_error(&err), ProgressErrorKind::Disk);
 }
 
+#[cfg(feature = "net")]
 #[test]
 fn test_classify_download_error_other() {
     let err = anyhow::anyhow!("Failed to acquire download lock (another process is downloading)");
@@ -281,6 +292,7 @@ fn test_classify_download_error_other() {
 
 /// A real reqwest connection failure classifies as network via the typed
 /// root cause, not message matching.
+#[cfg(feature = "net")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_classify_download_error_reqwest_is_network() {

@@ -7,6 +7,7 @@ use super::download::fetch::*;
 use super::download::*;
 use super::progress::*;
 use super::variant::*;
+#[cfg(feature = "net")]
 use crate::sha256::{Sha256, hex_lower};
 use std::io::Write;
 use std::path::Path;
@@ -14,6 +15,7 @@ use std::path::Path;
 use tokio::io::AsyncWriteExt;
 
 /// Compute the SHA-256 of a byte slice as a lowercase hex digest.
+#[cfg(feature = "net")]
 pub(super) fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
@@ -30,6 +32,7 @@ pub(super) fn stage_partial(final_path: &Path, bytes: &[u8]) -> std::path::PathB
     partial
 }
 
+#[cfg(any(feature = "ane", feature = "net"))]
 mod ane;
 mod download;
 mod progress;

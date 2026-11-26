@@ -52,6 +52,7 @@
 
 use std::path::{Path, PathBuf};
 
+#[cfg(feature = "file-decode")]
 use gigastt_core::inference::audio::{decode_audio_file, probe_duration_file};
 
 /// Mirror of the crate-private `CHUNK_THRESHOLD_SAMPLES` in
@@ -70,6 +71,7 @@ const SAMPLE_RATE: usize = 16_000;
 /// (`buf.len() > CHUNK_THRESHOLD_SAMPLES`) and a probed clip
 /// (`seconds > THRESHOLD_SECONDS`) apply the same 30 s boundary. Pinned to 30.0
 /// by [`threshold_is_the_documented_thirty_seconds`].
+#[cfg(feature = "file-decode")]
 const THRESHOLD_SECONDS: f64 = CHUNK_THRESHOLD_SAMPLES as f64 / SAMPLE_RATE as f64;
 
 /// One clip to measure. The scan cares only about the resolved audio path; the
@@ -95,6 +97,7 @@ enum Corpus {
     },
 }
 
+#[cfg(feature = "file-decode")]
 fn manifest_dir() -> PathBuf {
     match std::env::var("GIGASTT_SCAN_MANIFEST_DIR") {
         Ok(d) => PathBuf::from(d),
@@ -102,6 +105,7 @@ fn manifest_dir() -> PathBuf {
     }
 }
 
+#[cfg(feature = "file-decode")]
 fn env_filter() -> Option<Vec<String>> {
     std::env::var("GIGASTT_SCAN_MANIFESTS")
         .ok()
@@ -118,6 +122,7 @@ fn expand_tilde(p: &str) -> PathBuf {
     }
 }
 
+#[cfg(feature = "file-decode")]
 fn load_corpora() -> Vec<Corpus> {
     load_corpora_in(&manifest_dir(), env_filter())
 }
@@ -217,11 +222,13 @@ fn read_corpus(path: &Path, name: String) -> Corpus {
 /// Decode one clip to the engine's 16 kHz mono buffer. A decode failure is an
 /// error to report, never a silent zero. Used for the fallback path and for the
 /// boundary spot-check.
+#[cfg(feature = "file-decode")]
 fn decode(path: &Path) -> Result<Vec<f32>, String> {
     decode_audio_file(&path.to_string_lossy()).map_err(|e| e.to_string())
 }
 
 /// How a clip's duration was established.
+#[cfg(feature = "file-decode")]
 enum Measure {
     /// Answered from the container header. Carries the declared duration in
     /// seconds (frames / sample-rate — independent of any resampling).
@@ -240,6 +247,7 @@ enum Measure {
 /// container cannot be parsed at all; `decode_audio_file` shares that same
 /// container probe and would fail identically, so there is nothing to gain by
 /// paying to reproduce the error — report it as unmeasurable instead.
+#[cfg(feature = "file-decode")]
 fn measure(path: &Path) -> Measure {
     let p = path.to_string_lossy();
     match probe_duration_file(&p) {
@@ -259,6 +267,7 @@ fn measure(path: &Path) -> Measure {
 /// How many boundary-nearest probed clips to decode for real and cross-check
 /// against the header. A handful, so the scan stays fast; a verdict can only flip
 /// right at the threshold, so the nearest clips are the only ones worth checking.
+#[cfg(feature = "file-decode")]
 const SPOTCHECK_CLIPS: usize = 24;
 
 /// Scan every shipped manifest and report how many clips reach the chunked
@@ -269,6 +278,7 @@ const SPOTCHECK_CLIPS: usize = 24;
 /// or whose JSON will not parse prints `UNREADABLE` with the reason — it is never
 /// a zero row. The final assertion fails if the whole scan measured nothing, so it
 /// cannot pass green on a host that has no corpora.
+#[cfg(feature = "file-decode")]
 #[test]
 #[ignore = "requires the benchmark corpora under ~/.gigastt/benchmarks"]
 fn corpus_over_threshold_scan() {
@@ -403,6 +413,7 @@ fn corpus_over_threshold_scan() {
 /// delta and any clip whose over/under verdict flips between the two paths — the
 /// only place header rounding can change the headline count. `probed_clips` is
 /// sorted in place by distance to the boundary.
+#[cfg(feature = "file-decode")]
 fn spot_check_boundary(probed_clips: &mut [(String, PathBuf, f64)]) {
     probed_clips.sort_by(|a, b| {
         (a.2 - THRESHOLD_SECONDS)
@@ -538,6 +549,19 @@ mod self_tests {
         write_manifest(&tmp, "broken", "{ this is not json");
         match single(load_corpora_in(tmp.path(), None)) {
             Corpus::Unreadable { why, .. } => assert!(why.contains("parse failed"), "{why}"),
+            Corpus::Ready { .. } => panic!("unparseable manifest must be Unreadable"),
+        }
+    }
+
+    #[test]
+    fn unreadable_manifest_preserves_name() {
+        let tmp = TempDir::new().expect("temp dir");
+        write_manifest(&tmp, "named-broken", "{ this is not json");
+        match single(load_corpora_in(tmp.path(), None)) {
+            Corpus::Unreadable { name, why } => {
+                assert_eq!(name, "named-broken");
+                assert!(why.contains("parse failed"), "{why}");
+            }
             Corpus::Ready { .. } => panic!("unparseable manifest must be Unreadable"),
         }
     }

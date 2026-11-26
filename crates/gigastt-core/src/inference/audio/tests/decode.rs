@@ -2,6 +2,7 @@ use super::*;
 use bytes::Bytes;
 use std::io::{Read, Seek, SeekFrom};
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_audio_bytes_empty() {
     // Empty slice must return an error, not panic
@@ -9,6 +10,7 @@ fn test_decode_audio_bytes_empty() {
     assert!(result.is_err(), "Expected error for empty input, got Ok");
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_audio_bytes_invalid_data() {
     // Random bytes that are not a valid audio file must return an error, not panic
@@ -20,6 +22,7 @@ fn test_decode_audio_bytes_invalid_data() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_audio_bytes_ape_overflow_crash_is_graceful() {
     // Regression: a crafted APEv2 tag header (APE tags can ride on MP3
@@ -50,6 +53,7 @@ fn test_decode_audio_bytes_ape_overflow_crash_is_graceful() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_audio_bytes_wav() {
     let silence: Vec<i16> = vec![0; 16000]; // 1 second at 16kHz
@@ -60,6 +64,7 @@ fn test_decode_audio_bytes_wav() {
     assert!((samples.len() as i64 - 16000).unsigned_abs() <= 100);
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_probe_duration_wav_reports_declared_seconds() {
     // A WAV header declares its frame count, so the probe returns the duration
@@ -72,6 +77,7 @@ fn test_probe_duration_wav_reports_declared_seconds() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_probe_duration_agrees_with_decoded_length() {
     // The probe's declared duration must match the decoded sample count: the
@@ -88,6 +94,7 @@ fn test_probe_duration_agrees_with_decoded_length() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_probe_duration_non_container_does_not_claim_duration() {
     // Bytes that are not a supported container must not panic and must never
@@ -168,6 +175,7 @@ fn bytes_media_source_partial_read_progress() {
     assert_eq!(out, data.as_ref());
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn bytes_media_source_byte_len_matches() {
     use symphonia::core::io::MediaSource as _;
@@ -179,6 +187,7 @@ fn bytes_media_source_byte_len_matches() {
 
 // --- decode_audio_bytes_shared tests ---
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn decode_audio_shim_matches_shared() {
     // Equivalence oracle: the &[u8] shim and the Bytes entry point must
@@ -194,6 +203,7 @@ fn decode_audio_shim_matches_shared() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_stereo_mixes_to_mono() {
     // Left = +16384 (0.5), Right = -16384 (-0.5) → mono average ≈ 0.0.
@@ -210,6 +220,7 @@ fn test_decode_stereo_mixes_to_mono() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_stereo_constant_preserves_value() {
     // Both channels carry the same value → mono mix preserves it.
@@ -222,6 +233,7 @@ fn test_decode_stereo_constant_preserves_value() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_decode_wav_resamples_to_16k() {
@@ -239,6 +251,7 @@ fn test_decode_wav_resamples_to_16k() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 #[cfg_attr(miri, ignore = "rubato sinc resampler is too slow under Miri")]
 fn test_decode_audio_bytes_shared_channels_8khz() {
@@ -299,6 +312,7 @@ fn test_mix_channels_to_mono_empty_input() {
     assert!(mono.is_empty());
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_audio_bytes_shared_channels_mono_input() {
     // A mono WAV fed through the split decoder must return exactly one
@@ -317,6 +331,7 @@ fn test_decode_audio_bytes_shared_channels_mono_input() {
     }
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_decode_rejects_adversarial_sample_rate() {
     // A crafted header with an out-of-range sample rate must be rejected

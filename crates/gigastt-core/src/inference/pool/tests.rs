@@ -140,6 +140,7 @@ fn test_pool_try_checkout_n_empty_does_not_block() {
 // is just an alias, so any property proven here also holds for the real
 // pool.
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_guard_returns_triplet_on_normal_drop() {
@@ -153,6 +154,7 @@ async fn test_pool_guard_returns_triplet_on_normal_drop() {
     assert_eq!(pool.available(), 3);
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_guard_returns_triplet_on_panic_unwind() {
@@ -174,6 +176,7 @@ async fn test_pool_guard_returns_triplet_on_panic_unwind() {
     assert_eq!(pool.available(), 1);
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_close_wakes_waiters_with_closed() {
@@ -195,6 +198,7 @@ async fn test_pool_close_wakes_waiters_with_closed() {
     assert!(matches!(res, Err(PoolError::Closed)));
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_fifo_under_contention() {
@@ -232,6 +236,7 @@ async fn test_pool_fifo_under_contention() {
     assert_eq!(log, vec![0, 1, 2], "waiters must wake in FIFO order");
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_into_owned_for_spawn_blocking() {
@@ -255,6 +260,7 @@ async fn test_into_owned_for_spawn_blocking() {
     assert_eq!(result, "done");
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_owned_reservation_returns_on_spawn_blocking_panic() {
@@ -278,6 +284,7 @@ async fn test_owned_reservation_returns_on_spawn_blocking_panic() {
     );
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_owned_reservation_drop_returns_item() {
@@ -296,6 +303,7 @@ async fn test_owned_reservation_drop_returns_item() {
     assert_eq!(pool.available(), 1);
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_close_is_idempotent() {
@@ -306,6 +314,7 @@ async fn test_pool_close_is_idempotent() {
     pool.close();
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_waiters_count() {
@@ -325,6 +334,7 @@ async fn test_pool_waiters_count() {
     let _ = w2.await;
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_owned_reservation_round_trip_through_option() {
@@ -350,6 +360,7 @@ async fn test_owned_reservation_round_trip_through_option() {
     assert_eq!(pool.available(), 1);
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_slot_not_leaked_on_cancelled_checkout() {
@@ -381,6 +392,7 @@ async fn test_pool_slot_not_leaked_on_cancelled_checkout() {
     assert_eq!(pool.waiters(), 0, "dead waiter must be removed");
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_slot_not_leaked_on_timeout_checkout() {
@@ -404,6 +416,7 @@ async fn test_pool_slot_not_leaked_on_timeout_checkout() {
     assert_eq!(pool.waiters(), 0, "dead waiter must be removed");
 }
 
+#[cfg(feature = "async-pool")]
 #[tokio::test]
 #[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
 async fn test_pool_multiple_dead_waiters_are_skipped() {

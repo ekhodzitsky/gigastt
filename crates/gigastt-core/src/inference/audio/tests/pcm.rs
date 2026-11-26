@@ -148,6 +148,7 @@ fn test_parse_pcm16_empty() {
     assert!(pending.is_none());
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_sample_budget_pure() {
     // No caller limit means unbounded — the streaming path is O(one window),
@@ -167,6 +168,7 @@ fn test_sample_budget_pure() {
     );
 }
 
+#[cfg(feature = "file-decode")]
 #[test]
 fn test_whole_buffer_limit_clamps_but_only_downward() {
     // The whole-buffer ceiling is the default when the operator sets nothing.

@@ -441,7 +441,7 @@ const ML_CTC_LARGE_CHECKSUMS: &[(&str, Option<&str>)] = &[
     ),
 ];
 
-#[cfg(feature = "diarization")]
+#[cfg(all(feature = "net", feature = "diarization"))]
 pub(super) const SPEAKER_HF_REPO: &str = "onnx-community/wespeaker-voxceleb-resnet34-LM";
 #[cfg(feature = "diarization")]
 pub const SPEAKER_MODEL_FILE: &str = "wespeaker_resnet34.onnx";
@@ -451,6 +451,6 @@ pub const SPEAKER_MODEL_FILE: &str = "wespeaker_resnet34.onnx";
 /// Verified against the canonical HuggingFace copy on 2026-04-20; if the
 /// upstream model is ever rotated, update this constant alongside the
 /// SPEAKER_MODEL_FILE bump.
-#[cfg(feature = "diarization")]
+#[cfg(all(feature = "diarization", any(feature = "net", test)))]
 pub(super) const SPEAKER_MODEL_SHA256: &str =
     "3955447b0499dc9e0a4541a895df08b03c69098eba4e56c02b5603e9f7f4fcbb";

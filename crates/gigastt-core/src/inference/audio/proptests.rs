@@ -1,3 +1,4 @@
+#[cfg(feature = "file-decode")]
 use super::tests::make_wav_bytes;
 use super::*;
 use proptest::prelude::*;
@@ -45,6 +46,7 @@ proptest! {
         prop_assert!(result.is_ok(), "resample failed: {:?}", result.err());
     }
 
+    #[cfg(feature = "file-decode")]
     #[test]
     fn proptest_decode_header_sample_rate_never_panics(rate in 0u32..=300_000u32) {
         // Decoding a WAV with an arbitrary header sample rate must never panic;

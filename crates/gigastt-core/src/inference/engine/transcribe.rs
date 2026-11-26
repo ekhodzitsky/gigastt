@@ -74,6 +74,7 @@ impl Engine {
         // Opt-in operator length limit (`--max-audio-secs`); `None` = unlimited.
         // The streaming path honors it verbatim; the whole-buffer decoders clamp
         // it down to their fixed safety ceiling.
+        #[cfg(feature = "file-decode")]
         let max_audio_secs = req.max_audio_secs;
 
         match req.source {
