@@ -82,6 +82,16 @@ without mutating process environment; the existing `GIGASTT_OFFLINE` setting
 continues to work. Legacy CLI environment tests retain a test-only exception;
 new tests should use subprocess isolation instead.
 
+The quantizer library, UniFFI Rust library and binding generator, and their
+local build scripts (where present) also forbid unsafe Rust. The Node binding
+uses `deny(unsafe_code)` rather than `forbid` because napi-rs emits native
+constructor registration; the Node build script forbids unsafe Rust.
+The C ABI crate denies unsafe Rust and unsafe operations in unsafe functions,
+with annotated exceptions at exported entry points and C ABI tests. Its opaque
+handle registry forbids unsafe Rust. The [C header](../crates/gigastt-ffi/include/gigastt.h)
+documents caller obligations for foreign buffers, strings and handles. These
+lints cover first-party Rust, not the safety of dependencies or foreign callers.
+
 ## Models
 
 The supported catalog, exact file sets, formatting policy and current bundle

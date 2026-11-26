@@ -1,3 +1,5 @@
+#![deny(unsafe_code)] // napi expands native constructor registration.
+
 //! napi-rs Node.js bindings for gigastt — idiomatic JS over the synchronous
 //! `gigastt-core` engine.
 //!

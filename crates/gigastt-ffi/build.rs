@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 fn main() {
     let crate_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
     let config = cbindgen::Config::from_file("cbindgen.toml").unwrap_or_default();

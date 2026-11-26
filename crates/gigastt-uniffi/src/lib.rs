@@ -1,3 +1,5 @@
+#![forbid(unsafe_code)]
+
 //! UniFFI bindings for gigastt — idiomatic Swift, Kotlin, and Python generated
 //! from one Rust source.
 //!
