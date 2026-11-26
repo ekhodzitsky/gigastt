@@ -220,7 +220,7 @@ async fn handle_ws_inner(
 ) -> Result<()> {
     let (mut sink, source) = socket.split();
     let abort = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let _abort_guard = super::file_transcribe::AbortOnDrop(abort.clone());
+    let _abort_guard = super::transcription_control::AbortOnDrop(abort.clone());
     let mut incoming = incoming::Incoming::new(source, abort.clone());
     let partial = Arc::new(gigastt_core::inference::TranscriptSnapshot::default());
     tracing::info!("Client connected: {peer}");

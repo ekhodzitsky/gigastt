@@ -273,7 +273,7 @@ impl JobExecution for RealJobExecutor {
             // file making steady progress never trips, while a genuinely stalled
             // run still fails with the deterministic `inference_timeout` marker.
             // A fired shutdown also flips `abort`, freeing the triplet mid-drain.
-            match super::super::file_transcribe::await_transcription_watchdog(
+            match super::super::transcription_control::await_transcription_watchdog(
                 handle,
                 &progress,
                 &abort,
@@ -282,10 +282,10 @@ impl JobExecution for RealJobExecutor {
             )
             .await
             {
-                super::super::file_transcribe::WatchdogOutcome::Joined(r) => r
+                super::super::transcription_control::WatchdogOutcome::Joined(r) => r
                     .map_err(|e| anyhow::anyhow!("spawn_blocking join error: {e}"))?
                     .map_err(anyhow::Error::from),
-                super::super::file_transcribe::WatchdogOutcome::TimedOut => {
+                super::super::transcription_control::WatchdogOutcome::TimedOut => {
                     Err(anyhow::anyhow!("inference_timeout"))
                 }
             }

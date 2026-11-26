@@ -322,7 +322,7 @@ pub(super) async fn run_file_transcription(
     // the guard and flipping `abort`; the detached blocking run then cancels at
     // its next decode step and returns the triplet. On the normal return path the
     // guard fires after the result is already in hand, so it is a harmless no-op.
-    let _abort_guard = super::super::file_transcribe::AbortOnDrop(abort.clone());
+    let _abort_guard = super::super::transcription_control::AbortOnDrop(abort.clone());
 
     let inference_start = std::time::Instant::now();
     let span = tracing::Span::current();
@@ -361,7 +361,7 @@ pub(super) async fn run_file_transcription(
     // releases its triplet after the current runtime call instead of staying wedged for the
     // whole file. `0` disables the watchdog (shutdown still cancels).
     let inference_timeout_secs = limits.inference_timeout_secs;
-    let outcome = super::super::file_transcribe::await_transcription_watchdog(
+    let outcome = super::super::transcription_control::await_transcription_watchdog(
         handle,
         &progress,
         &abort,
@@ -371,8 +371,8 @@ pub(super) async fn run_file_transcription(
     .await;
 
     let result = match outcome {
-        super::super::file_transcribe::WatchdogOutcome::Joined(r) => r,
-        super::super::file_transcribe::WatchdogOutcome::TimedOut => {
+        super::super::transcription_control::WatchdogOutcome::Joined(r) => r,
+        super::super::transcription_control::WatchdogOutcome::TimedOut => {
             if let Some(ref reg) = state.metrics_registry {
                 reg.counter_inc("gigastt_inference_timeouts_total", &[], 1);
             }

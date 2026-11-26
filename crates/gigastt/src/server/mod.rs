@@ -12,6 +12,7 @@ pub(crate) mod middleware;
 pub(crate) mod openai;
 pub mod rate_limit;
 mod router;
+mod transcription_control;
 mod upload;
 mod ws;
 
