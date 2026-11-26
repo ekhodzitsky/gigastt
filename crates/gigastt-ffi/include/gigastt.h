@@ -19,6 +19,17 @@ typedef struct GigasttEngine GigasttEngine;
 typedef struct GigasttStream GigasttStream;
 
 /**
+ * Free a C string previously returned by the transcription, streaming, or
+ * quantization functions.
+ *
+ * # Safety
+ * `s` must be the original pointer returned by the library and not yet freed,
+ * or `NULL` (a no-op). Do not free with another allocator, change the string's
+ * length, or access the allocation concurrently with or after this call.
+ */
+void gigastt_string_free(char *s);
+
+/**
  * Load the ONNX models from `model_dir` and create an inference engine.
  *
  * Uses the default pool size (2). For mobile devices, prefer
@@ -76,6 +87,16 @@ struct GigasttEngine *gigastt_engine_new_with_threads(const char *model_dir,
                                                       uintptr_t encoder_intra_threads);
 
 /**
+ * Free an inference engine previously created by `gigastt_engine_new`.
+ *
+ * # Safety
+ * `engine` must be a live opaque handle returned by an engine constructor,
+ * or `NULL` (in which case this is a no-op). Concurrent free during an
+ * in-flight call is safe (the call's `Arc` keeps the engine alive).
+ */
+void gigastt_engine_free(struct GigasttEngine *engine);
+
+/**
  * Transcribe an audio file and return the recognized text as a newly allocated C string.
  *
  * # Safety
@@ -91,27 +112,6 @@ struct GigasttEngine *gigastt_engine_new_with_threads(const char *model_dir,
  * The caller **must** free the returned string with `gigastt_string_free`.
  */
 char *gigastt_transcribe_file(struct GigasttEngine *engine, const char *wav_path);
-
-/**
- * Free a C string previously returned by the transcription, streaming, or
- * quantization functions.
- *
- * # Safety
- * `s` must be the original pointer returned by the library and not yet freed,
- * or `NULL` (a no-op). Do not free with another allocator, change the string's
- * length, or access the allocation concurrently with or after this call.
- */
-void gigastt_string_free(char *s);
-
-/**
- * Free an inference engine previously created by `gigastt_engine_new`.
- *
- * # Safety
- * `engine` must be a live opaque handle returned by an engine constructor,
- * or `NULL` (in which case this is a no-op). Concurrent free during an
- * in-flight call is safe (the call's `Arc` keeps the engine alive).
- */
-void gigastt_engine_free(struct GigasttEngine *engine);
 
 /**
  * Quantize the FP32 encoder model to INT8 in-place.
