@@ -18,6 +18,9 @@ use gigastt_core::inference::{
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
+mod v4;
+pub use v4::{V4Engine, V4Token, V4Transcript, v4_supported};
+
 // --- error mapping ---------------------------------------------------------
 // gigastt-core errors flatten to thrown JS Errors. The stable variant name is
 // the message prefix (e.g. "PoolExhausted: ...") so JS callers can branch on it;

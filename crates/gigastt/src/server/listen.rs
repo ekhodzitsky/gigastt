@@ -29,7 +29,7 @@ pub async fn run_with_config(
 /// oneshot when present, otherwise Ctrl-C / SIGTERM. Mirrors the signal handling
 /// in [`run_with_config_listener`] so a stuck first-run model download can still
 /// be interrupted before the engine is ready.
-async fn wait_for_shutdown(shutdown: Option<tokio::sync::oneshot::Receiver<()>>) {
+pub(super) async fn wait_for_shutdown(shutdown: Option<tokio::sync::oneshot::Receiver<()>>) {
     match shutdown {
         Some(rx) => {
             let _ = rx.await;

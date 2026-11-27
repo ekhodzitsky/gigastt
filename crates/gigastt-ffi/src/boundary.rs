@@ -30,7 +30,7 @@ where
 }
 
 /// Free a C string previously returned by the transcription, streaming, or
-/// quantization functions.
+/// quantization functions, including v4 JSON results and constructor errors.
 ///
 /// # Safety
 /// `s` must be the original pointer returned by the library and not yet freed,

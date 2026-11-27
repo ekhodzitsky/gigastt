@@ -451,3 +451,21 @@ fn test_versioned_graph_reverified_bytes_and_role() {
     fs::write(path, bytes).unwrap();
     assert!(qualified.read_graph_bytes(ArtifactRole::Encoder).is_err());
 }
+
+#[test]
+fn test_transcript_style_public_selection_is_explicit() {
+    use std::str::FromStr;
+    assert_eq!(
+        TranscriptStyle::from_str("raw").unwrap(),
+        TranscriptStyle::Raw
+    );
+    assert_eq!(
+        TranscriptStyle::from_str("e2e").unwrap(),
+        TranscriptStyle::E2e
+    );
+    assert_eq!(TranscriptStyle::Raw.as_str(), "raw");
+    assert_eq!(TranscriptStyle::E2e.as_str(), "e2e");
+    for unsupported in ["", "auto", "rnnt", "e2e_rnnt", "RAW", " raw"] {
+        assert!(TranscriptStyle::from_str(unsupported).is_err());
+    }
+}

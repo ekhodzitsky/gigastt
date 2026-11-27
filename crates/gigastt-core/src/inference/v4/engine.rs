@@ -13,6 +13,8 @@ use crate::runtime::{RuntimeSession, ort::v4::load_verified_cpu};
 use crate::transcript::{WordInfo, aggregate_confidence};
 
 mod decode;
+#[cfg(feature = "file-decode")]
+mod file;
 
 pub(super) fn inference_error(source: anyhow::Error) -> GigasttError {
     GigasttError::Inference {

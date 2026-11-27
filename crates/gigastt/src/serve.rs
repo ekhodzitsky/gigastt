@@ -396,6 +396,7 @@ pub(crate) use bind::{ensure_bind_allowed, ensure_metrics_bind_allowed};
 pub(crate) async fn run_serve(
     matches: &clap::ArgMatches,
     mut args: ServeArgs,
+    v4_selection: Option<crate::v4_cli::V4Selection>,
 ) -> anyhow::Result<()> {
     // Edge profile fills weak-host defaults only when the operator left
     // the corresponding flags at clap defaults (explicit flags always win).
@@ -465,6 +466,10 @@ pub(crate) async fn run_serve(
         args.config,
         args.batch_pool_size,
     );
+
+    if let Some(selection) = v4_selection {
+        return crate::v4_cli::serve(selection, args.model_dir, server_config).await;
+    }
 
     // Shared recipe: first-run boot and `POST /v1/admin/reload` both
     // build through `EngineRecipe::build_engine` so post-processors

@@ -24,6 +24,7 @@ default = []
 coreml = ["gigastt-core/coreml"]
 cuda = ["gigastt-core/cuda"]
 nnapi = ["gigastt-core/nnapi"]
+v4-mkl = ["gigastt-core/v4-mkl"]
 
 [dependencies]
 # Lean core: file decoding only — no HTTP download, no async runtime (the

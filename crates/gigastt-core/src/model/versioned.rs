@@ -53,10 +53,23 @@ pub enum TranscriptStyle {
 }
 
 impl TranscriptStyle {
-    const fn as_str(self) -> &'static str {
+    /// Stable explicit style name used by the public selection APIs.
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::Raw => "raw",
             Self::E2e => "e2e",
+        }
+    }
+}
+
+impl std::str::FromStr for TranscriptStyle {
+    type Err = &'static str;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        match value {
+            "raw" => Ok(Self::Raw),
+            "e2e" => Ok(Self::E2e),
+            _ => Err("v4 transcript style must be 'raw' or 'e2e'"),
         }
     }
 }

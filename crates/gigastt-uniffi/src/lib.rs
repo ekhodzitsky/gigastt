@@ -17,6 +17,9 @@ use gigastt_core::inference::{
 
 uniffi::setup_scaffolding!();
 
+mod v4;
+pub use v4::{V4BindingError, V4Engine, V4Token, V4Transcript, v4_supported};
+
 /// Errors surfaced across the binding boundary.
 ///
 /// Deliberately *not* named `GigasttError`: the core crate already exports a

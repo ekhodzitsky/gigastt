@@ -68,3 +68,75 @@ provide Cargo dependencies, toolchains and generators locally. GPU libraries
 and platform system libraries can still be required even with statically linked
 ONNX Runtime. Inspect the exact packaged target rather than assuming all slices
 have identical linking behavior.
+
+## Optional GigaAM v4 file engine
+
+GigaAM v4 is a separate **side-loaded FP32 CPU file-only** engine. Its optional
+`v4-mkl` Cargo feature is available only on Linux x86-64 GNU, with numerical
+qualification limited to the measured runtime and host. Build
+with that feature in the desired core or binding crate. The default v3 engine,
+model downloads and existing binding constructors/stream APIs are unchanged.
+Enabling v4 does not itself fetch or distribute its model or MKL libraries;
+provision the exact validated v4 model pack and trusted local MKL runtime as
+separate assets. See [v4 pack validation](v4-pack-validation.md) for the format
+and runtime requirements. No implicit fallback is performed.
+
+The Rust API exposes `gigastt_core::inference::v4::V4Engine::load(pack_dir,
+mkl_runtime_dir)`, `transcribe` for validated native PCM, and with `file-decode`
+`transcribe_file` / `transcribe_bytes` for native mono container decode. Select
+`TranscriptStyle::Raw` or `TranscriptStyle::E2e` explicitly. The `_with_limit`
+file methods can lower but never raise the 30-second whole-context cap. No
+streaming, long-form stitching, hotwords, VAD, diarization or raw codec options
+are implemented by this engine. Rust methods accept a cooperative cancellation
+flag; foreign file-only bindings do not expose cancellation. The literal decoded
+text, word timing/groups, exact token IDs/frames/probabilities and duration are
+reported; confidence is an uncalibrated score.
+
+### C ABI
+
+Build with `cargo build -p gigastt-ffi --features v4-mkl`; the generated
+`gigastt.h` declares new symbols without altering the existing v3 ABI. The
+capability probe and separate v4 symbols also exist in default builds, and
+return an explicit `unsupported_capability` error when unavailable.
+
+```c
+#include "gigastt.h"
+#include <stdio.h>
+
+void recognize_v4(void) {
+    if (!gigastt_v4_supported()) return;
+    struct GigasttV4EngineResult engine = gigastt_v4_engine_new(
+        "/path/to/v4-pack", "/path/to/mkl-runtime", "e2e");
+    if (engine.engine) {
+        char *json = gigastt_v4_transcribe_file(engine.engine, "recording.wav");
+        if (json) puts(json);
+        gigastt_string_free(json);
+        gigastt_v4_engine_free(engine.engine);
+    } else {
+        if (engine.error) puts(engine.error);
+        gigastt_string_free(engine.error);
+    }
+}
+```
+
+The constructor returns either a separate opaque v4 engine ID or an owned
+UTF-8 JSON error string. File transcription returns owned JSON containing
+`result` (`style`, `text`, `words`, `tokens`, `duration_s`, `confidence`) or
+`error` (`code`, `message`). Free every returned string with
+`gigastt_string_free`, and every successful v4 handle with
+`gigastt_v4_engine_free`. Like the legacy C ABI, audio paths must be relative
+and stay inside the working directory. V4 handles cannot be used with v3
+file/stream APIs, or vice versa. One engine serializes inference; freeing a
+handle does not cancel work that already acquired it.
+
+### Other bindings
+
+- [Node.js](../crates/gigastt-node/README.md#optional-gigaam-v4-file-engine-linux-x86-64-gnu):
+  `v4Supported()`, `new V4Engine(packDir, mklRuntimeDir, style)`,
+  asynchronous `transcribeFile`.
+- [UniFFI](../crates/gigastt-uniffi/README.md#optional-gigaam-v4-file-engine-linux-x86-64-gnu):
+  `v4_supported`, separate `V4Engine` constructor and synchronous
+  `transcribe_file`, with typed `V4BindingError`.
+
+These are opt-in source-build capabilities; no v4 binary or model publication
+is implied for existing npm, Python, mobile or Apple artifacts.

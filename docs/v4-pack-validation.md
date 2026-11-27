@@ -301,8 +301,10 @@ inference transcript quality.
 
 On the same opt-in GNU Linux x86-64 profile, `inference::v4::V4Engine`
 loads the qualified seven-artifact local pack and the explicitly supplied
-MKL runtime. There is no CLI, HTTP, WebSocket, streaming, batching or
-automatic v4 routing in this API. The default legacy engine is unchanged.
+MKL runtime. The explicit core API does not implement streaming or batching.
+The opt-in [file CLI and server profile](cli.md#explicit-v4-full-context-file-profile)
+uses this engine for bounded full-context requests; no automatic v4 routing
+or native WebSocket streaming is enabled. The default legacy engine is unchanged.
 
 ```rust
 use gigastt_core::inference::v4::{V4Engine, V4Pcm};

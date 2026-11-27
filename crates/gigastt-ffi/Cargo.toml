@@ -16,6 +16,7 @@ crate-type = ["staticlib", "cdylib"]
 
 [features]
 default = []
+v4-mkl = ["gigastt-core/v4-mkl"]
 nnapi = ["gigastt-core/nnapi"]
 coreml = ["gigastt-core/coreml"]
 cuda = ["gigastt-core/cuda"]

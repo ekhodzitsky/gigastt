@@ -1051,3 +1051,52 @@ The new field has no effect with VAD, assistant/manual mode, CTC heads (which do
 not use the RNN-T blank-run endpoint), or file transcription. `stop` still flushes
 immediately. An automatic final ends an utterance without closing the WebSocket; explicit
 `stop` finishes the session.
+
+
+## Explicit v4 full-context file profile
+
+An explicitly configured GNU Linux x86-64 `v4-mkl` server may instead load
+the pinned v4 RNNT FP32 local pack. This does not change ordinary v3 behavior.
+See [CLI selection](cli.md#explicit-v4-full-context-file-profile) and
+[verified pack/runtime requirements](v4-pack-validation.md).
+
+- `GET /v1/models` lists exactly the active style with ID
+  `gigaam-v4-rnnt-raw-fp32` or `gigaam-v4-rnnt-e2e-fp32`, and reports
+  family `gigaam_v4`, head `rnnt`, style, precision `fp32`, CPU provider,
+  mode `full_context`, one request slot, `streaming: false` and the audio limit.
+- `POST /v1/transcribe` accepts supported audio files and uses the same
+  JSON/export envelope as v3. The complete text and literal word groups
+  come from the selected v4 style; word confidence and duration follow the
+  [v4 core contract](v4-pack-validation.md#explicit-experimental-core-cpu-engine).
+  Optional query selectors `model_family`, `model_head`, `transcript_style`,
+  `model_precision` and `variant` must match the loaded profile (the latter
+  uses its full model ID). They never switch models. A conflicting selector
+  returns 409 `variant_not_loaded`. The new v4 selector keys and the
+  `gigaam-v4-` model-ID namespace are reserved: sending them to a legacy
+  server also returns 409, rather than silently producing v3 text.
+- `POST /v1/transcribe/stream` is file SSE, **one final** transcript event
+  followed by EOF, with no false partials or native streaming claim.
+  Cancellation, inference timeout and errors do not return a partial
+  transcript.
+- `POST /v1/audio/transcriptions` requires the exact loaded model ID in
+  multipart `model`; supports `json`, `text`, `srt`, and `vtt`.
+  Language, prompt, sampling options, verbose Whisper metadata and
+  OpenAI streaming are not supported. Use native REST or final-only file SSE
+  for word-level metadata.
+- With jobs enabled, submission, status, result, events and cancellation
+  use the existing `/v1/jobs` contract. File jobs have no native preview,
+  guessed progress or automatic retries; the finished result is the same
+  full-context transcript. A cancelled job cannot publish a result.
+- `GET /v1/ws` rejects streaming with 409 `streaming_unsupported`;
+  `POST /v1/admin/reload` rejects hot reload.
+
+The maximum is 30 seconds of decoded audio (or the lower operator limit).
+Longer inputs fail with `audio_too_long`, never silent truncation or a legacy
+chunking route. V4 does not support raw headerless telephony, split-speaker
+channels, extra punctuation/ITN, hotwords, VAD, language hints or
+diarization. Unsupported options return 400 `unsupported_v4_option`.
+The same origin, rate, body-size, upload-admission and request-ID middleware
+protects the routes. Cancellation/timeout retains the single native request
+slot until the blocking operation actually finishes; no native preemption
+is promised. Graceful drain observes its configured deadline, but the CLI
+runtime may remain alive until already-running native blocking work returns.

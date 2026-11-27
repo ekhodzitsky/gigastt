@@ -10,6 +10,13 @@ mod state;
 mod stream;
 mod stream_watchdog;
 mod transcribe;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(super) mod v4;
 
 #[cfg(test)]
 mod tests;

@@ -4,7 +4,7 @@
 Ten checks, all stdlib-only (no third-party deps, no network):
 
   1. CLI flags/envs: every clap flag + GIGASTT_* env in the CLI sources
-     (crates/gigastt/src/{main,serve,serve/bind,transcribe_cmd}.rs) is
+     (crates/gigastt/src/{main,serve,serve/bind,transcribe_cmd,v4_cli}.rs) is
      documented in docs/cli.md, and cli.md names no flag/env that does not
      exist (intentional exceptions live in scripts/check-docs-drift.allowlist).
   2. CLI flag scoping: a `--flag` documented under a `gigastt <subcommand>`
@@ -57,6 +57,7 @@ CLI_SOURCES = (
     ROOT / "crates/gigastt/src/serve.rs",
     ROOT / "crates/gigastt/src/serve/bind.rs",
     ROOT / "crates/gigastt/src/transcribe_cmd.rs",
+    ROOT / "crates/gigastt/src/v4_cli.rs",
 )
 # Download policy is implemented in core, but its environment setting is
 # also part of the CLI contract. Read the actual consumer, not a doc allowlist.
@@ -66,6 +67,7 @@ SERVER_ROUTE_SOURCES = (
     ROOT / "crates/gigastt/src/server/mod.rs",
     ROOT / "crates/gigastt/src/server/router.rs",
     ROOT / "crates/gigastt/src/server/listen.rs",
+    ROOT / "crates/gigastt/src/server/http/v4.rs",
 )
 # Codec marker lives in the decode module after the audio/ feature split.
 AUDIO_RS = ROOT / "crates/gigastt-core/src/inference/audio/decode.rs"

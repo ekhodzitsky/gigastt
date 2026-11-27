@@ -17,6 +17,13 @@ mod ws;
 
 pub use config::{OriginPolicy, RuntimeLimits, ServerConfig};
 pub use http::EngineBuilder;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub use http::v4::{run_v4_files, v4_result};
 
 use anyhow::Result;
 
