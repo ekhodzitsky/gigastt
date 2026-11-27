@@ -12,7 +12,7 @@ use crate::model::{ArtifactRole, QualifiedV4Pack, TranscriptStyle};
 use crate::runtime::{RuntimeSession, ort::v4::load_verified_cpu};
 use crate::transcript::{WordInfo, aggregate_confidence};
 
-mod decode;
+pub(super) mod decode;
 #[cfg(feature = "file-decode")]
 mod file;
 
@@ -21,7 +21,7 @@ pub(super) fn inference_error(source: anyhow::Error) -> GigasttError {
         source: source.into_boxed_dyn_error(),
     }
 }
-fn model_error(path: String, source: anyhow::Error) -> GigasttError {
+pub(super) fn model_error(path: String, source: anyhow::Error) -> GigasttError {
     GigasttError::ModelLoad {
         path,
         source: Some(source.into_boxed_dyn_error()),
@@ -58,7 +58,7 @@ impl<'a> V4Pcm<'a> {
 pub struct V4Token {
     /// Exact SentencePiece ID (RNNT blank is never emitted here).
     pub id: usize,
-    /// Zero-based encoder frame, on the valid full-context utterance grid.
+    /// Zero-based encoder frame on the full-context utterance or absolute streaming grid.
     pub frame: usize,
     /// Selected-label probability `exp(log_softmax)` computed in f64.
     /// Not a calibrated probability of transcript correctness.
@@ -291,7 +291,7 @@ impl V4Engine {
     }
 }
 
-fn acquire_request_slot<'a>(
+pub(super) fn acquire_request_slot<'a>(
     request: &'a Mutex<()>,
     cancel: Option<&AtomicBool>,
 ) -> Result<MutexGuard<'a, ()>, GigasttError> {

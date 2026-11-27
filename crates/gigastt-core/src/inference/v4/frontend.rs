@@ -4,7 +4,7 @@ use anyhow::{Context, Result, ensure};
 use std::path::Path;
 
 use super::V4FrameGrid;
-use crate::model::{PackAbi, QualifiedV4Pack};
+use crate::model::{PackAbi, QualifiedV4Pack, QualifiedV4StreamingPack};
 
 mod mkl;
 
@@ -115,6 +115,19 @@ impl V4Frontend {
         match pack.descriptor().abi {
             PackAbi::V4RnntSplitV1 => {}
         }
+        Self::open(runtime_dir)
+    }
+
+    /// Select the same verified author coefficient profile explicitly from
+    /// a distinct qualified cached-streaming pack.
+    pub fn from_streaming_pack(
+        _pack: &QualifiedV4StreamingPack,
+        runtime_dir: &Path,
+    ) -> Result<Self> {
+        Self::open(runtime_dir)
+    }
+
+    fn open(runtime_dir: &Path) -> Result<Self> {
         let runtime = mkl::MklRuntime::open(runtime_dir)?;
         let coeff: Vec<f32> = COEFFICIENTS
             .as_chunks::<4>()

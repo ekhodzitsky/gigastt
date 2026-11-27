@@ -38,6 +38,24 @@ mod engine;
 ))]
 pub use engine::{V4DualTranscription, V4Engine, V4Pcm, V4Token, V4Transcription};
 
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+mod stream;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub use stream::{
+    V4_STREAM_MAX_PACKET_SAMPLES, V4_STREAM_MAX_SESSION_SAMPLES, V4_STREAM_MAX_SESSIONS,
+    V4StreamingDelta, V4StreamingEngine, V4StreamingPacket, V4StreamingSession, V4StreamingStyles,
+};
+
 const WINDOW_SAMPLES: usize = 320;
 const HOP_SAMPLES: usize = 160;
 const SUBSAMPLING: usize = 4;
@@ -302,9 +320,17 @@ fn group_words<'a>(
 }
 
 fn group_word_spans<'a>(
-    mut pieces: impl Iterator<Item = &'a str>,
+    pieces: impl Iterator<Item = &'a str>,
     frames: &[usize],
     grid: &V4FrameGrid,
+) -> Result<Vec<(V4WordTiming, std::ops::Range<usize>)>> {
+    group_word_spans_at(pieces, frames, |frame| grid.frame_bounds(frame))
+}
+
+fn group_word_spans_at<'a>(
+    mut pieces: impl Iterator<Item = &'a str>,
+    frames: &[usize],
+    frame_bounds: impl Fn(usize) -> Option<(f64, f64)>,
 ) -> Result<Vec<(V4WordTiming, std::ops::Range<usize>)>> {
     ensure!(
         frames.windows(2).all(|pair| pair[0] <= pair[1]),
@@ -333,9 +359,8 @@ fn group_word_spans<'a>(
     };
     for (index, &frame) in frames.iter().enumerate() {
         let piece = pieces.next().context("v4 token/frame count mismatch")?;
-        let (start, end) = grid
-            .frame_bounds(frame)
-            .context("v4 token frame outside valid encoder length")?;
+        let (start, end) =
+            frame_bounds(frame).context("v4 token frame outside valid encoder length")?;
         let piece = if let Some(remainder) = piece.strip_prefix('▁') {
             commit(&mut words, &mut current, &mut span);
             remainder

@@ -14,7 +14,9 @@ const CLASSES: usize = BLANK + 1;
 const WINDOW: usize = 8;
 const MAX_SYMBOLS: usize = 10;
 
-pub(super) fn check_cancel(cancel: Option<&AtomicBool>) -> Result<(), GigasttError> {
+pub(in crate::inference::v4) fn check_cancel(
+    cancel: Option<&AtomicBool>,
+) -> Result<(), GigasttError> {
     if cancel.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
         Err(GigasttError::Cancelled)
     } else {
@@ -22,7 +24,7 @@ pub(super) fn check_cancel(cancel: Option<&AtomicBool>) -> Result<(), GigasttErr
     }
 }
 
-pub(super) fn run_session(
+pub(in crate::inference::v4) fn run_session(
     session: &dyn RuntimeSession,
     inputs: &[Tensor],
     cancel: Option<&AtomicBool>,
@@ -33,19 +35,29 @@ pub(super) fn run_session(
     result.map_err(Into::into)
 }
 
-fn f32_tensor(shape: &[usize], data: Vec<f32>) -> Result<Tensor, GigasttError> {
+pub(in crate::inference::v4) fn f32_tensor(
+    shape: &[usize],
+    data: Vec<f32>,
+) -> Result<Tensor, GigasttError> {
     Ok(Tensor::new(
         Shape::new(shape.to_vec()),
         TensorData::F32(data),
     )?)
 }
-fn i64_tensor(shape: &[usize], data: Vec<i64>) -> Result<Tensor, GigasttError> {
+pub(in crate::inference::v4) fn i64_tensor(
+    shape: &[usize],
+    data: Vec<i64>,
+) -> Result<Tensor, GigasttError> {
     Ok(Tensor::new(
         Shape::new(shape.to_vec()),
         TensorData::I64(data),
     )?)
 }
-fn f32_output(tensor: Tensor, shape: &[usize], label: &str) -> AnyResult<Vec<f32>> {
+pub(in crate::inference::v4) fn f32_output(
+    tensor: Tensor,
+    shape: &[usize],
+    label: &str,
+) -> AnyResult<Vec<f32>> {
     ensure!(tensor.shape().dims() == shape, "unexpected {label} shape");
     let TensorData::F32(data) = tensor.into_data() else {
         anyhow::bail!("unexpected {label} element type");
@@ -54,13 +66,16 @@ fn f32_output(tensor: Tensor, shape: &[usize], label: &str) -> AnyResult<Vec<f32
     Ok(data)
 }
 
-pub(super) struct Encoded {
-    pub(super) data: Vec<f32>,
-    pub(super) physical: usize,
-    pub(super) valid: usize,
+pub(in crate::inference::v4) struct Encoded {
+    pub(in crate::inference::v4) data: Vec<f32>,
+    pub(in crate::inference::v4) physical: usize,
+    pub(in crate::inference::v4) valid: usize,
 }
 impl Encoded {
-    pub(super) fn from_outputs(outputs: Vec<Tensor>, grid: &V4FrameGrid) -> AnyResult<Self> {
+    pub(in crate::inference::v4) fn from_outputs(
+        outputs: Vec<Tensor>,
+        grid: &V4FrameGrid,
+    ) -> AnyResult<Self> {
         let [values, length]: [Tensor; 2] = outputs
             .try_into()
             .map_err(|_| anyhow::anyhow!("expected two v4 encoder outputs"))?;
@@ -84,6 +99,18 @@ impl Encoded {
             valid,
         })
     }
+    /// Streaming uses a valid-sliced block before gathering W8.
+    pub(in crate::inference::v4) fn valid_prefix(mut self) -> Self {
+        if self.physical != self.valid {
+            self.data = self
+                .data
+                .chunks_exact(self.physical)
+                .flat_map(|channel| channel[..self.valid].iter().copied())
+                .collect();
+            self.physical = self.valid;
+        }
+        self
+    }
     fn window(&self, pos: usize) -> Result<Tensor, GigasttError> {
         // The upstream gather clamps to the physical final frame, not the
         // valid final frame. The
@@ -98,7 +125,7 @@ impl Encoded {
     }
 }
 
-pub(super) fn encode_features(
+pub(in crate::inference::v4) fn encode_features(
     session: &dyn RuntimeSession,
     values: Vec<f32>,
     grid: &V4FrameGrid,
@@ -118,15 +145,15 @@ pub(super) fn encode_features(
     Encoded::from_outputs(outputs, grid).map_err(inference_error)
 }
 
-struct Prediction {
-    values: Vec<f32>,
-    h: Vec<f32>,
-    c: Vec<f32>,
+pub(in crate::inference::v4) struct Prediction {
+    pub(in crate::inference::v4) values: Vec<f32>,
+    pub(in crate::inference::v4) h: Vec<f32>,
+    pub(in crate::inference::v4) c: Vec<f32>,
 }
 
 #[cfg(test)]
 #[derive(Debug, Default, Clone)]
-pub(super) struct Trace {
+pub(in crate::inference::v4) struct Trace {
     pub predictor_inputs: Vec<[usize; 2]>,
     pub joint_inputs: Vec<[usize; 4]>,
     pub prediction: Vec<f32>,
@@ -135,7 +162,7 @@ pub(super) struct Trace {
     pub log_probs: Vec<f32>,
 }
 
-pub(super) struct Trajectory {
+pub(in crate::inference::v4) struct Trajectory {
     pub tokens: Vec<V4Token>,
     #[cfg(test)]
     pub trace: Trace,
@@ -177,21 +204,56 @@ fn argmax_first(row: &[f32]) -> usize {
     best
 }
 
-pub(super) fn greedy(
+/// The prediction cache is deliberately carried across blank-only blocks.
+pub(in crate::inference::v4) struct GreedyState {
+    pub(in crate::inference::v4) label: usize,
+    pub(in crate::inference::v4) h: Vec<f32>,
+    pub(in crate::inference::v4) c: Vec<f32>,
+    pub(in crate::inference::v4) prediction: Option<Prediction>,
+    pub(in crate::inference::v4) frame_offset: usize,
+}
+impl Default for GreedyState {
+    fn default() -> Self {
+        // Fresh author prediction uses a zero embedding. The exact qualified
+        // ONNX decoder's blank embedding row is zero.
+        Self {
+            label: BLANK,
+            h: vec![0.0; HIDDEN],
+            c: vec![0.0; HIDDEN],
+            prediction: None,
+            frame_offset: 0,
+        }
+    }
+}
+
+pub(in crate::inference::v4) fn greedy(
     predict: &dyn RuntimeSession,
     join: &dyn RuntimeSession,
     encoded: &Encoded,
     cancel: Option<&AtomicBool>,
 ) -> Result<Trajectory, GigasttError> {
+    greedy_block(predict, join, encoded, &mut GreedyState::default(), cancel)
+}
+
+pub(in crate::inference::v4) fn greedy_block(
+    predict: &dyn RuntimeSession,
+    join: &dyn RuntimeSession,
+    encoded: &Encoded,
+    state: &mut GreedyState,
+    cancel: Option<&AtomicBool>,
+) -> Result<Trajectory, GigasttError> {
     let cap = encoded.valid * (MAX_SYMBOLS + 1);
     let mut pos = 0;
     let mut repeat = 0;
-    let mut label = BLANK;
-    // Fresh author prediction uses a zero embedding. The exact qualified
-    // ONNX decoder's blank embedding row is zero; zero h/c reproduce it.
-    let mut h = vec![0.0; HIDDEN];
-    let mut c = vec![0.0; HIDDEN];
-    let mut prediction = None;
+    // These counts are per local block; the predictor/recurrent state and
+    // absolute encoder frame offset remain owned by the stream.
+    let GreedyState {
+        label,
+        h,
+        c,
+        prediction,
+        frame_offset,
+    } = state;
     let mut tokens = Vec::new();
     let mut predictor_calls = 0;
     let mut joint_calls = 0;
@@ -205,16 +267,16 @@ pub(super) fn greedy(
                     "v4 predictor call cap exceeded"
                 )));
             }
-            let p = predictor(predict, label, &h, &c, cancel)?;
+            let p = predictor(predict, *label, h, c, cancel)?;
             predictor_calls += 1;
             #[cfg(test)]
             {
-                trace.predictor_inputs.push([label, pos]);
+                trace.predictor_inputs.push([*label, pos]);
                 trace.prediction.extend_from_slice(&p.values);
                 trace.h.extend_from_slice(&p.h);
                 trace.c.extend_from_slice(&p.c);
             }
-            prediction = Some(p);
+            *prediction = Some(p);
         }
         if joint_calls >= cap {
             return Err(inference_error(anyhow::anyhow!(
@@ -238,7 +300,7 @@ pub(super) fn greedy(
         let count = WINDOW.min(encoded.valid - pos);
         #[cfg(test)]
         {
-            trace.joint_inputs.push([pos, label, repeat, count]);
+            trace.joint_inputs.push([pos, *label, repeat, count]);
             trace.log_probs.extend_from_slice(&logp);
         }
         let nonblank = logp
@@ -266,21 +328,22 @@ pub(super) fn greedy(
         }
         tokens.push(V4Token {
             id: token,
-            frame: pos,
+            frame: *frame_offset + pos,
             confidence,
         });
-        label = token;
+        *label = token;
         let p = prediction
             .take()
             .ok_or_else(|| inference_error(anyhow::anyhow!("missing v4 committed prediction")))?;
-        h = p.h;
-        c = p.c;
+        *h = p.h;
+        *c = p.c;
         if repeat >= MAX_SYMBOLS {
             pos += 1;
             repeat = 0;
         }
     }
     check_cancel(cancel)?;
+    *frame_offset += encoded.valid;
     Ok(Trajectory {
         tokens,
         #[cfg(test)]

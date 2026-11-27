@@ -31,18 +31,22 @@ pub use manifest::{
     MANIFEST_FILE, ManifestFiles, ModelManifest, ModelPrecision, ResolvedEncoder,
     reject_versioned_pack,
 };
+pub use versioned::{
+    ArtifactRole, PackAbi, PackArtifact, PackFamily, PackHead, PackMode, PackProvenance,
+    PackSelection, QualifiedV4Pack, QualifiedV4StreamingPack, SplitAbi, StreamingArtifactRole,
+    StreamingPackAbi, StreamingPackDescriptor, StreamingTensorSpec, TensorAxis, TensorElement,
+    TensorSpec, TranscriptStyle, V4_RNNT_SPLIT_ABI, V4_STREAMING_CONTEXTS_MS,
+    V4_STREAMING_FRAME_SHIFT_SECONDS, V4_STREAMING_FRONT_CACHE_SHAPES,
+    V4_STREAMING_LAYER_CACHE_SHAPES, V4_STREAMING_LEFT_CONTEXT_FRAMES, V4HeadFiles,
+    V4StreamContext, VersionedPackDescriptor,
+};
 #[cfg(all(
     feature = "v4-mkl",
     target_os = "linux",
     target_arch = "x86_64",
     target_env = "gnu"
 ))]
-pub(crate) use versioned::VerifiedV4Graph;
-pub use versioned::{
-    ArtifactRole, PackAbi, PackArtifact, PackFamily, PackHead, PackMode, PackProvenance,
-    PackSelection, QualifiedV4Pack, SplitAbi, TensorAxis, TensorElement, TensorSpec,
-    TranscriptStyle, V4_RNNT_SPLIT_ABI, V4HeadFiles, VersionedPackDescriptor,
-};
+pub(crate) use versioned::{VerifiedV4Graph, VerifiedV4StreamingGraph};
 
 #[cfg(all(feature = "net", feature = "ane"))]
 pub use download::ensure_ane_packages;

@@ -358,3 +358,128 @@ fn test_v4_native_engine_against_frozen_author_oracle() -> Result<()> {
     ensure!(pass, "one or more frozen v4 parity gates failed");
     Ok(())
 }
+
+fn exact_full_context_archive(summary: &Value, archived: &Value) -> bool {
+    let mut exact = ["features", "encoded"]
+        .iter()
+        .all(|key| summary[key]["sha256"] == archived[key]["sha256"]);
+    for name in ["raw", "e2e"] {
+        for key in [
+            "text",
+            "tokens",
+            "token_frames",
+            "confidence",
+            "words",
+            "style",
+            "duration_s",
+            "aggregate_confidence",
+            "predictor_inputs",
+            "joint_inputs",
+            "predictor_calls",
+            "joiner_calls",
+            "joint_scored_rows",
+            "valid_joint_rows",
+        ] {
+            exact &= summary[name][key] == archived[name][key];
+        }
+        for key in ["prediction", "h", "c", "log_probs"] {
+            exact &=
+                summary[name]["arrays"][key]["sha256"] == archived[name]["arrays"][key]["sha256"];
+        }
+    }
+    exact
+}
+
+#[test]
+fn test_v4_saved_regression_roundtrips_archive_and_rejects_one_ulp() -> Result<()> {
+    let make_summary = |end: f64, path: &str, metric: f64| {
+        let asset = json!({"sha256":"same-contents", "path":path});
+        let head = json!({"text":"known word", "words":[{"end":end}], "checks":{"diagnostic":metric},
+            "arrays":{"prediction":asset,"h":asset,"c":asset,"log_probs":asset}});
+        json!({"features":asset, "encoded":asset, "raw":head, "e2e":head})
+    };
+    let expected = 2.8799999999999994_f64;
+    let current = make_summary(expected, "actual-output.f32le", 1e-7);
+    let stored = serde_json::to_string(&make_summary(expected, "archived-output.f32le", 1e-5))?;
+    let archived: Value = serde_json::from_str(&stored)?;
+    // The test-only float_roundtrip feature preserves the exact stored f64.
+    // Artifact paths and descriptive numeric metrics are not in the gate.
+    assert_eq!(
+        archived["raw"]["words"][0]["end"]
+            .as_f64()
+            .map(f64::to_bits),
+        Some(expected.to_bits())
+    );
+    assert!(exact_full_context_archive(&current, &archived));
+    let changed = make_summary(
+        f64::from_bits(expected.to_bits() - 1),
+        "actual-output.f32le",
+        1e-7,
+    );
+    assert!(!exact_full_context_archive(&changed, &archived));
+    Ok(())
+}
+
+#[test]
+#[ignore = "one exact local full-context regression after native streaming decoder refactor"]
+fn test_v4_full_context_ru_short_streaming_refactor_regression() -> Result<()> {
+    let manifest = fs::read(std::env::var("GIGASTT_V4_ENGINE_ORACLE")?)?;
+    ensure!(
+        digest(&manifest) == std::env::var("GIGASTT_V4_ENGINE_ORACLE_SHA256")?,
+        "oracle manifest SHA mismatch"
+    );
+    let oracle: Value = serde_json::from_slice(&manifest)?;
+    let case = oracle["cases"]
+        .as_array()
+        .context("missing cases")?
+        .iter()
+        .find(|c| c["id"] == "ru_short")
+        .context("missing ru_short")?;
+    let archived = fs::read(std::env::var("GIGASTT_V4_ENGINE_ARCHIVE")?)?;
+    ensure!(
+        digest(&archived) == std::env::var("GIGASTT_V4_ENGINE_ARCHIVE_SHA256")?,
+        "archived native result SHA mismatch"
+    );
+    let archived: Value = serde_json::from_slice(&archived)?;
+    ensure!(
+        archived["case"] == "ru_short"
+            && archived["lane"] == "native_pcm"
+            && archived["pass"] == true,
+        "archived native lane mismatch"
+    );
+    let output = PathBuf::from(std::env::var("GIGASTT_V4_ENGINE_ORACLE_OUTPUT")?);
+    fs::create_dir(&output)?;
+    let pcm = read_floats(
+        Path::new(string(case, "pcm_path")?),
+        string(case, "pcm_sha256")?,
+    )?;
+    ensure!(
+        pcm.len() == number(case, "samples")? && pcm.len() == number(case, "logical_samples")?,
+        "unexpected ru_short geometry"
+    );
+    let native = V4Engine::load(
+        Path::new(&std::env::var("GIGASTT_V4_ENGINE_ORACLE_PACK")?),
+        Path::new(&std::env::var("GIGASTT_V4_ENGINE_ORACLE_MKL")?),
+    )?;
+    let result = native.transcribe_both(V4Pcm::full(&pcm), None)?;
+    let summary = evaluate(
+        &result,
+        case,
+        &asset(&case["features"])?,
+        "native_pcm",
+        &output,
+    )?;
+    let exact = exact_full_context_archive(&summary, &archived);
+    let pass = exact && summary["pass"] == true;
+    fs::write(
+        output.join("completion.json"),
+        serde_json::to_vec_pretty(
+            &json!({"pass":pass,"archived_bits_metadata_exact":exact,"encoder_calls":1,"head_trajectories":2,"summary":summary}),
+        )?,
+    )?;
+    ensure!(
+        pass,
+        "full-context regression was not exactly equal to archived native output"
+    );
+    Ok(())
+}

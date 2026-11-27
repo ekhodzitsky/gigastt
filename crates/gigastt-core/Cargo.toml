@@ -143,6 +143,8 @@ objc2-foundation = { version = "0.3", optional = true, default-features = false,
 
 
 [dev-dependencies]
+# Exact archived confidence and timestamp comparison in local parity tests.
+serde_json = { version = "1", features = ["float_roundtrip"] }
 tempfile = "3"
 wiremock = "0.6"
 proptest = "1"

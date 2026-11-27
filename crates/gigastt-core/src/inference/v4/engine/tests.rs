@@ -259,3 +259,50 @@ fn test_v4_invalid_predictor_and_joiner_outputs_fail_closed() {
     let wrong = MockSession(|_: &[Tensor]| Ok(vec![f32s(&[1, 1, 1, 1025], vec![0.; 1025])]));
     assert!(decode::greedy(&correct, &wrong, &encoded, None).is_err());
 }
+
+#[test]
+fn test_v4_streaming_blank_prediction_persists_across_packets_with_absolute_offset() {
+    use std::sync::Arc;
+    let grid = V4FrameGrid::new(960, 641).unwrap();
+    let data: Vec<f32> = (0..768).flat_map(|_| [3.0, 99.0]).collect();
+    let encoded =
+        decode::Encoded::from_outputs(vec![f32s(&[1, 768, 2], data), i64s(&[1], vec![1])], &grid)
+            .unwrap()
+            .valid_prefix();
+    let predicts = Arc::new(AtomicUsize::new(0));
+    let pc = predicts.clone();
+    let predict = MockSession(move |inputs: &[Tensor]| {
+        let n = pc.fetch_add(1, Ordering::Relaxed);
+        assert_eq!(
+            inputs[0].view().data().as_i64().unwrap(),
+            &[if n == 0 { 1024 } else { 7 }]
+        );
+        assert_eq!(
+            inputs[1].view().data().as_f32().unwrap()[0],
+            if n == 0 { 0. } else { 11. }
+        );
+        Ok(predictor_outputs(10. + n as f32))
+    });
+    let calls = AtomicUsize::new(0);
+    let join = MockSession(move |inputs: &[Tensor]| {
+        assert_eq!(&inputs[0].view().data().as_f32().unwrap()[..8], &[3.0; 8]);
+        let n = calls.fetch_add(1, Ordering::Relaxed);
+        let mut labels = [1024; 8];
+        if n == 1 {
+            labels[0] = 7;
+        }
+        Ok(vec![logits(labels)])
+    });
+    let mut state = decode::GreedyState::default();
+    let first = decode::greedy_block(&predict, &join, &encoded, &mut state, None).unwrap();
+    assert!(first.tokens.is_empty());
+    assert_eq!(predicts.load(Ordering::Relaxed), 1);
+    let second = decode::greedy_block(&predict, &join, &encoded, &mut state, None).unwrap();
+    assert_eq!(second.tokens.len(), 1);
+    assert_eq!((second.tokens[0].id, second.tokens[0].frame), (7, 1));
+    assert_eq!(predicts.load(Ordering::Relaxed), 2);
+    assert_eq!(second.trace.predictor_inputs, [[7, 0]]);
+    let third = decode::greedy_block(&predict, &join, &encoded, &mut state, None).unwrap();
+    assert!(third.tokens.is_empty());
+    assert_eq!(predicts.load(Ordering::Relaxed), 2);
+}

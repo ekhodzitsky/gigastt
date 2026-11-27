@@ -15,6 +15,21 @@ use crate::sha256::{Sha256, hex_lower};
 
 use super::{MANIFEST_FILE, ModelPrecision};
 
+mod streaming;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(crate) use streaming::VerifiedV4StreamingGraph;
+pub use streaming::{
+    QualifiedV4StreamingPack, StreamingArtifactRole, StreamingPackAbi, StreamingPackDescriptor,
+    StreamingTensorSpec, V4_STREAMING_CONTEXTS_MS, V4_STREAMING_FRAME_SHIFT_SECONDS,
+    V4_STREAMING_FRONT_CACHE_SHAPES, V4_STREAMING_LAYER_CACHE_SHAPES,
+    V4_STREAMING_LEFT_CONTEXT_FRAMES, V4StreamContext,
+};
+
 const SCHEMA_VERSION: u32 = 1;
 const MAX_DESCRIPTOR_BYTES: u64 = 64 * 1024;
 const SOURCE_REPOSITORY: &str = "https://github.com/salute-developers/GigaAM";
@@ -74,14 +89,14 @@ impl std::str::FromStr for TranscriptStyle {
     }
 }
 
-/// Recognition mode. Streaming is a distinct, currently unqualified ABI.
+/// Recognition mode. Streaming is a separate cached ABI.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[non_exhaustive]
 pub enum PackMode {
     /// Offline whole-utterance encoder context.
     FullContext,
-    /// Native cached streaming (not admitted by the first profile).
+    /// Native cached streaming (not admitted by the full-context profile).
     Streaming,
 }
 
@@ -427,18 +442,7 @@ impl VersionedPackDescriptor {
     /// Load a regular, bounded `manifest.toml`. A missing manifest is an error
     /// here, not permission to fall back to a legacy model directory.
     pub fn load(dir: &Path) -> Result<Self> {
-        let path = dir.join(MANIFEST_FILE);
-        let meta =
-            std::fs::symlink_metadata(&path).context("missing versioned model pack manifest")?;
-        ensure!(
-            meta.is_file() && meta.len() <= MAX_DESCRIPTOR_BYTES,
-            "versioned pack manifest must be a bounded regular file"
-        );
-        let mut text = String::new();
-        std::fs::File::open(&path)?
-            .take(MAX_DESCRIPTOR_BYTES + 1)
-            .read_to_string(&mut text)?;
-        Self::parse(&text)
+        Self::parse(&read_manifest_text(dir)?)
     }
 
     fn validate_profile(&self) -> Result<()> {
@@ -575,6 +579,50 @@ impl VersionedPackDescriptor {
         }
         hex_lower(&hash.finalize())
     }
+}
+
+fn read_manifest_text(dir: &Path) -> Result<String> {
+    let path = dir.join(MANIFEST_FILE);
+    let meta = std::fs::symlink_metadata(&path).context("missing versioned model pack manifest")?;
+    ensure!(
+        meta.is_file() && meta.len() <= MAX_DESCRIPTOR_BYTES,
+        "versioned pack manifest must be a bounded regular file"
+    );
+    let mut text = String::new();
+    std::fs::File::open(&path)?
+        .take(MAX_DESCRIPTOR_BYTES + 1)
+        .read_to_string(&mut text)?;
+    Ok(text)
+}
+
+fn read_artifact_bytes(path: &Path, artifact: &PackArtifact) -> Result<Vec<u8>> {
+    let meta = std::fs::symlink_metadata(path)?;
+    ensure!(
+        meta.is_file() && meta.len() == artifact.bytes,
+        "artifact is not a regular file of the verified size"
+    );
+    let file = std::fs::File::open(path)?;
+    let meta = file.metadata()?;
+    ensure!(
+        meta.is_file() && meta.len() == artifact.bytes,
+        "artifact changed before reading"
+    );
+    let mut bytes = Vec::new();
+    let limit = artifact
+        .bytes
+        .checked_add(1)
+        .context("artifact size overflow")?;
+    bytes
+        .try_reserve_exact(usize::try_from(limit)?)
+        .context("allocate verified artifact buffer")?;
+    file.take(limit).read_to_end(&mut bytes)?;
+    let mut hash = Sha256::new();
+    hash.update(&bytes);
+    ensure!(
+        bytes.len() as u64 == artifact.bytes && hex_lower(&hash.finalize()) == artifact.sha256,
+        "artifact bytes changed after pack validation"
+    );
+    Ok(bytes)
 }
 
 fn valid_basename(name: &str) -> bool {
@@ -771,34 +819,7 @@ impl QualifiedV4Pack {
             .artifacts
             .get(&role)
             .context("missing validated artifact")?;
-        let path = self.dir.join(&artifact.file);
-        let meta = std::fs::symlink_metadata(&path)?;
-        ensure!(
-            meta.is_file() && meta.len() == artifact.bytes,
-            "artifact is not a regular file of the verified size"
-        );
-        let file = std::fs::File::open(&path)?;
-        let meta = file.metadata()?;
-        ensure!(
-            meta.is_file() && meta.len() == artifact.bytes,
-            "artifact changed before reading"
-        );
-        let mut bytes = Vec::new();
-        let limit = artifact
-            .bytes
-            .checked_add(1)
-            .context("artifact size overflow")?;
-        bytes
-            .try_reserve_exact(usize::try_from(limit)?)
-            .context("allocate verified artifact buffer")?;
-        file.take(limit).read_to_end(&mut bytes)?;
-        let mut hash = Sha256::new();
-        hash.update(&bytes);
-        ensure!(
-            bytes.len() as u64 == artifact.bytes && hex_lower(&hash.finalize()) == artifact.sha256,
-            "artifact bytes changed after pack validation"
-        );
-        Ok(bytes)
+        read_artifact_bytes(&self.dir.join(&artifact.file), artifact)
     }
 
     /// Stable whole-pack content identity, separate from the legacy optimized

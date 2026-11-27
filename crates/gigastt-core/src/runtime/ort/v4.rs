@@ -7,7 +7,9 @@ use ort::{
 
 use super::{factory::shared_environment, session::OrtSession};
 use crate::model::{
-    ArtifactRole, TensorAxis, TensorElement, TensorSpec, V4_RNNT_SPLIT_ABI, VerifiedV4Graph,
+    ArtifactRole, StreamingTensorSpec, TensorAxis, TensorElement, TensorSpec, V4_RNNT_SPLIT_ABI,
+    V4_STREAMING_FRONT_CACHE_SHAPES, V4_STREAMING_LAYER_CACHE_SHAPES, VerifiedV4Graph,
+    VerifiedV4StreamingGraph,
 };
 use crate::runtime::{RuntimeError, RuntimeSession};
 
@@ -90,28 +92,122 @@ pub(crate) fn load_verified_cpu(
             return Err(load_error(role, "tokenizer is not an ONNX graph"));
         }
     };
+    let session = build_verified_cpu(graph.bytes(), |message| load_error(role, message))?;
+    validate_outlets(session.inputs(), inputs, false, role)?;
+    validate_outlets(session.outputs(), outputs, encoder_output, role)?;
+    Ok(Box::new(OrtSession::from_session(session)))
+}
+
+fn build_verified_cpu(
+    bytes: &[u8],
+    error: impl Fn(String) -> RuntimeError,
+) -> Result<Session, RuntimeError> {
     let environment = shared_environment()?;
     let mut builder = Session::builder(&environment)
-        .map_err(|e| load_error(role, e))?
+        .map_err(|e| error(e.to_string()))?
         .with_no_environment_execution_providers()
-        .map_err(|e| load_error(role, e))?
+        .map_err(|e| error(e.to_string()))?
         .with_execution_providers([ort::ep::CPU::default()
             .with_arena_allocator(true)
             .build()
             .error_on_failure()])
-        .map_err(|e| load_error(role, e))?
+        .map_err(|e| error(e.to_string()))?
         .with_optimization_level(GraphOptimizationLevel::Level3)
-        .map_err(|e| load_error(role, e))?
+        .map_err(|e| error(e.to_string()))?
         .with_parallel_execution(false)
-        .map_err(|e| load_error(role, e))?
+        .map_err(|e| error(e.to_string()))?
         .with_intra_threads(1)
-        .map_err(|e| load_error(role, e))?
+        .map_err(|e| error(e.to_string()))?
         .with_inter_threads(1)
-        .map_err(|e| load_error(role, e))?;
+        .map_err(|e| error(e.to_string()))?;
     let session = builder
-        .commit_from_memory(graph.bytes())
-        .map_err(|e| load_error(role, e))?;
-    validate_outlets(session.inputs(), inputs, false, role)?;
-    validate_outlets(session.outputs(), outputs, encoder_output, role)?;
+        .commit_from_memory(bytes)
+        .map_err(|e| error(e.to_string()))?;
+    Ok(session)
+}
+
+/// Load only exact role-pinned streaming graphs, not arbitrary ONNX bytes.
+pub(crate) fn load_verified_streaming_cpu(
+    graph: VerifiedV4StreamingGraph,
+) -> Result<Box<dyn RuntimeSession>, RuntimeError> {
+    let role = graph.role();
+    let error = |message: String| RuntimeError::LoadFailed {
+        path: role.as_str().into(),
+        message,
+    };
+    let (inputs, outputs) = role
+        .graph_specs()
+        .ok_or_else(|| error("not a v4 streaming ONNX role".into()))?;
+    let session = build_verified_cpu(graph.bytes(), error)?;
+    validate_streaming_outlets(session.inputs(), inputs, false).map_err(error)?;
+    validate_streaming_outlets(session.outputs(), outputs, true).map_err(error)?;
     Ok(Box::new(OrtSession::from_session(session)))
+}
+
+fn validate_streaming_outlets(
+    actual: &[Outlet],
+    expected: &[StreamingTensorSpec],
+    output: bool,
+) -> Result<(), String> {
+    if actual.len() != expected.len() {
+        return Err("unexpected v4 streaming graph input/output count".into());
+    }
+    for (actual, expected) in actual.iter().zip(expected) {
+        let ty = match expected.element {
+            TensorElement::F32 => TensorElementType::Float32,
+            TensorElement::I64 => TensorElementType::Int64,
+        };
+        if actual.name() != expected.name || actual.dtype().tensor_type() != Some(ty) {
+            return Err(format!(
+                "unexpected v4 streaming graph outlet {} type/name",
+                expected.name
+            ));
+        }
+        let shape = actual
+            .dtype()
+            .tensor_shape()
+            .ok_or_else(|| format!("non-tensor v4 streaming outlet {}", expected.name))?;
+        let shape_ok = shape.len() == expected.shape.len()
+            && shape
+                .iter()
+                .zip(expected.shape)
+                .enumerate()
+                .all(|(axis, (&got, &want))| {
+                    got == want
+                        || (output
+                            && want == -1
+                            && inferred_streaming_output_axis(expected.name, axis) == Some(got))
+                });
+        if !shape_ok {
+            return Err(format!(
+                "unexpected v4 streaming outlet {} shape {:?}",
+                expected.name,
+                shape.as_ref()
+            ));
+        }
+    }
+    Ok(())
+}
+
+// ORT can resolve a symbolic output axis to its known physical geometry.
+// Do not accept a fixed temporal width or any unqualified specialization.
+fn inferred_streaming_output_axis(name: &str, axis: usize) -> Option<i64> {
+    let known = if name == "pre_encoded" || name == "encoded" {
+        match (name, axis) {
+            (_, 0) => 1,
+            ("encoded", 1) | ("pre_encoded", 2) => 768,
+            _ => return None,
+        }
+    } else {
+        let (index, shapes) = if let Some(index) = name.strip_prefix("next_front_") {
+            (index, V4_STREAMING_FRONT_CACHE_SHAPES)
+        } else {
+            (
+                name.strip_prefix("next_cache_")?,
+                V4_STREAMING_LAYER_CACHE_SHAPES,
+            )
+        };
+        *shapes.get(index.parse::<usize>().ok()?)?.get(axis)?
+    };
+    i64::try_from(known).ok()
 }
