@@ -57,6 +57,8 @@ async-pool = ["dep:tokio"]                              # async Pool::checkout; 
 file-decode = ["dep:symphonia", "dep:ryf", "dep:opus-rs"] # file transcription; raw-PCM streaming does not need it
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = ["dep:gigastt-quantize"]
+# Explicit side-loaded oneMKL frontend for qualified v4 packs (GNU Linux x86-64 only).
+v4-mkl = []
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
 ane = ["dep:tar", "dep:objc2", "dep:objc2-core-ml", "dep:objc2-foundation", "dep:half"]
 # Private/unstable: exposes internal items (tokenizer module + synthetic

@@ -193,11 +193,104 @@ frame semantics and exclusive frame ends. Future inference must validate the
 actual returned encoder length before using this geometry; it is not a native
 streaming clock or a source of confidence scores.
 
-There is **no v4 acoustic frontend implementation or inference path** in this
-validation slice. A local frontend experiment matched the short, longer, odd,
-padded, native 16 kHz, and 48 kHz-resampled examples, but failed the fixed
-numerical parity gate for both 8 kHz-resampled inputs. The discrepancy was
-localized to float32 FFT backend cancellation near the log floor, not to
-SentencePiece or the model-pack contract. Those results do not justify
-replacing the v3 frontend, introducing an implicit fallback, or claiming v4
-acoustic parity.
+The default build still has **no v4 acoustic inference path**. The portable
+RustFFT frontend experiment failed the fixed parity gate for both 8 kHz-resampled
+inputs. The discrepancy came from float32 FFT cancellation near the log floor;
+neither a real-input Rust FFT nor a higher-precision mathematical FFT met the
+same author tolerance. These unsuccessful experiments do not justify fallback
+or changing the existing v3 frontend.
+
+## Optional experimental CPU acoustic frontend
+
+On GNU Linux x86-64 only, building `gigastt-core` with the opt-in `v4-mkl`
+feature exposes `inference::v4::V4Frontend`. It remains off by default,
+including in lean builds. On other targets the feature does not expose this
+API. No PyTorch, native model inference, implicit provider fallback, server
+routing, or automatic runtime installation is added by this feature.
+
+The initial profile uses Intel oneMKL 2024.2 build 20240605, sequential LP64,
+with the exact 12 libraries and SHA-256/size pins recorded in
+[`mkl-profile.json`](../crates/gigastt-core/src/inference/v4/frontend/mkl-profile.json).
+The complete vendor CPU/VML closure is about 350 MiB on disk. It was chosen
+after an isolated seven-library loader experiment showed a genuine missing
+VML-library search; all five documented CPU VML kernels are now explicit
+members of the link group. This profile is numerically qualified on the
+measured Linux x86-64 host, not every CPU, glibc, compiler, or MKL release.
+
+Supply the exact local [Intel MKL 2024.2.0 wheel](https://pypi.org/project/mkl/2024.2.0/),
+obtained separately by the operator. The helper neither downloads nor installs
+anything system-wide. It verifies the wheel, extracts only the listed CPU
+libraries and message catalog, retains the Intel Simplified Software License
+and third-party notices, and compiles the project's small public DFTI bridge:
+
+```sh
+python3 scripts/build-v4-mkl-runtime.py \
+  mkl-2024.2.0-py2.py3-none-manylinux1_x86_64.whl /path/to/new-runtime
+```
+
+The first profile pins the exact bridge binary as well as the vendor files.
+The measured bridge was built with GCC 15.2.0 (Ubuntu 15.2.0-16ubuntu1), GNU
+Binutils 2.46 and glibc 2.43 using the flags in that helper. A different
+compiler/link result is rejected, even if the source is identical; it needs
+separate qualification. The directory must remain operator-owned, trusted
+and immutable while the application runs. Model validation is not a sandbox
+for native executable code. Unexpected runtime-directory entries (including
+loader hardware-capability overlays), symlinks, wrong hashes or version,
+missing symbols and incompatible namespace paths are errors.
+
+```rust
+use gigastt_core::inference::v4::V4Frontend;
+use gigastt_core::model::QualifiedV4Pack;
+use std::path::Path;
+
+let pack = QualifiedV4Pack::load(Path::new("/path/to/local-v4-pack"))?;
+let frontend = V4Frontend::from_pack(&pack, Path::new("/path/to/new-runtime"))?;
+let samples = vec![0.0_f32; 3200];
+let features = frontend.compute(&samples)?;
+assert_eq!(features.grid.valid_mel_frames(), 19);
+# Ok::<(), anyhow::Error>(())
+```
+
+The bridge is an explicit isolated GNU dynamic-loader namespace, with its
+pinned libraries in the same directory and `$ORIGIN` search. The process
+never sets global loader environment variables or MKL thread settings.
+Explicit environment overrides that can change the qualified MKL arithmetic
+are rejected. Each transform uses one local MKL thread, checked aligned,
+disjoint input/output buffers, and a bounded, separately freed descriptor;
+the calling thread's setting is restored. One selected namespace remains for
+the process lifetime: do not hot-reload or replace it, and restart after a
+native status, namespace, or ownership failure. Calling again with the same
+qualified runtime reuses it. A different runtime is not substituted. The
+vendor libraries retained mappings after a successful `dlclose` in the
+qualification probe, so no unload guarantee is made.
+
+The frontend accepts finite mono 16 kHz float PCM, from one complete 320-sample
+window up to 30 seconds, the bounded qualification scope. It does not
+resample, center, implicitly pad or truncate. `compute_padded` distinguishes
+explicit physical padding from a separate valid prefix; the returned
+`V4FrameGrid` reports physical/valid mel lengths and expected encoded
+lengths from causal subsampling. Actual encoder output must be validated by a future inference
+runtime. There is no v4 streaming or batching claim.
+
+The 42,496-byte coefficient asset contains the exact pinned author's FP32
+Hann window (320 values) followed by the HTK mel-major 64×161 matrix, with
+no precision reduction. `scripts/extract-v4-frontend.py` reconstructs it from
+the pinned safetensors checkpoint after its exact SHA-256 check, reading
+only `model.preprocessor.featurizer.0.spectrogram.window` and `mel_scale.fb` and
+transposing the latter. Asset SHA-256 is
+`15c9da5c673fcfe5f6fa5dbfd28b8e19b658c14f15fd4c7ff656405764a417c0`.
+Custom distributors enabling `v4-mkl` must accompany the embedded coefficient
+asset with its [upstream MIT notice](../crates/gigastt-core/src/inference/v4/frontend/gigaam_v4_frontend.LICENSE).
+The separately supplied Intel binary libraries remain governed by their own
+license and notices; gigastt does not bundle them by default.
+
+The actual optional Rust frontend API passed the frozen author comparison on
+18 supported inputs and rejected all three sub-window inputs. This included
+short/odd/long inputs, explicit padding with a separate valid prefix, and the
+same fixed float PCM from both the author and native resampling paths at
+8/16/48 kHz. Across the supported feature arrays the maximum error was
+1.91e-6 and the worst active-bin mean error was 4.91e-8. Three frozen
+spectrum/power/mel/log controls were bit-identical. The 8 and 48 kHz waveform
+resampling algorithms themselves are different; this is feature parity on
+matched input PCM, not a claim of identical FFmpeg and Rubato samples or
+inference transcript quality.

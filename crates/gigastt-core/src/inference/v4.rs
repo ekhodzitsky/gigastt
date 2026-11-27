@@ -1,12 +1,27 @@
-//! SentencePiece and timestamp contracts for the qualified GigaAM v4 split ABI.
+//! SentencePiece, timestamp and optional MKL frontend contracts for the qualified v4 ABI.
 //!
 //! These helpers consume a verified pack, not a precision flag or a legacy
-//! variant. They do not create inference sessions or provide an acoustic frontend.
+//! variant. They do not create inference sessions or change the legacy frontend.
 
 use anyhow::{Context, Result, ensure};
 use sentencepiece_rs::{ModelType, PieceType, SentencePieceProcessor};
 
 use crate::model::{QualifiedV4Pack, TranscriptStyle};
+
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+mod frontend;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub use frontend::{V4Features, V4Frontend};
 
 const WINDOW_SAMPLES: usize = 320;
 const HOP_SAMPLES: usize = 160;
