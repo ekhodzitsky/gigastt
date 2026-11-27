@@ -7,10 +7,11 @@ info:
     Offline and streaming speech-to-text REST API powered by GigaAM v3 (rnnt head by default).
     On-device Russian speech recognition via ONNX Runtime. The default contract below
     describes the legacy v3 profile. An explicitly selected, optional GNU Linux x86-64
-    v4 RNNT FP32 server serves full-context file transcription only: one loaded
-    raw or e2e style, one CPU slot, maximum 30 seconds of decoded audio, no native
-    WebSocket or hot reload, no implicit model fallback. See the v4 profile section
-    in docs/api.md for supported selectors and unsupported options.
+    v4 RNNT FP32 server serves full-context file transcription with one loaded
+    raw or e2e style, one CPU slot, and a 30-second decoded audio limit. A separately
+    verified streaming pack optionally enables native v4 WebSocket sessions; see
+    docs/v4-native-websocket.md and docs/asyncapi.yaml. V4 has no hot reload or implicit
+    model fallback. See the v4 profile section in docs/api.md for selector details.
 
     ## Endpoints
 

@@ -145,9 +145,6 @@ pub(crate) fn validate_command(matches: &ArgMatches) -> Result<()> {
             "endpoint_silence_ms",
             "stream_max_window_secs",
             "stream_stable_prefix",
-            "idle_timeout_secs",
-            "ws_frame_max_bytes",
-            "max_session_secs",
             "metrics_listen",
             "config",
         ] {
@@ -162,6 +159,30 @@ pub(crate) fn validate_command(matches: &ArgMatches) -> Result<()> {
                 .is_none_or(|&n| n <= 30),
             "v4 supports at most 30 seconds per full-context file"
         );
+        if explicit(args, "v4_streaming_model_dir") {
+            gigastt_core::model::V4StreamContext::from_millis(
+                args.get_one::<u16>("v4_streaming_future_context_ms")
+                    .copied()
+                    .unwrap_or(320),
+            )?;
+            ensure!(
+                args.get_one::<usize>("ws_frame_max_bytes")
+                    .is_none_or(|n| *n >= 2),
+                "native v4 WebSocket frame limit must admit at least one PCM16 sample"
+            );
+        } else {
+            for id in [
+                "idle_timeout_secs",
+                "ws_frame_max_bytes",
+                "max_session_secs",
+            ] {
+                ensure!(
+                    !explicit(args, id),
+                    "v4 file server does not support --{} without a native streaming pack",
+                    id.replace('_', "-")
+                );
+            }
+        }
         // The edge profile implies legacy VAD/pool changes.
         ensure!(
             !explicit(args, "profile")
@@ -260,6 +281,8 @@ pub(crate) async fn transcribe(
 pub(crate) async fn serve(
     selection: V4Selection,
     model_dir: String,
+    streaming_dir: Option<PathBuf>,
+    future_context_ms: u16,
     config: gigastt::server::ServerConfig,
 ) -> Result<()> {
     #[cfg(all(
@@ -272,11 +295,19 @@ pub(crate) async fn serve(
         use gigastt_core::inference::v4::V4Engine;
         use std::path::Path;
         let style = selection.style;
-        let engine = tokio::task::spawn_blocking(move || {
-            V4Engine::load(Path::new(&model_dir), &selection.mkl_dir)
+        let (engine, streaming) = tokio::task::spawn_blocking(move || -> Result<_> {
+            let context = gigastt_core::model::V4StreamContext::from_millis(future_context_ms)?;
+            let engine = V4Engine::load(Path::new(&model_dir), &selection.mkl_dir)?;
+            let streaming = streaming_dir
+                .as_deref()
+                .map(|dir| {
+                    gigastt::server::NativeV4Streaming::load(dir, &selection.mkl_dir, context)
+                })
+                .transpose()?;
+            Ok((engine, streaming))
         })
         .await??;
-        gigastt::server::run_v4_files(engine, style, config, None).await
+        gigastt::server::run_v4_files_with_streaming(engine, style, config, streaming, None).await
     }
     #[cfg(not(all(
         feature = "v4-mkl",
@@ -285,7 +316,14 @@ pub(crate) async fn serve(
         target_env = "gnu"
     )))]
     {
-        let _ = (selection.style, selection.mkl_dir, model_dir, config);
+        let _ = (
+            selection.style,
+            selection.mkl_dir,
+            model_dir,
+            streaming_dir,
+            future_context_ms,
+            config,
+        );
         anyhow::bail!("v4 requires a GNU Linux x86-64 build with --features v4-mkl")
     }
 }

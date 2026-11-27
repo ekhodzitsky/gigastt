@@ -2,6 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Separate, opt-in native v4 WebSocket dialect.
+pub mod native_v4;
+
 /// Current WebSocket protocol version (semver-lite: major.minor).
 pub const PROTOCOL_VERSION: &str = "1.3";
 /// Oldest accepted client version; newer versions add optional fields.

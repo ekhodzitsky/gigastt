@@ -15,6 +15,13 @@ use std::sync::Arc;
 
 mod frames;
 mod incoming;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(super) mod native_v4;
 use frames::{
     FrameOutcome, flush_and_final, handle_binary_frame, handle_configure_message,
     handle_stop_message, send_server_message,
@@ -62,12 +69,34 @@ fn session_deadline(max_session_secs: u64) -> tokio::time::Instant {
     }
 }
 
+fn native_protocol_requested(headers: &axum::http::HeaderMap) -> bool {
+    headers
+        .get_all(axum::http::header::SEC_WEBSOCKET_PROTOCOL)
+        .iter()
+        .filter_map(|value| value.to_str().ok())
+        .flat_map(|s| s.split(','))
+        .any(|s| s.trim() == gigastt_core::protocol::native_v4::SUBPROTOCOL)
+}
+
 pub(crate) async fn ws_handler(
     ws: WebSocketUpgrade,
     axum::extract::ConnectInfo(peer): axum::extract::ConnectInfo<SocketAddr>,
     State(state): State<Arc<http::AppState>>,
     headers: axum::http::HeaderMap,
 ) -> Response {
+    // Only the new reserved v4 subprotocol changes behavior here. An
+    // ordinary legacy request still negotiates and runs the same v3 path.
+    if native_protocol_requested(&headers) {
+        use axum::response::IntoResponse;
+        return (
+            axum::http::StatusCode::CONFLICT,
+            axum::Json(serde_json::json!({
+                "error":"Native v4 streaming is not provisioned on this listener",
+                "code":"native_v4_unsupported",
+            })),
+        )
+            .into_response();
+    }
     // Origin allowlist is enforced by `origin_middleware` before the request
     // reaches this handler; anything that arrives here has already been cleared.
     //

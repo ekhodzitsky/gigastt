@@ -8,6 +8,11 @@ Machine-readable specs: [`docs/asyncapi.yaml`](asyncapi.yaml) (WebSocket) and
 
 ## WebSocket — streaming
 
+The following describes the default legacy wire protocol. A separately
+provisioned [native v4 WebSocket profile](v4-native-websocket.md) requires
+an explicit subprotocol offer and reports version 1.4; it never falls back
+to this legacy path.
+
 Connect to `ws://127.0.0.1:9876/v1/ws`, send PCM16 audio frames, receive incremental
 partials. This is **buffered/chunked over an offline RNN-T**, not a native streaming
 AM. Encoder geometry (do not change without a new protocol version): stride

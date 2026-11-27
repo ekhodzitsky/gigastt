@@ -156,3 +156,22 @@ decoder blank-run endpoint duration (40–2000 ms, default 600), only in auto mo
 without VAD. It is not acoustic silence detection. When set, the SDK requests
 protocol 1.3 so older servers reject the handshake instead of ignoring the
 setting. When omitted, the SDK retains its protocol 1.0 compatibility.
+
+## Native GigaAM v4 opt-in
+
+Connect to a server that explicitly provisions the native v4 streaming pack:
+
+```ts
+const client = await GigasttClient.connect(DEFAULT_URL, {
+  nativeV4: { transcriptStyle: "raw", futureContextMs: 320 },
+  handlers: { onPartial: (event) => console.log(event.native_delta?.text) },
+});
+```
+
+Use 16 kHz mono signed little-endian PCM16 and the `ready.native_v4` packet
+limit. The SDK requires the new subprotocol and matches the Ready profile;
+without `nativeV4`, the legacy SDK behavior is unchanged. `text`/`words` are
+cumulative snapshots; optionally consume `native_delta` once per message.
+Calling Stop finalizes and closes. Reconnect starts a fresh state without
+replaying audio. A custom WebSocket factory must forward the optional
+subprotocol list and expose the resulting negotiated `protocol`.

@@ -2,8 +2,9 @@
 
 The opt-in `v4-mkl` feature on GNU/Linux x86-64 exposes
 `gigastt_core::inference::v4::V4StreamingEngine`. It is separate from the v4
-full-context `V4Engine` and the default v3 inference path. It does not enable
-native streaming in the CLI, HTTP server or WebSocket protocol.
+full-context `V4Engine` and the default v3 inference path. This core API does
+not by itself enable a network route; see the separate
+[native v4 WebSocket profile](v4-native-websocket.md).
 
 Load a [qualified cached-streaming pack](v4-streaming-pack.md) and the explicit
 [qualified local oneMKL runtime](v4-pack-validation.md). The engine verifies

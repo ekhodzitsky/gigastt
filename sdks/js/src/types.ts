@@ -12,6 +12,31 @@
  * error instead of silently misbehaving.
  */
 export const PROTOCOL_VERSION = "1.0";
+/** Separately negotiated native cached v4 dialect. */
+export const NATIVE_V4_PROTOCOL_VERSION = "1.4";
+export const NATIVE_V4_SUBPROTOCOL = "gigastt-native-v4";
+
+export interface NativeV4Capability {
+  model_family: "gigaam_v4";
+  model_head: "rnnt";
+  model_precision: "fp32";
+  transcript_style: "raw" | "e2e";
+  future_context_ms: 160 | 320 | 640;
+  supported_future_context_ms: number[];
+  max_packet_bytes: number;
+  endpoint_mode: "manual";
+}
+
+/** New output since the previous packet, not another transcript snapshot. */
+export interface NativeV4Delta {
+  packet_one_based: number;
+  samples: number;
+  encoded_frames: number;
+  text: string;
+  words: WordInfo[];
+  tokens: { id: number; frame: number; confidence: number }[];
+}
+
 
 /** Default server endpoint (loopback bind, default port). */
 export const DEFAULT_URL = "ws://127.0.0.1:9876/v1/ws";
@@ -44,6 +69,8 @@ export interface ReadyMessage {
   diarization?: boolean;
   /** Minimum protocol version the server accepts. */
   min_protocol_version?: string;
+  /** Present only on an explicitly negotiated native v4 session. */
+  native_v4?: NativeV4Capability;
 }
 
 /** A partial (interim, may change) or final (utterance complete) segment. */
@@ -56,6 +83,8 @@ export interface Transcript {
   is_final: boolean;
   /** Unix time (seconds since epoch) when the segment was produced. */
   timestamp: number;
+  /** Append this delta once; text/words above are the entire current snapshot. */
+  native_delta?: NativeV4Delta;
 }
 
 /** Machine-readable error codes sent by the server (docs/asyncapi.yaml). */

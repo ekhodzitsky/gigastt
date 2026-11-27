@@ -114,6 +114,10 @@ gigastt serve [OPTIONS]
                             without widening the window [default: true].
                             Opt out with --stream-stable-prefix=false.
                             Env: GIGASTT_STREAM_STABLE_PREFIX.
+  --v4-streaming-model-dir <PATH> Qualified native v4 streaming pack (optional).
+                            Env: GIGASTT_V4_STREAMING_MODEL_DIR.
+  --v4-streaming-future-context-ms <MS> Default native v4 context: 160, 320, or 640 [default: 320].
+                            Requires the native pack. Env: GIGASTT_V4_STREAMING_FUTURE_CONTEXT_MS.
   --stream-ctc-model-dir <DIR> Cached ml_ctc_large sidecar for RNN-T WebSocket
                             speech/automatic-endpoint confirmation [default: off].
                             Env: GIGASTT_STREAM_CTC_MODEL_DIR. No automatic download.
@@ -446,4 +450,5 @@ cache, metrics and reload overrides are not applicable to this profile.
 Explicit conflicting options are rejected rather than silently ignored.
 Asynchronous file jobs have no automatic retries. See the
 [API's v4 profile section](api.md#explicit-v4-full-context-file-profile) for
-the exact server route subset and errors.
+the exact server route subset and errors. To enable the separate cached v4
+WebSocket profile, see [native v4 WebSocket](v4-native-websocket.md).

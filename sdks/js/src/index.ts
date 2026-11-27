@@ -1,11 +1,15 @@
 export {
   DEFAULT_URL,
   PROTOCOL_VERSION,
+  NATIVE_V4_PROTOCOL_VERSION,
+  NATIVE_V4_SUBPROTOCOL,
   ServerError,
   parseServerMessage,
 } from "./types.js";
 export type {
   ErrorMessage,
+  NativeV4Capability,
+  NativeV4Delta,
   ReadyMessage,
   ServerErrorCode,
   ServerWireMessage,
@@ -17,6 +21,7 @@ export type {
   ClientHandlers,
   ClientOptions,
   CloseInfo,
+  NativeV4Options,
   PcmData,
   ReconnectOptions,
   WebSocketFactory,

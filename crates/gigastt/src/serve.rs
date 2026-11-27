@@ -48,6 +48,19 @@ pub(crate) struct ServeArgs {
     #[arg(long, default_value_t = model::default_model_dir())]
     pub(crate) model_dir: String,
 
+    /// Verified native v4 streaming pack, separate from the v4 file pack.
+    /// Enables only the explicit native v4 WebSocket protocol; no download.
+    #[arg(long, env = "GIGASTT_V4_STREAMING_MODEL_DIR", value_name = "PATH")]
+    pub(crate) v4_streaming_model_dir: Option<std::path::PathBuf>,
+
+    /// Default native v4 context in milliseconds: 160, 320 or 640 (default 320).
+    #[arg(
+        long,
+        env = "GIGASTT_V4_STREAMING_FUTURE_CONTEXT_MS",
+        requires = "v4_streaming_model_dir"
+    )]
+    pub(crate) v4_streaming_future_context_ms: Option<u16>,
+
     /// Cached ml_ctc_large directory for optional RNNT streaming confirmation.
     /// No automatic download. Requires CPU RNNT, pool/min-size 1, batch 0,
     /// encoder threads 1, stable-prefix on, auto endpoint and VAD off.
@@ -398,6 +411,10 @@ pub(crate) async fn run_serve(
     mut args: ServeArgs,
     v4_selection: Option<crate::v4_cli::V4Selection>,
 ) -> anyhow::Result<()> {
+    anyhow::ensure!(
+        v4_selection.is_some() || args.v4_streaming_model_dir.is_none(),
+        "--v4-streaming-model-dir requires --model-family gigaam_v4"
+    );
     // Edge profile fills weak-host defaults only when the operator left
     // the corresponding flags at clap defaults (explicit flags always win).
     if args.profile == ServeProfile::Edge
@@ -468,7 +485,14 @@ pub(crate) async fn run_serve(
     );
 
     if let Some(selection) = v4_selection {
-        return crate::v4_cli::serve(selection, args.model_dir, server_config).await;
+        return crate::v4_cli::serve(
+            selection,
+            args.model_dir,
+            args.v4_streaming_model_dir,
+            args.v4_streaming_future_context_ms.unwrap_or(320),
+            server_config,
+        )
+        .await;
     }
 
     // Shared recipe: first-run boot and `POST /v1/admin/reload` both

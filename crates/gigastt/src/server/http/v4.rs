@@ -10,12 +10,13 @@ use crate::server::{
     jobs::{InMemoryJobStore, JobExecution, JobQueue, JobStatus, JobStore},
     middleware, rate_limit,
     upload::{UploadAdmission, UploadPermit},
+    ws::native_v4::{NativeState, NativeV4Streaming},
 };
 use axum::{
     Extension, Json, Router,
     body::Bytes,
-    extract::{DefaultBodyLimit, Multipart, Path, Query, State},
-    http::StatusCode,
+    extract::{DefaultBodyLimit, Multipart, Path, Query, State, ws::WebSocketUpgrade},
+    http::{HeaderMap, StatusCode, Uri},
     response::{
         IntoResponse, Response,
         sse::{Event, KeepAlive, Sse},
@@ -70,6 +71,7 @@ struct FileRunner {
 struct FileState {
     runner: FileRunner,
     jobs: Option<JobServerState>,
+    native_ws: Option<Arc<NativeState>>,
 }
 
 fn model_id(style: TranscriptStyle) -> String {
@@ -545,14 +547,18 @@ async fn job_events(
 }
 
 async fn health(State(state): State<Arc<FileState>>) -> Json<serde_json::Value> {
-    Json(
-        json!({"status":"ok","model":model_id(state.runner.style),"variant":model_id(state.runner.style),"family":"gigaam_v4","head":"rnnt","style":style_name(state.runner.style),"precision":"fp32","version":env!("CARGO_PKG_VERSION"),"punctuation":false,"itn":false,"streaming":false}),
-    )
+    let mut body = json!({"status":"ok","model":model_id(state.runner.style),"variant":model_id(state.runner.style),"family":"gigaam_v4","head":"rnnt","style":style_name(state.runner.style),"precision":"fp32","version":env!("CARGO_PKG_VERSION"),"punctuation":false,"itn":false,"streaming":state.native_ws.is_some()});
+    if let Some(ws) = &state.native_ws {
+        body["native_v4"] = json!(ws.capability());
+    }
+    Json(body)
 }
 async fn models(State(state): State<Arc<FileState>>) -> Json<serde_json::Value> {
-    Json(
-        json!({"id":model_id(state.runner.style),"name":"GigaAM v4 RNNT FP32","variant":model_id(state.runner.style),"family":"gigaam_v4","head":"rnnt","style":style_name(state.runner.style),"precision":"fp32","encoder":"fp32","mode":"full_context","version":env!("CARGO_PKG_VERSION"),"sample_rate":16000,"vocab_size":1025,"pool_size":1,"pool_available":state.runner.slot.available_permits(),"max_audio_seconds":state.runner.limits.max_audio_secs_opt().unwrap_or(30.0).min(30.0),"supported_formats":["wav","mp3","m4a","ogg","flac","opus","webm"],"supported_rates":[],"punctuation":false,"itn":false,"diarization":false,"execution_provider":"cpu","streaming":false}),
-    )
+    let mut body = json!({"id":model_id(state.runner.style),"name":"GigaAM v4 RNNT FP32","variant":model_id(state.runner.style),"family":"gigaam_v4","head":"rnnt","style":style_name(state.runner.style),"precision":"fp32","encoder":"fp32","mode":"full_context","version":env!("CARGO_PKG_VERSION"),"sample_rate":16000,"vocab_size":1025,"pool_size":1,"pool_available":state.runner.slot.available_permits(),"max_audio_seconds":state.runner.limits.max_audio_secs_opt().unwrap_or(30.0).min(30.0),"supported_formats":["wav","mp3","m4a","ogg","flac","opus","webm"],"supported_rates":[],"punctuation":false,"itn":false,"diarization":false,"execution_provider":"cpu","streaming":state.native_ws.is_some()});
+    if let Some(ws) = &state.native_ws {
+        body["native_v4"] = json!(ws.capability());
+    }
+    Json(body)
 }
 async fn ready(State(state): State<Arc<FileState>>) -> Response {
     let available = if state.runner.shutdown.is_cancelled() {
@@ -587,6 +593,17 @@ async fn ready(State(state): State<Arc<FileState>>) -> Response {
     )
         .into_response()
 }
+async fn native_websocket(
+    State(state): State<Arc<FileState>>,
+    uri: Uri,
+    headers: HeaderMap,
+    ws: WebSocketUpgrade,
+) -> Response {
+    match &state.native_ws {
+        Some(native) => native.clone().upgrade(ws, uri, &headers),
+        None => ws_unsupported().await.into_response(),
+    }
+}
 async fn ws_unsupported() -> ApiError {
     api_error(
         StatusCode::CONFLICT,
@@ -608,6 +625,17 @@ pub async fn run_v4_files(
     engine: V4Engine,
     style: TranscriptStyle,
     config: ServerConfig,
+    shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
+) -> anyhow::Result<()> {
+    run_v4_files_with_streaming(engine, style, config, None, shutdown).await
+}
+
+/// Start the v4 file profile with an optional, explicitly verified native WS pack.
+pub async fn run_v4_files_with_streaming(
+    engine: V4Engine,
+    style: TranscriptStyle,
+    config: ServerConfig,
+    streaming: Option<NativeV4Streaming>,
     shutdown: Option<tokio::sync::oneshot::Receiver<()>>,
 ) -> anyhow::Result<()> {
     anyhow::ensure!(
@@ -641,9 +669,20 @@ pub async fn run_v4_files(
     } else {
         None
     };
+    let native_ws = streaming.map(|pack| {
+        Arc::new(NativeState::new(
+            pack,
+            style,
+            runner.limits.clone(),
+            shutdown_root.clone(),
+            tracker.clone(),
+        ))
+    });
+    let stream_enabled = native_ws.is_some();
     let state = Arc::new(FileState {
         runner,
         jobs: jobs.clone(),
+        native_ws,
     });
     let mut protected = Router::new()
         .route(
@@ -663,13 +702,20 @@ pub async fn run_v4_files(
             post(openai).options(|| async { StatusCode::NO_CONTENT }),
         )
         .route(
-            "/v1/ws",
-            get(ws_unsupported).options(|| async { StatusCode::NO_CONTENT }),
-        )
-        .route(
             "/v1/admin/reload",
             post(reload_unsupported).options(|| async { StatusCode::NO_CONTENT }),
         );
+    protected = if stream_enabled {
+        protected.route(
+            "/v1/ws",
+            get(native_websocket).options(|| async { StatusCode::NO_CONTENT }),
+        )
+    } else {
+        protected.route(
+            "/v1/ws",
+            get(ws_unsupported).options(|| async { StatusCode::NO_CONTENT }),
+        )
+    };
     if jobs.is_some() {
         protected = protected
             .route(
@@ -723,7 +769,7 @@ pub async fn run_v4_files(
         .layer(axum::middleware::from_fn(middleware::request_id_middleware))
         .with_state(state.clone());
     tracing::info!(
-        "gigastt v4 full-context file server listening on http://{addr}, style {}",
+        "gigastt v4 server listening on http://{addr}, file style {}, native WebSocket {stream_enabled}",
         style_name(style)
     );
     let stop = shutdown_root.clone();

@@ -304,7 +304,9 @@ loads the qualified seven-artifact local pack and the explicitly supplied
 MKL runtime. The explicit core API does not implement streaming or batching.
 The opt-in [file CLI and server profile](cli.md#explicit-v4-full-context-file-profile)
 uses this engine for bounded full-context requests; no automatic v4 routing
-or native WebSocket streaming is enabled. The default legacy engine is unchanged.
+or native WebSocket streaming is enabled by this pack. The default legacy
+engine is unchanged. The separate [native v4 WebSocket profile](v4-native-websocket.md)
+requires its own cached-streaming pack.
 
 ```rust
 use gigastt_core::inference::v4::{V4Engine, V4Pcm};
