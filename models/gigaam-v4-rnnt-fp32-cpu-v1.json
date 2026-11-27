@@ -1,0 +1,177 @@
+{
+  "catalogue_schema": 1,
+  "id": "gigaam-v4-rnnt-fp32-cpu-v1",
+  "archive": "gigastt-gigaam-v4-rnnt-fp32-cpu-v1.tar.gz",
+  "provenance": {
+    "source_repository": "https://github.com/salute-developers/GigaAM",
+    "source_revision": "e9bbf2e773eedd217c6f0d3b89b9728c41332b7d",
+    "model_repository": "ai-sage/GigaAM-v4",
+    "model_revision": "9fe3ebf50c9e0cce5eed60d546938632238b6a96",
+    "checkpoint_sha256": "2c38690c38edbd9dfc2190f1a2dacdcfbea2a692078457fc145a6034c031840a",
+    "license": "MIT"
+  },
+  "license": {
+    "notice": "licences/GigaAM-MIT.txt",
+    "bytes": 1061,
+    "sha256": "d02ed0afc408cb4ed5eb34b233096ad8c3db8b6751cd9385276a6725dbf92925"
+  },
+  "export": {
+    "opset": 17,
+    "format": "ONNX, all weights embedded, no external tensors",
+    "file": "Full-context encoder and per-style split predictor/joiner; no fused token-only output.",
+    "native": "Official dynamic stream frontend/step, explicit state/config and the same per-style split predictor/joiner bytes.",
+    "pytorch": "2.9.1+cpu",
+    "onnx": "1.19.1",
+    "reference_onnxruntime": "1.23.2"
+  },
+  "qualified_runtime": {
+    "os_arch_abi": "Linux x86-64 GNU/glibc",
+    "provider": "CPU",
+    "encoder_threads": 1,
+    "batch_size": 1,
+    "onnxruntime": "1.31.0",
+    "ort_rust": "2.0.0-rc.15",
+    "sample_rate_hz": 16000,
+    "file_max_seconds": 30,
+    "frontend": "External oneMKL 2024.2.0 sequential LP64 + qualified shim; not bundled.",
+    "frontend_coefficients_sha256": "15c9da5c673fcfe5f6fa5dbfd28b8e19b658c14f15fd4c7ff656405764a417c0",
+    "native_future_context_ms": [
+      160,
+      320,
+      640
+    ],
+    "native_receive": "mono PCM16LE with explicit Stop",
+    "native_word_publication": "A complete trailing word becomes visible at the next word boundary or Stop, not necessarily within encoder future context."
+  },
+  "profiles": {
+    "file": {
+      "schema_version": 1,
+      "family": "gigaam_v4",
+      "head": "rnnt",
+      "styles": [
+        "raw",
+        "e2e"
+      ],
+      "mode": "full_context",
+      "precision": "fp32",
+      "provider": "cpu",
+      "abi": "v4_rnnt_split_v1",
+      "external_data": [],
+      "artifacts": {
+        "encoder": {
+          "file": "v4_rnnt_encoder.onnx",
+          "bytes": 951218063,
+          "sha256": "62fd1735d1a3cf45d83d525c1857fd5df807be9c5d38cd61a5af52f9de2888b6"
+        },
+        "raw_decoder": {
+          "file": "v4_rnnt_raw_decoder.onnx",
+          "bytes": 4599970,
+          "sha256": "2881cef81aa7f1e559293306bdbc2059be209065f6ce4ac45140b1c818cc8879"
+        },
+        "raw_joint": {
+          "file": "v4_rnnt_raw_joint.onnx",
+          "bytes": 2712938,
+          "sha256": "38815775659e398cf9b0d977b92707557f2dcaea73c482233b7d5c6fb86fe95f"
+        },
+        "raw_tokenizer": {
+          "file": "raw_tokenizer.model",
+          "bytes": 15374,
+          "sha256": "dcbe2598d1b374065091832970593a06065d498a43fbb1787de73e180d0556bc"
+        },
+        "e2e_decoder": {
+          "file": "v4_rnnt_e2e_decoder.onnx",
+          "bytes": 4599970,
+          "sha256": "087ea392f825547ecc707e37f091d31ab211ec3ca2ee23dd86298d07621d4545"
+        },
+        "e2e_joint": {
+          "file": "v4_rnnt_e2e_joint.onnx",
+          "bytes": 2712938,
+          "sha256": "4964b0a350f35c78da1d100705b83fe05dfdf95e8535b970192985385f366ed7"
+        },
+        "e2e_tokenizer": {
+          "file": "e2e_tokenizer.model",
+          "bytes": 14686,
+          "sha256": "f547bcb38e071694ef1ddb25d9d40c86b4ab88cd0b16ab9fd52f27dd52c48e39"
+        }
+      }
+    },
+    "native": {
+      "schema_version": 1,
+      "family": "gigaam_v4",
+      "head": "rnnt",
+      "styles": [
+        "raw",
+        "e2e"
+      ],
+      "mode": "streaming",
+      "precision": "fp32",
+      "provider": "cpu",
+      "abi": "v4_rnnt_streaming_split_v1",
+      "future_context_ms": [
+        160,
+        320,
+        640
+      ],
+      "left_context_frames": 32,
+      "state_schema": "v4_zapformer_cache_v1",
+      "external_data": [],
+      "artifacts": {
+        "frontend": {
+          "file": "v4_rnnt_dynamic_stream_frontend.onnx",
+          "bytes": 3228802,
+          "sha256": "5fd2b06f0a83b1206d88b2a32c5785bcdf261005cc176aa65b74c4d94ca3ac84"
+        },
+        "step": {
+          "file": "v4_rnnt_dynamic_stream_step.onnx",
+          "bytes": 948135265,
+          "sha256": "75e57be63d3ed747d5e25985c86fbba406ad94b7dda7240659fa299598c3fac4"
+        },
+        "e2e_decoder": {
+          "file": "v4_rnnt_dynamic_e2e_decoder.onnx",
+          "bytes": 4599970,
+          "sha256": "087ea392f825547ecc707e37f091d31ab211ec3ca2ee23dd86298d07621d4545"
+        },
+        "e2e_joint": {
+          "file": "v4_rnnt_dynamic_e2e_joint.onnx",
+          "bytes": 2712938,
+          "sha256": "4964b0a350f35c78da1d100705b83fe05dfdf95e8535b970192985385f366ed7"
+        },
+        "raw_decoder": {
+          "file": "v4_rnnt_dynamic_raw_decoder.onnx",
+          "bytes": 4599970,
+          "sha256": "2881cef81aa7f1e559293306bdbc2059be209065f6ce4ac45140b1c818cc8879"
+        },
+        "raw_joint": {
+          "file": "v4_rnnt_dynamic_raw_joint.onnx",
+          "bytes": 2712938,
+          "sha256": "38815775659e398cf9b0d977b92707557f2dcaea73c482233b7d5c6fb86fe95f"
+        },
+        "e2e_tokenizer": {
+          "file": "v4_rnnt_dynamic_e2e_tokenizer.model",
+          "bytes": 14686,
+          "sha256": "f547bcb38e071694ef1ddb25d9d40c86b4ab88cd0b16ab9fd52f27dd52c48e39"
+        },
+        "raw_tokenizer": {
+          "file": "v4_rnnt_dynamic_raw_tokenizer.model",
+          "bytes": 15374,
+          "sha256": "dcbe2598d1b374065091832970593a06065d498a43fbb1787de73e180d0556bc"
+        },
+        "official_state_manifest": {
+          "file": "streaming.json",
+          "bytes": 6328,
+          "sha256": "879597716d08ec7ad2631a87e5c5e18fc265cfc7fb33c729cb32223e69cfb372"
+        },
+        "official_manifest_alias": {
+          "file": "v4_rnnt_dynamic.streaming.json",
+          "bytes": 6328,
+          "sha256": "879597716d08ec7ad2631a87e5c5e18fc265cfc7fb33c729cb32223e69cfb372"
+        },
+        "official_saved_config": {
+          "file": "v4_rnnt_dynamic.yaml",
+          "bytes": 1789,
+          "sha256": "f7d32c94c7de7fe0e414232cf80caf0f16aaf3ff3581980cc73760737aa9185a"
+        }
+      }
+    }
+  }
+}

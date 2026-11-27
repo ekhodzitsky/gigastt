@@ -17,6 +17,9 @@ with supported future contexts of 160, 320 and 640 ms and a fixed 32-frame left
 cache. Qualification is arithmetic and trajectory parity to the upstream
 streaming implementation, not full-context equivalence or a WER claim.
 
+Install both local directories with the [v4 RNNT bundle installer](v4-rnnt-delivery.md).
+The bundle page also explains observed word-publication delay and runtime limits.
+
 ## Descriptor
 
 The local directory must provide a bounded regular `manifest.toml`:

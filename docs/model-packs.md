@@ -1,4 +1,9 @@
-# Standalone multilingual small model pack
+# Standalone model packs
+
+For GigaAM v4 RNNT FP32 CPU, use the [separate file and native streaming bundle](v4-rnnt-delivery.md).
+Both standalone installers are opt-in; legacy download behavior is unchanged.
+
+## Multilingual small model pack
 
 `scripts/package_small_multilingual.py` builds and installs the validated
 selective-precision small multilingual model as a separate model directory.

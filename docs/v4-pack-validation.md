@@ -1,9 +1,10 @@
 # Versioned GigaAM v4 model pack validation
 
-This is a **validation-only** library contract. GigaAM v4 inference is not yet
-available through the engine, CLI, HTTP, WebSocket, or bindings. Existing v3
-variants, download behavior, precision defaults, and unversioned manifests are
-unchanged. Do not replace an installed v3 pack or add v3 files to a v4 directory.
+This page describes the **full-context** v4 validation contract. For the
+explicit file and native WebSocket profile, see [v4 RNNT delivery](v4-rnnt-delivery.md).
+Existing v3 variants, download behavior, precision defaults, and unversioned
+manifests are unchanged. Do not replace an installed v3 pack or add v3 files
+to a v4 directory.
 
 The first profile covers the bilingual GigaAM v4 RNN-T FP32 split encoder and
 both independent `raw` and `e2e` heads on an explicitly selected CPU, using
@@ -26,8 +27,9 @@ compatibility contract. The following example identifies the exact locally
 qualified artifacts by role, byte size, and SHA-256, from the official
 [upstream source](https://github.com/salute-developers/GigaAM/tree/e9bbf2e773eedd217c6f0d3b89b9728c41332b7d)
 and [checkpoint](https://huggingface.co/ai-sage/GigaAM-v4/tree/9fe3ebf50c9e0cce5eed60d546938632238b6a96).
-There is not yet a downloadable gigastt v4 bundle. Preserve the official MIT
-license and notice when packaging any derived artifacts.
+The [combined bundle installer](v4-rnnt-delivery.md) supports local archives
+and explicit HTTPS URLs; it does not advertise a release URL. Preserve the
+official MIT license and notice when packaging derived artifacts.
 
 ```toml
 schema_version = 1
