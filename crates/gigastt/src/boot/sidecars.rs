@@ -186,6 +186,7 @@ pub fn ensure_int8_encoder(
     skip: bool,
 ) -> anyhow::Result<()> {
     let dir = std::path::Path::new(model_dir);
+    model::reject_versioned_pack(dir)?;
     let int8_path = dir.join(variant.encoder_int8_file());
     if int8_path.exists() {
         return Ok(());

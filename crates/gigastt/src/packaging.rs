@@ -14,6 +14,7 @@ pub(crate) fn run_quantize(
     // Rebuild only with explicit replacement; an existing file may use a
     // different recipe, so a no-op must not claim successful conversion.
     let dir = std::path::Path::new(&model_dir);
+    model::reject_versioned_pack(dir)?;
     let resolved = requested
         .or_else(|| model::ModelVariant::detect_in_dir(dir))
         .unwrap_or_default();
@@ -192,6 +193,30 @@ pub(crate) async fn run_download(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(feature = "quantize")]
+    #[test]
+    fn test_run_quantize_refuses_versioned_pack_even_with_legacy_encoder() {
+        let tmp = tempfile::tempdir().unwrap();
+        let original = tmp.path().join(ModelVariant::Rnnt.encoder_file());
+        let output = tmp.path().join(ModelVariant::Rnnt.encoder_int8_file());
+        std::fs::write(&original, b"legacy encoder").unwrap();
+        std::fs::write(&output, b"legacy int8").unwrap();
+        std::fs::write(
+            tmp.path().join(model::MANIFEST_FILE),
+            "schema_version = 1\nfamily = \"gigaam_v4\"\n",
+        )
+        .unwrap();
+        let err = run_quantize(
+            tmp.path().display().to_string(),
+            true,
+            false,
+            Some(ModelVariant::Rnnt),
+        )
+        .unwrap_err();
+        assert!(format!("{err:#}").contains("versioned model packs"));
+        assert_eq!(std::fs::read(output).unwrap(), b"legacy int8");
+    }
 
     #[cfg(feature = "quantize")]
     #[test]

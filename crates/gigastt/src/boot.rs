@@ -222,6 +222,7 @@ impl EngineRecipe {
     /// `POST /v1/admin/reload`. Detects the variant without network; optionally
     /// quantizes when `self.quantize` is set.
     pub fn build_engine(&self) -> anyhow::Result<inference::Engine> {
+        model::reject_versioned_pack(std::path::Path::new(&self.model_dir))?;
         let resolved = self.resolve_variant_local();
         if self.quantize {
             ensure_int8_encoder(resolved, &self.model_dir, self.skip_quantize)?;

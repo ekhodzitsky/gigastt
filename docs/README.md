@@ -10,6 +10,7 @@ release tag when integrating a packaged version.
 | Guide | What it answers |
 |---|---|
 | [Models](models.md) | Supported heads, files, downloads, formatting and offline setup |
+| [Versioned v4 pack validation](v4-pack-validation.md) | Development-only local descriptor and qualified FP32 split contract |
 | [FP32 on CPU](fp32-cpu.md) | Explicit E2E RNNT installation, precision selection and known omissions |
 | [CTC streaming](ctc-streaming.md) | Explicit Linux CPU selection, streaming behavior and bounded validation |
 | [RNN-T with CTC confirmation](stream-ctc-confirmation.md) | Opt-in speech/endpoint confirmation, supported configuration and costs |

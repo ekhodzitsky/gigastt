@@ -297,6 +297,7 @@ pub async fn ensure_fp32_model_variant(
     model_dir: &str,
 ) -> Result<ModelVariant> {
     let dir = Path::new(model_dir);
+    super::manifest::reject_versioned_pack(dir)?;
     let existing = ModelVariant::detect_in_dir(dir).filter(|&v| is_model_present(v, dir));
     let variant = match resolve_variant(requested, existing) {
         VariantAction::Use(v) => {
@@ -340,6 +341,7 @@ pub async fn ensure_prequantized_model_variant(
     model_dir: &str,
 ) -> Result<ModelVariant> {
     let dir = Path::new(model_dir);
+    super::manifest::reject_versioned_pack(dir)?;
     let variant = requested
         .or_else(|| ModelVariant::detect_in_dir(dir).filter(|&v| is_usable_present(v, dir)))
         .unwrap_or_default();

@@ -17,6 +17,7 @@ mod download;
 mod manifest;
 mod progress;
 mod variant;
+mod versioned;
 
 #[cfg(feature = "coreml")]
 pub(crate) use cache::coreml_cache_dir;
@@ -26,7 +27,15 @@ pub use cache::{
 };
 pub(crate) use cache::{optimized_content_basename, optimized_source_hash};
 pub(crate) use manifest::ConfiguredManifest;
-pub use manifest::{MANIFEST_FILE, ManifestFiles, ModelManifest, ModelPrecision, ResolvedEncoder};
+pub use manifest::{
+    MANIFEST_FILE, ManifestFiles, ModelManifest, ModelPrecision, ResolvedEncoder,
+    reject_versioned_pack,
+};
+pub use versioned::{
+    ArtifactRole, PackAbi, PackArtifact, PackFamily, PackHead, PackMode, PackProvenance,
+    PackSelection, QualifiedV4Pack, SplitAbi, TensorAxis, TensorElement, TensorSpec,
+    TranscriptStyle, V4_RNNT_SPLIT_ABI, V4HeadFiles, VersionedPackDescriptor,
+};
 
 #[cfg(all(feature = "net", feature = "ane"))]
 pub use download::ensure_ane_packages;

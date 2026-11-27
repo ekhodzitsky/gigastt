@@ -192,21 +192,26 @@ impl ConfiguredManifest {
     }
 
     pub(crate) fn load(dir: &Path) -> Result<Option<Self>> {
-        let path = dir.join(MANIFEST_FILE);
-        if !path.is_file() {
+        let Some(text) = read_manifest_text(dir)? else {
             return Ok(None);
-        }
-        let text = std::fs::read_to_string(&path)
-            .with_context(|| format!("failed to read model manifest {}", path.display()))?;
+        };
         Self::parse(&text)
-            .with_context(|| format!("invalid model manifest {}", path.display()))
+            .with_context(|| {
+                format!(
+                    "invalid model manifest {}",
+                    dir.join(MANIFEST_FILE).display()
+                )
+            })
             .map(Some)
     }
 
     /// Parse a manifest TOML document (no filesystem access).
     fn parse(text: &str) -> Result<Self> {
-        let raw: RawManifest =
-            toml::from_str(text).context("failed to parse model manifest TOML")?;
+        let table = parse_manifest_table(text)?;
+        reject_versioned_table(&table)?;
+        let raw: RawManifest = table
+            .try_into()
+            .context("failed to parse model manifest TOML")?;
         let precision = raw.precision;
         Ok(Self {
             manifest: ModelManifest::from_raw(raw)?,
@@ -244,6 +249,46 @@ impl ConfiguredManifest {
         }
         Ok(ResolvedEncoder { path, using_int8 })
     }
+}
+
+fn read_manifest_text(dir: &Path) -> Result<Option<String>> {
+    let path = dir.join(MANIFEST_FILE);
+    match std::fs::symlink_metadata(&path) {
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error).context("failed to inspect model manifest"),
+    }
+    // A present but unusable manifest is not an absent manifest. In particular,
+    // do not let a directory or a dangling symlink trigger legacy detection.
+    anyhow::ensure!(path.is_file(), "model manifest must refer to a file");
+    std::fs::read_to_string(&path)
+        .with_context(|| format!("failed to read model manifest {}", path.display()))
+        .map(Some)
+}
+
+fn parse_manifest_table(text: &str) -> Result<toml::Table> {
+    toml::from_str(text).context("failed to parse model manifest TOML")
+}
+
+fn reject_versioned_table(table: &toml::Table) -> Result<()> {
+    if table.contains_key("schema_version") || table.contains_key("family") {
+        bail!(
+            "versioned model packs cannot be loaded or modified by the legacy model path; v4 inference is not enabled"
+        );
+    }
+    Ok(())
+}
+
+/// Guard a legacy-only operation before downloading, quantizing, or modifying
+/// a model directory. Either reserved top-level versioned marker is sufficient
+/// to reject the operation, even if valid legacy keys coexist. Invalid TOML or
+/// an unusable manifest also fails closed rather than authorizing a fallback.
+/// Unversioned manifests retain their legacy extension metadata semantics.
+pub fn reject_versioned_pack(dir: &Path) -> Result<()> {
+    if let Some(text) = read_manifest_text(dir)? {
+        reject_versioned_table(&parse_manifest_table(&text)?)?;
+    }
+    Ok(())
 }
 
 /// Non-empty basename; rejects empty strings and path separators so values stay

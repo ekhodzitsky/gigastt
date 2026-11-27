@@ -175,6 +175,28 @@ fn test_quantize_model_idempotent() {
 }
 
 #[test]
+fn test_ffi_quantize_refuses_versioned_pack_with_legacy_files() {
+    let tmp = tempfile::tempdir().unwrap();
+    let variant = gigastt_core::model::ModelVariant::Rnnt;
+    let encoder = tmp.path().join(variant.encoder_file());
+    let int8 = tmp.path().join(variant.encoder_int8_file());
+    std::fs::write(encoder, b"legacy").unwrap();
+    std::fs::write(&int8, b"original int8").unwrap();
+    std::fs::write(
+        tmp.path().join(gigastt_core::model::MANIFEST_FILE),
+        "schema_version = 1\nfamily = \"gigaam_v4\"\n",
+    )
+    .unwrap();
+    let dir = CString::new(tmp.path().to_str().unwrap()).unwrap();
+    let result = unsafe { gigastt_quantize_model(dir.as_ptr(), false) };
+    assert!(!result.is_null());
+    let message = unsafe { CStr::from_ptr(result) }.to_str().unwrap();
+    assert!(message.contains("versioned model packs"), "{message}");
+    unsafe { gigastt_string_free(result) };
+    assert_eq!(std::fs::read(int8).unwrap(), b"original int8");
+}
+
+#[test]
 fn test_string_free_null() {
     unsafe { gigastt_string_free(ptr::null_mut()) };
 }
