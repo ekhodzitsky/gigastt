@@ -143,8 +143,8 @@ token IDs, frames and text, and instrumentation checked log-softmax and selected
 token confidence parity. This is not an independent WER claim, an arbitrary
 length or batching qualification, nor proof of Rust frontend/tokenizer or
 streaming parity. The author fused ONNX export produces token IDs only and does
-not meet the metadata-preserving split contract. Native inference and word
-metadata integration remain subsequent work.
+not meet the metadata-preserving split contract. The optional core engine uses the split
+contract below; a fused graph is not a substitute.
 
 ## Qualified tokenization and timestamp helpers
 
@@ -189,11 +189,11 @@ center=false ABI: `M = floor((samples - 320) / 160) + 1`, and expected encoder
 length `T = ceil(M / 4)`. Its full-context timestamp shift is valid sample count
 / 16,000 / valid encoder length, not a fixed 40 ms interval. `V4Tokenizer::words`
 groups literal pieces on that grid, retaining the author's bare-boundary
-frame semantics and exclusive frame ends. Future inference must validate the
+frame semantics and exclusive frame ends. The optional core engine validates the
 actual returned encoder length before using this geometry; it is not a native
 streaming clock or a source of confidence scores.
 
-The default build still has **no v4 acoustic inference path**. The portable
+The default build has **no v4 acoustic inference path**. The portable
 RustFFT frontend experiment failed the fixed parity gate for both 8 kHz-resampled
 inputs. The discrepancy came from float32 FFT cancellation near the log floor;
 neither a real-input Rust FFT nor a higher-precision mathematical FFT met the
@@ -205,8 +205,9 @@ or changing the existing v3 frontend.
 On GNU Linux x86-64 only, building `gigastt-core` with the opt-in `v4-mkl`
 feature exposes `inference::v4::V4Frontend`. It remains off by default,
 including in lean builds. On other targets the feature does not expose this
-API. No PyTorch, native model inference, implicit provider fallback, server
-routing, or automatic runtime installation is added by this feature.
+API. This feature also enables the explicit core engine below, but does not
+add PyTorch, implicit provider fallback, server routing, or automatic
+runtime installation.
 
 The initial profile uses Intel oneMKL 2024.2 build 20240605, sequential LP64,
 with the exact 12 libraries and SHA-256/size pins recorded in
@@ -269,8 +270,8 @@ window up to 30 seconds, the bounded qualification scope. It does not
 resample, center, implicitly pad or truncate. `compute_padded` distinguishes
 explicit physical padding from a separate valid prefix; the returned
 `V4FrameGrid` reports physical/valid mel lengths and expected encoded
-lengths from causal subsampling. Actual encoder output must be validated by a future inference
-runtime. There is no v4 streaming or batching claim.
+lengths from causal subsampling. Actual encoder output is validated by the optional core inference
+runtime below. There is no v4 streaming or batching claim.
 
 The 42,496-byte coefficient asset contains the exact pinned author's FP32
 Hann window (320 values) followed by the HTK mel-major 64×161 matrix, with
@@ -294,3 +295,58 @@ spectrum/power/mel/log controls were bit-identical. The 8 and 48 kHz waveform
 resampling algorithms themselves are different; this is feature parity on
 matched input PCM, not a claim of identical FFmpeg and Rubato samples or
 inference transcript quality.
+
+
+## Explicit experimental core CPU engine
+
+On the same opt-in GNU Linux x86-64 profile, `inference::v4::V4Engine`
+loads the qualified seven-artifact local pack and the explicitly supplied
+MKL runtime. There is no CLI, HTTP, WebSocket, streaming, batching or
+automatic v4 routing in this API. The default legacy engine is unchanged.
+
+```rust
+use gigastt_core::inference::v4::{V4Engine, V4Pcm};
+use gigastt_core::model::TranscriptStyle;
+use std::path::Path;
+
+let engine = V4Engine::load(
+    Path::new("/path/to/local-v4-pack"),
+    Path::new("/path/to/new-runtime"),
+)?;
+let samples = vec![0.0_f32; 3200];
+let result = engine.transcribe(V4Pcm::full(&samples), TranscriptStyle::E2e, None)?;
+# Ok::<(), anyhow::Error>(())
+```
+
+Exactly one shared acoustic encoder and two independent style-specific
+predictor, joiner and SentencePiece heads are loaded. Each ONNX graph is
+rehashed into an owned byte buffer, and that same buffer is parsed by ONNX
+Runtime with the explicit CPU provider and one intra/inter-op thread.
+No optimized graph cache or legacy variant fallback is used. Keep the
+operator-owned pack immutable; this loader does not monitor files after
+session creation. The graph load temporarily needs memory for the full
+FP32 encoder byte buffer as well as ONNX Runtime's allocations.
+
+Each synchronous request owns a single engine slot, with fresh recurrent
+prediction state. The explicit `transcribe_both` path runs the acoustic
+encoder once and decodes both styles independently. Cancellation is
+cooperative while waiting for the slot and around each native stage;
+an in-flight native call is not preempted. Cancelled requests return no
+partial state or transcript. Only finite mono 16 kHz float PCM within the
+frontend's stated physical/valid length limits is accepted.
+
+The v4 greedy schedule scores an eight-frame joiner window, clamping the
+gather to physical encoder length and searching only its valid prefix. It
+commits recurrent state only on nonblank emissions and limits each frame
+to ten symbols. Returned IDs, frames, and complete decoded text remain
+separate from the author's literal word grouping. Token confidence is the
+selected model log-softmax exponent, and the word confidence is the mean
+token confidence within that group. The overall confidence is
+duration-weighted across words (or absent for empty groups). These are
+gigastt's derived model scores, not author-provided word confidences or
+calibrated correctness probabilities. Timestamps have the valid full-context
+utterance's exclusive-frame-end convention, not a streaming clock.
+
+The core API is restricted to the pinned FP32 split profile, not arbitrary
+v4 weights, other execution providers or quantization. Numerical qualification
+uses matched PCM/feature inputs, not arbitrary audio quality or a WER claim.

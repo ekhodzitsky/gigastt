@@ -686,6 +686,31 @@ pub struct V4HeadFiles {
     pub cache_identity: String,
 }
 
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(crate) struct VerifiedV4Graph {
+    role: ArtifactRole,
+    bytes: Vec<u8>,
+}
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+impl VerifiedV4Graph {
+    pub(crate) fn role(&self) -> ArtifactRole {
+        self.role
+    }
+    pub(crate) fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+}
+
 impl QualifiedV4Pack {
     /// Load and verify a versioned local pack, without inference or download.
     pub fn load(dir: &Path) -> Result<Self> {
@@ -704,34 +729,61 @@ impl QualifiedV4Pack {
             TranscriptStyle::Raw => ArtifactRole::RawTokenizer,
             TranscriptStyle::E2e => ArtifactRole::E2eTokenizer,
         };
+        self.read_verified_artifact_bytes(role)
+    }
+
+    #[cfg(all(
+        feature = "v4-mkl",
+        target_os = "linux",
+        target_arch = "x86_64",
+        target_env = "gnu"
+    ))]
+    pub(crate) fn read_graph_bytes(&self, role: ArtifactRole) -> Result<VerifiedV4Graph> {
+        ensure!(
+            !matches!(
+                role,
+                ArtifactRole::RawTokenizer | ArtifactRole::E2eTokenizer
+            ),
+            "tokenizer role is not an ONNX graph"
+        );
+        Ok(VerifiedV4Graph {
+            role,
+            bytes: self.read_verified_artifact_bytes(role)?,
+        })
+    }
+
+    fn read_verified_artifact_bytes(&self, role: ArtifactRole) -> Result<Vec<u8>> {
         let artifact = self
             .descriptor
             .artifacts
             .get(&role)
-            .context("missing validated tokenizer")?;
+            .context("missing validated artifact")?;
         let path = self.dir.join(&artifact.file);
         let meta = std::fs::symlink_metadata(&path)?;
         ensure!(
             meta.is_file() && meta.len() == artifact.bytes,
-            "tokenizer is not a regular file of the verified size"
+            "artifact is not a regular file of the verified size"
         );
         let file = std::fs::File::open(&path)?;
         let meta = file.metadata()?;
         ensure!(
             meta.is_file() && meta.len() == artifact.bytes,
-            "tokenizer changed before reading"
+            "artifact changed before reading"
         );
         let mut bytes = Vec::new();
         let limit = artifact
             .bytes
             .checked_add(1)
-            .context("tokenizer size overflow")?;
+            .context("artifact size overflow")?;
+        bytes
+            .try_reserve_exact(usize::try_from(limit)?)
+            .context("allocate verified artifact buffer")?;
         file.take(limit).read_to_end(&mut bytes)?;
         let mut hash = Sha256::new();
         hash.update(&bytes);
         ensure!(
             bytes.len() as u64 == artifact.bytes && hex_lower(&hash.finalize()) == artifact.sha256,
-            "tokenizer bytes changed after pack validation"
+            "artifact bytes changed after pack validation"
         );
         Ok(bytes)
     }

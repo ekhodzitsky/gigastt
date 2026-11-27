@@ -60,7 +60,7 @@ fn log_energy(energy: f32) -> f32 {
     energy.clamp(1e-9, 1e9).ln()
 }
 
-fn validate_pcm(samples: &[f32], valid_samples: usize) -> Result<V4FrameGrid> {
+pub(super) fn validate_pcm(samples: &[f32], valid_samples: usize) -> Result<V4FrameGrid> {
     ensure!(
         samples.len() <= MAX_SAMPLES,
         "v4 MKL frontend supports at most 30 seconds per full-context buffer"

@@ -421,3 +421,33 @@ fn test_qualified_v4_split_pack_local_hash_only() {
         assert!(selected.tokenizer.is_file());
     }
 }
+
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+#[test]
+fn test_versioned_graph_reverified_bytes_and_role() {
+    let dir = tempfile::tempdir().unwrap();
+    let artifacts = fake_artifacts(dir.path());
+    let pins = test_pins(&artifacts);
+    let qualified = VersionedPackDescriptor::parse(&document(&pins))
+        .unwrap()
+        .validate_with_pins(dir.path(), &pins)
+        .unwrap();
+    let path = dir.path().join("encoder.bin");
+    let mut bytes = fs::read(&path).unwrap();
+    let graph = qualified.read_graph_bytes(ArtifactRole::Encoder).unwrap();
+    assert_eq!(graph.role(), ArtifactRole::Encoder);
+    assert_eq!(graph.bytes(), bytes);
+    assert!(
+        qualified
+            .read_graph_bytes(ArtifactRole::RawTokenizer)
+            .is_err()
+    );
+    bytes[0] ^= 1;
+    fs::write(path, bytes).unwrap();
+    assert!(qualified.read_graph_bytes(ArtifactRole::Encoder).is_err());
+}

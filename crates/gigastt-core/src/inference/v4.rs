@@ -1,7 +1,7 @@
 //! SentencePiece, timestamp and optional MKL frontend contracts for the qualified v4 ABI.
 //!
-//! These helpers consume a verified pack, not a precision flag or a legacy
-//! variant. They do not create inference sessions or change the legacy frontend.
+//! These APIs consume a verified pack, not a precision flag or legacy variant.
+//! The optional v4 engine creates its own CPU sessions, independent of legacy inference.
 
 use anyhow::{Context, Result, ensure};
 use sentencepiece_rs::{ModelType, PieceType, SentencePieceProcessor};
@@ -23,6 +23,21 @@ mod frontend;
 ))]
 pub use frontend::{V4Features, V4Frontend};
 
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+mod engine;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub use engine::{V4DualTranscription, V4Engine, V4Pcm, V4Token, V4Transcription};
+
 const WINDOW_SAMPLES: usize = 320;
 const HOP_SAMPLES: usize = 160;
 const SUBSAMPLING: usize = 4;
@@ -32,7 +47,7 @@ const PIECES: usize = 1024;
 /// Physical and valid geometry of a batch-one, center=false v4 input.
 ///
 /// Encoder lengths are expected from the pinned author encoder's subsampling;
-/// the future inference runtime must verify the returned encoder length.
+/// the inference runtime verifies the returned encoder length.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct V4FrameGrid {
     physical_samples: usize,
@@ -220,7 +235,7 @@ impl V4Tokenizer {
         self.processor.piece_to_id(piece)
     }
 
-    /// Group token IDs and their monotone absolute encoder-frame indices on
+    /// Group token IDs and their monotone relative encoder-frame indices on
     /// the author full-context utterance grid. This helper is deliberately
     /// distinct from `decode`: author word grouping uses literal pieces.
     pub fn words(
@@ -235,35 +250,88 @@ impl V4Tokenizer {
             .collect::<Result<Vec<_>>>()?;
         group_words(pieces.into_iter(), frames, grid)
     }
+
+    #[cfg(all(
+        feature = "v4-mkl",
+        target_os = "linux",
+        target_arch = "x86_64",
+        target_env = "gnu"
+    ))]
+    fn word_infos(
+        &self,
+        ids: &[usize],
+        frames: &[usize],
+        probabilities: &[f64],
+        grid: &V4FrameGrid,
+    ) -> Result<(
+        Vec<crate::transcript::WordInfo>,
+        Vec<std::ops::Range<usize>>,
+    )> {
+        ensure!(
+            probabilities.len() == ids.len()
+                && probabilities.iter().all(|v| (0.0..=1.0).contains(v)),
+            "invalid v4 token confidence"
+        );
+        let pieces = ids
+            .iter()
+            .map(|&id| self.id_to_piece(id))
+            .collect::<Result<Vec<_>>>()?;
+        let mut words = Vec::new();
+        let mut spans = Vec::new();
+        for (word, span) in group_word_spans(pieces.into_iter(), frames, grid)? {
+            let confidence =
+                (probabilities[span.clone()].iter().sum::<f64>() / span.len() as f64) as f32;
+            words.push(crate::transcript::WordInfo::new(
+                word.text, word.start, word.end, confidence, None,
+            ));
+            spans.push(span);
+        }
+        Ok((words, spans))
+    }
 }
 
 fn group_words<'a>(
-    mut pieces: impl Iterator<Item = &'a str>,
+    pieces: impl Iterator<Item = &'a str>,
     frames: &[usize],
     grid: &V4FrameGrid,
 ) -> Result<Vec<V4WordTiming>> {
+    Ok(group_word_spans(pieces, frames, grid)?
+        .into_iter()
+        .map(|(word, _)| word)
+        .collect())
+}
+
+fn group_word_spans<'a>(
+    mut pieces: impl Iterator<Item = &'a str>,
+    frames: &[usize],
+    grid: &V4FrameGrid,
+) -> Result<Vec<(V4WordTiming, std::ops::Range<usize>)>> {
     ensure!(
         frames.windows(2).all(|pair| pair[0] <= pair[1]),
         "nonmonotone v4 token frames"
     );
     let mut words = Vec::new();
     let mut current = String::new();
-    let mut span: Option<(f64, f64)> = None;
-    let commit =
-        |words: &mut Vec<V4WordTiming>, current: &mut String, span: &mut Option<(f64, f64)>| {
-            let text = current.trim();
-            if let Some((start, end)) = span.take()
-                && !text.is_empty()
-            {
-                words.push(V4WordTiming {
+    let mut span: Option<(f64, f64, std::ops::Range<usize>)> = None;
+    let commit = |words: &mut Vec<(V4WordTiming, std::ops::Range<usize>)>,
+                  current: &mut String,
+                  span: &mut Option<(f64, f64, std::ops::Range<usize>)>| {
+        let text = current.trim();
+        if let Some((start, end, indices)) = span.take()
+            && !text.is_empty()
+        {
+            words.push((
+                V4WordTiming {
                     text: text.to_owned(),
                     start,
                     end,
-                });
-            }
-            current.clear();
-        };
-    for &frame in frames {
+                },
+                indices,
+            ));
+        }
+        current.clear();
+    };
+    for (index, &frame) in frames.iter().enumerate() {
         let piece = pieces.next().context("v4 token/frame count mismatch")?;
         let (start, end) = grid
             .frame_bounds(frame)
@@ -278,10 +346,11 @@ fn group_words<'a>(
             piece
         };
         current.push_str(piece);
-        if let Some((_, previous_end)) = &mut span {
+        if let Some((_, previous_end, indices)) = &mut span {
             *previous_end = end;
+            indices.end = index + 1;
         } else {
-            span = Some((start, end));
+            span = Some((start, end, index..index + 1));
         }
     }
     ensure!(pieces.next().is_none(), "v4 token/frame count mismatch");
