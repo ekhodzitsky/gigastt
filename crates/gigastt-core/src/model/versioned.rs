@@ -697,6 +697,45 @@ impl QualifiedV4Pack {
         &self.descriptor
     }
 
+    /// Re-read the selected small tokenizer and verify the bytes passed to its
+    /// parser; a validated pack snapshot alone does not protect mutable files.
+    pub(crate) fn read_tokenizer_bytes(&self, style: TranscriptStyle) -> Result<Vec<u8>> {
+        let role = match style {
+            TranscriptStyle::Raw => ArtifactRole::RawTokenizer,
+            TranscriptStyle::E2e => ArtifactRole::E2eTokenizer,
+        };
+        let artifact = self
+            .descriptor
+            .artifacts
+            .get(&role)
+            .context("missing validated tokenizer")?;
+        let path = self.dir.join(&artifact.file);
+        let meta = std::fs::symlink_metadata(&path)?;
+        ensure!(
+            meta.is_file() && meta.len() == artifact.bytes,
+            "tokenizer is not a regular file of the verified size"
+        );
+        let file = std::fs::File::open(&path)?;
+        let meta = file.metadata()?;
+        ensure!(
+            meta.is_file() && meta.len() == artifact.bytes,
+            "tokenizer changed before reading"
+        );
+        let mut bytes = Vec::new();
+        let limit = artifact
+            .bytes
+            .checked_add(1)
+            .context("tokenizer size overflow")?;
+        file.take(limit).read_to_end(&mut bytes)?;
+        let mut hash = Sha256::new();
+        hash.update(&bytes);
+        ensure!(
+            bytes.len() as u64 == artifact.bytes && hex_lower(&hash.finalize()) == artifact.sha256,
+            "tokenizer bytes changed after pack validation"
+        );
+        Ok(bytes)
+    }
+
     /// Stable whole-pack content identity, separate from the legacy optimized
     /// encoder cache's source-file digest.
     pub fn identity(&self) -> &str {

@@ -145,3 +145,59 @@ length or batching qualification, nor proof of Rust frontend/tokenizer or
 streaming parity. The author fused ONNX export produces token IDs only and does
 not meet the metadata-preserving split contract. Native inference and word
 metadata integration remain subsequent work.
+
+## Qualified tokenization and timestamp helpers
+
+The `inference::v4::V4Tokenizer` library helper loads a selected raw or e2e
+SentencePiece tokenizer from the validated pack. It rehashes the exact small
+model bytes before parsing them; changing the file after pack validation is an
+error. It does not use the legacy text vocabulary, greedy longest-match
+encoding, or filename-based selection.
+
+The two qualified BPE models use their embedded identity normalization and
+whitespace rules. Each has 1024 pieces, unknown ID 0, no BOS/EOS/PAD IDs, and no
+byte fallback. RNNT appends blank ID 1024 outside the SentencePiece model; blank
+and other out-of-range IDs are rejected by token decoding and literal-piece
+lookup. The raw and e2e unknown surfaces differ, so unknown IDs must not be
+silently dropped or treated as blank. `id_to_piece` returns the literal piece;
+`decode` applies SentencePiece's sequence-level whitespace and unknown semantics.
+
+```rust
+use gigastt_core::inference::v4::V4Tokenizer;
+use gigastt_core::model::{QualifiedV4Pack, TranscriptStyle};
+use std::path::Path;
+
+let pack = QualifiedV4Pack::load(Path::new("/path/to/local-v4-pack"))?;
+let tokenizer = V4Tokenizer::from_pack(&pack, TranscriptStyle::Raw)?;
+let ids = tokenizer.encode("привет world")?;
+let text = tokenizer.decode(&ids)?;
+assert_eq!(tokenizer.blank_id(), 1024);
+# Ok::<(), anyhow::Error>(())
+```
+
+The exact pinned `sentencepiece-rs` 0.2.2 dependency is a pure-Rust,
+Apache-2.0-licensed runtime with no transitive dependencies, native build, or
+system tokenizer requirement. Both specific model files were checked against
+the official SentencePiece processor: all 2048 literal pieces and singleton
+decodes, 12,288 boundary/unknown contextual decodes, 54 curated text encodes,
+20 direct sequences (including invalid IDs), and eight word-timing cases.
+This qualifies these exact models, not arbitrary SentencePiece files or an
+unbounded equivalence claim for every possible string.
+
+`V4FrameGrid` tracks physical and valid lengths separately for the pinned
+center=false ABI: `M = floor((samples - 320) / 160) + 1`, and expected encoder
+length `T = ceil(M / 4)`. Its full-context timestamp shift is valid sample count
+/ 16,000 / valid encoder length, not a fixed 40 ms interval. `V4Tokenizer::words`
+groups literal pieces on that grid, retaining the author's bare-boundary
+frame semantics and exclusive frame ends. Future inference must validate the
+actual returned encoder length before using this geometry; it is not a native
+streaming clock or a source of confidence scores.
+
+There is **no v4 acoustic frontend implementation or inference path** in this
+validation slice. A local frontend experiment matched the short, longer, odd,
+padded, native 16 kHz, and 48 kHz-resampled examples, but failed the fixed
+numerical parity gate for both 8 kHz-resampled inputs. The discrepancy was
+localized to float32 FFT backend cancellation near the log floor, not to
+SentencePiece or the model-pack contract. Those results do not justify
+replacing the v3 frontend, introducing an implicit fallback, or claiming v4
+acoustic parity.

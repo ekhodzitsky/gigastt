@@ -238,6 +238,26 @@ fn test_versioned_pack_checks_all_artifact_bytes_and_selected_paths() {
 }
 
 #[test]
+fn test_versioned_tokenizer_is_reverified_after_pack_validation() {
+    let dir = tempfile::tempdir().unwrap();
+    let artifacts = fake_artifacts(dir.path());
+    let pins = test_pins(&artifacts);
+    let descriptor = VersionedPackDescriptor::parse(&document(&pins)).unwrap();
+    let qualified = descriptor.validate_with_pins(dir.path(), &pins).unwrap();
+    for (style, file) in [
+        (TranscriptStyle::Raw, "raw_tokenizer.bin"),
+        (TranscriptStyle::E2e, "e2e_tokenizer.bin"),
+    ] {
+        let path = dir.path().join(file);
+        let mut bytes = fs::read(&path).unwrap();
+        assert_eq!(qualified.read_tokenizer_bytes(style).unwrap(), bytes);
+        bytes[0] ^= 1;
+        fs::write(&path, bytes).unwrap();
+        assert!(qualified.read_tokenizer_bytes(style).is_err());
+    }
+}
+
+#[test]
 fn test_versioned_pack_production_pins_reject_self_declared_replacements() {
     let dir = tempfile::tempdir().unwrap();
     let artifacts = fake_artifacts(dir.path());

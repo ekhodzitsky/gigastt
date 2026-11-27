@@ -83,6 +83,8 @@ tracing = "0.1"
 anyhow = "1"
 thiserror = "2"
 rustfft = "6"
+# Qualified v4 SentencePiece BPE model parsing/normalization, pure Rust.
+sentencepiece-rs = "=0.2.2"
 rubato = "5.0"
 # 0.6.1 fixes APEv2 size overflow and unknown-size WebM Cluster termination.
 symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }

@@ -22,6 +22,7 @@ mod state;
 pub(crate) use state::SnapshotPublisher;
 mod token_format;
 mod types;
+pub mod v4;
 mod windows;
 
 #[cfg(not(feature = "__internals"))]
