@@ -29,7 +29,7 @@ v4-mkl = ["gigastt-core/v4-mkl"]
 [dependencies]
 # Lean core: file decoding only — no HTTP download, no async runtime (the
 # bindings side-load models and use the synchronous checkout_blocking path).
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
 uniffi = { version = "0.32", features = ["cli"] }
 thiserror = "2"
 
@@ -40,5 +40,5 @@ path = "src/bin/uniffi-bindgen.rs"
 
 [dev-dependencies]
 # Reuse model-free fault injection; both dependencies already exist in the workspace.
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["__internals"] }
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = ["__internals"] }
 tempfile = "3"

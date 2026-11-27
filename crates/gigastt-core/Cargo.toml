@@ -99,7 +99,7 @@ ryf = { version = "0.7", optional = true }
 # this crate (decoder only — the encoder is not used).
 opus-rs = { version = "0.1", optional = true }
 bytes = "1"
-gigastt-quantize = { version = "2.22.0", path = "../gigastt-quantize", optional = true }
+gigastt-quantize = { version = "2.23.0", path = "../gigastt-quantize", optional = true }
 # VAD, fbank and clustering only in production: speaker inference uses our CPU
 # runtime. Keep backend-tract for the public legacy SpeakerEncoder type alias;
 # removing that dependency surface needs a major release. Never use it in Engine.

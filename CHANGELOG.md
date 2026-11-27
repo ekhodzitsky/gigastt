@@ -15,6 +15,13 @@ Versions 0.1.0 and 0.1.1 were published to crates.io on 2026-04-09 and yanked
 
 ### Added
 
+- Add an explicit, default-off GigaAM v4 RNNT FP32 CPU profile on the qualified
+  GNU Linux x86-64 host, including file transcription, separate bindings and
+  native WebSocket streaming with 160/320/640 ms encoder context. Models and the
+  external MKL runtime are explicitly provisioned; v3 remains the default. See
+  [v4 delivery](docs/v4-rnnt-delivery.md) for package preparation, measured scope
+  and limitations. No INT8 or general v4 quality guarantee.
+
 - Add experimental, default-off `serve --jobs-file-zero-context` for native
   mono-routing CPU INT8 RNN-T jobs. It adds bounded zero context to full file
   windows and retries the original window once if a synthetic-tail token is

@@ -23,7 +23,7 @@ cuda = ["gigastt-core/cuda"]
 diarization = ["gigastt-core/diarization"]
 
 [dependencies]
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["file-decode", "quantize"] }
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = ["file-decode", "quantize"] }
 serde_json = "1"
 tracing = "0.1"
 
@@ -32,5 +32,5 @@ cbindgen = "0.29"
 
 [dev-dependencies]
 # Reuse model-free fault injection; both dependencies already exist in the workspace.
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["__internals"] }
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = ["__internals"] }
 tempfile = "3"

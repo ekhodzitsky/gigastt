@@ -116,13 +116,16 @@ caches add space. Disk size is not a RAM requirement. The older v2.22.0 release
 pins a different bundle; see [the model transition](docs/rnnt-quantization.md).
 
 [Benchmarks](docs/benchmarks.md) records corpus, model and hardware provenance.
-Historical M1 figures do not describe the new bundle. Live WebSocket recognition
+Historical M1 figures do not describe the new bundle. Legacy v3 WebSocket recognition
 uses an offline model with buffered incremental decoding, so file WER and speed
-must not be presented as live-stream measurements.
+must not be presented as live-stream measurements. The upcoming opt-in v4 FP32 CPU
+profile also supports native stateful streaming; see [v4 delivery](docs/v4-rnnt-delivery.md)
+for the measured scope, model packs and limitations.
 
 ## Embed the engine
 
-Use `gigastt-core = "2.22"` in Rust, `npm install gigastt` for the Node native
+For the upcoming 2.23 release, use `gigastt-core = "2.23"` in Rust (build the
+checked-out workspace until that version is published), `npm install gigastt` for the Node native
 binding, or `pip install gigastt` for Python. These packages load side-provisioned
 models. Swift, Kotlin and C ABI options are covered in
 [in-process quickstarts](docs/quickstarts.md) and [packaging](docs/embedding-packaging.md).
