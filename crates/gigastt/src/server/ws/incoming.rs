@@ -19,7 +19,7 @@ impl Incoming {
         let closed = CancellationToken::new();
         let disconnected = closed.clone();
         let reader = tokio::spawn(async move {
-            let _abort = super::super::file_transcribe::AbortOnDrop(abort.clone());
+            let _abort = super::super::transcription_control::AbortOnDrop(abort.clone());
             while let Some(message) = source.next().await {
                 let terminal = matches!(&message, Ok(Message::Close(_)) | Err(_));
                 if terminal {

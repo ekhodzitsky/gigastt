@@ -112,7 +112,7 @@ pub(super) async fn open_stream_chunks(
     ),
     ApiError,
 > {
-    use super::super::file_transcribe::{
+    use super::super::transcription_control::{
         AbortOnDrop, WatchdogOutcome, await_transcription_watchdog,
     };
     use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -289,7 +289,7 @@ pub async fn transcribe_stream(
     let cancel = state.shutdown.child_token();
     let tracker = state.tracker.clone();
     let (abort, finished) =
-        super::super::file_transcribe::stream_abort(&tx, cancel.clone(), &tracker);
+        super::super::transcription_control::stream_abort(&tx, cancel.clone(), &tracker);
     let watchdog = super::stream_watchdog::StreamWatchdog::start(
         &state,
         limits.inference_timeout_secs,

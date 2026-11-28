@@ -113,7 +113,7 @@ async fn openai_transcriptions_stream(
     let cancel = state.shutdown.child_token();
     let tracker = state.tracker.clone();
     let (abort, finished) =
-        super::super::file_transcribe::stream_abort(&tx, cancel.clone(), &tracker);
+        super::super::transcription_control::stream_abort(&tx, cancel.clone(), &tracker);
     let watchdog = super::stream_watchdog::StreamWatchdog::start(
         &state,
         limits.inference_timeout_secs,
