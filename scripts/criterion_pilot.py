@@ -7,13 +7,16 @@ import math
 import os
 from pathlib import Path
 import platform
+import re
 import statistics
 import subprocess
 import time
 
 CASES = {
     'tokenizer': ('tokenizer_decode/decode_64_ids', 'tokenizer_decode/decode_1024_ids'),
-    'decode': ('decode_audio/pcm16_wav_3s', 'decode_telephony_raw/raw_pcmu_8k'),
+    'decode': ('decode_audio/pcm16_wav_3s', 'decode_telephony_raw/raw_pcmu_8k',
+               'decode_telephony_raw/raw_g722_3s'),
+    'resample': ('resample/48k_to_16k_1s', 'resample/8k_to_16k_1s'),
 }
 PAIR_COUNT = 7
 LIMIT = 0.05
@@ -88,15 +91,63 @@ def read_measurement(home, case):
     return positive(estimate['mean']['point_estimate'])
 
 
+def workload_identity(provenance, cwd):
+    # The benchmark source contains the deterministic synthetic inputs and
+    # embeds these fixture files; keep identities separate from the binary hash.
+    paths = [f'crates/gigastt-core/benches/{target}.rs' for target in CASES]
+    if 'decode' in CASES:
+        paths.append('crates/gigastt-core/tests/fixtures/telephony')
+    identities = {}
+    for side in ('base', 'candidate'):
+        revision = provenance[side]['source_revision']
+        if not re.fullmatch(r'[0-9a-f]{40}', revision):
+            raise ValueError(f'invalid {side} source revision')
+        rows = subprocess.check_output(['git', 'ls-tree', revision, '--', *paths],
+                                       cwd=cwd, text=True).splitlines()
+        entries = {}
+        for line in rows:
+            metadata, path = line.split('\t', 1)
+            entries[path] = metadata
+        if set(entries) != set(paths):
+            raise ValueError(f'incomplete {side} benchmark workload identity')
+        identities[side] = entries
+    return {'trees': identities, 'identical': identities['base'] == identities['candidate']}
+
+
+def host_metadata():
+    affinity = sorted(os.sched_getaffinity(0)) if hasattr(os, 'sched_getaffinity') else None
+    return {'machine': platform.machine(), 'logical_cpus': os.cpu_count(),
+            'cpu_affinity': affinity}
+
+
+def cpu_ticks():
+    # Linux exposes cumulative times for every logical CPU, including siblings
+    # outside our affinity. These diagnose contention but cannot prove isolation.
+    proc_stat = Path('/proc/stat')
+    if not proc_stat.is_file():
+        return None
+    return parse_cpu_ticks(proc_stat.read_text())
+
+
+def parse_cpu_ticks(text):
+    rows = (line.split() for line in text.splitlines())
+    return {row[0]: [int(value) for value in row[1:]] for row in rows
+            if row and row[0].startswith('cpu') and row[0][3:].isdigit()}
+
+
 def measure(binary, case, home, cwd):
     home.mkdir(parents=True)
     argv = [binary['path'], *FLAGS, case]
+    ticks_before = cpu_ticks()
     start = time.time()
     with (home / 'process.log').open('w') as log:
         subprocess.run(argv, cwd=cwd, env={**os.environ, 'CRITERION_HOME': str(home)},
                        stdout=log, stderr=subprocess.STDOUT, check=True, timeout=60)
+    finish = time.time()
+    ticks_after = cpu_ticks()
     return {'mean_ns': read_measurement(home, case), 'started_epoch': start,
-            'finished_epoch': time.time(), 'binary_sha256': binary['sha256'], 'argv': argv}
+            'finished_epoch': finish, 'binary_sha256': binary['sha256'], 'argv': argv,
+            'cpu_ticks_before': ticks_before, 'cpu_ticks_after': ticks_after}
 
 
 def run(provenance_path, out, cwd):
@@ -110,7 +161,9 @@ def run(provenance_path, out, cwd):
     out.mkdir(parents=True, exist_ok=False)
     (out / 'build-provenance.json').write_text(json.dumps(provenance, indent=2) + '\n')
     start = time.monotonic()
-    report = {'platform': platform.platform(), 'pairs_per_mode': PAIR_COUNT,
+    report = {'platform': platform.platform(), 'host': host_metadata(),
+              'workload_identity': workload_identity(provenance, cwd),
+              'pairs_per_mode': PAIR_COUNT,
               'limit': LIMIT, 'cases': {}, 'complete': False}
 
     def save():
@@ -137,6 +190,10 @@ def run(provenance_path, out, cwd):
                         save()
                     paired[mode].append(tuple(block['arms'][arm]['mean_ns'] for arm in ('a', 'b')))
             case_report.update(assess(paired['aa'], paired['ab']))
+            # Uniform synthetic slowdown on measured controls; does not model
+            # the variance of a real slower executable. Never a gate result.
+            case_report['synthetic_10pct_slowdown'] = assess(
+                paired['aa'], [(a, b * 1.10) for a, b in paired['aa']])['outcome']
             print(case, case_report['outcome'], flush=True)
             save()
     validated_binaries(provenance)
