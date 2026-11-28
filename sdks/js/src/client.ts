@@ -1,5 +1,7 @@
 import {
   PROTOCOL_VERSION,
+  NATIVE_V4_PROTOCOL_VERSION,
+  NATIVE_V4_SUBPROTOCOL,
   ServerError,
   parseServerMessage,
 } from "./types.js";
@@ -44,6 +46,7 @@ export interface ClientHandlers {
 export interface WebSocketLike {
   binaryType: string;
   readonly readyState: number;
+  readonly protocol?: string;
   send(data: string | ArrayBufferLike | ArrayBufferView): void;
   close(code?: number, reason?: string): void;
   onopen: ((ev: unknown) => void) | null;
@@ -55,9 +58,17 @@ export interface WebSocketLike {
 }
 
 /** Factory for WebSocket instances (inject a custom transport). */
-export type WebSocketFactory = (url: string) => WebSocketLike;
+export type WebSocketFactory = (url: string, protocols?: string[]) => WebSocketLike;
+
+/** Explicit native cached v4 session selection. */
+export interface NativeV4Options {
+  futureContextMs: 160 | 320 | 640;
+  transcriptStyle: "raw" | "e2e";
+}
 
 export interface ClientOptions {
+  /** Require native cached v4 and exact Ready capability; never fall back to v3. */
+  nativeV4?: NativeV4Options;
   /**
    * Input audio sample rate in Hz; must be one of the server's
    * `supported_rates`. Default: server default (48000).
@@ -125,7 +136,7 @@ export class GigasttClient {
     options: ClientOptions = {},
   ): Promise<GigasttClient> {
     if (options.signal?.aborted === true) throw abortError();
-    const client = new GigasttClient(url, options);
+    const client = new GigasttClient(nativeV4URL(url, options), options);
     client.registerAbortHandler();
     try {
       const ready = await client.dialWithRetry();
@@ -166,6 +177,11 @@ export class GigasttClient {
     const ws = this.ws;
     if (ws === null || ws.readyState !== WS_OPEN) {
       throw new Error("gigastt: reconnecting, not connected");
+    }
+    const cap = this.readyMessage?.native_v4?.max_packet_bytes;
+    if (this.opts.nativeV4 !== undefined && cap !== undefined &&
+        (data.byteLength === 0 || data.byteLength % 2 !== 0 || data.byteLength > cap)) {
+      throw new Error("gigastt: invalid native v4 PCM16 packet size");
     }
     ws.send(data);
   }
@@ -242,13 +258,13 @@ export class GigasttClient {
     if (this.factoryPromise === null) {
       this.factoryPromise = (async () => {
         if (typeof WebSocket !== "undefined") {
-          return (url: string) =>
-            new WebSocket(url) as unknown as WebSocketLike;
+          return (url: string, protocols?: string[]) =>
+            (protocols === undefined ? new WebSocket(url) : new WebSocket(url, protocols)) as unknown as WebSocketLike;
         }
         // Node without a global WebSocket: use the `ws` package.
         const mod = await import("ws");
         const WS = mod.WebSocket;
-        return (url: string) => new WS(url) as unknown as WebSocketLike;
+        return (url: string, protocols?: string[]) => (protocols === undefined ? new WS(url) : new WS(url, protocols)) as unknown as WebSocketLike;
       })();
     }
     return this.factoryPromise;
@@ -294,7 +310,8 @@ export class GigasttClient {
   private async dialOnce(): Promise<ReadyMessage> {
     this.throwIfAborted();
     const factory = await this.resolveFactory();
-    const ws = factory(this.url);
+    const native = this.opts.nativeV4;
+    const ws = native === undefined ? factory(this.url) : factory(this.url, [NATIVE_V4_SUBPROTOCOL]);
     ws.binaryType = "arraybuffer";
     const dialTimeoutMs = this.opts.dialTimeoutMs ?? 10_000;
 
@@ -329,13 +346,18 @@ export class GigasttClient {
       this.opts.signal?.addEventListener("abort", onAbort, { once: true });
 
       ws.onopen = () => {
+        if (native !== undefined && ws.protocol !== NATIVE_V4_SUBPROTOCOL) {
+          fail(nativeV4Mismatch());
+          return;
+        }
         ws.send(
           JSON.stringify({
             type: "configure",
-            protocol_version: this.opts.endpointSilenceMs !== undefined ? "1.3" : PROTOCOL_VERSION,
-            ...(this.opts.sampleRate !== undefined
-              ? { sample_rate: this.opts.sampleRate }
-              : {}),
+            protocol_version: native !== undefined ? NATIVE_V4_PROTOCOL_VERSION
+              : this.opts.endpointSilenceMs !== undefined ? "1.3" : PROTOCOL_VERSION,
+            ...(native !== undefined ? { sample_rate: 16000, future_context_ms: native.futureContextMs,
+              transcript_style: native.transcriptStyle } : this.opts.sampleRate !== undefined
+              ? { sample_rate: this.opts.sampleRate } : {}),
             ...(this.opts.endpointSilenceMs !== undefined
               ? { endpoint_silence_ms: this.opts.endpointSilenceMs }
               : {}),
@@ -350,6 +372,10 @@ export class GigasttClient {
         if (msg === null) return; // Not a server message: keep waiting.
         if (settled) return;
         if (msg.type === "ready") {
+          if (native !== undefined && !matchesNativeV4(msg, native)) {
+            fail(nativeV4Mismatch());
+            return;
+          }
           settled = true;
           const { type: _type, ...ready } = msg;
           cleanup();
@@ -474,6 +500,46 @@ function normalizeData(data: unknown): unknown {
     return new TextDecoder().decode(data);
   }
   return null;
+}
+
+function nativeV4URL(input: string, options: ClientOptions): string {
+  const native = options.nativeV4;
+  if (native === undefined) return input;
+  if (![160, 320, 640].includes(native.futureContextMs) ||
+      !["raw", "e2e"].includes(native.transcriptStyle) ||
+      (options.sampleRate !== undefined && options.sampleRate !== 16000) ||
+      options.diarization === true || options.endpointSilenceMs !== undefined) {
+    throw new Error("gigastt: incompatible native v4 configuration");
+  }
+  const url = new URL(input);
+  for (const [key, value] of Object.entries({ model_family: "gigaam_v4", model_head: "rnnt",
+    model_precision: "fp32", transcript_style: native.transcriptStyle,
+    future_context_ms: String(native.futureContextMs) })) {
+    const previous = url.searchParams.getAll(key);
+    if (previous.length > 1 || (previous.length === 1 && previous[0] !== value)) {
+      throw new Error(`gigastt: conflicting native v4 query field ${key}`);
+    }
+    url.searchParams.set(key, value);
+  }
+  return url.toString();
+}
+
+function matchesNativeV4(ready: ReadyMessage, want: NativeV4Options): boolean {
+  const got = ready.native_v4;
+  return got !== undefined && got !== null && ready.version === NATIVE_V4_PROTOCOL_VERSION &&
+    ready.sample_rate === 16000 && Array.isArray(ready.supported_rates) &&
+    ready.supported_rates.length === 1 && ready.supported_rates[0] === 16000 &&
+    got.model_family === "gigaam_v4" && got.model_head === "rnnt" && got.model_precision === "fp32" &&
+    got.transcript_style === want.transcriptStyle && got.future_context_ms === want.futureContextMs &&
+    got.endpoint_mode === "manual" && Number.isInteger(got.max_packet_bytes) &&
+    got.max_packet_bytes >= 2 && got.max_packet_bytes <= 32000 &&
+    Array.isArray(got.supported_future_context_ms) &&
+    got.supported_future_context_ms.length === 3 &&
+    [160, 320, 640].every((v, i) => got.supported_future_context_ms[i] === v);
+}
+
+function nativeV4Mismatch(): ServerError {
+  return new ServerError({ code: "native_v4_mismatch", message: "Server did not negotiate the requested native v4 stream" });
 }
 
 /**

@@ -5,14 +5,20 @@ info:
   version: "1.0"
   description: |
     Offline and streaming speech-to-text REST API powered by GigaAM v3 (rnnt head by default).
-    On-device Russian speech recognition via ONNX Runtime.
+    On-device Russian speech recognition via ONNX Runtime. The default contract below
+    describes the legacy v3 profile. An explicitly selected, optional GNU Linux x86-64
+    v4 RNNT FP32 server serves full-context file transcription with one loaded
+    raw or e2e style, one CPU slot, and a 30-second decoded audio limit. A separately
+    verified streaming pack optionally enables native v4 WebSocket sessions; see
+    docs/v4-native-websocket.md and docs/asyncapi.yaml. V4 has no hot reload or implicit
+    model fallback. See the v4 profile section in docs/api.md for selector details.
 
     ## Endpoints
 
     - **Health & discovery**: `GET /health`, `GET /ready`, `GET /v1/models`
     - **File transcription**: `POST /v1/transcribe` — upload audio, receive full transcript
     - **Streaming transcription**: `POST /v1/transcribe/stream` — upload audio, receive SSE stream of partial/final segments
-    - **OpenAI-compatible**: `POST /v1/audio/transcriptions` — multipart `file` + `model`. `model` is ignored. Default body is `{"text":"..."}`; `verbose_json` can add `segments` and `words`. This route never returns speaker labels — use `POST /v1/transcribe?diarization=true` or WebSocket `configure.diarization`. Field map: `docs/api.md` (`Which endpoint returns which fields`).
+    - **OpenAI-compatible**: `POST /v1/audio/transcriptions` — multipart `file` + `model`. `model` is ignored by v3; the v4 file profile requires the exact loaded model ID. Default body is `{"text":"..."}`; `verbose_json` can add `segments` and `words`. This route never returns speaker labels — use `POST /v1/transcribe?diarization=true` or WebSocket `configure.diarization`. Field map: `docs/api.md` (`Which endpoint returns which fields`).
     - **Async jobs** (opt-in `--enable-jobs`): `POST /v1/jobs`, `GET/DELETE /v1/jobs/{id}`, result + SSE events
     - **Admin**: `POST /v1/admin/reload` — loopback-only model hot-reload
     - **WebSocket** (see `docs/asyncapi.yaml`): `GET /v1/ws`
@@ -230,6 +236,9 @@ paths:
         decoded buffer in memory and always enforce a fixed ~30-minute safety
         ceiling on those paths, independent of `--max-audio-secs`. G.722-in-WAV
         is windowed like other containers.
+        The explicit v4 full-context file profile permits only supported file
+        options and matching optional model selectors; incompatible requests
+        are rejected. Maximum decoded duration is 30 seconds.
       operationId: transcribeFile
       parameters:
         - name: format
@@ -491,6 +500,11 @@ paths:
         not include `is_final`, `speech_final`, `endpoint_reason`, `segments`,
         or `speaker` — this endpoint has no diarization query. `words[]` uses
         the same object as `/v1/transcribe` (`word`, `start`, `end`, `confidence`).
+        The explicit v4 full-context file profile permits only supported file
+        options and matching optional model selectors; incompatible requests
+        are rejected. Maximum decoded duration is 30 seconds.
+        In v4 this file SSE endpoint emits one final transcript event and EOF,
+        without native streaming or tentative output.
       operationId: transcribeStream
       parameters:
         - name: commit_policy
@@ -570,8 +584,13 @@ paths:
         that API shape (llama-swap, Hermes Agent, OpenAI SDKs with a custom
         `base_url`). Multipart form with required `file` and optional
         `model` / `response_format` / `language` / `timestamp_granularities[]`.
-        `model` is accepted for compatibility and ignored (loaded engine always
-        used). Same audio formats and duration limits as `/v1/transcribe` (no
+        In the legacy v3 profile, `model` is accepted for compatibility and ignored
+        (loaded engine always used). In the explicit v4 file profile, `model` is
+        required and must match `gigaam-v4-rnnt-raw-fp32` or
+        `gigaam-v4-rnnt-e2e-fp32` as loaded; only json/text/srt/vtt response formats
+        are supported and language, prompt, sampling, timestamps, verbose metadata
+        and stream options are rejected. The v4 file limit is 30 seconds.
+        Same audio formats and duration limits as `/v1/transcribe` (no
         default cap; see `--max-audio-secs`).
 
         `response_format`: `json` (default, `{"text"}`) · `text` · `srt` · `vtt`
@@ -732,6 +751,9 @@ paths:
         accepts the same body and query parameters as `POST /v1/transcribe`.
         When the job API is disabled (`--enable-jobs` not set), this path returns
         `404`.
+        The explicit v4 full-context file profile permits only supported file
+        options and matching optional model selectors; incompatible requests
+        are rejected. Maximum decoded duration is 30 seconds.
       operationId: submitJob
       parameters:
         - $ref: "#/components/parameters/Format"
@@ -1157,9 +1179,25 @@ components:
             download (prequantized INT8 bundle) the bootstrap responder reports `loading`.
         variant:
           type: string
-          enum: [rnnt, e2e_rnnt, ml_ctc, ml_ctc_large]
+          enum: [rnnt, e2e_rnnt, ml_ctc, ml_ctc_large, gigaam-v4-rnnt-raw-fp32, gigaam-v4-rnnt-e2e-fp32]
           example: rnnt
           description: Recognition head in use
+        family:
+          type: string
+          enum: [gigaam_v4]
+          description: Present for the explicit v4 file profile
+        head:
+          type: string
+          enum: [rnnt]
+        style:
+          type: string
+          enum: [raw, e2e]
+        precision:
+          type: string
+          enum: [fp32]
+        streaming:
+          type: boolean
+          description: False for the explicit v4 file profile
         version:
           type: string
           example: "2.18.0"
@@ -1231,9 +1269,31 @@ components:
           example: GigaAM v3 RNN-T
         variant:
           type: string
-          enum: [rnnt, e2e_rnnt, ml_ctc, ml_ctc_large]
+          enum: [rnnt, e2e_rnnt, ml_ctc, ml_ctc_large, gigaam-v4-rnnt-raw-fp32, gigaam-v4-rnnt-e2e-fp32]
           example: rnnt
           description: Recognition head in use
+        family:
+          type: string
+          enum: [gigaam_v4]
+          description: Present for the explicit v4 file profile
+        head:
+          type: string
+          enum: [rnnt]
+        style:
+          type: string
+          enum: [raw, e2e]
+        precision:
+          type: string
+          enum: [fp32]
+        streaming:
+          type: boolean
+          description: False for the explicit v4 file profile
+        mode:
+          type: string
+          enum: [full_context]
+        max_audio_seconds:
+          type: number
+          description: Effective full-context v4 maximum decoded duration
         version:
           type: string
           example: "2.18.0"
@@ -1241,8 +1301,8 @@ components:
           type: string
           enum: [int8, fp32]
           description: >
-            Encoder quantization type. Product ORT path is always `int8`;
-            `fp32` is reserved for experimental non-ORT backends (e.g. candle).
+            Encoder precision. Legacy default is INT8; explicitly selected qualified
+            FP32 profiles also report `fp32`.
         vocab_size:
           type: integer
           example: 34

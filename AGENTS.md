@@ -112,3 +112,26 @@ Historical measurements must retain provenance, raw evidence and limitations.
 Never relabel a measured model revision as the current one, mix file and live
 streaming metrics, or treat RSS and platform-specific physical footprint as the
 same measure. Preserve data licenses and fixtures during cleanup.
+
+
+### Optional v4 full-context file profile
+
+GNU Linux x86-64 builds with the Cargo feature `v4-mkl` can opt in to the
+qualified v4 RNNT FP32 pack for `serve` and `transcribe` with:
+
+- `--model-family` / `GIGASTT_MODEL_FAMILY`
+- `--model-head` / `GIGASTT_MODEL_HEAD`
+- `--transcript-style` / `GIGASTT_TRANSCRIPT_STYLE`
+- `--model-precision` / `GIGASTT_MODEL_PRECISION`
+- `--v4-mkl-runtime-dir` / `GIGASTT_V4_MKL_RUNTIME_DIR`
+
+See [docs/cli.md](docs/cli.md#explicit-v4-full-context-file-profile).
+Default and lean v3 behavior is unchanged. File inputs are bounded to 30
+seconds and there is no implicit model fallback. Optionally, `serve` may
+provision the separate [native v4 WebSocket profile](docs/v4-native-websocket.md):
+
+- `--v4-streaming-model-dir` / `GIGASTT_V4_STREAMING_MODEL_DIR`
+- `--v4-streaming-future-context-ms` / `GIGASTT_V4_STREAMING_FUTURE_CONTEXT_MS`
+
+Native WebSocket clients must explicitly offer `gigastt-native-v4`; the
+legacy v3 dialect retains its existing version and semantics.

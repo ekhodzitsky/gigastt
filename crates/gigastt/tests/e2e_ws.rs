@@ -219,7 +219,22 @@ async fn test_ws_audio_produces_final() {
     let model_dir = common::model_dir();
     let (port, _shutdown) = common::start_server(&model_dir).await;
 
-    let (mut sink, mut stream, _ready) = common::ws_connect(port).await;
+    use tokio_tungstenite::tungstenite::{Error, client::IntoClientRequest, http::HeaderValue};
+    let mut reserved = format!("ws://127.0.0.1:{port}/v1/ws")
+        .into_client_request()
+        .unwrap();
+    reserved.headers_mut().insert(
+        "sec-websocket-protocol",
+        HeaderValue::from_static(gigastt::protocol::native_v4::SUBPROTOCOL),
+    );
+    let rejected = tokio_tungstenite::connect_async(reserved)
+        .await
+        .unwrap_err();
+    assert!(matches!(rejected, Error::Http(response) if response.status().as_u16()==409));
+
+    let (mut sink, mut stream, ready) = common::ws_connect(port).await;
+    assert_eq!(ready["version"], gigastt::protocol::PROTOCOL_VERSION);
+    assert!(ready.get("native_v4").is_none());
 
     // 2 seconds of PCM16 silence at 48kHz = 192000 bytes
     let silence = common::generate_pcm16_silence(2.0, 48000);
@@ -248,6 +263,7 @@ async fn test_ws_audio_produces_final() {
 
         let text = msg.into_text().expect("expected text message");
         let v: serde_json::Value = serde_json::from_str(&text).expect("expected JSON");
+        assert!(v.get("native_delta").is_none());
         match v["type"].as_str().unwrap_or("") {
             "partial" => continue,
             "final" => {

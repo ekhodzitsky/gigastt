@@ -11,6 +11,7 @@ use tracing_subscriber::EnvFilter;
 mod packaging;
 mod serve;
 mod transcribe_cmd;
+mod v4_cli;
 #[cfg(feature = "quantize")]
 use packaging::run_quantize;
 use packaging::{run_cache_gc, run_download};
@@ -18,6 +19,7 @@ use serve::{ServeArgs, run_serve};
 use transcribe_cmd::{
     BatchOutputArgs, OfflineEngineArgs, run_transcribe, run_transcribe_batch, run_watch,
 };
+use v4_cli::FamilyArgs;
 
 #[derive(Parser)]
 #[command(
@@ -27,6 +29,8 @@ use transcribe_cmd::{
     after_long_help = "Engine and post-processing options (--model-variant, --punctuation, --itn, --vad, ...) are defined on the subcommands, not at the top level.\nSee `gigastt serve --help` or `gigastt transcribe --help` for the full list."
 )]
 struct Cli {
+    #[command(flatten)]
+    family: FamilyArgs,
     /// Log level [default: info]
     #[arg(long, global = true, default_value = "info")]
     log_level: String,
@@ -355,6 +359,11 @@ async fn main() -> anyhow::Result<()> {
     let matches = Cli::command().get_matches();
     let cli = Cli::from_arg_matches(&matches).unwrap_or_else(|e| e.exit());
 
+    let v4_selection = cli.family.resolve()?;
+    if v4_selection.is_some() {
+        v4_cli::validate_command(&matches)?;
+    }
+
     if cli.offline {
         model::enable_offline_mode();
     }
@@ -379,7 +388,7 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         Commands::Serve(args) => {
-            run_serve(&matches, args).await?;
+            run_serve(&matches, args, v4_selection).await?;
         }
         Commands::Download {
             model_dir,
@@ -444,6 +453,19 @@ async fn main() -> anyhow::Result<()> {
             codec,
             sample_rate,
         } => {
+            if let Some(selection) = v4_selection {
+                return v4_cli::transcribe(
+                    selection,
+                    file,
+                    model_dir,
+                    format,
+                    output,
+                    max_chars_per_line,
+                    max_words_per_line,
+                    word_timestamps,
+                )
+                .await;
+            }
             run_transcribe(
                 file,
                 model_dir,

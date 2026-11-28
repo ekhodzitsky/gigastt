@@ -57,6 +57,8 @@ async-pool = ["dep:tokio"]                              # async Pool::checkout; 
 file-decode = ["dep:symphonia", "dep:ryf", "dep:opus-rs"] # file transcription; raw-PCM streaming does not need it
 ort-load-dynamic = ["ort/load-dynamic"]                 # system/vendored onnxruntime instead of download-binaries
 quantize = ["dep:gigastt-quantize"]
+# Explicit side-loaded oneMKL frontend for qualified v4 packs (GNU Linux x86-64 only).
+v4-mkl = []
 candle = ["dep:candle-core", "dep:candle-nn", "dep:safetensors"]
 ane = ["dep:tar", "dep:objc2", "dep:objc2-core-ml", "dep:objc2-foundation", "dep:half"]
 # Private/unstable: exposes internal items (tokenizer module + synthetic
@@ -83,6 +85,8 @@ tracing = "0.1"
 anyhow = "1"
 thiserror = "2"
 rustfft = "6"
+# Qualified v4 SentencePiece BPE model parsing/normalization, pure Rust.
+sentencepiece-rs = "=0.2.2"
 rubato = "5.0"
 # 0.6.1 fixes APEv2 size overflow and unknown-size WebM Cluster termination.
 symphonia = { version = "0.6.1", features = ["aac", "isomp4", "mkv", "mp3", "ogg", "flac", "pcm", "wav"], optional = true }
@@ -95,7 +99,7 @@ ryf = { version = "0.7", optional = true }
 # this crate (decoder only — the encoder is not used).
 opus-rs = { version = "0.1", optional = true }
 bytes = "1"
-gigastt-quantize = { version = "2.22.0", path = "../gigastt-quantize", optional = true }
+gigastt-quantize = { version = "2.23.0", path = "../gigastt-quantize", optional = true }
 # VAD, fbank and clustering only in production: speaker inference uses our CPU
 # runtime. Keep backend-tract for the public legacy SpeakerEncoder type alias;
 # removing that dependency surface needs a major release. Never use it in Engine.
@@ -139,6 +143,8 @@ objc2-foundation = { version = "0.3", optional = true, default-features = false,
 
 
 [dev-dependencies]
+# Exact archived confidence and timestamp comparison in local parity tests.
+serde_json = { version = "1", features = ["float_roundtrip"] }
 tempfile = "3"
 wiremock = "0.6"
 proptest = "1"

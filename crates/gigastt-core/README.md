@@ -6,11 +6,18 @@ The standard ONNX runtime uses **prequantized INT8 bundles** (with floating-poin
 operators where required). Experimental ANE/Candle backends use converted assets;
 see the [model guide](../../docs/models.md). Default `rnnt` / `e2e_rnnt` files come from GitHub Releases; `ml_ctc` / `ml_ctc_large` come from HuggingFace, as do the optional speaker-embedding and punctuation sidecars — the Silero VAD sidecar comes from GitHub (`snakers4/silero-vad`).
 
+The upcoming 2.23 source also supports an explicitly provisioned v4 RNNT FP32
+CPU profile on the qualified GNU Linux x86-64 host. See [v4 delivery](../../docs/v4-rnnt-delivery.md)
+for requirements and limitations; existing v3 defaults remain unchanged.
+
 ## Usage
+
+The dependency example targets the upcoming 2.23 release. Until that version
+is published, build the checked-out workspace for v4.
 
 ```toml
 [dependencies]
-gigastt-core = "2.22"
+gigastt-core = "2.23"
 ```
 
 ```rust,ignore
@@ -68,7 +75,7 @@ the engine work out of the box. For a lean embedded build that side-loads
 INT8 models and feeds raw PCM, disable defaults:
 
 ```toml
-gigastt-core = { version = "2.22", default-features = false }
+gigastt-core = { version = "2.23", default-features = false }
 ```
 
 That drops `tokio`, `reqwest`/HTTP, `symphonia`, `ryf`, and the quantizer (`protoc`)

@@ -371,3 +371,25 @@ fn test_prune_optimized_cache_keeps_configurations_but_reclaims_old_content_and_
     assert!(first.exists() && second.exists());
     assert!(!old.exists() && !legacy.exists());
 }
+
+#[test]
+fn test_versioned_model_pack_refuses_legacy_cache_mutation() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    let cache = root.join("optimized_cache");
+    std::fs::create_dir(&cache).unwrap();
+    let orphan = cache.join("orphan.onnx");
+    std::fs::write(&orphan, b"unmodified cache").unwrap();
+    std::fs::write(
+        root.join(crate::model::MANIFEST_FILE),
+        "schema_version = 1\nfamily = \"gigaam_v4\"\n",
+    )
+    .unwrap();
+    let coreml_stale = root.join("coreml_cache").join("stale");
+    std::fs::create_dir_all(&coreml_stale).unwrap();
+    assert!(prune_optimized_cache_dir(&cache, root, false).is_err());
+    assert!(prune_coreml_cache(root, false).is_err());
+    assert!(coreml_stale.is_dir());
+    assert!(dedupe_model_dir(root, false).is_err());
+    assert_eq!(std::fs::read(orphan).unwrap(), b"unmodified cache");
+}

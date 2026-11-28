@@ -273,6 +273,20 @@ pub struct OrtSession {
     session: Mutex<Session>,
 }
 
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+impl OrtSession {
+    pub(super) fn from_session(session: Session) -> Self {
+        Self {
+            session: Mutex::new(session),
+        }
+    }
+}
+
 impl RuntimeSession for OrtSession {
     fn run(&self, inputs: &[Tensor]) -> Result<Vec<Tensor>, RuntimeError> {
         let session_inputs: Vec<ort::session::SessionInputValue<'_>> = inputs

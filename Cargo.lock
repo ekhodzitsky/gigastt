@@ -1692,7 +1692,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt"
-version = "2.22.0"
+version = "2.23.0"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -1718,7 +1718,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-core"
-version = "2.22.0"
+version = "2.23.0"
 dependencies = [
  "anyhow",
  "audio-codec",
@@ -1744,6 +1744,7 @@ dependencies = [
  "rustfft",
  "ryf",
  "safetensors 0.8.0",
+ "sentencepiece-rs",
  "serde",
  "serde_json",
  "sha2",
@@ -1759,7 +1760,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-ffi"
-version = "2.22.0"
+version = "2.23.0"
 dependencies = [
  "cbindgen",
  "gigastt-core",
@@ -1770,7 +1771,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-node"
-version = "2.22.0"
+version = "2.23.0"
 dependencies = [
  "gigastt-core",
  "napi",
@@ -1781,7 +1782,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-quantize"
-version = "2.22.0"
+version = "2.23.0"
 dependencies = [
  "anyhow",
  "prost",
@@ -1792,7 +1793,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-uniffi"
-version = "2.22.0"
+version = "2.23.0"
 dependencies = [
  "gigastt-core",
  "tempfile",
@@ -3860,6 +3861,12 @@ dependencies = [
  "serde",
  "serde_core",
 ]
+
+[[package]]
+name = "sentencepiece-rs"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bc4483945bfd66b8727ed59005af1543d3d966ca92f9bc065bfef532de1d7e8"
 
 [[package]]
 name = "seq-macro"

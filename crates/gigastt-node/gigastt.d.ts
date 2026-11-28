@@ -40,3 +40,31 @@ export declare class Stream {
   /** Flush buffered audio and return any final segment(s). */
   flush(): Promise<Array<TranscriptSegment>>
 }
+
+/** Exact nonblank v4 token; confidence is an uncalibrated model score. */
+export interface V4Token {
+  id: number
+  frame: number
+  confidence: number
+}
+
+/** A separate whole-context v4 result with literal text and timed word groups. */
+export interface V4Transcript {
+  style: 'raw' | 'e2e'
+  text: string
+  words: Array<Word>
+  tokens: Array<V4Token>
+  durationS: number
+  confidence?: number
+}
+
+/** Reports whether the local native addon has the optional v4 backend. */
+export declare function v4Supported(): boolean
+
+/** Local FP32 CPU v4 full-context engine; no streaming or model download. */
+export declare class V4Engine {
+  /** Requires a Linux x86-64 GNU addon built with the optional v4-mkl feature. */
+  constructor(packDir: string, mklRuntimeDir: string, style: 'raw' | 'e2e')
+  /** Native mono file decode; at most 30 seconds, with no implicit chunking. */
+  transcribeFile(path: string): Promise<V4Transcript>
+}

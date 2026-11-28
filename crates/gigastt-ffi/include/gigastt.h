@@ -19,8 +19,23 @@ typedef struct GigasttEngine GigasttEngine;
 typedef struct GigasttStream GigasttStream;
 
 /**
+ * Opaque v4 C type. Never constructed; its pointers encode table IDs.
+ */
+typedef struct GigasttV4Engine GigasttV4Engine;
+
+/**
+ * Result of the explicit v4 constructor. On success `engine` is non-null
+ * and `error` is NULL; on failure `engine` is NULL and `error` is an owned
+ * JSON error message. Free the error with `gigastt_string_free`.
+ */
+typedef struct GigasttV4EngineResult {
+  struct GigasttV4Engine *engine;
+  char *error;
+} GigasttV4EngineResult;
+
+/**
  * Free a C string previously returned by the transcription, streaming, or
- * quantization functions.
+ * quantization functions, including v4 JSON results and constructor errors.
  *
  * # Safety
  * `s` must be the original pointer returned by the library and not yet freed,
@@ -188,5 +203,46 @@ char *gigastt_stream_flush(struct GigasttEngine *engine, struct GigasttStream *s
  * in-flight call is safe.
  */
 void gigastt_stream_free(struct GigasttStream *stream);
+
+/**
+ * Whether this library was built with the qualified optional v4 backend.
+ */
+bool gigastt_v4_supported(void);
+
+/**
+ * Explicitly load the local v4 RNNT FP32 CPU pack, trusted local MKL runtime
+ * and a fixed style (`raw` or `e2e`). No download, discovery or v3 fallback.
+ *
+ * # Safety
+ * Each argument must be NULL or point to readable, NUL-terminated UTF-8
+ * storage in one allocation, shorter than `isize::MAX` including the NUL,
+ * not mutated during the call. A returned engine belongs only to the v4 ABI.
+ */
+struct GigasttV4EngineResult gigastt_v4_engine_new(const char *pack_dir,
+                                                   const char *mkl_runtime_dir,
+                                                   const char *style);
+
+/**
+ * Transcribe a supported container (at most 30 seconds), returning newly
+ * allocated UTF-8 JSON with either a `result` or an `error` member. Free it
+ * using `gigastt_string_free`. Audio paths must remain inside the working
+ * directory, with no absolute path or parent-directory component.
+ *
+ * # Safety
+ * `engine` is a live opaque v4 handle (invalid/freed IDs are rejected).
+ * `audio_path` must meet the string contract of `gigastt_v4_engine_new`.
+ * A concurrent free is safe after lookup; it does not cancel an in-flight call.
+ */
+char *gigastt_v4_transcribe_file(struct GigasttV4Engine *engine, const char *audio_path);
+
+/**
+ * Free an opaque v4 engine handle. NULL, invalid and already freed IDs are
+ * no-ops; the v3 and stream handle tables are never affected.
+ *
+ * # Safety
+ * Pass only an opaque handle returned by the library or NULL; do not
+ * dereference the pointer. Concurrent in-flight recognition may complete.
+ */
+void gigastt_v4_engine_free(struct GigasttV4Engine *engine);
 
 #endif  /* GIGASTT_H */

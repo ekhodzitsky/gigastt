@@ -1136,3 +1136,63 @@ async fn test_ensure_model_variant_fp32_pack_errors_do_not_download_or_fallback(
         std::fs::write(dir.join(file), b"local").unwrap();
     }
 }
+
+#[cfg(feature = "net")]
+#[tokio::test]
+#[cfg_attr(miri, ignore = "tokio runtime is unsupported under Miri")]
+async fn test_versioned_markers_refuse_all_legacy_download_paths_without_fetch() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path();
+    // Every old path would otherwise return immediately without needing the network.
+    for file in ModelVariant::Rnnt
+        .download_files()
+        .iter()
+        .copied()
+        .chain(ModelVariant::Rnnt.prequantized_files())
+    {
+        std::fs::write(dir.join(file), b"original legacy file").unwrap();
+    }
+    let legacy = r#"
+architecture = "rnnt"
+[files]
+encoder = "v3_rnnt_encoder.onnx"
+encoder_int8 = "v3_rnnt_encoder_int8.onnx"
+decoder = "v3_rnnt_decoder.onnx"
+joint = "v3_rnnt_joint.onnx"
+vocab = "v3_vocab.txt"
+"#;
+    for marker in [
+        "schema_version = 1\n",
+        "family = \"gigaam_v4\"\n",
+        "schema_version = \"unknown\"\n",
+        "schema_version = [\n",
+    ] {
+        std::fs::write(
+            dir.join(crate::model::MANIFEST_FILE),
+            format!("{marker}{legacy}"),
+        )
+        .unwrap();
+        for requested in [None, Some(ModelVariant::Rnnt)] {
+            let dir_str = dir.to_str().unwrap();
+            assert!(ensure_model_variant(requested, dir_str).await.is_err());
+            assert!(ensure_fp32_model_variant(requested, dir_str).await.is_err());
+            assert!(
+                ensure_prequantized_model_variant(requested, dir_str)
+                    .await
+                    .is_err()
+            );
+            assert!(!dir.join(".download.lock").exists());
+        }
+    }
+    for file in ModelVariant::Rnnt
+        .download_files()
+        .iter()
+        .copied()
+        .chain(ModelVariant::Rnnt.prequantized_files())
+    {
+        assert_eq!(
+            std::fs::read(dir.join(file)).unwrap(),
+            b"original legacy file"
+        );
+    }
+}

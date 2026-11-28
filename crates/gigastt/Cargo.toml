@@ -55,10 +55,11 @@ cuda = ["gigastt-core/cuda"]
 candle = ["gigastt-core/candle"]
 ane = ["gigastt-core/ane"]
 diarization = ["gigastt-core/diarization"]
+v4-mkl = ["gigastt-core/v4-mkl"]
 quantize = ["gigastt-core/quantize"]
 
 [dependencies]
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["net", "async-pool", "file-decode"] }
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = ["net", "async-pool", "file-decode"] }
 
 axum = { version = "0.8", features = ["ws", "multipart"] }
 tokio = { version = "1", features = ["rt-multi-thread", "net", "time", "sync", "signal", "macros", "fs"] }
@@ -80,7 +81,7 @@ tempfile = "3.27"
 sha2 = { version = "0.11", default-features = false }
 # Extra `__internals` feature exposes `gigastt_core::test_support` so HTTP /
 # jobs / CLI unit tests can drive a mock engine without the INT8 model.
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = [
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = [
     "net",
     "async-pool",
     "file-decode",

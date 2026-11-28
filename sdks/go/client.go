@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -39,7 +41,13 @@ type Handlers struct {
 	OnClose func(err error)
 }
 
+type nativeV4Selection struct {
+	style           string
+	futureContextMS uint16
+}
+
 type config struct {
+	nativeV4          *nativeV4Selection
 	sampleRate        uint32
 	diarization       *bool
 	endpointSilenceMS *uint32
@@ -67,6 +75,12 @@ type Option func(*config)
 // (48000) applies.
 func WithSampleRate(hz uint32) Option {
 	return func(c *config) { c.sampleRate = hz }
+}
+
+// WithNativeV4 requires the explicit native cached RNNT FP32 subprotocol,
+// 16 kHz mono PCM16, and matching Ready style/context. It never falls back.
+func WithNativeV4(style string, futureContextMS uint16) Option {
+	return func(c *config) { c.nativeV4 = &nativeV4Selection{style: style, futureContextMS: futureContextMS} }
 }
 
 // WithEndpointSilenceMS sets the decoder blank-run duration (40–2000 ms).
@@ -148,14 +162,18 @@ type Client struct {
 // On failure Dial returns an error; a *ServerError (check with errors.As) is
 // returned when the server rejected the session. With WithReconnect enabled,
 // transient failures are retried before Dial gives up.
-func Dial(ctx context.Context, url string, opts ...Option) (*Client, error) {
+func Dial(ctx context.Context, endpoint string, opts ...Option) (*Client, error) {
 	cfg := defaultConfig()
 	for _, o := range opts {
 		o(&cfg)
 	}
+	preparedURL, err := nativeV4URL(endpoint, cfg)
+	if err != nil {
+		return nil, err
+	}
 	ctx, cancel := context.WithCancel(ctx)
 	c := &Client{
-		url:    url,
+		url:    preparedURL,
 		cfg:    cfg,
 		ctx:    ctx,
 		cancel: cancel,
@@ -195,6 +213,11 @@ func (c *Client) Done() <-chan struct{} {
 // --ws-frame-max-bytes (default 512 KiB). While a reconnect is in flight,
 // SendPCM fails fast with ErrReconnecting; after Close, with ErrClosed.
 func (c *Client) SendPCM(pcm []byte) error {
+	if c.cfg.nativeV4 != nil {
+		if cap := c.Ready().NativeV4; cap != nil && (len(pcm) == 0 || len(pcm)%2 != 0 || len(pcm) > cap.MaxPacketBytes) {
+			return errors.New("gigastt: invalid native v4 PCM16 packet size")
+		}
+	}
 	return c.write(websocket.BinaryMessage, pcm)
 }
 
@@ -310,6 +333,9 @@ func isTransient(err error) bool {
 // before ready (e.g. pool saturation) is returned as a *ServerError.
 func (c *Client) dialAndHandshake(ctx context.Context) (*websocket.Conn, Ready, error) {
 	dialer := websocket.Dialer{HandshakeTimeout: c.cfg.dialTimeout}
+	if c.cfg.nativeV4 != nil {
+		dialer.Subprotocols = []string{NativeV4Subprotocol}
+	}
 	conn, _, err := dialer.DialContext(ctx, c.url, nil)
 	if err != nil {
 		return nil, Ready{}, fmt.Errorf("gigastt: dial %s: %w", c.url, err)
@@ -317,6 +343,9 @@ func (c *Client) dialAndHandshake(ctx context.Context) (*websocket.Conn, Ready, 
 	fail := func(err error) (*websocket.Conn, Ready, error) {
 		_ = conn.Close()
 		return nil, Ready{}, err
+	}
+	if c.cfg.nativeV4 != nil && conn.Subprotocol() != NativeV4Subprotocol {
+		return fail(nativeV4Mismatch())
 	}
 	if err := c.writeFrame(conn, websocket.TextMessage, c.configureMessage()); err != nil {
 		return fail(fmt.Errorf("gigastt: send configure: %w", err))
@@ -338,6 +367,9 @@ func (c *Client) dialAndHandshake(ctx context.Context) (*websocket.Conn, Ready, 
 			var r Ready
 			if err := json.Unmarshal(raw, &r); err != nil {
 				return fail(fmt.Errorf("gigastt: decode ready: %w", err))
+			}
+			if native := c.cfg.nativeV4; native != nil && !matchesNativeV4(r, *native) {
+				return fail(nativeV4Mismatch())
 			}
 			// Clear the handshake deadline; the session has no read deadline.
 			if err := conn.SetReadDeadline(time.Time{}); err != nil {
@@ -373,9 +405,55 @@ func (c *Client) configureMessage() []byte {
 	if c.cfg.diarization != nil {
 		msg["diarization"] = *c.cfg.diarization
 	}
+	if native := c.cfg.nativeV4; native != nil {
+		msg["protocol_version"] = NativeV4ProtocolVersion
+		msg["sample_rate"] = uint32(16000)
+		msg["transcript_style"] = native.style
+		msg["future_context_ms"] = native.futureContextMS
+	}
 	// The map is fully controlled above; marshaling cannot fail.
 	data, _ := json.Marshal(msg)
 	return data
+}
+
+func nativeV4URL(endpoint string, cfg config) (string, error) {
+	native := cfg.nativeV4
+	if native == nil {
+		return endpoint, nil
+	}
+	ctx := native.futureContextMS
+	if (ctx != 160 && ctx != 320 && ctx != 640) || (native.style != "raw" && native.style != "e2e") ||
+		(cfg.sampleRate != 0 && cfg.sampleRate != 16000) || (cfg.diarization != nil && *cfg.diarization) || cfg.endpointSilenceMS != nil {
+		return "", errors.New("gigastt: incompatible native v4 configuration")
+	}
+	parsed, err := url.Parse(endpoint)
+	if err != nil {
+		return "", err
+	}
+	q, err := url.ParseQuery(parsed.RawQuery)
+	if err != nil {
+		return "", err
+	}
+	for key, want := range map[string]string{"model_family": "gigaam_v4", "model_head": "rnnt", "model_precision": "fp32", "transcript_style": native.style, "future_context_ms": strconv.Itoa(int(ctx))} {
+		if prev := q[key]; len(prev) > 1 || (len(prev) == 1 && prev[0] != want) {
+			return "", fmt.Errorf("gigastt: conflicting native v4 query field %s", key)
+		}
+		q.Set(key, want)
+	}
+	parsed.RawQuery = q.Encode()
+	return parsed.String(), nil
+}
+
+func matchesNativeV4(r Ready, want nativeV4Selection) bool {
+	got := r.NativeV4
+	return got != nil && r.Version == NativeV4ProtocolVersion && r.SampleRate == 16000 && len(r.SupportedRates) == 1 && r.SupportedRates[0] == 16000 &&
+		got.ModelFamily == "gigaam_v4" && got.ModelHead == "rnnt" && got.ModelPrecision == "fp32" && got.TranscriptStyle == want.style &&
+		got.FutureContextMS == want.futureContextMS && got.EndpointMode == "manual" && got.MaxPacketBytes >= 2 && got.MaxPacketBytes <= 32000 &&
+		len(got.SupportedFutureContextMS) == 3 && got.SupportedFutureContextMS[0] == 160 && got.SupportedFutureContextMS[1] == 320 && got.SupportedFutureContextMS[2] == 640
+}
+
+func nativeV4Mismatch() *ServerError {
+	return &ServerError{Code: "native_v4_mismatch", Message: "Server did not negotiate the requested native v4 stream"}
 }
 
 // envelope is the type tag shared by all server messages.

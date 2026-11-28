@@ -170,3 +170,16 @@ decoder blank-run endpoint duration (40–2000 ms, default 600), only in auto mo
 without VAD. It is not acoustic silence detection. When set, the SDK requests
 protocol 1.3 so older servers reject the handshake instead of ignoring the
 setting. When omitted, the SDK retains its protocol 1.0 compatibility.
+
+## Native GigaAM v4 opt-in
+
+Connect to an explicitly provisioned native v4 streaming listener with
+`gigastt.WithNativeV4("raw", 320)` passed to `gigastt.Dial`. Choose `raw` or
+`e2e` and 160, 320, or 640 ms. The SDK requires the native subprotocol and
+matching Ready capability, never falling back to legacy v3. Send 16 kHz mono
+signed little-endian PCM16 within `Ready().NativeV4.MaxPacketBytes`.
+
+`Transcript.Text` and `.Words` are cumulative snapshots;
+`.NativeDelta` carries only new words, text and tokens. Stop finalizes and
+closes, and reconnect does not resume or replay input. Omitting the option
+leaves legacy connections unchanged.

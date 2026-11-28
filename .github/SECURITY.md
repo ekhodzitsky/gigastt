@@ -4,9 +4,13 @@
 
 | Version | Supported |
 |---------|-----------|
-| 2.22.x  | Yes (current)  |
-| 2.21.x  | Yes (previous) |
+| 2.23.x  | Yes (current)  |
+| 2.22.x  | Yes (previous) |
+| 2.21.x  | Yes (until 2.23 is published) |
 | < 2.21  | No             |
+
+The current workspace is preparing the 2.23 release; this table does not
+announce its publication or end support for 2.21 before publication.
 
 ## Reporting a Vulnerability
 

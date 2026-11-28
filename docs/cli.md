@@ -16,6 +16,15 @@ Options:
                          network fetch — model download, punctuation /
                          diarization / VAD auto-fetch — with an error naming
                          the missing file instead of a connect timeout
+  --model-family <FAMILY>  Explicit family: gigaam_v3 (legacy default) | gigaam_v4.
+                         Env: GIGASTT_MODEL_FAMILY.
+  --model-head <HEAD>     Explicit v4 head: rnnt. Env: GIGASTT_MODEL_HEAD.
+  --transcript-style <STYLE>  Explicit v4 style: raw | e2e.
+                         Env: GIGASTT_TRANSCRIPT_STYLE.
+  --model-precision <PRECISION>  Explicit v4 precision: fp32.
+                         Env: GIGASTT_MODEL_PRECISION.
+  --v4-mkl-runtime-dir <PATH>  Verified operator-supplied MKL runtime.
+                         Env: GIGASTT_V4_MKL_RUNTIME_DIR.
 
 Commands:
   serve        Start STT server
@@ -105,6 +114,10 @@ gigastt serve [OPTIONS]
                             without widening the window [default: true].
                             Opt out with --stream-stable-prefix=false.
                             Env: GIGASTT_STREAM_STABLE_PREFIX.
+  --v4-streaming-model-dir <PATH> Qualified native v4 streaming pack (optional).
+                            Env: GIGASTT_V4_STREAMING_MODEL_DIR.
+  --v4-streaming-future-context-ms <MS> Default native v4 context: 160, 320, or 640 [default: 320].
+                            Requires the native pack. Env: GIGASTT_V4_STREAMING_FUTURE_CONTEXT_MS.
   --stream-ctc-model-dir <DIR> Cached ml_ctc_large sidecar for RNN-T WebSocket
                             speech/automatic-endpoint confirmation [default: off].
                             Env: GIGASTT_STREAM_CTC_MODEL_DIR. No automatic download.
@@ -406,3 +419,36 @@ gigastt cache-gc [OPTIONS]
   Safe on accuracy: leftovers are pure disk waste from FP32 runs, head
   switches, or ONNX Runtime upgrades.
 ```
+
+
+## Explicit v4 full-context file profile
+
+Build the server with the optional Cargo feature `v4-mkl` in release mode
+on GNU Linux x86-64 and supply the [qualified v4 pack and MKL runtime](v4-pack-validation.md).
+Global model family/head/style/precision options do not change the legacy
+defaults. The first v4 profile requires all five explicit options together
+and a local model directory. It only supports `serve` and `transcribe`:
+
+```sh
+gigastt transcribe audio.wav --model-dir /path/to/v4-pack \
+  --model-family gigaam_v4 --model-head rnnt --model-precision fp32 \
+  --transcript-style e2e --v4-mkl-runtime-dir /path/to/runtime --format json
+
+gigastt serve --model-dir /path/to/v4-pack --model-family gigaam_v4 \
+  --model-head rnnt --model-precision fp32 --transcript-style raw \
+  --v4-mkl-runtime-dir /path/to/runtime --enable-jobs
+```
+
+Both styles use the verified CPU FP32 split graphs with one CPU inference
+thread and one full-context request slot, without downloads, warmup, optimized
+graph cache or provider fallback. The engine uses the model's own text style;
+no extra punctuation or ITN is applied. File inputs are bounded to 30 seconds
+after decoding, with no implicit chunking. A lower positive audio limit on
+the file server is respected; a limit above 30 seconds is rejected.
+Legacy model-variant, sidecar, hotword, speaker splitting, VAD, streaming,
+cache, metrics and reload overrides are not applicable to this profile.
+Explicit conflicting options are rejected rather than silently ignored.
+Asynchronous file jobs have no automatic retries. See the
+[API's v4 profile section](api.md#explicit-v4-full-context-file-profile) for
+the exact server route subset and errors. To enable the separate cached v4
+WebSocket profile, see [native v4 WebSocket](v4-native-websocket.md).

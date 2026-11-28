@@ -272,10 +272,28 @@ pub use sse::{OpenAITranscriptDelta, OpenAITranscriptDone};
 
 /// Parse an OpenAI-style multipart body into a typed request.
 pub async fn parse_openai_multipart(
+    multipart: Multipart,
+) -> Result<OpenAITranscriptionRequest, Box<Response>> {
+    parse_openai_multipart_mode(multipart, false).await
+}
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(crate) async fn parse_v4_openai_multipart(
+    multipart: Multipart,
+) -> Result<OpenAITranscriptionRequest, Box<Response>> {
+    parse_openai_multipart_mode(multipart, true).await
+}
+async fn parse_openai_multipart_mode(
     mut multipart: Multipart,
+    strict_v4: bool,
 ) -> Result<OpenAITranscriptionRequest, Box<Response>> {
     let mut file: Option<Bytes> = None;
     let mut options = OpenAITranscriptionOptions::default();
+    let mut seen = std::collections::BTreeSet::new();
 
     while let Some(field) = multipart.next_field().await.map_err(|e| {
         tracing::error!("OpenAI multipart parse failed: {e:#}");
@@ -286,6 +304,13 @@ pub async fn parse_openai_multipart(
         ))
     })? {
         let name = field.name().unwrap_or("").to_string();
+        if strict_v4 && !seen.insert(name.clone()) {
+            return Err(Box::new(openai_error(
+                StatusCode::BAD_REQUEST,
+                "Duplicate v4 multipart field",
+                "invalid_multipart",
+            )));
+        }
         let data = field.bytes().await.map_err(|e| {
             tracing::error!("OpenAI multipart field read failed: {e:#}");
             Box::new(openai_error(
@@ -297,6 +322,33 @@ pub async fn parse_openai_multipart(
         if name == "file" {
             file = Some(data);
             continue;
+        }
+        if !strict_v4
+            && (super::router::is_v4_selector(&name)
+                || (name == "model"
+                    && std::str::from_utf8(&data).is_ok_and(super::router::is_v4_model_id)))
+        {
+            return Err(Box::new(openai_error(
+                StatusCode::CONFLICT,
+                "Explicit v4 model selection requires a v4 file server",
+                "variant_not_loaded",
+            )));
+        }
+        if strict_v4
+            && !matches!(
+                name.as_str(),
+                "model"
+                    | "response_format"
+                    | "stream"
+                    | "timestamp_granularities"
+                    | "timestamp_granularities[]"
+            )
+        {
+            return Err(Box::new(openai_error(
+                StatusCode::BAD_REQUEST,
+                "Unsupported v4 OpenAI option; language hints, prompts and sampling options are unavailable",
+                "unsupported_v4_option",
+            )));
         }
         if let Err(msg) = apply_openai_form_field(&mut options, &name, &data) {
             let code = if msg.contains("response_format") {

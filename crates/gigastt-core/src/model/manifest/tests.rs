@@ -270,3 +270,50 @@ vocab = "vocab.txt"
         );
     }
 }
+
+#[test]
+fn test_legacy_manifest_refuses_reserved_versioned_markers() {
+    let legacy = r#"
+architecture = "rnnt"
+[files]
+encoder = "encoder.onnx"
+encoder_int8 = "encoder-int8.onnx"
+decoder = "decoder.onnx"
+joint = "joint.onnx"
+vocab = "vocab.txt"
+"#;
+    assert!(ModelManifest::parse(legacy).is_ok());
+    // Old readers used to ignore unknown keys, even if the same document
+    // declares a different model generation. Never route it as v3.
+    for marker in [
+        "schema_version = 1\n",
+        "family = \"gigaam_v4\"\n",
+        "schema_version = 999\nfamily = \"gigaam_v4\"\n",
+        "schema_version = \"invalid\"\n",
+    ] {
+        assert!(ModelManifest::parse(&format!("{marker}{legacy}")).is_err());
+    }
+    // Existing unrelated extension metadata is not a version declaration.
+    assert!(ModelManifest::parse(&format!("note = \"custom\"\n{legacy}")).is_ok());
+}
+
+#[test]
+fn test_present_non_file_manifest_is_not_an_absent_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    fs::create_dir(dir.path().join(MANIFEST_FILE)).unwrap();
+    assert!(ModelManifest::load(dir.path()).is_err());
+    assert!(reject_versioned_pack(dir.path()).is_err());
+}
+
+#[cfg(unix)]
+#[test]
+fn test_dangling_manifest_symlink_is_not_an_absent_manifest() {
+    let dir = tempfile::tempdir().unwrap();
+    std::os::unix::fs::symlink(
+        dir.path().join("missing.toml"),
+        dir.path().join(MANIFEST_FILE),
+    )
+    .unwrap();
+    assert!(ModelManifest::load(dir.path()).is_err());
+    assert!(reject_versioned_pack(dir.path()).is_err());
+}

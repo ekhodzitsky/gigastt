@@ -50,7 +50,7 @@ publishing {
         register<MavenPublication>("release") {
             groupId = (project.findProperty("GROUP") as String?) ?: "com.github.ekhodzitsky"
             artifactId = (project.findProperty("POM_ARTIFACT_ID") as String?) ?: "gigastt"
-            version = (project.findProperty("VERSION_NAME") as String?) ?: "2.22.0"
+            version = (project.findProperty("VERSION_NAME") as String?) ?: "2.23.0"
             afterEvaluate { from(components["release"]) }
             pom {
                 name.set("gigastt")

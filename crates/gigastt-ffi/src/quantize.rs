@@ -43,6 +43,9 @@ pub unsafe extern "C" fn gigastt_quantize_model(
         };
 
         let model_dir = std::path::Path::new(dir_str);
+        if let Err(error) = gigastt_core::model::reject_versioned_pack(model_dir) {
+            return to_cstring(&format!("invalid model pack: {error:#}")).into_raw();
+        }
         // Auto-detect the head from whichever encoder is present so this works for
         // the default rnnt model as well as e2e_rnnt.
         let variant = match gigastt_core::model::ModelVariant::detect_in_dir(model_dir) {

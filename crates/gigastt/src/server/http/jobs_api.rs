@@ -94,6 +94,14 @@ pub async fn submit_job(
 ) -> Result<Response, ApiError> {
     let jobs = require_jobs(&state)?;
     let limits = state.limits.load();
+    submit_job_for(jobs, &limits, params, body).await
+}
+pub(super) async fn submit_job_for(
+    jobs: &JobServerState,
+    limits: &super::super::config::RuntimeLimits,
+    params: ExportParams,
+    body: Bytes,
+) -> Result<Response, ApiError> {
     if body.is_empty() {
         return Err(api_error(
             StatusCode::BAD_REQUEST,
@@ -111,7 +119,7 @@ pub async fn submit_job(
     // Preserve advisory backpressure for stores using the original error
     // contract; typed create errors below cover concurrent admission races.
     if jobs.store.is_full().await {
-        return Err(queue_full(&limits));
+        return Err(queue_full(limits));
     }
     let split_channels = params.channels.as_deref() == Some("split");
     let request_diarization = params.diarization == Some(true);
@@ -127,7 +135,7 @@ pub async fn submit_job(
     let created_at = job.created_at;
     let id = match jobs.store.create(job).await {
         Ok(id) => id,
-        Err(e) if e.is::<JobStoreFull>() => return Err(queue_full(&limits)),
+        Err(e) if e.is::<JobStoreFull>() => return Err(queue_full(limits)),
         Err(e) => {
             tracing::error!("Failed to create job: {e:#}");
             return Err(api_error(
@@ -154,6 +162,9 @@ pub async fn get_job(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Response, ApiError> {
     let jobs = require_jobs(&state)?;
+    get_job_for(jobs, id).await
+}
+pub(super) async fn get_job_for(jobs: &JobServerState, id: String) -> Result<Response, ApiError> {
     let status = map_job_read(jobs.store.status(&id).await, &id)?;
     Ok(Json(status).into_response())
 }
@@ -164,6 +175,12 @@ pub async fn get_job_result(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Response, ApiError> {
     let jobs = require_jobs(&state)?;
+    get_job_result_for(jobs, id).await
+}
+pub(super) async fn get_job_result_for(
+    jobs: &JobServerState,
+    id: String,
+) -> Result<Response, ApiError> {
     let job = load_job(&*jobs.store, &id).await?;
     if !matches!(job.status, JobStatus::Done) {
         return Err(api_error(
@@ -210,6 +227,12 @@ pub async fn cancel_job(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Response, ApiError> {
     let jobs = require_jobs(&state)?;
+    cancel_job_for(jobs, id).await
+}
+pub(super) async fn cancel_job_for(
+    jobs: &JobServerState,
+    id: String,
+) -> Result<Response, ApiError> {
     match jobs.store.transition(&id, JobTransition::Cancel).await {
         Ok(TransitionOutcome::Applied) => {}
         Ok(TransitionOutcome::Rejected(_)) => {
@@ -244,6 +267,12 @@ pub async fn job_events(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Sse<impl Stream<Item = Result<Event, std::convert::Infallible>>>, ApiError> {
     let jobs = require_jobs(&state)?;
+    job_events_for(jobs, id).await
+}
+pub(super) async fn job_events_for(
+    jobs: &JobServerState,
+    id: String,
+) -> Result<Sse<impl Stream<Item = Result<Event, std::convert::Infallible>> + use<>>, ApiError> {
     let (tx, rx) = job_event_channel();
     match jobs.store.subscribe(&id, tx).await {
         Ok(true) => {}

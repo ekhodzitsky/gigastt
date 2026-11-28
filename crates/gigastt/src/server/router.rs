@@ -10,6 +10,45 @@ use std::sync::Arc;
 use super::http;
 use super::ws;
 
+/// New explicit v4 request selectors are reserved, never interpreted as
+/// legacy aliases. Other historic OpenAI model aliases remain compatible.
+pub(crate) fn is_v4_model_id(id: &str) -> bool {
+    id.starts_with("gigaam-v4-")
+}
+pub(crate) fn is_v4_selector(key: &str) -> bool {
+    matches!(
+        key,
+        "model_family"
+            | "model_head"
+            | "transcript_style"
+            | "model_precision"
+            | "v4_mkl_runtime_dir"
+    )
+}
+fn requests_v4(query: &[(String, String)]) -> bool {
+    query.iter().any(|(key, id)| {
+        is_v4_selector(key) || (matches!(key.as_str(), "variant" | "model") && is_v4_model_id(id))
+    })
+}
+async fn reject_v4_on_legacy(
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> axum::response::Response {
+    use axum::response::IntoResponse;
+    if request.method() == axum::http::Method::POST
+        && matches!(
+            request.uri().path(),
+            "/v1/transcribe" | "/v1/transcribe/stream" | "/v1/audio/transcriptions" | "/v1/jobs"
+        )
+        && let Ok(axum::extract::Query(query)) =
+            axum::extract::Query::<Vec<(String, String)>>::try_from_uri(request.uri())
+        && requests_v4(&query)
+    {
+        return (StatusCode::CONFLICT,axum::Json(serde_json::json!({"error":"Explicit v4 model selection requires a v4 file server","code":"variant_not_loaded"}))).into_response();
+    }
+    next.run(request).await
+}
+
 /// Routes gated by origin middleware (and the per-IP limiter when enabled).
 /// `/metrics` is intentionally absent — it lives on the loopback listener.
 pub(crate) fn protected_v1_router(
@@ -87,15 +126,46 @@ pub(crate) fn protected_v1_router(
     } else {
         protected
     };
-    protected.route_layer(axum::middleware::from_fn_with_state(
-        admission,
-        super::upload::admit,
-    ))
+    protected
+        .route_layer(axum::middleware::from_fn_with_state(
+            admission,
+            super::upload::admit,
+        ))
+        .route_layer(axum::middleware::from_fn(reject_v4_on_legacy))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_explicit_v4_profile_cannot_fall_through_to_legacy() {
+        for query in [
+            "model_family=gigaam_v4",
+            "model_precision=fp32",
+            "transcript_style=raw",
+            "model_head=rnnt",
+            "variant=gigaam-v4-rnnt-e2e-fp32",
+            "model=gigaam-v4-unqualified",
+            "model=gigaam-v4-rnnt-raw-fp32&model=whisper-1",
+        ] {
+            let uri = format!("/v1/transcribe?{query}").parse().unwrap();
+            let axum::extract::Query(fields) =
+                axum::extract::Query::<Vec<(String, String)>>::try_from_uri(&uri).unwrap();
+            assert!(requests_v4(&fields), "{query}");
+        }
+        for query in [
+            "variant=rnnt",
+            "model=whisper-1",
+            "unknown_legacy=ok",
+            "format=json",
+        ] {
+            let uri = format!("/v1/transcribe?{query}").parse().unwrap();
+            let axum::extract::Query(fields) =
+                axum::extract::Query::<Vec<(String, String)>>::try_from_uri(&uri).unwrap();
+            assert!(!requests_v4(&fields), "{query}");
+        }
+    }
 
     #[test]
     fn test_protected_v1_router_builds_with_and_without_jobs() {

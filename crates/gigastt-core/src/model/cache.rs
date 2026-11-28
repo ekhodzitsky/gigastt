@@ -159,6 +159,7 @@ pub fn prune_optimized_cache_dir(
         dry_run,
         ..Default::default()
     };
+    super::manifest::reject_versioned_pack(model_dir)?;
     if !cache_dir.is_dir() {
         return Ok(report);
     }
@@ -255,6 +256,7 @@ pub fn prune_coreml_cache(model_dir: &Path, dry_run: bool) -> Result<CoremlCache
         dry_run,
         ..Default::default()
     };
+    super::manifest::reject_versioned_pack(model_dir)?;
     let cache_root = model_dir.join("coreml_cache");
     if !cache_root.is_dir() {
         return Ok(report);
@@ -334,6 +336,7 @@ pub fn dedupe_model_dir(model_dir: &Path, dry_run: bool) -> Result<DedupeReport>
     if !model_dir.is_dir() {
         return Ok(report);
     }
+    super::manifest::reject_versioned_pack(model_dir)?;
 
     let mut by_hash: HashMap<String, Vec<PathBuf>> = HashMap::new();
     collect_regular_files(model_dir, &mut by_hash)?;

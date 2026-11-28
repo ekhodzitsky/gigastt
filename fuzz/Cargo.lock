@@ -245,7 +245,7 @@ dependencies = [
 
 [[package]]
 name = "gigastt-core"
-version = "2.22.0"
+version = "2.23.0"
 dependencies = [
  "anyhow",
  "bytes",
@@ -257,6 +257,7 @@ dependencies = [
  "rubato",
  "rustfft",
  "ryf",
+ "sentencepiece-rs",
  "serde",
  "serde_json",
  "sha2",
@@ -815,6 +816,12 @@ name = "semver"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a7852d02fc848982e0c167ef163aaff9cd91dc640ba85e263cb1ce46fae51cd"
+
+[[package]]
+name = "sentencepiece-rs"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bc4483945bfd66b8727ed59005af1543d3d966ca92f9bc065bfef532de1d7e8"
 
 [[package]]
 name = "serde"

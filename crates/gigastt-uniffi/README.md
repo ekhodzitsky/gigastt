@@ -74,3 +74,33 @@ except g.GigasttFfiError.ModelNotFound as e:
 ## License
 
 MIT.
+
+## Optional GigaAM v4 file engine (Linux x86-64 GNU)
+
+Build the native library with `cargo build -p gigastt-uniffi --features v4-mkl`
+and generate language bindings from that exact library as above. Default
+wheels/artifacts leave v4 off; the existing `Engine`, `Stream`, and
+`GigasttFfiError` APIs are unchanged. The separate `V4Engine` uses only a
+caller-provisioned validated local v4 FP32 pack and trusted local MKL runtime;
+there is no runtime download or model fallback. See [embedding and packaging](../../docs/embedding-packaging.md#optional-gigaam-v4-file-engine).
+
+```python
+import gigastt_uniffi as g
+
+if not g.v4_supported():
+    raise RuntimeError("This library has no v4 backend")
+engine = g.V4Engine("/path/to/v4-pack", "/path/to/mkl-runtime", "raw")
+result = engine.transcribe_file("recording.wav")
+print(result.text, result.words, result.tokens)
+```
+
+The API accepts explicit `raw` or `e2e` style, native decoded mono audio from
+20 ms through 30 s, and returns `V4Transcript { style, text, words, tokens,
+duration_s, confidence }`. Token `frame` is a zero-based encoder frame;
+confidence is an uncalibrated model score. Calls are synchronous and a single
+engine serializes inference. `V4BindingError` is a separate typed error with
+`UnsupportedCapability`, `InvalidArgument`, `ModelNotFound`, `InvalidAudio`,
+`AudioTooLong`, and `Inference` variants. Streaming, cancellation API,
+diarization, VAD, hotwords, long-form chunking and automatic fallback are not
+available. Swift/iOS/Android/macOS builds expose the capability probe and
+unsupported error rather than claiming v4 support.

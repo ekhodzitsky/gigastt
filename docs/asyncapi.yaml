@@ -9,6 +9,10 @@ info:
     over an offline RNN-T: stride 0.8 s, max window 2.5 s, left context 1.5 s.
     Streaming WER is not batch-equal; see docs/benchmarks.md.
 
+    This schema describes the legacy dialect; the separately provisioned
+    native v4 subprotocol and additive metadata are documented in
+    [docs/v4-native-websocket.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/v4-native-websocket.md).
+
     This document is the machine-readable schema. The human-readable protocol
     reference (field tables, error codes, close codes, examples) lives in
     [docs/api.md](https://github.com/ekhodzitsky/gigastt/blob/main/docs/api.md);

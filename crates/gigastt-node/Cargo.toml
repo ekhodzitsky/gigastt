@@ -22,12 +22,13 @@ default = []
 coreml = ["gigastt-core/coreml"]
 cuda = ["gigastt-core/cuda"]
 nnapi = ["gigastt-core/nnapi"]
+v4-mkl = ["gigastt-core/v4-mkl"]
 
 [dependencies]
 # Lean core: file decoding only — no HTTP download, no async runtime (the binding
 # side-loads models and uses the synchronous checkout_blocking path on a libuv
 # worker thread). onnxruntime is statically linked via ort's default download-binaries.
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = ["file-decode"] }
 napi = { version = "3.10", default-features = false, features = ["napi4"] }
 napi-derive = "3"
 
@@ -36,7 +37,7 @@ napi-build = "2"
 
 [dev-dependencies]
 # Reuse model-free fault injection; both dependencies already exist in the workspace.
-gigastt-core = { version = "2.22.0", path = "../gigastt-core", default-features = false, features = ["__internals"] }
+gigastt-core = { version = "2.23.0", path = "../gigastt-core", default-features = false, features = ["__internals"] }
 tempfile = "3"
 # Unit tests exercise Rust tasks without a Node host or N-API references.
 napi = { version = "3.10", default-features = false, features = ["noop"] }

@@ -17,6 +17,41 @@ package gigastt
 // are tolerated: unknown JSON fields are ignored on decode.
 const ProtocolVersion = "1.0"
 
+// NativeV4ProtocolVersion is the separately negotiated cached v4 dialect.
+const NativeV4ProtocolVersion = "1.4"
+
+// NativeV4Subprotocol explicitly selects the cached v4 WebSocket transport.
+const NativeV4Subprotocol = "gigastt-native-v4"
+
+// NativeV4Capability describes the negotiated native streaming profile.
+type NativeV4Capability struct {
+	ModelFamily              string   `json:"model_family"`
+	ModelHead                string   `json:"model_head"`
+	ModelPrecision           string   `json:"model_precision"`
+	TranscriptStyle          string   `json:"transcript_style"`
+	FutureContextMS          uint16   `json:"future_context_ms"`
+	SupportedFutureContextMS []uint16 `json:"supported_future_context_ms"`
+	MaxPacketBytes           int      `json:"max_packet_bytes"`
+	EndpointMode             string   `json:"endpoint_mode"`
+}
+
+// NativeV4Token is a newly emitted nonblank token on the absolute frame grid.
+type NativeV4Token struct {
+	ID         uint32  `json:"id"`
+	Frame      uint64  `json:"frame"`
+	Confidence float64 `json:"confidence"`
+}
+
+// NativeV4Delta contains only the new output for the referenced audio packet.
+type NativeV4Delta struct {
+	PacketOneBased uint64          `json:"packet_one_based"`
+	Samples        uint64          `json:"samples"`
+	EncodedFrames  uint64          `json:"encoded_frames"`
+	Text           string          `json:"text"`
+	Words          []WordInfo      `json:"words"`
+	Tokens         []NativeV4Token `json:"tokens"`
+}
+
 // DefaultURL is the default server endpoint (loopback bind, default port).
 const DefaultURL = "ws://127.0.0.1:9876/v1/ws"
 
@@ -65,7 +100,8 @@ type Ready struct {
 	// Diarization reports whether speaker diarization is available.
 	Diarization bool `json:"diarization,omitempty"`
 	// MinProtocolVersion is the minimum protocol version the server accepts.
-	MinProtocolVersion string `json:"min_protocol_version,omitempty"`
+	MinProtocolVersion string              `json:"min_protocol_version,omitempty"`
+	NativeV4           *NativeV4Capability `json:"native_v4,omitempty"`
 }
 
 // Transcript is a partial (interim, may change) or final (utterance complete)
@@ -79,6 +115,8 @@ type Transcript struct {
 	IsFinal bool `json:"is_final"`
 	// Timestamp is the Unix time (seconds since epoch) when the segment was produced.
 	Timestamp float64 `json:"timestamp"`
+	// NativeDelta is the incremental output; Text and Words are the snapshot.
+	NativeDelta *NativeV4Delta `json:"native_delta,omitempty"`
 }
 
 // ServerError is an error message sent by the server. It implements the error

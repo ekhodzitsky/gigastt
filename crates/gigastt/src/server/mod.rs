@@ -17,6 +17,20 @@ mod ws;
 
 pub use config::{OriginPolicy, RuntimeLimits, ServerConfig};
 pub use http::EngineBuilder;
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub use http::v4::{run_v4_files, run_v4_files_with_streaming, v4_result};
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub use ws::native_v4::NativeV4Streaming;
 
 use anyhow::Result;
 

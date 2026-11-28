@@ -380,3 +380,40 @@ vocab = "custom_vocab.txt"
             .is_err()
     );
 }
+
+#[test]
+fn test_versioned_marker_refuses_legacy_resolution_with_or_without_override() {
+    let dir = tempfile::tempdir().unwrap();
+    for file in ModelVariant::Rnnt.prequantized_files() {
+        std::fs::write(dir.path().join(file), b"legacy").unwrap();
+    }
+    std::fs::write(
+        dir.path().join(crate::model::MANIFEST_FILE),
+        r#"
+schema_version = 1
+family = "gigaam_v4"
+architecture = "rnnt"
+[files]
+encoder = "v3_rnnt_encoder.onnx"
+encoder_int8 = "v3_rnnt_encoder_int8.onnx"
+decoder = "v3_rnnt_decoder.onnx"
+joint = "v3_rnnt_joint.onnx"
+vocab = "v3_vocab.txt"
+"#,
+    )
+    .unwrap();
+    for requested in [None, Some(ModelVariant::Rnnt), Some(ModelVariant::E2eRnnt)] {
+        assert!(resolve_load_variant(requested, dir.path()).is_err());
+        assert!(matches!(
+            resolve_variant_required(requested, dir.path()),
+            Err(crate::error::GigasttError::ModelLoad { .. })
+        ));
+    }
+    assert!(ResolvedModelFiles::resolve(dir.path(), ModelVariant::Rnnt).is_err());
+    // The real engine must fail with the versioned-pack diagnostic before
+    // creating a runtime or trying to parse the deliberately invalid ONNX.
+    let err = crate::inference::Engine::load(dir.path().to_str().unwrap())
+        .err()
+        .expect("versioned pack must not load as legacy");
+    assert!(format!("{:#}", anyhow::Error::new(err)).contains("versioned model packs"));
+}

@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "wheel": {
+    "file": "mkl-2024.2.0-py2.py3-none-manylinux1_x86_64.whl",
+    "bytes": 195270338,
+    "sha256": "8b4b731a5652258d84e10dd9c28d68d391e5a81a97a482348f602649837611da"
+  },
+  "version": "Intel(R) oneAPI Math Kernel Library Version 2024.2-Product Build 20240605 for Intel(R) 64 architecture applications",
+  "shim_abi": 1,
+  "libraries": [
+    {
+      "file": "libmkl_intel_lp64.so.2",
+      "bytes": 17987488,
+      "sha256": "ac7c9840b8735282e4781f15272d28b0e494ac56399506993ba30defa24c768d"
+    },
+    {
+      "file": "libmkl_sequential.so.2",
+      "bytes": 23196640,
+      "sha256": "afdfa0a3d332c2a5beaf1138a303d25cd41e1809102313670a38c7000d5eeda2"
+    },
+    {
+      "file": "libmkl_core.so.2",
+      "bytes": 69600576,
+      "sha256": "dd2cdfcb74bcff6a2d9df0edfab2822ebacffb5a326223d4e2299fa439912840"
+    },
+    {
+      "file": "libmkl_def.so.2",
+      "bytes": 38439840,
+      "sha256": "7443958030423ce859a41a6b0debbc7799e58b8a84a3304141545918d1f81432"
+    },
+    {
+      "file": "libmkl_mc3.so.2",
+      "bytes": 45741168,
+      "sha256": "861a94ea9ad1ae379210b07e2cb6ab654d4aa4faa1abd494c015c70fc2dbb81a"
+    },
+    {
+      "file": "libmkl_avx2.so.2",
+      "bytes": 44414296,
+      "sha256": "49592efe2fecb0e7a10d1f0a77b5440390daf2dfbaacd820fb5e5d194406bac8"
+    },
+    {
+      "file": "libmkl_avx512.so.2",
+      "bytes": 65303320,
+      "sha256": "8dfbbebfd91324b86d2b6d5c957e7800f4eb4683d0fc2c5723d41db37bae7931"
+    },
+    {
+      "file": "libmkl_vml_def.so.2",
+      "bytes": 9291032,
+      "sha256": "e86422e1f87b7128103732cfffdaa682b9da28f1de76ae78f0a0ef1f8bf2bdbb"
+    },
+    {
+      "file": "libmkl_vml_mc3.so.2",
+      "bytes": 13223680,
+      "sha256": "0e48b920914d2b412716c092124910ada7aa0069c36dfd3ad51c293fbc85bf64"
+    },
+    {
+      "file": "libmkl_vml_avx2.so.2",
+      "bytes": 15428560,
+      "sha256": "8c7940b73e6eda2115ad14b8e7f8e48e6c77a324e4f19509d5549515e73b0d54"
+    },
+    {
+      "file": "libmkl_vml_avx512.so.2",
+      "bytes": 16256640,
+      "sha256": "6f5bdeccc76722439786d04b487f96302a2a93d61955a525724a86c032452825"
+    },
+    {
+      "file": "libmkl_vml_cmpt.so.2",
+      "bytes": 7984680,
+      "sha256": "511c800a1ecf67328a5a26cb30cd2ef165989daf8179a4076a0ab04a7340dcba"
+    }
+  ],
+  "shim": {
+    "file": "libgigastt_v4_mkl.so",
+    "bytes": 15896,
+    "sha256": "fb2adc8509ba1a614566d1b42278cd61f389b99b8c28eb6a13dd7857cd37409e"
+  },
+  "message_catalog": {
+    "file": "locale/en_US/mkl_msg.cat",
+    "bytes": 119064,
+    "sha256": "a01b97100b0d1b0d7157c8e4de8f31c0731fb77c0859e0a314da4a4e328b1416"
+  }
+}

@@ -98,3 +98,33 @@ Caveat: `npm install --ignore-scripts` skips the postinstall, so the binary is n
 ## License
 
 MIT.
+
+## Optional GigaAM v4 file engine (Linux x86-64 GNU)
+
+The separate `V4Engine` is an explicit local FP32 CPU API, not a replacement
+for `Engine` or `Stream`. Build the addon from source with `v4-mkl` enabled,
+for example `npm run build -- --features v4-mkl`. Existing default/prebuilt
+artifacts do not enable this feature. The caller must provision the exact
+validated v4 pack and a trusted local MKL runtime; there is no model/runtime
+download or fallback to v3. See [embedding and packaging](../../docs/embedding-packaging.md#optional-gigaam-v4-file-engine).
+
+```js
+const { V4Engine, v4Supported } = require('gigastt');
+if (!v4Supported()) throw new Error('This addon has no v4 backend');
+const engine = new V4Engine('/path/to/v4-pack', '/path/to/mkl-runtime', 'e2e');
+const result = await engine.transcribeFile('recording.wav');
+console.log(result.text, result.words, result.tokens);
+```
+
+Choose `raw` or `e2e` explicitly. Supported containers are decoded to native
+mono 16 kHz PCM (20 ms minimum, 30 s maximum). The result contains `style`,
+`text`, `words`, `tokens`, `durationS`, and optional aggregate `confidence`.
+Token `frame` is a zero-based encoder frame; token/word confidence scores
+are not calibrated correctness probabilities. The constructor blocks while
+loading; file transcription runs off the JS event loop, and one native
+engine serializes inference. There is no v4 streaming, cancellation API,
+diarization, VAD, hotword biasing, long-form chunking or automatic fallback.
+Unsupported builds report `UnsupportedCapability`; invalid style reports
+`InvalidArgument`. Load failures report `ModelNotFound`, audio/decode failures
+`InvalidAudio`, duration violations `AudioTooLong`, and other failures
+`Inference` (with `Cancelled` reserved for a native cancellation error).

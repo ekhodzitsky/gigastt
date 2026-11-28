@@ -104,3 +104,66 @@ pub(crate) fn take_stream(ptr: *mut GigasttStream) -> Option<Arc<Mutex<StreamSlo
     let id = as_id(ptr)?;
     lock_map(streams()).remove(&id)
 }
+
+/// Opaque v4 C type. Never constructed; its pointers encode table IDs.
+#[allow(dead_code)]
+pub struct GigasttV4Engine {
+    _private: (),
+}
+
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(crate) struct V4EngineSlot {
+    pub engine: gigastt_core::inference::v4::V4Engine,
+    pub style: gigastt_core::model::TranscriptStyle,
+}
+
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+fn v4_engines() -> &'static Mutex<HashMap<u64, Arc<V4EngineSlot>>> {
+    static V4_ENGINES: OnceLock<Mutex<HashMap<u64, Arc<V4EngineSlot>>>> = OnceLock::new();
+    V4_ENGINES.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(crate) fn insert_v4_engine(
+    engine: gigastt_core::inference::v4::V4Engine,
+    style: gigastt_core::model::TranscriptStyle,
+) -> *mut GigasttV4Engine {
+    let id = next_id();
+    lock_map(v4_engines()).insert(id, Arc::new(V4EngineSlot { engine, style }));
+    as_ptr(id)
+}
+
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(crate) fn get_v4_engine(ptr: *mut GigasttV4Engine) -> Option<Arc<V4EngineSlot>> {
+    lock_map(v4_engines()).get(&as_id(ptr)?).cloned()
+}
+
+#[cfg(all(
+    feature = "v4-mkl",
+    target_os = "linux",
+    target_arch = "x86_64",
+    target_env = "gnu"
+))]
+pub(crate) fn take_v4_engine(ptr: *mut GigasttV4Engine) -> Option<Arc<V4EngineSlot>> {
+    lock_map(v4_engines()).remove(&as_id(ptr)?)
+}
